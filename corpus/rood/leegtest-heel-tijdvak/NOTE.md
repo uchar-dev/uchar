@@ -1,0 +1,66 @@
+# leegtest-heel-tijdvak
+
+The **unnegated** leeg test under the ch. 3.9 whole-period qualifier: "de
+lengte van de Schuit is gedurende het gehele jaar leeg". All three
+executors refuse it by name. It is the twin of `leegnegatie-heel-tijdvak`,
+which carries the negated form.
+
+## The shape
+
+`leegnegatie-heel-tijdvak` with one field changed: `Predicaat.negatie` is
+`false`, and the `bron` text drops its "niet". Everything else is the
+twin's, and the case file is the same byte for byte. The lengte is
+month-granular, the qualifier is `GeheelPeriode` (jaar, `niet: false`),
+and the case supplies S1's lengte as a timeline, so the scalar-input
+refusal cannot fire first and hide the one under test.
+
+## What ch. 3.9 answers, by hand
+
+Unlike the negated twin, this form is normed: ch. 3.9 gives the leeg test
+the touched-days threshold. The grid is the qualifier's own, so the
+buckets are years even though the attribute is month-granular.
+
+- S1: lengte 8 on [2025-01-01, 2026-01-01). The timeline touches one
+  bucket, 2025, on all 365 of its days. None of those days is leeg, so 0
+  of 365 satisfy the test and the fold is **onwaar**. The condition
+  fails and meldpremie stays **leeg**.
+- S2: no lengte at all. A timeline with no segments touches no bucket
+  and passes vacuously: **waar**, so meldpremie is **40**.
+
+An executor that carried the form would answer S1.meldpremie leeg and
+S2.meldpremie 40.
+
+## Why each executor fails
+
+- `ref` reaches a named arm for a leeg/gevuld predicate that carries a
+  whole-period qualifier. The arm sits before the plain leeg and gevuld
+  arms and matches whatever `negatie` holds, so this twin and the negated
+  one meet the same refusal at evaluation: "whole-period leeg/gevuld test
+  is ch. 3.9 scope, not executed here".
+- The ASP backend refuses the same node in the same words, from a named
+  arm that comes before its leeg/gevuld arm, when it translates the
+  condition.
+- The Drools loader refuses the form before either transpiler branch sees
+  it, as `Predicaat.periode`: "a leeg/gevuld test under a whole-period
+  qualifier (ch. 3.9): ref executes neither the leeg fold (touched days)
+  nor the gevuld fold (days(B)), so this backend does not answer the form
+  either". Gate 8's Drools leg pins a fragment only on a fault at fire,
+  and a loader refusal comes one phase earlier, so the leg lists this
+  case with that reason instead.
+
+## Why a RED case
+
+Until 2026-09-23 both Drools branches played this form, and on this
+document they answered the hand values. Measured with a jar built from
+before the loader refusal: the red runner reported `NOFAULT ran to a
+model without faulting`, and a copy of the case with the hand values
+above as `expected` came out `PLAYED 1` in the exec branch and in the
+DRL-text branch. The fold lives in the Drools runtime alone, and `ref`
+does not execute it, so no second executor could check that answer. The
+refusal brought Drools into line with the other two.
+
+This document keeps all three refusals under the gate. If `ref` comes to
+execute the ch. 3.9 leeg/gevuld fold, its pin here fails and the Drools
+refusal loses the ground its sentence states; the ASP backend's pin fails
+the day it follows. The document is verifier-clean: no WF rule forbids
+the form, because ch. 3.9 norms it.
