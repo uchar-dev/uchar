@@ -56,3 +56,21 @@ May touch: `backends/clingo/**`, `backends/drools/**` (de DRL-tak),
 `backlog/`. Out of scope: `ref/` (arbiter — zij faalt al correct),
 `frontends/**`.
 NB: serieel met andere `translate.ml`-kaarten.
+
+## Aangescherpt bij oppakken (2026-09-23, basis main b91df009)
+
+- (a) Hermeten op het meetdocument (tempototaal teruggebracht tot de
+  derde regel, attribuut + doel `Datum in dagen`, J1 = 2024-01-15,
+  asOfDate 2026-03-15), per uitvoerder; de gemeten stand regeert.
+- (b) De ASP-weigering vraagt het aan de DECLARATIE (§2.10) en noemt
+  soort, tijdlijn en objecttype; rood-eerst op gate 8, mutatieproef met
+  `cmp`-herstel.
+- (c) Rode getuige(n) in `corpus/rood/`, `expectedFault {ref, clingo}`;
+  Drools met reden in gate 8's uitsluitingslijst (voorstel). De DRL-tak:
+  eerst meten of de vorm hem nog bereikt; zo ja een per-vorm-MARKER via
+  `kern.Vouwwaarde`, met een NIEUWE JUnit-getuige (bestaande tests
+  ongemoeid) en mutatieproef.
+- (d) Zusterarmen meten: navigerende tijdlijn (eigen en set), §7.1
+  per-element setvouw, gedurende-clip. Dicht wat in `translate.ml` /
+  `tijdreeksAggregatie` dezelfde klasse is; kaart de rest.
+- (e) Veertien gates los groen; gate-12-pins 180/159 bewegen niet.
