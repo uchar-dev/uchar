@@ -8,9 +8,6 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -37,8 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Those rows demand the SAME verdict of both branches. Two further rows below cover the SCOPES the
  * forward write rides on — a displaced reference field, and the to-many arm that has no forward field at
- * all — and one of them is deliberately NOT a branch mirror: there the two branches genuinely differ
- * today, so it pins each one's own answer rather than pretending to a shared one.
+ * all. The displaced-field row pinned a branch divergence until card drl-creatie-koppelloos levelled it;
+ * the link rows of that card live in {@link DrlCreatieKoppelingWitnessTest}.
  *
  * <p>The models are corpus goldens' own {@code ir.json} read off the wire, or a programmatic variant of
  * one; every case is authored here and replayed through {@code ref/} first, so no corpus expectation is
@@ -132,24 +129,12 @@ class DrlCreatieTakWitnessTest {
         // KieBuilder answers "Unable to Analyse Expression … $subject.setRekenkamer").
         Path ir = gelijknamigLid();
 
-        // THE TWO BRANCHES DIVERGE HERE, and this row pins what each one really does rather than demanding
-        // one verdict of both. The exec branch REFUSES the creation by name — its ch. 5.5 reading is that a
-        // link the bean cannot hold on the side it asked for is not-carried. This branch LOWERS it and plays:
-        // the back-reference on the mint is written, the forward one is skipped, so the mint exists and is
-        // reachable from itself. Levelling the two is a decision about ch. 5.5's refusal-to-guess and belongs
-        // with the koppelloos card (the neighbouring shape in the same method), not here.
-        assertNull(CaseRunner.speelCase(ir, jutterZonderLezing(), true),
-                "drl-tekst — the creation lowers and fires; only the displaced end is skipped");
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, jutterZonderLezing(), false),
-                "exec-model — the same shape is refused by name");
-        assertTrue(e.getMessage().contains("objectcreatie"), e.getMessage());
-        assertTrue(e.getMessage().contains("deelt haar naam met een gedeclareerd lid"), e.getMessage());
-
-        // and the DRL row is not "no complaint": the comparator is live on this very document.
-        String fout = CaseRunner.speelCase(ir, jutterMetOnwareVerwachting(), true);
-        assertNotNull(fout, "the played document must be observably empty on heffing, not merely unasserted");
-        assertTrue(fout.contains("heffing"), fout);
+        // Until card drl-creatie-koppelloos (2026-09-23) this row pinned a DIVERGENCE: the exec branch refused
+        // the creation by name, and this branch wrote only the back-reference and played. Writing one end of
+        // ch. 5.5's link is the one-sided link the exec branch refuses to leave, so both branches now refuse,
+        // by the same sentence from FactModelGenerator.geenReferentieveldReden.
+        BeideTakken.geweigerd(ir, jutterZonderLezing(), "deelt haar naam met een gedeclareerd lid",
+                "a displaced forward end is refused by name");
     }
 
     @Test void de_naar_veel_arm_koppelt_alleen_aan_de_gemunte_zijde() throws Exception {
@@ -249,19 +234,6 @@ class DrlCreatieTakWitnessTest {
                       "attributes": { "grondslag": { "number": "240" }, "aftrek": { "number": "90" } },
                       "roles": {}, "characteristics": [] } ], "parameters": {} },
                   "expected": [ { "kind": "attributeEmpty", "label": "J1", "attribute": "heffing" },
-                                { "kind": "consistent" } ] }
-                """);
-    }
-
-    /** The same input claiming a heffing it cannot have — the flank that shows the comparator is live. */
-    private static JsonNode jutterMetOnwareVerwachting() throws Exception {
-        return JSON.readTree("""
-                { "format": "uchar-case-v0", "asOfDate": null,
-                  "input": { "instances": [ { "label": "J1", "objectType": "Jutter",
-                      "attributes": { "grondslag": { "number": "240" }, "aftrek": { "number": "90" } },
-                      "roles": {}, "characteristics": [] } ], "parameters": {} },
-                  "expected": [ { "kind": "attributeValue", "label": "J1", "attribute": "heffing",
-                                  "value": { "number": "150" } },
                                 { "kind": "consistent" } ] }
                 """);
     }
