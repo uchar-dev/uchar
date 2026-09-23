@@ -3700,16 +3700,43 @@ let evaluate env world =
   done;
   let stratum_by_at = Hashtbl.create 16 in
   Array.iteri (fun i (f : Ir_v0.Checks.dep_form) -> Hashtbl.replace stratum_by_at f.df_at i) arr;
+  (* A form is found by the path the verifier's dep_forms record for it, and a
+     form absent from the graph runs at stratum 0. A form recorded under a path
+     spelled otherwise than [at_of] spells it would therefore run at stratum 0
+     unnoticed, so every recorded path is held to one this lookup asks for: a
+     change of the verifier's spelling (the M1 wire nests the rule lists under
+     "rules") fails here instead of flattening the strata. *)
+  let at_of key i = Printf.sprintf "/%s/%d" key i in
+  let asked = Hashtbl.create 16 in
+  List.iter
+    (fun (key, n) -> for i = 0 to n - 1 do Hashtbl.replace asked (at_of key i) () done)
+    [ ("resolvedRegels", List.length env.doc.resolved_regels);
+      ("verdelingen", List.length env.doc.verdelingen);
+      ("prioritizedDefaults", List.length env.doc.prioritized_defaults);
+      ("feitCreaties", List.length env.doc.feit_creaties);
+      ("objectCreaties", List.length env.doc.object_creaties);
+      ("consistenties", List.length env.doc.consistenties);
+      ("uniciteiten", List.length env.doc.uniciteiten);
+      ("uniciteitUnies", List.length env.doc.uniciteit_unies) ];
+  Array.iter
+    (fun (f : Ir_v0.Checks.dep_form) ->
+      if not (Hashtbl.mem asked f.df_at) then
+        failwith
+          (Printf.sprintf
+             "ref/lib/eval.ml, strata: the verifier's dep_forms record form %S at %S, a path the \
+              stratum lookup never asks for"
+             f.df_name f.df_at))
+    arr;
   let stratum_of at = match Hashtbl.find_opt stratum_by_at at with Some i -> strata.(i) | None -> 0 in
   let kmax = Array.fold_left max 0 strata in
-  let rule_stratum i = stratum_of (Printf.sprintf "/resolvedRegels/%d" i) in
-  let verdeling_stratum i = stratum_of (Printf.sprintf "/verdelingen/%d" i) in
-  let defaults_stratum i = stratum_of (Printf.sprintf "/prioritizedDefaults/%d" i) in
-  let fc_stratum i = stratum_of (Printf.sprintf "/feitCreaties/%d" i) in
-  let oc_stratum i = stratum_of (Printf.sprintf "/objectCreaties/%d" i) in
-  let cons_stratum i = stratum_of (Printf.sprintf "/consistenties/%d" i) in
-  let uni_stratum i = stratum_of (Printf.sprintf "/uniciteiten/%d" i) in
-  let uu_stratum i = stratum_of (Printf.sprintf "/uniciteitUnies/%d" i) in
+  let rule_stratum i = stratum_of (at_of "resolvedRegels" i) in
+  let verdeling_stratum i = stratum_of (at_of "verdelingen" i) in
+  let defaults_stratum i = stratum_of (at_of "prioritizedDefaults" i) in
+  let fc_stratum i = stratum_of (at_of "feitCreaties" i) in
+  let oc_stratum i = stratum_of (at_of "objectCreaties" i) in
+  let cons_stratum i = stratum_of (at_of "consistenties" i) in
+  let uni_stratum i = stratum_of (at_of "uniciteiten" i) in
+  let uu_stratum i = stratum_of (at_of "uniciteitUnies" i) in
   let indexed l = List.mapi (fun i x -> (i, x)) l in
   (* defaults groups (ch. 7.2): members share one (subject, target); a
      group runs at the max of its members' strata *)
