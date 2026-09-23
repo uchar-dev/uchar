@@ -825,7 +825,12 @@ EXPECTED_CHANNEL=(
 # EXPECTED_DRL_PLAYED moves by one as well. The pin is the sum 182 + jutterswet-wachtvenster (card
 # drools-venster-vouwtoets, the block above) + jutterswet-opvolgerquorum = 184; the two cards landed in
 # that order.
-EXPECTED_PLAYED=184
+# 184 -> 185 (2026-09-23, card m1-schema-en-container, builder C): jutterswet-kaletabel, new — the WF-113
+# witness, the first golden whose diagnostics list is not empty (a decision table with only a header, which
+# the frontend reports in a WARNING and does not lower). One rule, a wrakkenloon product; both branches play
+# its two cases on the first run, PLAYED 2 each, with ref's and clingo's values. M1 itself moves no golden:
+# measured with this gate's own jar on the M1 corpus, the played set is the 184 of the base plus this one.
+EXPECTED_PLAYED=185
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1053,7 +1058,9 @@ DRL_CHANNEL=(
 # jutterswet-opvolgerquorum. This branch plays the same four cases with no change of its own, PLAYED 4.
 # The pin is the sum 161 + jutterswet-wachtvenster + jutterswet-opvolgerquorum = 163. Reason block at
 # EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=163
+# 163 -> 164 (2026-09-23, card m1-schema-en-container, builder C): jutterswet-kaletabel, new. This branch
+# plays both cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=164
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
