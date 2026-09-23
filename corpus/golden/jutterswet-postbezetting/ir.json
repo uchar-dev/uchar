@@ -166,6 +166,7 @@
           "node": "RoleMembership",
           "factType": "wachtindeling",
           "role": "toegewezen wachtpost",
+          "counterpartType": "Strandjutter",
           "negated": false,
           "bron": "hij een strandjutter heeft"
         },
@@ -197,6 +198,7 @@
           "node": "RoleMembership",
           "factType": "wachtindeling",
           "role": "toegewezen wachtpost",
+          "counterpartType": "Strandjutter",
           "negated": true,
           "bron": "hij geen strandjutter heeft"
         },
