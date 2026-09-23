@@ -78,7 +78,8 @@ het vendored slice beweegt.
   verwijst nooit naar één bepaalde instantie en heeft altijd een
   universeel onderwerp.
 - §5.5.5: een kwantificatie als "alle" staat voor een rolselector in een
-  keten die aan een onderwerp hangt ("alle passagiers van de Vlucht").
+  keten die aan een onderwerp hangt (in Jutterswet-woorden: "alle vondsten
+  van de Jutter").
 - §8.1.6 (uniciteit, syntaxis in §9.5): de enige constructie met een
   documentbrede reikwijdte over een type, een bijzondere onderwerpexpressie
   "van alle <objecttype>" in plaats van een lidwoord — alleen in een
@@ -91,10 +92,10 @@ het vendored slice beweegt.
 ### 2. De toolchain-praktijk
 
 - `toka/` (read-only, niet geciteerd): 30 toolchain-gepinde `ir.json`,
-  daarin 4 `AANTAL`-knopen, alle vier over een rol (een
-  `AttribuutRef`-argument over de rol "passagiers", `elementObjecttype`
-  "Natuurlijk persoon"). Nul typetellingen. De 47 casusbronnen schrijven
-  twee tellingszinnen, allebei roltellingen.
+  daarin 4 `AANTAL`-knopen, alle vier over een meervoudige rol vanaf het
+  onderwerp (een `AttribuutRef`-argument met een `elementObjecttype`). Nul
+  typetellingen. De 47 casusbronnen schrijven twee tellingszinnen,
+  allebei roltellingen.
 - De resolver van de toolchain (regelspraak-java, de build onder de
   werkbank, frontend van vóór de overname) op de probe met Jutter, Vondst
   en feittype vondstaanmelding: "het aantal Vondsten" geeft `WARNING
