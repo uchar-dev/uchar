@@ -1,0 +1,23 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-02-30",
+  "input": {
+    "instances": [
+      {
+        "label": "M1",
+        "objectType": "Vondstmelding",
+        "attributes": {
+          "meldwaarde": { "number": "100" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "asOfDate \"2026-02-30\" is not the uchar-case-v0 date lexeme yyyy-mm-dd (day out of range in date lexeme \"2026-02-30\")",
+    "clingo": "asOfDate \"2026-02-30\" is not the uchar-case-v0 date lexeme yyyy-mm-dd (day out of range in date lexeme \"2026-02-30\")",
+    "drools": "malformed date '2026-02-30' on 'asOfDate': the field widths are right but the calendar is not"
+  }
+}
