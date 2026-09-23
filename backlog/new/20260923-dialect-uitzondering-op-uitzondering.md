@@ -4,9 +4,11 @@ Bouwkaart uit de onderzoekskaart dialect-defaults-niet-en-nesting; na de
 kaarten anker-ww-herleving-dragervoorwaarde en dialect-niet-in-uitzondering
 (zelfde bestanden in de resolver, dus serieel). Bronnen: het rapport buiten
 de repo (`../research/dialect-defaults-niet-en-nesting/onderzoek-niet-in-uitzonderingen.md`,
-§8.2, §8.3, §9) en het voorstel
-`spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md` (kaartbranch; de
-gelande tekst is de norm waar zij afwijkt).
+§8.2, §8.3, §9) en het gelande voorstel
+`spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md`. Deze kaart draagt de
+maintainersbesluiten van 2026-09-23; waar het voorstel op besluit 4d
+anders luidt, wordt het voorstel gelijkgetrokken (kaart
+voorstel-niet-en-nesting-besluiten), niet deze kaart.
 
 Vandaag weigert de resolver `Uitzondering op <naam van een uitzondering>`:
 `ordeningsDefaults` (`RuleChecker.java:206–283`) zoekt de drager alleen
@@ -33,7 +35,11 @@ Catala-frontend vertaalt vertakking onder de wortel al
   diepte. Hoogstens een linter-aanwijzing bij grote diepte.
 - 4d Dragervoorwaarde: **`Uitzondering op X` is beperkend** — het frontend
   conjungeert de (zelf al geconjungeerde) rechtvaardiging van X met de
-  eigen voorwaarde van de uitzondering, ook aan de wortel. De wire toont de
+  eigen voorwaarde van de uitzondering, ook aan de wortel. De conjunctie
+  neemt dus de hele keten onder X mee: in het WW-anker draagt de blokkade
+  van art. 21 lid 2 ook `werkloos` van art. 15 (maintainersbesluit
+  2026-09-23, besluitvraag; zonder die conjunct beslist de herleving `waar`
+  voor iemand bij wie nooit een recht ontstond). De wire toont de
   conjunctie (zelfstandige rechtvaardigingen, ch. 7.1; de IR verandert
   niet). Een uitzondering die de basis *verruimt* (hardheid: "als ware
   twaalf vervangen door zes") is geen uitzondering maar een afwijking en
@@ -45,9 +51,10 @@ Catala-frontend vertaalt vertakking onder de wortel al
   do not inherit conditionals from their base case"; Lawsky schrijft de
   insluiting in W), dus zij moet ergens staan; de juridische betekenis van
   een uitzondering is beperkend; hoek B van het anker is de stille fout van
-  de andere keuze. *Het voorstel-concept stelt in plaats hiervan
-  zelfstandig geschreven voorwaarden met een waarschuwing voor; de gelande
-  proposaltekst beslist, en deze kaart volgt haar.*
+  de andere keuze. Maintainersbesluit 2026-09-23 (besluitvraag, bevestigd):
+  **beperkend met erven, plus `Afwijking van`**. Het gelande voorstel (§10,
+  besluit 4d) kiest zelfstandig geschreven voorwaarden met een
+  waarschuwing en gaat mee via de kaart voorstel-niet-en-nesting-besluiten.
 - 5 Overerving: `Uitzondering op` met een geërfde uitzondering als drager
   wordt luid geweigerd (SUBTYPING §4.4: een geërfde `excepties`-subboom hoort
   bij de geërfde default, het subtype adresseert er niet in). De
