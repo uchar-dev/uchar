@@ -9,7 +9,12 @@
 #      name (convention: wf###-<slug>, e.g. wf001-duplicate-parameter).
 #      Additional incidental violations are allowed; a case that passes, or
 #      fails only for other rules, turns the gate red. A negatief corpus
-#      without cases is reported explicitly, never silently green.
+#      without cases is reported explicitly, never silently green. A case
+#      directory that carries an expect.txt (card l2-referentielaag, U1) must
+#      also be rejected on the ARM that file names: its one line is a literal
+#      fragment of the expected verifier message, without a JSON pointer, and
+#      it must occur verbatim (grep -F) in the verifier's report; an empty or
+#      blank expect.txt, or one of more than one line, fails.
 #
 # With explicit file arguments it runs the verifier against those files and
 # prints the reports (handy for a dump outside the repo).
@@ -62,6 +67,11 @@ status=0
 # other check would notice. NO floor on n_golden: that is byte-for-byte the file set gate 2 already
 # floors (both scan corpus/golden + corpus/rood for ir.json), and one quantity wants one floor.
 EXPECTED_MIN_NEGATIEF=350   # 2026-09-10: measured 350 (corpus/negatief/**/ir.json)
+# The arm fragments (U1) are floored for the same reason and in the same regime: a vanished
+# expect.txt takes the arm pin of a rewritten witness with it, and its directory keeps passing on
+# the rule number alone. Measured at the L2 landing: every rewritten or replaced witness of the
+# reference layer carries one.
+EXPECTED_MIN_EXPECT=83      # 2026-09-24: measured 83 (corpus/negatief/*/expect.txt)
 
 # check 2: golden dumps — and the red corpus's documents, whose faults
 # are behavioural, never well-formedness — are verifier-clean.
@@ -78,8 +88,10 @@ while IFS= read -r f; do
     fi
 done < "$list"
 
-# check 3: negatief cases are rejected for the declared rule.
+# check 3: negatief cases are rejected for the declared rule, and on the
+# declared arm where the case names one (expect.txt).
 n_neg=0
+n_expect=0
 find corpus/negatief -name ir.json 2>/dev/null | sort > "$list"
 while IFS= read -r f; do
     n_neg=$((n_neg + 1))
@@ -100,6 +112,25 @@ while IFS= read -r f; do
             "$f" "$expect" "$out" >&2
         status=1
     fi
+    arm="$(dirname "$f")/expect.txt"
+    if [ -f "$arm" ]; then
+        n_expect=$((n_expect + 1))
+        frag=$(cat "$arm")
+        if [ -z "$(printf '%s' "$frag" | tr -d '[:space:]')" ]; then
+            printf 'FAIL: %s is empty or blank: it pins no arm\n' "$arm" >&2
+            status=1
+        elif [ "$(awk 'END { print NR }' "$arm")" -ne 1 ]; then
+            printf 'FAIL: %s is not one line: an arm fragment is one literal line of the verifier message\n' "$arm" >&2
+            status=1
+        elif printf '%s\n' "$frag" | grep -qE '/(model|rules|diagnostics)/'; then
+            printf 'FAIL: %s carries a JSON pointer: the fragment is the message, which a path shift must not break\n' "$arm" >&2
+            status=1
+        elif ! printf '%s\n' "$out" | grep -qF -- "$frag"; then
+            printf 'FAIL: negatief case %s rejected for %s, but not on the arm %s names:\n  expected fragment: %s\n%s\n' \
+                "$f" "$expect" "$arm" "$frag" "$out" >&2
+            status=1
+        fi
+    fi
 done < "$list"
 
 # The floor is evaluated BEFORE the unpopulated-corpus exit, or that exit would answer the very
@@ -118,8 +149,12 @@ elif [ "$n_neg" -eq 0 ]; then
     echo 'FAIL: no negatief cases — every implemented WF check needs a failing case (spec discipline)' >&2
     status=1
 fi
+if [ "$n_expect" -lt "$EXPECTED_MIN_EXPECT" ]; then
+    echo "FAIL: $n_expect arm fragment(s) (expect.txt) checked, but EXPECTED_MIN_EXPECT pins at least $EXPECTED_MIN_EXPECT — arm pins vanished (a deliberate removal lowers the floor in the same commit)" >&2
+    status=1
+fi
 
 if [ "$status" -eq 0 ]; then
-    echo "check-verifier: PASS ($n_golden golden clean; $n_neg negatief rejected for their declared rule, floor $EXPECTED_MIN_NEGATIEF)"
+    echo "check-verifier: PASS ($n_golden golden clean; $n_neg negatief rejected for their declared rule, floor $EXPECTED_MIN_NEGATIEF; $n_expect on their declared arm (expect.txt), floor $EXPECTED_MIN_EXPECT)"
 fi
 exit "$status"
