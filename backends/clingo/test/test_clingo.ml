@@ -1158,6 +1158,22 @@ let faults_with ~name ~ir ~case_text ~needle =
   | exception Uchar_ref.Value.Fault m ->
       check (name ^ " faults loudly (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
 
+(* a document the loader refuses (B12, U2): since L2 a range is written in
+   one spelling and never derived, so the refusal lands at load, before any
+   translation, and the witness pins the loader's own sentence *)
+let refused_at_load ~name ~ir ~needle =
+  let irf = write_temp ".ir.json" ir in
+  let outcome =
+    match Ir_v0.Loader.load_file irf with
+    | (_ : Ir_v0.Ast.document) -> Error ()
+    | exception Ir_v0.Loader.Error (path, m) -> Ok (path, m)
+  in
+  Sys.remove irf;
+  match outcome with
+  | Error () -> check (name ^ ": expected a load refusal, got a document") false
+  | Ok (path, m) ->
+      check (name ^ " is refused at load (" ^ path ^ ": " ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
+
 (* DOOR 1 — a SUBJECT-DEPENDENT fold init over a list PARAMETER. fa/fr are
    keyed by the list id alone; plist(p) drops the subject out of the head, so
    two Meldplichten with different termijnen would put two init facts on ONE
@@ -3764,13 +3780,13 @@ let () =
          ~door:"")
     ~case_text:bp_case ~needle:"at least TWO steps";
   (* (a) a path beside a binding: two spellings of one range *)
-  faults_with ~name:"ch3.4b een pad naast een bronRol"
+  refused_at_load ~name:"ch3.4b een pad naast een bronRol"
     ~ir:
       (vervang bp_doc ~waar:{|"bronPad": [|}
          ~door:
            {|"bronRol": { "node": "RolBinding", "feittype": "berging", "rol": "geborgen vondst" },
           "bronPad": [|})
-    ~case_text:bp_case ~needle:"bronPad beside a bronRol";
+    ~needle:"bronPad beside bronRol: a fold carries one range, never two";
   (* (c) a listed fold has no set source (D8 (i): the source is a SINGLE
      argument), so a range beside two operands has nothing to range over, and
      reading the operands while dropping the range would answer over the
@@ -4555,7 +4571,7 @@ let () =
            {|, "bronPad": [ { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } ]|}
          ())
     ~case_text:vals ~needle:"a bronPad carries at least TWO steps";
-  faults_with ~name:"ch3.9a bereikpad naast een bronRol"
+  refused_at_load ~name:"ch3.9a bereikpad naast een bronRol"
     ~ir:
       (kv_doc
          ~ext:
@@ -4563,7 +4579,7 @@ let () =
            ^ {| "bronPad": [ { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" },
                              { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } ]|})
          ())
-    ~case_text:vals ~needle:"a bronPad beside a bronRol";
+    ~needle:"bronPad beside bronRol: a quantifier fold carries one range, never two";
   (* WF-043 stays intact on the value side: a qualifier over a
      non-time-dependent operand is refused by name, never folded to a
      vacuous pass *)
@@ -7335,10 +7351,23 @@ let () =
     ~case_text:unie_case ~needle:"= #count { X";
   (* clause (c): a count that names a source of its own beside the union.
      Ill-formed input (WF-110), named here rather than left to the bottom
-     sentence, which describes the position and identifies no construct. *)
-  faults_with ~name:"WF-110 een eigen bron naast de unie"
+     sentence, which describes the position and identifies no construct.
+     Since L2 an elementObjecttype alone does not load (B12, U2): a
+     single-argument fold that names one carries its range. With the range
+     written beside it the node loads and reaches the arm, the shape of
+     corpus/negatief/wf110-unie-naast-vouwbron. *)
+  refused_at_load ~name:"WF-110 een eigen bron naast de unie"
     ~ir:
       (vervang ir ~waar:{|"elementObjecttype": null|} ~door:{|"elementObjecttype": "Vondst"|})
+    ~needle:
+      "a single-argument fold with an elementObjecttype carries its range (bronRol or bronPad) \
+       under every kind but TOTAAL: the range is written, never derived";
+  faults_with ~name:"WF-110 een eigen bron met bereik naast de unie"
+    ~ir:
+      (vervang ir ~waar:{|"elementObjecttype": null|}
+         ~door:
+           {|"elementObjecttype": "Vondst",
+             "bronRol": { "node": "RolBinding", "feittype": "vondstaanmelding", "rol": "aangemelde vondst" }|})
     ~case_text:unie_case ~needle:"a count over an instance-set union names a source of its own";
   (* clause (a): the union standing where a VALUE is written — here as the
      whole rule value. It reaches [expr_term] as an ordinary term, where the
