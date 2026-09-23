@@ -96,7 +96,7 @@ rule (D17) — `old → new` in the first column. A rewritten or replaced witnes
 carries `expect.txt`, one literal line of the verifier message of the arm it now
 pins, without a JSON pointer; gate 3 requires that line in the report (U1). The
 arm column names that arm in words, or, for a removed witness, the arm that left.
-The negatief zone went from 444 to 394 documents; the floor
+The negatief zone went from 444 to 394 documents (with the U12 witness `wf034-rollidmaatschap-vreemde-vullersklasse` added beside the stamps); the floor
 `EXPECTED_MIN_NEGATIEF` did not have to move.
 
 | directory | rule | delta | stamp | arm | reason |
@@ -270,7 +270,7 @@ between the L1 and the L2 form of the corpus.
 | `wf007-doeltype-geheel-met-decimalen` | WF-007 | B13 | verwijderd-met-reden | the rule-target arm | the rule target lost its own type, the one position of this arm; measured: the migration's translation is verifier-clean |
 | `wf023-schrijf-doeltype-leugen` | WF-023 | B13 | verwijderd-met-reden | the target's declared type against its own lying type | the target lost its own type; measured: the translation is byte-identical to `wf023-schrijf-enum-domein` and falls on the same WF-023 line |
 | `wf034-foldbron-rolnaam-waardevouw` → `wf093-telbron-onder-som` | WF-034 → WF-093 | B13 | herschreven op WF-093 | WF-093, a count source under SOM | measured: WF-093 recognises the count source at the source (D9), so the role name under SOM falls there (D17) |
-| `wf046-kwantorvouw-bindingloos-bereik` | WF-046 | B12 | herschreven (m) | unchanged rule; the range is now bound | the migration derived the quantifier fold's range; the document still fails on WF-046 through the bound range under ALLE, the arm `wf046-kwantorvouw-alle-bereik` pins; the name records the form it was written for |
+| `wf046-kwantorvouw-bindingloos-bereik` | WF-046 | B12 | verwijderd-met-reden | the range of a quantifier fold without a written range | the loader refuses a quantifier fold without `bronRol` or `bronPad` (B12, U2), so the form cannot be written; measured: the migration derived the range `bemanning`/`post`, and the translation fails WF-046 through the bound range under ALLE on the relation the recursive creation writes through its back-link — the arm `wf046-kwantorvouw-alle-bereik` pins, a duplicate |
 
 The witnesses that kept their rule and their arm but whose report lost an
 incidental line to B13 — a reference's own `type` that crossed nothing any more

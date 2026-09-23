@@ -4518,13 +4518,12 @@ many strata as the chain is deep.
   *geen* (`IR-SPEC.md` ch. 5.2): "alle opvolgers hebben een rang groter
   dan 5" and "geen van de opvolgers heeft een rang groter dan 0" over the
   successors it mints, "geen van de ploegleden heeft een merk groter dan
-  0" with merk derived from the minted successors, the same ALLE fold
-  with no bound role, "ten hoogste 1" and "precies 1 opvolger heeft een
+  0" with merk derived from the minted successors, "ten hoogste 1" and "precies 1 opvolger heeft een
   kleur ongelijk aan 7" with kleur input only, "ten hoogste 1" and
   "precies 1 ploeglid heeft een merk groter dan 0", and "geen van: ten
   minste 1 opvolger heeft een rang groter dan 0" — negatief cases
   `wf046-kwantorvouw-alle-bereik`, `wf046-kwantorvouw-geen-vergelijking`,
-  `wf046-kwantorvouw-geen-matrix`, `wf046-kwantorvouw-bindingloos-bereik`,
+  `wf046-kwantorvouw-geen-matrix`,
   `wf046-kwantorvouw-tenhoogste-bereik`, `wf046-kwantorvouw-precies-bereik`,
   `wf046-kwantorvouw-tenhoogste-matrix`, `wf046-kwantorvouw-precies-matrix`
   and `wf046-kwantorvouw-onder-geen`. Before the rule, where the range
