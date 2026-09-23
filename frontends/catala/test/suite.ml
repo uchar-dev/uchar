@@ -440,7 +440,7 @@ let () =
        m1_doc
          ~regels:
            (regel ~voorwaarde:"null"
-              ~waarde:{|{ "node": "Onopgelost", "type": null, "bron": "de onbekende waarde" }|})
+              ~waarde:{|{ "node": "Onopgelost", "bron": "de onbekende waarde" }|})
          (),
        "Onopgelost");
       ("a condition Onopgelost",

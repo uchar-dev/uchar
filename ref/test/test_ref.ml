@@ -642,19 +642,10 @@ let ot name attrs kenmerken : string * Ir_v0.Ast.objecttype =
 
 let num0 : Ir_v0.Ast.datatype = Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = None }
 
-let aref attr otn typ : Ir_v0.Ast.expr =
-  Attribuut_ref
-    {
-      attribuut = Some attr;
-      objecttype = Some otn;
-      onderwerp_bron = None;
-      navigatie_rol = None;
-      typ = Some typ;
-      bron = None;
-      set = false;
-      navigatie_pad = [];
-      navigatie_bindingen = None;
-    }
+(* the subject's own read: no navigation bindings, and no type of its own
+   (B13) — the declaration is the one source *)
+let aref attr otn : Ir_v0.Ast.expr =
+  Attribuut_ref { attribuut = Some attr; objecttype = Some otn; bron = None; navigatie_bindingen = None }
 
 let litv lex typ : Ir_v0.Ast.expr = Literal { waarde = Some lex; typ = Some typ; bron = None }
 
@@ -674,7 +665,7 @@ let inst label otype attrs : World.instance =
 
 let env_of doc : Eval.env =
   { doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
-    locals = Eval.SMap.empty }
+    locals = Eval.SMap.empty; btypes = Eval.SMap.empty }
 
 (* WV-6.4-a (= the ch. 5.3 pair): producer/consumer across one negative
    edge — {waar, onwaar} at inkomen 50, {onwaar, waar} at 200, never the
@@ -687,25 +678,24 @@ let () =
       resolved_regels =
         [
           rr "vrijstelling" Kenmerktoekenning
-            (Some (aref "vrijgesteld" "Jutter" Booleaan))
+            (Some (aref "vrijgesteld" "Jutter"))
             (Some (litv "waar" Booleaan))
             (Some
                (Vergelijking
                   {
                     op = Kleiner;
-                    links = Some (aref "inkomen" "Jutter" num0);
+                    links = Some (aref "inkomen" "Jutter");
                     rechts = Some (litv "100" num0);
                     periode = None;
                     bron = None;
                   }));
           rr "bijdrageplicht" Kenmerktoekenning
-            (Some (aref "bijdrageplichtig" "Jutter" Booleaan))
+            (Some (aref "bijdrageplichtig" "Jutter"))
             (Some (litv "waar" Booleaan))
             (Some
                (Kenmerk_check
                   {
                     kenmerk = Some "vrijgesteld";
-                    navigatie = None;
                     negatie = true;
                     eigenaar = Some "Jutter";
                     periode = None;
@@ -758,7 +748,7 @@ let () =
     let final = Eval.evaluate (env_of doc) w in
     World.has_char (World.get final "oc0::j") "overzees"
   in
-  let read_overzees = aref "overzees" "Jutter" Booleaan in
+  let read_overzees = aref "overzees" "Jutter" in
   check "WV-5.5-charinit-expr-true" (mint read_overzees (Value.Bool true) = true);
   check "WV-5.5-charinit-expr-false" (mint read_overzees (Value.Bool false) = false);
   (* the empty flank (a missing caller attribute reads leeg) joins false:
@@ -795,7 +785,7 @@ let () =
                 (Vergelijking
                    {
                      op = Groter_of_gelijk;
-                     links = Some (aref "saldo" "Rekeninghouder" num0);
+                     links = Some (aref "saldo" "Rekeninghouder");
                      rechts = Some (litv "0" num0);
                      periode = None;
                      bron = None;
@@ -808,7 +798,7 @@ let () =
       resolved_regels =
         [
           rr "verscherpt toezicht" Kenmerktoekenning
-            (Some (aref "onder verscherpt toezicht" "Dossier" Booleaan))
+            (Some (aref "onder verscherpt toezicht" "Dossier"))
             (Some (litv "waar" Booleaan))
             (Some (Regelversie { regel = Some "controle saldo"; inconsistent = true; bron = None }));
         ];
@@ -837,11 +827,11 @@ let () =
 let () =
   let kc name = 
     Ir_v0.Ast.Kenmerk_check
-      { kenmerk = Some name; navigatie = None; negatie = true; eigenaar = Some "Aanvraag"; periode = None; bron = None; navigatie_binding = None }
+      { kenmerk = Some name; negatie = true; eigenaar = Some "Aanvraag"; periode = None; bron = None; navigatie_binding = None }
   in
   let kt name char cond =
     rr name Kenmerktoekenning
-      (Some (aref char "Aanvraag" Booleaan))
+      (Some (aref char "Aanvraag"))
       (Some (litv "waar" Booleaan))
       (Some cond)
   in
@@ -858,7 +848,7 @@ let () =
             (Vergelijking
                {
                  op = Groter_of_gelijk;
-                 links = Some (aref "x" "Aanvraag" num0);
+                 links = Some (aref "x" "Aanvraag");
                  rechts = Some (litv "1" num0);
                  periode = None;
                  bron = None;
@@ -881,17 +871,17 @@ let () =
    verification round's counterexample, locked) *)
 let () =
   let writer =
-    rr "zet a" Gelijkstelling (Some (aref "a" "Ding" num0)) (Some (litv "5" num0)) None
+    rr "zet a" Gelijkstelling (Some (aref "a" "Ding")) (Some (litv "5" num0)) None
   in
   let reader =
     rr "markeer" Kenmerktoekenning
-      (Some (aref "gemarkeerd" "Ding" Booleaan))
+      (Some (aref "gemarkeerd" "Ding"))
       (Some (litv "waar" Booleaan))
       (Some
          (Predicaat
             {
               soort = Leeg;
-              operand = Some (aref "a" "Ding" num0);
+              operand = Some (aref "a" "Ding");
               dagsoort = None;
               negatie = false;
               cijfers = 0;
@@ -917,7 +907,7 @@ let () =
     Predicaat
       {
         soort;
-        operand = Some (aref "a" "Ding" num0);
+        operand = Some (aref "a" "Ding");
         dagsoort = None;
         negatie;
         cijfers = 0;
@@ -928,7 +918,7 @@ let () =
   let run soort negatie attrs =
     let reader =
       rr "markeer" Kenmerktoekenning
-        (Some (aref "gemarkeerd" "Ding" Booleaan))
+        (Some (aref "gemarkeerd" "Ding"))
         (Some (litv "waar" Booleaan))
         (Some (pred soort negatie))
     in
@@ -956,12 +946,12 @@ let () =
       resolved_regels =
         [
           rr "bereken a" Berekening
-            (Some (aref "a" "Ding" num0))
-            (Some (plus (aref "b" "Ding" num0) (litv "1" num0)))
+            (Some (aref "a" "Ding"))
+            (Some (plus (aref "b" "Ding") (litv "1" num0)))
             None;
           rr "bereken b" Berekening
-            (Some (aref "b" "Ding" num0))
-            (Some (plus (aref "a" "Ding" num0) (litv "1" num0)))
+            (Some (aref "b" "Ding"))
+            (Some (plus (aref "a" "Ding") (litv "1" num0)))
             None;
         ];
     }
@@ -979,16 +969,16 @@ let () =
    answered leeg in both orders. WV-6.4-e is the same pair with a
    characteristic reader, which was already stratum-strict. *)
 let () =
-  let writer = rr "zet a" Gelijkstelling (Some (aref "a" "Ding" num0)) (Some (litv "5" num0)) None in
+  let writer = rr "zet a" Gelijkstelling (Some (aref "a" "Ding")) (Some (litv "5" num0)) None in
   let reader =
     rr "zet b" Berekening
-      (Some (aref "b" "Ding" num0))
+      (Some (aref "b" "Ding"))
       (Some (litv "1" num0))
       (Some
          (Predicaat
             {
               soort = Leeg;
-              operand = Some (aref "a" "Ding" num0);
+              operand = Some (aref "a" "Ding");
               dagsoort = None;
               negatie = false;
               cijfers = 0;
@@ -1025,19 +1015,14 @@ let () =
    the shared WF-045/046 check before it computes strata, so both
    documents are now refused, never answered. *)
 let () =
-  let merk = aref "merk" "Wachter" num0 and rang = aref "rang" "Wachter" num0 in
+  let merk = aref "merk" "Wachter" and rang = aref "rang" "Wachter" in
   let opvolger : Ir_v0.Ast.rol_binding = { rb_feittype = "opvolging"; rb_rol = "opvolger" } in
   let opvolger_rang : Ir_v0.Ast.expr =
     Attribuut_ref
       {
         attribuut = Some "rang";
         objecttype = Some "Wachter";
-        onderwerp_bron = None;
-        navigatie_rol = Some "opvolger";
-        typ = Some num0;
         bron = None;
-        set = false;
-        navigatie_pad = [];
         navigatie_bindingen = Some [ opvolger ];
       }
   in
@@ -1130,7 +1115,7 @@ let () =
   in
   let kc name : Ir_v0.Ast.conditie =
     Kenmerk_check
-      { kenmerk = Some name; navigatie = None; negatie = false; eigenaar = Some "Jutter";
+      { kenmerk = Some name; negatie = false; eigenaar = Some "Jutter";
         periode = None; bron = None; navigatie_binding = None }
   in
   let leaf name lex : Ir_v0.Ast.default =
@@ -1470,11 +1455,10 @@ let () =
         argumenten =
           [ Attribuut_ref
               { attribuut = Some "bewaartarief"; objecttype = Some "Vondst";
-                onderwerp_bron = None; navigatie_rol = None; typ = Some num_eur_mnd;
-                bron = None; set = true; navigatie_pad = []; navigatie_bindingen = None } ];
+                bron = None; navigatie_bindingen = None } ];
         element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
         dimensie_selectie = None; typ = Some num_eur; bron = None; granulariteit = None;
-        bron_rol = None; bron_pad = None }
+        bron_rol = Some { rb_feittype = "bewaring"; rb_rol = "vondst" }; bron_pad = None }
   in
   let tl_of segs label = { (inst label "Vondst" []) with
                            tls = World.SMap.add "bewaartarief" segs World.SMap.empty } in
@@ -1643,7 +1627,7 @@ let () =
   let enum_match : Ir_v0.Ast.expr =
     Match
       { typ = Some num2;
-        scrutinee = aref "staat" "Vondst" keurklasse;
+        scrutinee = aref "staat" "Vondst";
         arms =
           [ ("gaaf", None, litv "10.00" num2);
             ("beschadigd", None, litv "4.00" num2);
@@ -1742,13 +1726,10 @@ let () =
   let env = env_of doc in
   let w = World.add_instance World.empty (inst "j" "J" []) in
   let self = World.get w "j" in
-  let pref name typ : Ir_v0.Ast.expr =
-    Parameter_ref { parameter = Some name; typ = Some typ; bron = None }
-  in
+  let pref name : Ir_v0.Ast.expr = Parameter_ref { parameter = Some name; bron = None } in
   expect_fault "WV-5.7-scalar-absent-fault"
-    (fun () -> Eval.eval_expr env w self ~err:no_err (pref "p" num0));
-  expect_leeg "WV-10.3-list-absent-leeg"
-    (Eval.eval_expr env w self ~err:no_err (pref "lst" (List_type { element = num0 })))
+    (fun () -> Eval.eval_expr env w self ~err:no_err (pref "p"));
+  expect_leeg "WV-10.3-list-absent-leeg" (Eval.eval_expr env w self ~err:no_err (pref "lst"))
 
 (* --- ch. 11: record values (RUNTIME-SEMANTICS ch. 11) -------------------
    Value-level worked examples on the anchor's dossier struct (fields
@@ -1856,9 +1837,7 @@ let () =
        condition does NOT choose leaves the chosen branch standing, and the
        need is evaluated exactly ONCE however often it is read. *)
 let () =
-  let binder_ref name typ : Ir_v0.Ast.expr =
-    Binder_ref { naam = name; typ = Some typ; bron = None }
-  in
+  let binder_ref name : Ir_v0.Ast.expr = Binder_ref { naam = name; bron = None } in
   let letexpr binder value body typ : Ir_v0.Ast.expr =
     Let { typ = Some typ; binder; value; body; bron = None }
   in
@@ -1874,17 +1853,17 @@ let () =
      "g" = 100 — the filled dividend witness (iv)'s channel deposit needs *)
   let w = World.add_instance World.empty (inst "j" "J" [ ("g", n "100") ]) in
   let self = World.get w "j" in
-  let a_leeg = aref "a" "J" num0 in
+  let a_leeg = aref "a" "J" in
   (* (1) let x = 7 in x -> 7 *)
   expect_num "WV-10.6-binder-lookup"
     (Eval.eval_expr env w self ~err:no_err
-       (letexpr "x" (litv "7" num0) (binder_ref "x" num0) num0))
+       (letexpr "x" (litv "7" num0) (binder_ref "x") num0))
     "7";
   (* (2a) clause 2 — a leeg value under a READ binder: the barrier fires at the
      read and the WHOLE Let is leeg (so a body read never sees leeg) *)
   expect_leeg "WV-10.6-leeg-value-gelezen-binder"
     (Eval.eval_expr env w self ~err:no_err
-       (letexpr "x" a_leeg (binder_ref "x" num0) num0));
+       (letexpr "x" a_leeg (binder_ref "x") num0));
   (* (2b) clause 3 — the SAME leeg value under an UNREAD binder: nothing is
      evaluated and the body's outcome IS the Let's. Under the strict binding
      this rule stated before the L unification, this was leeg. *)
@@ -1899,13 +1878,13 @@ let () =
      barrier at the READ (ch. 10.6 clause 2) *)
   expect_leeg "WV-10.6-let-barrier"
     (Eval.eval_expr env w self ~err:no_err
-       (letexpr "x" a_leeg (maal (binder_ref "x" num0) (litv "5" num0)) num0));
+       (letexpr "x" a_leeg (maal (binder_ref "x") (litv "5" num0)) num0));
   (* (4) shadowing: let x = 2 in (let x = 3 in x) maal x  ==  3 × 2 = 6
      (an inner leak would give 3×3 = 9; no shadowing would give 2×2 = 4) *)
   expect_num "WV-10.6-shadow-inner-wins"
     (Eval.eval_expr env w self ~err:no_err
        (letexpr "x" (litv "2" num0)
-          (maal (letexpr "x" (litv "3" num0) (binder_ref "x" num0) num0) (binder_ref "x" num0))
+          (maal (letexpr "x" (litv "3" num0) (binder_ref "x") num0) (binder_ref "x"))
           num0))
     "6";
   (* (5) shadowing across a fold parameter: fold(+, 0, [1;2;3]) with body
@@ -1927,7 +1906,7 @@ let () =
             { parameters = [ ("acc", num0); ("x", num0) ];
               body =
                 letexpr "x" (litv "100" num0)
-                  (plus (binder_ref "acc" num0) (binder_ref "x" num0))
+                  (plus (binder_ref "acc") (binder_ref "x"))
                   num0;
               bron = None };
         init = litv "0" num0;
@@ -1950,7 +1929,7 @@ let () =
   (* (ii) the same value READ: the fault surfaces, fail-fast *)
   expect_fault "WV-10.6-gelezen-faultende-value" (fun () ->
       Eval.eval_expr env w self ~err:no_err
-        (letexpr "q" deel_door_nul (binder_ref "q" num0) num0));
+        (letexpr "q" deel_door_nul (binder_ref "q") num0));
   (* (iii) a leeg value whose binder is read ONLY in the branch the condition
      does not choose: `let k = 2 in let x = a in if k > 1 then 7 else x maal 2`
      -> 7. The condition is read on EVERY branch (k), the else-branch operand on
@@ -1963,9 +1942,9 @@ let () =
       (letexpr "x" a_leeg
          (If_then_else
             { typ = Some num0;
-              condition = groter (binder_ref "k" num0) (litv "1" num0);
+              condition = groter (binder_ref "k") (litv "1" num0);
               then_ = litv "7" num0;
-              else_ = maal (binder_ref "x" num0) (litv "2" num0);
+              else_ = maal (binder_ref "x") (litv "2" num0);
               bron = None })
          num0)
       num0
@@ -1987,7 +1966,7 @@ let () =
   let deel_lege_deler_gecoalesceerd : Ir_v0.Ast.expr =
     plus
       (Binair
-         { op = Gedeeld_door; links = Some (aref "g" "J" num0); rechts = Some (aref "d" "J" num0);
+         { op = Gedeeld_door; links = Some (aref "g" "J"); rechts = Some (aref "d" "J");
            typ = Some num0; bron = None })
       (litv "0" num0)
   in
@@ -1995,12 +1974,12 @@ let () =
     with_errs (fun err ->
         Eval.eval_expr env w self ~err
           (letexpr "q" deel_lege_deler_gecoalesceerd
-             (plus (binder_ref "q" num0) (binder_ref "q" num0)) num0))
+             (plus (binder_ref "q") (binder_ref "q")) num0))
   in
   let once, n_once =
     with_errs (fun err ->
         Eval.eval_expr env w self ~err
-          (letexpr "q" deel_lege_deler_gecoalesceerd (binder_ref "q" num0) num0))
+          (letexpr "q" deel_lege_deler_gecoalesceerd (binder_ref "q") num0))
   in
   (* both reads landed: 0 + 0 = 0, not the leeg a barrier would have produced *)
   expect_num "WV-10.6-need-kanaalfeit-tweemaal-gelezen" twice "0";
@@ -2025,9 +2004,7 @@ let () =
   let num2 : Ir_v0.Ast.datatype =
     Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
   in
-  let binder_ref name typ : Ir_v0.Ast.expr =
-    Binder_ref { naam = name; typ = Some typ; bron = None }
-  in
+  let binder_ref name : Ir_v0.Ast.expr = Binder_ref { naam = name; bron = None } in
   let deel : Ir_v0.Ast.expr =
     Binair
       { op = Gedeeld_door;
@@ -2043,7 +2020,7 @@ let () =
         value = deel;
         body =
           Afgerond
-            { basis = Some (binder_ref "deel" num2);
+            { basis = Some (binder_ref "deel");
               modus = Rekenkundig;
               decimalen = dec;
               typ = Some num2;
@@ -2082,9 +2059,7 @@ let () =
   let num2 : Ir_v0.Ast.datatype =
     Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
   in
-  let binder_ref name typ : Ir_v0.Ast.expr =
-    Binder_ref { naam = name; typ = Some typ; bron = None }
-  in
+  let binder_ref name : Ir_v0.Ast.expr = Binder_ref { naam = name; bron = None } in
   let beschikking : Ir_v0.Ast.datatype =
     Sum_type
       { domein = "beschikking";
@@ -2114,7 +2089,7 @@ let () =
           [ ( "Toegekend",
               Some "deel",
               Afgerond
-                { basis = Some (binder_ref "deel" num2);
+                { basis = Some (binder_ref "deel");
                   modus = Rekenkundig;
                   decimalen = 2;
                   typ = Some num2;
@@ -2351,14 +2326,14 @@ let () =
   let ev = Eval.eval_expr env w self ~err:no_err in
   let stap lex : Ir_v0.Ast.expr =
     Binair
-      { op = Plus; links = Some (aref "aanvang" "Post" Datum_in_dagen);
+      { op = Plus; links = Some (aref "aanvang" "Post");
         rechts = Some (litv lex num_kd); typ = Some Datum_in_dagen; bron = None }
   in
   let telling : Ir_v0.Ast.expr =
     Functie
       { kind = Tijdsduur;
         argumenten =
-          [ aref "aanvang" "Post" Datum_in_dagen; aref "sluiting" "Post" Datum_in_dagen ];
+          [ aref "aanvang" "Post"; aref "sluiting" "Post" ];
         element_objecttype = None; leegwaarde = None; filter = None; dimensie_selectie = None;
         typ = Some num_kd; bron = None; granulariteit = None; bron_rol = None; bron_pad = None }
   in
@@ -2534,13 +2509,13 @@ let () =
   let ev = Eval.eval_expr env w self ~err:no_err in
   let plus_uren attr typ lex : Ir_v0.Ast.expr =
     Binair
-      { op = Plus; links = Some (aref attr "Vondst" typ);
+      { op = Plus; links = Some (aref attr "Vondst");
         rechts = Some (litv lex num_uur); typ = Some typ; bron = None }
   in
-  let tijdsduur_uren a typ_a b typ_b : Ir_v0.Ast.expr =
+  let tijdsduur_uren a b : Ir_v0.Ast.expr =
     Functie
       { kind = Tijdsduur;
-        argumenten = [ aref a "Vondst" typ_a; aref b "Vondst" typ_b ];
+        argumenten = [ aref a "Vondst"; aref b "Vondst" ];
         element_objecttype = None; leegwaarde = None; filter = None;
         dimensie_selectie = None; typ = Some num_uur; bron = None;
         granulariteit = None; bron_rol = None; bron_pad = None }
@@ -2555,21 +2530,21 @@ let () =
   (* the widened WF-038 fence: sub-day tijdsduur over two datetimes reaches
      the linear hour count (WV-3.8-dt-borrow-uren, through the evaluator) *)
   expect_num "WV-3.8-dt-eval-tijdsduur"
-    (ev (tijdsduur_uren "melding" Datum_tijd "berging" Datum_tijd))
+    (ev (tijdsduur_uren "melding" "berging"))
     "34";
   (* ... and still refuses a day-precision operand (WF-038) *)
   expect_fault "WV-3.8-dt-eval-wf038" (fun () ->
-      ev (tijdsduur_uren "dagtekening" Datum_in_dagen "berging" Datum_tijd))
+      ev (tijdsduur_uren "dagtekening" "berging"))
 
-(* --- ch. 3.4a: the self-denoting fold source (WF-083) ------------------- *)
+(* --- ch. 3.4a: the count source (D8 (ii)) -------------------------------- *)
 
-(* WV-3.4a-zelfbron: "het aantal vondsten van de aanmelder" — the fold
-   source names the fold subject by its OWN role name; navigatieRol
-   carries the written role, presentation, not navigation. A Jutter
-   linked to two Vondsten — one with gewicht 2,50, one whose gewicht is
-   leeg — counts 2 (instances, not values: the ch. 1.2 aggregation row,
-   a count never empty); a Jutter with zero links counts 0, never leeg.
-   An away-pointing navigatieRol keeps the loud unsupported-shape fault. *)
+(* WV-3.4a-telbron: "het aantal vondsten van de aanmelder" — the single
+   argument of a count that carries a range names the counted role, and the
+   count folds the instances the range reaches. A Jutter linked to two
+   Vondsten — one with gewicht 2,50, one whose gewicht is leeg — counts 2
+   (instances, not values: the ch. 1.2 aggregation row, a count never
+   empty); a Jutter with zero links counts 0, never leeg. A count without
+   its range faults: the relation is written, never derived (B12). *)
 let () =
   let num2 : Ir_v0.Ast.datatype =
     Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
@@ -2595,27 +2570,19 @@ let () =
             } ) ];
     }
   in
-  let count_source nav : Ir_v0.Ast.expr =
+  let count_source : Ir_v0.Ast.expr =
     Attribuut_ref
-      {
-        attribuut = Some "vondsten";
-        objecttype = Some "Jutter";
-        onderwerp_bron = None;
-        navigatie_rol = Some nav;
-        typ = Some (Datatype_onbekend { reden = None });
-        bron = None;
-        set = false;
-        navigatie_pad = [];
-        navigatie_bindingen = None;
-      }
+      { attribuut = Some "vondsten"; objecttype = Some "Jutter"; bron = None;
+        navigatie_bindingen = None }
   in
-  let aantal nav : Ir_v0.Ast.expr =
+  let aantal bron_rol : Ir_v0.Ast.expr =
     Functie
-      { kind = Aantal; argumenten = [ count_source nav ];
+      { kind = Aantal; argumenten = [ count_source ];
         element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
         dimensie_selectie = None; typ = Some num0; bron = None;
-        granulariteit = None; bron_rol = None; bron_pad = None }
+        granulariteit = None; bron_rol; bron_pad = None }
   in
+  let vondst = Some { Ir_v0.Ast.rb_feittype = "vondstaanmelding"; rb_rol = "vondst" } in
   let env = env_of doc in
   let w =
     World.add_instance
@@ -2629,9 +2596,9 @@ let () =
       (inst "v2" "Vondst" [])
   in
   let ev label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
-  expect_num "WV-3.4a-zelfbron-twee" (ev "j1" (aantal "aanmelder")) "2";
-  expect_num "WV-3.4a-zelfbron-nul" (ev "j2" (aantal "aanmelder")) "0";
-  expect_fault "WV-3.4a-zelfbron-weg" (fun () -> ev "j1" (aantal "vondst"))
+  expect_num "WV-3.4a-telbron-twee" (ev "j1" (aantal vondst)) "2";
+  expect_num "WV-3.4a-telbron-nul" (ev "j2" (aantal vondst)) "0";
+  expect_fault "WV-3.4a-telbron-zonder-bereik" (fun () -> ev "j1" (aantal None))
 
 (* --- ch. 3.4b: the multi-step fold source, the flat union --------------- *)
 
@@ -2686,8 +2653,7 @@ let () =
   let pad3 = pad2 @ [ rb "inpakking" "ingepakte kist" ] in
   let bron attr otn : Ir_v0.Ast.expr =
     Attribuut_ref
-      { attribuut = Some attr; objecttype = Some otn; onderwerp_bron = None; navigatie_rol = None;
-        typ = Some num2; bron = None; set = true; navigatie_pad = []; navigatie_bindingen = None }
+      { attribuut = Some attr; objecttype = Some otn; bron = None; navigatie_bindingen = None }
   in
   let vouw kind attr el pad leegwaarde : Ir_v0.Ast.expr =
     Functie
@@ -2767,18 +2733,14 @@ let () =
              bron_rol = Some (rb "berging" "geborgen vondst"); bron_pad = Some pad2 }));
   expect_fault "WV-3.4b-eenstaps-pad-faalt"
     (fun () -> ev w1 "J1" (vouw Minimum "gewicht" "Vondst" [ rb "berging" "geborgen vondst" ] None));
+  (* a listed fold has no set source (D8 (i): the source is a SINGLE
+     argument), so a range beside two operands has nothing to range *)
   expect_fault "WV-3.4b-pad-op-een-niet-setbron-faalt" (fun () ->
       ev w1 "J1"
         (Functie
-           { kind = Aantal;
-             argumenten =
-               [ Attribuut_ref
-                   { attribuut = Some "geborgen vondst"; objecttype = Some "Jutter";
-                     onderwerp_bron = None; navigatie_rol = None;
-                     typ = Some (Datatype_onbekend { reden = None }); bron = None; set = false;
-                     navigatie_pad = []; navigatie_bindingen = None } ];
+           { kind = Minimum; argumenten = [ bron "gewicht" "Vondst"; bron "gewicht" "Vondst" ];
              element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
-             dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
+             dimensie_selectie = None; typ = Some num2; bron = None; granulariteit = None;
              bron_rol = None; bron_pad = Some pad2 }))
 
 (* WV-3.4b-toone: the ch. 3.4b clause "a step through a to-ONE role is an
@@ -2828,9 +2790,7 @@ let () =
       { kind = Minimum;
         argumenten =
           [ Attribuut_ref
-              { attribuut = Some "gewicht"; objecttype = Some "Vondst"; onderwerp_bron = None;
-                navigatie_rol = None; typ = Some num2; bron = None; set = true;
-                navigatie_pad = []; navigatie_bindingen = None } ];
+              { attribuut = Some "gewicht"; objecttype = Some "Vondst"; bron = None; navigatie_bindingen = None } ];
         element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
         dimensie_selectie = None; typ = Some num2; bron = None; granulariteit = None;
         bron_rol = None;
@@ -2878,9 +2838,9 @@ let () =
    waited for a carrier since the count's set source left the wire, and this
    kind is it.
 
-   Plus the loud refusal: a bare role source hands the fold INSTANCES, which
-   this kind cannot read. WF-037 fences it on the wire; the fault stays as
-   the second line of defence. *)
+   Plus the loud refusal: a source that names a role is a count source,
+   which this kind cannot read. The verifier fences it on the wire (WF-093);
+   the fault stays as the second line of defence. *)
 let () =
   let num2kg : Ir_v0.Ast.datatype =
     Numeriek
@@ -2920,18 +2880,15 @@ let () =
     }
   in
   let rb f r : Ir_v0.Ast.rol_binding = { rb_feittype = f; rb_rol = r } in
-  let setbron attr typ : Ir_v0.Ast.expr =
+  let setbron attr : Ir_v0.Ast.expr =
     Attribuut_ref
-      { attribuut = Some attr; objecttype = Some "Vondst"; onderwerp_bron = None;
-        navigatie_rol = None; typ = Some typ; bron = None; set = true; navigatie_pad = [];
-        navigatie_bindingen = None }
+      { attribuut = Some attr; objecttype = Some "Vondst"; bron = None; navigatie_bindingen = None }
   in
-  (* the v0 instance-fold source: a role name under the unknown sentinel *)
+  (* the count source: the counted role's name, read on the fold subject (D8 (ii)) *)
   let telbron : Ir_v0.Ast.expr =
     Attribuut_ref
-      { attribuut = Some "vondsten"; objecttype = Some "Jutter"; onderwerp_bron = None;
-        navigatie_rol = None; typ = Some (Datatype_onbekend { reden = None }); bron = None;
-        set = false; navigatie_pad = []; navigatie_bindingen = None }
+      { attribuut = Some "vondsten"; objecttype = Some "Jutter"; bron = None;
+        navigatie_bindingen = None }
   in
   let vouw kind argumenten filter pad : Ir_v0.Ast.expr =
     Functie
@@ -2940,11 +2897,11 @@ let () =
         bron_rol = (if pad = None then Some (rb "vondstaanmelding" "vondst") else None);
         bron_pad = pad }
   in
-  let gevuld ?filter attr typ = vouw Aantal_gevulde [ setbron attr typ ] filter None in
+  let gevuld ?filter attr = vouw Aantal_gevulde [ setbron attr ] filter None in
   let aantal ?filter () = vouw Aantal [ telbron ] filter None in
   let zwaarder lex : Ir_v0.Ast.conditie =
     Vergelijking
-      { op = Groter; links = Some (aref "gewicht" "Vondst" num2kg);
+      { op = Groter; links = Some (aref "gewicht" "Vondst");
         rechts = Some (litv lex num2kg); periode = None; bron = None }
   in
   let env = env_of doc in
@@ -2973,36 +2930,36 @@ let () =
   let ev w label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
   (* (1) the source shapes, the filled count beside the instance count *)
   expect_num "WV-3.4c-gemengd-aantal" (ev w "J1" (aantal ())) "3";
-  expect_num "WV-3.4c-gemengd-gevuld" (ev w "J1" (gevuld "gewicht" num2kg)) "2";
+  expect_num "WV-3.4c-gemengd-gevuld" (ev w "J1" (gevuld "gewicht")) "2";
   expect_num "WV-3.4c-alles-gevuld-aantal" (ev w "J4" (aantal ())) "2";
-  expect_num "WV-3.4c-alles-gevuld-gevuld" (ev w "J4" (gevuld "gewicht" num2kg)) "2";
+  expect_num "WV-3.4c-alles-gevuld-gevuld" (ev w "J4" (gevuld "gewicht")) "2";
   expect_num "WV-3.4c-alles-leeg-aantal" (ev w "J5" (aantal ())) "2";
-  expect_num "WV-3.4c-alles-leeg-gevuld" (ev w "J5" (gevuld "gewicht" num2kg)) "0";
+  expect_num "WV-3.4c-alles-leeg-gevuld" (ev w "J5" (gevuld "gewicht")) "0";
   expect_num "WV-3.4c-enig-lid-leeg-aantal" (ev w "J3" (aantal ())) "1";
-  expect_num "WV-3.4c-enig-lid-leeg-gevuld" (ev w "J3" (gevuld "gewicht" num2kg)) "0";
+  expect_num "WV-3.4c-enig-lid-leeg-gevuld" (ev w "J3" (gevuld "gewicht")) "0";
   expect_num "WV-3.4c-lege-bron-aantal" (ev w "J2" (aantal ())) "0";
-  expect_num "WV-3.4c-lege-bron-gevuld" (ev w "J2" (gevuld "gewicht" num2kg)) "0";
+  expect_num "WV-3.4c-lege-bron-gevuld" (ev w "J2" (gevuld "gewicht")) "0";
   (* (2) every value type counts; the test is presence, not number *)
-  expect_num "WV-3.4c-type-numeriek" (ev w "J1" (gevuld "gewicht" num2kg)) "2";
-  expect_num "WV-3.4c-type-tekst" (ev w "J1" (gevuld "vindplaats" Tekst)) "2";
-  expect_num "WV-3.4c-type-datum" (ev w "J1" (gevuld "vondstdag" Datum_in_dagen)) "2";
-  expect_num "WV-3.4c-type-enumeratie" (ev w "J1" (gevuld "kustvak" kustvak)) "2";
+  expect_num "WV-3.4c-type-numeriek" (ev w "J1" (gevuld "gewicht")) "2";
+  expect_num "WV-3.4c-type-tekst" (ev w "J1" (gevuld "vindplaats")) "2";
+  expect_num "WV-3.4c-type-datum" (ev w "J1" (gevuld "vondstdag")) "2";
+  expect_num "WV-3.4c-type-enumeratie" (ev w "J1" (gevuld "kustvak")) "2";
   (* onwaar is a VALUE: V2's `geborgen` is false and counts as filled *)
-  expect_num "WV-3.4c-type-booleaan" (ev w "J1" (gevuld "geborgen" Booleaan)) "2";
+  expect_num "WV-3.4c-type-booleaan" (ev w "J1" (gevuld "geborgen")) "2";
   (* (3) the filter narrows the contributors before the presence test *)
   expect_num "WV-3.4c-filter-aantal" (ev w "J1" (aantal ~filter:(zwaarder "2.00") ())) "1";
   expect_num "WV-3.4c-filter-gevuld"
-    (ev w "J1" (gevuld ~filter:(zwaarder "2.00") "gewicht" num2kg))
+    (ev w "J1" (gevuld ~filter:(zwaarder "2.00") "gewicht"))
     "1";
   expect_num "WV-3.4c-filter-alles-weg-aantal"
     (ev w "J1" (aantal ~filter:(zwaarder "10.00") ()))
     "0";
   expect_num "WV-3.4c-filter-alles-weg-gevuld"
-    (ev w "J1" (gevuld ~filter:(zwaarder "10.00") "gewicht" num2kg))
+    (ev w "J1" (gevuld ~filter:(zwaarder "10.00") "gewicht"))
     "0";
   (* (4) the multi-step range counts ELEMENTS, and a shared one counts once *)
   let pad = Some [ rb "bemanning" "gevoerde boot"; rb "berging" "geborgen vondst" ] in
-  let over_pad = vouw Aantal_gevulde [ setbron "gewicht" num2kg ] None pad in
+  let over_pad = vouw Aantal_gevulde [ setbron "gewicht" ] None pad in
   let boot label vondsten =
     { (inst label "Boot" []) with
       World.links = links [ ("geborgen vondsten", vondsten) ] }
@@ -3025,10 +2982,12 @@ let () =
   in
   expect_num "WV-3.4c-bronpad-vlakke-unie" (ev w2 "J1" over_pad) "2";
   expect_num "WV-3.4c-bronpad-gedeeld-element" (ev w3 "J1" over_pad) "2";
-  (* the second line of defence: a bare role source hands the fold instances *)
+  (* the second line of defence: a source that names a role and no
+     attribute of the element type is a count source, which this kind
+     cannot read — refused by name instead of counting leeg members *)
   expect_fault_msg "WV-3.4c-kale-rolbron-faalt"
     (fun () -> ev w "J1" (vouw Aantal_gevulde [ telbron ] None None))
-    "value aggregation over a bare role source";
+    "a role name is a count source only a count folds";
   (* ch. 3.4c's ONE exclusion, and it is on the temporal axis rather than on
      a value type: a set read of a TIME-DEPENDENT attribute folds twice, and
      only som and totaal define the first collapse (ch. 3.6, §7.1). A count
@@ -3053,14 +3012,14 @@ let () =
   expect_fault_msg "WV-3.4c-temporeel-faalt"
     (fun () ->
       Eval.eval_expr env_t w (World.get w "J1") ~err:no_err
-        (gevuld "vergoeding" num2kg))
+        (gevuld "vergoeding"))
     "no moment at which a filled count can ask a timeline whether it is filled";
   (* the sister measurement, and it is what makes the line above a witness: the
      SAME document under a ranking fold must NOT reach that sentence *)
   expect_fault_msg "WV-3.4c-temporeel-rangschikking-eigen-zin"
     (fun () ->
       Eval.eval_expr env_t w (World.get w "J1") ~err:no_err
-        (vouw Minimum [ setbron "vergoeding" num2kg ] None None))
+        (vouw Minimum [ setbron "vergoeding" ] None None))
     "has no defined moment to fold"
 
 (* WV-3.4d: the INSTANCE-SET UNION — the §5.7 concatenation of subject
@@ -3096,11 +3055,11 @@ let () =
   in
   let rb f r : Ir_v0.Ast.rol_binding = { rb_feittype = f; rb_rol = r } in
   let tak ?filter ft r : Ir_v0.Ast.instance_set_branch =
-    { isb_element_type = Some "Vondst"; isb_source_role = Some (rb ft r);
+    { isb_element_type = Some "Vondst"; isb_source_role = rb ft r;
       isb_filter = filter; isb_bron = None }
   in
   let kenmerk k : Ir_v0.Ast.conditie =
-    Kenmerk_check { kenmerk = Some k; navigatie = None; navigatie_binding = None; negatie = false;
+    Kenmerk_check { kenmerk = Some k; navigatie_binding = None; negatie = false;
                     eigenaar = None; periode = None; bron = None }
   in
   let unie takken : Ir_v0.Ast.expr = Instance_set_union { branches = takken; bron = None } in
@@ -3190,18 +3149,9 @@ let () =
       ev w1 "J1"
         (tel [ tak "vondstaanmelding" "aangemelde vondst";
                { isb_element_type = Some "Kavel";
-                 isb_source_role = Some (rb "vondstberging" "geborgen vondst");
+                 isb_source_role = rb "vondstberging" "geborgen vondst";
                  isb_filter = None; isb_bron = None } ]))
-    "ranges over TWO populations";
-  (* a selection without its relation faults NAMING the population, never
-     derives one from the type pair (WF-110 (e)'s ground, in the evaluator) *)
-  expect_fault_msg "WV-3.4d-tak-zonder-bronrol-faalt"
-    (fun () ->
-      ev w1 "J1"
-        (tel [ tak "vondstaanmelding" "aangemelde vondst";
-               { isb_element_type = Some "Vondst"; isb_source_role = None; isb_filter = None;
-                 isb_bron = None } ]))
-    "carries no sourceRole"
+    "ranges over TWO populations"
 
 (* WV-3.4a-opgesomd: a count handed VALUES instead of instances, and why this
    evaluator now refuses it by name.
@@ -3248,8 +3198,8 @@ let () =
         dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
         bron_rol = None; bron_pad = None }
   in
-  let gewicht = aref "gewicht" "Vondst" num2kg in
-  let vindplaats = aref "vindplaats" "Vondst" Tekst in
+  let gewicht = aref "gewicht" "Vondst" in
+  let vindplaats = aref "vindplaats" "Vondst" in
   let ev label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
   let hint = "a count folds INSTANCES and this node hands it" in
   (* the listed form, two operands (WF-037, 2026-09-20) *)
@@ -3329,7 +3279,7 @@ let () =
      bound attribute and one not *)
   let eigen_grens : Ir_v0.Ast.conditie =
     Periode_conditie
-      { vanaf = Some (aref "meldatum" "Vondst" datum); tot = None; tot_inclusief = false;
+      { vanaf = Some (aref "meldatum" "Vondst"); tot = None; tot_inclusief = false;
         bron = None }
   in
   check "WV-3.10-eigen-grens-na" (gate (Some "2024-06-15") eigen_grens = true);
@@ -3342,14 +3292,14 @@ let () =
     (fun () ->
       gate (Some "2024-06-15")
         (Periode_conditie
-           { vanaf = Some (Parameter_ref { parameter = Some "peildatum"; typ = Some datum; bron = None });
+           { vanaf = Some (Parameter_ref { parameter = Some "peildatum"; bron = None });
              tot = None; tot_inclusief = false; bron = None }))
     "neither a date literal nor an own scalar date attribute of the subject";
   expect_fault_msg "WV-3.10-grens-fasestaart"
     (fun () ->
       gate (Some "2024-06-15")
         (Periode_conditie
-           { vanaf = Some (Parameter_ref { parameter = Some "peildatum"; typ = Some datum; bron = None });
+           { vanaf = Some (Parameter_ref { parameter = Some "peildatum"; bron = None });
              tot = None; tot_inclusief = false; bron = None }))
     "Declined at evaluation";
   (* WF-042's bound-less window has no gate to compute *)
@@ -3405,12 +3355,12 @@ let () =
   in
   let prorata : Ir_v0.Ast.expr =
     Functie
-      { kind = Tijdsevenredig_deel; argumenten = [ aref "tarief" "Vondst" num0 ];
+      { kind = Tijdsevenredig_deel; argumenten = [ aref "tarief" "Vondst" ];
         element_objecttype = None; leegwaarde = None;
         filter =
           Some
             (Kenmerk_check
-               { kenmerk = Some "actief"; navigatie = None; negatie = false; eigenaar = None;
+               { kenmerk = Some "actief"; negatie = false; eigenaar = None;
                  periode = None; bron = None; navigatie_binding = None });
         dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = jaar;
         bron_rol = None; bron_pad = None }
@@ -3425,7 +3375,7 @@ let () =
       objecttypen = [ vondst ];
       resolved_regels =
         [ rr "vergoeding van een vondst" Berekening
-            (Some (aref "vergoeding" "Vondst" num0))
+            (Some (aref "vergoeding" "Vondst"))
             (Some prorata) (Some cond) ] }
   in
   let w =
@@ -3490,7 +3440,7 @@ let () =
            (n, { o with kenmerk_granulariteit = [ ("geborgen", Some Ir_v0.Ast.Jaar) ] })) ];
       resolved_regels =
         [ rr "berging van een vondst" Kenmerktoekenning
-            (Some (aref "geborgen" "Vondst" Booleaan))
+            (Some (aref "geborgen" "Vondst"))
             (Some (litv "waar" Booleaan))
             (Some (venster ~vanaf:"2024-01-01" ())) ] }
   in
@@ -3521,7 +3471,7 @@ let () =
         filter =
           Some
             (Kenmerk_check
-               { kenmerk = Some "aanwezig"; navigatie = None; negatie = false; eigenaar = None;
+               { kenmerk = Some "aanwezig"; negatie = false; eigenaar = None;
                  periode = None; bron = None; navigatie_binding = None });
         dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = maand;
         bron_rol = None; bron_pad = None }
@@ -3536,7 +3486,7 @@ let () =
       objecttypen = [ vondst ];
       resolved_regels =
         [ rr "zomerdagen van een vondst" Gelijkstelling
-            (Some (aref "zomerdagen" "Vondst" num0))
+            (Some (aref "zomerdagen" "Vondst"))
             (Some dagen) (Some venster) ] }
   in
   let w =
@@ -3597,29 +3547,14 @@ let () =
     }
   in
   let voorliggerrang : Ir_v0.Ast.expr =
-    Attribuut_ref
-      {
-        attribuut = Some "rangnummer";
-        objecttype = Some "Wachter";
-        onderwerp_bron = None;
-        navigatie_rol = None;
-        typ = Some num0;
-        bron = None;
-        set = false;
-        navigatie_pad = [ Some "voorligger" ];
-        navigatie_bindingen = Some [ { rb_feittype = "ketenband"; rb_rol = "voorligger" } ];
-      }
+    Attribuut_ref { attribuut = Some "rangnummer"; objecttype = Some "Wachter"; bron = None; navigatie_bindingen = Some [ { rb_feittype = "ketenband"; rb_rol = "voorligger" } ] }
   in
   let opvolgeraantal : Ir_v0.Ast.expr =
     Functie
       {
         kind = Aantal;
         argumenten =
-          [ Attribuut_ref
-              { attribuut = Some "opvolgers"; objecttype = Some "Wachter";
-                onderwerp_bron = None; navigatie_rol = None;
-                typ = Some (Datatype_onbekend { reden = None }); bron = None; set = false;
-                navigatie_pad = []; navigatie_bindingen = None } ];
+          [ Attribuut_ref { attribuut = Some "opvolgers"; objecttype = Some "Wachter"; bron = None; navigatie_bindingen = None } ];
         element_objecttype = Some "Wachter"; leegwaarde = None; filter = None;
         dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
         bron_rol = Some { rb_feittype = "ketenband"; rb_rol = "opvolger" };
@@ -3676,19 +3611,18 @@ let () =
        false
      with Case.Error m -> Case.contains ~needle:"WF-013" m)
 
-(* --- ch. 5.8 rule 4: the zero-hop self-reference (WF-053) --------------- *)
+(* --- ch. 5.8 rule 4: the zero-hop self-reference (WF-053, D10) ----------- *)
 
 (* WV-5.8-4: the `jutterswet-aanmelderkrediet` worked example. Jutters
    fill the role aanmelder (vondstaanmelding) and the reciprocal role
    strandmaat (strandmaatschap). "het strandtegoed van de aanmelder
-   plus 2" denotes the subject itself — zero hops, the own attribute,
-   unconditionally (J3 carries no links at all and still reads 9).
-   "het strandtegoed van zijn strandmaat" resolves as a far role FIRST
-   (the reciprocal case — never a self-read): J1 reads J2's 25, J3
-   reads leeg (rule 1, absent link). A same-typed reference naming a
-   role the Jutter does NOT fill ("van de vondst") keeps the loud
-   fault — the WF-053 narrowing. The navigated characteristic check is
-   out of rule 4's scope: a self-denoting name there faults loudly. *)
+   plus 2" denotes the subject itself — on the wire the subject's OWN read,
+   a reference without navigation bindings (D10), unconditionally (J3
+   carries no links at all and still reads 9). "het strandtegoed van zijn
+   strandmaat" is the one hop its binding names over the reciprocal role
+   (never a self-read): J1 reads J2's 25, J3 reads leeg (rule 1, absent
+   link). A binding over the to-many role vondst faults in this scalar
+   slot — never a silent first pick. *)
 let () =
   let doc =
     {
@@ -3724,23 +3658,14 @@ let () =
             } ) ];
     }
   in
-  let nav_read rol : Ir_v0.Ast.expr =
+  let nav_read ft rol : Ir_v0.Ast.expr =
     Attribuut_ref
-      {
-        attribuut = Some "strandtegoed";
-        objecttype = Some "Jutter";
-        onderwerp_bron = None;
-        navigatie_rol = Some rol;
-        typ = Some num0;
-        bron = None;
-        set = false;
-        navigatie_pad = [];
-        navigatie_bindingen = None;
-      }
+      { attribuut = Some "strandtegoed"; objecttype = Some "Jutter"; bron = None;
+        navigatie_bindingen = Some [ { rb_feittype = ft; rb_rol = rol } ] }
   in
   let plus2 : Ir_v0.Ast.expr =
     Binair
-      { op = Plus; links = Some (nav_read "aanmelder"); rechts = Some (litv "2" num0);
+      { op = Plus; links = Some (aref "strandtegoed" "Jutter"); rechts = Some (litv "2" num0);
         typ = Some num0; bron = None }
   in
   let env = env_of doc in
@@ -3758,27 +3683,22 @@ let () =
   expect_num "WV-5.8-4-zelf-j1" (ev "j1" plus2) "12";
   expect_num "WV-5.8-4-zelf-j2" (ev "j2" plus2) "27";
   expect_num "WV-5.8-4-zelf-j3-onvoorwaardelijk" (ev "j3" plus2) "9";
-  expect_num "WV-5.8-4-maat-j1" (ev "j1" (nav_read "strandmaat")) "25";
-  expect_num "WV-5.8-4-maat-j2" (ev "j2" (nav_read "strandmaat")) "10";
-  expect_leeg "WV-5.8-4-maat-j3-leeg" (ev "j3" (nav_read "strandmaat"));
-  expect_fault "WV-5.8-4-vreemde-rol" (fun () -> ev "j1" (nav_read "vondst"));
-  expect_fault "WV-5.8-4-kenmerkcheck-uitgesteld" (fun () ->
-      Eval.eval_cond env w (World.get w "j1") ~err:no_err
-        (Kenmerk_check
-           { kenmerk = Some "betrouwbaar"; navigatie = Some "aanmelder"; negatie = false;
-             eigenaar = None; periode = None; bron = None; navigatie_binding = None }))
+  let maat = nav_read "strandmaatschap" "strandmaat" in
+  expect_num "WV-5.8-4-maat-j1" (ev "j1" maat) "25";
+  expect_num "WV-5.8-4-maat-j2" (ev "j2" maat) "10";
+  expect_leeg "WV-5.8-4-maat-j3-leeg" (ev "j3" maat);
+  expect_fault "WV-5.8-4-vreemde-rol" (fun () -> ev "j1" (nav_read "vondstaanmelding" "vondst"))
 
-(* --- ch. 3.4a: the type-pair fallback for the fold-source name ---------- *)
+(* --- ch. 3.4a: the count source's range is written (B12) ---------------- *)
 
-(* WV-3.4a-typenpaar: the `jutterswet-kaveltelling` worked example. The
-   role duinkavel (kaveltoewijzing) declares no plural, and the written
-   source "duinkavels" resolves nowhere — the unique Jutter/Duinkavel
-   fact type is the source: j1 counts its three Duinkavels. The written
-   singular "vat" resolves by declared role name (vatberging, declared
-   plural "vaten"): j1 counts its two Vaten. A Jutter with no links
-   counts 0 and 0. With a second fact type connecting Jutter to
-   Duinkavel the unresolved written form keeps the loud fault — the
-   fallback never guesses between two relations. *)
+(* WV-3.4a-typenpaar: the `jutterswet-kaveltelling` worked example in its
+   L2 form. The role duinkavel (kaveltoewijzing) declares no plural; the
+   count names it and binds it, and j1 counts its three Duinkavels. The
+   singular "vat" names the role vat of vatberging (declared plural
+   "vaten"): j1 counts its two Vaten. A Jutter with no links counts 0 and
+   0. With a second fact type connecting Jutter to Duinkavel the count
+   still reads the relation its binding names — nothing is left to guess
+   between two relations — and a count without a range is refused. *)
 let () =
   let base_ft : (string * Ir_v0.Ast.feittype) list =
     [ ( "kaveltoewijzing",
@@ -3816,20 +3736,17 @@ let () =
     }
   in
   let count_source name : Ir_v0.Ast.expr =
-    Attribuut_ref
-      {
-        attribuut = Some name; objecttype = Some "Jutter"; onderwerp_bron = None;
-        navigatie_rol = None; typ = Some (Datatype_onbekend { reden = None });
-        bron = None; set = false; navigatie_pad = []; navigatie_bindingen = None;
-      }
+    Attribuut_ref { attribuut = Some name; objecttype = Some "Jutter"; bron = None; navigatie_bindingen = None }
   in
-  let aantal name el : Ir_v0.Ast.expr =
+  let aantal ?bron_rol name el : Ir_v0.Ast.expr =
     Functie
       { kind = Aantal; argumenten = [ count_source name ];
         element_objecttype = Some el; leegwaarde = None; filter = None;
         dimensie_selectie = None; typ = Some num0; bron = None;
-        granulariteit = None; bron_rol = None; bron_pad = None }
+        granulariteit = None; bron_rol; bron_pad = None }
   in
+  let kavel = { Ir_v0.Ast.rb_feittype = "kaveltoewijzing"; rb_rol = "duinkavel" } in
+  let vat = { Ir_v0.Ast.rb_feittype = "vatberging"; rb_rol = "vat" } in
   let w =
     List.fold_left World.add_instance World.empty
       [ { (inst "j1" "Jutter" []) with
@@ -3841,10 +3758,12 @@ let () =
         inst "t1" "Vat" []; inst "t2" "Vat" [] ]
   in
   let ev doc label e = Eval.eval_expr (env_of doc) w (World.get w label) ~err:no_err e in
-  expect_num "WV-3.4a-typenpaar-kavels" (ev doc "j1" (aantal "duinkavels" "Duinkavel")) "3";
-  expect_num "WV-3.4a-typenpaar-vat-enkelvoud" (ev doc "j1" (aantal "vat" "Vat")) "2";
-  expect_num "WV-3.4a-typenpaar-kavels-nul" (ev doc "j2" (aantal "duinkavels" "Duinkavel")) "0";
-  expect_num "WV-3.4a-typenpaar-vat-nul" (ev doc "j2" (aantal "vat" "Vat")) "0";
+  expect_num "WV-3.4a-typenpaar-kavels"
+    (ev doc "j1" (aantal ~bron_rol:kavel "duinkavel" "Duinkavel")) "3";
+  expect_num "WV-3.4a-typenpaar-vat-enkelvoud" (ev doc "j1" (aantal ~bron_rol:vat "vat" "Vat")) "2";
+  expect_num "WV-3.4a-typenpaar-kavels-nul"
+    (ev doc "j2" (aantal ~bron_rol:kavel "duinkavel" "Duinkavel")) "0";
+  expect_num "WV-3.4a-typenpaar-vat-nul" (ev doc "j2" (aantal ~bron_rol:vat "vat" "Vat")) "0";
   let doc2 =
     { doc with
       feittypen =
@@ -3862,20 +3781,22 @@ let () =
                   ];
               } ) ] }
   in
-  expect_fault "WV-3.4a-typenpaar-ambigu" (fun () ->
-      ev doc2 "j1" (aantal "duinkavels" "Duinkavel"))
+  expect_num "WV-3.4a-typenpaar-tweede-feittype-bindt"
+    (ev doc2 "j1" (aantal ~bron_rol:kavel "duinkavel" "Duinkavel")) "3";
+  expect_fault "WV-3.4a-typenpaar-zonder-bereik" (fun () ->
+      ev doc2 "j1" (aantal "duinkavel" "Duinkavel"))
 
 (* --- ch. 5.8a: the near-side rolcheck ---------------------------------- *)
 
 (* WV-5.8a: the `jutterswet-wachtindeling` worked example. Feittype
    wachtindeling relates the to-many role wachtjutter (Jutter) to the
-   to-one role toegewezen wachtpost (Wachtpost). The subject fills
-   wachtjutter iff its toegewezen-wachtpost reference is set — a null-test
-   on that connecting reference. J1 is assigned post W1, J2 to none: the
-   positive rolcheck holds for J1, not J2; the "is geen" negation flips it
-   (unlike the navigated characteristic check of ch. 5.8 rule 3, which is
-   asymmetric). A to-many connecting reference is v0's marker, refused
-   loudly. *)
+   to-one role toegewezen wachtpost (Wachtpost). The role check holds iff
+   a link of wachtindeling exists in which the subject fills wachtjutter
+   (D11). J1 is assigned post W1, J2 to none: the positive check holds for
+   J1, not J2; the "is geen" negation flips it (unlike the navigated
+   characteristic check of ch. 5.8 rule 3, which is asymmetric). With the
+   far role to-many the check is still an existence question: the number
+   of links is no part of it, so it answers and never refuses. *)
 let () =
   let ft_wacht rechts_meervoudig : string * Ir_v0.Ast.feittype =
     ( "wachtindeling",
@@ -3906,9 +3827,8 @@ let () =
            links = World.SMap.add "toegewezen wachtpost" [ "w1" ] World.SMap.empty })
       (inst "j2" "Jutter" [])
   in
-  let rolcheck negatie : Ir_v0.Ast.conditie =
-    Rollidmaatschap
-      { rol = Some "wachtjutter"; ander_te_filler = Some "Wachtpost"; negatie; bron = None }
+  let rolcheck negated : Ir_v0.Ast.conditie =
+    Role_membership { fact_type = "wachtindeling"; role = "wachtjutter"; negated; bron = None }
   in
   let ec label c = Eval.eval_cond env w (World.get w label) ~err:no_err c in
   check "WV-5.8a-vervult-j1" (ec "j1" (rolcheck false));
@@ -3916,27 +3836,24 @@ let () =
   check "WV-5.8a-geen-j1-niet" (not (ec "j1" (rolcheck true)));
   check "WV-5.8a-geen-j2" (ec "j2" (rolcheck true));
   let doc_mm = { doc with feittypen = [ ft_wacht true ] } in
-  expect_fault "WV-5.8a-naar-veel-refuseert" (fun () ->
-      Eval.eval_cond (env_of doc_mm) w (World.get w "j1") ~err:no_err (rolcheck false));
+  check "WV-5.8a-naar-veel-bestaat"
+    (Eval.eval_cond (env_of doc_mm) w (World.get w "j1") ~err:no_err (rolcheck false));
+  check "WV-5.8a-naar-veel-j2-niet"
+    (not (Eval.eval_cond (env_of doc_mm) w (World.get w "j2") ~err:no_err (rolcheck false)));
 
   (* WV-5.8a-ver: the `jutterswet-postbezetting` worked example — the same
-     §8.1.7 sentence read from the OTHER end. The Wachtpost does not fill
-     wachtjutter; it is the relation's other end, so "heeft een wachtjutter"
-     is an existence question over the relation. The worlds below carry BOTH
-     legs of every relation, which is what a loaded case carries (ch. 5.7a:
-     the loader materialises the leg the case did not spell) and what every
-     runtime link write produces (both legs, always).
+     sentence read from the OTHER end. The Wachtpost fills `toegewezen
+     wachtpost`, so "heeft een wachtjutter" is the role check on THAT role:
+     a link of wachtindeling in which the post fills it (D11). The worlds
+     below carry BOTH legs of every relation, which is what a loaded case
+     carries (ch. 5.7a: the loader materialises the leg the case did not
+     spell) and what every runtime link write produces (both legs, always).
 
-     Case 1 pins the two corners and their negations AND the filler class:
-     a plain Jutter leaves the post strandvrij. Case 2 separates existence
-     from counting (two fillers on one post read the same as one) and from
-     sheer presence (a Jutter in no relation leaves every post alone), with
-     the Strandjutter among them so the narrowed question answers too. Case
-     3 is the sharpest: two posts, each with one filler, differing only in
-     CLASS — `bemand` holds of both and `strandbemand` of one, so the
-     role-wide reading and the filler reading come apart inside one world.
-     The pair-resolution fault is the reader's own refusal of the shape
-     WF-034 (t) refuses ahead of it. *)
+     Case 1 pins the two corners and their negations. Case 2 separates
+     existence from counting (two fillers on one post read the same as one)
+     and from sheer presence (a Jutter in no relation leaves every post
+     alone). Case 3 has two posts with one filler each. A check naming the
+     role of the OTHER side faults: the subject does not fill it. *)
   let doc_sj =
     { doc with
       objecttypen =
@@ -3954,12 +3871,10 @@ let () =
       links = World.SMap.add "toegewezen wachtpost" [ post ] World.SMap.empty }
   in
   let wereld insts = List.fold_left World.add_instance World.empty insts in
-  let verre filler backref negatie : Ir_v0.Ast.conditie =
-    Verre_rollidmaatschap
-      { filler = Some filler; backref = Some backref; negatie; bron = None }
+  let verre role negated : Ir_v0.Ast.conditie =
+    Role_membership { fact_type = "wachtindeling"; role; negated; bron = None }
   in
-  let bemand = verre "Jutter" "toegewezen wachtpost" in
-  let strandbemand = verre "Strandjutter" "toegewezen wachtpost" in
+  let bemand = verre "toegewezen wachtpost" in
   let w1 =
     wereld [ post "w1" [ "j1" ]; inst "w2" "Wachtpost" []; jutter_op "j1" "Jutter" "w1" ]
   in
@@ -3968,8 +3883,6 @@ let () =
   check "WV-5.8a-ver-w1-niet-onbemand" (not (ev1 "w1" (bemand true)));
   check "WV-5.8a-ver-w2-niet-bemand" (not (ev1 "w2" (bemand false)));
   check "WV-5.8a-ver-w2-onbemand" (ev1 "w2" (bemand true));
-  check "WV-5.8a-ver-w1-niet-strandbemand" (not (ev1 "w1" (strandbemand false)));
-  check "WV-5.8a-ver-w1-strandvrij" (ev1 "w1" (strandbemand true));
   let w2 =
     wereld
       [ post "w1" [ "j1"; "j2" ]; inst "w2" "Wachtpost" []; jutter_op "j1" "Jutter" "w1";
@@ -3978,7 +3891,6 @@ let () =
   let ev2 label c = Eval.eval_cond env w2 (World.get w2 label) ~err:no_err c in
   check "WV-5.8a-ver-twee-vullers-telt-niet" (ev2 "w1" (bemand false));
   check "WV-5.8a-ver-twee-vullers-niet-onbemand" (not (ev2 "w1" (bemand true)));
-  check "WV-5.8a-ver-subtype-vult-supertype" (ev2 "w1" (strandbemand false));
   check "WV-5.8a-ver-losse-jutter-bemant-niets" (ev2 "w2" (bemand true));
   let w3 =
     wereld
@@ -3987,33 +3899,8 @@ let () =
   in
   let ev3 label c = Eval.eval_cond env w3 (World.get w3 label) ~err:no_err c in
   check "WV-5.8a-ver-klasse-splitst-w1-bemand" (ev3 "w1" (bemand false));
-  check "WV-5.8a-ver-klasse-splitst-w1-strandvrij" (ev3 "w1" (strandbemand true));
   check "WV-5.8a-ver-klasse-splitst-w2-bemand" (ev3 "w2" (bemand false));
-  check "WV-5.8a-ver-klasse-splitst-w2-strandbemand" (ev3 "w2" (strandbemand false));
-  expect_fault "WV-5.8a-ver-verkeerde-zijde" (fun () ->
-      ev1 "w1" (verre "Jutter" "wachtjutter" false));
-  (* the pair pins BOTH ends at once, so a second fact type carrying a
-     same-named subject role over the same type pair denotes a second
-     relation and there is no tie-break: a fault, never a pick. The verifier
-     leaves this one alone — WF-034 (t) reports the EMPTY candidate list and
-     several entries stay the ambiguity question — so the reader is where it
-     is caught, and this is its only witness. *)
-  let doc_ambigu =
-    { doc_sj with
-      feittypen =
-        [ ft_wacht false;
-          ( "reservewacht",
-            { ft_naam = Some "reservewacht"; wederkerig = false;
-              rollen =
-                [ { rol_naam = Some "reservejutter"; rol_objecttype_naam = Some "Jutter";
-                    rol_meervoud = Some "reservejutters"; rol_meervoudig = true };
-                  { rol_naam = Some "toegewezen wachtpost";
-                    rol_objecttype_naam = Some "Wachtpost"; rol_meervoud = None;
-                    rol_meervoudig = false } ];
-            } ) ] }
-  in
-  expect_fault "WV-5.8a-ver-ambigu-paar" (fun () ->
-      Eval.eval_cond (env_of doc_ambigu) w1 (World.get w1 "w1") ~err:no_err (bemand false))
+  expect_fault "WV-5.8a-ver-verkeerde-zijde" (fun () -> ev1 "w1" (verre "wachtjutter" false))
 
 (* --- ch. 5.8b: the characteristic check's owner (WF-100) ----------------
    The RUNTIME-SEMANTICS ch. 5.8b worked example, verbatim. `Vondst` and
@@ -4065,7 +3952,7 @@ let () =
   in
   let kc eigenaar : Ir_v0.Ast.conditie =
     Kenmerk_check
-      { kenmerk = Some "gekeurd"; navigatie = None; negatie = false; eigenaar; periode = None;
+      { kenmerk = Some "gekeurd"; negatie = false; eigenaar; periode = None;
         bron = None; navigatie_binding = None }
   in
   let ec label c = Eval.eval_cond (env_of doc) w (World.get w label) ~err:no_err c in
@@ -4080,8 +3967,8 @@ let () =
      hop — so the SENTENCE is asserted, not merely the fault *)
   let kc_nav eigenaar : Ir_v0.Ast.conditie =
     Kenmerk_check
-      { kenmerk = Some "gekeurd"; navigatie = Some "vinder"; negatie = false; eigenaar;
-        periode = None; bron = None; navigatie_binding = None }
+      { kenmerk = Some "gekeurd"; negatie = false; eigenaar; periode = None; bron = None;
+        navigatie_binding = Some { rb_feittype = "vondstvinding"; rb_rol = "vinder" } }
   in
   match ec "v1" (kc_nav (Some "Jutter")) with
   | exception Value.Fault m ->
@@ -4136,18 +4023,15 @@ let () =
       feit_creaties =
         [ { fc_naam = Some "vakbeseining door het kustvak";
             anker = Some "Kustvak"; fc_doel = Some "Sein";
-            zet_veld = Some "seinvak"; join_veld = Some "post";
-            tussenstappen =
-              [ { ts_type = Some "Post"; veld = Some "kustvak"; via_ouder_veld = false;
-                  ts_rol = Some (rb "kustligging" "post") } ];
+            tussenstappen = [ { ts_rol = rb "kustligging" "post" } ];
             fc_voorwaarde =
               Some
                 (Kenmerk_check
-                   { kenmerk = Some "gehesen"; navigatie = None; negatie = false; eigenaar;
+                   { kenmerk = Some "gehesen"; negatie = false; eigenaar;
                      periode = None; bron = None; navigatie_binding = None });
-            fc_geldigheid = None; fc_feittype = Some "vakbeseining";
-            anker_rol = Some "seinvak"; doel_rol = Some "vaksein";
-            join_rol = Some (rb "seinvoering" "sein") } ];
+            fc_geldigheid = None; fc_feittype = "vakbeseining";
+            anker_rol = "seinvak"; doel_rol = "vaksein";
+            join_rol = rb "seinvoering" "sein" } ];
     }
   in
   let links l = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty l in
@@ -4291,8 +4175,9 @@ let () =
   in
   let cond ?(jaar = true) ?(niet = false) ?(negatie = false) () : Ir_v0.Ast.conditie =
     Kenmerk_check
-      { kenmerk = Some "bedrijvig"; navigatie = Some "werf"; negatie; eigenaar = None;
-        periode = Some { gp_jaar = jaar; gp_niet = niet }; bron = None; navigatie_binding = None }
+      { kenmerk = Some "bedrijvig"; negatie; eigenaar = None;
+        periode = Some { gp_jaar = jaar; gp_niet = niet }; bron = None;
+        navigatie_binding = Some { rb_feittype = "ligplaats"; rb_rol = "werf" } }
   in
   let ec ~link perioden c =
     let w = wereld ~link perioden in
@@ -4330,10 +4215,7 @@ let () =
      directions in one check: the full year passes, the half year does not,
      which is what separates the own arm from a constant. *)
   let eigen_cond : Ir_v0.Ast.conditie =
-    Kenmerk_check
-      { kenmerk = Some "bedrijvig"; navigatie = None; negatie = false; eigenaar = None;
-        periode = Some { gp_jaar = true; gp_niet = false }; bron = None;
-        navigatie_binding = None }
+    Kenmerk_check { kenmerk = Some "bedrijvig"; negatie = false; eigenaar = None; periode = Some { gp_jaar = true; gp_niet = false }; bron = None; navigatie_binding = None }
   in
   let ec_eigen perioden =
     let w = wereld ~link:false perioden in
@@ -4454,15 +4336,15 @@ let () =
           Some
             (Binair
                { op = Gedeeld_door;
-                 links = Some (aref "vangstwaarde" "Wacht" num0);
-                 rechts = Some (aref "ploegomvang" "Wacht" num0);
+                 links = Some (aref "vangstwaarde" "Wacht");
+                 rechts = Some (aref "ploegomvang" "Wacht");
                  typ = Some num0; bron = None });
         modus = Naar_beneden; decimalen = 0; typ = Some num0; bron = None }
   in
   let cmp op links rechts : Ir_v0.Ast.conditie =
     Vergelijking { op; links = Some links; rechts = Some rechts; periode = None; bron = None }
   in
-  let lid1 op = cmp op (aref "ploegomvang" "Wacht" num0) (litv "0" num0) in
+  let lid1 op = cmp op (aref "ploegomvang" "Wacht") (litv "0" num0) in
   let lid2 = cmp Groter deling (litv "0" num0) in
   let doc_of kwantor drempel op1 : Ir_v0.Ast.document =
     { empty_doc with
@@ -4471,7 +4353,7 @@ let () =
             [ ("ploegomvang", Some num0); ("vangstwaarde", Some num0); ("merk", Some num0) ] [] ];
       resolved_regels =
         [ rr "merk" Gelijkstelling
-            (Some (aref "merk" "Wacht" num0))
+            (Some (aref "merk" "Wacht"))
             (Some (litv "1" num0))
             (Some (Samengesteld { kwantor; drempel; onderdelen = [ lid1 op1; lid2 ]; bron = None }));
         ];
@@ -4507,7 +4389,7 @@ let () =
     { (doc_of Alle 0 Ongelijk) with
       resolved_regels =
         [ rr "merk" Gelijkstelling
-            (Some (aref "merk" "Wacht" num0))
+            (Some (aref "merk" "Wacht"))
             (Some (litv "1" num0))
             (Some (Samengesteld { kwantor = Alle; drempel = 0; onderdelen = [ lid2 ]; bron = None }));
         ];
@@ -4531,14 +4413,14 @@ let () =
             [ ("ploegomvang", Some num0); ("vangstwaarde", Some num0); ("merk", Some num0) ] [] ];
       resolved_regels =
         [ rr "merk" Gelijkstelling
-            (Some (aref "merk" "Wacht" num0))
+            (Some (aref "merk" "Wacht"))
             (Some (litv "1" num0))
             (Some (Samengesteld { kwantor; drempel; onderdelen; bron = None }));
         ];
     }
   in
   let waar_ploeg0 = lid1 Gelijk in
-  let waar_vangst = cmp Groter (aref "vangstwaarde" "Wacht" num0) (litv "0" num0) in
+  let waar_vangst = cmp Groter (aref "vangstwaarde" "Wacht") (litv "0" num0) in
   let faultend = lid2 in
   (* THE STOP IS CHECKED BEFORE THE MEMBER, NOT AFTER. At TEN MINSTE with a
      threshold ABOVE the member count the out-of-reach trigger fires on the
@@ -4620,7 +4502,7 @@ let () =
       function_defs = fds;
       resolved_regels =
         [ rr "uitkomst van een vangst" Gelijkstelling
-            (Some (aref "uitkomst" "Vangst" num0))
+            (Some (aref "uitkomst" "Vangst"))
             (Some waarde) cond ];
     }
   in
@@ -4698,7 +4580,7 @@ let () =
         functie =
           Fn_lambda
             { parameters = [ ("acc", num0); ("x", num0) ];
-              body = Binder_ref { naam = "acc"; typ = Some num0; bron = None }; bron = None };
+              body = Binder_ref { naam = "acc"; bron = None }; bron = None };
         bron = None }
   in
   expect_msg "WV-5.11-fold-list-voor-init" (run_v (vouw boom pit)) bm;
@@ -4712,7 +4594,7 @@ let () =
     If_then_else
       { typ = Some num0;
         condition =
-          cmp Groter (Binder_ref { naam = "x"; typ = Some num0; bron = None }) (litv "0" num0);
+          cmp Groter (Binder_ref { naam = "x"; bron = None }) (litv "0" num0);
         then_ = boom; else_ = pit; bron = None }
   in
   let paar a b : Ir_v0.Ast.expr =
@@ -4765,7 +4647,7 @@ let () =
     cmp Groter
       (If_then_else
          { typ = Some num0;
-           condition = cmp Groter (aref "merk" "Deelvangst" num0) (litv "0" num0);
+           condition = cmp Groter (aref "merk" "Deelvangst") (litv "0" num0);
            then_ = boom; else_ = pit; bron = None })
       (litv "0" num0)
   in
@@ -4785,14 +4667,10 @@ let () =
     Functie
       { kind = Aantal;
         argumenten =
-          [ Attribuut_ref
-              { attribuut = Some "deelvangsten"; objecttype = Some "Vangst";
-                onderwerp_bron = None; navigatie_rol = None;
-                typ = Some (Datatype_onbekend { reden = None }); bron = None; set = false;
-                navigatie_pad = []; navigatie_bindingen = None } ];
+          [ Attribuut_ref { attribuut = Some "deelvangsten"; objecttype = Some "Vangst"; bron = None; navigatie_bindingen = None } ];
         element_objecttype = Some "Deelvangst"; leegwaarde = None; filter = Some lid_filter;
         dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
-        bron_rol = None; bron_pad = None }
+        bron_rol = Some { rb_feittype = "deelname"; rb_rol = "deelvangst" }; bron_pad = None }
   in
   expect_msg "WV-5.11-instantiefold-lid0-eerst" (run_leden telling "1" "0") bm;
   expect_msg "WV-5.11-instantiefold-lid1-later" (run_leden telling "0" "1") pm;
@@ -4802,12 +4680,10 @@ let () =
       { kind = Som;
         argumenten =
           [ Attribuut_ref
-              { attribuut = Some "bedrag"; objecttype = Some "Deelvangst"; onderwerp_bron = None;
-                navigatie_rol = None; typ = Some num0; bron = None; set = true;
-                navigatie_pad = []; navigatie_bindingen = None } ];
+              { attribuut = Some "bedrag"; objecttype = Some "Deelvangst"; bron = None; navigatie_bindingen = None } ];
         element_objecttype = Some "Deelvangst"; leegwaarde = None; filter = Some lid_filter;
         dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
-        bron_rol = None; bron_pad = None }
+        bron_rol = Some { rb_feittype = "deelname"; rb_rol = "deelvangst" }; bron_pad = None }
   in
   expect_msg "WV-5.11-instantiesom-lid0-eerst" (run_leden ledensom "1" "0") bm;
   expect_msg "WV-5.11-instantiesom-lid1-later" (run_leden ledensom "0" "1") pm
@@ -4844,11 +4720,11 @@ let () =
       pd_bron = None; pd_geldigheid = None }
   in
   let betwist : Ir_v0.Ast.conditie =
-    Kenmerk_check { kenmerk = Some "betwist"; navigatie = None; negatie = false;
+    Kenmerk_check { kenmerk = Some "betwist"; negatie = false;
                     eigenaar = None; periode = None; bron = None; navigatie_binding = None }
   in
   let diep : Ir_v0.Ast.conditie =
-    Vergelijking { op = Groter; links = Some (aref "bergingsdiepte" "Wrakrecht" num0);
+    Vergelijking { op = Groter; links = Some (aref "bergingsdiepte" "Wrakrecht");
                    rechts = Some (litv "20" num0); periode = None; bron = None }
   in
   let doc =
@@ -4861,15 +4737,15 @@ let () =
          fire for a subtype instance too (ch. 2.2) *)
       resolved_regels =
         [ rr "registratiekosten van een strandrecht" Berekening
-            (Some (aref "registratiekosten" "Strandrecht" bedrag))
+            (Some (aref "registratiekosten" "Strandrecht"))
             (Some (litv "5.00" bedrag)) None ];
       prioritized_defaults =
         [ groep "Strandrecht" [ d betwist (litv "99.00" bedrag);
-                                d altijd (aref "grondslag" "Strandrecht" bedrag) ];
+                                d altijd (aref "grondslag" "Strandrecht") ];
           groep "Wrakrecht"
             [ d diep (litv "55.00" bedrag);
               d altijd
-                (Binair { op = Maal; links = Some (aref "grondslag" "Wrakrecht" bedrag);
+                (Binair { op = Maal; links = Some (aref "grondslag" "Wrakrecht");
                           rechts = Some (litv "2" num0); typ = Some bedrag; bron = None }) ] ];
     }
   in
@@ -4919,7 +4795,7 @@ let () =
     (n, { o with ot_supertype = Some super })
   in
   let kc k : Ir_v0.Ast.conditie =
-    Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; eigenaar = None;
+    Kenmerk_check { kenmerk = Some k; negatie = false; eigenaar = None;
                     periode = None; bron = None; navigatie_binding = None }
   in
   let groep k waarde : Ir_v0.Ast.prioritized_defaults =
@@ -4957,7 +4833,7 @@ let () =
     (n, { o with ot_supertype = Some super })
   in
   let kc k : Ir_v0.Ast.conditie =
-    Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; eigenaar = None;
+    Kenmerk_check { kenmerk = Some k; negatie = false; eigenaar = None;
                     periode = None; bron = None; navigatie_binding = None }
   in
   let groep onderwerp k waarde ongeordend : Ir_v0.Ast.prioritized_defaults =
@@ -5024,7 +4900,7 @@ let () =
     Samengesteld { kwantor = Alle; drempel = 0; onderdelen = []; bron = None }
   in
   let kc k : Ir_v0.Ast.conditie =
-    Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; eigenaar = None;
+    Kenmerk_check { kenmerk = Some k; negatie = false; eigenaar = None;
                     periode = None; bron = None; navigatie_binding = None }
   in
   let d voorwaarde waarde : Ir_v0.Ast.default =
@@ -5049,7 +4925,7 @@ let () =
     { empty_doc with objecttypen = types;
       resolved_regels =
         [ rr "uitkering van een wrakrecht" Berekening
-            (Some (aref "uitkering" "Wrakrecht" bedrag)) (Some (litv "7.00" bedrag)) None ];
+            (Some (aref "uitkering" "Wrakrecht")) (Some (litv "7.00" bedrag)) None ];
       prioritized_defaults =
         [ groep "Strandrecht" [ d (kc "betwist") "99.00"; d altijd "30.00" ] ] }
   in
@@ -5067,7 +4943,7 @@ let () =
     { empty_doc with objecttypen = types;
       resolved_regels =
         [ rr "uitkering van een strandrecht" Berekening
-            (Some (aref "uitkering" "Strandrecht" bedrag)) (Some (litv "30.00" bedrag)) None ];
+            (Some (aref "uitkering" "Strandrecht")) (Some (litv "30.00" bedrag)) None ];
       prioritized_defaults =
         [ groep "Wrakrecht" [ d (kc "betwist") "99.00"; d altijd "20.00" ] ] }
   in
@@ -5081,7 +4957,7 @@ let () =
     { empty_doc with objecttypen = types;
       resolved_regels =
         [ rr "uitkering van een strandrecht" Berekening
-            (Some (aref "uitkering" "Strandrecht" bedrag)) (Some (litv "30.00" bedrag)) None ] }
+            (Some (aref "uitkering" "Strandrecht")) (Some (litv "30.00" bedrag)) None ] }
   in
   expect_num "WV-7.10-f-kale-regel-blijft-de-staande-norm" (run doc_kaal "Wrakrecht" []) "30.00";
   (* NOT lowered, and refused by name: a rule with a VALIDITY WINDOW beside an
@@ -5096,7 +4972,7 @@ let () =
     { empty_doc with objecttypen = types;
       resolved_regels =
         [ { (rr "uitkering van een wrakrecht" Berekening
-               (Some (aref "uitkering" "Wrakrecht" bedrag)) (Some (litv "7.00" bedrag)) None)
+               (Some (aref "uitkering" "Wrakrecht")) (Some (litv "7.00" bedrag)) None)
             with rr_geldigheid = Some { geld_vanaf = Some "2020-01-01"; geld_tot = None } } ];
       prioritized_defaults =
         [ groep "Strandrecht" [ d (kc "betwist") "99.00"; d altijd "30.00" ] ] }
@@ -5134,7 +5010,7 @@ let () =
     Samengesteld { kwantor = Alle; drempel = 0; onderdelen = []; bron = None }
   in
   let kc k : Ir_v0.Ast.conditie =
-    Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; eigenaar = None;
+    Kenmerk_check { kenmerk = Some k; negatie = false; eigenaar = None;
                     periode = None; bron = None; navigatie_binding = None }
   in
   let d voorwaarde waarde : Ir_v0.Ast.default =
@@ -5202,7 +5078,7 @@ let () =
       objecttypen = types;
       uniciteiten =
         [ { uni_naam = Some "nummer is uniek"; uni_subject = Some "Vondst";
-            sleutels = [ Some "nummer" ]; scope_veld = None; uni_bron = None;
+            sleutels = [ Some "nummer" ]; uni_bron = None;
             uni_geldigheid = None; scope_rol = None } ] }
   in
   let uni_run a b =
@@ -5225,7 +5101,7 @@ let () =
             assertie =
               Some
                 (Vergelijking
-                   { op = Kleiner; links = Some (aref "boete" "Vondst" num0);
+                   { op = Kleiner; links = Some (aref "boete" "Vondst");
                      rechts = Some (litv "100" num0); periode = None; bron = None });
             cons_bron = None; cons_line = 0; cons_geldigheid = None } ] }
   in
@@ -5246,11 +5122,11 @@ let () =
       objecttypen = types;
       resolved_regels =
         [ rr "boete van een wrakvondst" Berekening
-            (Some (aref "boete" "Wrakvondst" num0))
+            (Some (aref "boete" "Wrakvondst"))
             (Some (litv "7" num0))
             (Some
                (Kenmerk_check
-                  { kenmerk = Some "gemeld"; navigatie = None; negatie = false;
+                  { kenmerk = Some "gemeld"; negatie = false;
                     eigenaar = Some "Vondst"; periode = None; bron = None;
                     navigatie_binding = None })) ] }
   in
@@ -5279,7 +5155,7 @@ let () =
       objecttypen = [ ot "Vondst" [ ("staat", Some keurklasse) ] [] ];
       uniciteiten =
         [ { uni_naam = Some "eenmalige staat"; uni_subject = Some "Vondst";
-            sleutels = [ Some "staat" ]; scope_veld = None; uni_bron = None;
+            sleutels = [ Some "staat" ]; uni_bron = None;
             uni_geldigheid = None; scope_rol = None } ] }
   in
   let run a b =
@@ -5336,7 +5212,7 @@ let kv_toets ?(op : Ir_v0.Ast.vergelijk_op = Groter) ?(grens = "40") ?(niet = fa
   Vergelijking
     {
       op;
-      links = Some (aref "dagvergoeding" "Berger" num0);
+      links = Some (aref "dagvergoeding" "Berger");
       rechts = Some (litv grens num0);
       periode = Some { gp_jaar = true; gp_niet = niet };
       bron = None;
@@ -5426,7 +5302,7 @@ let () =
      excluded member's failing value never reaches the verdict *)
   let filter_boven_10 : Ir_v0.Ast.conditie =
     Vergelijking
-      { op = Groter; links = Some (aref "dagvergoeding" "Berger" num0);
+      { op = Groter; links = Some (aref "dagvergoeding" "Berger");
         rechts = Some (litv "10" num0); periode = Some { gp_jaar = true; gp_niet = false };
         bron = None }
   in
@@ -5556,7 +5432,7 @@ let () =
     let w = World.add_instance World.empty i in
     Eval.eval_cond (env_of scalar_doc) w (World.get w "B1") ~err:no_err
       (Vergelijking
-         { op; links = Some (aref "dagvergoeding" "Berger" num0);
+         { op; links = Some (aref "dagvergoeding" "Berger");
            rechts = Some (litv grens num0);
            periode = Some { gp_jaar = jaar; gp_niet = niet }; bron = None })
   in
@@ -5590,7 +5466,7 @@ let () =
       Value.Bool
         (Eval.eval_cond (env_of d) w (World.get w "B1") ~err:no_err
            (Vergelijking
-              { op = Groter; links = Some (aref "dagvergoeding" "Berger" num0);
+              { op = Groter; links = Some (aref "dagvergoeding" "Berger");
                 rechts = Some (litv "40" num0);
                 periode = Some { gp_jaar = true; gp_niet = false }; bron = None })))
     "WF-043"
@@ -5613,7 +5489,7 @@ let () =
     { empty_doc with
       objecttypen = [ ot "Melding" [ ("heffing", Some bedrag) ] [] ];
       resolved_regels =
-        [ { (rr "heffing in 2026" Berekening (Some (aref "heffing" "Melding" bedrag))
+        [ { (rr "heffing in 2026" Berekening (Some (aref "heffing" "Melding"))
                (Some (litv "125" bedrag)) None)
             with rr_geldigheid = Some { geld_vanaf = vanaf; geld_tot = tot } } ] }
   in
@@ -6301,7 +6177,7 @@ let () =
   in
   let kenmerk k : Ir_v0.Ast.conditie =
     Kenmerk_check
-      { kenmerk = Some k; navigatie = None; navigatie_binding = None; negatie = false;
+      { kenmerk = Some k; navigatie_binding = None; negatie = false;
         eigenaar = None; periode = None; bron = None }
   in
   let doc waarde =
@@ -6309,7 +6185,7 @@ let () =
       objecttypen = [ recht ];
       resolved_regels =
         [ rr "geen herleving" Kenmerktoekenning
-            (Some (aref "herleefd" "Recht" Ir_v0.Ast.Booleaan))
+            (Some (aref "herleefd" "Recht"))
             (Some waarde) (Some (kenmerk "nieuw recht ontstaan")) ] }
   in
   let wereld =
@@ -6338,7 +6214,7 @@ let () =
   weigert "WF-022-kenmerk-onwaar-weigert" (litv "onwaar" Ir_v0.Ast.Booleaan)
     (zin {|the literal "onwaar" typed Booleaan|});
   weigert "WF-022-kenmerk-berekend-weigert"
-    (aref "actief" "Recht" Ir_v0.Ast.Booleaan)
+    (aref "actief" "Recht")
     (zin "a computed value");
   (* both halves of the constant, each on its own: the lexeme waar with
      another type, and the type Booleaan with another spelling (lens
@@ -6362,7 +6238,7 @@ let () =
       objecttypen = [ jutter ];
       resolved_regels =
         [ rr "aantal als kenmerk" Kenmerktoekenning
-            (Some (aref "aantal aangemelde vondsten" "Jutter" aantal))
+            (Some (aref "aantal aangemelde vondsten" "Jutter"))
             (Some (litv "onwaar" Ir_v0.Ast.Booleaan)) None ] }
   in
   (match

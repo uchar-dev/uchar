@@ -41,6 +41,11 @@ type env = {
       (* lexical binders bound per match-arm evaluation (ch. 9.2), by norm
          name; the row-10 card extends this to lambda/function parameters,
          the ch. 10.6 Let adds the deferred [Later] form *)
+  btypes : datatype option SMap.t;
+      (* the static type of each lexical binder in [locals], by norm name:
+         a binder read carries no type on the wire (B13), so its type is
+         the one its binding declares — a match arm's payload, a closed
+         body's parameter, a Let value's, a list filter's element *)
 }
 
 let req what = function Some x -> x | None -> Value.fault "missing %s in IR node" what
@@ -196,7 +201,7 @@ let rec bevat_periode (c : conditie) =
   | Kwantorvouw { kv_filter; kv_toets; _ } ->
       let opt = function Some c -> bevat_periode c | None -> false in
       opt kv_filter || opt kv_toets
-  | Vergelijking _ | Predicaat _ | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _
+  | Vergelijking _ | Predicaat _ | Kenmerk_check _ | Role_membership _
   | Regelversie _ | Conditie_onopgelost _ ->
       false
 
@@ -315,7 +320,7 @@ let guard_on_doel (doc : document) (fc : resolved_feit_creatie) =
   match (fc.anker, fc.fc_doel, fc.fc_voorwaarde) with
   | ( Some a,
       Some d,
-      Some (Kenmerk_check { navigatie = None; periode = None; eigenaar = Some e; kenmerk; _ }) ) -> (
+      Some (Kenmerk_check { navigatie_binding = None; periode = None; eigenaar = Some e; kenmerk; _ }) ) -> (
       let bound = [ ("anker", a); ("doel", d) ] in
       let hits = List.filter (fun (_, t) -> Ir_v0.Checks.subtype_of doc ~sub:t ~super:e) bound in
       let near = List.filter (fun (_, t) -> Ir_v0.Checks.populations_overlap doc t e) bound in
@@ -416,40 +421,6 @@ let attr_granulariteit (ot : objecttype) name =
   | Some (Some g) -> g
   | _ -> Value.fault "temporal attribute %S without a granularity" name
 
-(* the unique connecting role between two object types; deriving it —
-   rather than naming the role in the IR — is the recorded v0 wart of
-   ch. 4.1, mirrored here for both allocation recipients and instance
-   folds. Uniqueness is counted in candidate ROLES, not fact types
-   (v0's verbindendeRol, RegelSpraakModel: every role of the far type
-   whose fact type also relates the near type counts), so a self-typed
-   two-role fact type offers BOTH its roles and blocks the derivation —
-   the pinned runtime derives null there; execution refuses to guess,
-   the same block connecting_pair carries. *)
-let connecting_role env ~from_type ~to_type =
-  let candidates =
-    List.concat_map
-      (fun (_, (ft : feittype)) ->
-        let f t r = fills env t r in
-        match ft.rollen with
-        | [ a; b ] ->
-            (if f from_type a && f to_type b then [ b ] else [])
-            @ (if f from_type b && f to_type a then [ a ] else [])
-        | [ r ] when ft.wederkerig ->
-            (* the reciprocal shape: the one role relates the type to
-               itself, and is both sides of the hop *)
-            if f from_type r && norm from_type = norm to_type then [ r ] else []
-        | _ -> [])
-      env.doc.feittypen
-  in
-  match candidates with
-  | [ r ] -> r
-  | [] -> Value.fault "no fact type relates %S to %S" from_type to_type
-  | _ ->
-      Value.fault
-        "the connecting role from %S to %S is ambiguous (%d candidate roles); the pinned \
-         runtime derives null there"
-        from_type to_type (List.length candidates)
-
 (* the unique fact type relating [from_type] to [to_type], with its
    name and both roles — (fact-type name, role to_type fills, role
    from_type fills). None when no fact type relates them (the linkless
@@ -526,14 +497,10 @@ let role_links world (self : World.instance) (role : rol) =
   in
   List.map (World.get world) labels
 
-(* linked instances of [to_type] seen from [self]; the connecting role
-   comes from the explicit [binding] when the node carries one, and from
-   the type-pair derivation otherwise. *)
-let linked ?binding env world (self : World.instance) ~to_type =
-  role_links world self
-    (match binding with
-    | Some rb -> bound_role env rb
-    | None -> connecting_role env ~from_type:self.otype ~to_type)
+(* linked instances seen from [self] over the bound role: the relation a
+   node reads is written on it, never derived (B12) *)
+let linked env world (self : World.instance) ~(binding : rol_binding) =
+  role_links world self (bound_role env binding)
 
 (* ch. 3.4b / WF-102: the multi-step fold source. The folded set is the
    FLAT UNION over the path — walk step 1 from the subject, step 2 from
@@ -574,175 +541,24 @@ let linked_path env world (self : World.instance) ~path =
    written before the chain existed. *)
 let fold_members ?binding ?path env world (self : World.instance) ~element =
   let reached =
-    match path with
-    | Some pad -> linked_path env world self ~path:pad (* ch. 3.4b *)
-    | None -> linked ?binding env world self ~to_type:element
+    match (path, binding) with
+    | Some pad, _ -> linked_path env world self ~path:pad (* ch. 3.4b *)
+    | None, Some rb -> linked env world self ~binding:rb
+    | None, None ->
+        Value.fault
+          "an instance fold over %S carries no range: its relation is written as bronRol or \
+           bronPad and never derived (B12)"
+          element
   in
   List.filter (fun (i : World.instance) -> isa env i.otype element) reached
 
-(* a role reachable from [self]'s type whose name/plural matches [name] —
-   the v0 instance-fold source wart: a pseudo-AttribuutRef carrying the
-   sentinel type names a role, resolved against declared roles (the
-   WF-034 exception). [to_type], when known (a navigation hop with a
-   written endpoint), joins the filter — the v0 by-name derivation
-   (verbindendeRolViaNaam) disambiguates same-named roles by target
-   type; its best-effort pluralisation is deliberately NOT mirrored
-   (a loud refusal beats heuristic name formation — tracked delta). The
-   fold-source arm adds the narrowed type-pair fallback for a name that
-   resolves NOWHERE (IR-SPEC ch. 4.3): the unique connecting fact type
-   is the source; zero or multiple keep the loud fault. *)
-(* the self-denoting fold source (WF-083, IR-SPEC ch. 4.3): the written
-   form "het aantal <rol> van de <onderwerp>" may name the fold subject
-   by its OWN role name; the wire carries that written role in the
-   fold-source argument's navigatieRol. Presentation, not navigation —
-   the v0 production runtime ignores the field there; mirrored safely:
-   the name must denote a role (ci, name or declared plural) that
-   [self_type] itself fills in some fact type, else the loud
-   unsupported-shape fault stands. *)
-let self_denoting_role (doc : document) ~self_type name =
-  List.exists
-    (fun (_, (ft : feittype)) ->
-      List.exists
-        (fun (r : rol) ->
-          Ir_v0.Checks.subtype_of doc ~sub:self_type
-            ~super:(Option.value r.rol_objecttype_naam ~default:"")
-          && ((match r.rol_naam with Some n -> norm n = norm name | None -> false)
-             || match r.rol_meervoud with Some m -> norm m = norm name | None -> false))
-        ft.rollen)
-    doc.feittypen
-
-let reachable_roles_by_name ?to_type env ~self_type ~name =
-  let matches (r : rol) =
-    ((match r.rol_naam with Some n -> norm n = norm name | None -> false)
-    || (match r.rol_meervoud with Some m -> norm m = norm name | None -> false))
-    &&
-    match to_type with
-    | None -> true
-    | Some t -> fills env t r
-  in
-  List.filter_map
-    (fun (_, (ft : feittype)) ->
-      let f r = fills env self_type r in
-      match ft.rollen with
-      | [ a; b ] ->
-          if f a && matches b then Some b else if f b && matches a then Some a else None
-      | [ r ] when ft.wederkerig -> if f r && matches r then Some r else None
-      | _ -> None)
-    env.doc.feittypen
-
-let role_by_name ?to_type env ~self_type ~name =
-  match reachable_roles_by_name ?to_type env ~self_type ~name with
-  | [ r ] -> r
-  | [] -> Value.fault "no role named %S reachable from %S" name self_type
-  | _ -> Value.fault "ambiguous role name %S from %S" name self_type
-
-(* the FAR-side role check's own resolution (RUNTIME-SEMANTICS ch. 5.8a, far
-   half; IR-SPEC ch. 4.6 (t)): [backref] names the role the SUBJECT fills and
-   [filler] the object type at the OTHER end of the same fact type. What the
-   join ranges over is that other end, so that is what this returns — the role
-   the FILLER fills, which is the sister of the one [backref] names.
-
-   It cannot be [reachable_roles_by_name], and the difference is the whole
-   point of the node: that function matches the name at the FAR end, while
-   `backref` names the role on the SUBJECT's own side. Both ends are pinned
-   at once, which is why an ambiguous pair is a fault and not a pick: two fact
-   types relating the same two types through same-named subject roles denote
-   two different relations, and v0 has no tie-break. Shared with the ASP
-   backend so both executors resolve the node identically. *)
-let far_side_role env ~self_type ~filler ~backref =
-  let named (r : rol) =
-    (match r.rol_naam with Some n -> norm n = norm backref | None -> false)
-    || match r.rol_meervoud with Some m -> norm m = norm backref | None -> false
-  in
-  let candidates =
-    List.concat_map
-      (fun (_, (ft : feittype)) ->
-        let f t r = fills env t r in
-        match ft.rollen with
-        | [ a; b ] ->
-            (if f self_type a && named a && f filler b then [ b ] else [])
-            @ (if f self_type b && named b && f filler a then [ a ] else [])
-        | [ r ] when ft.wederkerig ->
-            (* the reciprocal shape: one role is both ends of the hop, so it
-               is its own back-reference *)
-            if f self_type r && named r && f filler r then [ r ] else []
-        | _ -> [])
-      env.doc.feittypen
-  in
-  match candidates with
-  | [ r ] -> r
-  | [] ->
-      Value.fault
-        "no fact type holds %S in a role named %S with %S at the other end: the far-side role \
-         check's filler and back-reference resolve against no single declaration"
-        self_type backref filler
-  | _ ->
-      Value.fault
-        "the far-side role check from %S over %S to %S is ambiguous (%d candidate relations)"
-        self_type backref filler (List.length candidates)
-
-(* the zero-hop self-reference (WF-053, IR-SPEC ch. 4.1a): a single
-   bindingless written step on a reference whose endpoint type equals
-   the subject type may denote the subject ITSELF, by a role the
-   subject fills ("het strandtegoed van de aanmelder", read on the
-   Jutter who is the aanmelder) — then the walk is empty and the own
-   attribute is read, unconditionally (no link is consulted). Order is
-   normative: far-role resolution FIRST (a reciprocal role stays a
-   real hop); the self-reference only at zero far hits, and only under
-   the WF-083 self-denotation test. v0's broader fall-throughs (ANY
-   unresolved name on a same-typed reference, and the ambiguous far
-   match) are deliberately NOT mirrored — both keep the loud fault
-   (tracked delta in the safe direction). Returns None for the empty
-   walk. *)
-let nav_single_step env ~self_type ~endpoint ~name : rol option =
-  match reachable_roles_by_name ~to_type:endpoint env ~self_type ~name with
-  | [ r ] -> Some r
-  | [] when norm endpoint = norm self_type && self_denoting_role env.doc ~self_type name ->
-      None
-  | [] ->
-      if norm endpoint = norm self_type then
-        Value.fault
-          "no role named %S is reachable from %S, and it does not name a role %S itself \
-           fills — not the zero-hop self-reference (WF-053)"
-          name self_type self_type
-      else Value.fault "no role named %S reachable from %S" name self_type
-  | _ -> Value.fault "ambiguous role name %S from %S" name self_type
-
 (* the navigated scalar read's hop walk (WF-053, RUNTIME-SEMANTICS
-   ch. 5.8): resolve the hop roles — the explicit bindings when the node
-   carries them, else the written names, else the type pair — then walk
-   the links. An absent link at any hop short-circuits the whole read to
+   ch. 5.8): the hop roles are the node's bindings (D10), walked link by
+   link. An absent link at any hop short-circuits the whole read to
    None = leeg (ch. 1.2); a to-many hop in a scalar slot faults, never a
-   silent first pick. A zero-hop self-reference (ch. 5.8 rule 4) walks
-   nothing and reads the subject itself. *)
-let nav_target env world (self : World.instance) ~bindings ~navigatie_rol ~navigatie_pad
-    ~endpoint =
-  let roles =
-    match bindings with
-    | Some rbs -> List.map (bound_role env) rbs
-    | None -> (
-        match navigatie_pad with
-        | _ :: _ ->
-            let last = List.length navigatie_pad - 1 in
-            let step (i, cur, acc) name =
-              let name = req "navigation path step" name in
-              let to_type = if i = last then Some endpoint else None in
-              let r = role_by_name ?to_type env ~self_type:cur ~name in
-              (i + 1, Option.value r.rol_objecttype_naam ~default:"", acc @ [ r ])
-            in
-            let _, _, roles = List.fold_left step (0, self.otype, []) navigatie_pad in
-            roles
-        | [] -> (
-            match navigatie_rol with
-            | Some n -> (
-                (* single written step: a far role when one resolves, the
-                   zero-hop self-reference when none does and the name
-                   denotes the subject itself (ch. 4.1a) *)
-                match nav_single_step env ~self_type:self.otype ~endpoint ~name:n with
-                | Some r -> [ r ]
-                | None -> [])
-            | None -> [ connecting_role env ~from_type:self.otype ~to_type:endpoint ]))
-  in
+   silent first pick. *)
+let nav_target env world (self : World.instance) ~(bindings : rol_binding list) ~endpoint =
+  let roles = List.map (bound_role env) bindings in
   List.iter
     (fun (r : rol) ->
       if r.rol_meervoudig then
@@ -806,24 +622,39 @@ let literal_value (waarde : string option) (typ : datatype option) =
 (* [err] deposits a §9.5 error reason for the evaluating rule × subject *)
 (* --- condition evaluation ---------------------------------------------- *)
 
-(* the static type an expression node carries on the wire *)
-let expr_typ : expr -> datatype option = function
+(* the static type of an expression (RUNTIME-SEMANTICS ch. 2.10). A
+   reference carries no type on the wire (B13): it takes the type of the
+   declaration it names — the attribute's declared datatype on the type it
+   is read on (a characteristic reads as a boolean), the parameter's, the
+   dimension cell's attribute's, the binder's binding. Every other node
+   carries its own annotation. *)
+let rec static_type env (e : expr) : datatype option =
+  match e with
+  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } -> (
+      match Ir_v0.Checks.effective_ot env.doc ot with
+      | None -> None
+      | Some o -> (
+          match Ir_v0.Checks.find_ci o.attributen a with
+          | Some dt -> dt
+          | None -> if Ir_v0.Checks.has_kenmerk o a then Some Booleaan else None))
+  | Parameter_ref { parameter = Some p; _ } -> (
+      match Ir_v0.Checks.find_ci env.doc.parameters p with
+      | Some par -> par.par_datatype
+      | None -> None)
+  | Dimensie_cel { attribuut = Some inner; _ } -> static_type env inner
+  | Binder_ref { naam; _ } -> Option.join (SMap.find_opt (norm naam) env.btypes)
+  | Attribuut_ref _ | Parameter_ref _ | Dimensie_cel _ | Variabele_ref _ -> None
   | Literal { typ; _ }
   | Tekst_reeks { typ; _ }
   | Binair { typ; _ }
   | Functie { typ; _ }
   | Afgerond { typ; _ }
   | Begrensd { typ; _ }
-  | Attribuut_ref { typ; _ }
-  | Dimensie_cel { typ; _ }
-  | Parameter_ref { typ; _ }
-  | Variabele_ref { typ; _ }
   | Constante { typ; _ }
   | Expr_onopgelost { typ; _ }
   | Temporal_read { typ; _ }
   | Construct { typ; _ }
   | Match { typ; _ }
-  | Binder_ref { typ; _ }
   | Let { typ; _ }
   | Struct_literal { typ; _ }
   | Field_access { typ; _ }
@@ -843,21 +674,21 @@ let expr_typ : expr -> datatype option = function
 
 (* the ch. 1.2d empty-equality asymmetry routes on the declared operand
    kind — two empty runtime values cannot reveal it (Arith.compare_op) *)
-let static_numeric l r =
+let static_numeric env l r =
   let kind e =
-    match expr_typ e with
+    match static_type env e with
     | Some (Numeriek _ | Percentage _ | Datum_in_dagen | Datum_tijd) -> Some true
     | Some (Tekst | Booleaan | Enumeratie _ | Sum_type _ | List_type _ | Struct_type _) -> Some false
-    | Some (Datatype_onbekend _) | None -> None
+    | None -> None
   in
   match kind l with Some b -> Some b | None -> kind r
 
 (* the ch. 1.2d date row rides the numeric bucket above EXCEPT its
    both-leeg gelijk-aan cell, which is onwaar — v0's Tabel-38 guard on
    the date shape (Arith.compare_op ~static_date) *)
-let static_date l r =
+let static_date env l r =
   let is_date e =
-    match expr_typ e with Some (Datum_in_dagen | Datum_tijd) -> true | _ -> false
+    match static_type env e with Some (Datum_in_dagen | Datum_tijd) -> true | _ -> false
   in
   is_date l || is_date r
 
@@ -906,12 +737,16 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           | _ ->
               Value.fault "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)"
                 name))
-  | Attribuut_ref
-      { attribuut; objecttype = ot; navigatie_rol; navigatie_pad; navigatie_bindingen;
-        set = false; typ; _ }
-    when not (match typ with Some (Datatype_onbekend _) -> true | _ -> false) ->
+  | Attribuut_ref { attribuut; objecttype = ot; navigatie_bindingen; _ } -> (
       let name = req "AttribuutRef.attribuut" attribuut in
       let ot = req "AttribuutRef.objecttype" ot in
+      (* a value position reads a DECLARED attribute of the type the value
+         lives on; any other name — a characteristic, or the role name a
+         count source writes — has no value here, and reading it as an
+         absent attribute would answer leeg for a form no reader writes *)
+      if Ir_v0.Checks.find_ci (objecttype env ot).attributen name = None then
+        Value.fault "%S is not a declared attribute of %S: a value position reads an attribute \
+                     (WF-034)" name ot;
       (* ch. 3.3, mirrored: no point-in-time read exists — a temporal
          attribute in a scalar slot is refused; the only bridges are
          the dedicated collapses (the temporal total handles its own
@@ -922,35 +757,27 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           "temporal attribute %S in a scalar context is refused (ch. 3.3; no point-in-time \
            read exists — the collapses are the only bridges)"
           name;
-      let navigated =
-        (* not navigated when the reference is anchored at the subject
-           itself — which includes an INHERITED member, written at the
-           declaring supertype and read on a subtype instance (ch. 2.2) *)
-        navigatie_rol <> None || navigatie_pad <> [] || not (isa env self.otype ot)
-      in
-      if not navigated then begin
-        (match navigatie_bindingen with
-        | Some _ ->
-            Value.fault "navigation bindings on a reference that does not navigate (WF-053)"
-        | None -> ());
-        World.attr self name
-      end
-      else begin
-        (* the navigated read (ch. 5.8): walk the to-one hops; an absent
-           link anywhere reads the whole operand as leeg *)
-        match
-          nav_target env world self ~bindings:navigatie_bindingen ~navigatie_rol
-            ~navigatie_pad ~endpoint:ot
-        with
-        | None -> Value.Empty
-        | Some target -> World.attr target name
-      end
-  | Attribuut_ref _ ->
-      Value.fault "unsupported AttribuutRef shape (set/sentinel outside a fold)"
+      match navigatie_bindingen with
+      | None ->
+          (* D10: without bindings the read is the subject's own — which
+             includes an INHERITED member, written at the declaring
+             supertype and read on a subtype instance (ch. 2.2) *)
+          if not (isa env self.otype ot) then
+            Value.fault
+              "a read of %S on %S without navigation bindings is the subject's own read, but the \
+               subject is %S (WF-053)"
+              name ot self.otype;
+          World.attr self name
+      | Some bindings -> (
+          (* the navigated read (ch. 5.8): walk the to-one hops; an absent
+             link anywhere reads the whole operand as leeg *)
+          match nav_target env world self ~bindings ~endpoint:ot with
+          | None -> Value.Empty
+          | Some target -> World.attr target name))
   | Binair { op = (Plus | Min) as op; links; rechts; _ }
     when List.exists
            (fun e ->
-             match Option.bind e expr_typ with
+             match Option.bind e (static_type env) with
              | Some (Datum_in_dagen | Datum_tijd) -> true
              | _ -> false)
            [ links; rechts ] -> (
@@ -963,7 +790,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
          datum-tijd. *)
       let le = req "Binair.links" links and re = req "Binair.rechts" rechts in
       let date_typed e =
-        match expr_typ e with Some (Datum_in_dagen | Datum_tijd) -> true | _ -> false
+        match static_type env e with Some (Datum_in_dagen | Datum_tijd) -> true | _ -> false
       in
       let minus = op = Min in
       let dur_e =
@@ -976,11 +803,11 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
             (if minus then "\xe2\x88\x92" else "+")
       in
       let unit_ =
-        match expr_typ dur_e with
+        match static_type env dur_e with
         | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
             match Ir_v0.Checks.time_unit_of_eenheid u with
             | Some tu ->
-                if Ir_v0.Checks.time_unit_sub_day tu && expr_typ le = Some Datum_in_dagen
+                if Ir_v0.Checks.time_unit_sub_day tu && static_type env le = Some Datum_in_dagen
                 then
                   Value.fault
                     "sub-day date arithmetic needs a datum-tijd operand (WF-035)"
@@ -1049,7 +876,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                 | Some tu ->
                     if
                       Ir_v0.Checks.time_unit_sub_day tu
-                      && (expr_typ a = Some Datum_in_dagen || expr_typ b = Some Datum_in_dagen)
+                      && (static_type env a = Some Datum_in_dagen || static_type env b = Some Datum_in_dagen)
                     then
                       Value.fault
                         "sub-day tijdsduur needs datum-tijd operands (WF-038)"
@@ -1131,8 +958,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       | Value.Date d -> (
           match basis with
           | Attribuut_ref
-              { attribuut = Some a; objecttype = Some otn; navigatie_rol = None;
-                navigatie_pad = []; set = false; _ }
+              { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
             when isa env self.otype otn ->
               if not (Ir_v0.Checks.attr_temporal (objecttype env otn) a) then
                 Value.fault "temporal read of %S, which is not a temporal attribute" a;
@@ -1238,7 +1064,23 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                 | None, Some _ ->
                     Value.fault "match arm for unary constructor %S lacks a binder (WF-063)" tag
               in
-              eval_expr { env with locals } world self ~err body)
+              (* the binder's static type is the matched constructor's declared
+                 payload, read off the scrutinee's own type *)
+              let btypes =
+                match binder with
+                | None -> env.btypes
+                | Some b ->
+                    let payload_t =
+                      match static_type env scrutinee with
+                      | Some (Sum_type { constructoren; _ }) -> (
+                          match List.find_opt (fun (c, _) -> norm c = norm tag) constructoren with
+                          | Some (_, p) -> p
+                          | None -> None)
+                      | _ -> None
+                    in
+                    SMap.add (norm b) payload_t env.btypes
+              in
+              eval_expr { env with locals; btypes } world self ~err body)
       | v -> Value.fault "match scrutinee is %s, not a constructor value" (Value.to_string v))
   | Binder_ref { naam; _ } -> (
       (* ch. 9.2: the nearest enclosing binder; WF-064 makes the miss
@@ -1267,7 +1109,8 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       let memo = lazy (eval_expr env world self ~err value) in
       let read () = match Lazy.force memo with Value.Empty -> raise Barrier | v -> v in
       let locals = SMap.add (norm binder) (Later read) env.locals in
-      (try eval_expr { env with locals } world self ~err body with Barrier -> Value.Empty)
+      let btypes = SMap.add (norm binder) (static_type env value) env.btypes in
+      (try eval_expr { env with locals; btypes } world self ~err body with Barrier -> Value.Empty)
   | Struct_literal { velden; _ } ->
       (* ch. 11.1: a record value; a field evaluating leeg propagates — the
          whole literal evaluates leeg (a record carries no hole). The field
@@ -1385,11 +1228,15 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       match eval_expr env world self ~err list with
       | Value.Empty -> Value.Empty
       | Value.Lijst xs ->
+          let element_t =
+            match static_type env list with Some (List_type { element }) -> Some element | _ -> None
+          in
+          let btypes = SMap.add (norm binder) element_t env.btypes in
           Value.Lijst
             (filter_in_order
                (fun x ->
                  let locals = SMap.add (norm binder) (Now x) env.locals in
-                 eval_cond { env with locals } world self ~err condition)
+                 eval_cond { env with locals; btypes } world self ~err condition)
                xs)
       | v -> Value.fault "filter-list operand is %s, not a list value" (Value.to_string v))
   | List_length { list; _ } -> (
@@ -1432,7 +1279,10 @@ and eval_closed_body env world self ~err (parameters : (string * datatype) list)
       (fun acc (pname, _) v -> SMap.add (norm pname) (Now v) acc)
       SMap.empty parameters args
   in
-  eval_expr { env with locals } world self ~err body
+  let btypes =
+    List.fold_left (fun acc (pname, dt) -> SMap.add (norm pname) (Some dt) acc) SMap.empty parameters
+  in
+  eval_expr { env with locals; btypes } world self ~err body
 
 and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
     ~dimensie_selectie ~granulariteit ~bron_rol ~bron_pad =
@@ -1463,28 +1313,29 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       if List.length pad < 2 then
         Value.fault "a bronPad carries at least TWO steps, found %d (WF-102)"
           (List.length pad);
+      (* D8 (i): the set source is the single argument of an instance fold
+         that carries a range — the range is what makes it one *)
       match (element_objecttype, argumenten) with
-      | ( Some _,
-          [ Attribuut_ref { set = true; navigatie_rol = None; navigatie_pad = []; _ } ] ) ->
-          ()
+      | Some _, [ Attribuut_ref { navigatie_bindingen = None; _ } ] -> ()
       | _ ->
           Value.fault
             "a bronPad is admissible only on the set source of a single-argument instance fold \
              (WF-102)"));
   match (kind, argumenten) with
   | ( Totaal,
-      [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_rol = None; navigatie_pad = []; set = false; _ } ] )
-    when isa env self.otype aot
+      [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_bindingen = None; _ } ] )
+    when bron_rol = None && bron_pad = None
+         && isa env self.otype aot
          && Ir_v0.Checks.attr_temporal (objecttype env aot) a -> (
       (* ch. 3.6, the temporal total — the one v0-mirrored bridge from a
          timeline to a scalar. The case carries the asOfDate bucket's
          value (corpus/golden/README.md); the collapse folds that
          one-bucket timeline: value × whole-units of its own grid.
-         [set = false] is load-bearing: a SET operand is the §7.1
-         per-element fold, and on a self-relation (element type = subject
-         type) the two shapes are otherwise indistinguishable here — this
-         arm would then total the SUBJECT's own timeline and answer for
-         the wrong instance. *)
+         The absent range is load-bearing (D8 (iv)): a fold that carries
+         one reads a SET, the §7.1 per-element fold, and on a
+         self-relation (element type = subject type) the two shapes are
+         otherwise indistinguishable here — this arm would then total the
+         SUBJECT's own timeline and answer for the wrong instance. *)
       let ot_decl = objecttype env aot in
       let gran = attr_granulariteit ot_decl a in
       let grid = Timeline.grid_unit env.doc gran in
@@ -1512,7 +1363,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           let span = List.map (fun (s : Timeline.segment) -> (s.s_van, s.s_tot)) tl in
           let rec true_periods_of_cond (c : conditie) =
             match c with
-            | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie; _ } ->
+            | Kenmerk_check { kenmerk = Some k; navigatie_binding = None; negatie; _ } ->
                 if not (kenmerk_temporal ot_decl k) then
                   Value.fault
                     "gedurende over %S, which is not a temporal characteristic (WF-055)" k;
@@ -1522,8 +1373,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                 if negatie then Timeline.complement periods ~span else periods
             | Vergelijking
                 { op; links = Some (Attribuut_ref
-                    { attribuut = Some b; objecttype = Some botn; navigatie_rol = None;
-                      navigatie_pad = []; set = false; _ });
+                    { attribuut = Some b; objecttype = Some botn; navigatie_bindingen = None; _ });
                   rechts = Some grens; periode = None; _ }
               when isa env self.otype botn
                    && Ir_v0.Checks.attr_temporal ot_decl b ->
@@ -1602,48 +1452,41 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
     let keep (i : World.instance) =
       match filter with None -> true | Some c -> eval_cond env world i ~err c
     in
-    (* fold-source shapes are navigation-free — the same narrowing the
-       verifier's WF-047/048 detection uses; a navigated source falls to
-       the fail-fast arm below *)
+    (* D8: the single argument of an instance fold that carries a range is
+       its SET source. Under AANTAL it names the counted role and the count
+       folds the reached INSTANCES; under every value fold and the filled
+       count its attribute is read per contributor, on the element type. A
+       set source never navigates: the range is its whole relation. *)
+    let ranged = bron_rol <> None || bron_pad <> None in
     match (element_objecttype, argumenten) with
-    | ( Some el,
-        [ Attribuut_ref
-            { attribuut; typ = Some (Datatype_onbekend _);
-              navigatie_rol; navigatie_pad = []; _ } ] )
-      when (match navigatie_rol with
-           | None -> true
-           | Some nr ->
-               (* the self-denoting source (WF-083): the written form
-                  names the fold subject by its own role name — no
-                  navigation, the fold stays subject-anchored; an
-                  away-pointing role falls to the loud fault below *)
-               self_denoting_role env.doc ~self_type:self.otype nr) ->
-        (* the row-1 wart: the fold source argument names a role; with an
-           explicit binding the name check is the verifier's (WF-047) *)
-        (match bron_rol with
-        | Some _ -> ()
-        | None -> (
-            let name = req "fold source" attribuut in
-            match reachable_roles_by_name env ~self_type:self.otype ~name with
-            | [ _ ] -> ()
-            | _ :: _ -> Value.fault "ambiguous role name %S from %S" name self.otype
-            | [] ->
-                (* the narrowed type-pair fallback (IR-SPEC ch. 4.3,
-                   RUNTIME-SEMANTICS ch. 3.4a): a written name that
-                   resolves to no declared role — v0's synthesized plural
-                   over a role without a declared one — is admitted iff
-                   exactly one fact type connects the subject to the
-                   element type; [connecting_role] faults loudly on zero
-                   or multiple, and the +s/+en spelling guess itself
-                   stays unmirrored (tracked delta) *)
-                let (_ : rol) = connecting_role env ~from_type:self.otype ~to_type:el in
-                ()));
-        `Instances (filter_in_order keep (fold_members ?binding:bron_rol env world self ~element:el))
-    | ( Some el,
-        [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]
-      ) ->
+    | Some el, [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ]
+      when ranged && kind = Aantal ->
+        (* D9: a count source names a role; a name that is an attribute of
+           the element type reads a value per member, which a count does not
+           fold — refused rather than counted as though it named the role *)
+        (match attribuut with
+        | Some a when Ir_v0.Checks.find_ci (objecttype env el).attributen a <> None ->
+            Value.fault
+              "a count over %S, which is an attribute of %S: a count source names the counted \
+               role, and a value read per member is a value fold's source (WF-093)"
+              a el
+        | _ -> ());
+        `Instances
+          (filter_in_order keep
+             (fold_members ?binding:bron_rol ?path:bron_pad env world self ~element:el))
+    | Some el, [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ] when ranged ->
         let name = req "fold attribute" attribuut in
         let el_decl = objecttype env el in
+        (* D8 (iii)/D9: the source's name is read per contributor, on the
+           element type; a name that is no attribute there — the role a count
+           source names — would read leeg on every member and answer a silent
+           0, so it is refused by name *)
+        if Ir_v0.Checks.find_ci el_decl.attributen name = None then
+          Value.fault
+            "value aggregation over %S, which is no attribute of %S: a value fold reads an \
+             attribute per contributor, and a role name is a count source only a count folds \
+             (WF-093)"
+            name el;
         let members =
           filter_in_order keep
             (fold_members ?binding:bron_rol ?path:bron_pad env world self ~element:el)
@@ -1776,15 +1619,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
              (List.concat_map
                 (fun (b : instance_set_branch) ->
                   let el = req "instance-set branch element type" b.isb_element_type in
-                  let binding =
-                    match b.isb_source_role with
-                    | Some rb -> rb
-                    | None ->
-                        Value.fault
-                          "an instance-set branch over %S carries no sourceRole: a union names \
-                           each selection's relation, it never derives one (WF-110)"
-                          el
-                  in
+                  let binding = b.isb_source_role in
                   let bkeep (i : World.instance) =
                     match b.isb_filter with
                     | None -> true
@@ -1798,12 +1633,17 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           Value.fault "a filter on a listed-operand fold has no v0 form (the subselection \
                        ranges over instances)";
         `Values (map_in_order (eval_expr env world self ~err) args)
+    | Some el, [ _ ] when (not ranged) && kind <> Totaal ->
+        Value.fault
+          "an instance fold over %S carries no range: its relation is written as bronRol or \
+           bronPad and never derived (B12)"
+          el
     | Some _, _ -> Value.fault "unsupported instance-fold source shape"
   in
   let values () =
     match contributors () with
     | `Values vs -> vs
-    | `Instances _ -> Value.fault "value aggregation over a bare role source"
+    | `Instances _ -> Value.fault "value aggregation over instances: only a count folds them"
   in
   match kind with
   | Aantal -> (
@@ -1832,11 +1672,11 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
   | Aantal_gevulde ->
       (* ch. 3.4c: the filled-value count. It reads a VALUE per contributor
          and counts the ones that are not leeg, so [values ()] is the whole
-         of it — a set source hands them over and every other source shape
-         reaches that function's loud refusal, which is where the bare role
-         source lands ("value aggregation over a bare role source"). WF-037
-         puts the same fence on the wire; the refusal here stays as the
-         second line of defence.
+         of it — a set source hands them over, a source that names a role
+         and no attribute is refused in the contributor arm above (WF-093),
+         and every other source shape reaches that function's loud refusal.
+         WF-037 puts the same fence on the wire; the refusal here stays as
+         the second line of defence.
          Never empty: [agg_aantal] over the empty list is 0, the identity
          element of a rule over sets (ch. 1.3), and no `leegwaarde` is
          consulted because WF-037 admits none. *)
@@ -1905,8 +1745,7 @@ and venster_grenzen env world (self : World.instance) ~err vanaf tot =
     (match e with
      | Literal _ -> ()
      | Attribuut_ref
-         { attribuut = Some a; objecttype = Some otn; navigatie_rol = None; navigatie_pad = [];
-           set = false; _ }
+         { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
        when isa env self.otype otn && not (Ir_v0.Checks.attr_temporal (objecttype env otn) a) ->
          ()
      | _ ->
@@ -1952,7 +1791,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let le = req "Vergelijking.links" links and re = req "Vergelijking.rechts" rechts in
       let l = eval_expr env world self ~err le in
       let r = eval_expr env world self ~err re in
-      Arith.compare_op ?static_numeric:(static_numeric le re) ~static_date:(static_date le re) op l
+      Arith.compare_op ?static_numeric:(static_numeric env le re) ~static_date:(static_date env le re) op l
         r
   (* ch. 3.9, the whole-period VALUE test — the second of the chapter's two
      specified collapses, and the door ch. 3.3's scalar refusal must not
@@ -1969,8 +1808,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let le = req "Vergelijking.links" links and re = req "Vergelijking.rechts" rechts in
       let temporal_side = function
         | Attribuut_ref
-            { attribuut = Some a; objecttype = Some otn; navigatie_rol = None;
-              navigatie_pad = []; set = false; _ }
+            { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
           when isa env self.otype otn && Ir_v0.Checks.attr_temporal (objecttype env otn) a ->
             Some a
         | _ -> None
@@ -1994,8 +1832,8 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let g : Ir_v0.Ast.granulariteit = if gp.gp_jaar then Jaar else Maand in
       let verdict =
         Timeline.geheel_periode_waarde g ~tl:tested (fun v ->
-            Arith.compare_op ?static_numeric:(static_numeric le re)
-              ~static_date:(static_date le re) op v grens)
+            Arith.compare_op ?static_numeric:(static_numeric env le re)
+              ~static_date:(static_date env le re) op v grens)
       in
       (* ch. 3.9: "Negation complements the folded result" *)
       if gp.gp_niet then not verdict else verdict
@@ -2062,13 +1900,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          executor reads one inside the rule fixpoint"
         (Option.value dagsoort ~default:"?")
   | Predicaat _ -> Value.fault "predicate kind not implemented in this card"
-  | Kenmerk_check { kenmerk; navigatie = None; negatie; navigatie_binding; eigenaar; periode; _ }
-    ->
-      (match navigatie_binding with
-      | Some _ ->
-          Value.fault
-            "navigation binding on a characteristic check that does not navigate (WF-053)"
-      | None -> ());
+  | Kenmerk_check { kenmerk; navigatie_binding = None; negatie; eigenaar; periode; _ } ->
       owner_hosts env.doc ~otype:self.otype ~kenmerk eigenaar;
       let k = req "KenmerkCheck.kenmerk" kenmerk in
       (* [owner_hosts] above has already established that an `eigenaar`, where
@@ -2084,8 +1916,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
             Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)" k;
           let has = World.has_char self k in
           if negatie then not has else has)
-  | Kenmerk_check
-      { kenmerk; navigatie = Some nav; negatie; navigatie_binding; eigenaar; periode; _ } -> (
+  | Kenmerk_check { kenmerk; negatie; navigatie_binding = Some rb; eigenaar; periode; _ } -> (
       (* the navigated check (ch. 5.8): one to-one hop. The v0 asymmetry,
          mirrored deliberately: an ABSENT link makes the check false for
          the positive AND the negated form — unlike comparison and
@@ -2098,27 +1929,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          the scalar arm — the characteristic itself still lives on the far side *)
       owner_hosts env.doc ~otype:self.otype ~kenmerk eigenaar;
       let k = req "KenmerkCheck.kenmerk" kenmerk in
-      let role =
-        match navigatie_binding with
-        | Some rb -> bound_role env rb
-        | None ->
-            (* deferred, loudly: the ch. 4.1a zero-hop self-reference is
-               scoped to the attribute read — v0's resolver never
-               produces a navigated check whose written role denotes the
-               subject itself, so a self-denoting name here faults
-               explicitly rather than silently reading the own
-               characteristic *)
-            if
-              reachable_roles_by_name env ~self_type:self.otype ~name:nav = []
-              && self_denoting_role env.doc ~self_type:self.otype nav
-            then
-              Value.fault
-                "the navigated characteristic check's role %S names a role %S itself fills \
-                 — the zero-hop self-reference does not extend to the characteristic check \
-                 (deferred; WF-053, IR-SPEC ch. 4.1a)"
-                nav self.otype
-            else role_by_name env ~self_type:self.otype ~name:nav
-      in
+      let role = bound_role env rb (* D53: the hop is the binding *) in
       if role.rol_meervoudig then
         Value.fault
           "the navigated check reaches the to-many role %S in a scalar condition (WF-053)"
@@ -2203,26 +2014,29 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
   | Regelversie { inconsistent = false; _ } ->
       Value.fault
         "'is gevuurd' is not implemented (row 30: decided as a dialect-only fixpoint predicate)"
-  | Rollidmaatschap { ander_te_filler; negatie; _ } ->
-      (* ch. 5.8a near-side rolcheck ("hij is een <rol>"): the subject fills
-         the role iff its to-ONE reference to the OTHER end of the fact type
-         is set — a null-test on that reference (v0 DrlTranspiler §8.1.7,
-         mirrored). The written role name is presentation; the fact-type
-         route is the connecting role to [ander_te_filler] (v0's
-         verbindendeRol). A to-MANY connecting reference is v0's marker (the
-         far-side needs an exists-join, not a scalar null-test), refused
-         loudly here — never silently decided. The absent reference is leeg:
-         false for the positive form, true for the "is geen" negation. *)
-      let other = req "Rollidmaatschap.anderTeFiller" ander_te_filler in
-      let role = connecting_role env ~from_type:self.otype ~to_type:other in
-      if role.rol_meervoudig then
+  | Role_membership { fact_type; role; negated; _ } ->
+      (* ch. 5.8a, the role check (D11): true iff a link of [fact_type]
+         exists in which the subject fills [role] — an existence question
+         over the relation, never a count and never a pick, so the number of
+         links the far end holds is no part of it; [negated]: no such link
+         exists. The subject's links are read over the OTHER role of the
+         fact type, the ones the loader materialises from either spelling of
+         a supplied link (ch. 5.7a); a reciprocal fact type's one role is its
+         own other end. *)
+      let own, other =
+        match
+          Ir_v0.Checks.resolve_binding { doc = env.doc } { rb_feittype = fact_type; rb_rol = role }
+        with
+        | Ok (_, own, other) -> (own, other)
+        | Error e -> Value.fault "role check: %s" e
+      in
+      if not (fills env self.otype own) then
         Value.fault
-          "the rolcheck's connecting reference to %S is the to-many role %S (ch. 5.5): the \
-           near-side null-test needs a to-one reference — v0 markers it"
-          other
-          (Option.value role.rol_naam ~default:"?");
-      let fills = role_links world self role <> [] in
-      if negatie then not fills else fills
+          "role check: the subject %S does not fill the role %S of %S, so no link of it can \
+           hold the subject there (WF-034)"
+          self.otype role fact_type;
+      let exists = role_links world self other <> [] in
+      if negated then not exists else exists
   (* ch. 3.9a, the QUANTIFIER FOLD: a condition quantified over the members
      of a linked instance set. The contributors are the instance fold's,
      down to the helper — [fold_members] decides the population once, for
@@ -2329,49 +2143,6 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
                 read (if hit then hits + 1 else hits) (left - 1) rest)
       in
       read 0 n members
-  | Verre_rollidmaatschap { filler; backref; negatie; _ } ->
-      (* ch. 5.8a FAR-side rolcheck ("de Wachtpost heeft een wachtjutter"):
-         the same §8.1.7 sentence read from the other end. The subject does
-         NOT fill the named role; it is the relation's other end, and the
-         check asks whether ANY object of [filler] stands in that relation to
-         it — an existence question over the relation, never a count and
-         never a first pick.
-
-         It reads the RELATION, not a direction, and that is ch. 5.7a's law:
-         a supplied link establishes the relation itself and both roles read
-         it, the loader materialising the leg the case did not spell. So the
-         join is the subject's own links over the role the filler fills, the
-         same reading every other navigation here uses — a second,
-         instance-scanning route would be a second reading of one relation
-         and could come apart from it. The bean-model executors ask the
-         mirror-image question (does some filler's stored reference point
-         back at this subject), which is the same relation seen from the side
-         their fact model happens to store.
-
-         The FILLER is read TWICE and both readings are load-bearing. It
-         resolves the pair, and it then FILTERS what the relation reached:
-         an object counts only where its own type is ⊑ the named filler
-         (ch. 2.2, extensionally — the same one-sided test [fills] applies
-         to a role). Dropping the second reading makes the node answer the
-         ROLE's whole population instead of the named one, which is a
-         different sentence wherever the filler is a strict SUBTYPE of the
-         role's declared type — measured 2026-09-20 on
-         `jutterswet-postbezetting` cases 1 and 3, where the role-wide
-         reading reports a post manned by a Strandjutter it does not have,
-         verifier-clean and against both Drools branches.
-
-         "heeft geen" is the plain complement — unlike the navigated
-         characteristic check of ch. 5.8, nothing sits behind a hop here, so
-         a relation with no filler OF THAT CLASS makes the negated form
-         true. It rides the same filtered list, so the two forms can never
-         disagree about which objects count. *)
-      let f = req "VerreRollidmaatschap.filler" filler in
-      let b = req "VerreRollidmaatschap.backref" backref in
-      let role = far_side_role env ~self_type:self.otype ~filler:f ~backref:b in
-      let has_one =
-        List.exists (fun (i : World.instance) -> isa env i.otype f) (role_links world self role)
-      in
-      if negatie then not has_one else has_one
   | Periode_conditie { vanaf; tot; tot_inclusief; _ } ->
       (* ch. 3.10, the SCALAR target's evaluation-date gate — the chapter's
          first case, in its own six clauses: vanaf inclusive, tot exclusive,
@@ -2506,8 +2277,7 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
       { kind = Tijdsevenredig_deel;
         argumenten =
           [ Attribuut_ref
-              { attribuut = Some b; objecttype = Some bot; navigatie_rol = None;
-                navigatie_pad = []; set = false; _ } ];
+              { attribuut = Some b; objecttype = Some bot; navigatie_bindingen = None; _ } ];
         filter = Some c; granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ }
     when norm bot = norm ot ->
       let target_gran =
@@ -2534,7 +2304,7 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
       clip_member_qualifications c;
       let true_periods =
         match c with
-        | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; _ } ->
+        | Kenmerk_check { kenmerk = Some k; navigatie_binding = None; negatie = false; _ } ->
             if not (kenmerk_temporal ot_decl k) then
               Value.fault "gedurende over %S, which is not a temporal characteristic (WF-056)" k;
             Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
@@ -2574,7 +2344,7 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
       clip_member_qualifications c;
       let true_periods =
         match c with
-        | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; _ } ->
+        | Kenmerk_check { kenmerk = Some k; navigatie_binding = None; negatie = false; _ } ->
             if not (kenmerk_temporal ot_decl k) then
               Value.fault "gedurende over %S, which is not a temporal characteristic (WF-058)" k;
             Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
@@ -2638,7 +2408,6 @@ let kenmerkwaarde_constant_waar (r : resolved_regel) ~ot ~attr =
         | Sum_type _ -> "SumType"
         | List_type _ -> "ListType"
         | Struct_type _ -> "StructType"
-        | Datatype_onbekend _ -> "an unknown datatype"
       in
       let waarde =
         match w with
@@ -2816,7 +2585,7 @@ let run_verdeling env world (v : resolved_verdeling) =
           let recipients =
             List.filter
               (fun (i : World.instance) -> isa env i.otype doel_type)
-              (linked ?binding:v.verbindende_rol env w src ~to_type:doel_type)
+              (linked env w src ~binding:v.verbindende_rol)
           in
           let recs =
             List.map
@@ -2873,25 +2642,17 @@ let run_verdeling env world (v : resolved_verdeling) =
    over existing links, and link anchor and target in the created
    relation — both ends are written, so navigation from either side
    sees the link. Naturally idempotent: an already-present link is a
-   no-op write, so a target reached along two paths links once. Only
-   the symbolic extension form (IR-SPEC ch. 3.4, WF-028) carries the
-   relational content; a bean-field-only v0 record faults. *)
+   no-op write, so a target reached along two paths links once. The
+   symbolic form (IR-SPEC ch. 3.4, WF-028) is the whole of the relational
+   content; the wire requires it (B7). *)
 let run_feit_creatie env world (fc : resolved_feit_creatie) =
   if not (applies env fc.fc_geldigheid) then (world, false)
   else begin
     let name = Option.value fc.fc_naam ~default:"<feitcreatie>" in
-    let ftn =
-      match fc.fc_feittype with
-      | Some f -> f
-      | None ->
-          Value.fault
-            "fact creation %S carries only bean fields; the symbolic form (IR-SPEC ch. 3.4) is \
-             what executes"
-            name
-    in
+    let ftn = fc.fc_feittype in
     let role rname = bound_role env { rb_feittype = ftn; rb_rol = rname } in
-    let anker_rol = role (req "FeitCreatie.ankerRol" fc.anker_rol) in
-    let doel_rol = role (req "FeitCreatie.doelRol" fc.doel_rol) in
+    let anker_rol = role fc.anker_rol in
+    let doel_rol = role fc.doel_rol in
     (* ch. 5.5: the host splits the guard into the two readings this position
        has. On the doel it FILTERS the targets — so the chain is walked first
        and the condition asked once per target — and on the anker it GATES the
@@ -2910,10 +2671,10 @@ let run_feit_creatie env world (fc : resolved_feit_creatie) =
           in
           let mids =
             List.fold_left
-              (fun insts (t : tussenstap) -> hop insts (req "Tussenstap.rolBinding" t.ts_rol))
+              (fun insts (t : tussenstap) -> hop insts t.ts_rol)
               [ self ] fc.tussenstappen
           in
-          let targets = hop mids (req "FeitCreatie.joinRol" fc.join_rol) in
+          let targets = hop mids fc.join_rol in
           let targets =
             match doel_guard with
             | None -> targets
@@ -3311,14 +3072,12 @@ let run_uniciteit env world (u : resolved_uniciteit) =
        parent; an instance without a scope parent does not participate —
        the pinned runtime's silent narrowing, mirrored and recorded *)
     let scope_of =
-      match (u.scope_rol, u.scope_veld) with
-      | Some rb, _ ->
+      (* D12: the scope is the binding; a uniqueness without it is unscoped *)
+      match u.scope_rol with
+      | Some rb ->
           let role = bound_role env rb in
           Some (fun i -> role_links world i role)
-      | None, Some sv ->
-          let role = role_by_name env ~self_type:subject ~name:sv in
-          Some (fun i -> role_links world i role)
-      | None, None -> None
+      | None -> None
     in
     let keys = List.map (req "sleutel") u.sleutels in
     (* a duplicate non-empty key (ch. 5.6): rows with an empty key
@@ -3462,7 +3221,7 @@ let vintage_read_params (doc : document) : string list =
     match c with
     | Vergelijking { links; rechts; _ } -> opt links; opt rechts
     | Predicaat { operand; _ } -> opt operand
-    | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
+    | Kenmerk_check _ | Role_membership _ | Regelversie _
     | Conditie_onopgelost _ ->
         ()
     | Periode_conditie { vanaf; tot; _ } -> opt vanaf; opt tot

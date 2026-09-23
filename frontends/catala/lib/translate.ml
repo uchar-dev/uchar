@@ -242,21 +242,34 @@ and struct_type_of (enums : enum_ctx) (structs : struct_ctx) (name : StructName.
 
 let is_bool_dt = function I.Booleaan -> true | _ -> false
 
-(* the declared datatype riding an already-built IR expression — the mirror
-   of the verifier's [typ_of_expr] (checks.ml). Used to set a [Let]'s type to
-   its body's type (WF-076) and an [IfThenElse]'s type to its then-branch
-   (WF-069), by construction rather than by re-inference. *)
+(* A reference carries no type on the wire (B13): its declaration is the one
+   source. The translator knows that declaration where it BUILDS a reference,
+   so it records the datatype there, keyed by the node itself (physical
+   identity — two equal-looking binder reads in different scopes may differ),
+   and [ir_typ] reads it back. *)
+let ref_types : (I.expr * I.datatype option) list ref = ref []
+
+let typed_ref (e : I.expr) (dt : I.datatype option) : I.expr =
+  ref_types := (e, dt) :: !ref_types;
+  e
+
+(* the declared datatype riding an already-built IR expression. Used to set
+   a [Let]'s type to its body's type (WF-076) and an [IfThenElse]'s type to
+   its then-branch (WF-069), by construction rather than by re-inference. *)
 let ir_typ (e : I.expr) : I.datatype option =
   match e with
   | Literal { typ; _ } | Tekst_reeks { typ; _ } | Binair { typ; _ }
   | Functie { typ; _ } | Afgerond { typ; _ } | Begrensd { typ; _ }
-  | Attribuut_ref { typ; _ } | Dimensie_cel { typ; _ } | Parameter_ref { typ; _ }
-  | Variabele_ref { typ; _ } | Constante { typ; _ } | Expr_onopgelost { typ; _ }
+  | Constante { typ; _ } | Expr_onopgelost { typ; _ }
   | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
-  | Binder_ref { typ; _ } | Struct_literal { typ; _ } | Field_access { typ; _ }
+  | Struct_literal { typ; _ } | Field_access { typ; _ }
   | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
   | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
   | Filter_list { typ; _ } | List_length { typ; _ } -> typ
+  | Attribuut_ref _ | Dimensie_cel _ | Parameter_ref _ | Variabele_ref _ | Binder_ref _ -> (
+      match List.find_opt (fun (r, _) -> r == e) !ref_types with
+      | Some (_, dt) -> dt
+      | None -> failwith "Translate.ir_typ: a reference built without its declared datatype")
   (* neither a Lambda nor an instance-set union is a value: they carry no
      wire type at all *)
   | Lambda _ | Instance_set_union _ -> None
@@ -610,7 +623,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
            BinderRef (RUNTIME-SEMANTICS ch. 9.2/10.2); deliberately distinct
            from VariabeleRef (row 24) *)
         match Var.Map.find_opt v env with
-        | Some (nm, dt) -> Binder_ref { naam = nm; typ = Some dt; bron = Some nm }
+        | Some (nm, dt) -> typed_ref (Binder_ref { naam = nm; bron = Some nm }) (Some dt)
         | None -> refuse "unbound variable %S in a value position" (Bindlib.name_of v))
     | ELocation (ScopelangScopeVar { name }) -> read_var ~operand ~in_body name
     | EAppOp { op; args; _ } -> (
@@ -956,11 +969,12 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         let acc_name = fresh_acc_name [ an; xn ] in
         let env_step = Var.Map.add rvars.(1) (xn, elt) (Var.Map.add rvars.(0) (an, elt) env) in
         let present_body = some_of (value_expr ~in_body:true ~in_let:false ~env:env_step rbody) in
-        let absent_body = some_of (Binder_ref { naam = xn; typ = Some elt; bron = Some xn }) in
+        let absent_body = some_of (typed_ref (Binder_ref { naam = xn; bron = Some xn }) (Some elt)) in
         let step : I.expr =
           Match
             { typ = Some opt;
-              scrutinee = Binder_ref { naam = acc_name; typ = Some opt; bron = Some acc_name };
+              scrutinee =
+                typed_ref (Binder_ref { naam = acc_name; bron = Some acc_name }) (Some opt);
               arms = [ (none_c, None, absent_body); (some_c, Some an, present_body) ];
               bron = Some "de volgende vouwstap" }
         in
@@ -1375,12 +1389,12 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
         let callee_role = subscope_callee_role v in
         let bron = Printf.sprintf "de %s van de %s" fld_name (M.remove (ScopeVar.get_info v)) in
         Some
-          (Attribuut_ref
-             { attribuut = Some fld_name; objecttype = Some callee_type; onderwerp_bron = Some bron;
-               navigatie_rol = Some callee_role; typ = Some fld_ty; bron = Some bron; set = false;
-               navigatie_pad = [];
-               navigatie_bindingen =
-                 Some [ { rb_feittype = subscope_feittype v; rb_rol = callee_role } ] })
+          (typed_ref
+             (Attribuut_ref
+                { attribuut = Some fld_name; objecttype = Some callee_type; bron = Some bron;
+                  navigatie_bindingen =
+                    Some [ { rb_feittype = subscope_feittype v; rb_rol = callee_role } ] })
+             (Some fld_ty))
   in
   (* a declared subscope's per-field output read in CONDITION position (IR-SPEC
      ch. 4.1a/5, WF-053): an [EStructAccess] on the instance variable whose
@@ -1421,7 +1435,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
         let bron = Printf.sprintf "de %s is %s" (M.remove (ScopeVar.get_info v)) fld_name in
         Some
           (Kenmerk_check
-             { kenmerk = Some fld_name; navigatie = Some callee_role; negatie = false;
+             { kenmerk = Some fld_name; negatie = false;
                eigenaar = None; periode = None; bron = Some bron;
                navigatie_binding = Some { I.rb_feittype = subscope_feittype v; rb_rol = callee_role } })
   in
@@ -1478,16 +1492,16 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
      lives on the callee (the defaults-group subject), so its caller reads
      navigate callee -> caller. *)
   let attr_ref ?nav vname dt : I.expr =
-    let navigatie_rol, navigatie_bindingen =
+    let navigatie_bindingen =
       match nav with
-      | None -> (None, None)
-      | Some (ft, rol) -> (Some rol, Some [ { I.rb_feittype = ft; rb_rol = rol } ])
+      | None -> None
+      | Some (ft, rol) -> Some [ { I.rb_feittype = ft; rb_rol = rol } ]
     in
-    Attribuut_ref
-      { attribuut = Some vname; objecttype = Some ot_name;
-        onderwerp_bron = Some ("de " ^ vname); navigatie_rol;
-        typ = Some dt; bron = Some ("de " ^ vname); set = false;
-        navigatie_pad = []; navigatie_bindingen }
+    typed_ref
+      (Attribuut_ref
+         { attribuut = Some vname; objecttype = Some ot_name; bron = Some ("de " ^ vname);
+           navigatie_bindingen })
+      (Some dt)
   in
   (* the shared scalar-read check (subscope/closed-body/boolean-carriage/
      empty-operand), returning the declared name and datatype; [read_var] wraps
@@ -1569,8 +1583,8 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   let check_var ~in_body name : I.conditie =
     let k = kenmerk_read ~in_body name in
     Kenmerk_check
-      { kenmerk = Some k; navigatie = None; negatie = false;
-        eigenaar = None; periode = None; bron = Some k; navigatie_binding = None }
+      { kenmerk = Some k; negatie = false; eigenaar = None; periode = None; bron = Some k;
+        navigatie_binding = None }
   in
   let lookup_var v = try Some (snd (lookup v)) with Not_found -> None in
   let value_expr, cond_expr =
@@ -1591,7 +1605,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       ~check_var:(fun ~in_body name ->
         let k = kenmerk_read ~in_body name in
         Kenmerk_check
-          { kenmerk = Some k; navigatie = Some rol; negatie = false; eigenaar = None;
+          { kenmerk = Some k; negatie = false; eigenaar = None;
             periode = None; bron = Some k;
             navigatie_binding = Some { I.rb_feittype = feittype; rb_rol = rol } })
       ~lookup_var ~read_subscope_output ~check_subscope_output ~fused_map:(fun _ -> None)
@@ -2024,7 +2038,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
         let v = M.remove name in
         if ScopeVar.Set.mem v input_set then
           let nm = M.remove (ScopeVar.get_info v) in
-          Binder_ref { naam = nm; typ = Some (dt_of v); bron = Some nm }
+          typed_ref (Binder_ref { naam = nm; bron = Some nm }) (Some (dt_of v))
         else
           refuse
             "a nested subscope in %S forwards %S, which is not one of %S's inputs: a nested \
@@ -2090,7 +2104,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
         let v = M.remove name in
         if ScopeVar.Set.mem v input_set then
           let nm = M.remove (ScopeVar.get_info v) in
-          Binder_ref { naam = nm; typ = Some (dt_of v); bron = Some nm }
+          typed_ref (Binder_ref { naam = nm; bron = Some nm }) (Some (dt_of v))
         else
           refuse
             "per-element callee %S reads %S, which is not one of its inputs (non-input read): \
@@ -2273,7 +2287,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
        for the walks that must see it rather than a silent leaf *)
     | Kwantorvouw { kv_filter; kv_toets; _ } ->
         Option.iter fence_cond kv_filter; Option.iter fence_cond kv_toets
-    | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _
+    | Kenmerk_check _ | Role_membership _
     | Regelversie _ | Conditie_onopgelost _ -> ()
   in
   fence_expr body;

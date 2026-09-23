@@ -1,4 +1,4 @@
-(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its M1 shape.
+(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L2 shape.
 
    ARCHITECTURE. The plugin builds typed [Ir_v0.Ast] values and hands
    them to exactly one serialiser — this module — so schema conformity is
@@ -106,7 +106,6 @@ let rec datatype (d : datatype) : json =
              (List.map
                 (fun (nm, dt) -> `Assoc [ ("name", s nm); ("datatype", datatype dt) ])
                 velden)) ]
-  | Datatype_onbekend { reden } -> node "Onbekend" [ ("reden", so reden) ]
 
 and eenheid_j (e : eenheid) : json =
   node "Eenheid"
@@ -139,27 +138,21 @@ let rec expr (e : expr) : json =
       node "Afgerond"
         [ ("basis", opt expr basis); ("modus", s (afrond_modus_s modus));
           ("decimalen", i decimalen); typ t; bron br ]
-  | Attribuut_ref
-      { attribuut; objecttype; onderwerp_bron; navigatie_rol; typ = t; bron = br;
-        set; navigatie_pad; navigatie_bindingen = nb } ->
-      (* navigatieBindingen is an extension field (the loader admits it via
-         [ext]) — written only when the reference actually navigates (Phase 5c
-         subscope lowering: the caller reads a callee output over the back-link) *)
+  | Attribuut_ref { attribuut; objecttype; bron = br; navigatie_bindingen = nb } ->
+      (* a reference writes no type (B13). navigatieBindingen is written only
+         when the reference actually navigates (Phase 5c subscope lowering:
+         the caller reads a callee output over the back-link); without it the
+         read is the subject's own (D10) *)
       let ext =
         match nb with
         | None -> []
         | Some hops -> [ ("navigatieBindingen", `List (List.map rol_binding hops)) ]
       in
       node "AttribuutRef"
-        ([ ("attribuut", so attribuut); ("objecttype", so objecttype);
-           ("onderwerpBron", so onderwerp_bron); ("navigatieRol", so navigatie_rol);
-           typ t; bron br; ("set", b set);
-           ("navigatiePad", str_opt_list navigatie_pad) ]
-        @ ext)
-  | Parameter_ref { parameter; typ = t; bron = br } ->
-      node "ParameterRef" [ ("parameter", so parameter); typ t; bron br ]
-  | Variabele_ref { naam; typ = t; bron = br } ->
-      node "VariabeleRef" [ ("naam", so naam); typ t; bron br ]
+        ([ ("attribuut", so attribuut); ("objecttype", so objecttype); bron br ] @ ext)
+  | Parameter_ref { parameter; bron = br } ->
+      node "ParameterRef" [ ("parameter", so parameter); bron br ]
+  | Variabele_ref { naam; bron = br } -> node "VariabeleRef" [ ("naam", so naam); bron br ]
   | Constante { naam; typ = t; bron = br } ->
       node "Constante" [ ("naam", so naam); typ t; bron br ]
   (* The translator builds no marker, and a written one would need a WARNING
@@ -182,8 +175,7 @@ let rec expr (e : expr) : json =
                       ("body", expr body) ])
                 arms));
           bron br ]
-  | Binder_ref { naam; typ = t; bron = br } ->
-      node "BinderRef" [ ("name", s naam); typ t; bron br ]
+  | Binder_ref { naam; bron = br } -> node "BinderRef" [ ("name", s naam); bron br ]
   | List_literal { typ = t; elements; bron = br } ->
       node "ListLiteral"
         [ ("type", opt datatype t); ("elements", `List (List.map expr elements)); bron br ]
@@ -263,19 +255,17 @@ and conditie (c : conditie) : json =
         [ ("kwantor", s (kwantor_s kwantor)); ("drempel", i drempel);
           ("onderdelen", `List (List.map conditie onderdelen)); bron br ]
   | Kenmerk_check
-      { kenmerk; navigatie; negatie; eigenaar; periode = p; bron = br;
-        navigatie_binding = nb } ->
-      (* navigatieBinding is an extension field (the loader admits it via [ext])
-         — written whole or not at all (schema: never null), only when the check
-         actually navigates (ch. 4.1a/5: a caller reads a callee characteristic
-         over the synthesised back-link — the condition sibling of a navigated
-         AttribuutRef) *)
+      { kenmerk; negatie; eigenaar; periode = p; bron = br; navigatie_binding = nb } ->
+      (* navigatieBinding is written whole or not at all (schema: never null),
+         only when the check actually navigates (ch. 4.1a/5: a caller reads a
+         callee characteristic over the synthesised back-link — the condition
+         sibling of a navigated AttribuutRef); it is the hop (D53) *)
       let ext =
         match nb with None -> [] | Some rb -> [ ("navigatieBinding", rol_binding rb) ]
       in
       node "Kenmerk"
-        ([ ("kenmerk", so kenmerk); ("navigatie", so navigatie);
-           ("negatie", b negatie); ("eigenaar", so eigenaar); periode p; bron br ]
+        ([ ("kenmerk", so kenmerk); ("negatie", b negatie); ("eigenaar", so eigenaar);
+           periode p; bron br ]
         @ ext)
   (* no marker either: see the expression arm *)
   | Conditie_onopgelost _ ->

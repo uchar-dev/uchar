@@ -193,7 +193,7 @@ let () =
        m1_doc
          ~regels:
            (regel ~voorwaarde:"null"
-              ~waarde:{|{ "node": "Onopgelost", "type": null, "bron": "de onbekende waarde" }|})
+              ~waarde:{|{ "node": "Onopgelost", "bron": "de onbekende waarde" }|})
          (),
        "expression node not produced by the F-logic slice");
       ("a condition Onopgelost",

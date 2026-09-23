@@ -335,11 +335,10 @@ let rec low_expr m (ctx : ctx) ~line (e : expr) : A.expr =
       | Some e' -> low_expr m ctx ~line e'
       | None -> refuse ~line "the unbound variable ?%s" v)
   | E_path (v, [ attr ]) when v = ctx.c_var ->
-      let dt = attr_type m ~line ctx.c_subject attr in
+      (* the read writes no type (B13); it must still resolve on the subject *)
+      ignore (attr_type m ~line ctx.c_subject attr);
       A.Attribuut_ref
-        { attribuut = Some attr; objecttype = Some ctx.c_subject;
-          onderwerp_bron = Some ("?" ^ v); navigatie_rol = None; typ = Some dt;
-          bron = Some (show_expr e); set = false; navigatie_pad = [];
+        { attribuut = Some attr; objecttype = Some ctx.c_subject; bron = Some (show_expr e);
           navigatie_bindingen = None }
   | E_path (v, _) when v <> ctx.c_var ->
       refuse ~line "the path %s does not start at the rule's subject ?%s" (show_expr e) ctx.c_var
@@ -352,15 +351,17 @@ let rec low_expr m (ctx : ctx) ~line (e : expr) : A.expr =
         | "+" -> A.Plus | "-" -> A.Min | "*" -> A.Maal | "/" -> A.Gedeeld_door
         | _ -> refuse ~line "the operator %s" op
       in
-      let typ = join_num ~line (type_of ~line ll) (type_of ~line rr) in
+      let typ = join_num ~line (type_of m ~line ll) (type_of m ~line rr) in
       A.Binair { op = op'; links = Some ll; rechts = Some rr; typ = Some typ;
                  bron = Some (show_expr e) }
   | E_agg (kind, _, operand, goals) -> low_agg m ctx ~line ~kind ~operand ~goals ~whole:e
 
-and type_of ~line (e : A.expr) =
+(* an attribute read takes its declaration's type — the wire writes none on
+   a reference (B13) — and every other operand carries its own *)
+and type_of m ~line (e : A.expr) =
   match e with
-  | A.Literal { typ = Some t; _ } | A.Attribuut_ref { typ = Some t; _ }
-  | A.Binair { typ = Some t; _ } | A.Functie { typ = Some t; _ } -> t
+  | A.Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } -> attr_type m ~line ot a
+  | A.Literal { typ = Some t; _ } | A.Binair { typ = Some t; _ } | A.Functie { typ = Some t; _ } -> t
   | _ -> refuse ~line "an operand without a derivable type"
 
 and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
@@ -396,10 +397,7 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
           argumenten =
             [ A.Attribuut_ref
                 { attribuut = Some role; objecttype = Some ctx.c_subject;
-                  onderwerp_bron = Some ("?" ^ v); navigatie_rol = None;
-                  typ = Some (A.Datatype_onbekend { reden = Some "niet opgelost" });
-                  bron = Some (show_expr operand); set = false; navigatie_pad = [];
-                  navigatie_bindingen = None } ];
+                  bron = Some (show_expr operand); navigatie_bindingen = None } ];
           element_objecttype = Some el; leegwaarde = None; filter = None;
           dimensie_selectie = None;
           typ = Some (num ~teken:A.Niet_negatief ~geheel:true ~decimalen:0 ());
@@ -421,10 +419,8 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
         { kind = A.Som;
           argumenten =
             [ A.Attribuut_ref
-                { attribuut = Some attr; objecttype = Some el;
-                  onderwerp_bron = Some (show_expr (E_path (v, [ role ])));
-                  navigatie_rol = None; typ = Some dt; bron = Some (show_expr operand);
-                  set = true; navigatie_pad = []; navigatie_bindingen = None } ];
+                { attribuut = Some attr; objecttype = Some el; bron = Some (show_expr operand);
+                  navigatie_bindingen = None } ];
           element_objecttype = Some el;
           leegwaarde =
             Some (A.Literal { waarde = Some zero; typ = Some (literal_type zero);
@@ -508,7 +504,7 @@ let rec low_cond m ctx (g : goal) : A.conditie =
         refuse ~line "%s is neither a declared object type nor a characteristic of %s" k
           ctx.c_subject;
       A.Kenmerk_check
-        { kenmerk = Some k; navigatie = None; negatie = false; eigenaar = None;
+        { kenmerk = Some k; negatie = false; eigenaar = None;
           periode = None; bron = Some (show_goal g); navigatie_binding = None }
   | G_cmp (op, l, r, line) when as_quantification ~line l <> None ->
       low_kwantorvouw m ctx ~line ~op ~rhs:r
@@ -746,14 +742,12 @@ let low_rule m (r : rule) : definition =
 
 let no_geldigheid = Some { A.geld_vanaf = None; geld_tot = None }
 
-let doel m ~subject ~attr ~kenmerk ~bron ~var ~line =
-  (* a characteristic's target type is the boolean the assignment writes;
-     an attribute's is its declaration *)
-  let dt = if kenmerk then A.Booleaan else attr_type m ~line subject attr in
+let doel m ~subject ~attr ~kenmerk ~bron ~line =
+  (* the target writes no type of its own (B13); an attribute target still
+     resolves on its declaration, which refuses an undeclared one here *)
+  if not kenmerk then ignore (attr_type m ~line subject attr);
   A.Attribuut_ref
-    { attribuut = Some attr; objecttype = Some subject;
-      onderwerp_bron = Some ("?" ^ var); navigatie_rol = None; typ = Some dt;
-      bron = Some bron; set = false; navigatie_pad = [];
+    { attribuut = Some attr; objecttype = Some subject; bron = Some bron;
       navigatie_bindingen = None }
 
 let document (stmts : stmt list) : A.document =
@@ -856,8 +850,7 @@ let document (stmts : stmt list) : A.document =
             @ [ { A.rr_naam = d.d_name; rr_soort = Some A.Kenmerktoekenning;
                   doel =
                     Some
-                      (doel m ~subject ~attr ~kenmerk:true ~bron:d.d_doel_bron ~var:d.d_var
-                         ~line:d.d_line);
+                      (doel m ~subject ~attr ~kenmerk:true ~bron:d.d_doel_bron ~line:d.d_line);
                   waarde = Some d.d_value; rr_voorwaarde = d.d_cond;
                   rr_geldigheid = no_geldigheid; rr_bron_annotaties = None } ]
       | _ -> (
@@ -880,8 +873,7 @@ let document (stmts : stmt list) : A.document =
             @ [ { A.rr_naam = b.d_name; rr_soort = Some A.Berekening;
                   doel =
                     Some
-                      (doel m ~subject ~attr ~kenmerk:false ~bron:b.d_doel_bron ~var:b.d_var
-                         ~line:b.d_line);
+                      (doel m ~subject ~attr ~kenmerk:false ~bron:b.d_doel_bron ~line:b.d_line);
                   waarde = Some b.d_value; rr_voorwaarde = None;
                   rr_geldigheid = no_geldigheid; rr_bron_annotaties = None } ]
       | [], None -> ()

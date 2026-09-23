@@ -1,4 +1,4 @@
-(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its M1 shape.
+(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L2 shape.
 
    The lowering builds typed [Ir_v0.Ast] values and hands them to exactly
    one serialiser — this module — so schema conformity is structural
@@ -70,7 +70,6 @@ let datatype (d : datatype) : json =
   | Booleaan -> node "Booleaan" []
   | Tekst -> node "Tekst" []
   | Datum_in_dagen -> node "DatumInDagen" []
-  | Datatype_onbekend { reden } -> node "Onbekend" [ ("reden", so reden) ]
   | _ -> failwith "Emit: datatype not produced by the F-logic slice"
 
 let rol_binding (rb : rol_binding) : json =
@@ -86,29 +85,30 @@ let rec expr (e : expr) : json =
       node "Binair"
         [ ("op", s (bin_op_s op)); ("links", opt expr links);
           ("rechts", opt expr rechts); typ t; bron br ]
-  | Attribuut_ref
-      { attribuut; objecttype; onderwerp_bron; navigatie_rol; typ = t; bron = br;
-        set; navigatie_pad; navigatie_bindingen } ->
+  | Attribuut_ref { attribuut; objecttype; bron = br; navigatie_bindingen } ->
       if navigatie_bindingen <> None then
         failwith "Emit: the slice synthesises no navigation bindings";
-      node "AttribuutRef"
-        [ ("attribuut", so attribuut); ("objecttype", so objecttype);
-          ("onderwerpBron", so onderwerp_bron); ("navigatieRol", so navigatie_rol);
-          typ t; bron br; ("set", b set);
-          ("navigatiePad", str_opt_list navigatie_pad) ]
+      node "AttribuutRef" [ ("attribuut", so attribuut); ("objecttype", so objecttype); bron br ]
   | Functie
       { kind; argumenten; element_objecttype; leegwaarde; filter; dimensie_selectie;
         typ = t; bron = br; granulariteit; bron_rol; bron_pad } ->
       if filter <> None || dimensie_selectie <> None || granulariteit <> None
          || bron_pad <> None then
         failwith "Emit: aggregation qualifier not produced by the F-logic slice";
+      (* the slice's two folds read linked instances, so the range is written
+         whole on every one of them and never left to be derived (B12) *)
+      let rb =
+        match bron_rol with
+        | Some rb -> rb
+        | None -> failwith "Emit: an instance fold without its role binding"
+      in
       node "Functie"
         [ ("kind", s (functie_kind_s kind));
           ("argumenten", `List (List.map expr argumenten));
           ("elementObjecttype", so element_objecttype);
           ("leegwaarde", opt expr leegwaarde);
           ("filter", `Null); ("dimensieSelectie", `Null); typ t; bron br;
-          ("granulariteit", `Null); ("bronRol", opt rol_binding bron_rol) ]
+          ("granulariteit", `Null); ("bronRol", rol_binding rb) ]
   | _ -> failwith "Emit: expression node not produced by the F-logic slice"
 
 let rec conditie (c : conditie) : json =
@@ -158,13 +158,12 @@ let rec conditie (c : conditie) : json =
 and conditie_leaf (c : conditie) : json =
   let bron br = ("bron", so br) in
   match c with
-  | Kenmerk_check { kenmerk; navigatie; negatie; eigenaar; periode; bron = br;
-                    navigatie_binding } ->
+  | Kenmerk_check { kenmerk; negatie; eigenaar; periode; bron = br; navigatie_binding } ->
       if periode <> None || navigatie_binding <> None then
         failwith "Emit: the slice writes no period or navigation on a characteristic check";
       node "Kenmerk"
-        [ ("kenmerk", so kenmerk); ("navigatie", so navigatie); ("negatie", b negatie);
-          ("eigenaar", so eigenaar); ("periode", `Null); bron br ]
+        [ ("kenmerk", so kenmerk); ("negatie", b negatie); ("eigenaar", so eigenaar);
+          ("periode", `Null); bron br ]
   | Vergelijking { op; links; rechts; periode = _; bron = br } ->
       node "Vergelijking"
         [ ("op", s (vergelijk_op_s op)); ("links", opt expr links);
