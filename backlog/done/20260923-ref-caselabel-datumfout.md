@@ -312,28 +312,46 @@ or `a/b` rational)" is precies het hek dat de lader nu houdt.
 
 **Registerrijtekst `spec/CONSTRUCTS.md`, rij 37 (Scenario /
 conformance-test format)** — achter "…, label-based role values (which
-also feed row 4)" toevoegen:
-"; **the shared case loader reads every lexeme at load and refuses by
-position since 2026-09-23 (card `ref-caselabel-datumfout`)**: a
-malformed date in any case position (attribute, list element, struct
+also feed row 4)" toevoegen (versmald naar de meting, lensadvies 3):
+"; **the shared case loader refuses a malformed lexeme or JSON shape at
+load, by position, since 2026-09-23 (card `ref-caselabel-datumfout`)**:
+a malformed date in any case position (attribute, list element, struct
 field, constructor payload, timeline boundary and segment value,
 characteristic period, parameter, expected value and timeline) left the
 loader as an evaluation fault — `ref` reported `EVALUATION FAULT`, the
 ASP backend `TRANSLATION FAULT`, exit 1, with neither the field nor the
-load phase (measured on `jutterswet-bergingsklok`), the timeline
-readers' own refusal arms could never fire, and a red case could not pin
-such a refusal; a dateTime refusal named no field; a number was read by
-the IR literal grammar (WF-081) instead of the case schema's pattern, so
-`"1,000"` loaded as 1 without a word where the Drools reader errors; a
-duplicate label and a timeline on a grid other than month or year
-escaped the same way. All of these now refuse at load as case errors
-(exit 2) naming position, lexeme and the reader's reason, one template
-per kind — `P4.meldingsdatum "10-03-2026" is not the uchar-case-v0 date
-lexeme yyyy-mm-dd (…)` — the template the asOfDate refusal already used,
-whose sentence stays byte-identical; both OCaml executors share the
-loader and so the sentences; 36 suite witnesses, a mutation per
-mechanism; no replay moved (ref and clingo sweep over 638 cases
-identical)".
+load phase (measured on `jutterswet-bergingsklok`) — the timeline
+readers' own refusal arms could never fire, and a red case could not
+pin such a refusal; a dateTime refusal named no field; a number was
+read by the IR literal grammar (WF-081) instead of the case schema's
+pattern, so `"1,000"` loaded as 1 without a word where the Drools reader
+errors; the JSON-shape refusals said `expected a string` or `missing
+field` with no position. Now every date, dateTime and number lexeme is
+refused at load as a case error (exit 2) naming the position and the
+lexeme, with the reader's reason for dates and dateTimes and the
+schema's form for numbers (`P4.meldingsdatum "10-03-2026" is not the
+uchar-case-v0 date lexeme yyyy-mm-dd (…)`, the template of the asOfDate
+refusal, whose sentence stays byte-identical); a shape refusal names the
+position and what it found; a duplicate label is refused by the label;
+a timeline on a day, week or quarter grid is refused by position and
+declared grid as a v0 limit (ch. 3.2 buckets month and year only). Both
+OCaml executors share the loader and so the sentences. Red witness
+`corpus/rood/inputdatum-kalender` (an attribute date `2026-02-30` that
+gate 4 admits, pinned in ref, clingo and Drools); suite witnesses with a
+mutation per mechanism; no replay moved (ref and clingo sweep over 639
+cases identical to the base except the new red case)".
+
+**Registerrijtekst `spec/CONSTRUCTS.md`, rij `— Soort`** (fixronde 1,
+tweede extra item) — achter "…, no separate flag" toevoegen:
+"; **`ref` holds WF-022's value clause itself since 2026-09-23 (card
+`ref-caselabel-datumfout`)**: a flat KENMERKTOEKENNING whose value is
+not the constant `waar` was run anyway — forced past the verifier,
+`corpus/negatief/wf022-kenmerk-onwaar` answered `oracle: PASS` with the
+characteristic absent, and a computed boolean was written like the
+constant, where the ASP backend refuses at translation; `ref` now tests
+the verifier's own clause (the literal `waar` typed Booleaan) before any
+subject is taken and refuses by name with rule, characteristic, object
+type and the WF-022 ground; no document in any zone carries the form".
 
 **Open punten.**
 
