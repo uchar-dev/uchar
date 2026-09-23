@@ -4261,17 +4261,19 @@ every form that reads it — in three kinds:
   within a stratum, and a positive characteristic read is monotone-safe
   (it can only still become true).
 - **stratum-strict**: any non-characteristic read (attribute values,
-  emptiness and gevuld predicates, comparisons) by a form whose write is
-  *irrevocable* — a characteristic attribution (monotone, ch. 5.3), a
-  consistency or uniqueness (channel facts are never retracted,
-  ch. 5.6), or a creation. Such a form must evaluate strictly above the
+  comparisons; the leeg/gevuld predicates read negatively, below) by a
+  form whose write is *irrevocable* — a characteristic attribution
+  (monotone, ch. 5.3), a consistency or uniqueness (channel facts are
+  never retracted, ch. 5.6), or a creation. Such a form must evaluate strictly above the
   producers of what it reads: a transient it acted on would persist.
   Within a WF-045-admissible recursive-creation cycle the strictness is
   discharged by the one-generation-per-instance progression (ch. 5.5)
   rather than a stratum boundary.
 - **negative**: a negated characteristic read, a characteristic read
   under a negation-like quantifier (*geen*, *ten hoogste*, *precies* —
-  their truth can be lost by a later monotone write), or a channel test
+  their truth can be lost by a later monotone write), every read under a
+  leeg/gevuld predicate in either polarity (since 2026-09-23; the
+  maintainer decision is quoted in `IR-SPEC.md` ch. 5.2), or a channel test
   (regelversie, ch. 5.6). Once negative, conservatively negative — a
   double negation does not cancel. Negative edges are stratum-strict
   *and* forbidden on any cycle (WF-046).
@@ -4302,9 +4304,50 @@ edge runs through the relation).
 *Recorded residuals (ch. 7 territory, mirrored):* a condition-guarded
 attribute write whose condition later turns false keeps its written
 value — the mirror has no retraction — so conditions on
-attribute-writing forms read positively here; and §9.5 deposits from
-arithmetic transients within a stratum persist (idempotent inserts,
-never retracted). Both await the default model of ch. 7.
+attribute-writing forms read positively here, except a leeg/gevuld
+predicate, which reads negatively in every position since 2026-09-23;
+and §9.5 deposits from arithmetic transients within a stratum persist
+(idempotent inserts, never retracted). Both await the default model of
+ch. 7.
+
+*Recorded residual — conditions that hold on absence (measured
+2026-09-23, open).* The leeg/gevuld predicate is not the only condition
+that is true while its operand is absent and can turn false once the
+operand arrives. The others carry no `negated` field and keep their
+positive or stratum-strict reading, and on a WF-045-admissible creation
+cycle that reading is unsound in the way the leeg/gevuld decision records.
+Measured on one shape: a recursive creation "werf de opvolger" whose
+condition is "de rang van de Wachter is kleiner dan 5 en X", with X reading
+the successor that the creation itself mints, and one input Wachter W1 of
+rang 1. Every document in the table is verifier-clean. In every row the
+reference interpreter mints W1 to W5, each creation justified by an X that
+the next generation falsifies, and the ASP backend finds no stable model:
+
+| X | why it holds on absence |
+|---|---|
+| de rang van de opvolger is ongelijk aan 2 | exactly one leeg operand is waar (ch. 1.2) |
+| de rang van de opvolger is gelijk aan het merk (merk leeg) | two leeg numeric operands are equal (ch. 1.2) |
+| het aantal opvolgers is gelijk aan 0 | a count over nothing is 0 |
+| het aantal gevulde rangen van alle opvolgers is gelijk aan 0 | idem (ch. 3.4c) |
+| ALLE opvolgers hebben een rang groter dan 5 (quantifier fold) | vacuous truth over an empty range |
+| GEEN van de opvolgers heeft een rang groter dan 0 (quantifier fold) | idem |
+| geen van: de rang van de opvolger is groter dan 0 (composite) | a leeg operand makes the member false |
+| de rang van de opvolger plus 0 is kleiner dan 1 | plus coalesces leeg to 0 (ch. 1.2) |
+
+The control is the same shape with X = "de rang van de opvolger is leeg":
+the reference interpreter mints the same chain, the ASP backend refuses the
+form by name, and WF-046 refuses the document since 2026-09-23. The
+two-form shape splits silently rather than loudly. With "het merk is
+ongelijk aan 1" in the creation and a rule writing merk = 1 when "de rang
+van de opvolger is ongelijk aan 2", the reference interpreter answers
+merk(W1) = 1, the ASP backend has two stable models, and its runner picks
+one with merk(W1) leeg. A related gap sits in the role-check narrowing
+above, with no recursion needed: a creation of a Post under "hij is geen
+bemanner" reads, as input, the very link it writes. The verifier sees no
+edge, the reference interpreter mints once, and the ASP backend finds no
+stable model. None of these forms occurs in the corpus. Whether each of
+them becomes a negative edge is a norm question that the leeg/gevuld
+decision leaves open.
 
 ### 6.2 Acyclicity (WF-045)
 
@@ -4340,9 +4383,10 @@ does not exist.
 
 Evaluation by strata generalises ch. 5.3's single boundary: for k = 0,
 1, …, the forms of stratum ≤ k evaluate to their fixpoint before any
-form of stratum k + 1 fires. A negated characteristic is then read only
-after every producer — and the producers' own input chains — have
-quiesced, so a monotone write cannot contradict it later; a channel
+form of stratum k + 1 fires. A negated characteristic, and since
+2026-09-23 a leeg/gevuld predicate, is then read only after every
+producer — and the producers' own input chains — have quiesced, so a
+monotone write cannot contradict it later; a channel
 test reads a complete channel for the named rule. v0's single boundary
 is the two-stratum special case; nested and chained negation get as
 many strata as the chain is deep.
@@ -4368,16 +4412,38 @@ many strata as the chain is deep.
   the complement. v0's single boundary cannot express it — precisely
   the case WF-046 exists for.
 - An emptiness test on a *derived* attribute by a characteristic rule
-  ("gemarkeerd indien a leeg is", a computed elsewhere) is a
-  stratum-strict edge: the reader sits above the writer, and the
-  outcome is independent of rule order — the transient emptiness is
-  unobservable.
+  ("gemarkeerd indien a leeg is", a computed elsewhere) is a negative
+  edge (stratum-strict before 2026-09-23): the reader sits above the
+  writer, and the outcome is independent of rule order — the transient
+  emptiness is unobservable (WV-6.4-e).
+- The same test by an ATTRIBUTE rule ("b = 1 indien a leeg is", with
+  a = 5 written by another rule) is a negative edge too, and for this
+  reader that is new. Until 2026-09-23 the edge was positive, the two
+  rules shared a stratum, and a reader listed before its writer acted on
+  the transient leeg and kept its write: b = 1 with the reader first and
+  b leeg with the writer first, on one verifier-clean document, while
+  the ASP backend answered leeg in both orders. Now the reader sits above
+  the writer and b is leeg in both orders (WV-6.4-f).
 - Ill-formed: `a ← b + 1` and `b ← a + 1` on one object type is a
   WF-045 cycle through no creation (negatief case
   `wf045-cyclic-attribute-dependency`). A recursive creation whose
   condition negates a characteristic derived from its own output is a
   WF-045-admissible cycle carrying a negative edge — a WF-046
   violation (negatief case `wf046-negated-read-in-recursive-cycle`).
+  So is a recursive creation guarded by a leeg/gevuld test on what its
+  own cycle produces, in either polarity (`IR-SPEC.md` ch. 5.2): the R1
+  shape (the creation mints a successor while "het merk is leeg", and
+  the rule that writes merk = 1 reads the successor's rang under
+  "gevuld"), the R3 shape spelled with `negated: true` (both tests "niet
+  gevuld") and a presence-true test alone ("het merk is niet leeg") —
+  negatief cases `wf046-leegtest-recursieve-creatie`,
+  `wf046-leegtest-negatie-recursieve-creatie` and
+  `wf046-leegtest-aanwezigheid-recursieve-creatie`. `ref/` re-runs the
+  check and refuses R1 and R3 with the WF-046 report (WV-6.4-g). Before
+  the rule it answered them: R1 with a chain of five whose creations
+  are each justified by a leeg merk the final world fills (the ASP
+  reading has no stable model), R3 with merk(W1) = 1 (the ASP reading
+  has five stable models).
 
 ---
 

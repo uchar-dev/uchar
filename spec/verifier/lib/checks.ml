@@ -7473,8 +7473,9 @@ let expression_layer ctx =
 (* WF-045 / WF-046 — the dependency graph (RUNTIME-SEMANTICS ch. 6).
    Nodes: attribute, characteristic, channel (rule name), population
    (object type), identified up to normalisation. Edges run producer ->
-   consumer; a negated/negation-quantified characteristic read and a
-   regelversie channel test are negative edges. WF-045: the graph minus
+   consumer; a negated/negation-quantified characteristic read, every
+   read under a leeg/gevuld test (either polarity, since 2026-09-23) and
+   a regelversie channel test are negative edges. WF-045: the graph minus
    the creation members of recursive rule groups is acyclic.
    WF-046: no cycle in the full graph carries a negative edge.
    Recorded narrowings (ch. 6.1): relation membership CONDITION reads
@@ -7758,6 +7759,37 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
   match c with
   | Vergelijking { links; rechts; _ } ->
       dep_opt ctx ~subject (dep_opt ctx ~subject acc links) rechts
+  (* WF-046, the leeg/gevuld test (maintainer decision 2026-09-23): every
+     read under the test is a NEGATIVE edge, in BOTH polarities. The test
+     depends on absence whether it carries `negatie: false` or `true`, so
+     the gevuld form is negative for the same reason the leeg form is, and a
+     cycle through either is forbidden even where WF-045 admits the cycle
+     (a recursive creation group). Until then the operand was read like any
+     value, positive or stratum-strict, and the one-generation progression
+     that discharges strictness on an admissible creation cycle was taken
+     to discharge this read as well. It does not: the creation acts on an
+     absence that the cycle fills afterwards. Measured 2026-09-23 on two
+     probes, both verifier-clean before this arm. With LEEG in the
+     creation's condition (R1), ref minted a chain in which every
+     creation's justification is false in ref's own final world, and the
+     ASP backend found no stable model. With GEVULD negated there (R3), ref
+     answered merk(W1) = 1 because its pass runs rules before creations;
+     the opposite order leaves merk(W1) leeg, and the ASP backend found five
+     stable models, one per chain length. The witnesses are
+     corpus/negatief/wf046-leegtest-*.
+
+     Every node the operand reads turns negative, the hop relations of a
+     navigated operand included: an absent link makes the operand leeg, so
+     the test reads the absence of the link as well. The arm reaches the
+     test in every position the walk visits (a rule or creation condition,
+     an assertion, a fold filter, a quantifier matrix, a composite member).
+     It covers these two kinds and nothing more. Other conditions that hold
+     on absence without a `negatie` field (a comparison against leeg, a
+     count tested against zero, the ALLE fold's vacuous truth) keep their
+     positive or stratum-strict reading here. They were measured on the
+     same cycle shape and are recorded as open, not decided. *)
+  | Predicaat { soort = Leeg | Gevuld; operand; _ } ->
+      List.map (fun (node, _) -> (node, Dep_neg)) (dep_opt ctx ~subject [] operand) @ acc
   | Predicaat { operand; _ } -> dep_opt ctx ~subject acc operand
   | Kenmerk_check { kenmerk = Some k; eigenaar; negatie; navigatie = Some nav; navigatie_binding; _ }
     -> (
@@ -7806,11 +7838,19 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
       in
       List.fold_left (fun acc c -> dep_cond ctx ~subject ~neg:neg' acc c) acc onderdelen
   (* the quantifier fold (ch. 3.9a): the RANGE relation is read positively,
-     and everything under the matrix is read CONSERVATIVELY NEGATIVELY —
-     the quantifier is a fold with conjunction, so a member that fails
-     decides the verdict the way a negated read does, and GEEN is the
-     negation outright. ch. 6.1's "once negative, conservatively negative"
-     applied at the one place this node introduces. *)
+     and the filter and the matrix are walked with [neg] set, so every
+     CHARACTERISTIC read under them is negative. The quantifier is a fold
+     with conjunction, so a member that fails decides the verdict the way a
+     negated read does, and GEEN is the negation outright; that is ch. 6.1's
+     "once negative, conservatively negative" at the one place this node
+     introduces. The flag reaches characteristic reads only, as it does
+     under the propositional GEEN above: an attribute COMPARED in the matrix
+     stays positive or stratum-strict, because ch. 5.2 defines the negative
+     kind per read (a characteristic, a leeg/gevuld test, a channel test)
+     and not per context. A leeg/gevuld test in the matrix is negative on
+     its own arm. Measured 2026-09-23: an ALLE fold over a comparison on an
+     admissible recursive creation cycle is verifier-clean. That residual is
+     recorded as open, not closed here. *)
   | Kwantorvouw { kv_kwantor; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol; kv_bron_pad; _ }
     ->
       ignore kv_kwantor;
@@ -8183,7 +8223,7 @@ let wf045_046 ctx =
             viol46 :=
               v "WF-046" forms.(ci).df_at
                 (Printf.sprintf
-                   "negative dependency edge on a cycle: %s reads, negated, what %s produces while %s is reachable from it (no strata exist)"
+                   "negative dependency edge on a cycle: %s reads what %s produces while %s is reachable from it (no strata exist)"
                    forms.(ci).df_name forms.(pi).df_name forms.(pi).df_name)
               :: !viol46)
         succ.(pi))

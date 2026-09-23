@@ -7051,9 +7051,10 @@ ch. 3.12), and it belongs to whoever measures it.
   (ch. 5.3; mirror: v0 warns at build time and caps firing).
 - **WF-046** No dependency cycle — including a WF-045-admissible one —
   may carry a negative edge (a negated or negation-quantified
-  characteristic read, or a regelversie channel test): evaluation
-  strata MUST exist (ch. 5.3; operational reading `RUNTIME-SEMANTICS.md`
-  ch. 6.3). v0's single agenda boundary is the two-stratum special case.
+  characteristic read, every read under a leeg/gevuld test in either
+  polarity, or a regelversie channel test): evaluation strata MUST exist
+  (ch. 5.2, 5.3; operational reading `RUNTIME-SEMANTICS.md` ch. 6.3). v0's
+  single agenda boundary is the two-stratum special case.
 
 ### 4.7 Sum-type expressions — Construct, Match, BinderRef
 
@@ -7472,19 +7473,83 @@ to every form that **reads** it — in one of three kinds:
   within a stratum, and a positive characteristic read is monotone-safe
   (ch. 5.3).
 - **stratum-strict**: any non-characteristic read (attribute value,
-  emptiness/gevuld predicate, comparison) by a form whose write is
-  **irrevocable** — a characteristic attribution (monotone), a consistency
-  or uniqueness (channel facts are never retracted), or a creation. Such a
-  form MUST evaluate strictly above the producers of what it reads: a
-  transient it acted on would persist. Within a WF-045-admissible
+  comparison; the leeg/gevuld test reads negatively, below) by a form whose
+  write is **irrevocable** — a characteristic attribution (monotone), a
+  consistency or uniqueness (channel facts are never retracted), or a
+  creation. Such a form MUST evaluate strictly above the producers of what
+  it reads: a transient it acted on would persist. Within a WF-045-admissible
   recursive-creation cycle the strictness is discharged by the
   one-generation-per-instance progression (ch. 5.5), not a stratum boundary.
 - **negative**: a negated characteristic read, a characteristic read under
   a negation-like quantifier (*geen*, *ten hoogste*, *precies* — their
-  truth can be lost by a later monotone write), or a channel test
-  (regelversie). **Once negative, conservatively negative** — a double
+  truth can be lost by a later monotone write), every read under a
+  leeg/gevuld test in either polarity (*2026-09-23*, below), or a channel
+  test (regelversie). **Once negative, conservatively negative** — a double
   negation does not cancel. A negative edge is stratum-strict *and*
   forbidden on any cycle (WF-046).
+
+**The leeg/gevuld test is a negative edge** *(maintainer decision
+2026-09-23, card `verifier-leegtest-negafhankelijkheid`)*. The decision, in
+full:
+
+> A LEEG/GEVULD test counts in the WF-045/046 walk as a NEGATIVE edge, in
+> BOTH polarities: the test depends on absence, whether it carries
+> `negated: false` or `negated: true` (wire `negatie`). A cycle through
+> such an edge is forbidden by WF-046, also through a recursive creation
+> group that WF-045 admits. Motivation: verifier-clean documents whose
+> meaning depends on the evaluation order (the reference interpreter
+> answered R3 order-dependently, the ASP backend found five stable models)
+> are the class this repository never admits.
+
+Every node the operand reads is read negatively, the hop relations of a
+navigated operand included: an absent link makes the operand leeg, so the
+test reads the absence of the link as well. The rule holds in every position
+the walk reaches (a rule or creation condition, an assertion, a fold filter,
+a quantifier matrix, a composite member). On an admissible creation cycle
+the one-generation progression discharges stratum-strictness (above), and it
+does not discharge this read: the creation acts on an absence that the cycle
+fills afterwards. Measured on two probes of the
+`corpus/golden/anchor/jutterswet-wachtersketen` shape, both verifier-clean
+before the rule, with one input Wachter of rang 1. **R1**: the recursive
+creation mints a successor while "het merk is leeg", and the rule that
+writes merk = 1 reads the successor's rang under "gevuld". The reference
+interpreter minted a chain of five in which each of the first four creations
+is justified by a leeg merk that its own final world fills; the ASP backend
+found no stable model. **R3**: the same cycle with "niet gevuld" in the
+creation and the successor's rang tested leeg in the rule. The reference
+interpreter answered merk(W1) = 1, which is what its pass order (rules
+before creations) produces; the opposite order mints W2 and leaves merk(W1)
+leeg, and the ASP backend found five stable models, one per chain length.
+
+The witnesses are one per polarity plus the presence-true reading:
+`corpus/negatief/wf046-leegtest-recursieve-creatie` (R1, `negated: false`
+throughout), `wf046-leegtest-negatie-recursieve-creatie` (R3, spelled with
+`negated: true` throughout) and `wf046-leegtest-aanwezigheid-recursieve-creatie`,
+where the only test on the cycle is a negated leeg test. That last document
+has one fixpoint, in which nothing is minted, and it is refused because the
+decision counts both polarities; it is the witness that separates the
+decision from the narrower reading "only a test that holds on absence is
+negative". Off a cycle the rule orders a reader strictly above the writers
+of its operand, which also closes an order dependence in the reference
+interpreter: a leeg test in an ATTRIBUTE rule on a derived attribute shared
+its writer's stratum, and the reader's position in the document decided
+whether it acted on the transient leeg (`RUNTIME-SEMANTICS.md` ch. 6.4).
+
+*Cost:* none in the corpus. Counted 2026-09-23, none of the 28 leeg/gevuld
+tests in 26 corpus documents reads a node that some form writes, so the rule
+turns no existing edge negative. No verdict moved in the golden (235), red
+(43) or negatief (440) zones, and the reference interpreter's replay of all
+638 golden and red cases is byte-identical.
+
+*Not covered, recorded open:* other conditions that hold on absence without a
+`negated` field keep their positive or stratum-strict reading: an inequality
+with one leeg operand, a numeric equality of two leeg operands, a count or a
+filled-value count tested against zero, a quantifier fold under *all* or
+*none* over a comparison, a propositional *none* over a comparison, and an
+ordering over arithmetic that coalesces leeg to 0. On an admissible creation
+cycle each of them was measured verifier-clean with the executors split
+(`RUNTIME-SEMANTICS.md` ch. 6.1, recorded residuals). This decision does not
+cover them.
 
 **The WF-051 defaults fold.** A defaults group (ch. 6;
 `RUNTIME-SEMANTICS.md` ch. 7) folds into this graph as the writer of its
@@ -7827,7 +7892,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-043 | whole-period qualifier only on a time-dependent operand | gate 3 | `jutterswet-keurploeg` (whole-year over the MAAND-granular keurvergoeding) + `jutterswet-sleepvloot` (the negated one) | `wf043-wholeperiod-nontemporal` |
 | WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural — gate 8 (`scripts/check-rood.sh`): the two mandatory executors (`expectedFault.{ref, clingo}`) must both fault, fragment-pinned. The additive `expectedFault.drools` leg (decision V3-b) pins a Drools fault only where the v0 backend carries the red-path form; where it does not, the gate lists the case with a reason (a reason-carrying exclusion list, stale-guarded) — Onopgelost is such a case (its reaching rule does not lower: a transpiler SKIP leaves the value out of scope), so it is listed, never Drools-fragment-pinned | `corpus/rood/wf044-onopgelost-reached` (the red witness: ref faults the evaluation, the ASP backend the translation; the Drools leg lists it — the marker's rule never fires) | n/a (the marker is legal wire content; the fence is behavioural, not well-formedness) |
 | WF-045 | dependency graph acyclic (creation recursion excepted) — over the CHAIN-CLOSED node identity of ch. 5.1 since *2026-09-12*, and the three write positions do NOT close alike: a population write closes upward, a member write by a form that ITERATES a type closes over the ⊑-comparable types in both directions, a member write by an OBJECT CREATION closes upward only (it fills the one instance it mints, and creation is not polymorphic), and reads stay literal. Until then both keyed on the written type name alone, which made the rule's promise false of every model with a supertype: the two witnesses below were verifier-clean and diverged in the reference interpreter, which is the last line of defence and reports `no fixpoint within 100 passes` — loud, but naming neither the rule nor the type. The boundary is measured and narrow: a subtype creation is not itself refused (the mirror creation, from subtype subject to supertype, and a creation sideways into a chain both stay clean, as does either inside a guarded recursive group), and two INCOMPARABLE subtypes stay two nodes. Cost: none, and not vacuously so — counted 2026-09-12, the closure widens a write in **9** corpus documents and not one of them gains a cycle, and a tenth — `jutterswet-wrakboeking` — exists precisely because the closure must NOT widen there (gate 3: 209 verifier-clean documents before, 210 after, the one arrival being that witness; gate 11's parity zone unchanged) | gate 3 | `jutterswet-vondsttelling`; the chain-closed reading's own clean witnesses are `anchor/jutterswet-strandrechtketen` and `golden/jutterswet-wrakrecht`, which write ONE inherited attribute from BOTH spellings (a rule at the ancestor, defaults groups at each), `golden/jutterswet-hoofdberging`, whose allocation writes an inherited target attribute from the subtype, `golden/jutterswet-zustervondst`, where a write at the parent reaches TWO incomparable children and they still do not reach each other, and `golden/jutterswet-wrakboeking`, the creation arm's own witness — a creation that mints its own SUPERTYPE and fills an inherited attribute, which the both-directions reading turns into a WF-045 refusal on a model with no cycle in it (measured 2026-09-12, both readings, with ref declining and clingo answering under the wrong one), replayed by gates 5, 6 and 12 | `wf045-cyclic-attribute-dependency` (one type, one spelling) + `wf045-subtypecreatie-cyclus` (the population arm) + `wf045-erfattribuut-spelling-cyclus` (the member arm) — the three fall independently: a graph keyed on the written name catches only the first |
-| WF-046 | no negative edge on a dependency cycle (strata exist) | gate 3 | `jutterswet-penningjaar` (the negated aanmeldplichtig reading — a negative edge, verifier-clean, oracle-replayed) | `wf046-negated-read-in-recursive-cycle` |
+| WF-046 | no negative edge on a dependency cycle (strata exist); since *2026-09-23* every read under a leeg/gevuld test is a negative edge, in both polarities (ch. 5.2) | gate 3 | `jutterswet-penningjaar` (the negated aanmeldplichtig reading — a negative edge, verifier-clean, oracle-replayed); the leeg/gevuld reading has no golden whose test reads a written node (counted 2026-09-23: none of 28), so its clean witness is the reference interpreter's WV-6.4-f (a leeg test in an attribute rule on a derived attribute, off any cycle, answering alike in both rule orders) | `wf046-negated-read-in-recursive-cycle` + `wf046-leegtest-recursieve-creatie` (`negated: false`) + `wf046-leegtest-negatie-recursieve-creatie` (`negated: true`) + `wf046-leegtest-aanwezigheid-recursieve-creatie` (a presence-true test alone: the both-polarities clause) |
 | WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) + `anchor/jutterswet-maatschap` (the reciprocal binding: bound = opposite) + `anchor/jutterswet-wachtersketen` (the creation back-link binding) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) + `wf047-reciprocal-wrong-filler` (the single-role filler clause) + `wf047-creation-binding-wrong-filler` (the creation site) |
 | WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 (contexts with a statically known fold subject; a subjectless context — none exists in v0 dumps, whose folds sit under a typed rule target — is left to the executors' runtime fault) | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) + `anchor/jutterswet-maatschap` (bindingless over a reciprocal relation) | `wf048-ambiguous-connecting-relation` |
 | WF-049 | temporal read: basis temporal (attribute/granular parameter), day-precision date, element type | gate 3 | `anchor/jutterswet-aanmeldquotum` (attribute + parameter reads; hit, gap→leeg, empty date→leeg; replayed by gates 5–6) | `wf049-read-of-nontemporal` (basis) + `wf049-read-at-datetime` (date operand) + `wf049-type-not-element` (element type) |
