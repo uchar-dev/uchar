@@ -9511,24 +9511,28 @@ let () =
   both_answer ~name:"Let, lazy: k read in a nested matrix ends the Let before p (late matrix reach)" ~ir:late
     ~case_text:(pf_case ~instances:(geladen "8" "3") bonus_leeg)
 
-(* FIXRONDE 3, point 4 (maintainer decision 2026-09-23): members a creation
-   adds to a quantifier fold's range have no normed order (ch. 3.9a/5.7a). Where
-   that order decides whether the matrix reads the unbound parameter, clingo
-   refuses in a sentence that names it, never in ref's words; where every
-   allowed order reads it, the guard fires in ref's words; where ref's own order
-   (case links first, then the creations in document order) does not, both
-   play. W1 without schuiten in the case unless stated; each creation mints one
-   schuit for every werf; matrix TEN MINSTE 1 [lengte > 5, lengte > p], or ALLE
-   [lengte > 5, lengte > p] for mx. ms-2/ms-4 range over a haven's werven'
-   schuiten: S1 (3) at W1, S2 (8) at W2, and one created schuit of 8 per werf. *)
-let order_named ~name ~ir ~case_text ~param =
+(* FIXRONDE 3, point 4, and FIXRONDE 4 (maintainer decision 2026-09-23, upheld):
+   members a creation adds to a fold's range have no normed order (ch.
+   3.9a/5.7a). Where every allowed order reads the unbound parameter, the guard
+   fires in ref's words; where one allowed order reads it and another does not,
+   clingo refuses in a sentence that names the unnormed order, whichever order
+   ref itself keeps — so also where ref plays ([~ref_plays], its rows pinned);
+   where no allowed order reads it, both play. [by] is what the sentence says
+   reads the parameter: a quantifier fold, or a Let whose value waits for its
+   binder or whose barrier may end it first. W1 without schuiten in the case
+   unless stated; each creation mints one schuit for every werf; matrix TEN
+   MINSTE 1 [lengte > 5, lengte > p], or ALLE [lengte > 5, lengte > p] for mx.
+   ms-2/ms-4 range over a haven's werven' schuiten: S1 (3) at W1, S2 (8) at
+   W2, and one created schuit of 8 per werf. *)
+let named_refusal ~by ~ref_plays ~name ~ir ~case_text ~param =
   let doc, case = load_pair ~ir ~case_text in
-  (match ref_report doc case with
-  | _ -> check (name ^ ": ref faults (it evaluated)") false
-  | exception Uchar_ref.Value.Fault m ->
-      check (name ^ ": ref faults (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle:(pf_reason param) m));
-  let named =
-    Printf.sprintf "parameter %S is unbound in this case, and whether the quantifier fold" param
+  if ref_plays then ref_matches ~name ~ir ~case_text
+  else (
+    match ref_report doc case with
+    | _ -> check (name ^ ": ref faults (it evaluated)") false
+    | exception Uchar_ref.Value.Fault m ->
+        check (name ^ ": ref faults (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle:(pf_reason param) m));
+  let named = Printf.sprintf "parameter %S is unbound in this case, and whether %s" param by
   and not_normed = "depends on the order of the members a creation adds, which is not normed (ch. 3.9a/5.7a)" in
   let label = name ^ ": clingo refuses in the named sentence" in
   match translate doc case with
@@ -9551,6 +9555,8 @@ let order_named ~name ~ir ~case_text ~param =
           in
           check (label ^ " (" ^ answered ^ ")") false
       | _, _ -> check (label ^ " (clingo did not run)") false)
+
+let order_named = named_refusal ~by:"the quantifier fold" ~ref_plays:false
 
 let () =
   let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"keur": %s|} pf_n0)
@@ -9614,10 +9620,13 @@ let () =
   let minst = kv ~drempel:1 "TEN_MINSTE" of_ in
   order_named ~name:"created members: 3 then 8, the first read reads p (cr-3-8)"
     ~ir:(doc ~creaties:[ "3"; "8" ] minst) ~param:"p" ~case_text:(pf_case ~instances:(w1 ()) (keur (Some "99")));
-  both_answer ~name:"created members: 8 then 3, ref's order stops at 8 (cr-8-3)"
-    ~ir:(doc ~creaties:[ "8"; "3" ] minst) ~case_text:(pf_case ~instances:(w1 ()) (keur (Some "99")));
-  both_answer ~name:"created members: the case's 8 before a created 3 (cr-case8-new3)"
-    ~ir:(doc ~creaties:[ "3" ] minst) ~case_text:(pf_case ~instances:(w1 ~case:[ ("S1", "8") ] ()) (keur (Some "99")));
+  named_refusal ~by:"the quantifier fold" ~ref_plays:true
+    ~name:"created members: 8 then 3, ref's order stops at 8, [3, 8] reads p (cr-8-3)"
+    ~ir:(doc ~creaties:[ "8"; "3" ] minst) ~param:"p" ~case_text:(pf_case ~instances:(w1 ()) (keur (Some "99")));
+  named_refusal ~by:"the quantifier fold" ~ref_plays:true
+    ~name:"created members: the case's 8 before a created 3 in ref's order, not in every one (cr-case8-new3)"
+    ~ir:(doc ~creaties:[ "3" ] minst) ~param:"p"
+    ~case_text:(pf_case ~instances:(w1 ~case:[ ("S1", "8") ] ()) (keur (Some "99")));
   unbound_fires ~name:"created members: one created 3 is read in every order (control)"
     ~ir:(doc ~creaties:[ "3" ] minst) ~param:"p" ~case_text:(pf_case ~instances:(w1 ()) (keur None))
     ~silent:"keur leeg";
@@ -9641,6 +9650,146 @@ let () =
   unbound_fires ~name:"created members: the same two steps without a creation (ms-2, control)"
     ~ir:(ms "GEEN" []) ~param:"p" ~case_text:(pf_case ~instances:haven_case (keur ~label:"H1" None))
     ~silent:"keur leeg"
+
+(* FIXRONDE 4, lens point 1: ref's order of the members a creation adds is
+   not the document order of the creations. ref runs a fixpoint per stratum: a
+   creation for each Werf sits above the creation that makes Werven, while one
+   for each Droogdok (a subtype of Werf) stays in stratum 0, so on D1 ref runs
+   the Droogdok creation first. A translation that took the creation index for
+   ref's order answered on the four witnesses below where ref faults, on all
+   three paths that leaned on it: a quantifier fold's matrix, a Let barrier per
+   member, and the demand of a Let value read in a matrix. c0 mints a schuit
+   for each Werf, c1 a werf for each Haven, c2 a schuit for each Droogdok. *)
+let () =
+  let haven = pf_ot ~naam:"Haven" ~meervoud:"Havens" (Printf.sprintf {|"keur": %s, "bonus": %s|} pf_n0 pf_n0)
+  and werf =
+    pf_ot ~naam:"Werf" ~meervoud:"Werven"
+      (Printf.sprintf {|"keur": %s, "bonus": %s, "restpost": %s|} pf_n0 pf_n0 pf_n0)
+  and droogdok =
+    replace_first ~needle:{|"bezield": true|} ~by:{|"supertype": "Werf", "bezield": true|}
+      (pf_ot ~naam:"Droogdok" ~meervoud:"Droogdokken" "")
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+  let feittypen =
+    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] },
+      "havenwerf": { "node": "Feittype", "naam": "havenwerf", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "haven", "objecttypeNaam": "Haven", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": "werven", "meervoudig": true } ] } }|}
+  in
+  let schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|}
+  and werven = {|{ "node": "RolBinding", "feittype": "havenwerf", "rol": "werf" }|} in
+  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and p = pf_p ~typ:pf_n0 "p" in
+  let k = Printf.sprintf {|{ "node": "BinderRef", "name": "k", "type": %s, "bron": "de k" }|} pf_n0 in
+  let gt l r = pf_cmp "GROTER" l r and lit v = pf_l ~typ:pf_n0 v in
+  let let_ b v body =
+    Printf.sprintf {|{ "node": "Let", "type": %s, "binder": "%s", "value": %s, "body": %s, "bron": "let %s" }|}
+      pf_n0 b v body b
+  in
+  let kv ?drempel kwantor toets =
+    Printf.sprintf
+      {|{ "node": "Kwantorvouw", "kwantor": "%s"%s, "elementObjecttype": "Schuit", "filter": null,
+        "toets": %s, "bron": "de schuiten", "bronRol": %s }|}
+      kwantor
+      (match drempel with Some d -> Printf.sprintf {|, "drempel": %d|} d | None -> "")
+      toets schuiten
+  in
+  let som ~el ~attr ~rol filter =
+    Printf.sprintf
+      {|{ "node": "Functie", "kind": "SOM",
+        "argumenten": [ { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s",
+          "onderwerpBron": "alle", "navigatieRol": null, "type": %s,
+          "bron": "de %s", "set": true, "navigatiePad": [] } ],
+        "elementObjecttype": "%s", "leegwaarde": null, "filter": %s, "dimensieSelectie": null,
+        "type": %s, "bron": "de som", "granulariteit": null, "bronRol": %s }|}
+      attr el pf_n0 attr el filter pf_n0 rol
+  in
+  let creatie ?(toekenningen = []) naam nieuw subject rol =
+    Printf.sprintf
+      {|{ "node": "ResolvedObjectCreatie", "naam": "%s", "nieuwType": "%s", "subject": "%s",
+          "toekenningen": [ %s ], "voorwaarde": null,
+          "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null }, "verbindendeRol": %s }|}
+      naam nieuw subject
+      (String.concat ", "
+         (List.map
+            (fun (a, w) ->
+              Printf.sprintf {|{ "node": "Toekenning", "attribuut": "%s", "waarde": %s, "kenmerk": false }|} a w)
+            toekenningen))
+      rol
+  in
+  (* c0 a schuit of [a] for each Werf, c1 a werf for each Haven (left out with
+     [~werf:false]), c2 a schuit of [b] for each Droogdok *)
+  let creaties ?(werf = true) ?werf_keur a b =
+    [ creatie ~toekenningen:[ ("lengte", lit a) ] "maak schuit 0" "Schuit" "Werf" schuiten ]
+    @ (if werf then [ creatie ?toekenningen:werf_keur "maak werf 1" "Werf" "Haven" werven ] else [])
+    @ [ creatie ~toekenningen:[ ("lengte", lit b) ] "maak schuit 2" "Schuit" "Droogdok" schuiten ]
+  in
+  let doc cs regel =
+    pf_doc ~objecttypen:[ haven; werf; droogdok; schuit ] ~feittypen ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
+      ~regels:[ regel ] ~creaties:cs ()
+  in
+  let inst label ot attrs roles =
+    Printf.sprintf
+      {|{ "label": "%s", "objectType": "%s", "attributes": { %s }, "roles": { %s }, "characteristics": [] }|}
+      label ot attrs roles
+  in
+  let d1 = [ inst "D1" "Droogdok" "" "" ] and bound = [ pf_bind "p" "1" ] in
+  (* the matrix: keur 99 for a werf whose schuiten satisfy the fold *)
+  let keur_doc cs voorwaarde = doc cs (pf_regel ~ot:"Werf" ~doel:"keur" ~typ:pf_n0 ~voorwaarde (lit "99")) in
+  let keur v = [ (match v with Some v -> pf_is ~label:"D1" ~attr:"keur" v | None -> pf_leeg ~label:"D1" ~attr:"keur" ()); pf_cons ] in
+  let minst = kv ~drempel:1 "TEN_MINSTE" (pf_comp ~drempel:1 "TEN_MINSTE" [ gt lengte (lit "5"); gt lengte p ])
+  and alle = kv "ALLE" (pf_comp "ALLE" [ gt lengte (lit "5"); gt lengte p ]) in
+  order_named ~name:"stratum: at-least 1, 8 for each Werf and 3 for each Droogdok, ref reads 3 first (stratum-8-w-3dd)"
+    ~ir:(keur_doc (creaties "8" "3") minst) ~param:"p" ~case_text:(pf_case ~instances:d1 (keur (Some "99")));
+  order_named ~name:"stratum: ALLE, 3 for each Werf and 8 for each Droogdok, ref reads 8 first (stratum-alle-3-w-8dd)"
+    ~ir:(keur_doc (creaties "3" "8") alle) ~param:"p" ~case_text:(pf_case ~instances:d1 (keur None));
+  named_refusal ~by:"the quantifier fold" ~ref_plays:true
+    ~name:"stratum: without the werf creation ref reads 8 first and plays (stratum-8-3dd-zonder-werfcreatie, control)"
+    ~ir:(keur_doc (creaties ~werf:false "8" "3") minst) ~param:"p" ~case_text:(pf_case ~instances:d1 (keur (Some "99")));
+  both_answer ~name:"stratum: at-least 1 with p bound (stratum-8-w-3dd-gebonden, control)"
+    ~ir:(keur_doc (creaties "8" "3") minst) ~case_text:(pf_case ~params:bound ~instances:d1 (keur (Some "99")));
+  order_named ~name:"stratum: the werf creation initialises from 1 plus 0 (stratum-ctl-nietliteral, control)"
+    ~ir:(keur_doc (creaties ~werf_keur:[ ("keur", pf_bin ~typ:pf_n0 "PLUS" (lit "1") (lit "0")) ] "8" "3") minst)
+    ~param:"p" ~case_text:(pf_case ~instances:d1 (keur (Some "99")));
+  (* the barrier per member: bonus = Let k = restpost in som(lengte van
+     schuiten die TEN MINSTE 1 [ALLE[lengte > 5, k > 0], lengte > p]), after
+     every creation (the ALLE condition, WF-046), restpost leeg: a read of k
+     at 8 ends the Let, a read of p at 3 faults, whichever comes first *)
+  let pm_doc cs =
+    doc cs
+      (pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:pf_n0 ~voorwaarde:(kv "ALLE" (gt lengte (lit "0")))
+         (let_ "k" (pf_a ~ot:"Werf" ~typ:pf_n0 "restpost")
+            (som ~el:"Schuit" ~attr:"lengte" ~rol:schuiten
+               (pf_comp ~drempel:1 "TEN_MINSTE" [ pf_comp "ALLE" [ gt lengte (lit "5"); gt k (lit "0") ]; gt lengte p ]))))
+  in
+  let bonus_leeg = [ pf_leeg ~label:"D1" ~attr:"bonus" (); pf_cons ] in
+  named_refusal ~by:{|the Let "k"|} ~ref_plays:false
+    ~name:"stratum: a Let barrier per member, ref reads 3 first (stratum-pm2-8-w-3dd)" ~ir:(pm_doc (creaties "8" "3"))
+    ~param:"p" ~case_text:(pf_case ~instances:d1 bonus_leeg);
+  named_refusal ~by:{|the Let "k"|} ~ref_plays:true
+    ~name:"stratum: the barrier per member without the werf creation, ref's barrier at 8 (stratum-pm2-8-3dd-zonder-werfcreatie, control)"
+    ~ir:(pm_doc (creaties ~werf:false "8" "3")) ~param:"p" ~case_text:(pf_case ~instances:d1 bonus_leeg);
+  both_answer ~name:"stratum: the barrier per member with p bound (stratum-pm2-8-w-3dd-gebonden, control)"
+    ~ir:(pm_doc (creaties "8" "3")) ~case_text:(pf_case ~params:bound ~instances:d1 bonus_leeg);
+  (* the demand: bonus of H1 = Let k = p in som(keur van werven die TEN MINSTE
+     1 schuiten [TEN MINSTE 1 [lengte > 5, lengte > k]]): the value p is read
+     where the matrix reads k, at 3 only if 3 comes before 8 *)
+  let vraag_doc cs =
+    doc cs
+      (pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:pf_n0
+         (let_ "k" p
+            (som ~el:"Werf" ~attr:"keur" ~rol:werven
+               (kv ~drempel:1 "TEN_MINSTE" (pf_comp ~drempel:1 "TEN_MINSTE" [ gt lengte (lit "5"); gt lengte k ])))))
+  in
+  let h1 = [ inst "H1" "Haven" "" {|"werven": [ "D1" ]|}; inst "D1" "Droogdok" {|"keur": { "number": "4" }|} "" ] in
+  named_refusal ~by:{|the Let "k"|} ~ref_plays:false
+    ~name:"stratum: a Let value read in a matrix, ref reads 3 first (stratum-vraag-8-w-3dd)"
+    ~ir:(vraag_doc (creaties "8" "3")) ~param:"p" ~case_text:(pf_case ~instances:h1 [ pf_cons ]);
+  named_refusal ~by:{|the Let "k"|} ~ref_plays:true
+    ~name:"stratum: the Let value without the werf creation, ref's 8 settles the matrix (stratum-vraag-8-3dd-zonder-werfcreatie, control)"
+    ~ir:(vraag_doc (creaties ~werf:false "8" "3")) ~param:"p" ~case_text:(pf_case ~instances:h1 [ pf_cons ]);
+  both_answer ~name:"stratum: the Let value with p bound (stratum-vraag-8-w-3dd-gebonden, control)"
+    ~ir:(vraag_doc (creaties "8" "3")) ~case_text:(pf_case ~params:bound ~instances:h1 [ pf_cons ])
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
