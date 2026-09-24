@@ -1,0 +1,1 @@
+an attribute reference without navigation bindings is the subject's own read, so its objecttype is the subject type 'Munt'
