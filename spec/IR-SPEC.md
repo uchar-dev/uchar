@@ -3852,11 +3852,14 @@ day means OUTSIDE a day-kind voorwaarde is a runtime fault in every executor
 the mirror arm, recorded and open.
 
 **`Rekenjaar` stays in the set without a carrier.** No document in any zone
-carries it, and the reference interpreter faults on it by name ("not exercised
-by any corpus case"). That fault is the honest answer for a name the spec
-admits and no executor implements, so the name is admitted-and-unexecuted
-rather than dropped: removing it from the set would make a document ill-formed
-for using a construct ch. 8.2 defines.
+carries it, and every executor refuses it by name with one sentence — the
+reference interpreter and the ASP backend at evaluation, the Drools backend
+before lowering (an EXCLUDE, never a fired result; until the L4 landing it
+computed the year of the evaluation date): "the Rekenjaar context value is
+not exercised by any corpus case (ch. 8.2)". That refusal is the honest
+answer for a name the spec admits and no executor implements, so the name is
+admitted-and-unexecuted rather than dropped: removing it from the set would
+make a document ill-formed for using a construct ch. 8.2 defines.
 
 **Observability before the rule: none, in either direction.** Measured
 2026-09-10 on the state that predates this clause, one field at a time:

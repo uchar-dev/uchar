@@ -4714,7 +4714,9 @@ normative:
   a `ContextValue` named `Rekendatum` (the v0 `Constante` until L4; day
   precision; its sibling
   `Rekenjaar`, a whole number, is not yet exercised by any corpus case
-  and executors fault on it, recorded).
+  and every executor refuses it by name with one sentence — the reference
+  interpreter and the ASP backend at evaluation, the Drools backend before
+  lowering — recorded in `IR-SPEC.md` ch. 4.1).
 
 **The bound day is not a session value.** Until L4 `IR-SPEC.md` ch. 4.1
 admitted a third context-value name, `de dag`; since L4 it is the node
