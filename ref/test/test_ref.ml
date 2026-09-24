@@ -6546,6 +6546,38 @@ let () =
      'Jutter': without a range the fold is the subject's own read, so its elementType must \
      name the subject type"
 
+(* WF-037's granularity facet (IR-SPEC ch. 4.3): since the L4 landing only a
+   BuiltinCall carries one, and only the two bucketing builtins read it, as
+   the whole value of a rule on a temporal target (ch. 3.7, 3.8). On any
+   other kind the facet is refused in the verifier's sentence, and a
+   bucketing builtin anywhere else is refused by name: neither is evaluated
+   with its facet dropped. The verifier refuses the first document first *)
+let () =
+  let doc waarde : Ir_v0.Ast.document =
+    { empty_doc with
+      objecttypen = [ ot "Jutter" [ ("jaar", Some num0); ("basis", Some num0) ] [] ];
+      resolved_regels = [ rr "jaar" Berekening (Some (aref "jaar" "Jutter")) (Some waarde) None ] }
+  in
+  let run waarde =
+    Eval.evaluate (env_of (doc waarde)) (World.add_instance World.empty (inst "J1" "Jutter" []))
+  in
+  let met_granulariteit kind argumenten : Ir_v0.Ast.expr =
+    Functie
+      { kind; argumenten; element_objecttype = None; leegwaarde = None; filter = None;
+        dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = Some Maand;
+        bron_rol = None; bron_pad = None }
+  in
+  expect_fault_msg "WF-037-granulariteit-op-een-niet-emmerende-builtin-faalt"
+    (fun () -> run (met_granulariteit Jaar_uit [ litv "2026-03-15" Ir_v0.Ast.Datum_in_dagen ]))
+    "granularity facet on a non-bucketing kind";
+  expect_fault_msg "WF-037-granulariteit-op-een-aggregatiesoort-faalt"
+    (fun () -> run (met_granulariteit Som [ litv "1" num0; litv "2" num0 ]))
+    "granularity facet on a non-bucketing kind";
+  expect_fault_msg "WV-3.7-emmerende-builtin-buiten-een-tijdsafhankelijk-doel-faalt"
+    (fun () -> run (met_granulariteit Tijdsevenredig_deel [ aref "basis" "Jutter" ]))
+    "a granularity-bucketed builtin call is executed only as the whole value of a rule on a \
+     temporal target (ch. 3.7, 3.8)"
+
 (* WV-4.1-literaal (IR-SPEC ch. 4.1): a literal is read from its value
    variant under its type. A variant the type does not name is refused in
    the loader's sentence (WF-114), never read as the type's value — a node

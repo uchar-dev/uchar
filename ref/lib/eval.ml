@@ -1365,7 +1365,18 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
      subject itself) — that form must never run as an instance
      subselection and faults in its own arm *)
   if dimensie_selectie <> None then Value.fault "dimension selection not implemented in this card";
-  if granulariteit <> None then Value.fault "granularity-bucketed aggregation not implemented in this card";
+  (* a granularity is a BuiltinCall facet since the L4 landing, read by the
+     two bucketing builtins alone, and those run only as the whole value of a
+     rule on a temporal target ([run_pro_rata]). On any other kind the facet
+     is WF-037's refusal, in the verifier's sentence; a bucketing builtin met
+     here is refused by name, never evaluated with its facet dropped *)
+  (match (granulariteit, kind) with
+  | None, _ -> ()
+  | Some _, (Tijdsevenredig_deel | Aantal_dagen_in) ->
+      Value.fault
+        "a granularity-bucketed builtin call is executed only as the whole value of a rule on a \
+         temporal target (ch. 3.7, 3.8)"
+  | Some _, _ -> Value.fault "granularity facet on a non-bucketing kind");
   (* WF-102's three shape arms, mirrored here rather than assumed: a
      verifier-clean document cannot reach them, and a document that
      reaches an executor without passing the verifier must fault by name
