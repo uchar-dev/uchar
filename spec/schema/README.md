@@ -209,7 +209,10 @@ L3 moves the datatypes and the units to their v1 nodes and changes no meaning
   `denominator`?). No field is ever null. The factor is the exact rational
   `{"num": n, "den": d}`, two integers of at least 1, without a node
   discriminator (B17 (i)); that it is in lowest terms is WF-092's, because a
-  schema cannot state a greatest common divisor.
+  schema cannot state a greatest common divisor. Both integers are also at
+  most 4611686018427387903 (2^62 − 1): every loader reads them within that
+  range and refuses a larger one in its factor sentence, so the schema states
+  the same bound instead of admitting a document no reader loads.
 - A unit's further spellings (`spellings`, at least one when present) belong
   to its declaration. `UnitSystem.units` holds `DeclaredUnit`: the node
   `Unit` with that one field after the others, its other field schemas taken
@@ -320,7 +323,8 @@ The repo's second CI gate. It performs three checks, and two self-tests:
      since L2), and in the L3 shape the presentation tag on a type annotation
      and a factor not in lowest terms (both refused by the verifier), a
      percentage without the tag, a declared unit without spellings, the bare
-     unit, and a parameter without a facet and a day kind without a plural.
+     unit, a factor at the bound 2^62 − 1, and a parameter without a facet and
+     a day kind without a plural.
 2. **Validation** — every `corpus/golden/**/ir.json` validates against the
    schema. The file count is reported; an empty corpus passes and says so.
 3. **Round-trip** — each such file is parsed (preserving the original number
