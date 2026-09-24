@@ -48,10 +48,10 @@ A hand-broken variant of `corpus/golden/jutterswet-berging/ir.json` — one
 field nulled, a one-line diff; schema-valid, since the version's
 `targetType` is `["string","null"]` on the wire.
 
-Falsifiable, arm-exact: in `wf034_verdeling_typen` replace the whole `match
-r.doel_type with …` arm by `[]`, leaving the `sourceType` arm untouched. This
-case, alone in all four zones, turns clean; its `sourceType` sibling stays
-rejected. Measured: 486 documents compared, 4 reports change, 1 verdict.
+Falsifiable, arm-exact: in `wf034_verdeling_typen` replace the whole
+`match r.doel_type with …` arm by `[]`, leaving the `sourceType` arm
+untouched. This case, alone in all four zones, turns clean; its `sourceType`
+sibling stays rejected. Measured: 486 documents compared, 4 reports change, 1 verdict.
 Dropping the whole clause instead frees this case and
 `wf034-verdeling-zonder-brontype`, those two and nothing else: 6 reports
 change, 2 verdicts.
