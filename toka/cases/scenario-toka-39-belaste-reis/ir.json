@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "POSITIEF"
+              "sign": "positive"
             }
           },
           {
@@ -53,7 +53,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "jr",
@@ -73,7 +73,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -83,7 +83,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -93,7 +93,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -103,7 +103,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -113,21 +113,21 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
             "node": "Attribute",
             "name": "burgerservicenummer",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           },
           {
             "node": "Attribute",
             "name": "woonprovincie",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           },
           {
@@ -137,7 +137,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -145,32 +145,32 @@
           {
             "node": "Characteristic",
             "name": "passagier jonger dan 18 jaar",
-            "kind": "ZELFSTANDIG"
+            "kind": "nominal"
           },
           {
             "node": "Characteristic",
             "name": "minderjarig",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "passagier van 18 tot en met 24 jaar",
-            "kind": "ZELFSTANDIG"
+            "kind": "nominal"
           },
           {
             "node": "Characteristic",
             "name": "passagier van 25 tot en met 64 jaar",
-            "kind": "ZELFSTANDIG"
+            "kind": "nominal"
           },
           {
             "node": "Characteristic",
             "name": "passagier van 65 jaar of ouder",
-            "kind": "ZELFSTANDIG"
+            "kind": "nominal"
           },
           {
             "node": "Characteristic",
             "name": "recht op duurzaamheidskorting",
-            "kind": "BEZITTELIJK"
+            "kind": "possessive"
           }
         ]
       },
@@ -200,9 +200,9 @@
             "node": "Attribute",
             "name": "luchthaven van vertrek",
             "datatype": {
-              "node": "Enumeratie",
-              "domein": "Luchthavens",
-              "waarden": [
+              "node": "Enumeration",
+              "domain": "Luchthavens",
+              "values": [
                 "Amsterdam Schiphol",
                 "Groningen Eelde",
                 "Parijs Charles de Gaulle",
@@ -214,9 +214,9 @@
             "node": "Attribute",
             "name": "luchthaven van bestemming",
             "datatype": {
-              "node": "Enumeratie",
-              "domein": "Luchthavens",
-              "waarden": [
+              "node": "Enumeration",
+              "domain": "Luchthavens",
+              "values": [
                 "Amsterdam Schiphol",
                 "Groningen Eelde",
                 "Parijs Charles de Gaulle",
@@ -239,7 +239,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "km",
@@ -256,14 +256,14 @@
             "node": "Attribute",
             "name": "bereikbaar per trein",
             "datatype": {
-              "node": "Booleaan"
+              "node": "Boolean"
             }
           },
           {
             "node": "Attribute",
             "name": "gebruik fossiele brandstof minder dan 50 procent",
             "datatype": {
-              "node": "Booleaan"
+              "node": "Boolean"
             }
           },
           {
@@ -273,7 +273,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "minuut",
@@ -293,7 +293,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -303,7 +303,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -313,7 +313,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "jr",
@@ -333,7 +333,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -343,7 +343,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -353,7 +353,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -379,7 +379,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "minuut",
@@ -421,52 +421,52 @@
           {
             "node": "Characteristic",
             "name": "in het hoogseizoen",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "bereikbaar per trein",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "gebruik fossiele brandstoffen minder dan 50%",
-            "kind": "BEZITTELIJK"
+            "kind": "possessive"
           },
           {
             "node": "Characteristic",
             "name": "reis met paaskorting",
-            "kind": "ZELFSTANDIG"
+            "kind": "nominal"
           },
           {
             "node": "Characteristic",
             "name": "reiziger",
-            "kind": "BEZITTELIJK"
+            "kind": "possessive"
           },
           {
             "node": "Characteristic",
             "name": "duurzaam",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "belaste reis",
-            "kind": "ZELFSTANDIG"
+            "kind": "nominal"
           },
           {
             "node": "Characteristic",
             "name": "belast",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "rondvlucht",
-            "kind": "ZELFSTANDIG"
+            "kind": "nominal"
           },
           {
             "node": "Characteristic",
             "name": "bestemd voor minderjarigen",
-            "kind": "ZELFSTANDIG"
+            "kind": "nominal"
           }
         ]
       },
@@ -482,7 +482,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "POSITIEF"
+              "sign": "positive"
             }
           },
           {
@@ -492,7 +492,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "POSITIEF"
+              "sign": "positive"
             }
           },
           {
@@ -502,7 +502,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "POSITIEF"
+              "sign": "positive"
             }
           }
         ],
@@ -511,79 +511,72 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "Vlucht van natuurlijke personen",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "Vlucht van natuurlijke personen",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "reis",
-            "objecttypeNaam": "Vlucht",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "reis",
+            "objectType": "Vlucht",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "passagier",
-            "objecttypeNaam": "Natuurlijk persoon",
-            "meervoud": null,
-            "meervoudig": true
+            "node": "Role",
+            "name": "passagier",
+            "objectType": "Natuurlijk persoon",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "reis met contingent treinmiles",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "reis met contingent treinmiles",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "reis met treinmiles",
-            "objecttypeNaam": "Vlucht",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "reis met treinmiles",
+            "objectType": "Vlucht",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "vastgestelde contingent treinmiles",
-            "objecttypeNaam": "Contingent treinmiles",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "vastgestelde contingent treinmiles",
+            "objectType": "Contingent treinmiles",
+            "many": false
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "verdeling contingent treinmiles over passagiers",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "verdeling contingent treinmiles over passagiers",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "te verdelen contingent treinmiles",
-            "objecttypeNaam": "Contingent treinmiles",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "te verdelen contingent treinmiles",
+            "objectType": "Contingent treinmiles",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "passagier met recht op treinmiles",
-            "objecttypeNaam": "Natuurlijk persoon",
-            "meervoud": null,
-            "meervoudig": true
+            "node": "Role",
+            "name": "passagier met recht op treinmiles",
+            "objectType": "Natuurlijk persoon",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "Partnerrelatie",
-        "wederkerig": true,
-        "rollen": [
+        "node": "FactType",
+        "name": "Partnerrelatie",
+        "reciprocal": true,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "partner",
-            "objecttypeNaam": "Natuurlijk persoon",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "partner",
+            "objectType": "Natuurlijk persoon",
+            "many": false
           }
         ]
       }
@@ -596,7 +589,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       },
       {
@@ -606,7 +599,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "NIET_NEGATIEF",
+          "sign": "nonNegative",
           "unit": {
             "node": "Unit",
             "abbreviation": "jr",
@@ -642,7 +635,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "POSITIEF"
+          "sign": "positive"
         }
       },
       {
@@ -652,7 +645,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       },
       {
@@ -662,7 +655,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD",
+          "sign": "unspecified",
           "unit": {
             "node": "Unit",
             "abbreviation": "jr",
@@ -682,7 +675,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD",
+          "sign": "unspecified",
           "unit": {
             "node": "Unit",
             "abbreviation": "km",
@@ -702,7 +695,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       },
       {
@@ -712,7 +705,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD",
+          "sign": "unspecified",
           "unit": {
             "node": "Unit",
             "abbreviation": "km",
@@ -732,7 +725,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       },
       {
@@ -742,7 +735,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       },
       {
@@ -752,7 +745,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD",
+          "sign": "unspecified",
           "unit": {
             "node": "Unit",
             "abbreviation": "%",
@@ -772,7 +765,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD",
+          "sign": "unspecified",
           "unit": {
             "node": "Unit",
             "abbreviation": "%",
@@ -792,7 +785,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD",
+          "sign": "unspecified",
           "unit": {
             "node": "Unit",
             "abbreviation": "%",
@@ -812,7 +805,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD",
+          "sign": "unspecified",
           "unit": {
             "node": "Unit",
             "abbreviation": "minuut",
@@ -832,7 +825,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD",
+          "sign": "unspecified",
           "unit": {
             "node": "Unit",
             "abbreviation": "minuut",
@@ -852,7 +845,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD",
+          "sign": "unspecified",
           "unit": {
             "node": "Unit",
             "abbreviation": "mnd",
@@ -874,15 +867,15 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       },
       {
         "node": "Domain",
         "name": "Luchthavens",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "Amsterdam Schiphol",
             "Groningen Eelde",
             "Parijs Charles de Gaulle",
@@ -1099,11 +1092,11 @@
     "dimensions": [],
     "timelines": [
       {
-        "node": "Tijdlijn",
-        "naam": "de variabele periode van 3 maanden",
-        "variabelStartpunt": true,
-        "granulariteit": "KWARTAAL",
-        "aantal": 1
+        "node": "Timeline",
+        "name": "de variabele periode van 3 maanden",
+        "variableStart": true,
+        "granularity": "quarter",
+        "count": 1
       }
     ],
     "dayKinds": [
@@ -1115,21 +1108,19 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "belaste reis",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "belaste reis",
-              "objecttype": "Vlucht",
+              "node": "AttributeReference",
+              "attribute": "belaste reis",
+              "subjectType": "Vlucht",
               "source": {
                 "snippet": "Een Vlucht is een belaste reis"
               }
@@ -1140,36 +1131,35 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "bereikbaar per trein",
-                "objecttype": "Vlucht",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "bereikbaar per trein",
+                "subjectType": "Vlucht",
                 "source": {
                   "snippet": "bereikbaar per trein van de vlucht"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "boolean": true
                 },
                 "type": {
-                  "node": "Booleaan"
+                  "node": "Boolean"
                 },
                 "source": {
                   "snippet": "waar"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "bereikbaar per trein van de vlucht gelijk is aan waar"
               }
@@ -1179,14 +1169,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }
