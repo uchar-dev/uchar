@@ -11713,6 +11713,51 @@ let () =
       ( "kwantorvouw zonder bereik, voorbij de lader", bereik ~rol:None ~pad:None,
         "a quantifier fold carries its range (bronRol or bronPad): the range is written, never derived" ) ]
 
+(* WF-037's granularity facet on a builtin that does not bucket. The loader
+   admits the facet on every BuiltinCall and the verifier refuses it on a
+   non-bucketing kind; ref and this backend refuse it in the verifier's
+   sentence rather than drop it, in a value position and in a day-kind
+   voorwaarde, the two places this backend reads a builtin. Until this
+   refusal the backend answered both documents with the facet dropped. *)
+let () =
+  let zin = "granularity facet on a non-bucketing kind" in
+  let geweigerd naam ir case_text at =
+    check (naam ^ ": de verifier weigert met WF-037")
+      (List.mem
+         { Ir_v0.Checks.wf = "WF-037"; at; reason = zin }
+         (Ir_v0.Checks.all
+            (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string ir))));
+    let doc, case = load_pair ~ir ~case_text in
+    (match ref_report doc case with
+    | (_ : string list) -> check (naam ^ ": ref weigert (kreeg een wereld)") false
+    | exception Uchar_ref.Value.Fault m -> check (naam ^ ": ref weigert (" ^ m ^ ")") (m = zin));
+    match translate doc case with
+    | (_ : string) -> check (naam ^ ": clingo weigert (kreeg een programma)") false
+    | exception Uchar_ref.Value.Fault m -> check (naam ^ ": clingo weigert (" ^ m ^ ")") (m = zin)
+  in
+  let jaar_uit =
+    Printf.sprintf
+      {|{ "node": "BuiltinCall", "kind": "JAAR_UIT", "arguments": [ %s ], "granularity": "MAAND",
+          "type": %s, "bron": "het jaar uit zijn vondstdatum" }|}
+      (pf_a "vondstdatum") pf_n0
+  in
+  geweigerd "granularity op een niet-emmerende builtin in een waardepositie"
+    (pf_doc
+       ~objecttypen:[ pf_ot [ ("vondstdatum", pf_datum); ("vondstjaar", pf_n0) ] ]
+       ~regels:[ pf_regel ~doel:"vondstjaar" jaar_uit ]
+       ())
+    (pf_case
+       ~instances:
+         [ {|{ "label": "J1", "objectType": "Jutter", "attributes": { "vondstdatum": { "date": "2026-03-15" } }, "roles": {}, "characteristics": [] }|} ]
+       [ pf_cons ])
+    "/rules/resolvedRegels/0/versions/0/value";
+  geweigerd "granularity op een niet-emmerende builtin in een dagsoortvoorwaarde"
+    (vervang
+       (dk_doc ~voorwaarde:(deel_gelijk "DAG_UIT" "1") ~waarde:(stap ()) ())
+       ~waar:{|"kind": "DAG_UIT", "arguments"|}
+       ~door:{|"kind": "DAG_UIT", "granularity": "MAAND", "arguments"|})
+    dk_case "/rules/resolvedDagsoorten/0/voorwaarde/links"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
