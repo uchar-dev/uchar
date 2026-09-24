@@ -4154,22 +4154,26 @@ the expression whose value is inserted). In v0 the three nodes were
 delta B21):** the wire writes the two nodes, each with only its own fields
 (the two tables below); the `kind` decides the node — the eight folds are
 an `Aggregation`'s, the seventeen other kinds a `BuiltinCall`'s — and a
-kind of the other node is an unknown value of this one. The kinds keep
-their v0 spelling (`SOM`, `TOTAAL`, …) until their own landing.
+kind of the other node is an unknown value of this one. Since L5 the kinds
+carry the spelling of the two tables, each table with its v0 values.
 
 **Aggregation** — folds over object instances or dimension cells:
 
 | Field | Meaning |
 |---|---|
-| `kind` | sum, total, count, minimum, maximum, first, last, **filled count** (the last a uchar dialect kind, `CONSTRUCTS.md` row 1 — see "The filled count" below) |
-| `arguments` | one set-valued operand (instance fold), one `InstanceSetUnion` (the §5.7 concatenation, count only — see "The instance-set union" below), or ≥ 2 listed operands (value fold). **The listed form is the VALUE folds' alone since 2026-09-20**: under `AANTAL` and `AANTAL_GEVULDE` it is refused by WF-037, so the §5.7 concatenation reaches the count through the union node and never through this list. **Neither count has a sourceless form since 2026-09-23**: a count of one operand or none MUST carry `elementType` (WF-037), the union being the one exit because its selections carry the population and WF-110 (c) forbids a second one here |
+| `kind` | `sum`, `total`, `count`, `minimum`, `maximum`, `first`, `last`, `filledCount` (the last a uchar dialect kind, `CONSTRUCTS.md` row 1 — see "The filled count" below) |
+| `arguments` | one set-valued operand (instance fold), one `InstanceSetUnion` (the §5.7 concatenation, count only — see "The instance-set union" below), or ≥ 2 listed operands (value fold). **The listed form is the VALUE folds' alone since 2026-09-20**: under `count` and `filledCount` it is refused by WF-037, so the §5.7 concatenation reaches the count through the union node and never through this list. **Neither count has a sourceless form since 2026-09-23**: a count of one operand or none MUST carry `elementType` (WF-037), the union being the one exit because its selections carry the population and WF-110 (c) forbids a second one here |
 | `elementType` | the instance type ranged over (instance folds) — the POPULATION, extensionally (ch. 2.2): the contributors are the instances the source relation reaches whose type is ⊑ `elementType`, so one it reaches that this type does not cover is not folded. Since WF-047's "agree" became ⊑-compatibility the source role's filler may be a strict SUPERTYPE of it, and reach and population are then genuinely different sets; witness `golden/jutterswet-munttelling` |
-| `filter` | Condition? — the die/dat-subselection, evaluated PER CONTRIBUTOR (the element is the condition's subject; a leeg operand fails it, ch. 1.2d; an all-excluding filter leaves an empty source — the sum fallback fires, a count reads 0). **Landed (2026-08-19):** executes in both executors (`jutterswet-strandgoed`, an emitter golden; `RUNTIME-SEMANTICS.md` ch. 3.4a). The reference interpreter carries the full condition set; the ASP backend's corpus-exercised fragment faults loudly on the rest — the standing executor asymmetry, differential-gated over the corpus. The SAME field also carries the §7.1 gedurende timeline clip (on the temporal total, where the element type is the subject itself) — a timeline operation, never an instance subselection. **Landed (2026-08-19, WF-055):** the clip executes in both executors (`jutterswet-getijdenwacht`; `RUNTIME-SEMANTICS.md` ch. 3.6): intersect the full value timeline with the condition's true-periods (an own temporal characteristic, or a per-segment comparison against a scalar bound), then total whole units per clipped segment — floor, never pro-rata; a gap in the condition clips away; a fully clipped-away or absent timeline totals 0, never leeg. The negated clip (the complement) and the Gelijk/Ongelijk comparison clip execute in the reference interpreter only — the ASP side faults loudly on both. A negated characteristic subselection never reaches the wire executable (v0 marks it Onopgelost) |
+| `filter` | Condition? — the die/dat-subselection, evaluated PER CONTRIBUTOR (the element is the condition's subject; a leeg operand fails it, ch. 1.2d; an all-excluding filter leaves an empty source — the sum fallback fires, a count reads 0). **Landed (2026-08-19):** executes in both executors (`jutterswet-strandgoed`, an emitter golden; `RUNTIME-SEMANTICS.md` ch. 3.4a). The reference interpreter carries the full condition set; the ASP backend's corpus-exercised fragment faults loudly on the rest — the standing executor asymmetry, differential-gated over the corpus. The SAME field also carries the §7.1 gedurende timeline clip (on the temporal total, where the element type is the subject itself) — a timeline operation, never an instance subselection. **Landed (2026-08-19, WF-055):** the clip executes in both executors (`jutterswet-getijdenwacht`; `RUNTIME-SEMANTICS.md` ch. 3.6): intersect the full value timeline with the condition's true-periods (an own temporal characteristic, or a per-segment comparison against a scalar bound), then total whole units per clipped segment — floor, never pro-rata; a gap in the condition clips away; a fully clipped-away or absent timeline totals 0, never leeg. The negated clip (the complement) and the Gelijk/Ongelijk comparison clip execute in the reference interpreter only — the ASP side faults loudly on both. A negated characteristic subselection never reaches the wire executable (the producer marks it `Unresolved`; v0 `Onopgelost`) |
 | `emptyFallback` | expression? — **sum only**: the §5.8.2 "of … als die er niet zijn" clause |
-| `dimensionSelection` | ? — **sum/min/max only**: fold over an ordered label selection instead of instances (dialect, row 28) |
-| `sourceRole` | RoleBinding? — **extension field** (v0 wire `bronRol`), instance folds only: the connecting relation, with **the role whose filler instances the fold RANGES OVER bound** — the reach, which `elementType` then narrows to the population (ch. 2.2); the opposite role's filler is the fold's subject type (WF-047, ⊑-compatible since ch. 2.6, so the bound role's filler may be an ancestor of `elementType`). **Since L2 (2026-09-24, B12)** a fold with ONE argument and an `elementType` carries its range — this field or `sourcePath` — under every kind but `TOTAAL`, where its absence makes the argument the subject's own read; the schema and every loader refuse a bindingless fold elsewhere, so nothing derives a range (until L2 WF-048 demanded a uniquely derivable one). A binding on a node that is no instance fold is ill-formed (WF-047) |
+| `dimensionSelection` | DimensionSelection? — **`sum`/`minimum`/`maximum` only**: fold over an ordered label selection instead of instances (dialect, row 28). The value is a **DimensionSelection** node: `dimension`, the declared dimension it selects on, and `labels`, the selected labels, which resolve against that dimension's declared order (WF-040). v0 wrote it as the node `DimensieSelectie` (`dimensie`, `labels`), the wire name until L5 |
+| `sourceRole` | RoleBinding? — **extension field** (v0 wire `bronRol`), instance folds only: the connecting relation, with **the role whose filler instances the fold RANGES OVER bound** — the reach, which `elementType` then narrows to the population (ch. 2.2); the opposite role's filler is the fold's subject type (WF-047, ⊑-compatible since ch. 2.6, so the bound role's filler may be an ancestor of `elementType`). **Since L2 (2026-09-24, B12)** a fold with ONE argument and an `elementType` carries its range — this field or `sourcePath` — under every kind but `total`, where its absence makes the argument the subject's own read; the schema and every loader refuse a bindingless fold elsewhere, so nothing derives a range (until L2 WF-048 demanded a uniquely derivable one). A binding on a node that is no instance fold is ill-formed (WF-047) |
 | `sourcePath` | RoleBinding list? — **extension field** (v0 wire `bronPad`), the MULTI-STEP range of a value fold's set source: the relations walked subject-outwards, each step spelled exactly as `sourceRole` is. Two or more steps; the one-step range IS `sourceRole`, and since L2 the schema and every loader admit at most one of the two fields (WF-102) |
 | `type`, `source` | — |
+
+v0 values: `SOM` → `sum`, `TOTAAL` → `total`, `AANTAL` → `count`, `MINIMUM` →
+`minimum`, `MAXIMUM` → `maximum`, `EERSTE` → `first`, `LAATSTE` → `last`,
+`AANTAL_GEVULDE` → `filledCount`.
 
 Empty-source results differ per kind — the som/totaal split and the
 no-fallback rule for min/max/first/last are `RUNTIME-SEMANTICS.md`
@@ -4183,7 +4187,7 @@ read.
 **What a fold SOURCE is.** The rule below speaks about the **single**
 argument of an aggregation carrying an `elementType` — the argument that IS
 the folded set's source. A fold carrying two or more arguments is the
-listed value fold (§5.8.3, MIN/MAX/EERSTE/LAATSTE over listed operands); it
+listed value fold (§5.8.3, `minimum`/`maximum`/`first`/`last` over listed operands); it
 has no source at all, its `elementType` is vestigial where the
 resolver stamps one, and its operands are ORDINARY READS, evaluated one by
 one against the rule subject and governed by WF-053 like every other read.
@@ -4200,14 +4204,14 @@ Drools transpiler branches.
 decides it, and nothing else on the argument does. (i) With a range —
 `sourceRole` or `sourcePath` — the single argument is the **set source**:
 the fold reads it on each instance the range reaches and `elementType`
-admits. (ii) Under `AANTAL` the set source is the **count source**: it
+admits. (ii) Under `count` the set source is the **count source**: it
 counts the instances the range reaches, and its `attribute` is the written
 name of the role the range binds, which MUST denote that role on declared
 name or declared plural (WF-047). (iii) Under the value folds and
-`AANTAL_GEVULDE` the source's `attribute` is read on each contributor and
+`filledCount` the source's `attribute` is read on each contributor and
 resolves on `elementType`. (iv) Without a range the argument is the
 subject's **own read** — the ch. 3.6 temporal total; the schema and every
-loader admit that only under `TOTAAL` (B12: a single-argument fold with an
+loader admit that only under `total` (B12: a single-argument fold with an
 `elementType` carries a range under every other kind), and its
 `elementType` is then the subject type (WF-083 (c)). The count source is
 recognised at the source itself (WF-093 below): its `attribute` names no
@@ -4224,7 +4228,7 @@ Jutter": each member of the folded set is asked for the attribute, and the
 declaration that answers is the element type's), and the fold **subject**
 for the count source (its written role name names the subject's relation)
 and for the subject's own read (what the ch. 3.6 temporal total totals).
-The argument's `objecttype` MUST name that anchor.
+The argument's `subjectType` MUST name that anchor.
 
 It is not a free annotation, and the precise reason is worth stating,
 because the obvious one is false. The field is not ignored: for the own
@@ -4240,7 +4244,7 @@ declaration on a type the fold never walks; this rule compares the names
 (equality, WF-001 form), so it refuses a supertype of the subject as
 well. At
 the set source the field is inert in both — `ref`'s set-source arm binds no
-`objecttype` at all and every ASP read hangs on the element variable —
+`subjectType` at all and every ASP read hangs on the element variable —
 which is not a reason to leave it free but the reason to pin it: a field
 nobody reads is a field that can say anything.
 
@@ -4252,7 +4256,7 @@ fold source, admissible only on the count source and only when it denoted
 the fold subject; any other written role on a fold source was navigation,
 which a fold source never does. The field left the wire with L2 (B11): the
 form is a count source read on its subject like every other, and the
-written role stays in `bron`.
+written role stays in `source`.
 
 - **WF-083** A fold SOURCE — the single argument of an aggregation carrying
   an `elementType` — is ANCHORED and MUST NOT navigate. A fold with two or
@@ -4263,12 +4267,12 @@ written role stays in `bron`.
   count source or not denoting the fold subject; both fields left the wire
   (B11), and so did the witnesses of (b) (`corpus/negatief/README.md`,
   L2). Navigation bindings on a fold source are WF-053's (the fold's
-  relation is its range). (c) The fold source's `objecttype` MUST name the
+  relation is its range). (c) The fold source's `subjectType` MUST name the
   fold's anchor, per position (the reading of the source above): the
   `elementType` for the set source of a value fold, the fold subject for
-  the count source and for the subject's own read (a `TOTAAL` without a
+  the count source and for the subject's own read (a `total` without a
   range). Where WF-093 refuses the reading itself — a count source under a
-  value fold, a member read under `AANTAL` — the anchor is not crossed, so
+  value fold, a member read under `count` — the anchor is not crossed, so
   one defect is reported under one rule. For the subject's own read the
   node's own `elementType` MUST name the fold subject too (equality, WF-001
   form; since the L2 fix round): without a range the fold totals the
@@ -4279,14 +4283,14 @@ written role stays in `bron`.
   Witnesses: `wf083-vouwbron-vreemd-elementtype` (a set source anchored on
   the subject), `wf083-vouwbron-anker-op-operand` (a count source anchored
   on the element type), `wf083-vouwbron-vreemd-objecttype` (an own read
-  anchored on another type), `wf083-totaal-vreemd-elementtype` (a `TOTAAL`
+  anchored on another type), `wf083-totaal-vreemd-elementtype` (a `total`
   without a range whose `elementType` names another type than the
   subject). **A `sourcePath`'s INTERMEDIATE types are
   range, never anchor (2026-09-11).** The path (WF-102) introduces a third
   class of type into this position — the types the walk passes THROUGH —
   and the anchor is unmoved by them: every member of the folded set is
   still an `elementType` instance and every declaration is still
-  looked up there, so a source `objecttype` naming an intermediate type is
+  looked up there, so a source `subjectType` naming an intermediate type is
   ill-formed exactly as any other non-anchor name is
   (`wf083-vouwbron-anker-op-tussentype`). The clause needs no new arm for
   it; it needs to have CONSIDERED it, because the shape where the anchor
@@ -4665,8 +4669,8 @@ single-argument instance fold's set source is the COUNT source when its
 element type: it then names a role of the fold subject's relation, the
 written name of the role the range binds (WF-047), and it hands the fold the
 linked INSTANCES rather than a value per contributor. That is exactly what
-`AANTAL` consumes, and exactly what no other fold kind can use: `SOM`,
-`TOTAAL`, `MINIMUM`, `MAXIMUM`, `EERSTE`, `LAATSTE` and the filled count
+`count` consumes, and exactly what no other fold kind can use: `sum`,
+`total`, `minimum`, `maximum`, `first`, `last` and `filledCount`
 read a value PER CONTRIBUTOR. The recognition reads the source and never the
 node's kind, which is what lets the rule say both directions without being
 circular. It reads the name alone, and that has one consequence a document
@@ -4678,13 +4682,14 @@ spelling where that one does not collide (ch. 2.6).
 
 - **WF-093** For the single argument of an aggregation carrying an
   `elementType` and a range: (a) a count source — an `attribute` that
-  names no member of the element type — MUST be the source of `AANTAL`:
-  under a value fold (sum, total, minimum, maximum, first, last, filled
-  count) a source that names a role of the fold subject is ill-formed
+  names no member of the element type — MUST be the source of `count`:
+  under a value fold (`sum`, `total`, `minimum`, `maximum`, `first`,
+  `last`, `filledCount`) a source that names a role of the fold subject is
+  ill-formed
   (`wf093-aantalgevulde-wrat`, `wf093-wratvouw-kale-eerste`,
   `wf093-wratvouw-kale-som`, `wf093-telbron-onder-som`), while a name that
   is neither a member of the element type nor a role of the subject is an
-  unresolved member (WF-034); (b) `AANTAL` MUST read a count source: a
+  unresolved member (WF-034); (b) `count` MUST read a count source: a
   count whose source names a member of the element type reads a value per
   contributor, which a count does not consume
   (`wf093-telling-over-attribuutbron`). A fold of two or more arguments is
@@ -4844,7 +4849,8 @@ the listed count left the wire on the same
 ground as the set source, under WF-037 rather than this rule, because what is
 wrong with it is its ARITY and not a field. The meaning authors do want —
 count the filled ones — has carried its own name since 2026-09-20,
-`AANTAL_GEVULDE`, over a set source; the listed spelling of THAT is
+`AANTAL_GEVULDE` (`filledCount` since L5), over a set source; the listed
+spelling of THAT is
 expressible the day a source language norms one.
 
 *One decision for two positions, and what the other answer would have cost.*
@@ -5007,7 +5013,7 @@ the bound role, case-insensitively on declared name or declared plural —
 never a synthesized plural (the ch. 2.6 decision) — and WF-047 crosses it
 against the range. Where the written name denoted neither, the L2
 migration and the emitter write the declared name of the bound role and
-keep the written spelling in `bron` (ch. 2.6, WF-047). A value fold's source
+keep the written spelling in `source` (ch. 2.6, WF-047). A value fold's source
 reads an attribute value and resolves as an ordinary attribute reference
 on its anchor (WF-034, ch. 4.6 (l)). Semantics: `RUNTIME-SEMANTICS.md`
 ch. 3.4a; the ASP backend keys the count by the connecting role's
@@ -5022,7 +5028,7 @@ exists: the range names the role, and the fallback's two witnesses
 (`wf034-ambigu-typenpaar`, `wf034-zelftype-typenpaar`) were removed with
 reason.
 
-**The filled count (`AANTAL_GEVULDE`, v1 `filledCount`).** *(Maintainer
+**The filled count (`filledCount`, v0 `AANTAL_GEVULDE`).** *(Maintainer
 decision 2026-09-19, decisions G1–G8; landed 2026-09-20.)* One aggregation
 kind folds the contributors' VALUES by PRESENCE: it answers how many
 contributors have a value that is not leeg. It is an instance fold, it reads
@@ -5038,13 +5044,13 @@ its own typing document rules the value reading OUT of the count operator by
 saying that operator takes subject expressions and therefore has no empty-
 value question. The count counts instances and keeps doing so. So this kind
 is written FIRST on the wire and has no producer route in any frontend —
-the same order the `eerste`/`laatste` widening of 2026-09-04 took.
+the same order the `first`/`last` widening of 2026-09-04 took.
 
 The node is the existing `Aggregation` (the v0 `Functie` until L4), in the
 instance-fold shape. **No field is added and no field is given a new
 meaning:**
 
-| Field | On `AANTAL_GEVULDE` |
+| Field | On `filledCount` |
 |---|---|
 | `arguments` | exactly ONE, an `AttributeReference` — the set source, which the fold's range makes it (the reading of the source, (i); the set flag until L2) |
 | `elementType` | required: the population, exactly as ch. 3.4a reads it for every instance fold |
@@ -5053,7 +5059,7 @@ meaning:**
 | `dimensionSelection` | always absent — **postponed, not rejected** (below) |
 | `granularity` | not a field of an `Aggregation` since L4 (delta B21) — it buckets nothing |
 | `type` | a whole, unitless number: a cardinality — **derived**, so the annotation is crossed against it under WF-091 exactly as a count's is, never believed (negatief `wf091-aantalgevulde-eenheid`) |
-| `sourceRole` / `sourcePath` | the range, one step or many, exactly as on the value folds (WF-102); required, as on every single-argument fold with an `elementType` under a kind other than `TOTAAL` (B12) |
+| `sourceRole` / `sourcePath` | the range, one step or many, exactly as on the value folds (WF-102); required, as on every single-argument fold with an `elementType` under a kind other than `total` (B12) |
 
 *Why no node of its own.* The v1 split of row 1 separates aggregation-with-a-
 source from ordinary builtin call. This kind falls on the aggregation side
@@ -5090,7 +5096,7 @@ instance fold and without one its argument is no source at all
 (`wf037-aantalgevulde-zonder-elementtype`). (iii) That one argument MUST be
 the set source. Since L2 (2026-09-24) the range makes it one (the reading
 of the source, (i)), and the schema and every loader demand the range of a
-single-argument fold with an `elementType` under every kind but `TOTAAL`
+single-argument fold with an `elementType` under every kind but `total`
 (B12): the subject's own read
 cannot reach this kind at all, so the set-source demand is enforced at load.
 What the verifier still decides under (iii) is a range beside a source that
@@ -5134,12 +5140,12 @@ unimplemented one, and a later card may supply the moment rule as a clause.
 *The result type is DERIVED, so it is crossed and not believed.* It is fixed
 by the operation — a whole, non-negative, unitless cardinality — rather than
 read off an operand, and **WF-091 crosses the annotation against it, on the
-same arm that has always crossed `AANTAL`'s** (ch. 4.1, the composite
+same arm that has always crossed `count`'s** (ch. 4.1, the composite
 derivation inventory; negatief `wf091-aantalgevulde-eenheid`). Without that
 cross this kind would be the one aggregation whose node type nothing checked:
 measured 2026-09-20, a filled count annotated `kg` and written into an
 equally-lying `kg` target was verifier-CLEAN while the identical lie under
-`AANTAL` was WF-091, and `ref` then played it — a unitless 1 landing in a
+`count` was WF-091, and `ref` then played it — a unitless 1 landing in a
 kg-declared attribute with the oracle reporting PASS. No unit travels through
 the node, and the consumer clause of `RUNTIME-SEMANTICS.md` ch. 2.10 leaves
 it alone precisely because the operation, not the annotation, fixes it.
@@ -5164,14 +5170,14 @@ argument is an `InstanceSetUnion` is this form.
 | Field of `InstanceSetUnion` | Meaning |
 |---|---|
 | `branches` | list of `InstanceSetBranch`, **two or more** — the selections, in written order |
-| `bron` | provenance of the written concatenation |
+| `source` | provenance of the written concatenation (the source reference, ch. 4) |
 
 | Field of `InstanceSetBranch` | Meaning |
 |---|---|
 | `elementType` | the population this selection ranges over, read exactly as ch. 3.4a reads an instance fold's — and the SAME for every selection of one union (WF-110 (d)) |
 | `sourceRole` | RoleBinding, **required**: the one-step relation this selection walks from the count's subject. No bindingless fallback and no `sourcePath` (below) |
 | `filter` | Condition? — this selection's own die/dat subselection, evaluated PER CONTRIBUTOR with the element as its subject, exactly as a fold's `filter` is |
-| `bron` | provenance of the written selection |
+| `source` | provenance of the written selection (the source reference, ch. 4) |
 
 The node carries **no `type`**. It denotes instances and not a value, so
 there is no annotation to believe and none for the ch. 2.10 consumer clause
@@ -5180,7 +5186,7 @@ node kind, exactly as it exempts a `Lambda`. The count above it derives its
 own whole, unitless cardinality as it always has.
 
 *Its position is ONE position.* The union is admissible as the SINGLE
-argument of an `AANTAL` aggregation and nowhere else — not as a rule value,
+argument of a `count` aggregation and nowhere else — not as a rule value,
 not as an operand of a composite node, not as an operand of a condition, not
 under any other kind. That is the shape of rule WF-096 drew for the set
 reading until L2, for the same reason: the one node that consumes a
@@ -5268,7 +5274,7 @@ one-step `sourceRole`, required, and the multi-step question stays exactly
 where 2026-09-19 and 2026-09-11 left it. Named open flank, not a closed one.
 
 - **WF-110** An `InstanceSetUnion` (ch. 4.3): **(a)** is admissible ONLY as
-  the single argument of an `AANTAL` aggregation — at every other position
+  the single argument of a `count` aggregation — at every other position
   the document is ill-formed (`wf110-unie-als-regelwaarde`,
   `wf110-unie-onder-een-builtin`). The clause is about the UNION node: a
   COUNT over a union is an ordinary whole-number expression and stands
@@ -5307,7 +5313,8 @@ relation is the one-step case of a PATH.
 step 1's opposite role is filled by the fold subject, each further step's
 opposite role is filled by the type its predecessor's bound role reaches,
 and the LAST step's bound role is filled by the `elementType`. That is
-the orientation and the discipline of `navigationBindings` (ch. 4.1a) and of
+the orientation and the discipline of an attribute reference's `path`
+(ch. 4.1a) and of
 `sourceRole` itself, so WF-047's resolution is reused step for step rather
 than restated. Two fields, one meaning, so exactly one spelling per meaning:
 a one-step range IS `sourceRole` — the spelling every existing document
@@ -5334,8 +5341,8 @@ three places:
   ELEMENTS; a count of counts counts INTERMEDIATE INSTANCES. On the worked
   example: three finds against two boats. Like the sum's below, this divergence
   is **named and pinned nowhere** — and since 2026-09-19 for a reason stronger
-  than "no carrier": a count over a multi-step range is **not expressible as an
-  `AANTAL` FOLD**. A `sourcePath` is admissible only as the range of a VALUE
+  than "no carrier": a count over a multi-step range is **not expressible as a
+  `count` FOLD**. A `sourcePath` is admissible only as the range of a VALUE
   fold's set source (clause (c) below), and a count reads a count source,
   whose range is one step (WF-093 (b) refuses a count over a member read —
   until L2 the set flag under `AANTAL` was WF-096's, the maintainer decision
@@ -5347,7 +5354,7 @@ three places:
   node counts over a multi-step range is that node's own question under its own
   rule, and a claim about it would need its own witness before it could be
   written here. The quantifier fold (ch. 4.5) is such a node, and for its
-  at-least and at-most arms it has that witness: they take a multi-step
+  `atLeast` and `atMost` arms it has that witness: they take a multi-step
   range under WF-108 (c) and count over it FLAT, an element reached along
   two intermediate instances satisfying the matrix once. In
   `jutterswet-ketenkwantor` both alternative readings are ruled out: a
@@ -5355,7 +5362,7 @@ three places:
   makes the flat count 3 and the tuple count 4, and the count of counts
   above — INTERMEDIATE INSTANCES — turns them over where two boten reach
   four elements; a second subject in one world pins the range itself.
-  Replayed by gates 5 and 6. The exactly arm is not witnessed over a
+  Replayed by gates 5 and 6. The `exactly` arm is not witnessed over a
   multi-step range.
 
   The flat-union reading stated here therefore remains the reading — it is
@@ -5391,7 +5398,7 @@ consumes the list symbolically. The corpus pins two steps and three steps
 left open.* A role's declared multiplicity does not enter the reading: a
 step through a to-one role contributes its zero-or-one linked instance to
 the union exactly as a to-many step contributes its zero-or-more. Refusing
-it would need a new arm keyed on `meervoudig`, which no consumer reads in
+it would need a new arm keyed on `many`, which no consumer reads in
 this position, to refuse a shape whose semantics is already fixed by the
 clause above. So "alle vondsten van de boot van de Jutter" — one to-one step
 and one to-many step — is a two-step `sourcePath`, not a refusal.
@@ -5453,25 +5460,38 @@ Semantics and worked examples, including the three empty corners:
   intermediate-type witness is named there.
 
 **BuiltinCall** — scalar, text, and date builtins with plain arguments:
-wortel, absolute-waarde (core kernel); concatenatie (text fold);
-tijdsduur/absolute-tijdsduur (two date operands, result unit declared);
-tijdsevenredig-deel and aantal-dagen-in (each carrying a `granularity`
-bucket ∈ month/year — tijdsevenredig-deel MUST carry a gedurende
+`squareRoot`, `absoluteValue` (core kernel); `concatenation` (text fold);
+`duration`/`absoluteDuration` (two date operands, result unit declared);
+`timeProportionalPart` and `dayCount` (each carrying a `granularity`
+bucket ∈ `month`/`year` — `timeProportionalPart` MUST carry a gedurende
 condition in `filter` and one temporal source argument as coarse as or
 coarser than its bucket, and on a temporal target the bucket MUST equal
 the target's declared granularity, WF-056; semantics ch. 3.7 of
-`RUNTIME-SEMANTICS.md`); eerste-paasdag, datum-met, datumtijd-met, and the
-seven date/time part extractors — the date library is
+`RUNTIME-SEMANTICS.md`); `easterSunday`, `dateWith`, `dateTimeWith`, and the
+seven date/time part extractors `yearOf`, `monthOf`, `dayOf`, `hourOf`,
+`minuteOf`, `secondOf` and `millisecondOf` — the date library is
 `layer: dialect(regelspraak)` (row on date builtins, `CONSTRUCTS.md`
 ch. 2.1); semantics in `RUNTIME-SEMANTICS.md` ch. 2–3.
 
 | Field | Meaning |
 |---|---|
-| `kind` | the seventeen builtin kinds above, in their v0 spelling until their own landing (`WORTEL`, `ABSOLUTE_WAARDE`, `CONCATENATIE`, `TIJDSDUUR`, `ABSOLUTE_TIJDSDUUR`, `EERSTE_PAASDAG`, `TIJDSEVENREDIG_DEEL`, `AANTAL_DAGEN_IN`, the seven `…_UIT` extractors, `DATUM_MET`, `DATUMTIJD_MET`) |
+| `kind` | the seventeen builtin kinds above |
 | `arguments` | the operands, plain expressions: a builtin has no set source |
-| `filter` | Condition? — the gedurende condition of tijdsevenredig-deel and aantal-dagen-in (WF-056, WF-058) |
-| `granularity` | the bucket? — `DAG`, `WEEK`, `MAAND`, `KWARTAAL` or `JAAR` (v0 spelling): required on tijdsevenredig-deel and aantal-dagen-in and admitted on no other kind (WF-037) |
+| `filter` | Condition? — the gedurende condition of `timeProportionalPart` and `dayCount` (WF-056, WF-058) |
+| `granularity` | the bucket? — one of the five granularity values of ch. 2.2, `day`, `week`, `month`, `quarter` or `year`: required on `timeProportionalPart` and `dayCount` and admitted on no other kind (WF-037) |
 | `type`, `source` | — |
+
+v0 values: `WORTEL` → `squareRoot`, `ABSOLUTE_WAARDE` → `absoluteValue`,
+`CONCATENATIE` → `concatenation`, `TIJDSDUUR` → `duration`,
+`ABSOLUTE_TIJDSDUUR` → `absoluteDuration`, `EERSTE_PAASDAG` →
+`easterSunday`, `TIJDSEVENREDIG_DEEL` → `timeProportionalPart`,
+`AANTAL_DAGEN_IN` → `dayCount`, `JAAR_UIT` → `yearOf`, `MAAND_UIT` →
+`monthOf`, `DAG_UIT` → `dayOf`, `UUR_UIT` → `hourOf`, `MINUUT_UIT` →
+`minuteOf`, `SECONDE_UIT` → `secondOf`, `MILLISECONDE_UIT` →
+`millisecondOf`, `DATUM_MET` → `dateWith`, `DATUMTIJD_MET` →
+`dateTimeWith`; `granularity` has the v0 values of ch. 2.2 (`DAG` …
+`JAAR`). Until L5 this chapter spelled the kinds in Dutch with hyphens
+(`wortel`, `absolute-waarde`, `tijdsevenredig-deel`, …).
 
 An element type, a range, an empty fallback and a dimension selection are
 an `Aggregation`'s fields, and `granularity` is a `BuiltinCall`'s alone, so
@@ -5506,8 +5526,8 @@ vintage read).
 
 | Field | Type | Meaning |
 |---|---|---|
-| `basis` | expression | names the timeline: an own temporal attribute reference, or a granular parameter reference. Never evaluated as a scalar (that is the refused ch. 3.3 shape) |
-| `datum` | expression | the day-precision date index |
+| `base` | expression | names the timeline: an own temporal attribute reference, or a granular parameter reference. Never evaluated as a scalar (that is the refused ch. 3.3 shape) |
+| `date` | expression | the day-precision date index |
 | `type` | datatype | the timeline's element datatype; required, non-null |
 | `source` | — | v0 wire `bron` |
 
@@ -5520,10 +5540,10 @@ value variant (`uchar-case-v0`); the asOfDate-bucket scalar convention
 of the temporal total cannot serve a point read — executors fault,
 never guess.
 
-- **WF-049** The `basis` MUST be a navigation-free reference to a
+- **WF-049** The `base` MUST be a navigation-free reference to a
   declared temporal attribute of the subject type or to a granular
   parameter (a temporal *characteristic* operand is **OPEN** — the case
-  format carries no characteristic timelines yet); the `datum` operand
+  format carries no characteristic timelines yet); the `date` operand
   MUST carry the day-precision date type (millisecond precision is
   ill-formed); the node's `type` MUST equal the timeline's element
   datatype.
@@ -5532,7 +5552,13 @@ never guess.
 
 **Unresolved** is the honest-inexpressibility marker (row 16, permanent
 contract): an expression variant carrying an optional `type` and the
-source slice, and a condition variant carrying the source slice. The
+source slice, and a condition variant carrying the source slice. Both
+variants MUST carry `source` (ch. 4): its `snippet` is what WF-113 (b)
+looks for in the producer's diagnostics, so a marker without one cannot be
+accounted for. The schema requires it and every executor refuses a marker
+without one at load; the verifier loads such a marker so that WF-113 (b)
+names it. The node has been `Unresolved` on the wire since L5 (v0
+`Onopgelost`, which carried the source slice as its `bron` string). The
 expression variant's `type` is absent when the type is unknown and, when
 present, a real datatype — never null; there is no declared-unknown
 type (ch. 2.4). A well-formed IR MAY contain Unresolved nodes; what it may
