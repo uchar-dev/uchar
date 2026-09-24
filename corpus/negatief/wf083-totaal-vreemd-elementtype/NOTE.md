@@ -9,8 +9,7 @@ form). Here it names another declared type.
     WF-083 FAIL /rules/resolvedRegels/2/waarde/elementObjecttype: the
     elementObjecttype 'Vondst' of a TOTAAL without a range is not the fold
     subject 'Jutter': without a range the fold is the subject's own read, so
-    the type it folds over is the subject type, and the executors never read
-    this field there
+    its elementObjecttype must name the subject type
 
 The document is `corpus/golden/jutterswet-tempototaal` with one change: the
 third rule, "het bewaargeld van een Jutter is het totaal van zijn
@@ -20,9 +19,10 @@ bewaarvergoeding per maand", carries `elementObjecttype: "Vondst"` instead of
 (c), `wf083-vouwbron-vreemd-objecttype`) is satisfied, and every other rule of
 the document is the golden's.
 
-Why it has to exist. No executor reads the field at this position: the
-temporal total reads the subject's own timeline. So the field could name any
-declared type and nothing checked it. Measured in the L2 fix round
+Why it has to exist. Until the L2 fix round no executor read the field at
+this position: the temporal total reads the subject's own timeline. So the
+field could name any declared type and nothing checked it. Since the fix
+round the executors check it too, with the verifier's sentence. Measured in the L2 fix round
 (2026-09-24) on this document with the golden's `case.json`: the verifier
 of the L2 union (`bd2c48de`) answered `verifier: PASS`, and `ref` and the ASP
 backend both answered the golden's seven pinned expectations unchanged

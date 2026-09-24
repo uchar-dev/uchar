@@ -4397,21 +4397,20 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                   f.argumenten))
       (* WF-083 (c), the element type of the subject's own read (IR-SPEC
          ch. 4.3, L2 fix round). A TOTAAL without a range is the subject's
-         own read, so the type it folds over IS the subject type: the
-         executors read the subject's own timeline there and never this
-         field. Before this arm a foreign type in it was verifier-clean and
-         moved no answer (measured by the lens on the union of the L2
-         card), so the field could state a type nothing checked. Equality
-         in the WF-001 form, the comparison the source's own anchor makes
-         in [aggregation_source_check]. *)
+         own read: it totals the subject's own timeline, so the type it
+         folds over IS the subject type. Before this arm a foreign type in
+         the field was verifier-clean and moved no answer (measured by the
+         lens on the union of the L2 card): no reader checked it. Since
+         the fix round ref, the ASP backend and the Drools loader refuse it
+         with this sentence. Equality in the WF-001 form, the comparison
+         the source's own anchor makes in [aggregation_source_check]. *)
       @ (match (f.kind, f.element_objecttype, subject) with
          | Totaal, Some el, Some st when source_position && (not ranged) && norm el <> norm st ->
              [ v "WF-083" (sub "elementObjecttype")
                  (Printf.sprintf
                     "the elementObjecttype '%s' of a TOTAAL without a range is not the fold \
-                     subject '%s': without a range the fold is the subject's own read, so the \
-                     type it folds over is the subject type, and the executors never read this \
-                     field there"
+                     subject '%s': without a range the fold is the subject's own read, so its \
+                     elementObjecttype must name the subject type"
                     el st) ]
          | _ -> [])
       (* the operands: the source position is judged by the fold-source rules
