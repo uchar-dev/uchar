@@ -1419,8 +1419,9 @@ public final class IrEmitter {
     }
 
     /** The verifier's name identity ({@code checks.ml norm}): runs of spaces and tabs collapse to one space
-     *  and only A-Z fold to lower case. */
-    private static String norm(String s) {
+     *  and only A-Z fold to lower case. Public for the resolver, which refuses a second declaration of one unit
+     *  abbreviation under this same identity before a model can reach the emitter's own check. */
+    public static String norm(String s) {
         StringBuilder uit = new StringBuilder();
         for (String woord : s.split("[ \t]+")) {
             if (woord.isEmpty()) continue;

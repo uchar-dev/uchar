@@ -263,18 +263,60 @@ class IrEmitterTest {
         assertEquals(4, c.split("\"spellings\"", -1).length - 1, () -> "spellingen alleen in het stelsel:\n" + c);
     }
 
-    @Test void twee_afkortingen_die_een_naam_zijn_in_een_stelsel_worden_geweigerd() {
-        // WF-009: one Unit per abbreviation under the name identity. The model keys its units on the exact spelling,
-        // so kg and KG declared apart are two units there; the wire would carry one name twice, which every reader
-        // refuses — so the emitter refuses the model instead of writing that document.
-        RegelSpraakModel m = Resolver.resolve("""
+    @Test void een_tweede_declaratie_van_een_afkorting_is_een_fout_en_vervangt_de_eerste_niet() {
+        // WF-009: one Unit per abbreviation under the name identity. The resolver keyed its units on the written
+        // abbreviation, so a second declaration of one replaced the first without a word — the document then carried
+        // "t = 100 kg" alone, verifier-clean — and a second one that differs in case alone became a second unit.
+        // Both are refused now, by name and at the second declaration's line; the first declaration stands.
+        RegelSpraakModel dubbel = Resolver.resolve("""
+            Eenheidsysteem Gewicht
+                het kilogram kg
+                de ton t = 1000 kg
+                de tonne t = 100 kg
+            Objecttype de Vondst
+                het gewicht Numeriek (geheel getal) met eenheid t;
+            """);
+        assertEquals(List.of("eenheidstelsel 'Gewicht': de afkorting 't' is al gedeclareerd voor de eenheid 't'; één "
+                        + "eenheid per afkorting (WF-009), dus deze tweede declaratie wordt geweigerd in plaats van de "
+                        + "eerste stil te vervangen"),
+                dubbel.errors().stream().map(Diagnostic::message).toList());
+        assertEquals(4, dubbel.errors().get(0).line(), "de melding staat op de tweede declaratie");
+        assertEquals(new java.math.BigDecimal("1000"),
+                dubbel.eenheidstelsels.get("Gewicht").eenheden.get("t").factorNaarCanoniek(), "de eerste declaratie staat");
+
+        RegelSpraakModel kast = Resolver.resolve("""
             Eenheidsysteem Gewicht
                 het kilogram kg
                 de kilo KG = 1 kg
             Objecttype de Vondst
                 het gewicht Numeriek (geheel getal) met eenheid kg;
             """);
-        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        assertEquals(List.of("eenheidstelsel 'Gewicht': de afkorting 'KG' is al gedeclareerd als 'kg' voor de eenheid "
+                        + "'kg'; één eenheid per afkorting (WF-009), dus deze tweede declaratie wordt geweigerd in "
+                        + "plaats van de eerste stil te vervangen"),
+                kast.errors().stream().map(Diagnostic::message).toList());
+        assertFalse(kast.eenheidstelsels.get("Gewicht").eenheden.containsKey("KG"), "de tweede declaratie is geweigerd");
+
+        // two spellings of one abbreviation inside ONE declaration are that unit's own, and no collision
+        RegelSpraakModel eigen = Resolver.resolve("""
+            Eenheidsysteem Gewicht
+                het kilogram kg KG
+            Objecttype de Vondst
+                het gewicht Numeriek (geheel getal) met eenheid kg;
+            """);
+        assertTrue(eigen.errors().isEmpty(), () -> "onverwachte fouten: " + eigen.errors());
+    }
+
+    @Test void twee_afkortingen_die_een_naam_zijn_in_een_stelsel_worden_geweigerd() {
+        // The emitter's own guard behind the resolver's refusal above: a model that keys two units of one system on
+        // spellings the name identity joins (kg and KG) would put one name on the wire twice, which every reader
+        // refuses (WF-009), so the emitter refuses the model instead of writing that document. Only a model the
+        // resolver did not build reaches it, so this one is built by hand.
+        RegelSpraakModel m = new RegelSpraakModel();
+        RegelSpraakModel.Eenheidstelsel gewicht = new RegelSpraakModel.Eenheidstelsel("Gewicht");
+        gewicht.eenheden.put("kg", new io.github.yhavinga.regelspraak.model.Eenheid("kg", "Gewicht"));
+        gewicht.eenheden.put("KG", new io.github.yhavinga.regelspraak.model.Eenheid("KG", "Gewicht"));
+        m.eenheidstelsels.put("Gewicht", gewicht);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         assertTrue(e.getMessage().contains("'kg' en 'KG'") && e.getMessage().contains("(WF-009)"), e.getMessage());
     }

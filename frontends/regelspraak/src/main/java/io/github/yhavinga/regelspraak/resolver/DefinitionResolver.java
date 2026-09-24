@@ -481,10 +481,16 @@ public final class DefinitionResolver {
         Eenheidstelsel stelsel = new Eenheidstelsel(src(ctx.eenheidsysteemNaam()));
         // pass 1: collect raw definitions keyed by primary abbreviation (or word)
         java.util.Map<String, EenheidRuw> ruw = new java.util.LinkedHashMap<>();
+        // every abbreviation a declaration writes, under the name identity: {as written, the unit's primary}
+        java.util.Map<String, String[]> geschreven = new java.util.HashMap<>();
         for (EenheidDefinitieContext u : ctx.eenheidDefinitie()) {
             java.util.List<String> afk = u.eenheidAfkorting().stream().map(DefinitionResolver::src).toList();
             String primair = !afk.isEmpty() ? afk.get(0) : (u.eenheidWoord() != null ? src(u.eenheidWoord()) : null);
             if (primair == null) continue;
+            // WF-009, one unit per abbreviation under the name identity the emitter checks too: a second declaration
+            // of an abbreviation would replace the first in the maps below without a word, so it is refused by name
+            // and the first declaration stands
+            if (tweedeAfkorting(stelsel.naam, afk.isEmpty() ? List.of(primair) : afk, geschreven, u)) continue;
             java.math.BigDecimal n = null; Eenheidstelsel.Factor exact = null; String naar = null;
             if (u.omrekenSpecificatie() != null) {                       // "= 12 mnd" or "= 1/1000 m"
                 String getal = u.omrekenSpecificatie().NUMBER().getText();
@@ -506,6 +512,28 @@ public final class DefinitionResolver {
             if (r.meervoud() != null) stelsel.aliassen.put(RegelSpraakModel.normaliseerTijdseenheid(r.meervoud()), e);
         }
         model.eenheidstelsels.put(stelsel.naam, stelsel);
+    }
+
+    /** Whether one of {@code afkortingen} — the abbreviations one unit declaration writes — was written before by an
+     *  EARLIER declaration of the same system, under the name identity ({@code IrEmitter.norm}); if so an ERROR names
+     *  the pair. Otherwise the declaration claims them. Two spellings of one abbreviation inside ONE declaration
+     *  ("kg KG") are that unit's own spellings and no collision. */
+    private boolean tweedeAfkorting(String stelsel, List<String> afkortingen, java.util.Map<String, String[]> geschreven,
+                                    EenheidDefinitieContext u) {
+        for (String a : afkortingen) {
+            String[] eerder = geschreven.get(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(a));
+            if (eerder == null) continue;
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    "eenheidstelsel '" + stelsel + "': de afkorting '" + a + "' is al gedeclareerd"
+                            + (a.equals(eerder[0]) ? "" : " als '" + eerder[0] + "'") + " voor de eenheid '" + eerder[1]
+                            + "'; één eenheid per afkorting (WF-009), dus deze tweede declaratie wordt geweigerd in "
+                            + "plaats van de eerste stil te vervangen", u.getStart().getLine()));
+            return true;
+        }
+        for (String a : afkortingen)
+            geschreven.putIfAbsent(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(a),
+                    new String[]{a, afkortingen.get(0)});
+        return false;
     }
 
     /** Parse an omrekenfactor, which the lexer hands over as a single rational NUMBER
