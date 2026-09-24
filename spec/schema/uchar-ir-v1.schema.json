@@ -530,11 +530,13 @@
           "properties": {
             "num": {
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "maximum": 4611686018427387903
             },
             "den": {
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "maximum": 4611686018427387903
             }
           }
         },
