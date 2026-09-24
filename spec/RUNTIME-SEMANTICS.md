@@ -626,8 +626,8 @@ unit, the soort and the precision it computes with:
 **Three positions where the annotation IS the source**, and a consumer
 reads it there:
 
-- a **`Literal`**: its type is the lexeme's own carrier (`"3,5 EUR"`), a
-  copy of no declaration;
+- a **`Literal`**: its type is its own value's carrier (`{"number": "3.5"}`
+  in EUR), a copy of no declaration;
 - the **duration operand of a date ± duration**: the calendar unit that
   routes the arithmetic is that operand's static type (`IR-SPEC.md`
   WF-035);
@@ -1942,7 +1942,7 @@ calendar table does not know and no day kind carries is ill-formed
 MUST be ALTIJD (WF-031), so there is no window to read.
 
 **Evaluation — the predicate of one day.** `P_k(d)` is the definition's
-`voorwaarde`, evaluated with **the bound day bound to d** and nothing else
+`voorwaarde`, evaluated with **the bound day set to d** and nothing else
 in scope. That binding IS the runtime meaning of the `BoundDay` node
 (`IR-SPEC.md` ch. 4.1; until L4 the context value `de dag`): it is not a
 session value — ch. 8.2's evaluation date is — but the arbitrary day the
