@@ -661,7 +661,7 @@ let whole_count_of q =
    duration form has a closed formula: both walk the calendar one day at a
    time. The kernel takes the predicate as a function over the civil day
    number and knows nothing about conditions — resolving the day kind and
-   evaluating its voorwaarde is the caller's (Eval's) work, which keeps the
+   evaluating its condition is the caller's (Eval's) work, which keeps the
    calendar kernel free of the fact base exactly as the rest of this file.
 
    THE REACH FENCE bounds the walk and is normative: a step that passes

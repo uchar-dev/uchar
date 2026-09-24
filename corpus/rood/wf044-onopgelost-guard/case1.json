@@ -95,7 +95,7 @@
     "parameters": {}
   },
   "expectedFault": {
-    "ref": "Onopgelost condition reached in evaluation",
+    "ref": "Unresolved condition reached in evaluation",
     "clingo": "Onopgelost condition reached in translation"
   }
 }

@@ -62,7 +62,7 @@ let req what = function Some x -> x | None -> Value.fault "missing %s in IR node
    declared binder name can ever collide with it: every other key in that
    map is a [norm]-ed source name, and [norm] neither produces nor preserves
    a NUL. Its presence is also the marker that evaluation is INSIDE a
-   day-kind voorwaarde — which is the only place a nested day-kind predicate
+   day-kind condition — which is the only place a nested day-kind predicate
    is evaluated (ch. 5.4). *)
 let day_kind_binder = "\x00de dag"
 
@@ -126,8 +126,8 @@ let window_admits ~as_of (g : geldigheid option) =
           Value.fault "a validity-bounded form needs an evaluation date; this session is time-free"
       | Some d ->
           let day = validity_day ~what:"asOfDate" d in
-          let vanaf = Option.map (validity_day ~what:"geldigheid.vanaf") geld_vanaf in
-          let tot = Option.map (validity_day ~what:"geldigheid.tot") geld_tot in
+          let vanaf = Option.map (validity_day ~what:"validity.from") geld_vanaf in
+          let tot = Option.map (validity_day ~what:"validity.to") geld_tot in
           (match vanaf with Some v -> v <= day | None -> true)
           && match tot with Some t -> day <= t | None -> true)
 
@@ -160,9 +160,8 @@ let own_read env (self : World.instance) otn =
   (match env.subj with
   | Some st when norm st <> norm otn ->
       Value.fault
-        "an attribute reference without navigation bindings is the subject's own read, so its \
-         objecttype is the subject type '%s' — '%s' names another type, which only a \
-         navigation reaches (WF-053)"
+        "an attribute reference without a path is the subject's own read, so its subjectType is \
+         the subject type '%s' — '%s' names another type, which only a navigation reaches"
         st otn
   | _ -> ());
   isa env self.otype otn
@@ -235,17 +234,17 @@ let rec bevat_periode (c : conditie) =
    Measured 2026-09-20, before card drools-venster-vouwtoets (2026-09-23), on
    verifier-clean documents, one per quantifier, with the window as the
    second member of a composite: the DRL-text branch then named this very
-   limit ("periodevergelijking onder een tellende kwantor") under GEEN,
-   TEN_MINSTE, TEN_HOOGSTE and PRECIES, and the exec branch dropped the rule;
-   both PLAYED under ALLE and DE. So the boundary is not invented here, it is
+   limit ("periodevergelijking onder een tellende kwantor") under `none`,
+   `atLeast`, `atMost` and `exactly`, and the exec branch dropped the rule;
+   both PLAYED under `all` and `the`. So the boundary is not invented here, it is
    read off the three other executors — and the two carried quantifiers are
    exactly the two this interpreter has a corpus witness for. Since that card
-   both Drools branches play the window under ALLE and refuse it by name
-   under GEEN and the counting quantifiers, citing WF-112, in a composite and
+   both Drools branches play the window under `all` and refuse it by name
+   under `none` and the counting quantifiers, citing WF-112, in a composite and
    in a fold alike.
 
    What the refused position would otherwise do is a reading nothing norms:
-   under GEEN the window's verdict is COMPLEMENTED, so a time-free session —
+   under `none` the window's verdict is COMPLEMENTED, so a time-free session —
    where ch. 3.10 says the window never matches — would make the composite
    TRUE and fire the rule. The chapter norms the window as a gate on the
    RULE, not as a member a quantifier may count.
@@ -259,7 +258,7 @@ let rec bevat_periode (c : conditie) =
    may not be softened to a fallback. The fold measurement of that day, taken
    before card drools-venster-vouwtoets, is why the rule covers the fold as
    well: the Drools DRL-text branch then PLAYED a window under all five fold
-   quantifiers, and under GEEN in a time-free session it answered the
+   quantifiers, and under `none` in a time-free session it answered the
    complement — true — which is exactly the reading nothing norms. *)
 let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
   match kwantor with
@@ -267,20 +266,20 @@ let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
   | Geen | Ten_minste | Ten_hoogste | Precies ->
       if List.exists bevat_periode parts then
         Value.fault
-          "a period condition under GEEN or a counting quantifier (ten minste / ten hoogste / \
-           precies) is the position WF-112 refuses: the quantifier counts or complements the \
+          "a period condition under none or a counting quantifier (atLeast / atMost / exactly) \
+           is the position WF-112 refuses: the quantifier counts or complements the \
            window's verdict, while ch. 3.10 norms the window as a gate on the RULE, so the \
            document is not well-formed. Declined at evaluation"
 
 (* WF-108, the quantifier fold's shape: a matrix; a range in one spelling,
-   a path of at least two steps; a kwantor other than DE; a threshold under
-   a counting kwantor. On the wire the loader refuses the two range
+   a path of at least two steps; a quantifier other than `the`; a threshold
+   under a counting quantifier. On the wire the loader refuses the two range
    spellings and the verifier the rest; a node that reaches an executor past
    them is refused here in their sentences, never read with a part it lacks.
    The ASP backend calls this function too, so the two executors refuse in
    one voice, and a quantifier fold never meets the aggregation's sentences
    for sourceRole and sourcePath. Returns the matrix and the threshold (0
-   under ALLE and GEEN, which read none). *)
+   under `all` and `none`, which read none). *)
 let quantifier_fold_shape ~(kwantor : kwantor) ~(drempel : int option) ~(toets : conditie option)
     ~(bron_rol : rol_binding option) ~(bron_pad : rol_binding list option) =
   let toets =
@@ -288,34 +287,31 @@ let quantifier_fold_shape ~(kwantor : kwantor) ~(drempel : int option) ~(toets :
     | Some t -> t
     | None ->
         Value.fault
-          "quantifier fold without a toets: the matrix is what every contributor must satisfy, \
+          "quantifier fold without a test: the matrix is what every contributor must satisfy, \
            and a quantifier over no condition has no verdict"
   in
   (match (bron_rol, bron_pad) with
   | Some _, Some _ ->
-      Value.fault "bronPad beside bronRol: a quantifier fold carries one range, never two"
+      Value.fault "sourcePath beside sourceRole: a quantifier fold carries one range, never two"
   | None, None ->
       Value.fault
-        "a quantifier fold carries its range (bronRol or bronPad): the range is written, never \
-         derived"
+        "a quantifier fold carries its range (sourceRole or sourcePath): the range is written, \
+         never derived"
   | _, Some pad when List.length pad < 2 ->
       Value.fault
-        "a quantifier fold's bronPad carries at least TWO steps, found %d — the one-step range is \
-         spelled bronRol"
+        "a quantifier fold's sourcePath carries at least TWO steps, found %d — the one-step range \
+         is spelled sourceRole"
         (List.length pad)
   | _ -> ());
   (match kwantor with
   | Alle | Geen | Ten_minste | Ten_hoogste | Precies -> ()
-  | De ->
-      Value.fault
-        "quantifier fold with kwantor DE: the bare definite is a description of ONE member, not a \
-         quantification over the set — a fold over it has no reading");
+  | De -> Value.fault "%s" Ir_v0.Checks.quantifier_fold_the_refusal);
   let drempel =
     match (kwantor, drempel) with
     | (Ten_minste | Ten_hoogste | Precies), Some d -> d
     | (Ten_minste | Ten_hoogste | Precies), None ->
         Value.fault
-          "counting quantifier fold without a drempel: the verdict compares the number of \
+          "counting quantifier fold without a threshold: the verdict compares the number of \
            contributors satisfying the matrix with a threshold, and there is none to compare it \
            with"
     | _, _ -> 0
@@ -323,7 +319,7 @@ let quantifier_fold_shape ~(kwantor : kwantor) ~(drempel : int option) ~(toets :
   (toets, drempel)
 
 (* WF-100 / IR-SPEC ch. 4.6 (q1), maintainer decision 2026-09-10: on a
-   characteristic check the `eigenaar` is AUTHORITATIVE for the declaration.
+   characteristic check the `host` is AUTHORITATIVE for the declaration.
    WF-109 / ch. 4.6 (q2), maintainer decision 2026-09-19: it is also the
    GASTHEER — it names the object type the check LIVES ON, and that object is
    the one read. The v0 producer sets it on exactly one shape, the
@@ -423,7 +419,7 @@ let guard_on_doel (doc : document) (fc : resolved_feit_creatie) =
    (ch. 3.6) and the whole-period predicate (ch. 3.9)". ch. 8.2 and ch. 3.11
    say it twice more ("the only bridges … are the dedicated collapses";
    "refused EXCEPT through the specified collapses"). A condition carrying a
-   GeheelPeriode qualifier is therefore not a scalar context at all — it IS
+   WholePeriod qualifier is therefore not a scalar context at all — it IS
    the second collapse — and the refusal below this helper, which fires where
    the qualifier is ABSENT, may not touch it. Until 2026-09-11 both
    characteristic-check arms matched `periode` away with `_`, so the
@@ -645,8 +641,7 @@ let fold_members ?binding ?path env world (self : World.instance) ~element =
     | None, None ->
         Value.fault
           "an instance fold over %S carries no range: its relation is written as a range (sourceRole \
-           or sourcePath on an aggregation, bronRol or bronPad on a quantifier fold) and never \
-           derived (B12)"
+           or sourcePath) and never derived (B12)"
           element
   in
   List.filter (fun (i : World.instance) -> isa env i.otype element) reached
@@ -822,7 +817,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   match e with
   | Literal { variant; typ; _ } -> literal_value variant typ
   | Parameter_ref { parameter; _ } -> (
-      let name = req "ParameterRef.parameter" parameter in
+      let name = req "ParameterReference.parameter" parameter in
       let decl =
         match Ir_v0.Checks.find_ci env.doc.parameters name with
         | Some { par_granulariteit = Some _; _ } ->
@@ -848,8 +843,8 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
               Value.fault "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)"
                 name))
   | Attribuut_ref { attribuut; objecttype = ot; navigatie_bindingen; _ } -> (
-      let name = req "AttribuutRef.attribuut" attribuut in
-      let ot = req "AttribuutRef.objecttype" ot in
+      let name = req "AttributeReference.attribute" attribuut in
+      let ot = req "AttributeReference.subjectType" ot in
       (* a value position reads a DECLARED attribute of the type the value
          lives on; any other name — a characteristic, or the role name a
          count source writes — has no value here, and reading it as an
@@ -904,7 +899,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
          date is ill-formed; the duration's unit is its static type's unit
          spelling through the shared table — sub-day units demand
          datum-tijd. *)
-      let le = req "Binair.links" links and re = req "Binair.rechts" rechts in
+      let le = req "Binary.left" links and re = req "Binary.right" rechts in
       let date_typed e =
         match static_type env e with Some (Datum_in_dagen | Datum_tijd) -> true | _ -> false
       in
@@ -947,8 +942,8 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       | `Day_kind k ->
           Arith.date_plus_day_kind ~minus ~matches:(day_kind_pred env world self ~err k) d dur)
   | Binair { op; links; rechts; _ } -> (
-      let l = eval_expr env world self ~err (req "Binair.links" links) in
-      let r = eval_expr env world self ~err (req "Binair.rechts" rechts) in
+      let l = eval_expr env world self ~err (req "Binary.left" links) in
+      let r = eval_expr env world self ~err (req "Binary.right" rechts) in
       match op with
       | Plus -> Arith.add l r
       | Min -> Arith.sub_min l r
@@ -965,14 +960,14 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
              true irrational, exactly *)
           Arith.sqrt_rounded ~err modus decimalen (eval_expr env world self ~err arg)
       | _ ->
-          Arith.round_v modus decimalen (eval_expr env world self ~err (req "Afgerond.basis" basis)))
+          Arith.round_v modus decimalen (eval_expr env world self ~err (req "Rounding.base" basis)))
   | Begrensd { basis; minimum; maximum; _ } ->
-      (* ch. 5.11, wire order: basis, then minimum, then maximum. The [let]s
+      (* ch. 5.11, wire order: base, then minimum, then maximum. The [let]s
          carry the semantics, not the style — written as two labelled
          arguments this build evaluates the MAXIMUM first, which runs the
          node's operands against the direction ch. 2.7 applies its bounds in.
          An absent bound evaluates nothing. *)
-      let v = eval_expr env world self ~err (req "Begrensd.basis" basis) in
+      let v = eval_expr env world self ~err (req "Clamp.base" basis) in
       let bound = function None -> Value.Empty | Some b -> eval_expr env world self ~err b in
       let min_ = bound minimum in
       let max_ = bound maximum in
@@ -1034,20 +1029,21 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
         (map_in_order
            (function
              | Letterlijk { tekst } -> Value.Text (Option.value tekst ~default:"")
-             | Ingevoegd { expr = e } -> eval_expr env world self ~err (req "Ingevoegd.expr" e))
+             | Ingevoegd { expr = e } -> eval_expr env world self ~err (req "EmbeddedExpression.expr" e))
            delen)
   | Expr_onopgelost _ ->
-      Value.fault "Onopgelost reached in evaluation: this rule fails observably (WF-044)"
-  | Constante { naam = Some "Rekendatum"; _ } -> (
+      Value.fault "Unresolved reached in evaluation: this rule fails observably (WF-044)"
+  | Constante { naam = Some n; _ } when n = Ir_v0.Spelling.evaluation_date -> (
       (* ch. 8.2: the execution-date context value — the only
          expression-level access to the evaluation date *)
       match env.as_of with
       | Some d -> Value.date_of_iso d
       | None ->
           Value.fault
-            "the Rekendatum context value needs an evaluation date; the case carries asOfDate null")
-  | Constante { naam = Some "Rekenjaar"; _ } ->
-      Value.fault "the Rekenjaar context value is not exercised by any corpus case (ch. 8.2)"
+            "the evaluationDate context value needs an evaluation date; the case carries asOfDate \
+             null")
+  | Constante { naam = Some n; _ } when n = Ir_v0.Spelling.evaluation_year ->
+      Value.fault "the evaluationYear context value is not exercised by any corpus case (ch. 8.2)"
   (* any other name is outside WF-098's closed set, spelled byte for byte —
      the bound day of a day-kind definition included, which is a BoundDay.
      An executor's loader refuses such a node, so only one built by hand
@@ -1058,7 +1054,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   | Bound_day _ -> (
       (* ch. 3.7/3.8: the BOUND DAY of a day-kind definition (BoundDay) —
          the day the defining predicate is being applied to. It is not a
-         session value (that is Rekendatum, above) and it has a value only
+         session value (that is evaluationDate, above) and it has a value only
          inside a day-kind evaluation, which is exactly where
          [day_kind_binding] puts one. *)
       match SMap.find_opt day_kind_binder env.locals with
@@ -1071,7 +1067,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   | Dimensie_cel _ | Variabele_ref _ | Constante _ ->
       Value.fault "expression kind not implemented in this card"
   | Temporal_read { basis; datum; typ = _; bron = _ } -> (
-      (* ch. 3.3, the point-in-time read: read(tl, d). The basis is never
+      (* ch. 3.3, the point-in-time read: read(tl, d). The base is never
          evaluated as a scalar (that is the refused shape); it names the
          timeline. An empty date index reads to leeg; a gap reads to leeg
          (ch. 3.1); a case that supplies only the asOfDate-bucket scalar
@@ -1102,7 +1098,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
               | None ->
                   Value.fault
                     "the temporal read of parameter %S needs its timeline in the case" p)
-          | _ -> Value.fault "unsupported temporal-read basis shape")
+          | _ -> Value.fault "unsupported temporal-read base shape")
       | v ->
           Value.fault "temporal-read date operand is %s, must be a day-precision date"
             (Value.to_string v))
@@ -1450,9 +1446,9 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
          && (Ir_v0.Checks.find_ci (objecttype env el).attributen a <> None
             || Ir_v0.Checks.has_kenmerk (objecttype env el) a) ->
       Value.fault
-        "the source of this AANTAL aggregation reads '%s', a member of the element type '%s': a \
+        "the source of this count aggregation reads '%s', a member of the element type '%s': a \
          count folds INSTANCES, so its source is a count source naming the relation's role, never \
-         a value read per contributor (WF-093)"
+         a value read per contributor"
         a el
   | _ -> ());
   (match bron_pad with
@@ -1476,14 +1472,14 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           "a sourcePath carries at least TWO steps, found %d — the one-step range is spelled \
            sourceRole"
           (List.length pad));
-  (* WF-083 (c), the verifier's sentence: a TOTAAL without a range is the
+  (* WF-083 (c), the verifier's sentence: a total without a range is the
      subject's own read, so the type it folds over is the subject type. The
      field is checked here because a foreign type in it otherwise moves no
      answer and nothing else refuses it *)
   (match (kind, element_objecttype, argumenten, env.subj) with
   | Totaal, Some el, [ _ ], Some st when bron_rol = None && bron_pad = None && norm el <> norm st ->
       Value.fault
-        "the elementType '%s' of a TOTAAL without a range is not the fold subject '%s': \
+        "the elementType '%s' of a total without a range is not the fold subject '%s': \
          without a range the fold is the subject's own read, so its elementType must name the \
          subject type"
         el st
@@ -1553,7 +1549,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                 Timeline.true_periods_of tested ~span (fun v ->
                     Arith.compare_op op v bound)
             | Samengesteld { kwantor = Alle; onderdelen = (_ :: _ as onderdelen); _ } ->
-                (* ch. 3.6, the FLAT composite ALLE clip: the
+                (* ch. 3.6, the FLAT composite `all` clip: the
                    intersection of the members' true periods — v0 nests
                    the per-member clips over exactly such flat
                    characteristic lists. Members are restricted to
@@ -1582,7 +1578,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                 Value.fault
                   "unsupported gedurende condition shape (WF-055: an own temporal \
                    characteristic, a per-segment comparison of an own temporal attribute, \
-                   or an ALLE composite of such shapes)"
+                   or an all composite of such shapes)"
           in
           clip_member_qualifications c;
           let true_periods = true_periods_of_cond c in
@@ -1622,7 +1618,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       | Some c -> eval_cond { env with subj = element_objecttype } world i ~err c
     in
     (* D8: the single argument of an instance fold that carries a range is
-       its SET source. Under AANTAL it names the counted role and the count
+       its SET source. Under `count` it names the counted role and the count
        folds the reached INSTANCES; under every value fold and the filled
        count its attribute is read per contributor, on the element type. A
        set source never navigates: the range is its whole relation. *)
@@ -1689,7 +1685,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                  that reaches it — it names the position and the two carried kinds,
                  never the construct rejected — so a red case pinning it witnesses
                  minimum, maximum, eerste, laatste and this kind alike. Measured
-                 2026-09-20: the red document with kind MINIMUM matched the filled
+                 2026-09-20: the red document with kind `minimum` matched the filled
                  count's pin word for word. Hence a sentence of its own, and it says
                  what is missing for THIS fold rather than what som and totaal have:
                  a count asks after PRESENCE, which is a question about an instant,
@@ -1741,9 +1737,9 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       when (match kind with Eerste | Laatste | Minimum | Maximum -> true | _ -> false) ->
         (* the articulated value fold (§5.8.3: ≥2 listed operands) is
            decided by argument SHAPE, not element absence — but ONLY for
-           v0's listed family MIN/MAX/EERSTE/LAATSTE (isGelisteFold: the
-           scalar concatenatieFold path, where the resolver-stamped
-           elementType is vestigial). For SOM/TOTAAL/AANTAL the
+           v0's listed family `minimum`/`maximum`/`first`/`last` (isGelisteFold:
+           the scalar concatenatieFold path, where the resolver-stamped
+           elementType is vestigial). For `sum`/`total`/`count` the
            element is load-bearing: v0's accumulate consumes it (joins
            the element, reads only argument 0), so a multi-operand form
            keeps the loud fault below — never a silent list fold v0
@@ -1917,7 +1913,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
    word the ASP backend's up to the phase, so the two executors carry one
    set and the differential never arbitrates a form only one reads.
 
-   Both bounds are evaluated, vanaf before tot (ch. 5.11), and BEFORE any
+   Both bounds are evaluated, from before to (ch. 5.11), and BEFORE any
    verdict: the order is normative and a fault in either bound belongs to
    it. *)
 and venster_grenzen env world (self : World.instance) ~err vanaf tot =
@@ -1940,8 +1936,8 @@ and venster_grenzen env world (self : World.instance) ~err vanaf tot =
            side);
     eval_expr env world self ~err e
   in
-  let v = match vanaf with Some e -> Some (bound "vanaf" e) | None -> None in
-  let t = match tot with Some e -> Some (bound "tot" e) | None -> None in
+  let v = match vanaf with Some e -> Some (bound "from" e) | None -> None in
+  let t = match tot with Some e -> Some (bound "to" e) | None -> None in
   if v = None && t = None then
     Value.fault "a period condition without any bound has no window to gate on (WF-042)";
   let day = function
@@ -1968,7 +1964,7 @@ and venster_grenzen env world (self : World.instance) ~err vanaf tot =
 and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
   match c with
   | Vergelijking { op; links; rechts; periode = None; _ } ->
-      let le = req "Vergelijking.links" links and re = req "Vergelijking.rechts" rechts in
+      let le = req "Comparison.left" links and re = req "Comparison.right" rechts in
       let l = eval_expr env world self ~err le in
       let r = eval_expr env world self ~err re in
       Arith.compare_op ?static_numeric:(static_numeric env le re) ~static_date:(static_date env le re) op l
@@ -1985,7 +1981,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
      negation of either is a different one (leeg operands make both
      false). *)
   | Vergelijking { op; links; rechts; periode = Some gp; _ } ->
-      let le = req "Vergelijking.links" links and re = req "Vergelijking.rechts" rechts in
+      let le = req "Comparison.left" links and re = req "Comparison.right" rechts in
       let temporal_side = function
         | Attribuut_ref
             { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
@@ -2026,16 +2022,16 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          answers the opposite. *)
       Value.fault "whole-period leeg/gevuld test is ch. 3.9 scope, not executed here"
   | Predicaat { soort = Leeg; operand; negatie; _ } ->
-      let v = eval_expr env world self ~err (req "Predicaat.operand" operand) in
+      let v = eval_expr env world self ~err (req "Predicate.operand" operand) in
       let is_empty = v = Value.Empty in
       if negatie then not is_empty else is_empty
   | Predicaat { soort = Gevuld; operand; negatie; _ } ->
-      let v = eval_expr env world self ~err (req "Predicaat.operand" operand) in
+      let v = eval_expr env world self ~err (req "Predicate.operand" operand) in
       let is_filled = v <> Value.Empty in
       if negatie then not is_filled else is_filled
   | Predicaat { soort = Dagsoort; dagsoort; operand; negatie; _ }
     when SMap.mem day_kind_binder env.locals ->
-      (* A NESTED day-kind reference, inside a day-kind voorwaarde (ch. 3.7,
+      (* A NESTED day-kind reference, inside a day-kind condition (ch. 3.7,
          the WF-085 reference graph): the §9.8 composition, "a day is a
          holiday when it is a Christmas day or …". It is carried on the
          BOUND DAY ONLY — a test on some other date is a recognised,
@@ -2043,7 +2039,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          narrow route, 2026-09-19: ref and the Drools day-kind compiler both
          answered it while the ASP backend refused it, and a form one
          executor computes and another refuses is the asymmetry this card
-         exists to end). Outside a day-kind voorwaarde the predicate stays
+         exists to end). Outside a day-kind condition the predicate stays
          refused altogether (the arm below): ch. 5.4's framing is that a day
          kind is consulted as a stratum-0 classifier, never as a derived read
          in the rule fixpoint. The leeg rule is the source's own exception: a
@@ -2065,10 +2061,10 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let hit =
         match d with
         | Value.Empty -> false
-        | Value.Date z -> day_kind_matches env world self ~err (req "Predicaat.dagsoort" dagsoort) z
+        | Value.Date z -> day_kind_matches env world self ~err (req "Predicate.dayKind" dagsoort) z
         | Value.Date_time t ->
             day_kind_matches env world self ~err
-              (req "Predicaat.dagsoort" dagsoort)
+              (req "Predicate.dayKind" dagsoort)
               (fst (Arith.split_ms t))
         | v -> Value.fault "a day-kind test needs a date operand, got %s" (Value.to_string v)
       in
@@ -2082,8 +2078,8 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
   | Predicaat _ -> Value.fault "predicate kind not implemented in this card"
   | Kenmerk_check { kenmerk; navigatie_binding = None; negatie; eigenaar; periode; _ } ->
       owner_hosts env.doc ~otype:self.otype ~kenmerk eigenaar;
-      let k = req "KenmerkCheck.kenmerk" kenmerk in
-      (* [owner_hosts] above has already established that an `eigenaar`, where
+      let k = req "CharacteristicCheck.characteristic" kenmerk in
+      (* [owner_hosts] above has already established that a `host`, where
          present, names the subject's own type — so the declaration this
          resolves against and the instance read are one object *)
       (match periode with
@@ -2108,7 +2104,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          reached type, so it is crossed against the subject here exactly as on
          the scalar arm — the characteristic itself still lives on the far side *)
       owner_hosts env.doc ~otype:self.otype ~kenmerk eigenaar;
-      let k = req "KenmerkCheck.kenmerk" kenmerk in
+      let k = req "CharacteristicCheck.characteristic" kenmerk in
       let role = bound_role env rb (* D53: the hop is the binding *) in
       if role.rol_meervoudig then
         Value.fault
@@ -2257,7 +2253,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
         kv_bron_pad; _ } ->
       periode_onder_telkwantor kv_kwantor
         (List.filter_map Fun.id [ kv_filter; kv_toets ]);
-      let el = req "Kwantorvouw.elementObjecttype" kv_element_objecttype in
+      let el = req "QuantifierFold.elementType" kv_element_objecttype in
       let toets, drempel =
         quantifier_fold_shape ~kwantor:kv_kwantor ~drempel:kv_drempel ~toets:kv_toets
           ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad
@@ -2272,14 +2268,14 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
           (fold_members ?binding:kv_bron_rol ?path:kv_bron_pad env world self ~element:el)
       in
       (* ch. 3.9a's count, and it is ch. 5.10's machinery over the
-         CONTRIBUTORS instead of over a written member list — ALLE is
-         [hits = n] and GEEN is [hits = 0], so all five quantifiers are the
-         same comparison and the same stop triggers. GEEN stays the
+         CONTRIBUTORS instead of over a written member list — `all` is
+         [hits = n] and `none` is [hits = 0], so all five quantifiers are the
+         same comparison and the same stop triggers. `none` stays the
          per-MEMBER complement and never the fold's: "geen van de bergers
          heeft gedurende het gehele jaar meer dan 40" asks each member to
          fail the matrix, so a member whose timeline does not cover the
-         period fails it and does not block GEEN either. The empty
-         contributor set needs no arm of its own: ALLE and GEEN both read
+         period fails it and does not block `none` either. The empty
+         contributor set needs no arm of its own: `all` and `none` both read
          [hits = 0 = n], at-least and exactly are out of reach, at-most can
          no longer be exceeded. *)
       let n = List.length members in
@@ -2342,14 +2338,14 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
                    | Some (Some z) -> if tot_inclusief then today <= z else today < z
                    | _ -> true)
            | _ -> assert false))
-  | Conditie_onopgelost _ -> Value.fault "Onopgelost condition reached in evaluation (WF-044)"
+  | Conditie_onopgelost _ -> Value.fault "Unresolved condition reached in evaluation (WF-044)"
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------
    Two steps stand between a unit SPELLING on a duration node and a verdict
    about one calendar day. Resolution: the spelling names a day kind as its
    name or its plural (trimmed, case-insensitive — IR-SPEC ch. 2.9), and
-   the name names its definition in `resolvedDagsoorten`. Evaluation: the
-   definition's voorwaarde is an ordinary condition, evaluated with the day
+   the name names its definition in `dayKindDefinitions`. Evaluation: the
+   definition's condition is an ordinary condition, evaluated with the day
    bound as the bound day (BoundDay) and with no other binder in scope — WF-031's purity
    clause is what makes that sound, since a pure condition never reaches the
    fact base and the `self` it is handed is never read. *)
@@ -2567,7 +2563,7 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
    the verifier refuses the document this fault is fail-fast on a
    non-conforming input; in no case may it be softened to a fallback. The
    test of the constant is the verifier's own (the boolean variant true
-   typed Booleaan).
+   typed Boolean).
 
    What the check does not reach: a rule outside its validity window is
    skipped before it ([applies] comes first, in the ASP backend too), and a
@@ -2580,11 +2576,11 @@ let kenmerkwaarde_constant_waar (r : resolved_regel) ~ot ~attr =
   | w ->
       let datatype_woord (t : datatype) =
         match t with
-        | Booleaan -> "Booleaan"
-        | Tekst -> "Tekst"
+        | Booleaan -> "Boolean"
+        | Tekst -> "Text"
         | Numeriek _ | Percentage _ -> "Number"
         | Datum_in_dagen | Datum_tijd -> "Date"
-        | Enumeratie _ -> "Enumeratie"
+        | Enumeratie _ -> "Enumeration"
         | Sum_type _ -> "SumType"
         | List_type _ -> "ListType"
         | Struct_type _ -> "StructType"
@@ -2617,7 +2613,7 @@ let run_rule env world (r : resolved_regel) =
   else
     match r.doel with
     | Some (Attribuut_ref { attribuut; objecttype = Some ot; _ }) ->
-        let attr = req "RuleVersion.target attribuut" attribuut in
+        let attr = req "RuleVersion.target attribute" attribuut in
         let env = { env with subj = Some ot } in
         let temporal_target =
           match r.rr_soort with
@@ -2630,7 +2626,7 @@ let run_rule env world (r : resolved_regel) =
            [temporal_target] reads. That flag is keyed on the attribute side
            alone because the pro-rata dispatch below needs it so; reusing it
            here let the characteristic target through. Measured 2026-09-20 on
-           a verifier-clean characteristic assignment whose target declares a JAAR
+           a verifier-clean characteristic assignment whose target declares a `year`
            granularity and whose whole condition is the window: the ASP
            backend PLAYED the scalar gate on a timeline target (present
            inside the window, absent outside it) while both Drools branches
@@ -2944,7 +2940,7 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
             let w =
               List.fold_left
                 (fun w (t : toekenning) ->
-                  let m = req "Toekenning.attribuut" t.toe_attribuut in
+                  let m = req "MemberInit.member" t.toe_attribuut in
                   if t.toe_kenmerk then (
                     match t.toe_waarde with
                     | Some (Literal { variant = Lv_boolean true; _ }) ->
@@ -2976,7 +2972,7 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
                         Value.fault
                           "characteristic initialisation of %S without a value (WF-027)" m)
                   else
-                    let v = eval_expr env w self ~err (req "Toekenning.waarde" t.toe_waarde) in
+                    let v = eval_expr env w self ~err (req "MemberInit.value" t.toe_waarde) in
                     fst
                       (World.write_attr w ~label ~attr:m
                          ~decl:(attr_decl env ~otype:nieuw ~attr:m)
@@ -3052,7 +3048,7 @@ let run_defaults_group env world ~owner (members : prioritized_defaults list) =
       Value.fault
         "temporal attribute %S as a defaults target: temporal writes are not implemented" a
   | _ -> ());
-  (* the WF-086 kenmerk arm's defense-in-depth: a temporal characteristic target would
+  (* the WF-086 characteristic arm's defense-in-depth: a temporal characteristic target would
      otherwise evaluate silently atemporally *)
   (match l0.pd_kenmerk with
   | Some k
@@ -3121,7 +3117,7 @@ let run_defaults_group env world ~owner (members : prioritized_defaults list) =
               let j, flush = speculate (fun err -> justified r err) in
               if j then (
                 flush ();
-                Some (Char_dec (req "default besluit" r.default_besluit)))
+                Some (Char_dec (req "default decision" r.default_besluit)))
               else None)
             else
               let outcome, flush =
@@ -3129,7 +3125,7 @@ let run_defaults_group env world ~owner (members : prioritized_defaults list) =
                     if justified r err then
                       Some
                         (eval_expr env w self ~err
-                           (req "default consequentie" r.default_consequentie))
+                           (req "default consequence" r.default_consequentie))
                     else None)
               in
               match outcome with
@@ -3182,10 +3178,10 @@ let run_defaults_group env world ~owner (members : prioritized_defaults list) =
              bare-keyed at the root, path-keyed for a nested exception group *)
           (World.insert_error w ~rule ~subject:self.label, false)
       | Decided (Char_dec true) ->
-          World.set_char w ~label:self.label ~char:(req "defaults kenmerk" l0.pd_kenmerk)
+          World.set_char w ~label:self.label ~char:(req "defaults characteristic" l0.pd_kenmerk)
       | Decided (Char_dec false) -> (w, false)
       | Decided (Attr_dec v) ->
-          let a = req "defaults attribuut" l0.pd_attribuut in
+          let a = req "defaults attribute" l0.pd_attribuut in
           World.write_attr w ~label:self.label ~attr:a
             ~decl:(attr_decl env ~otype:owner ~attr:a)
             v)
@@ -3351,7 +3347,7 @@ let run_uniciteit_unie env world (u : resolved_uniciteit_unie) =
 
 (* ch. 8.4: the Parameterset session-start coverage check. Every granular
    parameter the document reads at the evaluation date (a ch. 8.3 vintage
-   read: TemporalRead of a ParameterRef indexed by Rekendatum) must have
+   read: TemporalRead of a ParameterReference indexed by evaluationDate) must have
    a timeline in the session that covers that date — checked before any
    rule fires; a missing vintage is a configuration error, never a
    mid-evaluation leeg. Point reads at data-dependent indices are
@@ -3365,7 +3361,7 @@ let vintage_read_params (doc : document) : string list =
     | Temporal_read
         { basis = Parameter_ref { parameter = Some p; _ };
           datum = Constante { naam = Some n; _ }; _ }
-      when norm n = norm "Rekendatum" ->
+      when norm n = norm Ir_v0.Spelling.evaluation_date ->
         if not (List.exists (fun q -> norm q = norm p) !acc) then acc := p :: !acc
     | Temporal_read { basis; datum; _ } ->
         expr basis;
@@ -3586,10 +3582,10 @@ let evaluate env world =
      off-cycle leeg reader strictly above its writer, so the reader's
      position in the document no longer decides whether it acts on a
      transient leeg (WV-6.4-f). A quantifier fold whose range can grow
-     (ALLE, GEEN, TEN_HOOGSTE, PRECIES) or whose matrix is negated (GEEN,
-     TEN_HOOGSTE, PRECIES) is a negative edge on the same terms since
+     (`all`, `none`, `atMost`, `exactly`) or whose matrix is negated (`none`,
+     `atMost`, `exactly`) is a negative edge on the same terms since
      that date. Other conditions that hold on absence (a comparison
-     against leeg, a count against zero, a propositional GEEN over a
+     against leeg, a count against zero, a propositional `none` over a
      comparison, arithmetic that coalesces leeg to 0) are not negative
      edges. They still reach this loop on an admissible cycle, and off a
      cycle they leave this interpreter order-dependent in the condition of

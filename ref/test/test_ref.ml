@@ -733,37 +733,37 @@ let with_pointers (doc : Ir_v0.Ast.document) : Ir_v0.Ast.document =
     resolved_regels =
       List.mapi
         (fun i (r : Ir_v0.Ast.resolved_regel) ->
-          { r with rr_pointer = at "resolvedRegels" i r.rr_pointer })
+          { r with rr_pointer = at "rules" i r.rr_pointer })
         doc.resolved_regels;
     object_creaties =
       List.mapi
         (fun i (o : Ir_v0.Ast.resolved_object_creatie) ->
-          { o with oc_pointer = at "objectCreaties" i o.oc_pointer })
+          { o with oc_pointer = at "objectCreations" i o.oc_pointer })
         doc.object_creaties;
     verdelingen =
       List.mapi
         (fun i (v : Ir_v0.Ast.resolved_verdeling) ->
-          { v with vd_pointer = at "verdelingen" i v.vd_pointer })
+          { v with vd_pointer = at "allocations" i v.vd_pointer })
         doc.verdelingen;
     consistenties =
       List.mapi
         (fun i (c : Ir_v0.Ast.resolved_consistentie) ->
-          { c with cons_pointer = at "consistenties" i c.cons_pointer })
+          { c with cons_pointer = at "consistencies" i c.cons_pointer })
         doc.consistenties;
     uniciteiten =
       List.mapi
         (fun i (u : Ir_v0.Ast.resolved_uniciteit) ->
-          { u with uni_pointer = at "uniciteiten" i u.uni_pointer })
+          { u with uni_pointer = at "uniquenesses" i u.uni_pointer })
         doc.uniciteiten;
     uniciteit_unies =
       List.mapi
         (fun i (u : Ir_v0.Ast.resolved_uniciteit_unie) ->
-          { u with uu_pointer = at "uniciteiten" (n_uni + i) u.uu_pointer })
+          { u with uu_pointer = at "uniquenesses" (n_uni + i) u.uu_pointer })
         doc.uniciteit_unies;
     feit_creaties =
       List.mapi
         (fun i (f : Ir_v0.Ast.resolved_feit_creatie) ->
-          { f with fc_pointer = at "feitCreaties" i f.fc_pointer })
+          { f with fc_pointer = at "factCreations" i f.fc_pointer })
         doc.feit_creaties;
   }
 
@@ -1197,10 +1197,10 @@ let () =
   in
   expect_fault_msg "WV-6.4-g-r3-negatie-waar"
     (fun () -> run (doc ~in_creatie:(toets Gevuld true merk) ~in_regel:(toets Gevuld true opvolger_rang)))
-    "WF-046 at /rules/objectCreaties/0/versions/0: negative dependency edge on a cycle";
+    "WF-046 at /rules/objectCreations/0/versions/0: negative dependency edge on a cycle";
   expect_fault_msg "WV-6.4-g-r1-negatie-onwaar"
     (fun () -> run (doc ~in_creatie:(toets Leeg false merk) ~in_regel:(toets Gevuld false opvolger_rang)))
-    "WF-046 at /rules/objectCreaties/0/versions/0: negative dependency edge on a cycle"
+    "WF-046 at /rules/objectCreations/0/versions/0: negative dependency edge on a cycle"
 
 (* WV-7.9: nested exception groups (ch. 7.9) — the PHASE4-DEFAULTS §7
    spurious-conflict test at the unit level (b <- x, x <- {y, z}, hand-built
@@ -2849,7 +2849,7 @@ let () =
              dimensie_selectie = None; typ = Some num2; bron = None; granulariteit = None;
              bron_rol = None; bron_pad = Some pad2 }));
   (* WF-102 (c), the verifier's sentence: a count's range is one step,
-     spelled sourceRole, so a path under AANTAL is refused by name, with and
+     spelled sourceRole, so a path under `count` is refused by name, with and
      without a die/dat subselection. Until this refusal ref counted the
      instances the path reached while the verifier refused the document *)
   let telling filter : Ir_v0.Ast.expr =
@@ -2903,7 +2903,7 @@ let () =
    ordinary step". Multiplicity is a declaration fact and does not enter
    the reading — a to-one role contributes its zero-or-one instance to
    the union like any other — and this is the ONE clause of that chapter
-   no corpus document exercises: every bronPad step in the corpus is
+   no corpus document exercises: every sourcePath step in the corpus is
    to-many, so without this check the sentence has no artefact.
 
    The model makes the answer discriminating rather than merely defined:
@@ -3492,7 +3492,7 @@ let () =
     "without any bound has no window to gate on (WF-042)";
   (* the mirror note's SECOND bound: the window under a quantifier that counts
      or complements its verdict. The boundary is the one measured on the other
-     three executors — ALLE and DE carried, the rest refused — and it is pinned
+     three executors — `all` and `the` carried, the rest refused — and it is pinned
      from BOTH sides here, because a refusal that quietly widened would look
      exactly like a refusal that did not. *)
   let samengesteld kwantor drempel : Ir_v0.Ast.conditie =
@@ -3502,7 +3502,7 @@ let () =
     (fun (naam, kwantor, drempel) ->
       expect_fault_msg ("WV-3.10-telkwantor-" ^ naam)
         (fun () -> gate (Some "2024-06-15") (samengesteld kwantor drempel))
-        "under GEEN or a counting quantifier")
+        "under none or a counting quantifier")
     [ ("geen", Ir_v0.Ast.Geen, 0); ("tenminste", Ten_minste, 1); ("tenhoogste", Ten_hoogste, 1);
       ("precies", Precies, 1) ];
   check "WV-3.10-telkwantor-fasestaart"
@@ -4107,9 +4107,9 @@ let () =
    J1 does not, so the two readings are distinguishable by value and not only
    by name. Three owners over the same subject:
 
-     eigenaar absent    -> reads V1's own `gekeurd`  = true
-     eigenaar "Vondst"  -> the same, the field naming the subject's own type
-     eigenaar "Jutter"  -> FAULT, never J1's value and never V1's
+     host absent    -> reads V1's own `gekeurd`  = true
+     host "Vondst"  -> the same, the field naming the subject's own type
+     host "Jutter"  -> FAULT, never J1's value and never V1's
 
    The third line is the decision (2026-09-10): the field is authoritative, so
    an owner that is not the subject's type is not a decoration to be read past.
@@ -4598,13 +4598,13 @@ let () =
     in
     World.attr (World.get (Eval.evaluate (env_of doc) w) "w") "merk"
   in
-  (* table 1 — ALLE, member 1 "ploegomvang ongelijk aan 0" *)
+  (* table 1 — `all`, member 1 "ploegomvang ongelijk aan 0" *)
   let alle = doc_of Alle 0 Ongelijk in
   expect_leeg "WV-5.10-alle-deler-0-geen-fault" (run alle "0" "100");
   expect_num "WV-5.10-alle-deler-4" (run alle "4" "100") "1";
   expect_leeg "WV-5.10-alle-deler-7-lid2-beslist" (run alle "7" "3");
   (* table 2 — the SAME two members, member 1 "ploegomvang gelijk aan 0",
-     under GEEN (the stop fixes the outcome false) and TEN MINSTE 1 (the same
+     under `none` (the stop fixes the outcome false) and `atLeast` 1 (the same
      stop fixes it true): one trigger, opposite verdicts *)
   let geen = doc_of Geen 0 Gelijk and minste = doc_of Ten_minste 1 Gelijk in
   expect_leeg "WV-5.10-geen-deler-0-geen-fault" (run geen "0" "100");
@@ -4676,11 +4676,11 @@ let () =
      settle the outcome, and the faulting third member is never read. *)
   expect_leeg "WV-5.10-atmost-overschrijding-stopt"
     (run (doc_leden Ten_hoogste 1 [ waar_ploeg0; waar_vangst; faultend ]) "0" "100");
-  (* PRECIES' OVER-THRESHOLD TRIGGER, likewise: hits 2 against a threshold of 1
+  (* `exactly`'s OVER-THRESHOLD TRIGGER, likewise: hits 2 against a threshold of 1
      settle it false and the faulting third member stays unread. *)
   expect_leeg "WV-5.10-precies-overschrijding-stopt"
     (run (doc_leden Precies 1 [ waar_ploeg0; waar_vangst; faultend ]) "0" "100");
-  (* PRECIES' OUT-OF-REACH TRIGGER: a threshold above the member count settles
+  (* `exactly`'s OUT-OF-REACH TRIGGER: a threshold above the member count settles
      it false on the empty prefix, so nothing is read. *)
   expect_leeg "WV-5.10-precies-onhaalbaar-leest-niets"
     (run (doc_leden Precies 3 [ faultend; waar_ploeg0 ]) "0" "100")
@@ -4723,7 +4723,7 @@ let () =
         typ = Some num0; bron = None }
   in
   let pit : Ir_v0.Ast.expr = Expr_onopgelost { typ = Some num0; bron = None } in
-  let bm = "division by numeric zero" and pm = "Onopgelost reached in evaluation" in
+  let bm = "division by numeric zero" and pm = "Unresolved reached in evaluation" in
   let lijst : Ir_v0.Ast.datatype = List_type { element = num0 } in
   let paardom : Ir_v0.Ast.datatype =
     Struct_type { domein = "paar"; velden = [ ("een", num0); ("twee", num0) ] }
@@ -5405,7 +5405,7 @@ let () =
    The five pinned rows of the §8.2 form
      "… indien de <attribuut> van ALLE <leden> van de <onderwerp>
         gedurende het gehele jaar groter is dan <grens>"
-   plus the scalar comparison the matrix rests on, and the GEEN twin. *)
+   plus the scalar comparison the matrix rests on, and the `none` twin. *)
 
 let dagnr iso = match Value.date_of_iso iso with Value.Date d -> d | _ -> assert false
 
@@ -5503,9 +5503,9 @@ let () =
   check "WV-3.9a-pin5-precies-op-de-grens-is-niet-strikt-groter"
     (not (kv_eval [ ("B1", heel_jaar "40") ]));
 
-  (* the GEEN twin: the verdict is the complement PER MEMBER, never of the
+  (* the `none` twin: the verdict is the complement PER MEMBER, never of the
      fold — a member with a gap does NOT have the value whole-period, so it
-     does not block GEEN either *)
+     does not block `none` either *)
   check "WV-3.9a-geen-allen-onder-de-grens"
     (kv_eval ~kwantor:Geen [ ("B1", heel_jaar "30"); ("B2", heel_jaar "20") ]);
   check "WV-3.9a-geen-een-lid-erboven"
@@ -5521,7 +5521,7 @@ let () =
   check "WV-3.9a-lid-zonder-tijdlijn-is-vacuous-waar"
     (kv_eval [ ("B1", heel_jaar "50"); ("B2", []) ]);
   (* and the cell where that vacuum CHANGES SIGN: the very same member
-     SATISFIES its matrix vacuously, which is what GEEN denies. Pinned on
+     SATISFIES its matrix vacuously, which is what `none` denies. Pinned on
      its OWN set, because beside a member at 50 the fold is already decided
      and the empty one is never reached — the two vacua (at the member, at
      the set) part company only here *)
@@ -5545,7 +5545,7 @@ let () =
 
   (* the COUNTING quantifiers (ch. 3.9a): the verdict COUNTS the
      contributors whose matrix holds and compares that number with the
-     threshold. ALLE is [hits = n] and GEEN is [hits = 0] written the other
+     threshold. `all` is [hits = n] and `none` is [hits = 0] written the other
      way round, so one comparison covers all five — and the empty set gets
      no vacuum rule of its own, it simply counts 0. Matrix throughout: the
      §8.2 test "dagvergoeding > 40 gedurende het gehele jaar". *)
@@ -5566,7 +5566,7 @@ let () =
     (not (tel Precies 1 [ ("B1", heel_jaar "30"); ("B2", heel_jaar "20") ]));
 
   (* the EMPTY contributor set, per quantifier: it is the count, not a
-     principle. ALLE and GEEN read waar there (pinned above); these three
+     principle. `all` and `none` read waar there (pinned above); these three
      part company on the same set *)
   check "WV-3.9a-tel-lege-set-minstens1-is-onwaar" (not (tel Ten_minste 1 []));
   check "WV-3.9a-tel-lege-set-hoogstens1-is-waar" (tel Ten_hoogste 1 []);
@@ -5598,7 +5598,7 @@ let () =
           [ ("B1", heel_jaar "50"); ("B2", heel_jaar "5"); ("B3", heel_jaar "5") ]));
 
   (* the NIET prefix under a counting quantifier. On the whole-period matrix
-     the "niet" qualifies the OUTER comparison, and under ALLE/GEEN an
+     the "niet" qualifies the OUTER comparison, and under `all`/`none` an
      executor may fold it by flipping the quantifier — a THRESHOLD has no
      quantifier to flip into, so the negation is read per contributor and
      lands on the COUNT: count(not P) = n - count(P), exact because the
@@ -5624,16 +5624,16 @@ let () =
 
   (* a counting fold with no threshold has nothing to compare the count
      with — WF-108 (e)'s business, and reaching it in evaluation is a
-     fault, never a verdict. DE is arm (a)'s and faults the same way *)
+     fault, never a verdict. `the` is arm (a)'s and faults the same way *)
   expect_fault_msg "WV-3.9a-tel-kwantorvouw-zonder-drempel-faalt"
     (fun () ->
       Value.Bool (kv_eval ~kwantor:Ten_minste [ ("B1", heel_jaar "50") ]))
-    "counting quantifier fold without a drempel: the verdict compares the number of contributors \
-     satisfying the matrix with a threshold, and there is none to compare it with";
+    "counting quantifier fold without a threshold: the verdict compares the number of \
+     contributors satisfying the matrix with a threshold, and there is none to compare it with";
   expect_fault_msg "WV-3.9a-kwantorvouw-met-kwantor-DE-faalt"
     (fun () -> Value.Bool (kv_eval ~kwantor:De [ ("B1", heel_jaar "50") ]))
-    "quantifier fold with kwantor DE: the bare definite is a description of ONE member, not a \
-     quantification over the set — a fold over it has no reading";
+    "quantifier fold with quantifier the: the bare definite is a description of ONE member, not \
+     a quantification over the set — a fold over it has no reading";
 
   (* a matrix that is absent is WF-108's business, and reaching it in
      evaluation is a fault, never a verdict *)
@@ -5648,7 +5648,7 @@ let () =
                 kv_toets = None; kv_bron = None;
                 kv_bron_rol = Some { rb_feittype = "ploegindeling"; rb_rol = "berger" };
                 kv_bron_pad = None })))
-    "quantifier fold without a toets: the matrix is what every contributor must satisfy, and a \
+    "quantifier fold without a test: the matrix is what every contributor must satisfy, and a \
      quantifier over no condition has no verdict";
   (* WF-108 (c), the range's shape: one spelling and a path of at least two
      steps. The loader and the verifier refuse the wire forms first; a node
@@ -5666,12 +5666,13 @@ let () =
       zin
   in
   bereik_faalt "WV-3.9a-kwantorvouw-met-twee-bereiken-faalt" (Some rb) (Some [ rb; rb ])
-    "bronPad beside bronRol: a quantifier fold carries one range, never two";
+    "sourcePath beside sourceRole: a quantifier fold carries one range, never two";
   bereik_faalt "WV-3.9a-kwantorvouw-zonder-bereik-faalt" None None
-    "a quantifier fold carries its range (bronRol or bronPad): the range is written, never derived";
+    "a quantifier fold carries its range (sourceRole or sourcePath): the range is written, never \
+     derived";
   bereik_faalt "WV-3.9a-kwantorvouw-met-een-pad-van-een-stap-faalt" None (Some [ rb ])
-    "a quantifier fold's bronPad carries at least TWO steps, found 1 — the one-step range is \
-     spelled bronRol"
+    "a quantifier fold's sourcePath carries at least TWO steps, found 1 — the one-step range is \
+     spelled sourceRole"
 
 (* The SCALAR whole-period comparison the matrix rests on (ch. 3.9): the
    same four rows the characteristic form already pins, over a VALUE
@@ -5729,7 +5730,7 @@ let () =
     "WF-043"
 
 (* WV-3.10-geldigheid-datumlezing: the validity gate reads its three dates —
-   the case's asOfDate and the form's geldigheid.vanaf / .tot — through the
+   the case's asOfDate and the form's validity.from / .to — through the
    strict date reader, and refuses a non-date by position. Until 2026-09-23
    it compared the raw strings: asOfDate "01-06-2026" sorted before every
    20xx bound and a day-first bound moved its window, each answering
@@ -5784,32 +5785,32 @@ let () =
      opened; month 13 sorted after, so it stayed shut *)
   weigert "WV-3.10-geldigheid-vanaf-dag-eerst-weigert"
     (fun () -> run (Some "01-01-2026") (snd jaar))
-    (zin "geldigheid.vanaf" "01-01-2026" (vorm "01-01-2026"));
+    (zin "validity.from" "01-01-2026" (vorm "01-01-2026"));
   weigert "WV-3.10-geldigheid-vanaf-kalender-weigert"
     (fun () -> run (Some "2026-13-01") None)
-    (zin "geldigheid.vanaf" "2026-13-01" (maand "2026-13-01"));
+    (zin "validity.from" "2026-13-01" (maand "2026-13-01"));
   (* the month-length half of the calendar: 30 February has the shape and
      even sorts correctly, and only the reader's month length refuses it *)
   weigert "WV-3.10-geldigheid-vanaf-maandlengte-weigert"
     (fun () -> run (Some "2026-02-30") None)
-    (zin "geldigheid.vanaf" "2026-02-30" (dag "2026-02-30"));
+    (zin "validity.from" "2026-02-30" (dag "2026-02-30"));
   (* position tot: "31-12-2025" sorted before "2026-06-01", so the window
      closed; a day-first tot that sorts AFTER the date kept it open *)
   weigert "WV-3.10-geldigheid-tot-dag-eerst-weigert"
     (fun () -> run (fst jaar) (Some "31-12-2026"))
-    (zin "geldigheid.tot" "31-12-2026" (vorm "31-12-2026"));
+    (zin "validity.to" "31-12-2026" (vorm "31-12-2026"));
   weigert "WV-3.10-geldigheid-tot-kalender-weigert"
     (fun () -> run None (Some "2026-12-32"))
-    (zin "geldigheid.tot" "2026-12-32" (dag "2026-12-32"));
+    (zin "validity.to" "2026-12-32" (dag "2026-12-32"));
   (* a malformed bound is refused even where the other bound already
      excludes the date, in both directions: neither reading sits behind
      the other bound's short-circuit *)
   weigert "WV-3.10-geldigheid-tot-weigert-ook-buiten-vanaf"
     (fun () -> run ~as_of:"2025-06-01" (fst jaar) (Some "31-12-2026"))
-    (zin "geldigheid.tot" "31-12-2026" (vorm "31-12-2026"));
+    (zin "validity.to" "31-12-2026" (vorm "31-12-2026"));
   weigert "WV-3.10-geldigheid-vanaf-weigert-ook-buiten-tot"
     (fun () -> run ~as_of:"2027-06-01" (Some "01-01-2026") (snd jaar))
-    (zin "geldigheid.vanaf" "01-01-2026" (vorm "01-01-2026"));
+    (zin "validity.from" "01-01-2026" (vorm "01-01-2026"));
   (* position asOfDate, at the gate: an env built without the case loader *)
   weigert "WV-3.10-geldigheid-asofdate-dag-eerst-weigert"
     (fun () -> run ~as_of:"01-06-2026" (fst jaar) (snd jaar))
@@ -6122,7 +6123,7 @@ let () =
                  [ ("tarief", Some Ir_v0.Ast.Dag); ("ijkdag", Some Ir_v0.Ast.Maand) ] } )) ] }
   in
   weigert_tekst ~d:doc_dag "caselader-tijdlijn-dagrooster" (case_met "" "")
-    "V1.tarief: the declared grid is DAG, which every day boundary sits on, yet this loader \
+    "V1.tarief: the declared grid is day, which every day boundary sits on, yet this loader \
      checks a timeline's grid through the calendar bucketing and v0 defines buckets for month \
      and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as \
      a defect of the case";
@@ -6144,8 +6145,8 @@ let () =
             grid to check the segment boundaries against: refused as a v0 limit, not as a defect \
             of the case"
            grid grid))
-    [ ("caselader-tijdlijn-weekrooster", Ir_v0.Ast.Week, "WEEK");
-      ("caselader-tijdlijn-kwartaalrooster", Ir_v0.Ast.Kwartaal, "KWARTAAL") ];
+    [ ("caselader-tijdlijn-weekrooster", Ir_v0.Ast.Week, "week");
+      ("caselader-tijdlijn-kwartaalrooster", Ir_v0.Ast.Kwartaal, "quarter") ];
   (* the per-segment refusals beside the lexeme ones name their segment the
      same way; the two that compare segments with each other keep the
      timeline's own position *)
@@ -6470,7 +6471,7 @@ let () =
           false
   in
   weigert "WF-022-kenmerk-onwaar-weigert" (litv "onwaar" Ir_v0.Ast.Booleaan)
-    (zin {|the literal {"boolean": false} typed Booleaan|});
+    (zin {|the literal {"boolean": false} typed Boolean|});
   weigert "WF-022-kenmerk-berekend-weigert"
     (aref "actief" "Recht")
     (zin "a computed value");
@@ -6482,10 +6483,10 @@ let () =
      variant under Tekst — a node only a hand builds, since the loader
      refuses a variant its type does not name (WF-114) *)
   weigert "WF-022-kenmerk-waar-als-tekst-weigert" (litv "waar" Ir_v0.Ast.Tekst)
-    (zin {|the literal {"text": "waar"} typed Tekst|});
+    (zin {|the literal {"text": "waar"} typed Text|});
   weigert "WF-022-kenmerk-booleaanse-variant-als-tekst-weigert"
     (Literal { variant = Lv_boolean true; typ = Some Ir_v0.Ast.Tekst; bron = None })
-    (zin {|the literal {"boolean": true} typed Tekst|});
+    (zin {|the literal {"boolean": true} typed Text|});
   (* the control: the constant itself still attributes, on the condition *)
   let w = Eval.evaluate (env_of (doc (litv "waar" Ir_v0.Ast.Booleaan))) wereld in
   check "WF-022-kenmerk-waar-kent-toe"
@@ -6511,7 +6512,7 @@ let () =
   | exception Value.Fault m ->
       let verwacht =
         zin ~regel:"aantal als kenmerk" ~doel:"aantal aangemelde vondsten" ~ot:"Jutter"
-          {|the literal {"boolean": false} typed Booleaan|}
+          {|the literal {"boolean": false} typed Boolean|}
       in
       check ("WF-022-kenmerktoekenning-op-attribuut-weigert (got: " ^ m ^ ")") (m = verwacht)
   | _ -> check "WF-022-kenmerktoekenning-op-attribuut-weigert (no fault at all)" false)
@@ -6544,17 +6545,16 @@ let () =
   expect_num "WV-4.1a-eigen-lezing-op-het-subjecttype" (run (aref "leeftijd" "Jutter")) "40";
   expect_fault_msg "WV-4.1a-eigen-lezing-op-een-supertype-faalt"
     (fun () -> run (aref "leeftijd" "Persoon"))
-    "an attribute reference without navigation bindings is the subject's own read, so its \
-     objecttype is the subject type 'Jutter' — 'Persoon' names another type, which only a \
-     navigation reaches (WF-053)";
+    "an attribute reference without a path is the subject's own read, so its subjectType is the \
+     subject type 'Jutter' — 'Persoon' names another type, which only a navigation reaches";
   expect_fault_msg "WV-4.1-kenmerk-op-een-waardepositie-faalt"
     (fun () -> run (aref "vrijgesteld" "Jutter"))
     "'vrijgesteld' is a characteristic of 'Jutter', not an attribute — a characteristic \
      endpoint is ill-formed in a value position (WF-080)";
   check "WV-2.10-kenmerk-heeft-geen-statisch-type"
     (Eval.static_type (env_of (doc (aref "leeftijd" "Jutter"))) (aref "vrijgesteld" "Jutter") = None);
-  (* WF-083 (c): a TOTAAL without a range is the subject's own read, so its
-     elementObjecttype is the subject type; the supertype Persoon there is
+  (* WF-083 (c): a total without a range is the subject's own read, so its
+     elementType is the subject type; the supertype Persoon there is
      refused in the verifier's sentence, where the time-total arm used to
      let it through [isa] *)
   let totaal el : Ir_v0.Ast.expr =
@@ -6565,7 +6565,7 @@ let () =
   in
   expect_fault_msg "WV-4.3-totaal-zonder-bereik-over-een-supertype-faalt"
     (fun () -> run (totaal "Persoon"))
-    "the elementType 'Persoon' of a TOTAAL without a range is not the fold subject \
+    "the elementType 'Persoon' of a total without a range is not the fold subject \
      'Jutter': without a range the fold is the subject's own read, so its elementType must \
      name the subject type"
 
@@ -6649,13 +6649,20 @@ let () =
   in
   expect_fault_msg "WV-4.1-de-dag-als-contextwaarde-faalt"
     (fun () -> run_datum (contextwaarde "de dag"))
-    "context value 'de dag' is not one of the two admissible names Rekendatum, Rekenjaar: the \
-     context-value name is a closed set, spelled byte for byte";
+    "context value 'de dag' is not one of the two admissible names evaluationDate, \
+     evaluationYear: the context-value name is a closed set, spelled byte for byte";
   expect_fault_msg "WV-4.1-contextwaarde-andere-spelling-faalt"
     (fun () -> run_datum (contextwaarde "rekendatum"))
-    "context value 'rekendatum' is not one of the two admissible names Rekendatum, Rekenjaar";
+    "context value 'rekendatum' is not one of the two admissible names evaluationDate, \
+     evaluationYear";
+  (* the v0 spelling of the session value is outside the set since L5, like
+     any other name (the ref side of corpus/negatief/wf098-v0-naam-rekendatum) *)
+  expect_fault_msg "WV-4.1-contextwaarde-v0-spelling-faalt"
+    (fun () -> run_datum (contextwaarde "Rekendatum"))
+    "context value 'Rekendatum' is not one of the two admissible names evaluationDate, \
+     evaluationYear";
   check "WV-4.1-rekendatum-leest-de-evaluatiedatum"
-    (World.attr (World.get (run_datum (contextwaarde "Rekendatum")) "J1") "peildatum"
+    (World.attr (World.get (run_datum (contextwaarde Ir_v0.Spelling.evaluation_date)) "J1") "peildatum"
     = Value.date_of_iso "2026-03-15")
 
 let () =

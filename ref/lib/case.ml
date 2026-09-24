@@ -311,13 +311,13 @@ let timeline_of_json ?(allow_empty = false) ~at ~(gran : granulariteit) (decl : 
         van = d
     | Dag ->
         fail
-          "%s: the declared grid is DAG, which every day boundary sits on, yet this loader checks \
+          "%s: the declared grid is day, which every day boundary sits on, yet this loader checks \
            a timeline's grid through the calendar bucketing and v0 defines buckets for month and \
            year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as \
            a defect of the case"
           at
-    | Week -> geen_rooster "WEEK"
-    | Kwartaal -> geen_rooster "KWARTAAL"
+    | Week -> geen_rooster "week"
+    | Kwartaal -> geen_rooster "quarter"
   in
   let parsed =
     List.mapi

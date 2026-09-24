@@ -350,7 +350,7 @@ let true_periods_of (tested : t) ~(span : (int * int) list) (pred : Value.t -> b
 
 (* complement of a boolean timeline's true-periods within a span
    (ch. 3.6: the negated gedurende form) *)
-(* intersection of two true-period lists (ch. 3.6, the composite ALLE
+(* intersection of two true-period lists (ch. 3.6, the composite `all`
    clip): pairwise overlap [max from, min to) — v0 reaches the same set
    by nesting per-member clips; intersection is associative, so the
    fold over a composite's members lands on identical periods *)

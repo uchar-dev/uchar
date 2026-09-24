@@ -2,7 +2,7 @@
    an exact rational, a text, a boolean, a date (day or millisecond
    precision), an enumeration value, a constructor value (ch. 9.1) — or
    empty, the distinguished absence of a value. Empty is not zero, not the
-   empty string, not false, and distinct from Onopgelost (an unresolvable
+   empty string, not false, and distinct from Unresolved (an unresolvable
    construct, which faults evaluation).
 
    Numbers carry their unit; unit algebra lives in Arith (ch. 2.6).
@@ -44,7 +44,7 @@ type t =
          rule, the Ctor/Lijst sibling) *)
 
 (* A fault aborts the evaluation observably (hard runtime error, ch. 1.4
-   point 4; Onopgelost, WF-044; a non-representable bounded write). *)
+   point 4; Unresolved, WF-044; a non-representable bounded write). *)
 exception Fault of string
 
 let fault fmt = Printf.ksprintf (fun s -> raise (Fault s)) fmt
@@ -117,7 +117,8 @@ let iso_of_date z =
    The RegelSpraak source snippet [dd. ]d-m-yyyy hh:mm:ss[.SSS] is refused
    like any other form. It was a second admitted spelling while the v0
    emitter wrote it into `waarde`; since 2026-09-22 the emitter writes the ISO
-   lexeme there and keeps the snippet in `bron`, and WF-095 admits the ISO
+   lexeme there and keeps the snippet as the node's source text (since the L5
+   landing the source record, `source.snippet`), and WF-095 admits the ISO
    form alone. A reader that still read the snippet would answer documents no
    producer writes and the verifier rejects, so it was narrowed with them
    (2026-09-23).
