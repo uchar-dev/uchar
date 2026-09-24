@@ -85,8 +85,9 @@ test: compile $(JUNIT_JAR)
 		--scan-class-path --details=tree --disable-banner
 
 # Emit the IR (uchar-ir-v1) — a FAITHFUL JSON dump of the complete resolved model:
-# the M1 container, and elsewhere the Dutch v0 field names exactly as the Java
-# records name them. Over one-or-more
+# the container, the reference layer, the type system and the rule and expression
+# layers in their v1 shape, and elsewhere the Dutch v0 field names exactly as the
+# Java records name them. Over one-or-more
 # .rgs files (concatenated in listed order). An unresolvable model writes
 # NOTHING and exits 1.
 IR_OUT := $(if $(OUT),$(OUT),$(OUT_DIR)/ir.json)

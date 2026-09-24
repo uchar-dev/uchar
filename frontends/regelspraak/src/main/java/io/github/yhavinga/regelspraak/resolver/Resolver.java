@@ -161,7 +161,7 @@ public final class Resolver {
     /** The --ir mode body: {@code rest} = [out.json, file.rgs...] after flag removal — the FIRST remaining arg is
      *  the output file, the rest are the source files of the model chain (concatenated in order). Writes a
      *  FAITHFUL {@code uchar-ir-v1} JSON dump of the complete resolved model (the uchar "mirror" artifact — the
-     *  M1 container, and the Dutch v0 field names elsewhere, warts included) via
+     *  layers migrated so far in their v1 shape, and the Dutch v0 field names elsewhere, warts included) via
      *  {@link io.github.yhavinga.regelspraak.emit.IrEmitter}.
      *  Returns the process exit code (0 = ir geschreven, 1 = resolver-fouten, 2 = usage) instead of exiting, so the
      *  disk discipline is testable as the REAL CLI path: an unresolvable model writes NOTHING and exits non-zero. */
@@ -189,6 +189,9 @@ public final class Resolver {
         // be SEEN: until 2026-09-19 a successful run printed nothing, so every marker-with-a-warning was
         // invisible on the one path an author actually uses. stderr, so the stdout summary stays parseable.
         m.diagnostics.stream().filter(d -> !d.isError()).forEach(d -> System.err.println("  " + d));
+        // the WARNINGs the emitter itself appends, for what the wire cannot carry, are shown the same way
+        io.github.yhavinga.regelspraak.emit.IrEmitter.ongeschrevenVerdelingen(m)
+                .forEach(d -> System.err.println("  " + d));
         java.nio.file.Files.writeString(out, io.github.yhavinga.regelspraak.emit.IrEmitter.emit(m),
                 java.nio.charset.StandardCharsets.UTF_8);
         System.out.printf("ir: objecttypen=%d feittypen=%d resolvedRegels=%d geschreven naar %s%n",
