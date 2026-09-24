@@ -104,16 +104,16 @@ class VensterNestingWitnessTest {
 
     // ================= the documents =================
 
-    private static final String DATUM = "{ \"node\": \"DatumInDagen\" }";
-    private static final String NUM = "{ \"node\": \"Numeriek\", \"geheel\": true, \"decimalen\": 0,"
-            + " \"teken\": \"ONBEPAALD\", \"eenheid\": null }";
+    private static final String DATUM = "{ \"node\": \"Date\", \"precision\": \"day\" }";
+    private static final String NUM = "{ \"node\": \"Number\", \"whole\": true, \"decimals\": 0,"
+            + " \"sign\": \"ONBEPAALD\" }";
     private static final String WACHT = "{ \"node\": \"RolBinding\", \"feittype\": \"schouwindeling\", \"rol\": \"wacht\" }";
     private static final String BREVET = "{ \"node\": \"RolBinding\", \"feittype\": \"brevethouding\", \"rol\": \"brevet\" }";
 
     private static final String VENSTER = """
             { "node": "Periode",
-              "vanaf": { "node": "Literal", "waarde": "2024-01-01", "type": { "node": "DatumInDagen" }, "bron": "2024-01-01" },
-              "tot": { "node": "Literal", "waarde": "2025-01-01", "type": { "node": "DatumInDagen" }, "bron": "2025-01-01" },
+              "vanaf": { "node": "Literal", "waarde": "2024-01-01", "type": { "node": "Date", "precision": "day" }, "bron": "2024-01-01" },
+              "tot": { "node": "Literal", "waarde": "2025-01-01", "type": { "node": "Date", "precision": "day" }, "bron": "2025-01-01" },
               "totInclusief": false, "bron": "van 1 januari 2024 tot 1 januari 2025" }""";
 
     private static final String BREVET_VENSTER = """
@@ -196,7 +196,7 @@ class VensterNestingWitnessTest {
     private Path metPeildatum(Path ir) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(ir));
         IrPad.modelLijst(doc, "parameters").add(JSON.readTree(
-                "{ \"node\": \"Parameter\", \"naam\": \"peildatum\", \"datatype\": " + DATUM + ", \"granulariteit\": null }"));
+                "{ \"node\": \"Parameter\", \"name\": \"peildatum\", \"datatype\": " + DATUM + " }"));
         return schrijf(doc);
     }
 

@@ -280,8 +280,7 @@ class StaandeScalaireNormWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(CORPUS.resolve("anchor")
                 .resolve("jutterswet-waardestelling").resolve("ir.json").toFile());
         ObjectNode getal = JSON.createObjectNode();
-        getal.put("node", "Numeriek").put("geheel", false).put("decimalen", 2)
-                .put("teken", "ONBEPAALD").putNull("eenheid");
+        getal.put("node", "Number").put("whole", false).put("decimals", 2).put("sign", "ONBEPAALD");
         IrPad.addAttribute(IrPad.objectType(ir, "Vondst"), "tweede taxatie", getal);
 
         ArrayNode regels = IrPad.rulesLijst(ir, "resolvedRegels");

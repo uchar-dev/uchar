@@ -39,11 +39,11 @@ class ZelfnaamTerugvalWitnessTest {
     }
 
     @Test void parameter_zonder_naam_wordt_geweigerd() throws Exception {
-        weigertZonderNaam("jutterswet-penningdrempel", "parameters", "naam", "vondstdrempel");
+        weigertZonderNaam("jutterswet-penningdrempel", "parameters", "name", "vondstdrempel");
     }
 
     @Test void eenheidstelsel_zonder_naam_wordt_geweigerd() throws Exception {
-        weigertZonderNaam("jutterswet-berging", "unitSystems", "naam", "Munt");
+        weigertZonderNaam("jutterswet-berging", "unitSystems", "name", "Munt");
     }
 
     @Test void feittype_zonder_naam_wordt_geweigerd() throws Exception {

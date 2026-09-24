@@ -130,8 +130,7 @@ class InstantieUnieWitnessTest {
     }
 
     private static String doc(String unie) {
-        String heel = "{\"node\":\"Numeriek\",\"geheel\":true,\"decimalen\":0,\"teken\":\"NIET_NEGATIEF\","
-                + "\"eenheid\":null}";
+        String heel = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"NIET_NEGATIEF\"}";
         String waarde = ("{\"node\":\"Functie\",\"kind\":\"AANTAL\",\"argumenten\":[%s],"
                 + "\"elementObjecttype\":null,\"leegwaarde\":null,\"filter\":null,\"dimensieSelectie\":null,"
                 + "\"type\":%s,\"bron\":\"het aantal …\",\"granulariteit\":null}").formatted(unie, heel);
@@ -155,7 +154,7 @@ class InstantieUnieWitnessTest {
                 + "\"meervoud\":\"geborgen vondsten\",\"meervoudig\":true}]}";
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s,%s],\"factTypes\":[%s,%s],"
                 + "\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
-                + "\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+                + "\"dayKinds\":[]},"
                 + "\"rules\":{\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"aantal strandvondsten\","
                 + "\"soort\":\"BEREKENING\",\"doel\":%s,\"waarde\":%s,\"voorwaarde\":null,"
                 + "\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}],"

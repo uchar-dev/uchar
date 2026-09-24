@@ -598,7 +598,7 @@ class HeelperiodeKwantorvouwWitnessTest {
               "eigenaar": null, "periode": null, "bron": "zeegaand" }""";
 
     private static final String NUMERIEK =
-            "{ \"node\": \"Numeriek\", \"geheel\": false, \"decimalen\": 2, \"teken\": \"POSITIEF\", \"eenheid\": null }";
+            "{ \"node\": \"Number\", \"whole\": false, \"decimals\": 2, \"sign\": \"POSITIEF\" }";
 
     /** The ch. 4.5 node: {@code kwantor} over the Schuiten of the Vloot, matrix "wachtwaarde gedurende het
      *  gehele jaar groter dan 10", with {@code filter} and the range field ({@code bronRol} or {@code bronPad})
@@ -740,7 +740,7 @@ class HeelperiodeKwantorvouwWitnessTest {
                           { "node": "Rol", "naam": "vloot", "objecttypeNaam": "Vloot", "meervoud": null, "meervoudig": false },
                           { "node": "Rol", "naam": "schip", "objecttypeNaam": "Schuit", "meervoud": "schepen", "meervoudig": true } ] } ],
                     "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-                    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+                    "timelines": [], "dayKinds": [] },
                   "rules": {
                     "resolvedRegels": [
                       { "node": "ResolvedRegel", "naam": "Kenmerktoekenning zeewaardig", "soort": "KENMERKTOEKENNING",

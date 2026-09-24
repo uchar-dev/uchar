@@ -197,8 +197,8 @@ class DrlCreatieTakWitnessTest {
     private static Path gelijknamigLid() throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
         IrPad.addAttribute(IrPad.objectType(ir, "Jutter"), "rekenkamer", JSON.readTree("""
-                        { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                          "teken": "ONBEPAALD", "eenheid": null }"""));
+                        { "node": "Number", "whole": true, "decimals": 0,
+                          "sign": "ONBEPAALD" }"""));
         IrPad.rules(ir).set("resolvedRegels", zonder(IrPad.rulesLijst(ir, "resolvedRegels"), "heffing van een jutter"));
         return schrijf(ir, "gelijknamig-lid");
     }

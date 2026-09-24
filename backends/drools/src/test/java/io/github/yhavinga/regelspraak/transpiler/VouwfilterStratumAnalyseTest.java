@@ -127,7 +127,7 @@ class VouwfilterStratumAnalyseTest {
     }
 
     private static final String HEEL =
-            "{\"node\":\"Numeriek\",\"geheel\":true,\"decimalen\":0,\"teken\":\"NIET_NEGATIEF\",\"eenheid\":null}";
+            "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"NIET_NEGATIEF\"}";
     private static final String BOOL = "{\"node\":\"Booleaan\"}";
 
     private static String kenmerkCheck(boolean negatie) {
@@ -191,7 +191,7 @@ class VouwfilterStratumAnalyseTest {
                 + "\"meervoud\":\"vondsten\",\"meervoudig\":true}]}";
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],\"factTypes\":[%s],"
                 + "\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
-                + "\"dayKinds\":[],\"dagsoortPerEenheid\":{}},\"rules\":{\"resolvedRegels\":[%s],"
+                + "\"dayKinds\":[]},\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
                 + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
                 + "\"regelGroepen\":[]},\"diagnostics\":[]}")

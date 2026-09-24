@@ -229,7 +229,7 @@ class GenesteLetDuwWitnessTest {
     // ---------------- helpers: the wire shapes (IR-SPEC ch. 4.10 and its neighbours) ----------------
 
     private static String num(int dec, String teken) {
-        return "{\"node\":\"Numeriek\",\"geheel\":false,\"decimalen\":%d,\"teken\":\"%s\",\"eenheid\":null}"
+        return "{\"node\":\"Number\",\"whole\":false,\"decimals\":%d,\"sign\":\"%s\"}"
                 .formatted(dec, teken);
     }
     private static String num() { return num(2, "ONBEPAALD"); }
@@ -284,7 +284,7 @@ class GenesteLetDuwWitnessTest {
                 + "{\"node\":\"Attribute\",\"name\":\"uit\",\"datatype\":%s}],"
                 + "\"characteristics\":[]}],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
-                + "\"timelines\":[],\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+                + "\"timelines\":[],\"dayKinds\":[]},"
                 + "\"rules\":{\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"BEREKENING\","
                 + "\"doel\":%s,\"waarde\":%s,\"voorwaarde\":null,"
                 + "\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}],"

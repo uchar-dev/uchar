@@ -176,7 +176,7 @@ class BronpadKetenWitnessTest {
     private static String doc() { return DOCUMENT; }
 
     private static final String NUM2 =
-            "{ \"node\": \"Numeriek\", \"geheel\": false, \"decimalen\": 2, \"teken\": \"ONBEPAALD\", \"eenheid\": null }";
+            "{ \"node\": \"Number\", \"whole\": false, \"decimals\": 2, \"sign\": \"ONBEPAALD\" }";
 
     /** One fold rule: {@code <attribuut>} of a Tolhuis is {@code <kind>} of {@code <arg>} of all
      *  {@code <element>} the path reaches. */
@@ -233,7 +233,7 @@ class BronpadKetenWitnessTest {
                   %s ],
                 "factTypes": [ %s, %s, %s, %s, %s ],
                 "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-                "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+                "timelines": [], "dayKinds": [] },
               "rules": {
                 "resolvedRegels": [ %s ],
                 "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
@@ -263,13 +263,11 @@ class BronpadKetenWitnessTest {
                     String.join(", ",
                             regel("laagste vracht", "laagste vracht", "MINIMUM", "Praam", "vracht", "null", PAD_VRACHT),
                             regel("totale vracht", "totale vracht", "SOM", "Praam", "vracht",
-                                    "{ \"node\": \"Literal\", \"waarde\": \"0\", \"type\": { \"node\": \"Numeriek\","
-                                    + " \"geheel\": true, \"decimalen\": 0, \"teken\": \"ONBEPAALD\","
-                                    + " \"eenheid\": null }, \"bron\": \"0\" }", PAD_VRACHT),
+                                    "{ \"node\": \"Literal\", \"waarde\": \"0\", \"type\": { \"node\": \"Number\","
+                                    + " \"whole\": true, \"decimals\": 0, \"sign\": \"ONBEPAALD\" }, \"bron\": \"0\" }", PAD_VRACHT),
                             regel("steenlast", "steenlast", "SOM", "Ankersteen", "steengewicht",
-                                    "{ \"node\": \"Literal\", \"waarde\": \"0\", \"type\": { \"node\": \"Numeriek\","
-                                    + " \"geheel\": true, \"decimalen\": 0, \"teken\": \"ONBEPAALD\","
-                                    + " \"eenheid\": null }, \"bron\": \"0\" }", PAD_STEEN),
+                                    "{ \"node\": \"Literal\", \"waarde\": \"0\", \"type\": { \"node\": \"Number\","
+                                    + " \"whole\": true, \"decimals\": 0, \"sign\": \"ONBEPAALD\" }, \"bron\": \"0\" }", PAD_STEEN),
                             regel("laagste zegelvracht", "laagste zegelvracht", "MINIMUM", "Zegelpraam", "vracht",
                                     "null", PAD_VRACHT),
                             regel("laagste vatinhoud", "laagste vatinhoud", "MINIMUM", "Vat", "inhoud", "null", PAD_VAT)));

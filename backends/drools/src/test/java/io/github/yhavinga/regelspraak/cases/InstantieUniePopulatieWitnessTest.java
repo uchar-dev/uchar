@@ -56,7 +56,7 @@ class InstantieUniePopulatieWitnessTest {
     }
 
     private static final String HEEL =
-            "{\"node\":\"Numeriek\",\"geheel\":true,\"decimalen\":0,\"teken\":\"NIET_NEGATIEF\",\"eenheid\":null}";
+            "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"NIET_NEGATIEF\"}";
 
     private static String objecttype(String naam, String mv) {
         return ("{\"node\":\"ObjectType\",\"name\":\"%s\",\"animate\":false,\"plural\":\"%s\","
@@ -86,7 +86,7 @@ class InstantieUniePopulatieWitnessTest {
             + feittype("vondstaanmelding", "aanmelder", "aangemelde vondst", "Vondst", "aangemelde vondsten")
             + "," + feittype("kaveltoewijzing", "kavelhouder", "duinkavel", "Kavel", "duinkavels")
             + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
-            + "\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+            + "\"dayKinds\":[]},"
             + "\"rules\":{\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"aantal strandvondsten\","
             + "\"soort\":\"BEREKENING\",\"doel\":{\"node\":\"AttribuutRef\","
             + "\"attribuut\":\"aantal strandvondsten\",\"objecttype\":\"Jutter\","

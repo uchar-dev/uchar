@@ -379,7 +379,7 @@ class OverervingWeigeringWitnessTest {
     /** The synthetic anchor member a startpuntbepaling names — WF-032 requires it to be declared. */
     private static void ankerAttribuut(ObjectNode ir, String objecttype) {
         IrPad.addAttribute(IrPad.objectType(ir, objecttype), "meetdatum",
-                JSON.createObjectNode().put("node", "DatumInDagen"));
+                JSON.createObjectNode().put("node", "Date").put("precision", "day"));
     }
 
     private static void startpuntOp(ObjectNode ir, String objecttype) {
@@ -389,8 +389,8 @@ class OverervingWeigeringWitnessTest {
     }
 
     private static ObjectNode getal() {
-        return JSON.createObjectNode().put("node", "Numeriek").put("geheel", true).put("decimalen", 0)
-                .put("teken", "NIET_NEGATIEF").putNull("eenheid");
+        return JSON.createObjectNode().put("node", "Number").put("whole", true).put("decimals", 0)
+                .put("sign", "NIET_NEGATIEF");
     }
 
     private static JsonNode geval(String golden, String bestand) throws Exception {

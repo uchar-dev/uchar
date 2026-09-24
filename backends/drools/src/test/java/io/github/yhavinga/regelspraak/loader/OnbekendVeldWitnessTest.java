@@ -27,10 +27,12 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>Before L2's fix round most rule-side node kinds — the fold, the quantifier fold, the verdeling and a union's
  * selection among them, and the condition marker, which also admitted a {@code type} — loaded with the unknown field
- * and ignored it. The sweep reaches 60 kinds (measured 2026-09-24). Fifteen more occur only in goldens this backend
- * refuses as forms it does not carry (the list, sum, struct and function forms, {@code TemporalRead}, {@code Match}),
- * so their document is refused before the node is read; the kinds this backend reads that no loadable golden carries
- * have rows of their own below.
+ * and ignored it. The sweep reaches 59 kinds (measured 2026-09-24 on L3, where the six type-system kinds of the L2
+ * shape became {@code Number}, {@code Date}, {@code Unit}, {@code UnitSystem} and {@code DayKind}; the exact factor
+ * has no discriminator and its rows stand in {@code TypesysteemWeigeringWitnessTest}). Fifteen more occur only in
+ * goldens this backend refuses as forms it does not carry (the list, sum, struct and function forms,
+ * {@code TemporalRead}, {@code Match}), so their document is refused before the node is read; the kinds this backend
+ * reads that no loadable golden carries have rows of their own below.
  */
 class OnbekendVeldWitnessTest {
 
@@ -50,8 +52,8 @@ class OnbekendVeldWitnessTest {
             try { IrLoader.loadAll(doc); } catch (IrLoader.Refusal r) { continue; }
             verzamel(doc, "", ir, eerste);
         }
-        // 60 kinds, measured 2026-09-24; the goldens that carry the rest are refused as forms not carried
-        assertTrue(eerste.size() >= 60, () -> "te weinig knoopsoorten gevonden: " + eerste.keySet());
+        // 59 kinds, measured 2026-09-24 on L3; the goldens that carry the rest are refused as forms not carried
+        assertTrue(eerste.size() >= 59, () -> "te weinig knoopsoorten gevonden: " + eerste.keySet());
         List<String> doorgelaten = new ArrayList<>();
         for (Map.Entry<String, Plek> e : eerste.entrySet()) {
             Plek plek = e.getValue();
@@ -129,8 +131,8 @@ class OnbekendVeldWitnessTest {
      *  {@code Onbekend} there loaded. */
     @Test void een_onbekend_type_op_een_afgeleide_positie_weigert() throws Exception {
         String w = "/rules/resolvedRegels/0/waarde";
-        String literal = "{\"node\":\"Literal\",\"waarde\":\"2\",\"type\":{\"node\":\"Numeriek\",\"geheel\":true,"
-                + "\"decimalen\":0,\"teken\":\"ONBEPAALD\",\"eenheid\":null},\"bron\":\"2\"}";
+        String literal = "{\"node\":\"Literal\",\"waarde\":\"2\",\"type\":{\"node\":\"Number\",\"whole\":true,"
+                + "\"decimals\":0,\"sign\":\"ONBEPAALD\"},\"bron\":\"2\"}";
         String onbekend = "{\"node\":\"Onbekend\",\"reden\":\"niet opgelost\"}";
         Map<String, String> rijen = new java.util.LinkedHashMap<>();
         rijen.put("Afgerond", "{\"node\":\"Afgerond\",\"basis\":" + literal + ",\"modus\":\"REKENKUNDIG\","

@@ -211,8 +211,8 @@ class TakgelijkheidWitnessTest {
     }
 
     private static ObjectNode numeriek() {
-        return JSON.createObjectNode().put("node", "Numeriek").put("geheel", true)
-                .put("decimalen", 0).put("teken", "ONBEPAALD").putNull("eenheid");
+        return JSON.createObjectNode().put("node", "Number").put("whole", true)
+                .put("decimals", 0).put("sign", "ONBEPAALD");
     }
 
     private static Path tijdelijk(String naam, String inhoud) throws Exception {

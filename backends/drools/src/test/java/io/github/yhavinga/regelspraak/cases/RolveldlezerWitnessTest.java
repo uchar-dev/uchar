@@ -273,8 +273,8 @@ class RolveldlezerWitnessTest {
     }
 
     private static ObjectNode numeriek() {
-        return JSON.createObjectNode().put("node", "Numeriek").put("geheel", true)
-                .put("decimalen", 0).put("teken", "ONBEPAALD").putNull("eenheid");
+        return JSON.createObjectNode().put("node", "Number").put("whole", true)
+                .put("decimals", 0).put("sign", "ONBEPAALD");
     }
 
     /** Reduce a model to the named rules in the resolved list. */
@@ -517,7 +517,7 @@ class RolveldlezerWitnessTest {
         aantal.put("node", "Functie").put("kind", "AANTAL");
         aantal.putArray("argumenten").add(arg);
         aantal.put("elementObjecttype", "Penning").putNull("leegwaarde").putNull("filter").putNull("dimensieSelectie");
-        aantal.set("type", numeriek().put("teken", "NIET_NEGATIEF"));
+        aantal.set("type", numeriek().put("sign", "NIET_NEGATIEF"));
         aantal.put("bron", "het aantal penningen van de Jutter").putNull("granulariteit");
         aantal.putObject("bronRol").put("node", "RolBinding").put("feittype", "penningbezit").put("rol", "penning");
         ObjectNode rechts = JSON.createObjectNode();

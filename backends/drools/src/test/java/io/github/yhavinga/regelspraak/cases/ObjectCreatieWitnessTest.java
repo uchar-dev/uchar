@@ -209,7 +209,7 @@ class ObjectCreatieWitnessTest {
         // "EVALUATION FAULT: characteristic initialisation of "overzees" is not boolean: 5 (WF-027)".
         Path ir = kenmerkWaarde("""
                 { "node": "Literal", "waarde": "5",
-                  "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+                  "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" },
                   "bron": "5" }""", "lit-getal");
         RuntimeException e = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
                 () -> CaseRunner.naFire(ir, overzeeMetVerwachting("800", null, "800")));
@@ -670,8 +670,8 @@ class ObjectCreatieWitnessTest {
                           "links": { "node": "AttribuutRef", "attribuut": "grondslag", "objecttype": "Jutter",
                                      "bron": "de grondslag van de Jutter" },
                           "rechts": { "node": "Literal", "waarde": "100",
-                                      "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                                                "teken": "ONBEPAALD", "eenheid": null }, "bron": "100" },
+                                      "type": { "node": "Number", "whole": true, "decimals": 0,
+                                                "sign": "ONBEPAALD" }, "bron": "100" },
                           "periode": null, "bron": "de grondslag van de Jutter is groter dan 100" }
                         """));
         return schrijf(ir, "met-voorwaarde");

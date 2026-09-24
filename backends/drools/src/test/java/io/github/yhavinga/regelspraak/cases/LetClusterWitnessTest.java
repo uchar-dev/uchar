@@ -188,7 +188,7 @@ class LetClusterWitnessTest {
     // ---------------- helpers: the wire shapes (IR-SPEC ch. 4.10) ----------------
 
     private static String num(int dec, boolean geheel, String teken) {
-        return "{\"node\":\"Numeriek\",\"geheel\":%b,\"decimalen\":%d,\"teken\":\"%s\",\"eenheid\":null}"
+        return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"%s\"}"
                 .formatted(geheel, dec, teken);
     }
     private static String num(int dec) { return num(dec, false, "ONBEPAALD"); }
@@ -248,7 +248,7 @@ class LetClusterWitnessTest {
                 + "\"model\":{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,"
                 + "\"plural\":\"Jutters\",\"attributes\":[%s],\"characteristics\":[%s]}],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
-                + "\"timelines\":[],\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+                + "\"timelines\":[],\"dayKinds\":[]},"
                 + "\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
                 + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"

@@ -144,13 +144,13 @@ class DagsoortOpzoekvolgordeWitnessTest {
 
     // ---------------- fixtures ----------------
 
-    /** The golden with its day-kind unit RESPELLED as the calendar abbreviation `wk`, and `wk` registered as a
-     *  day-kind unit beside the two spellings it already had. That is the whole contradiction: the document
-     *  says `wk` is a day-kind unit while the table says it is the week. */
+    /** The golden with its day-kind unit RESPELLED as the calendar abbreviation `wk`, and `wk` registered as the
+     *  day kind's plural — its unit spelling — in place of the spelling it replaced. That is the whole
+     *  contradiction: the document says `wk` is a day-kind unit while the table says it is the week. */
     private static ObjectNode splijtdocument() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(BERGINGSKLOK).resolve("ir.json")));
         herdoop(ir, "wk");
-        ((ObjectNode) IrPad.model(ir).get("dagsoortPerEenheid")).put("wk", "springtijdag");
+        ((ObjectNode) IrPad.modelLijst(ir, "dayKinds").get(0)).put("plural", "wk");
         return ir;
     }
 
@@ -167,9 +167,9 @@ class DagsoortOpzoekvolgordeWitnessTest {
      *  with the declaration it came from. */
     private static void herdoop(JsonNode x, String spelling) {
         if (x instanceof ObjectNode o) {
-            if ("Eenheid".equals(o.path("node").asText()) && "springtijdagen".equals(o.path("afkorting").asText())) {
-                o.put("afkorting", spelling);
-                if ("springtijdagen".equals(o.path("canoniek").asText())) o.put("canoniek", spelling);
+            if ("Unit".equals(o.path("node").asText()) && "springtijdagen".equals(o.path("abbreviation").asText())) {
+                o.put("abbreviation", spelling);
+                if ("springtijdagen".equals(o.path("canonical").asText())) o.put("canonical", spelling);
             }
             o.forEach(k -> herdoop(k, spelling));
         } else if (x.isArray()) {

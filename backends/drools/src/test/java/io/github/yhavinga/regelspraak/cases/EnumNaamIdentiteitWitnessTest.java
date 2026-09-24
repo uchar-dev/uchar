@@ -102,9 +102,8 @@ class EnumNaamIdentiteitWitnessTest {
                   {"node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst", "meervoud": "vondsten", "meervoudig": true}]}
                 """));
         ObjectNode param = IrPad.modelLijst(ir, "parameters").addObject();
-        param.put("node", "Parameter").put("naam", "keurnorm");
+        param.put("node", "Parameter").put("name", "keurnorm");
         param.set("datatype", keurtype.deepCopy());
-        param.putNull("granulariteit");
 
         ObjectNode staat = eigenStaat(ir);   // before the rules below replace the golden's own
         ArrayNode resolved = IrPad.rules(ir).putArray("resolvedRegels");

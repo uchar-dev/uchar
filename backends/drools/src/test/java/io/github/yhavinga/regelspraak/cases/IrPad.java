@@ -26,9 +26,12 @@ public final class IrPad {
 
     public static ObjectNode domain(JsonNode ir, String naam) { return lid(modelLijst(ir, "domains"), "name", naam); }
 
-    /** A declaration whose node kept its v0 shape: {@code parameters}, {@code factTypes}, {@code unitSystems},
-     *  {@code dimensions} — named by {@code naam}. */
-    public static ObjectNode declaratie(JsonNode ir, String lijst, String naam) { return lid(modelLijst(ir, lijst), "naam", naam); }
+    /** A declaration of {@code parameters}, {@code factTypes}, {@code unitSystems} or {@code dimensions}: a parameter
+     *  and a unit system are named by {@code name} (L3), a fact type and a dimension, which kept their v0 shape, by
+     *  {@code naam}. */
+    public static ObjectNode declaratie(JsonNode ir, String lijst, String naam) {
+        return lid(modelLijst(ir, lijst), lijst.equals("parameters") || lijst.equals("unitSystems") ? "name" : "naam", naam);
+    }
 
     public static ObjectNode attribute(JsonNode objectType, String naam) { return lid(lijst(objectType, "attributes"), "name", naam); }
 

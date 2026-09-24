@@ -190,13 +190,13 @@ class DatumLexeemWitnessTest {
             """;
 
     private static String waardeModel(String lexeem) {
-        return MODEL_KOP.formatted("{ \"node\": \"Attribute\", \"name\": \"peildag\", \"datatype\": { \"node\": \"DatumInDagen\" } }") + """
-                  "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+        return MODEL_KOP.formatted("{ \"node\": \"Attribute\", \"name\": \"peildag\", \"datatype\": { \"node\": \"Date\", \"precision\": \"day\" } }") + """
+                  "timelines": [], "dayKinds": [] },
                 "rules": {
                   "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "Peildag", "soort": "GELIJKSTELLING",
                     "doel": { "node": "AttribuutRef", "attribuut": "peildag", "objecttype": "Vondst",
                       "bron": "De peildag van een Vondst" },
-                    "waarde": { "node": "Literal", "waarde": "%s", "type": { "node": "DatumInDagen" }, "bron": "20-01-2024" },
+                    "waarde": { "node": "Literal", "waarde": "%s", "type": { "node": "Date", "precision": "day" }, "bron": "20-01-2024" },
                     "voorwaarde": null,
                     "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
                   "resolvedDagsoorten": [],
@@ -204,8 +204,8 @@ class DatumLexeemWitnessTest {
     }
 
     private static String dagsoortModel(String lexeem) {
-        return MODEL_KOP.formatted("{ \"node\": \"Attribute\", \"name\": \"vondstdag\", \"datatype\": { \"node\": \"DatumInDagen\" } }") + """
-                  "timelines": [], "dayKinds": [ "peildag" ], "dagsoortPerEenheid": {} },
+        return MODEL_KOP.formatted("{ \"node\": \"Attribute\", \"name\": \"vondstdag\", \"datatype\": { \"node\": \"Date\", \"precision\": \"day\" } }") + """
+                  "timelines": [], "dayKinds": [ { "node": "DayKind", "name": "peildag" } ] },
                 "rules": {
                   "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "Kenmerktoekenning verjaard",
                     "soort": "KENMERKTOEKENNING",
@@ -220,8 +220,8 @@ class DatumLexeemWitnessTest {
                     "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
                   "resolvedDagsoorten": [ { "node": "ResolvedDagsoort", "naam": "peildag",
                     "voorwaarde": { "node": "Vergelijking", "op": "GELIJK",
-                      "links": { "node": "Constante", "naam": "de dag", "type": { "node": "DatumInDagen" }, "bron": "de dag" },
-                      "rechts": { "node": "Literal", "waarde": "%s", "type": { "node": "DatumInDagen" }, "bron": "20-01-2024" },
+                      "links": { "node": "Constante", "naam": "de dag", "type": { "node": "Date", "precision": "day" }, "bron": "de dag" },
+                      "rechts": { "node": "Literal", "waarde": "%s", "type": { "node": "Date", "precision": "day" }, "bron": "20-01-2024" },
                       "periode": null, "bron": "de dag gelijk is aan 20-01-2024" },
                     "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
                 """.formatted(lexeem) + MODEL_STAART;
@@ -275,10 +275,10 @@ class DatumLexeemWitnessTest {
                 { "format": "uchar-ir-v1",
                   "model": {
                     "objectTypes": [ { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
-                      "attributes": [ { "node": "Attribute", "name": "vondstdag", "datatype": { "node": "DatumInDagen" } } ],
+                      "attributes": [ { "node": "Attribute", "name": "vondstdag", "datatype": { "node": "Date", "precision": "day" } } ],
                       "characteristics": [ { "node": "Characteristic", "name": "verjaard", "kind": "BIJVOEGLIJK" } ] } ],
                     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-                    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+                    "timelines": [], "dayKinds": [] },
                   "rules": {
                   "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "Kenmerktoekenning verjaard",
                     "soort": "KENMERKTOEKENNING",
@@ -288,7 +288,7 @@ class DatumLexeemWitnessTest {
                     "voorwaarde": { "node": "Vergelijking", "op": "EERDER",
                       "links": { "node": "AttribuutRef", "attribuut": "vondstdag", "objecttype": "Vondst",
                         "bron": "zijn vondstdag" },
-                      "rechts": { "node": "Literal", "waarde": "%s", "type": { "node": "DatumInDagen" },
+                      "rechts": { "node": "Literal", "waarde": "%s", "type": { "node": "Date", "precision": "day" },
                         "bron": "31-01-2024" },
                       "periode": null, "bron": "zijn vondstdag eerder is dan 31-01-2024" },
                     "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],

@@ -36,6 +36,8 @@ import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Tijdlijn;
 import io.github.yhavinga.regelspraak.transpiler.kern.Namen;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +77,20 @@ import java.util.Map;
  * range that is a path, a TOTAAL without a range over another type than its subject, a role check naming no link
  * the subject can be in, and a characteristic read at a value position ({@link #keurVouwbron},
  * {@link #keurOnderwerpen}).
+ *
+ * <p><b>The type system (L3 of the v1 wire migration).</b> A number is a {@code Number}, a date a {@code Date} with
+ * its precision, a unit a {@code Unit} whose factor is an exact fraction {@code {num, den}}, a unit system a list
+ * of units with their spellings, a parameter carries its timeline facet and a day kind is a {@code DayKind} node. The
+ * records keep their own shape and this loader lays the wire back onto them one to one: a {@code Number} whose unit
+ * is '%' is a {@link Datatype.Percentage} (its presentation tag, legal only at a declaration, carries no meaning
+ * here), any other a {@link Datatype.Numeriek}; {@code day} is {@link Datatype.DatumInDagen} and {@code millisecond}
+ * {@link Datatype.DatumTijd}. The exact factor becomes the record's decimal {@code factorNaarCanoniek} — a whole
+ * number exactly, any other fraction rounded to 16 significant digits ({@link MathContext#DECIMAL64}), the rounding
+ * the frontend gives a declared "1/N" — and the unit system keeps the fraction itself beside it. From there this
+ * backend restates between units with that pre-rounded ratio, where {@code ref} and the ASP backend reckon with the
+ * fraction: a tracked delta of the Drools backend (CONSTRUCTS row 26), invisible in the corpus, whose factors are
+ * all whole numbers. A type-system node of the L2 shape, or one of its fields, is unknown by name.
+ *
  * The frontend records this loader fills keep their v0 components (they are the vendored slice the toolchain
  * compiles); what the wire no longer carries is filled with {@code null}, {@code false} or an empty list, and
  * what the records have no component for rides BESIDE the model in {@link Loaded} — the same side-channel
@@ -115,7 +131,7 @@ public final class IrLoader {
     private static final List<String> ROOT = List.of("format", "model", "rules", "diagnostics");
     private static final List<String> MODEL = List.of(
             "objectTypes", "factTypes", "parameters", "domains", "unitSystems", "dimensions", "timelines",
-            "dayKinds", "dagsoortPerEenheid");
+            "dayKinds");
     private static final List<String> RULES = List.of(
             "resolvedRegels", "resolvedDagsoorten", "objectCreaties", "verdelingen", "consistenties",
             "uniciteiten", "uniciteitUnies", "feitCreaties", "resolvedStartpunten", "regelGroepen");
@@ -269,11 +285,11 @@ public final class IrLoader {
         });
         lijst(model, "/model", "parameters", (p, n) -> {
             Parameter par = parameter(p, n);
-            eenmaal(m.parameters, p + "/naam", par.naam(), par);
+            eenmaal(m.parameters, p + "/name", par.naam(), par);
         });
         lijst(model, "/model", "unitSystems", (p, n) -> {
-            Eenheidstelsel es = eenheidstelsel(p, n);
-            eenmaal(m.eenheidstelsels, p + "/naam", es.naam, es);
+            Eenheidstelsel es = unitSystem(p, n);
+            eenmaal(m.eenheidstelsels, p + "/name", es.naam, es);
         });
         lijst(model, "/model", "factTypes", (p, n) -> {
             Feittype ft = feittype(p, n);
@@ -284,9 +300,7 @@ public final class IrLoader {
             eenmaal(m.dimensies, p + "/naam", d.naam(), d);
         });
         lijst(model, "/model", "timelines", (p, n) -> m.tijdlijnen.add(tijdlijn(n)));
-        lijst(model, "/model", "dayKinds", (p, n) -> m.dagsoorten.add(tekstOfNull(n, p)));
-        forEachField(sectie(model, "/model", "dagsoortPerEenheid"),
-                (k, v) -> m.dagsoortPerEenheid.put(k, tekstOfNull(v, "/model/dagsoortPerEenheid/" + k)));
+        lijst(model, "/model", "dayKinds", this::dayKind);
 
         lijst(rules, "/rules", "resolvedRegels", (p, n) -> m.resolvedRegels.add(resolvedRegel(n)));
         lijst(rules, "/rules", "resolvedDagsoorten", (p, n) -> {
@@ -570,14 +584,6 @@ public final class IrLoader {
         return n.has(veld) ? tekst(n, pad, veld) : null;
     }
 
-    /** A list entry or map value the schema types as string or null. Null stays null, where {@code asText} made it
-     *  the text "null", and anything else is a defect. */
-    private static String tekstOfNull(JsonNode v, String pad) {
-        if (v.isNull()) return null;
-        if (!v.isTextual()) throw new Documentfout(pad, "expected a string or null, got " + kort(v));
-        return v.asText();
-    }
-
     private static boolean waarheid(JsonNode n, String pad, String veld) {
         JsonNode v = n.get(veld);
         if (v == null) throw ontbreekt(pad, veld);
@@ -796,7 +802,7 @@ public final class IrLoader {
             JsonNode dt = a.get("datatype");
             if (!dt.isNull() && !dt.isObject())
                 throw new Documentfout(ap + "/datatype", "expected a datatype object or null, got " + kort(dt));
-            ot.attributen.put(lid, datatype(dt, ap + "/datatype"));
+            ot.attributen.put(lid, datatype(dt, ap + "/datatype", true));
             String meervoud = optTekst(a, ap, "plural");
             if (meervoud != null) ot.attribuutMeervoud.put(lid, meervoud);
             if (a.has("dimensions")) ot.attribuutDimensies.put(lid, tekstLijst(a, ap, "dimensions"));
@@ -847,56 +853,147 @@ public final class IrLoader {
                 throw new Documentfout(dp + "/waarden", "expected an array, got " + kort(dt.get("waarden")));
             return new Datatype.Enumeratie(naam, stringList(dt.get("waarden")));
         }
-        return datatype(dt, dp);
+        return datatype(dt, dp, true);
     }
 
     /** The key set of each datatype kind at the declaration position {@code Domain.datatype}, as the OCaml loader's
      *  {@code domain_datatype} and {@code datatype} check it: the three kinds that carry a domain name at a
-     *  reference position carry none here, and every other kind has the keys it has everywhere. A kind outside
-     *  the table reaches the dispatch's refusal of an unknown datatype node. */
+     *  reference position carry none here, and every other kind has the keys it has everywhere ({@code Number} and
+     *  {@code Date} are checked in the dispatch, with their optional keys). A kind outside the table reaches the
+     *  dispatch. */
     private static final Map<String, List<String>> DOMEINDATATYPE = Map.ofEntries(
             Map.entry("Enumeratie", List.of("node", "waarden")),
             Map.entry("SumType", List.of("node", "constructors")),
             Map.entry("StructType", List.of("node", "fields")),
             Map.entry("ListType", List.of("node", "element")),
-            Map.entry("Numeriek", List.of("node", "geheel", "decimalen", "teken", "eenheid")),
-            Map.entry("Percentage", List.of("node", "geheel", "decimalen", "eenheid")),
             Map.entry("Tekst", List.of("node")),
-            Map.entry("Booleaan", List.of("node")),
-            Map.entry("DatumInDagen", List.of("node")),
-            Map.entry("DatumTijd", List.of("node")));
+            Map.entry("Booleaan", List.of("node")));
 
-    /** The key set of each datatype kind this backend carries, at every position but a domain's declaration (see
-     *  {@link #DOMEINDATATYPE}): an Enumeratie names its domain here. */
+    /** The key set of each datatype kind this backend carries without optional keys, at every position but a
+     *  domain's declaration (see {@link #DOMEINDATATYPE}): an Enumeratie names its domain here. */
     private static final Map<String, List<String>> DATATYPE = Map.ofEntries(
-            Map.entry("Numeriek", List.of("node", "geheel", "decimalen", "teken", "eenheid")),
-            Map.entry("Percentage", List.of("node", "geheel", "decimalen", "eenheid")),
             Map.entry("Tekst", List.of("node")),
             Map.entry("Booleaan", List.of("node")),
-            Map.entry("DatumInDagen", List.of("node")),
-            Map.entry("DatumTijd", List.of("node")),
             Map.entry("Enumeratie", List.of("node", "domein", "waarden")));
 
+    /** The type-system nodes of the L2 shape, each with the node that took its place: unknown nodes. */
+    private static final Map<String, String> L2_DATATYPE = Map.of(
+            "Numeriek", "Number", "Percentage", "Number", "DatumInDagen", "Date", "DatumTijd", "Date");
+
+    /** IR-SPEC ch. 2.10: a parameter, its datatype, and when it is time-dependent its timeline facet. The datatype is
+     *  required, and the facet carries no timeline name; the model's parameter holds the granularity, so a facet of
+     *  more than one period is a form this backend does not carry. */
     private Parameter parameter(String pad, JsonNode n) {
-        velden(n, pad, "Parameter", List.of("node", "naam", "datatype", "granulariteit"), List.of());
-        return new Parameter(naam(n, pad, "naam"), datatype(n.get("datatype"), pad + "/datatype"),
-                enumOf(Granulariteit.class, n, "granulariteit"));
+        velden(n, pad, "Parameter", List.of("node", "name", "datatype"), List.of("timeline"));
+        String naam = naam(n, pad, "name");
+        JsonNode dt = n.get("datatype");
+        if (!dt.isObject()) throw new Documentfout(pad + "/datatype", "expected a datatype object, got " + kort(dt));
+        Datatype datatype = datatype(dt, pad + "/datatype", true);
+        Granulariteit granulariteit = null;
+        if (n.has("timeline")) {
+            String tp = pad + "/timeline";
+            JsonNode tl = n.get("timeline");
+            velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of());
+            granulariteit = enumOf(Granulariteit.class, tekst(tl, tp, "granularity"), tp + "/granularity");
+            int aantal = geheel(tl, tp, "count", "TimelineFacet.count");
+            if (aantal != 1)
+                throw new Refusal("Parameter.timeline", "a parameter timeline of " + aantal + " periods at '" + tp
+                        + "'; this backend carries a parameter's timeline of one period");
+        }
+        return new Parameter(naam, datatype, granulariteit);
     }
 
-    private Eenheidstelsel eenheidstelsel(String pad, JsonNode n) {
-        velden(n, pad, "Eenheidstelsel", List.of("node", "naam", "eenheden", "aliassen"), List.of());
-        Eenheidstelsel es = new Eenheidstelsel(naam(n, pad, "naam"));
-        forEachField(n.get("eenheden"), (k, v) -> es.eenheden.put(k, eenheid(v)));
-        forEachField(n.get("aliassen"), (k, v) -> es.aliassen.put(k, eenheid(v)));
+    /** IR-SPEC ch. 2.5: a unit system and its units, each declared once. The model keeps every unit under its
+     *  abbreviation, its further spellings in the alias map, and its exact factor beside the record's decimal one. */
+    private Eenheidstelsel unitSystem(String pad, JsonNode n) {
+        velden(n, pad, "UnitSystem", List.of("node", "name", "units"), List.of());
+        Eenheidstelsel es = new Eenheidstelsel(naam(n, pad, "name"));
+        lijst(n, pad, "units", (up, u) -> {
+            Eenheid e = unit(u, up, es);
+            if (es.eenheden.putIfAbsent(e.afkorting(), e) != null)
+                throw new Documentfout(up + "/abbreviation", "the unit '" + e.afkorting() + "' is declared twice in"
+                        + " the unit system '" + es.naam + "'");
+            if (u.has("spellings"))
+                for (String spelling : tekstLijst(u, up, "spellings")) es.aliassen.put(spelling, e);
+        });
         return es;
     }
 
-    private Eenheid eenheid(JsonNode n) {
-        if (n == null || n.isNull()) return null;
-        velden(n, n.isObject() ? padVan(n) : "Eenheid", "Eenheid",
-                List.of("node", "afkorting", "stelsel", "canoniek", "factorNaarCanoniek", "noemer"), List.of());
-        return new Eenheid(text(n, "afkorting"), text(n, "stelsel"), text(n, "canoniek"),
-                decimal(n, "factorNaarCanoniek"), eenheid(n.get("noemer")));
+    /** A unit where it occurs — on a number, as a rate's denominator: IR-SPEC ch. 2.5's fields and nothing else, so
+     *  a spelling there is an unknown field (spellings belong to the declaration). */
+    private Eenheid unit(JsonNode n, String pad) { return unit(n, pad, null); }
+
+    /** A unit, with {@code stelsel} the unit system it is declared in, or null where it occurs. A declared unit may
+     *  carry its further spellings — at least one, none of them its abbreviation — and its exact factor lands in the
+     *  system. */
+    private Eenheid unit(JsonNode n, String pad, Eenheidstelsel stelsel) {
+        velden(n, pad, "Unit", List.of("node", "abbreviation"), stelsel == null
+                ? List.of("system", "canonical", "factorToCanonical", "denominator")
+                : List.of("system", "canonical", "factorToCanonical", "denominator", "spellings"));
+        String afkorting = tekst(n, pad, "abbreviation");
+        Eenheidstelsel.Factor factor = n.has("factorToCanonical")
+                ? factor(n.get("factorToCanonical"), pad + "/factorToCanonical") : null;
+        Eenheid noemer = n.has("denominator") ? unit(n.get("denominator"), pad + "/denominator") : null;
+        if (stelsel != null && n.has("spellings")) {
+            List<String> spellingen = tekstLijst(n, pad, "spellings");
+            if (spellingen.isEmpty())
+                throw new Documentfout(pad + "/spellings", "an empty list of spellings: a unit without further"
+                        + " spellings leaves the field out");
+            for (int i = 0; i < spellingen.size(); i++)
+                if (spellingen.get(i).equals(afkorting))
+                    throw new Documentfout(pad + "/spellings/" + i, SPELLING_IS_AFKORTING);
+        }
+        if (stelsel != null && factor != null) stelsel.exacteFactoren.put(afkorting, factor);
+        return new Eenheid(afkorting, optTekst(n, pad, "system"), optTekst(n, pad, "canonical"),
+                factor == null ? null : decimaal(factor), noemer);
+    }
+
+    /** A spelling equal to its unit's abbreviation: the abbreviation is the unit's first spelling already. */
+    static final String SPELLING_IS_AFKORTING =
+            "a spelling equal to its unit's abbreviation: the abbreviation is its primary spelling";
+
+    /** The exact factor (IR-SPEC ch. 2.5): an object of exactly the two integers {@code num} and {@code den}, each at
+     *  least 1, in lowest terms (WF-092). A number or a string there is no factor: the fraction it would stand for is
+     *  not written. */
+    private static Eenheidstelsel.Factor factor(JsonNode n, String pad) {
+        if (!n.isObject())
+            throw new Documentfout(pad, "expected an exact fraction {num, den}, got " + kort(n));
+        velden(n, pad, null, List.of("num", "den"), List.of());
+        BigInteger num = positief(n, pad, "num"), den = positief(n, pad, "den");
+        if (!num.gcd(den).equals(BigInteger.ONE)) throw new Documentfout(pad, FACTOR_LAAGSTE_TERMEN);
+        return new Eenheidstelsel.Factor(num, den);
+    }
+
+    /** WF-092 (c) — the verifier's sentence. */
+    static final String FACTOR_LAAGSTE_TERMEN =
+            "a conversion factor is a positive rational in lowest terms (WF-092)";
+
+    private static BigInteger positief(JsonNode n, String pad, String veld) {
+        JsonNode c = n.get(veld);
+        if (!c.isIntegralNumber()) throw new Documentfout(pad + "/" + veld, "expected an integer, got " + kort(c));
+        BigInteger v = c.bigIntegerValue();
+        if (v.signum() <= 0) throw new Documentfout(pad + "/" + veld, "expected an integer of at least 1, got " + v);
+        return v;
+    }
+
+    /** The record's decimal factor of an exact fraction: a whole number exactly, any other fraction rounded to 16
+     *  significant digits, as the frontend rounds a declared "1/N" (see the class comment). */
+    private static BigDecimal decimaal(Eenheidstelsel.Factor f) {
+        return f.den().equals(BigInteger.ONE) ? new BigDecimal(f.num())
+                : new BigDecimal(f.num()).divide(new BigDecimal(f.den()), MathContext.DECIMAL64);
+    }
+
+    /** IR-SPEC ch. 2.9: a day kind and the plural it takes as a duration unit. The model keeps the names, and a
+     *  registry from each unit spelling of a day kind (lower-cased) to its name that the transpilers' day-kind
+     *  recognition reads: the name and then the plural, the first to claim a spelling keeping it, as the frontend
+     *  registers them. */
+    private void dayKind(String pad, JsonNode n) {
+        velden(n, pad, "DayKind", List.of("node", "name"), List.of("plural"));
+        String naam = tekst(n, pad, "name");
+        String meervoud = optTekst(n, pad, "plural");
+        m.dagsoorten.add(naam);
+        m.dagsoortPerEenheid.putIfAbsent(naam.trim().toLowerCase(), naam);
+        if (meervoud != null) m.dagsoortPerEenheid.putIfAbsent(meervoud.trim().toLowerCase(), naam);
     }
 
     private Feittype feittype(String pad, JsonNode n) {
@@ -926,43 +1023,74 @@ public final class IrLoader {
 
     // --- Datatype ----------------------------------------------------------
 
-    private Datatype datatype(JsonNode n) { return datatype(n, null); }
-
-    /** The datatype dispatch. {@code pad} is the JSON pointer of the datatype where one is known, and null at a
-     *  v0 position, which is read without a path (see {@link Documentfout}). */
-    private Datatype datatype(JsonNode n, String pad) {
+    /** The datatype dispatch. {@code pad} is the JSON pointer of the datatype; {@code declaratie} says whether it
+     *  stands at a declaration (the datatype of an attribute, a parameter or a domain) or at a type annotation (the
+     *  {@code type} of an expression node), where a presentation tag is refused (WF-007). */
+    private Datatype datatype(JsonNode n, String pad, boolean declaratie) {
         if (n == null || n.isNull()) return null;
-        if (!n.isObject())
-            throw new Documentfout(pad == null ? "Datatype" : pad, "expected a datatype object or null, got " + kort(n));
+        if (!n.isObject()) throw new Documentfout(pad, "expected a datatype object or null, got " + kort(n));
         String node = datatypeSoort(n, pad);
         List<String> sleutels = DATATYPE.get(node);
-        if (sleutels != null) velden(n, pad == null ? padVan(n) : pad, node, sleutels, List.of());
+        if (sleutels != null) velden(n, pad, node, sleutels, List.of());
         return switch (node) {
-            case "Numeriek" -> new Datatype.Numeriek(bool(n, "geheel"), intOf(n, "decimalen"),
-                    enumOf(Datatype.Teken.class, n, "teken"), eenheid(n.get("eenheid")));
-            case "Percentage" -> new Datatype.Percentage(bool(n, "geheel"), intOf(n, "decimalen"),
-                    n.get("eenheid") == null || n.get("eenheid").isNull() ? Datatype.Percentage.PROCENT : eenheid(n.get("eenheid")));
+            case "Number" -> number(n, pad, declaratie);
+            case "Date" -> {
+                velden(n, pad, "Date", List.of("node", "precision"), List.of());
+                String precisie = tekst(n, pad, "precision");
+                yield switch (precisie) {
+                    case "day" -> new Datatype.DatumInDagen();
+                    case "millisecond" -> new Datatype.DatumTijd();
+                    default -> throw new Documentfout(pad + "/precision", "'" + precisie
+                            + "' is not one of [day, millisecond]");
+                };
+            }
             case "Tekst" -> new Datatype.Tekst();
             case "Booleaan" -> new Datatype.Booleaan();
-            case "DatumInDagen" -> new Datatype.DatumInDagen();
-            case "DatumTijd" -> new Datatype.DatumTijd();
             case "Enumeratie" -> new Datatype.Enumeratie(text(n, "domein"), stringList(n.get("waarden")));
             // IR-SPEC ch. 2.4: the datatype union has no member for an unknown type — a marker leaves its type
             // out and a derived position the producer could not type is null — so this node is no form at all
-            case "Onbekend" -> throw new Documentfout(pad == null ? padVan(n) : pad,
+            case "Onbekend" -> throw new Documentfout(pad,
                     "unknown datatype node \"Onbekend\": uchar-ir-v1 has no datatype for an unknown type");
+            case "Numeriek", "Percentage", "DatumInDagen", "DatumTijd" -> throw new Documentfout(pad,
+                    "unknown datatype node \"" + node + "\": uchar-ir-v1 writes it as a " + L2_DATATYPE.get(node));
             default -> throw new Refusal("Datatype:" + node, "unknown datatype node");
         };
     }
 
+    /** IR-SPEC ch. 2.4: a number, its sign always written. One whose unit is '%' is a percentage, which the model
+     *  holds as a {@link Datatype.Percentage} — without a sign, so a percentage with a sign other than ONBEPAALD is a
+     *  form this backend does not carry. The presentation tag is legal at a declaration only and means nothing to
+     *  evaluation. */
+    private Datatype number(JsonNode n, String pad, boolean declaratie) {
+        velden(n, pad, "Number", List.of("node", "whole", "decimals", "sign"), List.of("unit", "presentation"));
+        boolean geheel = waarheid(n, pad, "whole");
+        int decimalen = geheel(n, pad, "decimals", "Number.decimals");
+        Datatype.Teken teken = enumOf(Datatype.Teken.class, tekst(n, pad, "sign"), pad + "/sign");
+        Eenheid eenheid = n.has("unit") ? unit(n.get("unit"), pad + "/unit") : null;
+        if (n.has("presentation")) {
+            String presentatie = tekst(n, pad, "presentation");
+            if (!presentatie.equals("percentage"))
+                throw new Documentfout(pad + "/presentation", "'" + presentatie + "' is not one of [percentage]");
+            if (!declaratie) throw new Documentfout(pad + "/presentation", TAG_OP_ANNOTATIE);
+        }
+        if (eenheid == null || !eenheid.afkorting().equals("%"))
+            return new Datatype.Numeriek(geheel, decimalen, teken, eenheid);
+        if (teken != Datatype.Teken.ONBEPAALD)
+            throw new Refusal("Number.sign", "a percentage with the sign " + teken + " at '" + pad + "'; this"
+                    + " backend's percentage carries no sign");
+        return new Datatype.Percentage(geheel, decimalen, eenheid);
+    }
+
+    /** WF-007 — the verifier's sentence for a presentation tag at a type annotation. */
+    static final String TAG_OP_ANNOTATIE =
+            "the presentation tag belongs to a declaration, never to a type annotation (WF-007)";
+
     /** The {@code node} of a datatype object, required: a switch on an absent one ended in a NullPointerException
-     *  that named no place in the document. {@code pad} as in {@link #datatype(JsonNode, String)}. */
+     *  that named no place in the document. */
     private static String datatypeSoort(JsonNode n, String pad) {
         JsonNode soort = n.get("node");
-        if (soort == null)
-            throw new Documentfout(pad == null ? "Datatype.node" : pad, "missing field 'node' (the datatype discriminator)");
-        if (!soort.isTextual())
-            throw new Documentfout(pad == null ? "Datatype.node" : pad + "/node", "expected a string, got " + kort(soort));
+        if (soort == null) throw new Documentfout(pad, "missing field 'node' (the datatype discriminator)");
+        if (!soort.isTextual()) throw new Documentfout(pad + "/node", "expected a string, got " + kort(soort));
         return soort.asText();
     }
 
@@ -1154,7 +1282,8 @@ public final class IrLoader {
             // ch. 4.4: an absent type is an unknown one, and the record holds null for it.
             case "Onopgelost" -> {
                 String p = padVan(n);
-                yield new Expr.Onopgelost(n.has("type") ? datatype(n.get("type"), p + "/type") : null, bron(n), null);
+                yield new Expr.Onopgelost(n.has("type") ? datatype(n.get("type"), p + "/type", false) : null, bron(n),
+                        null);
             }
             // IR-SPEC ch. 4.10 the Let cluster — all three are ORDINARY union nodes, built straight into the tree
             // with nothing riding beside them. Note the wire's field names: a BinderRef's is "name", an
@@ -1354,9 +1483,10 @@ public final class IrLoader {
         typeVeld(n);
     }
 
-    /** The datatype at a node's {@code type} field, with that field's pointer for every defect in it. */
+    /** The datatype at a node's {@code type} field — a type annotation — with that field's pointer for every defect
+     *  in it. */
     private Datatype typeVeld(JsonNode n) {
-        return datatype(n.get("type"), padVan(n) + "/type");
+        return datatype(n.get("type"), padVan(n) + "/type", false);
     }
 
     /** Index one {@link Expr.Let} (see {@link Loaded#lets()}) and return it — the node itself goes into the tree. */
@@ -1757,11 +1887,6 @@ public final class IrLoader {
         return v == null || v.isNull() ? null : v.asInt();
     }
 
-    private static BigDecimal decimal(JsonNode n, String field) {
-        JsonNode v = n.get(field);
-        return v == null || v.isNull() ? null : new BigDecimal(v.asText());
-    }
-
     private static List<String> stringList(JsonNode n) {
         List<String> uit = new ArrayList<>();
         if (n != null && n.isArray()) n.forEach(e -> uit.add(e.asText()));
@@ -1808,10 +1933,5 @@ public final class IrLoader {
             if (!e.isObject()) throw new Documentfout(padVan(a) + "/" + i, "expected a JSON object, got " + kort(e));
             f.accept(e);
         }
-    }
-
-    private static void forEachField(JsonNode obj, java.util.function.BiConsumer<String, JsonNode> f) {
-        if (obj == null || !obj.isObject()) return;
-        for (Map.Entry<String, JsonNode> e : obj.properties()) f.accept(e.getKey(), e.getValue());
     }
 }

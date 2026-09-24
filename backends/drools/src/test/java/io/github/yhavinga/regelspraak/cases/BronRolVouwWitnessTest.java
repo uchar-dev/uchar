@@ -329,8 +329,8 @@ class BronRolVouwWitnessTest {
     }
 
     private static ObjectNode numeriek() {
-        return JSON.createObjectNode().put("node", "Numeriek").put("geheel", true)
-                .put("decimalen", 0).put("teken", "NIET_NEGATIEF").putNull("eenheid");
+        return JSON.createObjectNode().put("node", "Number").put("whole", true)
+                .put("decimals", 0).put("sign", "NIET_NEGATIEF");
     }
 
     private static void houdRegels(ObjectNode ir, String... namen) {

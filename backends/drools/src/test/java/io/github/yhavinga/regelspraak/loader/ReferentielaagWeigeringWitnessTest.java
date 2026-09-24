@@ -60,7 +60,7 @@ class ReferentielaagWeigeringWitnessTest {
     private static final String TEMPOTOTAAL = "jutterswet-tempototaal";
 
     private static final String NUMERIEK =
-            "{\"node\":\"Numeriek\",\"geheel\":false,\"decimalen\":2,\"teken\":\"ONBEPAALD\",\"eenheid\":null}";
+            "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"ONBEPAALD\"}";
     private static final String ONBEKEND = "{\"node\":\"Onbekend\",\"reden\":\"niet opgelost\"}";
 
     // ---------------- the reference nodes carry no type ----------------

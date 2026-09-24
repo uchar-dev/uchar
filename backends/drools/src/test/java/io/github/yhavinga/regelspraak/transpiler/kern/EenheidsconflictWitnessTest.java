@@ -65,12 +65,12 @@ class EenheidsconflictWitnessTest {
     /** A concrete unit from no system the corpus knows: a canonical of its own, so it inter-converts with
      *  nothing a golden declares, and a factor, so it is not the WF-092 factorless form. */
     private static final String VREEMD = """
-            {"node":"Eenheid","afkorting":"uchar-vreemd","stelsel":null,
-             "canoniek":"uchar-vreemd-canoniek","factorNaarCanoniek":3600,"noemer":null}""";
+            {"node":"Unit","abbreviation":"uchar-vreemd",
+             "canonical":"uchar-vreemd-canoniek","factorToCanonical":{"num":3600,"den":1}}""";
 
     /** A plain denominator, to turn a declared unit into a RATE with the very same numerator. */
     private static final String NOEMER = """
-            {"node":"Eenheid","afkorting":"mnd","stelsel":null,"canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}""";
+            {"node":"Unit","abbreviation":"mnd","canonical":"mnd","factorToCanonical":{"num":1,"den":1}}""";
 
     // ---------------- the guard itself: what it refuses and what it lets through ----------------
 
@@ -330,8 +330,8 @@ class EenheidsconflictWitnessTest {
             ObjectNode ref = additieveRechterRef(kopie);
             if (ref == null) continue;
             gezien++;
-            ref.putObject("type").put("node", "Numeriek").put("geheel", false).put("decimalen", 2)
-                    .put("teken", "ONBEPAALD").set("eenheid", JSON.readTree(VREEMD));
+            ref.putObject("type").put("node", "Number").put("whole", false).put("decimals", 2)
+                    .put("sign", "ONBEPAALD").set("unit", JSON.readTree(VREEMD));
             IrLoader.Documentfout f = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(kopie),
                     naam(ir));
             assertTrue(f.plek().endsWith("/waarde/rechts/type") && f.getMessage().contains("unknown field"),
@@ -348,7 +348,7 @@ class EenheidsconflictWitnessTest {
         ObjectNode ref = additieveRechterRef(kopie);
         if (ref == null) return null;
         ObjectNode decl = declaratieVan(kopie, ref);
-        decl.set("eenheid", JSON.readTree(VREEMD));
+        decl.set("unit", JSON.readTree(VREEMD));
         return kopie;
     }
 
@@ -376,7 +376,7 @@ class EenheidsconflictWitnessTest {
         JsonNode kopie = ir.deepCopy();
         String naam = vergelekenParameter(kopie);
         if (naam == null) return null;
-        JsonNode p = zoekLid(kopie.path("model").path("parameters"), "naam", naam);
+        JsonNode p = zoekLid(kopie.path("model").path("parameters"), "name", naam);
         return p == null ? null : metNoemer(kopie, (ObjectNode) p.get("datatype"));
     }
 
@@ -410,17 +410,17 @@ class EenheidsconflictWitnessTest {
         if (ref == null || !"ParameterRef".equals(ref.path("node").asText())) return null;
         String naam = ref.path("parameter").asText(null);
         if (naam == null) return null;
-        JsonNode p = zoekLid(ir.path("model").path("parameters"), "naam", naam);
+        JsonNode p = zoekLid(ir.path("model").path("parameters"), "name", naam);
         if (p == null) return null;
-        JsonNode e = p.path("datatype").path("eenheid");
-        return e.isObject() && e.path("noemer").isNull() ? naam : null;
+        JsonNode e = p.path("datatype").path("unit");
+        return e.isObject() && !e.has("denominator") ? naam : null;
     }
 
     /** Give {@code houder}'s unit a "mnd" denominator; null when there is no plain unit to give one to. */
     private static JsonNode metNoemer(JsonNode kopie, ObjectNode houder) throws Exception {
-        if (houder == null || !(houder.get("eenheid") instanceof ObjectNode e)) return null;
-        if (e.get("noemer") == null || !e.get("noemer").isNull()) return null;    // already a rate
-        e.set("noemer", JSON.readTree(NOEMER));
+        if (houder == null || !(houder.get("unit") instanceof ObjectNode e)) return null;
+        if (e.has("denominator")) return null;    // already a rate
+        e.set("denominator", JSON.readTree(NOEMER));
         return kopie;
     }
 
@@ -429,7 +429,7 @@ class EenheidsconflictWitnessTest {
         JsonNode kopie = ir.deepCopy();
         JsonNode regel = additieveRegel(kopie);
         if (regel == null || !(regel.get("waarde").get("type") instanceof ObjectNode type)) return null;
-        type.set("eenheid", JSON.readTree(VREEMD));
+        type.set("unit", JSON.readTree(VREEMD));
         return kopie;
     }
 
@@ -465,7 +465,7 @@ class EenheidsconflictWitnessTest {
         if (ot == null) return null;
         JsonNode lid = zoekLid(ot.path("attributes"), "name", ref.path("attribuut").asText(""));
         JsonNode attr = lid == null ? null : lid.get("datatype");
-        if (attr == null || attr.path("eenheid").isMissingNode() || attr.path("eenheid").isNull()) return null;
+        if (attr == null || !attr.has("unit")) return null;
         return (ObjectNode) attr;
     }
 

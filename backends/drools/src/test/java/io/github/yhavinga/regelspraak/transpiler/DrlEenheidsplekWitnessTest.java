@@ -8,7 +8,7 @@ import io.github.yhavinga.regelspraak.loader.IrLoader;
 
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -63,7 +63,6 @@ class DrlEenheidsplekWitnessTest {
     private static final Set<String> AFGELEIDE_KIND = Set.of("SOM", "TOTAAL", "MINIMUM", "MAXIMUM", "EERSTE", "LAATSTE");
     /** WF-038: a tijdsduur's unit is the operator's parameter, not a derived result type. */
     private static final Set<String> GEEN_FUNCTIE = Set.of("TIJDSDUUR", "ABSOLUTE_TIJDSDUUR");
-    private static final Set<String> DATUM = Set.of("DatumInDagen", "DatumTijd");
 
     @Test void de_drl_tekst_volgt_de_declaraties_niet_de_wire_herhaling() throws Exception {
         int twists = 0;
@@ -114,8 +113,8 @@ class DrlEenheidsplekWitnessTest {
                 || ("Functie".equals(node) && GEEN_FUNCTIE.contains(o.path("kind").asText("")));
         int n = 0;
         if (!vrijgesteld && afgeleid(o) && o.get("type") instanceof ObjectNode t) {
-            ObjectNode zusje = zusje(t.get("eenheid"), KLASSE.get(node));
-            if (zusje != null) { t.set("eenheid", zusje); n++; }
+            ObjectNode zusje = zusje(t.get("unit"), KLASSE.get(node));
+            if (zusje != null) { t.set("unit", zusje); n++; }
         }
         for (var it = o.fields(); it.hasNext(); ) {
             var e = it.next();
@@ -134,19 +133,23 @@ class DrlEenheidsplekWitnessTest {
         return KLASSE.containsKey(node);
     }
 
-    /** A CONVERTIBLE sister of a unit: same canonical, distinct abbreviation, factor x 10^exp. */
+    /** A CONVERTIBLE sister of a unit: same canonical, distinct abbreviation, factor x 10^exp — the exact fraction
+     *  with its numerator scaled, in lowest terms as the wire writes every factor. */
     private static ObjectNode zusje(JsonNode e, int exp) {
         if (!(e instanceof ObjectNode u)) return null;
-        JsonNode a = u.get("afkorting"), c = u.get("canoniek"), f = u.get("factorNaarCanoniek");
-        if (a == null || a.isNull() || c == null || c.isNull() || f == null || f.isNull()) return null;
+        JsonNode a = u.get("abbreviation"), c = u.get("canonical"), f = u.get("factorToCanonical");
+        if (a == null || c == null || f == null) return null;
+        BigInteger num = f.get("num").bigIntegerValue().multiply(BigInteger.TEN.pow(exp));
+        BigInteger den = f.get("den").bigIntegerValue();
+        BigInteger ggd = num.gcd(den);
         ObjectNode uit = u.deepCopy();
-        uit.put("afkorting", a.asText() + "-verdraaid" + exp);
-        uit.put("factorNaarCanoniek", new BigDecimal(f.asText()).scaleByPowerOfTen(exp));
+        uit.put("abbreviation", a.asText() + "-verdraaid" + exp);
+        uit.putObject("factorToCanonical").put("num", num.divide(ggd)).put("den", den.divide(ggd));
         return uit;
     }
 
     private static boolean datumGetypeerd(JsonNode e) {
-        return e != null && e.get("type") != null && DATUM.contains(e.get("type").path("node").asText(""));
+        return e != null && e.get("type") != null && "Date".equals(e.get("type").path("node").asText(""));
     }
 
     // ---------------- helpers ----------------

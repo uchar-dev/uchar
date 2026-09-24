@@ -173,8 +173,8 @@ class HeelperiodeDoelpogingWitnessTest {
     }
 
     private static ObjectNode getal() {
-        return JSON.createObjectNode().put("node", "Numeriek").put("geheel", true).put("decimalen", 0)
-                .put("teken", "ONBEPAALD").putNull("eenheid");
+        return JSON.createObjectNode().put("node", "Number").put("whole", true).put("decimals", 0)
+                .put("sign", "ONBEPAALD");
     }
 
     private static String metWaarde(String segmenten) throws Exception {

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.github.yhavinga.regelspraak.cases.CaseRunner;
 import io.github.yhavinga.regelspraak.cases.IrPad;
+import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
 
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +17,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -222,8 +222,8 @@ class LaderWeigeringWitnessTest {
         IrPad.modelLijst(ir, "timelines").add(JSON.createObjectNode().put("node", "Tijdlijn").put("naam", "boekjaar")
                 .put("variabelStartpunt", true).putNull("granulariteit").put("aantal", 1));
         ObjectNode peilwaarde = IrPad.addAttribute(IrPad.objectType(ir, "Strandrecht"), "peilwaarde",
-                JSON.createObjectNode().put("node", "Numeriek").put("geheel", true).put("decimalen", 0)
-                        .put("teken", "NIET_NEGATIEF").putNull("eenheid"));
+                JSON.createObjectNode().put("node", "Number").put("whole", true).put("decimals", 0)
+                        .put("sign", "NIET_NEGATIEF"));
         peilwaarde.putObject("timeline").put("node", "TimelineFacet").put("count", 1).put("timelineName", "boekjaar");
         ontbreekt(ir, lidPad(ir, "Strandrecht", "attributes", "peilwaarde") + "/timeline", "granularity");
     }
@@ -310,12 +310,11 @@ class LaderWeigeringWitnessTest {
 
     @Test void een_domeindatatype_draagt_precies_de_velden_van_zijn_soort() throws Exception {
         // the key check the Enumeratie, SumType and StructType arms already had, for the kinds without an arm;
-        // no golden declares a Numeriek domain, so one is added: clean it loads, with a stray field it is refused
+        // no golden declares a number domain, so one is added: clean it loads, with a stray field it is refused
         ObjectNode ir = golden(BAKENMEESTER);
         ArrayNode domeinen = IrPad.modelLijst(ir, "domains");
         ObjectNode getal = domeinen.addObject().put("node", "Domain").put("name", "Bedrag").putObject("datatype")
-                .put("node", "Numeriek").put("geheel", false).put("decimalen", 2).put("teken", "ONBEPAALD")
-                .putNull("eenheid");
+                .put("node", "Number").put("whole", false).put("decimals", 2).put("sign", "ONBEPAALD");
         IrLoader.loadAll(ir);
         getal.put("naam", "Bedrag");
         weigert(ir, "/model/domains/" + (domeinen.size() - 1) + "/datatype/naam");
@@ -347,19 +346,37 @@ class LaderWeigeringWitnessTest {
         assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
     }
 
-    @Test void een_dagsoortlijst_draagt_tekst_of_null() throws Exception {
-        // the schema types every entry string or null; asText read 5 as "5" and null as the text "null"
+    @Test void een_dagsoort_is_een_knoop_met_naam_en_meervoud() throws Exception {
+        // IR-SPEC ch. 2.9: an entry is a DayKind node; a bare name is its L2 form, and the registry beside the list
+        // is gone with it. A name is a string and required, a plural written whole or not at all.
         ObjectNode ir = golden(BAKENMEESTER);
-        IrPad.model(ir).putArray("dayKinds").add(5);
-        weigert(ir, "/model/dayKinds/0");
+        IrPad.model(ir).putArray("dayKinds").add("springtijdag");
+        IrLoader.Documentfout e = weigert(ir, "/model/dayKinds/0");
+        assertTrue(e.getMessage().contains("(DayKind)"), e.getMessage());
 
         ir = golden(BAKENMEESTER);
-        IrPad.model(ir).putObject("dagsoortPerEenheid").put("x", 5);
-        weigert(ir, "/model/dagsoortPerEenheid/x");
+        IrPad.model(ir).putObject("dagsoortPerEenheid");
+        e = weigert(ir, "/model/dagsoortPerEenheid");
+        assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
 
         ir = golden(BAKENMEESTER);
-        IrPad.model(ir).putObject("dagsoortPerEenheid").putNull("x");
-        assertNull(IrLoader.load(ir).dagsoortPerEenheid.get("x"), "null blijft null, niet de tekst \"null\"");
+        IrPad.model(ir).putArray("dayKinds").addObject().put("node", "DayKind").put("name", 5);
+        weigert(ir, "/model/dayKinds/0/name");
+
+        ir = golden(BAKENMEESTER);
+        IrPad.model(ir).putArray("dayKinds").addObject().put("node", "DayKind").put("name", "springtijdag")
+                .putNull("plural");
+        e = weigert(ir, "/model/dayKinds/0/plural");
+        assertTrue(e.getMessage().contains("null is neither"), e.getMessage());
+
+        // read, the name and the plural are the day kind's spellings as a duration unit
+        ir = golden(BAKENMEESTER);
+        IrPad.model(ir).putArray("dayKinds").addObject().put("node", "DayKind").put("name", "Springtijdag")
+                .put("plural", "springtijdagen");
+        RegelSpraakModel m = IrLoader.load(ir);
+        assertEquals(List.of("Springtijdag"), m.dagsoorten);
+        assertEquals(java.util.Map.of("springtijdag", "Springtijdag", "springtijdagen", "Springtijdag"),
+                m.dagsoortPerEenheid);
     }
 
     @Test void format_en_functionDefs_worden_eerst_op_vorm_gelezen() throws Exception {
@@ -408,12 +425,12 @@ class LaderWeigeringWitnessTest {
     }
 
     @Test void namen_botsen_onder_de_naamidentiteit_van_de_verifier() throws Exception {
-        // WF-001 on a list whose node kept its v0 shape: a difference in case makes no second name (checks.ml
+        // WF-001 on the parameter list: a difference in case makes no second name (checks.ml
         // norm), and the exact-key table would have kept both
         ObjectNode ir = golden(PENNINGDREMPEL);
         ArrayNode parameters = IrPad.modelLijst(ir, "parameters");
-        parameters.add(IrPad.declaratie(ir, "parameters", "vondstdrempel").deepCopy().put("naam", "Vondstdrempel"));
-        IrLoader.Documentfout e = weigert(ir, "/model/parameters/" + (parameters.size() - 1) + "/naam");
+        parameters.add(IrPad.declaratie(ir, "parameters", "vondstdrempel").deepCopy().put("name", "Vondstdrempel"));
+        IrLoader.Documentfout e = weigert(ir, "/model/parameters/" + (parameters.size() - 1) + "/name");
         assertTrue(e.getMessage().contains("WF-001"), e.getMessage());
 
         // WF-002 on attributes, which the loader compared exactly before: neither case nor a run of spaces makes

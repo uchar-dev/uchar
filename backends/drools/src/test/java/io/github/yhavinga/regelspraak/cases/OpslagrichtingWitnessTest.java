@@ -528,8 +528,8 @@ class OpslagrichtingWitnessTest {
     }
 
     private static ObjectNode numeriek() {
-        return JSON.createObjectNode().put("node", "Numeriek").put("geheel", true)
-                .put("decimalen", 0).put("teken", "ONBEPAALD").putNull("eenheid");
+        return JSON.createObjectNode().put("node", "Number").put("whole", true)
+                .put("decimals", 0).put("sign", "ONBEPAALD");
     }
 
     /** W1 (rang 1), no roles — the golden's own case1, with the fold expectation dropped where that rule is. */

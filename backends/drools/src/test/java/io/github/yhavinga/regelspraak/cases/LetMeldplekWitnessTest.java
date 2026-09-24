@@ -140,7 +140,7 @@ class LetMeldplekWitnessTest {
     // ---------------- helpers: the wire shapes (IR-SPEC ch. 4.10 and its neighbours) ----------------
 
     private static String num(int dec, boolean geheel, String teken) {
-        return "{\"node\":\"Numeriek\",\"geheel\":%b,\"decimalen\":%d,\"teken\":\"%s\",\"eenheid\":null}"
+        return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"%s\"}"
                 .formatted(geheel, dec, teken);
     }
     private static String num(int dec) { return num(dec, false, "ONBEPAALD"); }
@@ -195,7 +195,7 @@ class LetMeldplekWitnessTest {
                 + "{\"node\":\"Attribute\",\"name\":\"uit\",\"datatype\":%s}],"
                 + "\"characteristics\":[]}],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
-                + "\"timelines\":[],\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+                + "\"timelines\":[],\"dayKinds\":[]},"
                 + "\"rules\":{\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"BEREKENING\","
                 + "\"doel\":%s,\"waarde\":%s,\"voorwaarde\":null,"
                 + "\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}],"

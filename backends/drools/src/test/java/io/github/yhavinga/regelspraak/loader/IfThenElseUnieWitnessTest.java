@@ -100,7 +100,7 @@ class IfThenElseUnieWitnessTest {
     // ---------------- the wire shapes ----------------
 
     private static String num(int dec) {
-        return "{\"node\":\"Numeriek\",\"geheel\":false,\"decimalen\":%d,\"teken\":\"ONBEPAALD\",\"eenheid\":null}"
+        return "{\"node\":\"Number\",\"whole\":false,\"decimals\":%d,\"sign\":\"ONBEPAALD\"}"
                 .formatted(dec);
     }
 
@@ -169,7 +169,7 @@ class IfThenElseUnieWitnessTest {
                 .formatted(attr("uit", num(2)), waarde);
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
-                + "\"timelines\":[],\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+                + "\"timelines\":[],\"dayKinds\":[]},"
                 + "\"rules\":{\"resolvedRegels\":[%s],\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],"
                 + "\"consistenties\":[],\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],"
                 + "\"resolvedStartpunten\":[],\"regelGroepen\":[]},\"diagnostics\":[]}")

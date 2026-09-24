@@ -259,8 +259,8 @@ class LetDragerWandelingWitnessTest {
     private static final String BOOLEAAN = "{\"node\":\"Booleaan\"}";
 
     private static String num(int dec, boolean geheel, String teken, String eenheid) {
-        return "{\"node\":\"Numeriek\",\"geheel\":%b,\"decimalen\":%d,\"teken\":\"%s\",\"eenheid\":%s}"
-                .formatted(geheel, dec, teken, eenheid == null ? "null" : eenheid);
+        return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"%s\"%s}"
+                .formatted(geheel, dec, teken, eenheid == null ? "" : ",\"unit\":" + eenheid);
     }
     private static String num(int dec) { return num(dec, false, "ONBEPAALD", null); }
     private static String pos(int dec) { return num(dec, false, "NIET_NEGATIEF", null); }
@@ -268,8 +268,8 @@ class LetDragerWandelingWitnessTest {
 
     /** One unit of the two-unit "Afstand" system below (canonical metre, factor to the canonical unit). */
     private static String eenheid(String afkorting, int factor) {
-        return ("{\"node\":\"Eenheid\",\"afkorting\":\"%s\",\"stelsel\":\"Afstand\",\"canoniek\":\"m\","
-                + "\"factorNaarCanoniek\":%d,\"noemer\":null}").formatted(afkorting, factor);
+        return ("{\"node\":\"Unit\",\"abbreviation\":\"%s\",\"system\":\"Afstand\",\"canonical\":\"m\","
+                + "\"factorToCanonical\":{\"num\":%d,\"den\":1}}").formatted(afkorting, factor);
     }
 
     private static String attr(String objecttype, String naam, String type) {
@@ -364,8 +364,7 @@ class LetDragerWandelingWitnessTest {
     private static String doc(String objecttypen, String feittypen, String eenheidstelsels,
             String[] regels, String prioritizedDefaults) {
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],\"factTypes\":[%s],\"parameters\":[],"
-                + "\"domains\":[],\"unitSystems\":[%s],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[],"
-                + "\"dagsoortPerEenheid\":{}},\"rules\":{"
+                + "\"domains\":[],\"unitSystems\":[%s],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]},\"rules\":{"
                 + "\"resolvedRegels\":[%s],\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],"
                 + "\"consistenties\":[],\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],"
                 + "\"resolvedStartpunten\":[],\"regelGroepen\":[]%s},\"diagnostics\":[]}")
@@ -393,8 +392,8 @@ class LetDragerWandelingWitnessTest {
     private static String kruisEenheidModel() {
         String meter = num(0, true, "NIET_NEGATIEF", eenheid("m", 1));
         String kilometer = num(0, true, "NIET_NEGATIEF", eenheid("km", 1000));
-        String stelsel = "{\"node\":\"Eenheidstelsel\",\"naam\":\"Afstand\",\"eenheden\":{"
-                + "\"m\":" + eenheid("m", 1) + ",\"km\":" + eenheid("km", 1000) + "},\"aliassen\":{}}";
+        String stelsel = "{\"node\":\"UnitSystem\",\"name\":\"Afstand\",\"units\":["
+                + eenheid("m", 1) + "," + eenheid("km", 1000) + "]}";
         String waarde = let("a", attr("Baan", "aanloop", meter),
                 ite(verg("GROTER", bref("a", meter), lit("1", kilometer)),
                         lit("1.00", num(2)), lit("2.00", num(2)), num(2)), num(2));

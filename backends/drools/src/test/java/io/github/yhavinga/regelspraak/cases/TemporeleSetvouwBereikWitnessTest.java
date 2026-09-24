@@ -147,11 +147,12 @@ class TemporeleSetvouwBereikWitnessTest {
     }
 
     private static ObjectNode eur() {
-        ObjectNode e = JSON.createObjectNode().put("node", "Eenheid").put("afkorting", "EUR")
-                .put("stelsel", "Munt").put("canoniek", "EUR").put("factorNaarCanoniek", 1).putNull("noemer");
-        ObjectNode n = JSON.createObjectNode().put("node", "Numeriek").put("geheel", true)
-                .put("decimalen", 0).put("teken", "ONBEPAALD");
-        n.set("eenheid", e);
+        ObjectNode e = JSON.createObjectNode().put("node", "Unit").put("abbreviation", "EUR")
+                .put("system", "Munt").put("canonical", "EUR");
+        e.putObject("factorToCanonical").put("num", 1).put("den", 1);
+        ObjectNode n = JSON.createObjectNode().put("node", "Number").put("whole", true)
+                .put("decimals", 0).put("sign", "ONBEPAALD");
+        n.set("unit", e);
         return n;
     }
 

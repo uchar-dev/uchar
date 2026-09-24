@@ -471,8 +471,8 @@ class HerhaaldTypepaarWitnessTest {
     }
 
     private static ObjectNode numeriek() {
-        return JSON.createObjectNode().put("node", "Numeriek").put("geheel", true)
-                .put("decimalen", 0).put("teken", "NIET_NEGATIEF").putNull("eenheid");
+        return JSON.createObjectNode().put("node", "Number").put("whole", true)
+                .put("decimals", 0).put("sign", "NIET_NEGATIEF");
     }
 
     /** Two havens and two schuiten with BOTH roles of the repeated pair written on S1: it lies in H1

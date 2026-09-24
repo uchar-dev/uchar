@@ -237,7 +237,7 @@ class VensterVouwWitnessTest {
 
     // ================= the document and the cases =================
 
-    private static final String DATUM = "{ \"node\": \"DatumInDagen\" }";
+    private static final String DATUM = "{ \"node\": \"Date\", \"precision\": \"day\" }";
 
     private static String literal(String d) {
         return "{ \"node\": \"Literal\", \"waarde\": \"" + d + "\", \"type\": " + DATUM + ", \"bron\": \"" + d + "\" }";
@@ -327,8 +327,8 @@ class VensterVouwWitnessTest {
         ObjectNode vergelijking = JSON.createObjectNode();
         vergelijking.put("node", "Vergelijking").put("op", "GROTER").set("links", telling);
         vergelijking.set("rechts", JSON.readTree("""
-                { "node": "Literal", "waarde": "0", "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                  "teken": "ONBEPAALD", "eenheid": null }, "bron": "0" }"""));
+                { "node": "Literal", "waarde": "0", "type": { "node": "Number", "whole": true, "decimals": 0,
+                  "sign": "ONBEPAALD" }, "bron": "0" }"""));
         vergelijking.putNull("periode").put("bron", "het aantal wachten die vanaf hun aanstelling dienen groter is dan 0");
         ((ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0)).set("voorwaarde", vergelijking);
         Path p = tmp.resolve("venstervouw-" + (n++) + ".json");
@@ -356,10 +356,9 @@ class VensterVouwWitnessTest {
     private Path metKeurgrens(Path ir) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(ir));
         IrPad.modelLijst(doc, "parameters").add(JSON.readTree("""
-                { "node": "Parameter", "naam": "keurgrens",
-                  "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                                "teken": "NIET_NEGATIEF", "eenheid": null },
-                  "granulariteit": null }"""));
+                { "node": "Parameter", "name": "keurgrens",
+                  "datatype": { "node": "Number", "whole": true, "decimals": 0,
+                                "sign": "NIET_NEGATIEF" } }"""));
         Files.writeString(ir, doc.toPrettyString());
         return ir;
     }

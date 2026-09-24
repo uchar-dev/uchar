@@ -177,7 +177,7 @@ class DrlCreatieKoppelingWitnessTest {
     private static Path gelijknamigLid(String objecttype, String rol) throws Exception {
         ObjectNode ir = zonderNavigerendeRegel(lees(REKENKAMER));
         IrPad.addAttribute(IrPad.objectType(ir, objecttype), rol, JSON.readTree("""
-                { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }"""));
+                { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }"""));
         return schrijf(ir, "lid-" + rol);
     }
 
@@ -209,8 +209,7 @@ class DrlCreatieKoppelingWitnessTest {
             if (t.get("kenmerk").asBoolean())
                 ((ObjectNode) t).set("waarde", JSON.readTree("""
                         { "node": "Literal", "waarde": "5",
-                          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
-                                    "eenheid": null }, "bron": "5" }"""));
+                          "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "bron": "5" }"""));
         return schrijf(ir, "kenmerk-getal");
     }
 
