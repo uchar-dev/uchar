@@ -1,0 +1,223 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Strandjutter",
+        "supertype": "Jutter",
+        "animate": true,
+        "plural": "Strandjutters",
+        "attributes": [],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Wachtpost",
+        "animate": false,
+        "plural": "Wachtposten",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "bemand",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "onbemand",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "strandbemand",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "strandvrij",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "wachtindeling",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "wachtjutter",
+            "objecttypeNaam": "Jutter",
+            "meervoud": "wachtjutters",
+            "meervoudig": true
+          },
+          {
+            "node": "Rol",
+            "naam": "toegewezen wachtpost",
+            "objecttypeNaam": "Wachtpost",
+            "meervoud": null,
+            "meervoudig": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "bemande wachtpost",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "bemand",
+          "objecttype": "Wachtpost",
+          "bron": "Een Wachtpost is bemand"
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "RoleMembership",
+          "factType": "wachtindeling",
+          "role": "wachtjutters",
+          "negated": false,
+          "bron": "hij een wachtjutter heeft"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "onbemande wachtpost",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "onbemand",
+          "objecttype": "Wachtpost",
+          "bron": "Een Wachtpost is onbemand"
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "RoleMembership",
+          "factType": "wachtindeling",
+          "role": "toegewezen wachtpost",
+          "negated": true,
+          "bron": "hij geen wachtjutter heeft"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "strandbemande wachtpost",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "strandbemand",
+          "objecttype": "Wachtpost",
+          "bron": "Een Wachtpost is strandbemand"
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "RoleMembership",
+          "factType": "wachtindeling",
+          "role": "toegewezen wachtpost",
+          "counterpartType": "Strandjutter",
+          "negated": false,
+          "bron": "hij een strandjutter heeft"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "strandvrije wachtpost",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "strandvrij",
+          "objecttype": "Wachtpost",
+          "bron": "Een Wachtpost is strandvrij"
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "RoleMembership",
+          "factType": "wachtindeling",
+          "role": "toegewezen wachtpost",
+          "counterpartType": "Strandjutter",
+          "negated": true,
+          "bron": "hij geen strandjutter heeft"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
+}
