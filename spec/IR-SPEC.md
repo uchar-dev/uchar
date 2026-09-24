@@ -1163,16 +1163,16 @@ no-hole/equality semantics are `RUNTIME-SEMANTICS.md` ch. 11.
   Measured by the migration: no v0 `Numeriek` in the four zones or the
   parity zone carried the unit `%`, so on every document there the reading
   "a `Number` whose unit is `%` is a percentage" is the v0 distinction
-  exactly. At a DERIVED position it is a refinement of meaning, stated
-  rather than silent: the RegelSpraak frontend types a sum or a difference
-  of two percentages as a number carrying the left operand's unit — `%`,
-  or a rate over `%` — and its emitter writes that annotation as a `Number`
-  with the unit `%`, which every reader now reads as a percentage. WF-091
-  derives the same (ch. 4.1, the derived-type table: a `%` result is a
-  percentage), so the frontend's own emission stays verifier-clean where
-  the migration's reading alone would have refused it (measured on the
-  frontend's emission of `A plus B`, `A min B`, `A verminderd met B` and
-  `A plus 5%` over two percentage attributes; card
+  exactly. At a DERIVED position the reading is a refinement of meaning,
+  stated here: the RegelSpraak frontend types a sum or a difference of two
+  percentages as a number carrying the left operand's unit — `%`, or a rate
+  whose numerator is `%` — and its emitter writes that annotation as a
+  `Number` with the unit `%`, which every reader now reads as a percentage.
+  WF-091 derives the same (ch. 4.1, the derived-type table: a `%` result is
+  a percentage), so the frontend's own emission stays verifier-clean; while
+  the derivation still built a number there, the verifier refused it
+  (measured 2026-09-24 on the frontend's emission of `A plus B`, `A min B`,
+  `A verminderd met B` and `A plus 5%` over two percentage attributes; card
   `20260924-l3-typesysteem`, which pins the form with a golden).
 - v0 `DatumInDagen`/`DatumTijd` merge into `Date(precision)`.
   *Migration:* mechanical. Mixed-precision date use remains a rule-layer
@@ -2857,7 +2857,7 @@ verifier removed both.
 
 | Position | Derived type | Facets claimed |
 |---|---|---|
-| `Binary` plus / min / verminderd-met, numeric | maxDec; whole iff **both** operands are; the **left** operand's unit. The soort **follows that unit** as a reader reads a `Number` (ch. 2.4): a result whose unit is `%` — a rate over `%` among them — is a percentage, any other a number. *(History until L3:)* the soort collapsed to a number, `Percentage + Percentage` derived `number`, and a number was the only annotation the position admitted; since L3 that annotation carries the unit `%` and is itself a percentage | soort, domain, unit, decimals, wholeness |
+| `Binary` plus / min / verminderd-met, numeric | maxDec; whole iff **both** operands are; the **left** operand's unit. The soort **follows that unit** as a reader reads a `Number` (ch. 2.4): a result whose unit is `%` — a rate whose numerator is `%` among them — is a percentage, any other a number. *(History until L3:)* the soort collapsed to a number, `Percentage + Percentage` derived `number`, and a number was the only annotation the position admitted; since L3 that annotation carries the unit `%` and is itself a percentage | soort, domain, unit, decimals, wholeness |
 | `Binary` plus / min over a date and a duration | the **date** operand's type, unchanged (the duration carries the calendar unit and contributes nothing to the result type) | soort, domain, unit, decimals, wholeness |
 | `Binary` maal | the ch. 2.6 join: a unitless operand hands the other unit through; a rate times its convertible denominator unit **cancels** to the numerator. The soort follows the unit as it does on the additive row (until L3 it collapsed to a number there too) | soort, domain, unit |
 | `Rounding` over a numeric or percentage base | the base's soort, unit and sign, with the node's **own** decimal count (whole iff zero) — ch. 2.4's *facing* precision | soort, domain, unit, decimals, wholeness |
@@ -2865,7 +2865,7 @@ verifier removed both.
 | `Clamp` | the base's type, unchanged (ch. 2.7 returns the base, the minimum or the maximum) | soort, domain, unit, decimals, wholeness |
 | `Aggregation` som | operand 0's type, unchanged (§4.6 *Eenheid1*) | soort, domain, unit, decimals, wholeness |
 | `Aggregation` eerste / laatste | operand 0's type, unchanged | soort, unit, decimals, wholeness — **not the domain**, which WF-089/WF-090's own arm already crosses at this position, once per operand |
-| `Aggregation` totaal | operand 0's type with a rate's **denominator stripped** — but only where the fold *integrates over time*. The scheidslijn is the emitter's own predicate: the **non-temporal set reading** ("het totaal van *x* van alle *elementen*" over a plain attribute) is an alias of the sum, folds over instances and integrates over nothing, so it passes operand 0's type through unchanged; every other reading — the non-set rate read, and the set read over a **temporal** attribute, which is the §7.1 per-element timeline fold — integrates, and there `EUR/jr` totals to `EUR` (§4.20) — and a rate over `%` totals to `%`, which is still a percentage | soort, domain, unit, decimals, wholeness |
+| `Aggregation` totaal | operand 0's type with a rate's **denominator stripped** — but only where the fold *integrates over time*. The scheidslijn is the emitter's own predicate: the **non-temporal set reading** ("het totaal van *x* van alle *elementen*" over a plain attribute) is an alias of the sum, folds over instances and integrates over nothing, so it passes operand 0's type through unchanged; every other reading — the non-set rate read, and the set read over a **temporal** attribute, which is the §7.1 per-element timeline fold — integrates, and there `EUR/jr` totals to `EUR` (§4.20) — and a rate whose numerator is `%` (`%/jr`) totals to `%`, which is still a percentage | soort, domain, unit, decimals, wholeness |
 | `Aggregation` minimum / maximum | the **least** operand precision, the **conjunction** of wholeness, operand 0's sign and unit — over a percentage operand 0 as over a number (since L3 a `%` number is a percentage; a percentage carries no sign) | soort, unit, decimals, wholeness (the domain for the same reason as eerste/laatste) |
 | `Aggregation` aantal | whole, zero decimals, unitless — a constant of the operator, reading no operand | soort, domain, unit, decimals, wholeness |
 | `Aggregation` aantal gevulde | the same constant, on its own row because the engine matches on the KIND: a filled count answers a cardinality whatever unit the folded attribute carries (`RUNTIME-SEMANTICS.md` ch. 3.4c). Added 2026-09-20, and not as bookkeeping — until it existed this was the one aggregation whose node type nothing crossed, so a filled count annotated `kg` into an equally-lying `kg` target was verifier-clean and `ref` played it | soort, domain, unit, decimals, wholeness |

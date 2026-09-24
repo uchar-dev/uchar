@@ -2433,9 +2433,9 @@ let composite_expectation ctx ~binders (e : expr) :
               | Some true ->
                   Some (what, "the type derived from its first operand", t0, [])
               | Some false ->
-                  (* the strip keeps the constructor: a rate over '%' strips
-                     to '%' and stays the percentage the loader read, as any
-                     other rate strips to a number. Since L3 a '%' rate is a
+                  (* the strip keeps the constructor: a rate whose numerator
+                     is '%' strips to '%' and stays the percentage the loader
+                     read, as any other rate strips to a number. Since L3 a '%' rate is a
                      [Percentage] whichever producer typed it, and the
                      RegelSpraak frontend strips the rate its own sum of two
                      '%' rates carries (measured 2026-09-24: without the
