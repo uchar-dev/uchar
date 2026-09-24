@@ -25,6 +25,7 @@ import io.github.yhavinga.regelspraak.transpiler.kern.Eenheidsconflict;
 import io.github.yhavinga.regelspraak.kern.Literalen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Namen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Operatoren;
+import io.github.yhavinga.regelspraak.transpiler.kern.Rekenjaar;
 import io.github.yhavinga.regelspraak.transpiler.kern.Tijdlijnen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Vensterpositie;
 import io.github.yhavinga.regelspraak.kern.Tijdrekening;
@@ -4357,17 +4358,20 @@ public final class ExecModelTranspiler {
         // attribute init) -> its Boolean constant; DRL renders the same true/false.
         if (e instanceof Expr.Literal bl && bl.type() instanceof Datatype.Booleaan)
             return WaardeFn.constant(Literalen.waar(bl.waarde()));
-        // §5.3 Rekendatum/Rekenjaar as a VALUE operand (§13.4.17.34): the §4.2 rekendatum global, bound into the
+        // Rekenjaar is admitted and not executed (kern.Rekenjaar): this branch never lowers it, and names why.
+        if (Rekenjaar.is(e)) {
+            navReden = Rekenjaar.WEIGERING;
+            return null;
+        }
+        // §5.3 Rekendatum as a VALUE operand (§13.4.17.34): the §4.2 rekendatum global, bound into the
         // globals map under its own name (the map's values are BigDecimal-typed but ERASED; only this reader
         // touches the "rekendatum" slot and it instanceof-guards, so the LocalDate rides through safely — the
         // binder side uses the raw-put vulGlobalMap / cast-free bindGlobal). An unset rekendatum reads leeg.
-        // DRL lowers the same shapes as the free global name / rsRekenjaar(rekendatum).
-        if (e instanceof Expr.Constante rc && Expr.isRekenConstante(rc)) {
-            boolean jaar = "Rekenjaar".equals(rc.naam());
+        // DRL lowers the same shape as the free global name.
+        if (e instanceof Expr.Constante rc && "Rekendatum".equals(rc.naam())) {
             return new WaardeFn((s, gm) -> {
                 Object rd = ((Map<?, ?>) gm).get("rekendatum");
-                if (!(rd instanceof java.time.LocalDate d)) return null;
-                return jaar ? RegelSpraakRuntime.rsRekenjaar(d) : d;
+                return rd instanceof java.time.LocalDate d ? d : null;
             }, java.util.Set.of("rekendatum"));
         }
         if (e instanceof Expr.Literal dl && dl.type() instanceof Datatype.DatumInDagen) {
@@ -5275,7 +5279,8 @@ public final class ExecModelTranspiler {
      *  expr-vs-attr / expr-vs-expr comparison through the {@link #scalarWaarde} value-path lowering on both sides. */
     private static boolean numeriekeExpressie(Expr e) {
         // a §5.3 Rekenjaar constant counts as a numeric expression so a bare "Rekenjaar groter is dan 2020"
-        // routes to the vs-global branch (it binds the rekendatum pseudo-global; the fact-only leaf skips it).
+        // routes through scalarWaarde, whose named arm refuses it (kern.Rekenjaar); the fact-only leaf would skip
+        // it under a generic scope line.
         return e instanceof Expr.Binair || e instanceof Expr.Functie || e instanceof Expr.Begrensd
                 || e instanceof Expr.Afgerond || Expr.isRekenConstante(e);
     }

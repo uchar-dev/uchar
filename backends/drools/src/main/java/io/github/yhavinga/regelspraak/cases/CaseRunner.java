@@ -18,6 +18,7 @@ import io.github.yhavinga.regelspraak.schema.FactModelGenerator;
 import io.github.yhavinga.regelspraak.transpiler.DrlTranspiler;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dekking;
 import io.github.yhavinga.regelspraak.transpiler.kern.Namen;
+import io.github.yhavinga.regelspraak.transpiler.kern.Rekenjaar;
 import io.github.yhavinga.regelspraak.transpiler.model.ExecModelTranspiler;
 
 import org.drools.modelcompiler.KieBaseBuilder;
@@ -224,6 +225,11 @@ public final class CaseRunner {
         IrLoader.Loaded loaded = IrLoader.loadAll(ir);   // the model plus the ch. 7 prioritized-defaults extension beside it
         RegelSpraakModel model = loaded.model();
 
+        // Rekenjaar is admitted and not executed (kern.Rekenjaar). The loader has admitted it; it is refused here,
+        // before either branch lowers anything, so the reference interpreter's sentence is what the report says in
+        // both branches and whatever position the node holds.
+        if (draagtRekenjaar(ir)) throw new Excluded(Rekenjaar.WEIGERING);
+
         // A form the v0 backend cannot REPLAY is refused up front — a LOUD per-form exclusion, never a
         // silent value-divergence in the gate. Carrying it to fire only to fault or misvalue there is
         // honestly NOT-CARRIED, not a semantic exec-model difference, so it belongs in the auto-excluded
@@ -271,6 +277,16 @@ public final class CaseRunner {
         } finally {
             Thread.currentThread().setContextClassLoader(vorige);
         }
+    }
+
+    /** Whether the document carries the context value Rekenjaar at any position. Read off the wire, which the loader
+     *  has just accepted: a walk over the whole document finds the node wherever it stands, where a walk over the
+     *  model's construct lists finds it only in the surfaces it was written to visit. */
+    private static boolean draagtRekenjaar(JsonNode n) {
+        if (n.isObject() && "ContextValue".equals(n.path("node").asText()) && "Rekenjaar".equals(n.path("name").asText()))
+            return true;
+        for (JsonNode kind : n) if (draagtRekenjaar(kind)) return true;
+        return false;
     }
 
     /** The DRL-TEXT branch of the same prelude: {@link DrlTranspiler} emits DRL, which is compiled to a

@@ -16,6 +16,7 @@ import io.github.yhavinga.regelspraak.transpiler.kern.Eenheidsconflict;
 import io.github.yhavinga.regelspraak.transpiler.kern.Gastheer;
 import io.github.yhavinga.regelspraak.kern.Literalen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Operatoren;
+import io.github.yhavinga.regelspraak.transpiler.kern.Rekenjaar;
 import io.github.yhavinga.regelspraak.transpiler.kern.Tijdlijnen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Vensterpositie;
 import io.github.yhavinga.regelspraak.kern.Tijdrekening;
@@ -99,7 +100,7 @@ public final class DrlTranspiler {
      *  marker (opt-in emission, no fact-base bloat). Populated at {@link #run} start. */
     private java.util.Set<String> gevuurdReferenties = java.util.Set.of();
     /** Set exactly where emitted rule text references the §4.2 rekendatum global (a §8.4.3 periode-window, a
-     *  §5.3 Rekendatum/Rekenjaar value read), so the global is spliced into the header iff actually used. */
+     *  §5.3 Rekendatum value read), so the global is spliced into the header iff actually used. */
     private boolean rekendatumNodig;
     /** §9.8 dagsoort predicates the rules referenced: DRL global name ({@code rsDagsoort_<Naam>}) -> the
      *  predicate compiled by the SHARED {@link Dagsoorten} compiler. Declared as
@@ -5227,13 +5228,15 @@ public final class DrlTranspiler {
         return Frag.todo("operand", e.bron());
     }
 
-    /** §5.3 Rekendatum / Rekenjaar as an expression: the §4.2 rekendatum global (a LocalDate the runtime
-     *  supplies), respectively its year via the null-guarded rsRekenjaar (an unset rekendatum reads leeg,
-     *  the leegwaarde rules then apply). Valid in both a pattern constraint and a consequence — a global is
-     *  a free name in either. null for any other constant ("hij", "de dag": handled by their own paths). */
+    /** §5.3 Rekendatum as an expression: the §4.2 rekendatum global (a LocalDate the runtime supplies; an unset
+     *  rekendatum reads leeg, the leegwaarde rules then apply). Valid in both a pattern constraint and a
+     *  consequence — a global is a free name in either. Rekenjaar is admitted and not executed (kern.Rekenjaar):
+     *  it becomes a placeholder, so the construct is a marker wherever it stands, and navReden gives the manifest
+     *  the reference interpreter's sentence. null for any other constant ("hij", "de dag": handled by their own
+     *  paths). */
     private Frag rekenConstante(Expr.Constante c) {
         if ("Rekendatum".equals(c.naam())) { rekendatumNodig = true; return Frag.ok("rekendatum"); }
-        if ("Rekenjaar".equals(c.naam()))  { rekendatumNodig = true; fnImport("rsRekenjaar"); return Frag.ok("rsRekenjaar(rekendatum)"); }
+        if (Rekenjaar.is(c)) { navReden = Rekenjaar.WEIGERING; return Frag.todo(Rekenjaar.WEIGERING, c.bron()); }
         return null;
     }
 
