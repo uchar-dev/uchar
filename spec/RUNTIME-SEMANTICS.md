@@ -199,8 +199,12 @@ half is where v1 and v0 agree rather than diverge: v0's static typing
 demands one precision too ("alle datumexpressies moeten dezelfde
 tijd-precisie hebben", the same `Typering.datumAggregatie`), so the
 tightening puts the wire fence and the frontend that writes to it in
-agreement. The unknown sentinel defers, since it is the one operand
-shape v0 never typed and does hand to this very fold at runtime. The
+agreement. An operand without a static type defers: since L2 that is a
+reference whose declaration does not resolve (WF-034 reports it) or an
+`Onopgelost` without a `type` (an executor faults on reaching it,
+WF-044). Until L2 it was the unknown sentinel, the one operand shape v0
+never typed and did hand to this very fold at runtime; the sentinel left
+the datatype union at L2 (B16). The
 delta belongs to the `FunctieKind` (aggregations) row of
 `spec/CONSTRUCTS.md` at the serial merge update.
 Worked examples (ref tests verbatim; the `jutterswet-peildatum` golden
@@ -568,13 +572,17 @@ unit, the soort and the precision it computes with:
 
 1. **Reference positions** — an `AttribuutRef` (bare, navigated, or the one
    a rule names as its `doel`), a `ParameterRef`, a `DimensieCel` read, a
-   `BinderRef`, a `VariabeleRef` — take unit, soort and precision from the
+   `BinderRef` — take unit, soort and precision from the
    **declaration** the reference names: the object type's declared
    attribute datatype, the parameter's declared datatype, the attribute's
    element datatype, the binder's declaration (a `Let`'s value, a match
    arm's payload, a lambda or function parameter). Since L2 that is the
    only place they can take it from: the wire carries no type on these
-   nodes (`IR-SPEC.md` ch. 4.1), and a loader refuses one by name. Until
+   nodes, nor on a `VariabeleRef` (`IR-SPEC.md` ch. 4.1), and a loader
+   refuses one by name. A `VariabeleRef` names no declaration: it is the
+   marker for a variable the resolver could not bind (`IR-SPEC.md`
+   ch. 4.1), so there is no type to take — the verifier assigns it none,
+   and `ref` faults on reaching it. Until
    L2 each carried a copy, which WF-091's reference arms held faithful,
    so on a verifier-clean document the two agreed — which is exactly why
    reading the copy was *invisibly* wrong when they did not, and why the
@@ -608,8 +616,10 @@ unit, the soort and the precision it computes with:
    corpus does not carry and no frontend can emit; a `Let` carries its
    body's, and a binder read carries
    what its binding derived, unit-bearing **or unitless** — bound to a
-   unitless value is not the same fact as unbound, and only the second
-   falls back to an annotation; a value aggregation carries its first
+   unitless value is not the same fact as unbound (until L2 only the
+   second fell back to the binder reference's own annotation; since L2 a
+   `BinderRef` carries none, and an unbound one is ill-formed,
+   `IR-SPEC.md` WF-064); a value aggregation carries its first
    operand's (§4.6 *Eenheid1*); a rounding and a clamp carry their basis's.
    Where v0 states no join rule at all, the **fourth class** below applies.
 
@@ -956,8 +966,9 @@ characteristic (ch. 3.11).
 
 **The contributors, before any filter: reach ∩ population.** An instance
 fold names two declarations, and they answer two different questions. The
-source relation (`sourceRole`, or the multi-step `sourcePath` of ch. 3.4b,
-or WF-048's derived role when neither is written) says which instances the
+source relation (`sourceRole`, or the multi-step `sourcePath` of ch. 3.4b —
+since L2 every instance fold carries one of the two, B12; until L2 WF-048
+derived the role when neither was written) says which instances the
 fold REACHES from its subject. `elementObjecttype` says which instances the
 fold RANGES OVER, extensionally (`IR-SPEC.md` ch. 2.2): every instance
 whose type is ⊑ it. The contributors are the intersection — an instance the
@@ -1086,11 +1097,14 @@ stating because the nested reading answers differently:
 2. A count over the union counts ELEMENTS, never intermediate instances.
    (Named here and pinned nowhere, and since 2026-09-19 for a reason
    stronger than "no carrier": under `AANTAL` a multi-step range is not
-   EXPRESSIBLE. A `sourcePath` is admissible only on the SET source
-   (`IR-SPEC.md` WF-102 (c)), and a set source is no longer admissible under
-   a count (WF-096, maintainer decision 2026-09-19) — the two fences meet at
-   this NODE, so neither spelling of a counting FOLD over a union survives
-   the wire. The claim is the fold's and not the IR's: another node that
+   EXPRESSIBLE. Since L2 one clause says so directly: a `sourcePath` is
+   admissible only as the range of a VALUE fold's set source, and a count
+   source's range is one step (`IR-SPEC.md` WF-102 (c)); every executor
+   refuses a count that carries a `sourcePath`, by name. Until L2 two
+   fences met at this NODE — a `sourcePath` only on the SET source
+   (WF-102 (c)), and no set source under a count (WF-096, maintainer
+   decision 2026-09-19) — so neither spelling of a counting FOLD over a
+   union survived the wire. The claim is the fold's and not the IR's: another node that
    counts over a range answers to its own rule, and nothing here is evidence
    about it. What prompted the
    decision was this clause read the other way round: measured 2026-09-19,
@@ -1161,8 +1175,9 @@ well-formedness: `IR-SPEC.md` ch. 4.3, "The filled count".)*
 One aggregation kind folds the contributors' VALUES by PRESENCE:
 `AANTAL_GEVULDE` counts the contributors whose value is not leeg. It is an
 instance fold and it reads a value per contributor, so it takes a SET source
-(`IR-SPEC.md` ch. 4.3, `set: true`), and that is required rather than
-optional. It has no listed form: the source language has no spelling for the
+(`IR-SPEC.md` ch. 4.3: since L2 the single argument of a fold that carries a
+range, `sourceRole` or `sourcePath`; until L2 the argument marked
+`set: true`), and that is required rather than optional. It has no listed form: the source language has no spelling for the
 operation at all, so there is no articulated operand list to admit.
 
 The contributor set is ch. 3.4a's, unchanged: reach ∩ population, narrowed
@@ -1283,7 +1298,8 @@ and the filled count is **2**. With `B2` salvaging `V1` as well, the union
 is unchanged and the filled count is still **2**: an element reachable along
 two intermediate instances contributes once. This is the example ch. 3.4b's
 word ELEMENTS waited for; under `AANTAL` the shape has no wire form at all
-(WF-096 and WF-102 meet at that node), and the filled count is the operation
+(`IR-SPEC.md` WF-102 (c): a count source's range is one step; until L2
+WF-096 and WF-102 met at that node), and the filled count is the operation
 that can carry it.
 
 ### 3.4d The instance-set union — the §5.7 concatenation
@@ -1582,6 +1598,13 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   aantal — is **refused**: there is no defined moment of the timeline for
   it to rank or count, and silently reading the segment list instead of a
   value is the error this rule exists to prevent.
+  On the wire the two routes differ by their range. The per-element fold
+  carries one (`sourceRole` or `sourcePath`, the relation of its set
+  source). The subject's own collapse carries none: of the
+  single-argument aggregations that carry an `elementObjecttype`,
+  `TOTAAL` alone may omit its range (since L2, `IR-SPEC.md` ch. 4.3), and
+  it then reads the subject itself, so its `elementObjecttype` and its
+  argument's `objecttype` both name the subject type (WF-083 (c)).
   The two temporal-total routes carry **opposite** input conventions, and
   the asymmetry is deliberate (ch. 8.4 keeps the two case conventions
   strictly apart):
@@ -2194,10 +2217,12 @@ threshold(B) = days(B)          for every toets except the leeg test
   timeline must pass — and an **empty set passes vacuously**. *(Re-scoped
   2026-09-16.)* That reading is right and it is **not** an implicit
   reading of a set-valued operand: the wire shape it used to describe —
-  an `AttributeReference` with `set: true` standing in a condition — is
-  ill-formed under WF-096, and it could not distinguish "alle" from "geen
-  van de" if it were admitted, since the set flag records that a
-  quantifier was written and never which one. The conjunctive lift is
+  an `AttributeReference` with `set: true` standing in a condition — was
+  ill-formed under WF-096 until L2 and cannot be written since (the flag
+  left the wire with B11, and a to-many hop in a condition is WF-053's),
+  and it could not distinguish "alle" from "geen van de" even where it
+  was written, since the set flag recorded that a quantifier was written
+  and never which one. The conjunctive lift is
   therefore stated where the quantifier is: **ch. 3.9a**, the quantifier
   fold, whose matrix is this qualifier applied per member. Counted when
   the clause was re-scoped: **zero** documents in the four zones carried
