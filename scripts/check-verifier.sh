@@ -78,7 +78,10 @@ EXPECTED_MIN_NEGATIEF=350   # 2026-09-10: measured 350 (corpus/negatief/**/ir.js
 # the WF-102 (c) witness whose message L2 changed, and five witnesses added after the lens. Raised
 # at L3 (91 -> 159): every rewritten witness of the type-system stamp list and every date witness
 # whose rule reads the precision pins its arm (62), and so do the six witnesses of the new arms.
-EXPECTED_MIN_EXPECT=159     # 2026-09-24: measured 159 (corpus/negatief/*/expect.txt)
+# Raised in the L3 fix round (159 -> 165): the five witnesses the lens asked for (two new arms,
+# WF-009 and WF-005; the abbreviation class of WF-017 (a); WF-001 in the two namespaces whose
+# message label moved) and the WF-001 witness that had no pin.
+EXPECTED_MIN_EXPECT=165     # 2026-09-24: measured 165 (corpus/negatief/*/expect.txt)
 
 # check 2: golden dumps — and the red corpus's documents, whose faults
 # are behavioural, never well-formedness — are verifier-clean.

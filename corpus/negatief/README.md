@@ -322,9 +322,13 @@ Every unit took the IR-SPEC keys (U4), every number the keys `whole`,
 `ONBEPAALD` (D24). Every witness was measured before its stamp: the L2 verifier
 on the document's L2 form against the L3 verifier on its L3 form, the
 translation of `spec/proposals/v1-migratie/m3.py`. On every document of the
-three zones the two reports agree but for their paths, except on the four the
-migration refuses (removed below) and on `wf017-dagsoortnaam-bindt-vreemde-dagsoort`,
-whose arm now reads the day kinds' own spellings. A rewritten witness of the
+three zones the two reports agree but for their paths and, in eight messages,
+for the name of the date type — the six `wf095-*` witnesses and the two
+`wf111-datumtijdgrens-*` witnesses name a `millisecond-precision date` where
+the L2 message wrote `datum-tijd` —, except on the four the migration refuses
+(removed below) and on `wf017-dagsoortnaam-bindt-vreemde-dagsoort`, whose arm
+now reads the day kinds' own spellings (measured again in the L3 fix round: these
+nine are the only reports whose text moved). A rewritten witness of the
 card's stamp list carries `expect.txt`, one literal line of the verifier
 message of the arm it pins, without a JSON pointer; so does every date witness
 whose rule reads the precision, and every witness added here. The arm column
@@ -335,14 +339,14 @@ rose from 91 to 159 (`scripts/check-verifier.sh`).
 
 | directory | rule | delta | stamp | arm | reason |
 | --- | --- | --- | --- | --- | --- |
-| `wf017-eenheidsleutel-schaduwt-kalenderafkorting` | WF-017 (a) | D55 | verwijderd-met-reden | a registry key that is a calendar spelling (the abbreviation `wk`) | the key is a third spelling of `schouwdag` beside its name and its plural `schouwdagen`, and a `DayKind` carries its name and one plural (m3.py: "a third spelling of the day kind "schouwdag" beside its name and the plural "schouwdagen": a DayKind carries its name and one plural"); the arm now reads the `plural`, where `wf017-meervoud-schaduwt-kalendereenheid` pins it |
-| `wf017-eenheidsleutel-schaduwt-kalendereenheid` | WF-017 (a) | D55 | verwijderd-met-reden | a registry key that is a calendar spelling (the plural `dagen`) | idem |
+| `wf017-eenheidsleutel-schaduwt-kalenderafkorting` | WF-017 (a) | D55 | verwijderd-met-reden | a registry key that is a calendar spelling (the abbreviation `wk`) | the key is a third spelling of `schouwdag` beside its name and its plural `schouwdagen`, and a `DayKind` carries its name and one plural (m3.py: "a third spelling of the day kind "schouwdag" beside its name and the plural "schouwdagen": a DayKind carries its name and one plural"); the arm now reads the `plural`, where `wf017-meervoud-schaduwt-kalenderafkorting` pins the abbreviation class (added in the L3 fix round, below) |
+| `wf017-eenheidsleutel-schaduwt-kalendereenheid` | WF-017 (a) | D55 | verwijderd-met-reden | a registry key that is a calendar spelling (the plural `dagen`) | idem; the class is pinned on the `plural` by `wf017-meervoud-schaduwt-kalendereenheid` |
 | `wf017-eenheidsleutel-schaduwt-tweede-meervoudsvorm` | WF-017 (a) | D55 | verwijderd-met-reden | a registry key that is a calendar spelling (the second plural `secondes`) | idem; the class is pinned on the `plural` by `wf017-meervoud-schaduwt-tweede-meervoudsvorm` |
 | `wf034-dagsoorteenheid-onbekende-dagsoort` | WF-034 (s) | D55 | verwijderd-met-reden | a registry value naming an undeclared day kind (the arm left with the registry) | a spelling stands on the day kind it belongs to or not at all, so there is no value to name an undeclared day kind (m3.py: "the registry entry names the day kind "havendag", which no declaration carries: the L3 shape has no registry, so a spelling is written on its own day kind or not at all"); arm (s) of WF-034 loses its object and becomes a history line in `spec/IR-SPEC.md` ch. 4.6 |
 | `wf092-canoniek-zonder-factor` | WF-092 (a) | B17 (i), U4 | herschreven (m) | a canonical unit without a factor | the conversion pair is spelled `canonical`/`factorToCanonical`, the missing half absent where it was null; the report moved only in its paths |
 | `wf092-factor-zonder-canoniek` | WF-092 (b) | B17 (i), U4 | herschreven (m) | a factor without a canonical unit | as the row above; the factor is `{num: 1, den: 1}` |
 | `wf092-noemer-zonder-factor` | WF-092 (a) | B17 (i), U4, D54 | herschreven (m) | a canonical unit without a factor, on the denominator of a rate | as the rows above; the denominator is spelled `denominator`. The unit system carries a map key other than the abbreviation, now a spelling (D54, not on the defect) |
-| `wf017-dagsoortnaam-bindt-vreemde-dagsoort` | WF-017 (b) | D55 | herschreven (m) | arm (b): the plural of one day kind is the name of another | measured: the one witness whose message moved. Until L3 the arm reported the registry key of a declared name bound to another day kind; the day kinds now carry their own spellings, and the arm reports the plural that is another day kind's name |
+| `wf017-dagsoortnaam-bindt-vreemde-dagsoort` | WF-017 (b) | D55 | herschreven (m) | arm (b): the plural of one day kind is the name of another | measured: the one witness whose arm moved (eight others changed only the name of the date type, see above). Until L3 the arm reported the registry key of a declared name bound to another day kind; the day kinds now carry their own spellings, and the arm reports the plural that is another day kind's name |
 | `wf017-dagsoortnaam-schaduwt-kalenderafkorting` | WF-017 | D55 | herschreven (m) | the declared-name clause: a name that is a calendar spelling (the abbreviation `wk`) | the name is the `DayKind`'s `name`; the report moved only in its path (`/model/dayKinds/2/name`) |
 | `wf017-daykind-shadows-builtin` | WF-017 | D55 | herschreven (m) | the declared-name clause (the singular `dag`) | as the row above (`/model/dayKinds/0/name`) |
 | `wf095-bronsnippet` | WF-095 | B15 | herschreven (m) | the lexeme of a millisecond-precision date literal (a day-first snippet) | the literal's type is `Date` with `precision: millisecond`, which is what makes WF-095 its rule; the message names the date by its precision |
@@ -462,8 +466,8 @@ sibling arm at L3, so that a fragment tells the arms apart.
 | `wf049-read-at-datetime` | WF-049 | B15, B18 | herschreven (m) | a temporal read at a millisecond-precision date | the rule reads the date's precision, a field of `Date` since L3; the host parameter's facet (B18) is not on the defect; the report is unchanged |
 | `wf084-bare-non-iso` | WF-084 | B15 | herschreven (m) | the lexeme of a day-precision date literal (day-first) | the rule reads the date's precision, a field of `Date` since L3; the report is unchanged |
 | `wf084-source-snippet` | WF-084 | B15 | herschreven (m) | idem (a source snippet) | the rule reads the date's precision, a field of `Date` since L3; the report is unchanged |
-| `wf111-datumtijdgrens-attribuut` | WF-111 | B15 | herschreven (m) | a millisecond-precision window bound (an attribute) | the rule reads the date's precision, a field of `Date` since L3; the report is unchanged |
-| `wf111-datumtijdgrens-literal` | WF-111 | B15 | herschreven (m) | a millisecond-precision window bound (a literal) | the rule reads the date's precision, a field of `Date` since L3; the report is unchanged |
+| `wf111-datumtijdgrens-attribuut` | WF-111 | B15 | herschreven (m) | a millisecond-precision window bound (an attribute) | the rule reads the date's precision, a field of `Date` since L3; the message names the bound a `millisecond-precision date` where L2 wrote `datum-tijd`, and the arm is unchanged |
+| `wf111-datumtijdgrens-literal` | WF-111 | B15 | herschreven (m) | a millisecond-precision window bound (a literal) | the rule reads the date's precision, a field of `Date` since L3; the message names the bound a `millisecond-precision date` where L2 wrote `datum-tijd`, and the arm is unchanged |
 | `wf007-whole-with-decimals` | WF-007 | U5 | herschreven (m) | the precision forms (`whole` with decimals) | WF-007 gained the presentation arm; the precision fields are spelled `whole`/`decimals`, and the witness pins the arm it always held |
 | `wf005-count-zero` | WF-005 | — | herschreven (m) | an attribute's facet with count 0 | WF-005 gained the parameter-facet arm; the witness pins the attribute arm it always held |
 
@@ -479,4 +483,25 @@ each).
 | `wf017-meervoud-schaduwt-kalendereenheid` | WF-017 (a) | D55 (U7) | toegevoegd | arm (a): a plural that is a calendar spelling (`dagen`) | the arm on the `plural`, which the registry-key witnesses above held; `corpus/golden/jutterswet-schouwrooster` with an unused plural respelled |
 | `wf017-meervoud-schaduwt-tweede-meervoudsvorm` | WF-017 (a) | D55 (U7) | toegevoegd | idem (the second plural `secondes`) | the second-plural class, which no other witness reaches; as the row above |
 | `wf017-meervoud-botst-met-vreemd-meervoud` | WF-017 (b) | D55 (U7) | toegevoegd | arm (b): a plural that is another day kind's plural, differing in case alone | the plural-against-plural collision the registry could not show, and the pin of the ch. 2.1 identity, which left `corpus/golden/jutterswet-vormenkabinet` with its registry entries; as the row above |
-| `wf005-parameterfacet-telling-nul` | WF-005 | B18 (U6) | toegevoegd | a parameter's facet with count 0 | the new arm: WF-018 defers a parameter's facet to WF-005; `corpus/golden/jutterswet-penningvintage` with the count set to 0 |
+| `wf005-parameterfacet-telling-nul` | WF-005 | B18 (U6) | toegevoegd | a parameter's facet with count 0 | the new arm: WF-018 defers a parameter's facet to WF-005; `corpus/golden/anchor/jutterswet-penningvintage` with the count set to 0 |
+
+#### Added and pinned in the L3 fix round (2026-09-24)
+
+The lens on the L3 union found two arms that the list forms of L3 made
+necessary and did not have — an abbreviation declared twice in one unit system,
+and a parameter's facet with more than one period — and two classes whose
+witness had left with the registry or was never written: the abbreviation class
+of WF-017 arm (a), and WF-001 in the two namespaces whose nodes L3 rewrote,
+whose messages now name the wire lists `unitSystems` and `dayKinds`. Each
+witness carries `expect.txt`, and so does the one WF-001 witness that had
+none. The negatief zone went from 402 to 407 documents, and
+`EXPECTED_MIN_EXPECT` rose from 159 to 165 (`scripts/check-verifier.sh`).
+
+| directory | rule | delta | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf001-duplicate-parameter` | WF-001 | U6 | herschreven (m) | the `parameters` namespace: two names differing in case alone | the defect sits on the parameter's `name`, spelled `naam` until L3 (U6); the report is unchanged, and `expect.txt` pins it since the fix round |
+| `wf001-dubbele-dagsoort` | WF-001 | D55 (U7) | toegevoegd | the `dayKinds` namespace: two day-kind names differing in case alone | the message names the namespace by its wire list `dayKinds` since the fix round (the v0 `dagsoorten` until then); row 3 of the collision table of IR-SPEC ch. 2.9 had no witness; `corpus/golden/jutterswet-schouwrooster` with a third day kind `Schouwdag` |
+| `wf001-dubbel-eenheidstelsel` | WF-001 | D54 (U8) | toegevoegd | the `unitSystems` namespace: two unit-system names differing in case alone | the message names the namespace by its wire list `unitSystems` since the fix round (the v0 `eenheidstelsels` until then); `corpus/golden/jutterswet-vangstklem` with a second unit system `gewicht` |
+| `wf009-dubbele-afkorting` | WF-009 | D54 (U8) | toegevoegd | one abbreviation declared twice in one unit system | the new arm: the list form can write a second `t`, which the verifier, `ref` and the ASP backend passed while the Drools loader refused the document; `corpus/golden/jutterswet-vangstklem` with a second `t` that converts to `kg` by 100 |
+| `wf005-parameterfacet-telling-twee` | WF-005 | B18 (U6) | toegevoegd | a parameter's facet with count 2 | the new arm: a parameter's count is 1 while `spec/RUNTIME-SEMANTICS.md` ch. 3.12 leaves multi-period grids open, because no executor evaluates it; `corpus/golden/anchor/jutterswet-penningvintage` with the count set to 2 |
+| `wf017-meervoud-schaduwt-kalenderafkorting` | WF-017 (a) | D55 (U7) | toegevoegd | arm (a): a plural that is a calendar abbreviation (`wk`) | the abbreviation class, whose witness left with `wf017-eenheidsleutel-schaduwt-kalenderafkorting`; `corpus/golden/jutterswet-schouwrooster` with the plural of `stormvloeddag` respelled `wk` |

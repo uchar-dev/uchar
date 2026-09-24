@@ -12,5 +12,5 @@ attribute, without a timeline name (delta B18 of
 a bare granularity and no count, so this clause had nothing to read on a
 parameter. The count is the facet's own field, so its rule is the facet's.
 
-The document is `corpus/golden/jutterswet-penningvintage` with the count of the
+The document is `corpus/golden/anchor/jutterswet-penningvintage` with the count of the
 facet of `penningbedrag` set to 0. `expect.txt` pins the arm.
