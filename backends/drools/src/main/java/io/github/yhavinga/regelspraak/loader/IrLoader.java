@@ -67,11 +67,13 @@ import java.util.Map;
  * fold ({@code bronRol}, {@code bronPad}) and of a quantifier fold, the recipient join of a verdeling and the
  * back-link of an objectcreatie ({@code verbindendeRol}), a union selection's {@code sourceRole}, a role check's
  * {@code factType}/{@code role}, a creation's symbolic block and a uniqueness scope's {@code scopeRol}. A
- * reference node's type is the declaration's (IR-SPEC ch. 2.10), never an annotation. The nodes L2 changed —
- * the five reference nodes, {@code RoleMembership}, {@code Kenmerk}, {@code Onopgelost}, the creation with its
- * steps and the uniqueness — are read as strictly as the M1 nodes, with their exact keys and a JSON pointer: a
- * field the L2 shape does not have is an unknown field, a binding the shape requires is a missing field, and an
- * {@code Onbekend} datatype or a role check of the L1 shape is an unknown node — each a {@link Documentfout}.
+ * reference node's type is the declaration's (IR-SPEC ch. 2.10), never an annotation. Since L2's fix round every
+ * node this loader reads — not only the nodes L2 changed — is read with the schema's exact keys and a JSON pointer:
+ * a field the shape does not have is an unknown field, a binding the shape requires is a missing field, and an
+ * {@code Onbekend} datatype or a role check of the L1 shape is an unknown node — each a {@link Documentfout}. So is
+ * a reference-layer shape every executor refuses by name: a fold's set source its kind cannot consume, a count's
+ * range that is a path, a role check naming no link the subject can be in, and a characteristic read at a value
+ * position ({@link #keurVouwbron}, {@link #keurOnderwerpen}).
  * The frontend records this loader fills keep their v0 components (they are the vendored slice the toolchain
  * compiles); what the wire no longer carries is filled with {@code null}, {@code false} or an empty list, and
  * what the records have no component for rides BESIDE the model in {@link Loaded} — the same side-channel
