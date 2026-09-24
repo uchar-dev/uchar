@@ -1048,13 +1048,14 @@ names a role of the fold subject and no member of the element type
 `AANTAL` and of nothing else, and `AANTAL` reads nothing but such a
 source). Since L2 no field on the node records which reading applies, so a
 collision of names is decided by the declarations: a count whose written
-name is also an attribute of the element type is no count source — it
-reads as that attribute, and a count over an attribute is refused (WF-093
-(b); `ref` and the ASP backend fault with `a count over …, which is an
-attribute of …`). A role whose declared name and declared plural both name
-attributes of the element type, or whose name does while it declares no
-plural, therefore cannot be counted; where only one of the two spellings
-collides, the count is written with the other. Until L2 the recognition
+name is also a member of the element type (an attribute or a
+characteristic) is no count source — it reads as that member, and a count
+over a member is refused (WF-093 (b); on an attribute `ref` and the ASP
+backend fault with `a count over …, which is an attribute of …`). A role
+whose declared name and declared plural both name members of the element
+type, or whose name does while it declares no plural, therefore cannot be
+counted; where only one of the two spellings collides, the count is written
+with the other. Until L2 the recognition
 keyed on the unknown-type sentinel on the source's own `type` (B13, B16).
 
 **The self-denoting written form is a plain count source.** The written
