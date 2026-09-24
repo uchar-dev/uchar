@@ -74,8 +74,9 @@ EXPECTED_MIN_NEGATIEF=350   # 2026-09-10: measured 350 (corpus/negatief/**/ir.js
 # The arm fragments (U1) are floored for the same reason and in the same regime: a vanished
 # expect.txt takes the arm pin of a rewritten witness with it, and its directory keeps passing on
 # the rule number alone. Measured at the L2 landing: every rewritten or replaced witness of the
-# reference layer carries one.
-EXPECTED_MIN_EXPECT=84      # 2026-09-24: measured 84 (corpus/negatief/*/expect.txt)
+# reference layer carries one. Raised in the L2 fix round (84 -> 91): the restored WF-046 witness,
+# the WF-102 (c) witness whose message L2 changed, and five witnesses added after the lens.
+EXPECTED_MIN_EXPECT=91      # 2026-09-24: measured 91 (corpus/negatief/*/expect.txt)
 
 # check 2: golden dumps — and the red corpus's documents, whose faults
 # are behavioural, never well-formedness — are verifier-clean.
