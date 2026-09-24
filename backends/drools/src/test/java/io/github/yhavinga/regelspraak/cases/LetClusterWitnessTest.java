@@ -191,7 +191,7 @@ class LetClusterWitnessTest {
         return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"%s\"}"
                 .formatted(geheel, dec, teken);
     }
-    private static String num(int dec) { return num(dec, false, "ONBEPAALD"); }
+    private static String num(int dec) { return num(dec, false, "unspecified"); }
 
     private static String attr(String naam, int dec, boolean geheel, String teken) {
         return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
@@ -200,7 +200,7 @@ class LetClusterWitnessTest {
     }
 
     private static String lit(String waarde, int dec, boolean geheel) {
-        return IrPad.literal(waarde, num(dec, geheel, "ONBEPAALD"), waarde);
+        return IrPad.literal(waarde, num(dec, geheel, "unspecified"), waarde);
     }
     private static String lit(String waarde, int dec) { return lit(waarde, dec, false); }
 
@@ -262,43 +262,43 @@ class LetClusterWitnessTest {
 
     /** Binding, reuse, shadowing and the branch guard on one Jutter. */
     private static String rekenModel() {
-        String inkomen = attr("inkomen", 2, false, "NIET_NEGATIEF");
-        String kindertal = attr("kindertal", 0, true, "NIET_NEGATIEF");
-        String basis = let("ink", inkomen, binair("PLUS", bref("ink", 2), lit("100.00", 2), 2), 2);
-        String dubbelop = let("ink", inkomen, binair("PLUS", bref("ink", 2), bref("ink", 2), 2), 2);
+        String inkomen = attr("inkomen", 2, false, "nonNegative");
+        String kindertal = attr("kindertal", 0, true, "nonNegative");
+        String basis = let("ink", inkomen, binair("plus", bref("ink", 2), lit("100.00", 2), 2), 2);
+        String dubbelop = let("ink", inkomen, binair("plus", bref("ink", 2), bref("ink", 2), 2), 2);
         String geschaduwd = let("x", inkomen,
                 let("y", let("x", lit("5.00", 2), bref("x", 2), 2),
-                        binair("PLUS", bref("y", 2), bref("x", 2), 2), 2), 2);
+                        binair("plus", bref("y", 2), bref("x", 2), 2), 2), 2);
         String tak = let("a", inkomen,
-                let("b", binair("MAAL", kindertal, lit("100.00", 2), 2),
-                        ite(verg("GROTER", bref("b", 2), bref("a", 2)), lit("1.00", 2), lit("2.00", 2), 2), 2), 2);
-        return model(String.join(",", attribuut("inkomen", num(2, false, "NIET_NEGATIEF")),
-                        attribuut("kindertal", num(0, true, "NIET_NEGATIEF")), attribuut("basis", num(2)),
+                let("b", binair("times", kindertal, lit("100.00", 2), 2),
+                        ite(verg("greater", bref("b", 2), bref("a", 2)), lit("1.00", 2), lit("2.00", 2), 2), 2), 2);
+        return model(String.join(",", attribuut("inkomen", num(2, false, "nonNegative")),
+                        attribuut("kindertal", num(0, true, "nonNegative")), attribuut("basis", num(2)),
                         attribuut("dubbelop", num(2)), attribuut("geschaduwd", num(2)), attribuut("tak", num(2))), "",
-                new String[]{regel("basis van een jutter", attr("basis", 2, false, "ONBEPAALD"), basis),
-                        regel("dubbelop van een jutter", attr("dubbelop", 2, false, "ONBEPAALD"), dubbelop),
-                        regel("geschaduwd van een jutter", attr("geschaduwd", 2, false, "ONBEPAALD"), geschaduwd),
-                        regel("tak van een jutter", attr("tak", 2, false, "ONBEPAALD"), tak)},
+                new String[]{regel("basis van een jutter", attr("basis", 2, false, "unspecified"), basis),
+                        regel("dubbelop van een jutter", attr("dubbelop", 2, false, "unspecified"), dubbelop),
+                        regel("geschaduwd van een jutter", attr("geschaduwd", 2, false, "unspecified"), geschaduwd),
+                        regel("tak van een jutter", attr("tak", 2, false, "unspecified"), tak)},
                 "");
     }
 
     /** ch. 10.6's contrast: the same product with and without the Let binding, on one subject. */
     private static String barriereModel() {
-        String inkomen = attr("inkomen", 2, false, "NIET_NEGATIEF");
-        return model(String.join(",", attribuut("inkomen", num(2, false, "NIET_NEGATIEF")),
+        String inkomen = attr("inkomen", 2, false, "nonNegative");
+        return model(String.join(",", attribuut("inkomen", num(2, false, "nonNegative")),
                         attribuut("metlet", num(4)), attribuut("zonderlet", num(4))), "",
                 new String[]{
-                        regel("met let van een jutter", attr("metlet", 4, false, "ONBEPAALD"),
-                                let("ink", inkomen, binair("MAAL", bref("ink", 2), lit("0.21", 2), 4), 4)),
-                        regel("zonder let van een jutter", attr("zonderlet", 4, false, "ONBEPAALD"),
-                                binair("MAAL", inkomen, lit("0.21", 2), 4))},
+                        regel("met let van een jutter", attr("metlet", 4, false, "unspecified"),
+                                let("ink", inkomen, binair("times", bref("ink", 2), lit("0.21", 2), 4), 4)),
+                        regel("zonder let van een jutter", attr("zonderlet", 4, false, "unspecified"),
+                                binair("times", inkomen, lit("0.21", 2), 4))},
                 "");
     }
 
     /** A ch. 7 prioritizedDefaults group whose first default's CONSEQUENCE is a Let over an attribute. */
     private static String defaultsModel() {
-        String consequentie = let("g", attr("grondslag", 2, false, "NIET_NEGATIEF"),
-                binair("PLUS", bref("g", 2), lit("100.00", 2), 2), 2);
+        String consequentie = let("g", attr("grondslag", 2, false, "nonNegative"),
+                binair("plus", bref("g", 2), lit("100.00", 2), 2), 2);
         String groep = (",\"prioritizedDefaults\":[{\"node\":\"PrioritizedDefaults\",\"name\":\"toeslag\","
                 + "\"subject\":\"Jutter\",\"attribute\":\"toeslag\",\"defaults\":["
                 + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}},"
@@ -306,10 +306,10 @@ class LetClusterWitnessTest {
                 + "{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,\"parts\":[],\"source\":{\"snippet\":\"altijd\"}},"
                 + "\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
                 + "\"source\":{\"snippet\":\"toeslag\"},\"validity\":{\"node\":\"Validity\"}}]")
-                .formatted(verg("GROTER_OF_GELIJK", attr("kindertal", 0, true, "NIET_NEGATIEF"), lit("2", 0, true)),
+                .formatted(verg("greaterOrEqual", attr("kindertal", 0, true, "nonNegative"), lit("2", 0, true)),
                         consequentie, lit("0.00", 2));
-        return model(String.join(",", attribuut("kindertal", num(0, true, "NIET_NEGATIEF")),
-                        attribuut("grondslag", num(2, false, "NIET_NEGATIEF")), attribuut("toeslag", num(2))), "",
+        return model(String.join(",", attribuut("kindertal", num(0, true, "nonNegative")),
+                        attribuut("grondslag", num(2, false, "nonNegative")), attribuut("toeslag", num(2))), "",
                 new String[]{}, groep);
     }
 
@@ -317,25 +317,25 @@ class LetClusterWitnessTest {
      *  rule reads a negated kenmerk that has a producer, so its salience is -1). Only a freshness watch that
      *  descends the Let keeps the consumer reactive on that producer's write. */
     private static String reactiviteitModel() {
-        String inkomen = attr("inkomen", 2, false, "NIET_NEGATIEF");
+        String inkomen = attr("inkomen", 2, false, "nonNegative");
         String vermistDoel = ("{\"node\":\"AttributeReference\",\"attribute\":\"vermist\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"Een Jutter is vermist\"}}");
         String waar = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}";
         String nietVermist = ("{\"node\":\"CharacteristicCheck\",\"characteristic\":\"vermist\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"hij niet vermist is\"}}");
         String gewogen = let("x", inkomen,
-                binair("MAAL", bref("x", 2), attr("factor", 4, false, "ONBEPAALD"), 6), 6);
-        return model(String.join(",", attribuut("inkomen", num(2, false, "NIET_NEGATIEF")),
+                binair("times", bref("x", 2), attr("factor", 4, false, "unspecified"), 6), 6);
+        return model(String.join(",", attribuut("inkomen", num(2, false, "nonNegative")),
                         attribuut("factor", num(4)), attribuut("gewogen", num(6))),
                 "{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"adjectival\"}",
                 new String[]{
                         // never true for the case input — its only job is to BE a producer of `vermist`, which
                         // is what sinks the factor rule's stratum below this consumer's.
                         regel("vermissing van een jutter", "KENMERKTOEKENNING", vermistDoel, waar,
-                                verg("GROTER", inkomen, lit("999999.00", 2))),
-                        regel("factor van een jutter", "BEREKENING", attr("factor", 4, false, "ONBEPAALD"),
+                                verg("greater", inkomen, lit("999999.00", 2))),
+                        regel("factor van een jutter", "BEREKENING", attr("factor", 4, false, "unspecified"),
                                 lit("3.0000", 4), nietVermist),
-                        regel("gewogen van een jutter", attr("gewogen", 6, false, "ONBEPAALD"), gewogen)},
+                        regel("gewogen van een jutter", attr("gewogen", 6, false, "unspecified"), gewogen)},
                 "");
     }
 }

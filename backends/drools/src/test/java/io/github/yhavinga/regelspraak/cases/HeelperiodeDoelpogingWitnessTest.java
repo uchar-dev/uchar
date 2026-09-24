@@ -58,7 +58,7 @@ class HeelperiodeDoelpogingWitnessTest {
         // doel reading of its own seinhoogte is a different question.
         ObjectNode ir = basis();
         ObjectNode sein = objecttype(ir, "Sein");
-        IrPad.timeline(IrPad.addAttribute(sein, "seinhoogte", getal()), "MAAND");
+        IrPad.timeline(IrPad.addAttribute(sein, "seinhoogte", getal()), "month");
         IrPad.addAttribute(objecttype(ir, "Kustvak"), "vlagsein", getal());
         IrPad.modelLijst(ir, "factTypes").add(JSON.readTree("""
                 { "node": "FactType", "name": "vlagvoering", "reciprocal": false, "roles": [
@@ -112,12 +112,12 @@ class HeelperiodeDoelpogingWitnessTest {
         // attempt finds `gehesen` and lowers, and the doel attempt is never reached: both branches answer 0, ref's
         // answer. The refusal itself stays pinned by tests 1 and 3.
         ObjectNode ir = basis();
-        IrPad.timeline(IrPad.characteristic(objecttype(ir, "Kustvak"), "gehesen"), "JAAR");
+        IrPad.timeline(IrPad.characteristic(objecttype(ir, "Kustvak"), "gehesen"), "year");
         ObjectNode sein = objecttype(ir, "Sein");
         IrPad.timeline(sein.putArray("characteristics").addObject()
-                .put("node", "Characteristic").put("name", "Gehesen").put("kind", "BIJVOEGLIJK"), "JAAR");
+                .put("node", "Characteristic").put("name", "Gehesen").put("kind", "adjectival"), "year");
         ObjectNode k = (ObjectNode) IrPad.versie(ir, "factCreations", 0, 0).get("condition");
-        k.put("kenmerk", "Gehesen").putNull("eigenaar");
+        k.put("characteristic", "Gehesen");
         BeideTakken.groen(schrijf(ir),
                 geval("\"characteristics\": [], \"characteristicTimelines\": { \"gehesen\": " + HALF + " }, \"attributes\": {}",
                         "", "\"characteristicTimelines\": { \"Gehesen\": " + JAAR + " }",
@@ -147,8 +147,8 @@ class HeelperiodeDoelpogingWitnessTest {
         // clingo PASS, both branches PLAYED — 2 with V1 hoisted all year, 0 with V1 hoisted half a year (the doel
         // reading would be 1 in both).
         ObjectNode ir = basis();
-        IrPad.timeline(IrPad.characteristic(objecttype(ir, "Kustvak"), "gehesen"), "JAAR");
-        ((ObjectNode) IrPad.versie(ir, "factCreations", 0, 0).get("condition")).putNull("eigenaar");
+        IrPad.timeline(IrPad.characteristic(objecttype(ir, "Kustvak"), "gehesen"), "year");
+        ((ObjectNode) IrPad.versie(ir, "factCreations", 0, 0).get("condition")).remove("host");
         Path p = schrijf(ir);
         String s1 = "\"characteristicTimelines\": { \"gehesen\": " + JAAR + " }";
         String s2 = "\"characteristicTimelines\": { \"gehesen\": " + HALF + " }";
@@ -174,7 +174,7 @@ class HeelperiodeDoelpogingWitnessTest {
 
     private static ObjectNode getal() {
         return JSON.createObjectNode().put("node", "Number").put("whole", true).put("decimals", 0)
-                .put("sign", "ONBEPAALD");
+                .put("sign", "unspecified");
     }
 
     private static String metWaarde(String segmenten) throws Exception {

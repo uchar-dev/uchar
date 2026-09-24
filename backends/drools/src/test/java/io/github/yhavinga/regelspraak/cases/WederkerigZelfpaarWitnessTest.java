@@ -144,7 +144,7 @@ class WederkerigZelfpaarWitnessTest {
         com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
                 JSON.readTree(Files.readString(CORPUS.resolve("anchor/jutterswet-maatschap").resolve("ir.json")));
         ((com.fasterxml.jackson.databind.node.ArrayNode) IrPad.objectType(ir, "Jutter").get("characteristics"))
-                .addObject().put("node", "Characteristic").put("name", "maat").put("kind", "BIJVOEGLIJK");
+                .addObject().put("node", "Characteristic").put("name", "maat").put("kind", "adjectival");
         Path tmp = Files.createTempFile("naamdeling-maat", ".json");
         try {
             Files.writeString(tmp, ir.toString());
@@ -173,9 +173,9 @@ class WederkerigZelfpaarWitnessTest {
         com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
                 JSON.readTree(Files.readString(CORPUS.resolve("anchor/jutterswet-maatschap").resolve("ir.json")));
         com.fasterxml.jackson.databind.node.ObjectNode ft2 = IrPad.declaratie(ir, "factTypes", "maatschap").deepCopy();
-        ft2.put("naam", "maatschap2");
-        ((com.fasterxml.jackson.databind.node.ObjectNode) ft2.get("rollen").get(0)).put("naam", "tweedemaat");
-        ((com.fasterxml.jackson.databind.node.ObjectNode) ft2.get("rollen").get(0)).put("meervoud", "tweedematen");
+        ft2.put("name", "maatschap2");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) ft2.get("roles").get(0)).put("name", "tweedemaat");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) ft2.get("roles").get(0)).put("plural", "tweedematen");
         IrPad.modelLijst(ir, "factTypes").add(ft2);
         Path tmp = Files.createTempFile("ambigu-zelfpaar", ".json");
         try {

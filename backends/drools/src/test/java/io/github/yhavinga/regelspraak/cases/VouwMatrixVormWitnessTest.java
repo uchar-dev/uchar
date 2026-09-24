@@ -226,7 +226,7 @@ class VouwMatrixVormWitnessTest {
     private Path diepeSamenstelling() throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SAMENGESTELD.resolve("ir.json")));
         houdRegels(doc, "paraat bij ploegkeur", "redderstal van een reddingspost");
-        ((ObjectNode) IrPad.versie(doc, "rules", "paraat bij ploegkeur").get("condition")).set("toets", JSON.readTree(DIEPE_MATRIX));
+        ((ObjectNode) IrPad.versie(doc, "rules", "paraat bij ploegkeur").get("condition")).set("test", JSON.readTree(DIEPE_MATRIX));
         return schrijf(doc, "diep-ir");
     }
 
@@ -238,7 +238,7 @@ class VouwMatrixVormWitnessTest {
                 { "node": "Parameter", "name": "bovengrens",
                   "datatype": { "node": "Number", "whole": true, "decimals": 0,
                                 "sign": "nonNegative" } }"""));
-        ((ObjectNode) IrPad.versie(doc, "rules", "bekwaam bij keurgrens").get("condition")).set("toets", JSON.readTree(TWEE_PARAM_MATRIX));
+        ((ObjectNode) IrPad.versie(doc, "rules", "bekwaam bij keurgrens").get("condition")).set("test", JSON.readTree(TWEE_PARAM_MATRIX));
         return schrijf(doc, "twee-param-ir");
     }
 
@@ -250,7 +250,7 @@ class VouwMatrixVormWitnessTest {
         IrPad.addAttribute(IrPad.objectType(doc, "Loods"), "rang", JSON.readTree("{ \"node\": \"Text\" }"));
         IrPad.modelLijst(doc, "parameters").add(JSON.readTree("""
                 { "node": "Parameter", "name": "keurrang", "datatype": { "node": "Text" } }"""));
-        ((ObjectNode) IrPad.versie(doc, "rules", "bekwaam bij keurgrens").get("condition")).set("toets", JSON.readTree(TEKST_PARAM_MATRIX));
+        ((ObjectNode) IrPad.versie(doc, "rules", "bekwaam bij keurgrens").get("condition")).set("test", JSON.readTree(TEKST_PARAM_MATRIX));
         return schrijf(doc, "tekst-param-ir");
     }
 

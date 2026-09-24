@@ -44,21 +44,21 @@ class CreatieguardPositieWitnessTest {
     /** The admitted position: the window as an ALLE member of an anker-side guard. V1 (the Kustvak) is gehesen, so
      *  on 2024-06-15 the guard holds and both seinen of its post get the relation; in a time-free session none. */
     @Test void het_venster_als_alle_lid_van_een_ankerguard_speelt() throws Exception {
-        Path ir = document(samen("ALLE", GEHESEN_ANKER, VENSTER));
+        Path ir = document(samen("all", GEHESEN_ANKER, VENSTER));
         BeideTakken.groen(ir, casus("2024-06-15", "2"), "binnen het venster: twee vakseinen");
         BeideTakken.groen(ir, casus(null, "0"), "tijdvrij: het venster matcht nooit");
     }
 
     /** WF-112 at the guard: both branches name the quantifier and the rule. */
     @Test void een_venster_onder_geen_in_een_guard_weigeren_beide_takken_bij_naam() throws Exception {
-        BeideTakken.geweigerd(document(samen("GEEN", GEHESEN_ANKER, VENSTER)), casus(null, "0"),
+        BeideTakken.geweigerd(document(samen("none", GEHESEN_ANKER, VENSTER)), casus(null, "0"),
                 "GEEN-samenstelling (WF-112)", "GEEN[gehesen, venster] als guard");
     }
 
     /** WF-109's first doel fence: a doel host inside a composite binds nothing, even where both checks are hosted
      *  on the doel's supertype and the doel pattern could carry them. */
     @Test void een_doelgastheer_in_een_samenstelling_weigeren_beide_takken_bij_naam() throws Exception {
-        BeideTakken.geweigerd(document(samen("ALLE", GEHESEN_BAKEN, GEHESEN_BAKEN)), casus(null, "1"),
+        BeideTakken.geweigerd(document(samen("all", GEHESEN_BAKEN, GEHESEN_BAKEN)), casus(null, "1"),
                 "doelgastheer binnen een samengestelde of genavigeerde voorwaarde", "ALLE[host Baken, host Baken]");
     }
 

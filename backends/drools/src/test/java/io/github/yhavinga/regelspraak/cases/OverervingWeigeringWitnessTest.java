@@ -99,11 +99,11 @@ class OverervingWeigeringWitnessTest {
         ObjectNode ir = goldenIr(WRAKBASIS);
         ((ObjectNode) IrPad.rulesLijst(ir, "rules").get(0)).put("name", "uitkering van een strandrecht (kaal)");
         ObjectNode regel = IrPad.versie(ir, "rules", 0, 0);
-        ((ObjectNode) regel.get("target")).put("objecttype", "Strandrecht");
-        ((ObjectNode) regel.get("value").get("links")).put("objecttype", "Strandrecht");
+        ((ObjectNode) regel.get("target")).put("subjectType", "Strandrecht");
+        ((ObjectNode) regel.get("value").get("left")).put("subjectType", "Strandrecht");
         ObjectNode pd = (ObjectNode) IrPad.rulesLijst(ir, "prioritizedDefaults").get(0);
-        pd.put("naam", "uitkering van een wrakrecht").put("onderwerp", "Wrakrecht");
-        ((ObjectNode) pd.get("defaults").get(1).get("consequentie")).put("objecttype", "Wrakrecht");
+        pd.put("name", "uitkering van een wrakrecht").put("subject", "Wrakrecht");
+        ((ObjectNode) pd.get("defaults").get(1).get("consequence")).put("subjectType", "Wrakrecht");
 
         assertNull(CaseRunner.speelCase(model("overerving-regel-4", ir), geval(
                 "{ \"format\": \"uchar-case-v0\", \"asOfDate\": null, \"input\": { \"instances\": ["
@@ -143,9 +143,9 @@ class OverervingWeigeringWitnessTest {
         ObjectNode ir = goldenIr(KETEN);
         ArrayNode pds = IrPad.rulesLijst(ir, "prioritizedDefaults");
         ObjectNode eersteGroep = (ObjectNode) pds.get(0);              // Strandrecht.uitkering
-        eersteGroep.put("ongeordend", true);
+        eersteGroep.put("unordered", true);
         ObjectNode tweede = eersteGroep.deepCopy();
-        tweede.put("naam", "uitkering van een strandrecht #2");
+        tweede.put("name", "uitkering van een strandrecht #2");
         pds.insert(1, tweede);
 
         Path irPad = model("overerving-geerfde-set", ir);
@@ -165,9 +165,9 @@ class OverervingWeigeringWitnessTest {
         ObjectNode ir = goldenIr(KETEN);
         ArrayNode pds = IrPad.rulesLijst(ir, "prioritizedDefaults");
         ObjectNode wrak = (ObjectNode) pds.get(1);                     // Wrakrecht.uitkering
-        wrak.put("ongeordend", true);
+        wrak.put("unordered", true);
         ObjectNode tweede = wrak.deepCopy();
-        tweede.put("naam", "uitkering van een wrakrecht #2");
+        tweede.put("name", "uitkering van een wrakrecht #2");
         pds.add(tweede);
 
         Path irPad = model("overerving-eigen-set", ir);
@@ -186,7 +186,7 @@ class OverervingWeigeringWitnessTest {
         // value. Versioned rules are a live corpus form, so this is not a hypothetical.
         ObjectNode ir = goldenIr(WRAKBASIS);
         ObjectNode geldigheid = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("validity");
-        geldigheid.put("vanaf", "2020-01-01");
+        geldigheid.put("from", "2020-01-01");
 
         Path irPad = model("overerving-venster", ir);
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
@@ -214,7 +214,7 @@ class OverervingWeigeringWitnessTest {
         // answer 71; this test is the facet half, on a shape no golden can hold (a temporal READ into a
         // scalar target is Phase F in this backend and faults in ref).
         ObjectNode ir = goldenIr(KETEN);
-        IrPad.timeline(IrPad.attribute(IrPad.objectType(ir, "Strandrecht"), "grondslag"), "JAAR");
+        IrPad.timeline(IrPad.attribute(IrPad.objectType(ir, "Strandrecht"), "grondslag"), "year");
         RegelSpraakModel m = IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-temporeel", ir)))).model();
         Objecttype wrak = m.objecttypeOpNaam("Wrakrecht");
         assertEquals(RegelSpraakModel.Granulariteit.JAAR, wrak.granulariteitVan("grondslag"));
@@ -263,7 +263,7 @@ class OverervingWeigeringWitnessTest {
         // shape is therefore RESIDUE, not a newly-closed hole; the hole was the degenerate twin, which M1
         // made unwritable (its witness is now a loader refusal in loader.LaderWeigeringWitnessTest).
         ObjectNode ir = goldenIr(KETEN);
-        benoemdeTijdlijn(ir, /*variabelStartpunt=*/true, /*granulariteit=*/"JAAR");
+        benoemdeTijdlijn(ir, /*variabelStartpunt=*/true, /*granulariteit=*/"year");
         startpuntOp(ir, "Kustgemeente");
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
                 () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-variabele-tijdlijn", ir)))));
@@ -279,7 +279,7 @@ class OverervingWeigeringWitnessTest {
         // (probe p1): verifier PASS, merge base EXCLUDE (the broad refusal caught it), head PLAYED 4 —
         // so the narrowing FREES a shape as well as catching two, and this test is what holds it free.
         ObjectNode ir = goldenIr(KETEN);
-        benoemdeTijdlijn(ir, /*variabelStartpunt=*/false, /*granulariteit=*/"JAAR");
+        benoemdeTijdlijn(ir, /*variabelStartpunt=*/false, /*granulariteit=*/"year");
         Path irPad = model("keten-vast-startpunt", ir);
         assertNull(CaseRunner.speelCase(irPad, geval(KETEN, "case1-basis.json")));
     }
@@ -363,17 +363,17 @@ class OverervingWeigeringWitnessTest {
      *  granularity facet WF-005 demands (the declaration's own). This is the whole §13.3.6.9 shape,
      *  verifier-clean by construction rather than by luck. */
     private static void benoemdeTijdlijn(ObjectNode ir, boolean variabelStartpunt, String granulariteit) {
-        IrPad.modelLijst(ir, "timelines").add(JSON.createObjectNode().put("node", "Tijdlijn").put("naam", "boekjaar")
-                .put("variabelStartpunt", variabelStartpunt).put("granulariteit", granulariteit).put("aantal", 1));
+        IrPad.modelLijst(ir, "timelines").add(JSON.createObjectNode().put("node", "Timeline").put("name", "boekjaar")
+                .put("variableStart", variabelStartpunt).put("granularity", granulariteit).put("count", 1));
         ObjectNode peilwaarde = IrPad.addAttribute(IrPad.objectType(ir, "Strandrecht"), "peilwaarde", getal());
         IrPad.timeline(peilwaarde, granulariteit).put("timelineName", "boekjaar");   // WF-005: adoption must be total
     }
 
     /** The tijdlijn declaration alone, variable-start — for site (b), where no attribute rides it. */
     private static void variabeleTijdlijnDeclaratie(ObjectNode ir) {
-        IrPad.modelLijst(ir, "timelines").add(JSON.createObjectNode().put("node", "Tijdlijn")
-                .put("naam", "boekjaar").put("variabelStartpunt", true)
-                .put("granulariteit", "JAAR").put("aantal", 1));
+        IrPad.modelLijst(ir, "timelines").add(JSON.createObjectNode().put("node", "Timeline")
+                .put("name", "boekjaar").put("variableStart", true)
+                .put("granularity", "year").put("count", 1));
     }
 
     /** The synthetic anchor member a startpuntbepaling names — WF-032 requires it to be declared. */
@@ -384,13 +384,13 @@ class OverervingWeigeringWitnessTest {
 
     private static void startpuntOp(ObjectNode ir, String objecttype) {
         IrPad.rulesLijst(ir, "startPointDeterminations").add(JSON.createObjectNode()
-                .put("node", "ResolvedStartpunt").put("tijdlijn", "boekjaar")
-                .put("objecttype", objecttype).put("lid", "meetdatum"));
+                .put("node", "StartPointDetermination").put("timeline", "boekjaar")
+                .put("objectType", objecttype).put("member", "meetdatum"));
     }
 
     private static ObjectNode getal() {
         return JSON.createObjectNode().put("node", "Number").put("whole", true).put("decimals", 0)
-                .put("sign", "NIET_NEGATIEF");
+                .put("sign", "nonNegative");
     }
 
     private static JsonNode geval(String golden, String bestand) throws Exception {

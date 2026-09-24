@@ -188,9 +188,9 @@ class DrlCreatieKoppelingWitnessTest {
     /** Role 0 of taxatieopdracht is the subject side (`opdrachtgever`), role 1 the created side (`rekenkamer`). */
     private static ObjectNode cardinaliteitIr(boolean subjectVeel, boolean gemunteVeel) throws Exception {
         ObjectNode ir = lees(REKENKAMER);
-        JsonNode rollen = IrPad.declaratie(ir, "factTypes", "taxatieopdracht").get("rollen");
-        ((ObjectNode) rollen.get(0)).put("meervoudig", subjectVeel);
-        ((ObjectNode) rollen.get(1)).put("meervoudig", gemunteVeel);
+        JsonNode rollen = IrPad.declaratie(ir, "factTypes", "taxatieopdracht").get("roles");
+        ((ObjectNode) rollen.get(0)).put("many", subjectVeel);
+        ((ObjectNode) rollen.get(1)).put("many", gemunteVeel);
         return ir;
     }
 
@@ -208,8 +208,8 @@ class DrlCreatieKoppelingWitnessTest {
     private static Path kenmerkGetal() throws Exception {
         ObjectNode ir = lees(OVERZEE);
         for (JsonNode t : IrPad.versie(ir, "objectCreations", 0, 0).get("initialisations"))
-            if (t.get("kenmerk").asBoolean())
-                ((ObjectNode) t).set("waarde", JSON.readTree("""
+            if (t.get("characteristic").asBoolean())
+                ((ObjectNode) t).set("value", JSON.readTree("""
                         { "node": "Literal", "value": { "number": "5" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }, "source": { "snippet": "5" } }"""));
         return schrijf(ir, "kenmerk-getal");
     }

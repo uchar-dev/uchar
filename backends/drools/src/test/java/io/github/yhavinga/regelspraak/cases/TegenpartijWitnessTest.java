@@ -118,8 +118,8 @@ class TegenpartijWitnessTest {
     /** The golden with wachtjutter to-one, so the bean model stores the link on the Wachtpost. */
     private static ObjectNode eenOpEen() throws Exception {
         ObjectNode ir = lees();
-        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "wachtindeling").get("rollen"))
-            if ("wachtjutter".equals(r.get("naam").asText())) ((ObjectNode) r).put("meervoudig", false);
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "wachtindeling").get("roles"))
+            if ("wachtjutter".equals(r.get("name").asText())) ((ObjectNode) r).put("many", false);
         return ir;
     }
 

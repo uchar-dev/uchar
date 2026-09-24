@@ -97,8 +97,8 @@ class BonenveldWitnessTest {
         // side the frontend picks for an objectcreatie-placed link; the only other witness sits in the temporary
         // parity zone. Verifier-clean, ref PASS.
         ObjectNode ir = lees(POSTWACHT);
-        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "kustligging").get("rollen"))
-            if (r.get("naam").asText().equals("post")) ((ObjectNode) r).put("meervoudig", false).putNull("meervoud");
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "kustligging").get("roles"))
+            if (r.get("name").asText().equals("post")) ((ObjectNode) r).put("many", false);
         ObjectNode c = (ObjectNode) casus(POSTWACHT, "case");
         for (JsonNode i : c.get("input").get("instances")) {
             ObjectNode rollen = (ObjectNode) i.get("roles");
@@ -158,7 +158,7 @@ class BonenveldWitnessTest {
             assertTrue(e.getMessage().contains("missing field '" + veld + "'"), e.getMessage());
         }
         ObjectNode ir = lees(POSTWACHT);
-        stap(ir).remove("feittype");
+        stap(ir).remove("factType");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
         assertEquals("/rules/factCreations/0/versions/0/path/0", e.plek(), e.getMessage());
         assertTrue(e.getMessage().contains("missing field 'feittype'"), e.getMessage());
@@ -184,7 +184,7 @@ class BonenveldWitnessTest {
     /** The first hop of the creation's path, a step before the final hop. */
     private static ObjectNode stap(ObjectNode ir) {
         ObjectNode t = (ObjectNode) creatie(ir, 0, null).get("path").get(0);
-        assertTrue(t.get("feittype").asText().equals("kustligging"), t.toString());
+        assertTrue(t.get("factType").asText().equals("kustligging"), t.toString());
         return t;
     }
 
@@ -215,17 +215,17 @@ class BonenveldWitnessTest {
 
     private static ObjectNode feittype(String naam, String rol1, String ot1, boolean veel1,
                                        String rol2, String ot2, boolean veel2) {
-        ObjectNode ft = JSON.createObjectNode().put("node", "Feittype").put("naam", naam).put("wederkerig", false);
-        ArrayNode rollen = ft.putArray("rollen");
-        rollen.addObject().put("node", "Rol").put("naam", rol1).put("objecttypeNaam", ot1)
-                .put("meervoud", veel1 ? rol1 + "en" : null).put("meervoudig", veel1);
-        rollen.addObject().put("node", "Rol").put("naam", rol2).put("objecttypeNaam", ot2)
-                .put("meervoud", veel2 ? rol2 + "en" : null).put("meervoudig", veel2);
+        ObjectNode ft = JSON.createObjectNode().put("node", "FactType").put("name", naam).put("reciprocal", false);
+        ArrayNode rollen = ft.putArray("roles");
+        rollen.addObject().put("node", "Role").put("name", rol1).put("objectType", ot1)
+                .put("plural", veel1 ? rol1 + "en" : null).put("many", veel1);
+        rollen.addObject().put("node", "Role").put("name", rol2).put("objectType", ot2)
+                .put("plural", veel2 ? rol2 + "en" : null).put("many", veel2);
         return ft;
     }
 
     private static ObjectNode binding(String feittype, String rol) {
-        return JSON.createObjectNode().put("node", "RolBinding").put("feittype", feittype).put("rol", rol);
+        return JSON.createObjectNode().put("node", "RoleBinding").put("factType", feittype).put("role", rol);
     }
 
     private static ObjectNode lees(Path golden) throws Exception {

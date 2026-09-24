@@ -590,8 +590,8 @@ class ObjectCreatieWitnessTest {
     private static Path kenmerkWaarde(String waardeJson, String naam) throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(OVERZEE)));
         for (JsonNode t : IrPad.versie(ir, "objectCreations", 0, 0).get("initialisations"))
-            if (t.get("kenmerk").asBoolean())
-                ((com.fasterxml.jackson.databind.node.ObjectNode) t).set("waarde", JSON.readTree(waardeJson));
+            if (t.get("characteristic").asBoolean())
+                ((com.fasterxml.jackson.databind.node.ObjectNode) t).set("value", JSON.readTree(waardeJson));
         return schrijf(ir, naam);
     }
 
@@ -619,9 +619,9 @@ class ObjectCreatieWitnessTest {
      *  (`opdrachtgever`), role 1 the created side (`rekenkamer`). */
     private static com.fasterxml.jackson.databind.node.ObjectNode metCardinaliteit(boolean subjectVeel, boolean gemunteVeel) throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
-        JsonNode rollen = IrPad.declaratie(ir, "factTypes", "taxatieopdracht").get("rollen");
-        ((com.fasterxml.jackson.databind.node.ObjectNode) rollen.get(0)).put("meervoudig", subjectVeel);
-        ((com.fasterxml.jackson.databind.node.ObjectNode) rollen.get(1)).put("meervoudig", gemunteVeel);
+        JsonNode rollen = IrPad.declaratie(ir, "factTypes", "taxatieopdracht").get("roles");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) rollen.get(0)).put("many", subjectVeel);
+        ((com.fasterxml.jackson.databind.node.ObjectNode) rollen.get(1)).put("many", gemunteVeel);
         return ir;
     }
 
@@ -713,13 +713,13 @@ class ObjectCreatieWitnessTest {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(PENNING)));
         var k = IrPad.versie(ir, "consistencies", "houderscontrole");
         k.put("subject", "Jutter");
-        var f = (com.fasterxml.jackson.databind.node.ObjectNode) k.get("assertion").get("links");
+        var f = (com.fasterxml.jackson.databind.node.ObjectNode) k.get("assertion").get("left");
         f.put("elementType", "Dossier");
         f.set("sourceRole", JSON.readTree("""
                 { "node": "RoleBinding", "factType": "dossiervoering", "role": "dossier" }"""));
         var arg = (com.fasterxml.jackson.databind.node.ObjectNode) f.get("arguments").get(0);
-        arg.put("attribuut", "dossiers");
-        arg.put("objecttype", "Jutter");
+        arg.put("attribute", "dossiers");
+        arg.put("subjectType", "Jutter");
         return schrijf(ir, "dossier-aantal");
     }
 

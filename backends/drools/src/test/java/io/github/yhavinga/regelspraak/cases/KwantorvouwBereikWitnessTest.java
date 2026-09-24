@@ -89,7 +89,7 @@ class KwantorvouwBereikWitnessTest {
     /** Every {@code bronRol} under a rule, at whatever depth — the folds sit inside the rule's conditions. */
     private static void stripBronRol(JsonNode n) {
         if (n instanceof ObjectNode o) {
-            o.remove("bronRol");
+            o.remove("sourceRole");
             o.forEach(KwantorvouwBereikWitnessTest::stripBronRol);
         } else if (n.isArray()) {
             n.forEach(KwantorvouwBereikWitnessTest::stripBronRol);
@@ -117,18 +117,18 @@ class KwantorvouwBereikWitnessTest {
     private static ObjectNode herhaaldPaar() throws Exception {
         ObjectNode ir = lees();
         ObjectNode ft = IrPad.modelLijst(ir, "factTypes").addObject();
-        ft.put("node", "Feittype").put("naam", "schaduwindeling").put("wederkerig", false);
-        ft.putArray("rollen")
+        ft.put("node", "FactType").put("name", "schaduwindeling").put("reciprocal", false);
+        ft.putArray("roles")
           .add(rol("schaduwploeg", "Keurploeg", null, false))
           .add(rol("schaduwmeester", "Keurmeester", "schaduwmeesters", true));
         return ir;
     }
 
     private static ObjectNode rol(String naam, String objecttype, String meervoud, boolean meervoudig) {
-        ObjectNode r = JSON.createObjectNode().put("node", "Rol").put("naam", naam)
-                .put("objecttypeNaam", objecttype);
-        if (meervoud == null) r.putNull("meervoud"); else r.put("meervoud", meervoud);
-        return r.put("meervoudig", meervoudig);
+        ObjectNode r = JSON.createObjectNode().put("node", "Role").put("name", naam)
+                .put("objectType", objecttype);
+        if (meervoud != null) r.put("plural", meervoud);
+        return r.put("many", meervoudig);
     }
 
     private static Path tijdelijk(String naam, ObjectNode ir) throws Exception {

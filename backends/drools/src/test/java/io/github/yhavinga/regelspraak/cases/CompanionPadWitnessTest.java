@@ -371,7 +371,7 @@ class CompanionPadWitnessTest {
         // would answer CONSISTENT in silence; the honest outcome is the same loud refusal the division gets,
         // naming the wortel.
         CaseRunner.Excluded weigering = assertThrows(CaseRunner.Excluded.class,
-                () -> speel(defaultsModel(binair("PLUS", WORTEL, lit("0.0000", num(4)), num(4))),
+                () -> speel(defaultsModel(binair("plus", WORTEL, lit("0.0000", num(4)), num(4))),
                         jutter(n("saldo", "-4.00") + ", " + n("kindertal", "3"),
                                 waarde("toeslag", "0.0000") + ", " + inconsistent())));
         assertTrue(weigering.getMessage().contains("wortel"),
@@ -482,9 +482,9 @@ class CompanionPadWitnessTest {
         return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"%s\"}"
                 .formatted(geheel, dec, teken);
     }
-    private static String num(int dec) { return num(dec, false, "ONBEPAALD"); }
-    private static String pos(int dec) { return num(dec, false, "NIET_NEGATIEF"); }
-    private static final String GEHEEL_POS = num(0, true, "NIET_NEGATIEF");
+    private static String num(int dec) { return num(dec, false, "unspecified"); }
+    private static String pos(int dec) { return num(dec, false, "nonNegative"); }
+    private static final String GEHEEL_POS = num(0, true, "nonNegative");
 
     private static String attr(String naam, String type) {
         return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
@@ -588,14 +588,14 @@ class CompanionPadWitnessTest {
     // ---------------- the models (each ref-replayed before its values were pinned) ----------------
 
     /** "het inkomen gedeeld door de tweede" — the §6.5 site every Let-shaped model here wraps. */
-    private static final String DELING = binair("GEDEELD_DOOR", attr("inkomen"), attr("tweede"), num(4));
-    private static final String DELING_DELER = binair("GEDEELD_DOOR", attr("inkomen"), attr("deler"), num(4));
-    private static final String DELING_ABS = binair("GEDEELD_DOOR_ABS", attr("inkomen"), attr("tweede"), num(4));
-    private static final String DELING_LEEGDING = binair("GEDEELD_DOOR", attr("leegding"), attr("tweede"), num(4));
-    private static final String DELING_NUL = binair("GEDEELD_DOOR", attr("inkomen"), attr("nul"), num(4));
+    private static final String DELING = binair("dividedBy", attr("inkomen"), attr("tweede"), num(4));
+    private static final String DELING_DELER = binair("dividedBy", attr("inkomen"), attr("deler"), num(4));
+    private static final String DELING_ABS = binair("dividedByAbs", attr("inkomen"), attr("tweede"), num(4));
+    private static final String DELING_LEEGDING = binair("dividedBy", attr("leegding"), attr("tweede"), num(4));
+    private static final String DELING_NUL = binair("dividedBy", attr("inkomen"), attr("nul"), num(4));
     /** (a'') "5,00 gedeeld door het leegding" — a LITERAL dividend, so companionOperand refuses it and the site
      *  qualifies for no companion of its own, bare or under a carrier. */
-    private static final String DELING_LITERAAL = binair("GEDEELD_DOOR", lit("5.00", pos(2)), attr("leegding"), num(4));
+    private static final String DELING_LITERAAL = binair("dividedBy", lit("5.00", pos(2)), attr("leegding"), num(4));
     private static final String ZEVEN = lit("7.0000", num(4));
     private static final String WORTEL = wortel(attr("saldo", num(2)), num(4));
 
@@ -609,8 +609,8 @@ class CompanionPadWitnessTest {
      *  division on the left. */
     private static String barriereModel(boolean lezingEerst) {
         String body = lezingEerst
-                ? binair("PLUS", bref("d", pos(2)), DELING, num(4))
-                : binair("PLUS", DELING, bref("d", pos(2)), num(4));
+                ? binair("plus", bref("d", pos(2)), DELING, num(4))
+                : binair("plus", DELING, bref("d", pos(2)), num(4));
         return uitModel(let("d", attr("deler"), body, num(4)));
     }
 
@@ -619,27 +619,27 @@ class CompanionPadWitnessTest {
     private static String keuzeModel(boolean inLetBody, boolean metWortel) {
         String dan = metWortel ? WORTEL : DELING_DELER;
         String links = inLetBody ? bref("a", pos(2)) : attr("a");
-        String keuze = ite(verg("GROTER", links, lit("100", GEHEEL_POS)), dan, ZEVEN, num(4));
+        String keuze = ite(verg("greater", links, lit("100", GEHEEL_POS)), dan, ZEVEN, num(4));
         return uitModel(inLetBody ? let("a", attr("a"), keuze, num(4)) : keuze);
     }
 
     /** (d) the division as a Let VALUE, read ({@code q plus 1}) or not ({@code 42}). */
     private static String valueModel(boolean gelezen) {
-        String body = gelezen ? binair("PLUS", bref("q", num(4)), lit("1.0000", num(4)), num(4)) : lit("42.0000", num(4));
+        String body = gelezen ? binair("plus", bref("q", num(4)), lit("1.0000", num(4)), num(4)) : lit("42.0000", num(4));
         return uitModel(let("q", DELING, body, num(4)));
     }
 
     /** (d) the division as a Let VALUE read only in the DAN branch of a choice on another binder. */
     private static String eenTakModel() {
-        String keuze = ite(verg("GROTER", bref("k", pos(2)), lit("100", GEHEEL_POS)), bref("q", num(4)), ZEVEN, num(4));
+        String keuze = ite(verg("greater", bref("k", pos(2)), lit("100", GEHEEL_POS)), bref("q", num(4)), ZEVEN, num(4));
         return uitModel(let("k", attr("a"), let("q", DELING, keuze, num(4)), num(4)));
     }
 
     /** (e) "Let x = leegding in Let q = inkomen gedeeld door tweede in x plus q" ({@code vreemdeEerst}) or "q plus x". */
     private static String vreemdeBarriereModel(boolean vreemdeEerst) {
         String body = vreemdeEerst
-                ? binair("PLUS", bref("x", pos(2)), bref("q", num(4)), num(4))
-                : binair("PLUS", bref("q", num(4)), bref("x", pos(2)), num(4));
+                ? binair("plus", bref("x", pos(2)), bref("q", num(4)), num(4))
+                : binair("plus", bref("q", num(4)), bref("x", pos(2)), num(4));
         return uitModel(let("x", attr("leegding"), let("q", DELING, body, num(4)), num(4)));
     }
 
@@ -670,22 +670,22 @@ class CompanionPadWitnessTest {
     /** (a'') "Let d = deler in ((inkomen ÷ tweede) plus (5,00 ÷ leegding))" — the second site's dividend is a
      *  LITERAL, so it qualifies for no companion of its own; it still runs and reports to the probe. */
     private static String medePlekModel() {
-        return uitModel(let("d", attr("deler"), binair("PLUS", DELING, DELING_LITERAAL, num(4)), num(4)));
+        return uitModel(let("d", attr("deler"), binair("plus", DELING, DELING_LITERAAL, num(4)), num(4)));
     }
 
     /** (a'') the same two sites behind the read of {@code d}, so a barrier can cut both off. */
     private static String medePlekAchterBarriereModel() {
-        String rechts = binair("PLUS", DELING, DELING_LITERAAL, num(4));
-        return uitModel(let("d", attr("deler"), binair("PLUS", bref("d", pos(2)), rechts, num(4)), num(4)));
+        String rechts = binair("plus", DELING, DELING_LITERAAL, num(4));
+        return uitModel(let("d", attr("deler"), binair("plus", bref("d", pos(2)), rechts, num(4)), num(4)));
     }
 
     /** (e') "Let x = leegding in ((Let q = 1,0000 in x plus q) plus …)" — the read of the OUTER binder sits
      *  inside the INNER Let, whose handler must let that foreign barrier through. */
     private static String vreemdeBarriereDoorgifteModel(boolean metDeling) {
         String binnen = let("q", lit("1.0000", num(4)),
-                binair("PLUS", bref("x", pos(2)), bref("q", num(4)), num(4)), num(4));
+                binair("plus", bref("x", pos(2)), bref("q", num(4)), num(4)), num(4));
         String rechts = metDeling ? DELING : lit("5.0000", num(4));
-        return uitModel(let("x", attr("leegding"), binair("PLUS", binnen, rechts, num(4)), num(4)));
+        return uitModel(let("x", attr("leegding"), binair("plus", binnen, rechts, num(4)), num(4)));
     }
 
     /** (i) the same, with the division by NUMERIC zero ("inkomen gedeeld door nul") as the other bound. */
@@ -698,7 +698,7 @@ class CompanionPadWitnessTest {
     /** (i) a ch. 10.2 guard "d groter dan (inkomen ÷ tweede)" ({@code lezingLinks}) or its mirror, in a Let on d. */
     private static String conditieVolgordeModel(boolean lezingLinks) {
         String lezing = bref("d", pos(2));
-        String conditie = lezingLinks ? verg("GROTER", lezing, DELING) : verg("GROTER", DELING, lezing);
+        String conditie = lezingLinks ? verg("greater", lezing, DELING) : verg("greater", DELING, lezing);
         String keuze = ite(conditie, lit("1.0000", num(4)), lit("2.0000", num(4)), num(4));
         return uitModel(let("d", attr("deler"), keuze, num(4)));
     }
@@ -713,23 +713,23 @@ class CompanionPadWitnessTest {
         String nietVermist = ("{\"node\":\"CharacteristicCheck\",\"characteristic\":\"vermist\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"hij niet vermist is\"}}");
         String body = tak
-                ? ite(verg("GROTER", bref("d", pos(2)), lit("1", GEHEEL_POS)), DELING, ZEVEN, num(4))
-                : binair("PLUS", bref("d", pos(2)), DELING, num(4));
+                ? ite(verg("greater", bref("d", pos(2)), lit("1", GEHEEL_POS)), DELING, ZEVEN, num(4))
+                : binair("plus", bref("d", pos(2)), DELING, num(4));
         return modelK(new String[]{
                         regel("vermissing van een jutter", "KENMERKTOEKENNING", vermistDoel, waar,
-                                verg("GROTER", attr("inkomen"), lit("999999.00", pos(2)))),
+                                verg("greater", attr("inkomen"), lit("999999.00", pos(2)))),
                         regel("deler van een jutter", "BEREKENING", attr("deler"), lit("2.00", pos(2)), nietVermist),
                         regel("uit van een jutter", attr("uit", num(4)), let("d", attr("deler"), body, num(4)))});
     }
 
     /** (j) "Let n = inkomen in n gedeeld door tweede" — the binder is the DIVIDEND. */
     private static String binderDividendModel() {
-        return uitModel(let("n", attr("inkomen"), binair("GEDEELD_DOOR", bref("n", pos(2)), attr("tweede"), num(4)), num(4)));
+        return uitModel(let("n", attr("inkomen"), binair("dividedBy", bref("n", pos(2)), attr("tweede"), num(4)), num(4)));
     }
 
     /** (j) "Let d = deler in inkomen gedeeld door d" — the binder is the DIVISOR. */
     private static String binderDelerModel() {
-        return uitModel(let("d", attr("deler"), binair("GEDEELD_DOOR", attr("inkomen"), bref("d", pos(2)), num(4)), num(4)));
+        return uitModel(let("d", attr("deler"), binair("dividedBy", attr("inkomen"), bref("d", pos(2)), num(4)), num(4)));
     }
 
     /** (j) "Let s = saldo in de wortel van s" — the binder is the RADICAND. */
@@ -739,13 +739,13 @@ class CompanionPadWitnessTest {
 
     /** (h) a bare division plus a Let-wrapped one behind a read. */
     private static String tweeDelingenModel() {
-        String omhuld = let("d", attr("leegding"), binair("PLUS", bref("d", pos(2)), DELING, num(4)), num(4));
-        return uitModel(binair("PLUS", DELING_DELER, omhuld, num(4)));
+        String omhuld = let("d", attr("leegding"), binair("plus", bref("d", pos(2)), DELING, num(4)), num(4));
+        return uitModel(binair("plus", DELING_DELER, omhuld, num(4)));
     }
 
     /** (p) a Parameter read inside the carrier, beside the division. */
     private static String parameterModel() {
-        String body = binair("PLUS", DELING, param("grondslag", GEHEEL_POS), num(4));
+        String body = binair("plus", DELING, param("grondslag", GEHEEL_POS), num(4));
         return uitModel(let("d", attr("deler"), body, num(4)),
                 "{\"node\":\"Parameter\",\"name\":\"grondslag\",\"datatype\":%s}"
                         .formatted(GEHEEL_POS));
@@ -759,7 +759,7 @@ class CompanionPadWitnessTest {
                 + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}},"
                 + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
                 + "\"source\":{\"snippet\":\"toeslag\"},\"validity\":{\"node\":\"Validity\"}}")
-                .formatted(verg("GROTER_OF_GELIJK", attr("kindertal", GEHEEL_POS), lit("2", GEHEEL_POS)),
+                .formatted(verg("greaterOrEqual", attr("kindertal", GEHEEL_POS), lit("2", GEHEEL_POS)),
                         consequentie, ALTIJD, lit("0.0000", num(4)));
         return model(new String[]{}, "", ",\"prioritizedDefaults\":[" + groep + "]");
     }

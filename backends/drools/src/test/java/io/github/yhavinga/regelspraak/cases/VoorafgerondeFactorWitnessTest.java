@@ -50,7 +50,7 @@ class VoorafgerondeFactorWitnessTest {
      */
     @Test void de_factor_een_derde_rekent_voorafgerond_in_beide_takken() throws Exception {
         Path ir = document("Wachtrooster", "dn", "dienst", "wa", "wacht", 3, "dienstduur", "wachtduur", "inzet",
-                "afgeronde inzet", "NAAR_BENEDEN", "naar beneden");
+                "afgeronde inzet", "floor", "naar beneden");
         JsonNode zaak = zaak("dienstduur", "1.00", "wachtduur", "3.00", "inzet", "2.00", "afgeronde inzet", "2");
         String exec = BeideTakken.rood(ir, zaak, "attribuut inzet: verwacht 2.00, werkelijk 1.9999999999999999",
                 "de voorafgeronde factor 1/3 blijft onder de 2");
@@ -72,7 +72,7 @@ class VoorafgerondeFactorWitnessTest {
      */
     @Test void de_factor_een_vierentwintigste_rekent_voorafgerond_in_beide_takken() throws Exception {
         Path ir = document("Getijrooster", "tj", "tij", "sl", "slag", 24, "tijduur", "slagduur", "looptijd",
-                "afgeronde looptijd", "NAAR_BOVEN", "naar boven");
+                "afgeronde looptijd", "ceiling", "naar boven");
         JsonNode zaak = zaak("tijduur", "0.00", "slagduur", "216.00", "looptijd", "9.00", "afgeronde looptijd", "9");
         String exec = BeideTakken.rood(ir, zaak, "attribuut looptijd: verwacht 9.00, werkelijk 9.000000000000001",
                 "de voorafgeronde factor 1/24 komt boven de 9 uit");

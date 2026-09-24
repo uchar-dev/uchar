@@ -274,7 +274,7 @@ class RolveldlezerWitnessTest {
 
     private static ObjectNode numeriek() {
         return JSON.createObjectNode().put("node", "Number").put("whole", true)
-                .put("decimals", 0).put("sign", "ONBEPAALD");
+                .put("decimals", 0).put("sign", "unspecified");
     }
 
     /** Reduce a model to the named rules in the resolved list. */
@@ -312,17 +312,17 @@ class RolveldlezerWitnessTest {
     private static Path verreRolcheck() throws Exception {
         ObjectNode ir = goldenIr(NAVIGATIEPREMIE);
         IrPad.addAttribute(IrPad.objectType(ir, "Werf"), "wachtgeld", numeriek());
-        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "ligplaats").get("rollen"))
-            if ("werf".equals(r.get("naam").asText())) {
-                ((ObjectNode) r).put("meervoudig", true);
-                ((ObjectNode) r).put("meervoud", "werven");
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "ligplaats").get("roles"))
+            if ("werf".equals(r.get("name").asText())) {
+                ((ObjectNode) r).put("many", true);
+                ((ObjectNode) r).put("plural", "werven");
             }
         ObjectNode vorm = IrPad.rules(ir).putArray("rules").addObject();
         vorm.put("node", "Rule").put("name", "wachtgeld van een werf");
         ObjectNode regel = vorm.putArray("versions").addObject();
-        regel.putObject("validity").put("node", "Geldigheid").putNull("vanaf").putNull("tot");
+        regel.putObject("validity").put("node", "Validity");
         ObjectNode doel = regel.putObject("target");
-        doel.put("node", "AttribuutRef").put("attribuut", "wachtgeld").put("objecttype", "Werf")
+        doel.put("node", "AttributeReference").put("attribute", "wachtgeld").put("subjectType", "Werf")
             .set("source", IrPad.bronrecord("Het wachtgeld van een Werf"));
         ObjectNode waarde = regel.putObject("value");
         waarde.put("node", "Literal").putObject("value").put("number", "8");
@@ -331,7 +331,7 @@ class RolveldlezerWitnessTest {
         // "de Werf heeft een schuit": the subject Werf fills `werf` in ligplaats
         regel.putObject("condition").put("node", "RoleMembership").put("factType", "ligplaats")
              .put("role", "werf").put("negated", false).set("source", IrPad.bronrecord("de Werf een schuit heeft"));
-        regel.put("initialisation", false).put("presentation", "GELIJKSTELLING");
+        regel.put("initialisation", false).put("presentation", "equation");
         return model("verre-rolcheck-zonder-veld", ir);
     }
 
@@ -341,22 +341,22 @@ class RolveldlezerWitnessTest {
     private static Path kenmerkTijdreeks() throws Exception {
         ObjectNode ir = goldenIr(NAVIGATIEPREMIE);
         ObjectNode bedrijvig = IrPad.objectType(ir, "Werf").putArray("characteristics").addObject();
-        bedrijvig.put("node", "Characteristic").put("name", "bedrijvig").put("kind", "BIJVOEGLIJK");
-        IrPad.timeline(bedrijvig, "MAAND");
+        bedrijvig.put("node", "Characteristic").put("name", "bedrijvig").put("kind", "adjectival");
+        IrPad.timeline(bedrijvig, "month");
         IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", numeriek());
         houdRegels(ir, Set.of("toeslag van een schuit"));
         ObjectNode regel = IrPad.versie(ir, "rules", 0, 0);
-        regel.put("initialisation", false).put("presentation", "GELIJKSTELLING");
+        regel.put("initialisation", false).put("presentation", "equation");
         ObjectNode eigen = JSON.createObjectNode();
-        eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit")
+        eigen.put("node", "AttributeReference").put("attribute", "lengte").put("subjectType", "Schuit")
              .set("source", IrPad.bronrecord("de lengte van de Schuit"));
         regel.set("value", eigen);
         ObjectNode check = JSON.createObjectNode();
-        check.put("node", "Kenmerk").put("kenmerk", "bedrijvig")
-             .put("negatie", false).putNull("eigenaar");
-        check.putObject("periode").put("node", "GeheelPeriode").put("jaar", true).put("niet", false);
+        check.put("node", "CharacteristicCheck").put("characteristic", "bedrijvig")
+             .put("negated", false);
+        check.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", true).put("negated", false);
         check.set("source", IrPad.bronrecord("de werf van de Schuit gedurende het gehele jaar bedrijvig is"));
-        check.putObject("navigatieBinding").put("node", "RolBinding").put("feittype", "ligplaats").put("rol", "werf");
+        check.putObject("navigation").put("node", "RoleBinding").put("factType", "ligplaats").put("role", "werf");
         regel.set("condition", check);
         return model("kenmerktijdreeks-naamdeling", ir);
     }
@@ -383,19 +383,19 @@ class RolveldlezerWitnessTest {
         JsonNode elemType = IrPad.attribute(IrPad.objectType(ir, "Vondst"), "bewaartarief").get("datatype");
         ObjectNode bewaarlast = IrPad.attribute(IrPad.objectType(ir, "Jutter"), "bewaarlast");
         bewaarlast.set("datatype", elemType.deepCopy());
-        IrPad.timeline(bewaarlast, "MAAND");
-        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "bewaring").get("rollen")) {
+        IrPad.timeline(bewaarlast, "month");
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "bewaring").get("roles")) {
             ObjectNode rol = (ObjectNode) r;
-            if ("bewarende jutter".equals(rol.get("naam").asText())) {
-                rol.put("meervoudig", true); rol.put("meervoud", "bewarende jutters");
-            } else if ("vondst".equals(rol.get("naam").asText())) {
-                rol.put("meervoudig", false); rol.putNull("meervoud");
+            if ("bewarende jutter".equals(rol.get("name").asText())) {
+                rol.put("many", true); rol.put("plural", "bewarende jutters");
+            } else if ("vondst".equals(rol.get("name").asText())) {
+                rol.put("many", false);
             }
         }
         ObjectNode regel = IrPad.versie(ir, "rules", 0, 0);
         // the target's datatype is bewaarlast's declaration above; only the fold carries an annotation of its own
         ObjectNode fold = (ObjectNode) regel.get("value");
-        fold.put("kind", "SOM").set("source", IrPad.bronrecord("de som van het bewaartarief van alle vondsten van de Jutter"));
+        fold.put("kind", "sum").set("source", IrPad.bronrecord("de som van het bewaartarief van alle vondsten van de Jutter"));
         fold.set("type", elemType.deepCopy());
         return model("temporele-setsommatie-zonder-veld", ir);
     }
@@ -419,12 +419,12 @@ class RolveldlezerWitnessTest {
      *  bean field sits at the SOURCE end and Berger derives none. Verifier-clean and ref-clean. */
     private static Path verdelingZonderVeld() throws Exception {
         ObjectNode ir = goldenIr(BERGING);
-        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "bergingsdeelname").get("rollen")) {
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "bergingsdeelname").get("roles")) {
             ObjectNode rol = (ObjectNode) r;
-            if ("berging".equals(rol.get("naam").asText())) {
-                rol.put("meervoudig", true); rol.put("meervoud", "bergingen");
+            if ("berging".equals(rol.get("name").asText())) {
+                rol.put("many", true); rol.put("plural", "bergingen");
             } else {
-                rol.put("meervoudig", false); rol.putNull("meervoud");
+                rol.put("many", false);
             }
         }
         return model("verdeling-join-zonder-veld", ir);
@@ -505,39 +505,39 @@ class RolveldlezerWitnessTest {
      *  the field that count reads. Verifier-clean and ref-clean (ref reports the violation). */
     private static Path aantalNaamdrift() throws Exception {
         ObjectNode ir = goldenIr(PENNINGUITGIFTE);
-        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "penningbezit").get("rollen"))
-            if ("penning".equals(r.get("naam").asText())) ((ObjectNode) r).put("meervoudig", false);
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "penningbezit").get("roles"))
+            if ("penning".equals(r.get("name").asText())) ((ObjectNode) r).put("many", false);
         IrPad.addAttribute(IrPad.objectType(ir, "Jutter"), "penning", numeriek());
         ObjectNode rules = IrPad.rules(ir);
         rules.putArray("objectCreations"); rules.putArray("rules"); rules.putArray("ruleGroups");
         rules.putArray("uniquenesses");
         ObjectNode arg = JSON.createObjectNode();
         // the count source: its written name is the element role's declared plural, read at the fold subject
-        arg.put("node", "AttribuutRef").put("attribuut", "penningen").put("objecttype", "Jutter")
+        arg.put("node", "AttributeReference").put("attribute", "penningen").put("subjectType", "Jutter")
            .set("source", IrPad.bronrecord("penningen van de Jutter"));
         ObjectNode aantal = JSON.createObjectNode();
-        aantal.put("node", "Aggregation").put("kind", "AANTAL");
+        aantal.put("node", "Aggregation").put("kind", "count");
         aantal.putArray("arguments").add(arg);
         aantal.put("elementType", "Penning");
-        aantal.putObject("sourceRole").put("node", "RolBinding").put("feittype", "penningbezit").put("rol", "penning");
-        aantal.set("type", numeriek().put("sign", "NIET_NEGATIEF"));
+        aantal.putObject("sourceRole").put("node", "RoleBinding").put("factType", "penningbezit").put("role", "penning");
+        aantal.set("type", numeriek().put("sign", "nonNegative"));
         aantal.set("source", IrPad.bronrecord("het aantal penningen van de Jutter"));
         ObjectNode rechts = JSON.createObjectNode();
         rechts.put("node", "Literal").putObject("value").put("number", "1");
         rechts.set("type", numeriek());
         rechts.set("source", IrPad.bronrecord("1"));
         ObjectNode assertie = JSON.createObjectNode();
-        assertie.put("node", "Vergelijking").put("op", "GROTER_OF_GELIJK");
-        assertie.set("links", aantal);
-        assertie.set("rechts", rechts);
-        assertie.putNull("periode")
+        assertie.put("node", "Comparison").put("op", "greaterOrEqual");
+        assertie.set("left", aantal);
+        assertie.set("right", rechts);
+        assertie
                 .set("source", IrPad.bronrecord("het aantal penningen van de Jutter is groter of gelijk aan 1"));
         ObjectNode vorm = rules.putArray("consistencies").addObject();
         vorm.put("node", "Consistency").put("name", "penningtelcontrole");
         ObjectNode con = vorm.putArray("versions").addObject();
         con.put("subject", "Jutter");
         con.set("assertion", assertie);
-        con.putObject("validity").put("node", "Geldigheid").putNull("vanaf").putNull("tot");
+        con.putObject("validity").put("node", "Validity");
         con.set("source", IrPad.bronrecord("Er moet worden voldaan aan: elke Jutter heeft een penning").put("line", 1));
         return model("aantal-naamdrift", ir);
     }

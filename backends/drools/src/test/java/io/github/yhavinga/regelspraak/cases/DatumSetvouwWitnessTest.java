@@ -89,7 +89,7 @@ class DatumSetvouwWitnessTest {
 
     @Test void de_optellende_vouw_over_een_datumbron_weigert_om_een_andere_reden() throws Exception {
         // Same document, only the kind twisted: now nothing carries the form, and the sentence says so.
-        for (String kind : new String[] { "SOM", "TOTAAL" }) {
+        for (String kind : new String[] { "sum", "total" }) {
             BeideTakken.geweigerd(tijdelijk("datumsetbron-" + kind, metKind(BEREIK, kind)),
                     zaak(BEREIK, "case1-bereik.json"),
                     "vouw " + kind + " over de setbron 'vondstdatum' van Vondst: die leden zijn van type "
@@ -108,7 +108,7 @@ class DatumSetvouwWitnessTest {
         // wrong about. Under the additive kinds there is: retyped end to end, the document passes.
         // Only the case carries text instead of dates, because a date value against a Tekst
         // declaration is refused by the case reader and never reaches the transpiler at all.
-        BeideTakken.geweigerd(tijdelijk("tekstsetbron", alsTekst(BEREIK, "SOM")), JSON.readTree(TEKSTZAAK),
+        BeideTakken.geweigerd(tijdelijk("tekstsetbron", alsTekst(BEREIK, "sum")), JSON.readTree(TEKSTZAAK),
                 "vouw SOM over de setbron 'vondstdatum' van Vondst: die leden zijn van type Tekst en "
                         + "niet getalachtig, terwijl beide takken elke waardevouw in BigDecimal "
                         + "accumuleren. Optellen is rekenkunde en alleen bedragen tellen op",
@@ -159,7 +159,7 @@ class DatumSetvouwWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
         if (kind != null)
             for (JsonNode r : ir.get("rules").get("rules")) ((ObjectNode) r.get("versions").get(0).get("value")).put("kind", kind);
-        ObjectNode tekst = JSON.createObjectNode().put("node", "Tekst");
+        ObjectNode tekst = JSON.createObjectNode().put("node", "Text");
         ObjectNode jutter = IrPad.objectType(ir, "Jutter");
         IrPad.attribute(jutter, "vroegste vondstdag").set("datatype", tekst);
         IrPad.attribute(jutter, "jongste vondstdag").set("datatype", tekst);

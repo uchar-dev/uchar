@@ -73,14 +73,14 @@ class VensterVouwWitnessTest {
 
     /** vanaf the CONTRIBUTOR's own aanstelling: W3 (after the date) and W5 (leeg) miss it, the rest hit. */
     @Test void het_venster_in_de_toets_leest_de_grens_van_elke_bijdrager() throws Exception {
-        BeideTakken.groen(document("ALLE", null, null, ATTR), casus(BINNEN, "S1", "S4", "S5"),
+        BeideTakken.groen(document("all", null, null, ATTR), casus(BINNEN, "S1", "S4", "S5"),
                 "de grens is de aanstelling van de wacht, per bijdrager gelezen");
     }
 
     /** The same document against the answer a lowering reading the PLOEG's own date would give: both branches
      *  must reject it, so the row above really separates the two subjects. */
     @Test void de_lezing_van_de_ploeg_zelf_wordt_door_beide_takken_verworpen() throws Exception {
-        BeideTakken.rood(document("ALLE", null, null, ATTR), casus(BINNEN, "S2", "S4", "S6"),
+        BeideTakken.rood(document("all", null, null, ATTR), casus(BINNEN, "S2", "S4", "S6"),
                 "kenmerk bevoegd: verwacht aanwezig, werkelijk afwezig",
                 "de datum van de ploeg is niet de grens van de bijdrager");
     }
@@ -88,32 +88,32 @@ class VensterVouwWitnessTest {
     /** ch. 3.10: {@code tot} is exclusive and "tot en met" inclusive — on the evaluation date itself the two
      *  spellings of one window give opposite folds. */
     @Test void de_totgrens_sluit_de_evaluatiedatum_uit_en_tot_en_met_sluit_hem_in() throws Exception {
-        BeideTakken.groen(document("ALLE", null, null, EXCL), casus(BINNEN, "S4"),
+        BeideTakken.groen(document("all", null, null, EXCL), casus(BINNEN, "S4"),
                 "tot 15 juni: de evaluatiedatum ligt buiten het venster");
-        BeideTakken.groen(document("ALLE", null, null, INCL), casus(BINNEN, "S1", "S2", "S3", "S4", "S5", "S6"),
+        BeideTakken.groen(document("all", null, null, INCL), casus(BINNEN, "S1", "S2", "S3", "S4", "S5", "S6"),
                 "tot en met 15 juni: de evaluatiedatum ligt erin");
     }
 
     /** An unset evaluation date never matches (ch. 3.10), so every non-empty ploeg fails ALLE and only the
      *  vacuous one holds — the reading WF-112 keeps because nothing complements it here. */
     @Test void in_een_tijdvrije_sessie_haalt_geen_bijdrager_het_venster() throws Exception {
-        BeideTakken.groen(document("ALLE", null, null, LIT), casus(null, "S4"),
+        BeideTakken.groen(document("all", null, null, LIT), casus(null, "S4"),
                 "tijdvrij: het venster matcht nooit");
     }
 
     /** The window as a member of an ALLE and of a DE composite matrix: S5's wacht is in the window but not
      *  gediplomeerd, so the composite differs from the bare window exactly there. */
     @Test void het_venster_als_lid_van_een_samengestelde_matrix() throws Exception {
-        BeideTakken.groen(document("ALLE", null, null, samen("ALLE", GEDIPLOMEERD, ATTR)),
+        BeideTakken.groen(document("all", null, null, samen("all", GEDIPLOMEERD, ATTR)),
                 casus(BINNEN, "S1", "S4"), "ALLE[gediplomeerd, venster]");
-        BeideTakken.groen(document("ALLE", null, null, samen("DE", GEDIPLOMEERD, ATTR)),
+        BeideTakken.groen(document("all", null, null, samen("the", GEDIPLOMEERD, ATTR)),
                 casus(BINNEN, "S1", "S4"), "DE[gediplomeerd, venster]");
     }
 
     /** The window beside a numeric PARAMETER bound in one matrix: both are read. Under keurgrens 5 every wacht
      *  (8 dienstjaren) passes the comparison and the window decides; under 9 none passes. */
     @Test void het_venster_naast_een_parametergrens_leest_beide() throws Exception {
-        Path ir = metKeurgrens(document("ALLE", null, null, samen("ALLE", KEURGRENS, ATTR)));
+        Path ir = metKeurgrens(document("all", null, null, samen("all", KEURGRENS, ATTR)));
         BeideTakken.groen(ir, metParameter(casus(BINNEN, "S1", "S4", "S5"), "5"), "keurgrens 5: het venster beslist");
         BeideTakken.groen(ir, metParameter(casus(BINNEN, "S4"), "9"), "keurgrens 9: de vergelijking beslist");
     }
@@ -125,7 +125,7 @@ class VensterVouwWitnessTest {
      *  session nothing is selected anywhere, so every ploeg holds vacuously — ch. 3.12's recorded reading of this
      *  position (maintainer decision 2026-09-23). */
     @Test void het_venster_in_het_filter_kiest_de_bijdragers_per_bijdrager() throws Exception {
-        Path ir = document("ALLE", null, ATTR, GEDIPLOMEERD);
+        Path ir = document("all", null, ATTR, GEDIPLOMEERD);
         BeideTakken.groen(ir, casus(BINNEN, "S1", "S2", "S3", "S4", "S6"), "het filter selecteert per bijdrager");
         BeideTakken.groen(ir, casus(null, "S1", "S2", "S3", "S4", "S5", "S6"),
                 "tijdvrij: niets geselecteerd, vacuüm waar");
@@ -163,7 +163,7 @@ class VensterVouwWitnessTest {
         Path ir = aggregatieDocument(ATTR);
         BeideTakken.groen(ir, tellingCasus(BINNEN, 2, 0, 1, 0, 1, 1), "de telling selecteert per wacht");
         BeideTakken.groen(ir, tellingCasus(null, 0, 0, 0, 0, 0, 0), "tijdvrij: niets telt");
-        BeideTakken.groen(aggregatieDocument(samen("ALLE", GEDIPLOMEERD, ATTR)), tellingCasus(BINNEN, 2, 0, 1, 0, 0, 1),
+        BeideTakken.groen(aggregatieDocument(samen("all", GEDIPLOMEERD, ATTR)), tellingCasus(BINNEN, 2, 0, 1, 0, 0, 1),
                 "ALLE[gediplomeerd, venster] als subselectie");
     }
 
@@ -184,8 +184,8 @@ class VensterVouwWitnessTest {
      *  both branches (WF-112 reaches both positions). In the filter the window SELECTS the members the quantifier
      *  counts or complements the toets over, and the sentence says that rather than the toets's reason. */
     @Test void onder_geen_en_de_tellende_kwantoren_weigeren_beide_takken_het_venster() throws Exception {
-        for (String kw : List.of("GEEN", "TEN_MINSTE", "TEN_HOOGSTE", "PRECIES")) {
-            Integer drempel = "GEEN".equals(kw) ? null : 1;
+        for (String kw : List.of("none", "atLeast", "atMost", "exactly")) {
+            Integer drempel = "none".equals(kw) ? null : 1;
             String vouw = "een kwantorvouw onder " + kw + " over Strandwacht (WF-112)";
             BeideTakken.geweigerd(document(kw, drempel, null, LIT), casus(null, ALLE_PLOEGEN),
                     "periodevenster in de toets van " + vouw + ": de kwantor telt of ontkent het vensterverdict",
@@ -200,7 +200,7 @@ class VensterVouwWitnessTest {
     /** WF-112's walk is deep: a GEEN composite inside an ALLE fold's toets complements the window as surely as a
      *  GEEN fold does, and is refused on ITS quantifier. */
     @Test void een_venster_onder_een_geen_samenstelling_in_een_alle_vouw_wordt_geweigerd() throws Exception {
-        BeideTakken.geweigerd(document("ALLE", null, null, samen("GEEN", LIT)), casus(null, ALLE_PLOEGEN),
+        BeideTakken.geweigerd(document("all", null, null, samen("none", LIT)), casus(null, ALLE_PLOEGEN),
                 "GEEN-samenstelling (WF-112)", "GEEN[venster] als toets van een ALLE-vouw");
     }
 
@@ -208,9 +208,9 @@ class VensterVouwWitnessTest {
      *  branches refused it before, under a generic note ("aggregatie buiten Phase-C scope" / "TODO aggregatie
      *  AANTAL"; "voorwaarde buiten Phase-B scope" / "TODO voorwaarde"), and now name the rule. */
     @Test void een_venster_onder_geen_in_een_aggregatiefilter_wordt_bij_naam_geweigerd() throws Exception {
-        BeideTakken.geweigerd(aggregatieDocument(samen("GEEN", ATTR)), tellingCasus(null, 2, 1, 2, 0, 1, 2),
+        BeideTakken.geweigerd(aggregatieDocument(samen("none", ATTR)), tellingCasus(null, 2, 1, 2, 0, 1, 2),
                 "GEEN-samenstelling (WF-112)", "GEEN[venster] als subselectie van een telling");
-        BeideTakken.geweigerd(voorwaardeTellingDocument(samen("GEEN", ATTR)), casus(null, ALLE_PLOEGEN),
+        BeideTakken.geweigerd(voorwaardeTellingDocument(samen("none", ATTR)), casus(null, ALLE_PLOEGEN),
                 "GEEN-samenstelling (WF-112)", "diezelfde telling als operand van een voorwaarde");
     }
 
@@ -288,10 +288,10 @@ class VensterVouwWitnessTest {
             IrPad.addAttribute(IrPad.objectType(doc, ot), "aanstelling", JSON.readTree(DATUM));
         houdRegel(doc, "bevoegd bij diploma");
         ObjectNode kv = (ObjectNode) IrPad.versie(doc, "rules", 0, 0).get("condition");
-        kv.put("kwantor", kwantor);
-        if (drempel == null) kv.remove("drempel"); else kv.put("drempel", drempel);
+        kv.put("quantifier", kwantor);
+        if (drempel == null) kv.remove("threshold"); else kv.put("threshold", drempel);
         kv.set("filter", filter == null ? JSON.nullNode() : JSON.readTree(filter));
-        kv.set("toets", JSON.readTree(toets));
+        kv.set("test", JSON.readTree(toets));
         Path p = tmp.resolve("venstervouw-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());
         return p;
@@ -326,11 +326,11 @@ class VensterVouwWitnessTest {
             IrPad.addAttribute(IrPad.objectType(doc, ot), "aanstelling", JSON.readTree(DATUM));
         houdRegel(doc, "bevoegd bij diploma");
         ObjectNode vergelijking = JSON.createObjectNode();
-        vergelijking.put("node", "Vergelijking").put("op", "GROTER").set("links", telling);
-        vergelijking.set("rechts", JSON.readTree("""
+        vergelijking.put("node", "Comparison").put("op", "greater").set("left", telling);
+        vergelijking.set("right", JSON.readTree("""
                 { "node": "Literal", "value": { "number": "0" }, "type": { "node": "Number", "whole": true, "decimals": 0,
                   "sign": "unspecified" }, "source": { "snippet": "0" } }"""));
-        vergelijking.putNull("periode").set("source", IrPad.bronrecord("het aantal wachten die vanaf hun aanstelling dienen groter is dan 0"));
+        vergelijking.set("source", IrPad.bronrecord("het aantal wachten die vanaf hun aanstelling dienen groter is dan 0"));
         IrPad.versie(doc, "rules", 0, 0).set("condition", vergelijking);
         Path p = tmp.resolve("venstervouw-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());

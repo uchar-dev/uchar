@@ -44,7 +44,7 @@ class VensterGatepositieWitnessTest {
     private int n;
 
     @Test void het_venster_in_de_poort_van_een_verdeling_speelt() throws Exception {
-        Path alle = verdeling(samen("ALLE", 0, "{score}", VENSTER));
+        Path alle = verdeling(samen("all", 0, "{score}", VENSTER));
         BeideTakken.groen(alle, verdelingCasus("2024-06-15", "75", "25", null, null), "ALLE[score, venster], binnen");
         BeideTakken.groen(alle, verdelingCasus(null, null, null, null, null), "ALLE[score, venster], tijdvrij");
         Path kaal = verdeling(VENSTER);
@@ -53,23 +53,23 @@ class VensterGatepositieWitnessTest {
     }
 
     @Test void onder_geen_en_ten_minste_weigeren_beide_takken_de_verdeling_bij_naam() throws Exception {
-        BeideTakken.geweigerd(verdeling(samen("GEEN", 0, "{score}", VENSTER)), verdelingCasus(null, null, null, null, null),
+        BeideTakken.geweigerd(verdeling(samen("none", 0, "{score}", VENSTER)), verdelingCasus(null, null, null, null, null),
                 "periodevenster in een GEEN-samenstelling (WF-112)", "GEEN[score, venster] als verdelingspoort");
-        BeideTakken.geweigerd(verdeling(samen("TEN_MINSTE", 1, "{score}", VENSTER)),
+        BeideTakken.geweigerd(verdeling(samen("atLeast", 1, "{score}", VENSTER)),
                 verdelingCasus(null, null, null, null, null),
                 "periodevenster in een TEN_MINSTE-samenstelling (WF-112)", "TEN MINSTE 1[score, venster]");
     }
 
     @Test void het_venster_in_de_guard_van_een_objectcreatie_speelt() throws Exception {
-        Path alle = creatie(samen("ALLE", 0, "{guard}", VENSTER));
+        Path alle = creatie(samen("all", 0, "{guard}", VENSTER));
         BeideTakken.groen(alle, creatieCasus("2024-06-15", "2"), "ALLE[rang < 98, venster], binnen");
         BeideTakken.groen(alle, creatieCasus(null, "0"), "ALLE[rang < 98, venster], tijdvrij: niets gemunt");
     }
 
     @Test void onder_geen_en_ten_minste_weigeren_beide_takken_de_objectcreatie_bij_naam() throws Exception {
-        BeideTakken.geweigerd(creatie(samen("GEEN", 0, "{guard}", VENSTER)), creatieCasus(null, "0"),
+        BeideTakken.geweigerd(creatie(samen("none", 0, "{guard}", VENSTER)), creatieCasus(null, "0"),
                 "periodevenster in een GEEN-samenstelling (WF-112)", "GEEN[rang < 98, venster] als creatieguard");
-        BeideTakken.geweigerd(creatie(samen("TEN_MINSTE", 1, "{guard}", VENSTER)), creatieCasus(null, "0"),
+        BeideTakken.geweigerd(creatie(samen("atLeast", 1, "{guard}", VENSTER)), creatieCasus(null, "0"),
                 "periodevenster in een TEN_MINSTE-samenstelling (WF-112)", "TEN MINSTE 1[rang < 98, venster]");
     }
 

@@ -61,14 +61,14 @@ class HeelperiodeKwantorvouwWitnessTest {
     // ---------------- the five verdict rows of ch. 3.9a ----------------
 
     @Test void alle_leden_het_hele_jaar_boven_de_grens_is_waar() throws Exception {
-        assertTrue(zeewaardig(ir(vouw("ALLE", "null", BRONROL)), schepen(
+        assertTrue(zeewaardig(ir(vouw("all", "null", BRONROL)), schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01"),
                 schuit("S2", "15", "2025-01-01", "2026-01-01"))),
                 "elk lid dekt het hele jaar boven de grens — de forall houdt");
     }
 
     @Test void een_lid_onder_de_grens_maakt_de_vouw_onwaar() throws Exception {
-        assertFalse(zeewaardig(ir(vouw("ALLE", "null", BRONROL)), schepen(
+        assertFalse(zeewaardig(ir(vouw("all", "null", BRONROL)), schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01"),
                 schuit("S2", "8", "2025-01-01", "2026-01-01"))),
                 "één tegenvoorbeeld breekt de forall — de kwantor kijkt naar ELK lid, niet naar een totaal");
@@ -77,7 +77,7 @@ class HeelperiodeKwantorvouwWitnessTest {
     @Test void een_gat_in_het_jaar_maakt_de_vouw_onwaar() throws Exception {
         // S2 haalt de grens waar het meet, maar meet maar een half jaar. §8.2 vraagt het hele
         // kalenderjaar: een gat laat minder voldoende dagen over dan het jaar lang is.
-        assertFalse(zeewaardig(ir(vouw("ALLE", "null", BRONROL)), schepen(
+        assertFalse(zeewaardig(ir(vouw("all", "null", BRONROL)), schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01"),
                 schuit("S2", "15", "2025-01-01", "2025-07-01"))),
                 "een lid dat maar een half jaar dekt voldoet niet GEDURENDE HET GEHELE jaar");
@@ -85,15 +85,15 @@ class HeelperiodeKwantorvouwWitnessTest {
 
     @Test void een_lege_verzameling_is_vacuum_waar() throws Exception {
         // ch. 3.9a: een lege bijdragersverzameling is WAAR voor beide kwantoren — niets schendt de matrix.
-        assertTrue(zeewaardig(ir(vouw("ALLE", "null", BRONROL)), ""),
+        assertTrue(zeewaardig(ir(vouw("all", "null", BRONROL)), ""),
                 "geen enkel schip betekent geen enkel tegenvoorbeeld");
-        assertTrue(zeewaardig(ir(vouw("GEEN", "null", BRONROL)), ""),
+        assertTrue(zeewaardig(ir(vouw("none", "null", BRONROL)), ""),
                 "en ook geen enkel lid dat de matrix haalt");
     }
 
     @Test void precies_op_de_grens_is_bij_strikt_groter_onwaar() throws Exception {
         // De matrixoperator is GROTER, niet GROTER_OF_GELIJK: gelijk aan de grens haalt hem niet.
-        assertFalse(zeewaardig(ir(vouw("ALLE", "null", BRONROL)), schepen(
+        assertFalse(zeewaardig(ir(vouw("all", "null", BRONROL)), schepen(
                 schuit("S1", "10", "2025-01-01", "2026-01-01"),
                 schuit("S2", "10", "2025-01-01", "2026-01-01"))),
                 "de grens zelf ligt buiten een strikt-groter-matrix");
@@ -102,14 +102,14 @@ class HeelperiodeKwantorvouwWitnessTest {
     // ---------------- the GEEN arm, which is not the negation of the ALLE arm ----------------
 
     @Test void geen_enkel_lid_haalt_de_matrix_dus_de_geen_vouw_is_waar() throws Exception {
-        assertTrue(zeewaardig(ir(vouw("GEEN", "null", BRONROL)), schepen(
+        assertTrue(zeewaardig(ir(vouw("none", "null", BRONROL)), schepen(
                 schuit("S1", "3", "2025-01-01", "2026-01-01"),
                 schuit("S2", "4", "2025-01-01", "2026-01-01"))),
                 "GEEN houdt precies wanneer geen enkele bijdrager de matrix haalt");
     }
 
     @Test void een_voldoend_lid_maakt_de_geen_vouw_onwaar() throws Exception {
-        assertFalse(zeewaardig(ir(vouw("GEEN", "null", BRONROL)), schepen(
+        assertFalse(zeewaardig(ir(vouw("none", "null", BRONROL)), schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01"),
                 schuit("S2", "4", "2025-01-01", "2026-01-01"))),
                 "één bijdrager die de matrix wél haalt breekt GEEN");
@@ -123,8 +123,8 @@ class HeelperiodeKwantorvouwWitnessTest {
     @Test void geen_is_niet_de_ontkenning_van_alle() throws Exception {
         String gemengd = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01"),
                                  schuit("S2", "4", "2025-01-01", "2026-01-01"));
-        assertFalse(zeewaardig(ir(vouw("ALLE", "null", BRONROL)), gemengd), "niet elk lid haalt de matrix");
-        assertFalse(zeewaardig(ir(vouw("GEEN", "null", BRONROL)), gemengd), "en toch haalt één lid hem wél");
+        assertFalse(zeewaardig(ir(vouw("all", "null", BRONROL)), gemengd), "niet elk lid haalt de matrix");
+        assertFalse(zeewaardig(ir(vouw("none", "null", BRONROL)), gemengd), "en toch haalt één lid hem wél");
     }
 
     // ---------------- the filter selects WHICH members are quantified over ----------------
@@ -135,9 +135,9 @@ class HeelperiodeKwantorvouwWitnessTest {
         // kiest WELKE leden gekwantificeerd worden, de matrix WAT elk gekozen lid moet halen).
         String vloot = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01", true),
                                schuit("S2", "3", "2025-01-01", "2026-01-01", false));
-        assertFalse(zeewaardig(ir(vouw("ALLE", "null", BRONROL)), vloot),
+        assertFalse(zeewaardig(ir(vouw("all", "null", BRONROL)), vloot),
                 "zonder filter telt de niet-zeegaande schuit mee en breekt de forall");
-        assertTrue(zeewaardig(ir(vouw("ALLE", ZEEGAAND_FILTER, BRONROL)), vloot),
+        assertTrue(zeewaardig(ir(vouw("all", ZEEGAAND_FILTER, BRONROL)), vloot),
                 "met het filter is zij geen bijdrager meer en houdt de forall");
     }
 
@@ -154,11 +154,11 @@ class HeelperiodeKwantorvouwWitnessTest {
     @Test void de_niet_prefix_klapt_de_kwantor_om_in_plaats_van_het_verdict() throws Exception {
         String geenHaaltHem = schepen(schuit("S1", "3", "2025-01-01", "2026-01-01"),
                                       schuit("S2", "4", "2025-01-01", "2026-01-01"));
-        assertTrue(zeewaardig(ir(vouw("ALLE", "null", BRONROL, true)), geenHaaltHem),
+        assertTrue(zeewaardig(ir(vouw("all", "null", BRONROL, true)), geenHaaltHem),
                 "ALLE met een genegeerde matrix is GEEN over de positieve matrix");
         String eenHaaltHem = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01"),
                                      schuit("S2", "4", "2025-01-01", "2026-01-01"));
-        assertFalse(zeewaardig(ir(vouw("ALLE", "null", BRONROL, true)), eenHaaltHem),
+        assertFalse(zeewaardig(ir(vouw("all", "null", BRONROL, true)), eenHaaltHem),
                 "één lid dat de positieve matrix haalt breekt haar");
     }
 
@@ -169,7 +169,7 @@ class HeelperiodeKwantorvouwWitnessTest {
                 "bronPad": [ { "node": "RoleBinding", "factType": "vlootindeling", "role": "schip" },
                              { "node": "RoleBinding", "factType": "vlootindeling", "role": "schip" } ]""";
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
-                () -> IrLoader.load(JSON.readTree(ir(vouw("ALLE", "null", pad)))),
+                () -> IrLoader.load(JSON.readTree(ir(vouw("all", "null", pad)))),
                 "een meerstaps bereik hoort een benoemde per-vorm-weigering te zijn, geen genegeerd veld");
         assertEquals("Kwantorvouw.bronPad", r.form(),
                 "de weigering noemt de vorm, zodat gate 12 haar met reden in de kanaalvloer zet");
@@ -185,7 +185,7 @@ class HeelperiodeKwantorvouwWitnessTest {
      * naam stuklopen in plaats van stil als forall mee te glijden.
      */
     @Test void de_bepaalde_kwantor_wordt_bij_naam_geweigerd() throws Exception {
-        for (String kw : new String[]{"DE", "SOMMIGE"}) {
+        for (String kw : new String[]{"the", "SOMMIGE"}) {
             IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
                     () -> IrLoader.load(JSON.readTree(ir(vouw(kw, "null", BRONROL)))),
                     "kwantor " + kw + " is geen kwantificatie over een verzameling en hoort te worden geweigerd");
@@ -201,7 +201,7 @@ class HeelperiodeKwantorvouwWitnessTest {
      * verdict, en een drempel naast ALLE noteert een kwantificatie die het kwantorveld tegenspreekt.
      */
     @Test void de_drempel_staat_er_precies_onder_een_tellende_kwantor() throws Exception {
-        for (String kw : new String[]{"TEN_MINSTE", "TEN_HOOGSTE", "PRECIES"}) {
+        for (String kw : new String[]{"atLeast", "atMost", "exactly"}) {
             IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
                     () -> IrLoader.load(JSON.readTree(ir(vouw(kw, "null", BRONROL)))),
                     "een tellende kwantor zonder drempel hoort te worden geweigerd (" + kw + ")");
@@ -209,7 +209,7 @@ class HeelperiodeKwantorvouwWitnessTest {
             assertTrue(r.getMessage().contains("WF-108"),
                     "de reden verwijst naar de regel: " + r.getMessage());
         }
-        for (String kw : new String[]{"ALLE", "GEEN"}) {
+        for (String kw : new String[]{"all", "none"}) {
             IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
                     () -> IrLoader.load(JSON.readTree(ir(telVouw(kw, 2, "null", BRONROL)))),
                     "een drempel naast " + kw + " hoort te worden geweigerd");
@@ -230,17 +230,17 @@ class HeelperiodeKwantorvouwWitnessTest {
                 schuit("S2", "15", "2025-01-01", "2026-01-01"));
         String een = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01"),
                 schuit("S2", "8", "2025-01-01", "2026-01-01"));
-        assertTrue(zeewaardig(ir(telVouw("TEN_MINSTE", 2, "null", BRONROL)), twee),
+        assertTrue(zeewaardig(ir(telVouw("atLeast", 2, "null", BRONROL)), twee),
                 "telling 2 ligt op de drempel van ten minste 2");
-        assertFalse(zeewaardig(ir(telVouw("TEN_MINSTE", 2, "null", BRONROL)), een),
+        assertFalse(zeewaardig(ir(telVouw("atLeast", 2, "null", BRONROL)), een),
                 "telling 1 ligt er precies één onder");
-        assertTrue(zeewaardig(ir(telVouw("TEN_HOOGSTE", 1, "null", BRONROL)), een),
+        assertTrue(zeewaardig(ir(telVouw("atMost", 1, "null", BRONROL)), een),
                 "telling 1 ligt op de drempel van ten hoogste 1");
-        assertFalse(zeewaardig(ir(telVouw("TEN_HOOGSTE", 1, "null", BRONROL)), twee),
+        assertFalse(zeewaardig(ir(telVouw("atMost", 1, "null", BRONROL)), twee),
                 "telling 2 overschrijdt haar met precies één");
-        assertTrue(zeewaardig(ir(telVouw("PRECIES", 1, "null", BRONROL)), een),
+        assertTrue(zeewaardig(ir(telVouw("exactly", 1, "null", BRONROL)), een),
                 "precies 1 wil de telling die de andere twee omklapt");
-        assertFalse(zeewaardig(ir(telVouw("PRECIES", 1, "null", BRONROL)), twee),
+        assertFalse(zeewaardig(ir(telVouw("exactly", 1, "null", BRONROL)), twee),
                 "en verwerpt er twee");
     }
 
@@ -249,11 +249,11 @@ class HeelperiodeKwantorvouwWitnessTest {
      * waar op lezen, gaan de drie tellende kwantoren uit elkaar op precies dezelfde verzameling.
      */
     @Test void de_lege_verzameling_is_onder_de_tellende_kwantoren_de_telling_nul() throws Exception {
-        assertFalse(zeewaardig(ir(telVouw("TEN_MINSTE", 1, "null", BRONROL)), ""),
+        assertFalse(zeewaardig(ir(telVouw("atLeast", 1, "null", BRONROL)), ""),
                 "telling 0 haalt ten minste 1 niet");
-        assertTrue(zeewaardig(ir(telVouw("TEN_HOOGSTE", 1, "null", BRONROL)), ""),
+        assertTrue(zeewaardig(ir(telVouw("atMost", 1, "null", BRONROL)), ""),
                 "telling 0 blijft onder ten hoogste 1");
-        assertFalse(zeewaardig(ir(telVouw("PRECIES", 1, "null", BRONROL)), ""),
+        assertFalse(zeewaardig(ir(telVouw("exactly", 1, "null", BRONROL)), ""),
                 "en is niet precies 1");
     }
 
@@ -272,13 +272,13 @@ class HeelperiodeKwantorvouwWitnessTest {
         String twee_van_drie = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01"),
                 schuit("S2", "15", "2025-01-01", "2026-01-01"),
                 schuit("S3", "3", "2025-01-01", "2026-01-01"));
-        assertTrue(zeewaardig(ir(vouw("TEN_MINSTE", 2, "null", BRONROL, true)), geen),
+        assertTrue(zeewaardig(ir(vouw("atLeast", 2, "null", BRONROL, true)), geen),
                 "geen lid haalt de matrix, dus beide voldoen aan haar ontkenning");
-        assertTrue(zeewaardig(ir(vouw("TEN_HOOGSTE", 1, "null", BRONROL, true)), beide),
+        assertTrue(zeewaardig(ir(vouw("atMost", 1, "null", BRONROL, true)), beide),
                 "elk lid haalt de matrix, dus nul voldoen aan haar ontkenning");
-        assertTrue(zeewaardig(ir(vouw("PRECIES", 1, "null", BRONROL, true)), twee_van_drie),
+        assertTrue(zeewaardig(ir(vouw("exactly", 1, "null", BRONROL, true)), twee_van_drie),
                 "twee halen hem, één niet — precies één aan de ontkende kant");
-        assertFalse(zeewaardig(ir(vouw("TEN_MINSTE", 1, "null", BRONROL, true)), ""),
+        assertFalse(zeewaardig(ir(vouw("atLeast", 1, "null", BRONROL, true)), ""),
                 "de lege verzameling blijft 0 − 0 en wordt niet 'alles ontkend'");
     }
 
@@ -287,9 +287,9 @@ class HeelperiodeKwantorvouwWitnessTest {
         // S1 en S2 halen de matrix, S2 is niet zeegaand: de selectie houdt één voldoener over.
         String leden = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01", true),
                 schuit("S2", "15", "2025-01-01", "2026-01-01", false));
-        assertTrue(zeewaardig(ir(telVouw("TEN_MINSTE", 2, "null", BRONROL)), leden),
+        assertTrue(zeewaardig(ir(telVouw("atLeast", 2, "null", BRONROL)), leden),
                 "zonder filter telt het bereik er twee");
-        assertFalse(zeewaardig(ir(telVouw("TEN_MINSTE", 2, ZEEGAAND_FILTER, BRONROL)), leden),
+        assertFalse(zeewaardig(ir(telVouw("atLeast", 2, ZEEGAAND_FILTER, BRONROL)), leden),
                 "met de deelselectie blijft er één voldoener over, en dat is onder de drempel");
     }
 
@@ -302,10 +302,10 @@ class HeelperiodeKwantorvouwWitnessTest {
      * halen: januari tot en met december staat er, alleen juli ontbreekt. Beide takken moeten hem missen.
      */
     @Test void een_gat_midden_in_het_jaar_breekt_de_dekking_net_zo_goed() throws Exception {
-        assertFalse(zeewaardig(ir(vouw("ALLE", "null", BRONROL)), schepen(
+        assertFalse(zeewaardig(ir(vouw("all", "null", BRONROL)), schepen(
                 gatSchuit("S1", "12", "2025-01-01", "2025-07-01", "2025-08-01", "2026-01-01"))),
                 "een lid dat elf van de twaalf maanden dekt voldoet niet GEDURENDE HET GEHELE jaar");
-        assertTrue(zeewaardig(ir(vouw("GEEN", "null", BRONROL)), schepen(
+        assertTrue(zeewaardig(ir(vouw("none", "null", BRONROL)), schepen(
                 gatSchuit("S1", "12", "2025-01-01", "2025-07-01", "2025-08-01", "2026-01-01"))),
                 "en haalt de matrix dus niet, waarmee GEEN juist houdt");
     }
@@ -321,11 +321,11 @@ class HeelperiodeKwantorvouwWitnessTest {
      */
     @Test void een_lid_zonder_tijdlijn_voldoet_vacuum_en_keert_geen_om() throws Exception {
         String enkel = schepen(schuitZonderTijdlijn("S1"));
-        assertTrue(zeewaardig(ir(vouw("ALLE", "null", BRONROL)), enkel),
+        assertTrue(zeewaardig(ir(vouw("all", "null", BRONROL)), enkel),
                 "geen bucket geraakt, dus niets geschonden");
-        assertFalse(zeewaardig(ir(vouw("GEEN", "null", BRONROL)), enkel),
+        assertFalse(zeewaardig(ir(vouw("none", "null", BRONROL)), enkel),
                 "maar GEEN ontkent precies wie de matrix haalt, en vacuüm halen is halen");
-        assertTrue(zeewaardig(ir(vouw("GEEN", "null", BRONROL)), ""),
+        assertTrue(zeewaardig(ir(vouw("none", "null", BRONROL)), ""),
                 "terwijl de lege VERZAMELING onder GEEN wél waar blijft — twee verschillende vacua");
     }
 
@@ -335,10 +335,10 @@ class HeelperiodeKwantorvouwWitnessTest {
      * op één hoop gooit leest hier de andere kant van ten-minste-1.
      */
     @Test void de_telling_scheidt_het_ontbrekende_segment_van_het_gat() throws Exception {
-        assertTrue(zeewaardig(ir(telVouw("TEN_MINSTE", 1, "null", BRONROL)),
+        assertTrue(zeewaardig(ir(telVouw("atLeast", 1, "null", BRONROL)),
                 schepen(schuitZonderTijdlijn("S1"))),
                 "het lid zonder tijdlijn voldoet vacuüm en telt dus mee");
-        assertFalse(zeewaardig(ir(telVouw("TEN_MINSTE", 1, "null", BRONROL)), schepen(
+        assertFalse(zeewaardig(ir(telVouw("atLeast", 1, "null", BRONROL)), schepen(
                 gatSchuit("S1", "12", "2025-01-01", "2025-07-01", "2025-08-01", "2026-01-01"))),
                 "het lid met het gat voldoet niet en telt dus niet mee");
     }
@@ -354,15 +354,15 @@ class HeelperiodeKwantorvouwWitnessTest {
         String drie = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01"),
                 schuit("S2", "15", "2025-01-01", "2026-01-01"),
                 schuit("S3", "11", "2025-01-01", "2026-01-01"));
-        assertTrue(zeewaardig(ir(telVouw("TEN_MINSTE", 2, "null", BRONROL)), twee),
+        assertTrue(zeewaardig(ir(telVouw("atLeast", 2, "null", BRONROL)), twee),
                 "telling 2 haalt ten minste 2 precies");
-        assertTrue(zeewaardig(ir(telVouw("TEN_HOOGSTE", 2, "null", BRONROL)), twee),
+        assertTrue(zeewaardig(ir(telVouw("atMost", 2, "null", BRONROL)), twee),
                 "en blijft precies onder ten hoogste 2");
-        assertFalse(zeewaardig(ir(telVouw("TEN_HOOGSTE", 2, "null", BRONROL)), drie),
+        assertFalse(zeewaardig(ir(telVouw("atMost", 2, "null", BRONROL)), drie),
                 "terwijl telling 3 haar met precies één overschrijdt");
-        assertTrue(zeewaardig(ir(telVouw("PRECIES", 2, "null", BRONROL)), twee),
+        assertTrue(zeewaardig(ir(telVouw("exactly", 2, "null", BRONROL)), twee),
                 "precies 2 wil de telling die beide grenzen raakt");
-        assertFalse(zeewaardig(ir(telVouw("PRECIES", 2, "null", BRONROL)), drie),
+        assertFalse(zeewaardig(ir(telVouw("exactly", 2, "null", BRONROL)), drie),
                 "en verwerpt er één meer");
     }
 
@@ -633,16 +633,16 @@ class HeelperiodeKwantorvouwWitnessTest {
                   "source": { "snippet": "de wachtwaarde van %s schepen van de Vloot gedurende het gehele jaar groter is dan 10" } }
                 """.formatted(kwantor, drempel < 0 ? "" : ", \"drempel\": " + drempel,
                         filter, NUMERIEK, niet, bereik,
-                        "GEEN".equals(kwantor) ? "geen van de" : "alle");
+                        "none".equals(kwantor) ? "geen van de" : "alle");
     }
 
     /** The §8.2 fold with a member filter and a bound this arm refuses: the ELEMENT's own scalar attribute,
      *  which the eval after the accumulate cannot read (it binds no subject). */
     private static String nietScalaireGrens() throws Exception {
-        ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("ALLE", ZEEGAAND_FILTER, BRONROL)));
+        ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("all", ZEEGAAND_FILTER, BRONROL)));
         IrPad.addAttribute(IrPad.objectType(doc, "Schuit"), "grenswaarde", JSON.readTree(NUMERIEK));
-        ObjectNode toets = (ObjectNode) IrPad.versie(doc, "rules", 0, 0).get("condition").get("toets");
-        toets.set("rechts", JSON.readTree("""
+        ObjectNode toets = (ObjectNode) IrPad.versie(doc, "rules", 0, 0).get("condition").get("test");
+        toets.set("right", JSON.readTree("""
                 { "node": "AttributeReference", "attribute": "grenswaarde", "subjectType": "Schuit",
                   "source": { "snippet": "zijn grenswaarde" } }"""));
         return doc.toPrettyString();
@@ -659,7 +659,7 @@ class HeelperiodeKwantorvouwWitnessTest {
                              "source": { "snippet": "het stuk gekeurd is" } },
                   "sourceRole": { "node": "RoleBinding", "factType": "schuituitrusting", "role": "stuk" },
                   "source": { "snippet": "die al hun stukken gekeurd hebben" } }""";
-        ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("ALLE", nested, BRONROL)));
+        ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("all", nested, BRONROL)));
         IrPad.modelLijst(doc, "objectTypes").add(JSON.readTree("""
                 { "node": "ObjectType", "name": "Uitrusting", "animate": false, "plural": "Uitrustingen",
                   "attributes": [],
@@ -677,7 +677,7 @@ class HeelperiodeKwantorvouwWitnessTest {
      *  the position whose verdict is folded with {@code ||}, where a separate when-clause cannot go.
      *  {@code heelperiode} picks which matrix route the bullet takes. */
     private static String vouwOnderDisjunctie(boolean heelperiode) throws Exception {
-        ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("ALLE", "null", BRONROL)));
+        ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("all", "null", BRONROL)));
         ObjectNode vloot = IrPad.objectType(doc, "Vloot");
         vloot.set("characteristics", JSON.readTree("""
                 [ { "node": "Characteristic", "name": "zeewaardig", "kind": "adjectival" },
@@ -685,14 +685,14 @@ class HeelperiodeKwantorvouwWitnessTest {
         ObjectNode regel = IrPad.versie(doc, "rules", 0, 0);
         ObjectNode fold = (ObjectNode) regel.get("condition");
         if (!heelperiode)   // de niet-temporele route: een kenmerkmatrix zonder heelperiodekwalificatie
-            fold.set("toets", JSON.readTree("""
+            fold.set("test", JSON.readTree("""
                     { "node": "CharacteristicCheck", "characteristic": "zeegaand", "negated": false,
                       "source": { "snippet": "het schip zeegaand is" } }"""));
         ObjectNode compound = JSON.createObjectNode();
-        compound.put("node", "Samengesteld");
-        compound.put("kwantor", "TEN_MINSTE");
-        compound.put("drempel", 1);
-        compound.putArray("onderdelen").add(fold).add(JSON.readTree("""
+        compound.put("node", "Compound");
+        compound.put("quantifier", "atLeast");
+        compound.put("threshold", 1);
+        compound.putArray("parts").add(fold).add(JSON.readTree("""
                 { "node": "CharacteristicCheck", "characteristic": "vlaggend", "negated": false,
                   "source": { "snippet": "de Vloot vlaggend is" } }"""));
         compound.set("source", IrPad.bronrecord("ten minste één van de volgende voorwaarden"));

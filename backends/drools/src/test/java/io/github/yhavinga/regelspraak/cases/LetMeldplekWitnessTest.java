@@ -143,8 +143,8 @@ class LetMeldplekWitnessTest {
         return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"%s\"}"
                 .formatted(geheel, dec, teken);
     }
-    private static String num(int dec) { return num(dec, false, "ONBEPAALD"); }
-    private static String pos(int dec) { return num(dec, false, "NIET_NEGATIEF"); }
+    private static String num(int dec) { return num(dec, false, "unspecified"); }
+    private static String pos(int dec) { return num(dec, false, "nonNegative"); }
 
     private static String attr(String naam, String type) {
         return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
@@ -209,7 +209,7 @@ class LetMeldplekWitnessTest {
 
     /** "het inkomen gedeeld door de restpost" — the §6.5 site, un-bound. */
     private static String kaalModel() {
-        return model(binair("GEDEELD_DOOR", attr("inkomen"), attr("restpost"), num(4)));
+        return model(binair("dividedBy", attr("inkomen"), attr("restpost"), num(4)));
     }
 
     /** The SAME site, one `Let` deep: "Let k = inkomen in (k gedeeld door restpost)". */
@@ -220,23 +220,23 @@ class LetMeldplekWitnessTest {
     /** "Let k = inkomen in (k plus (saldo gedeeld door restpost))" — the need is read BEFORE the site, and it
      *  is not one of the site's own operands. */
     private static String barriereModel() {
-        String deling = binair("GEDEELD_DOOR", attr("saldo", num(2)), attr("restpost"), num(4));
-        return model(let("k", attr("inkomen"), binair("PLUS", bref("k", pos(2)), deling, num(4)), num(4)));
+        String deling = binair("dividedBy", attr("saldo", num(2)), attr("restpost"), num(4));
+        return model(let("k", attr("inkomen"), binair("plus", bref("k", pos(2)), deling, num(4)), num(4)));
     }
 
     /** "Let k = inkomen in (als k groter dan 10,00 dan 5,0000 anders (k gedeeld door restpost))". */
     private static String takModel() {
-        String keuze = ite(verg("GROTER", bref("k", pos(2)), lit("10.00", pos(2))),
+        String keuze = ite(verg("greater", bref("k", pos(2)), lit("10.00", pos(2))),
                 lit("5.0000", num(4)), gebondenDeling(), num(4));
         return model(let("k", attr("inkomen"), keuze, num(4)));
     }
 
     /** "100,00 gedeeld door de restpost" — a LITERAL dividend, no `Let` in sight. */
     private static String literaalModel() {
-        return model(binair("GEDEELD_DOOR", lit("100.00", pos(2)), attr("restpost"), num(4)));
+        return model(binair("dividedBy", lit("100.00", pos(2)), attr("restpost"), num(4)));
     }
 
     private static String gebondenDeling() {
-        return binair("GEDEELD_DOOR", bref("k", pos(2)), attr("restpost"), num(4));
+        return binair("dividedBy", bref("k", pos(2)), attr("restpost"), num(4));
     }
 }

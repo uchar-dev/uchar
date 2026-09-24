@@ -374,8 +374,8 @@ class OpslagrichtingWitnessTest {
      *  owns its own bean field. An in-memory variant written to a temp file; the corpus ir.json is untouched. */
     private static Path vondstRolNaarToOne() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(VONDSTTELLING)));
-        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "vondstaanmelding").get("rollen"))
-            if ("vondst".equals(r.get("naam").asText())) ((ObjectNode) r).put("meervoudig", false);
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "vondstaanmelding").get("roles"))
+            if ("vondst".equals(r.get("name").asText())) ((ObjectNode) r).put("many", false);
         return tijdelijk("vondst-een-op-een", ir);
     }
 
@@ -388,8 +388,8 @@ class OpslagrichtingWitnessTest {
         IrPad.rules(ir).putArray("factCreations");
         IrPad.rules(ir).putArray("ruleGroups");
         ObjectNode waarde = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value");
-        ((ObjectNode) waarde.get("arguments").get(0)).put("attribuut", "opvolgers");
-        ((ObjectNode) waarde.get("sourceRole")).put("feittype", "opvolging").put("rol", "opvolger");
+        ((ObjectNode) waarde.get("arguments").get(0)).put("attribute", "opvolgers");
+        ((ObjectNode) waarde.get("sourceRole")).put("factType", "opvolging").put("role", "opvolger");
         return tijdelijk("erflijn-telling-op-opvolgers", ir);
     }
 
@@ -436,22 +436,22 @@ class OpslagrichtingWitnessTest {
         haven.putArray("characteristics");
         IrPad.addAttribute(haven, "havengeld", numeriek());
         ObjectNode ft = IrPad.modelLijst(ir, "factTypes").addObject();
-        ft.put("node", "Feittype").put("naam", "werfhaven").put("wederkerig", false);
-        ft.putArray("rollen")
-          .add(JSON.createObjectNode().put("node", "Rol").put("naam", "thuishaven").put("objecttypeNaam", "Haven")
-                  .putNull("meervoud").put("meervoudig", false))
-          .add(JSON.createObjectNode().put("node", "Rol").put("naam", "havenwerf").put("objecttypeNaam", "Werf")
-                  .put("meervoud", "havenwerven").put("meervoudig", true));
+        ft.put("node", "FactType").put("name", "werfhaven").put("reciprocal", false);
+        ft.putArray("roles")
+          .add(JSON.createObjectNode().put("node", "Role").put("name", "thuishaven").put("objectType", "Haven")
+                  .put("many", false))
+          .add(JSON.createObjectNode().put("node", "Role").put("name", "havenwerf").put("objectType", "Werf")
+                  .put("plural", "havenwerven").put("many", true));
         if (stap == 1) IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", numeriek());
         else IrPad.addAttribute(IrPad.objectType(ir, "Werf"), "thuishaven", numeriek());
         houdRegel(ir, "premie van een schuit");
-        ObjectNode keten = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value").get("rechts");
-        keten.put("attribuut", "havengeld").put("objecttype", "Haven")
+        ObjectNode keten = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value").get("right");
+        keten.put("attribute", "havengeld").put("subjectType", "Haven")
              .set("source", IrPad.bronrecord("het havengeld van de thuishaven van de werf van de Schuit"));
-        keten.putArray("navigatieBindingen")
-             .add(JSON.createObjectNode().put("node", "RolBinding").put("feittype", "ligplaats").put("rol", "werf"))
-             .add(JSON.createObjectNode().put("node", "RolBinding").put("feittype", "werfhaven")
-                     .put("rol", "thuishaven"));
+        keten.putArray("path")
+             .add(JSON.createObjectNode().put("node", "RoleBinding").put("factType", "ligplaats").put("role", "werf"))
+             .add(JSON.createObjectNode().put("node", "RoleBinding").put("factType", "werfhaven")
+                     .put("role", "thuishaven"));
         return tijdelijk("keten-naamdeling-" + stap, ir);
     }
 
@@ -464,17 +464,17 @@ class OpslagrichtingWitnessTest {
         houdRegel(ir, "toeslag van een schuit");
         ObjectNode regel = IrPad.versie(ir, "rules", 0, 0);
         ObjectNode nav = JSON.createObjectNode();
-        nav.put("node", "AttribuutRef").put("attribuut", "tarief").put("objecttype", "Werf");
+        nav.put("node", "AttributeReference").put("attribute", "tarief").put("subjectType", "Werf");
         nav.set("source", IrPad.bronrecord("het tarief van de werf van de Schuit"));
-        nav.putArray("navigatieBindingen").addObject()
-           .put("node", "RolBinding").put("feittype", "ligplaats").put("rol", "werf");
-        ((ObjectNode) regel.get("condition")).set("links", nav);
+        nav.putArray("path").addObject()
+           .put("node", "RoleBinding").put("factType", "ligplaats").put("role", "werf");
+        ((ObjectNode) regel.get("condition")).set("left", nav);
         ((ObjectNode) regel.get("condition")).set("source", IrPad.bronrecord("het tarief van de werf van de Schuit groter is dan 5"));
         ObjectNode eigen = JSON.createObjectNode();
-        eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit");
+        eigen.put("node", "AttributeReference").put("attribute", "lengte").put("subjectType", "Schuit");
         eigen.set("source", IrPad.bronrecord("de lengte van de Schuit"));
         regel.set("value", eigen);
-        regel.put("initialisation", false).put("presentation", "GELIJKSTELLING");
+        regel.put("initialisation", false).put("presentation", "equation");
         return tijdelijk("schuit-naamdeling-vergelijking", ir);
     }
 
@@ -492,10 +492,10 @@ class OpslagrichtingWitnessTest {
              .put("negated", false).set("source", IrPad.bronrecord("de Schuit een schuit is"));
         regel.set("condition", check);
         ObjectNode eigen = JSON.createObjectNode();
-        eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit");
+        eigen.put("node", "AttributeReference").put("attribute", "lengte").put("subjectType", "Schuit");
         eigen.set("source", IrPad.bronrecord("de lengte van de Schuit"));
         regel.set("value", eigen);
-        regel.put("initialisation", false).put("presentation", "GELIJKSTELLING");
+        regel.put("initialisation", false).put("presentation", "equation");
         return tijdelijk("schuit-naamdeling-rolcheck", ir);
     }
 
@@ -529,7 +529,7 @@ class OpslagrichtingWitnessTest {
 
     private static ObjectNode numeriek() {
         return JSON.createObjectNode().put("node", "Number").put("whole", true)
-                .put("decimals", 0).put("sign", "ONBEPAALD");
+                .put("decimals", 0).put("sign", "unspecified");
     }
 
     /** W1 (rang 1), no roles — the golden's own case1, with the fold expectation dropped where that rule is. */

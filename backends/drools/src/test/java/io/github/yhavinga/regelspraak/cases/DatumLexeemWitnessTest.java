@@ -121,7 +121,7 @@ class DatumLexeemWitnessTest {
         com.fasterxml.jackson.databind.node.ObjectNode doc =
                 (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(golden.resolve("ir.json").toFile());
         com.fasterxml.jackson.databind.node.ObjectNode tot = (com.fasterxml.jackson.databind.node.ObjectNode)
-                IrPad.versie(doc, "rules", 1, 0).path("condition").path("tot").path("value");
+                IrPad.versie(doc, "rules", 1, 0).path("condition").path("to").path("value");
         assertEquals("2025-01-01", tot.path("date").asText(), "the bound this pin twists");
         tot.put("date", "2025-01-2026");
         String ir = JSON.writeValueAsString(doc);

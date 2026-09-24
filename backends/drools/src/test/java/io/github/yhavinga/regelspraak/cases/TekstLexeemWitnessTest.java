@@ -76,7 +76,7 @@ class TekstLexeemWitnessTest {
         //     verifier: PASS
         //     ref     : oracle: PASS (3 expectations)
         //     clingo  : clingo: PASS (3 expectations)
-        Path ir = model("tekstlexeem-rauw", "GELIJK", "Flevoland", RAUW_GEVOLG);
+        Path ir = model("tekstlexeem-rauw", "equal", "Flevoland", RAUW_GEVOLG);
         beideTakkenSpelen(ir, geval("rauw-raakt", "Flevoland", true, RAUW_GEVOLG));
     }
 
@@ -91,7 +91,7 @@ class TekstLexeemWitnessTest {
         //     verifier: PASS
         //     ref     : oracle: PASS (3 expectations)
         //     clingo  : clingo: PASS (3 expectations)
-        Path ir = model("tekstlexeem-quote", "GELIJK", "\"Flevoland\"", GEVOLG);
+        Path ir = model("tekstlexeem-quote", "equal", "\"Flevoland\"", GEVOLG);
         beideTakkenSpelen(ir, geval("quote-raakt", "\"Flevoland\"", true, GEVOLG));
     }
 
@@ -115,7 +115,7 @@ class TekstLexeemWitnessTest {
         //     verifier: PASS
         //     ref     : MISMATCH: V1.afslag = "\"Noordzee\"", expected "Noordzee"
         //     clingo  : MISMATCH: V1.afslag = [""Noordzee""], expected "Noordzee"
-        Path ir = model("tekstlexeem-gevolg", "GELIJK", "Flevoland", GEVOLG);
+        Path ir = model("tekstlexeem-gevolg", "equal", "Flevoland", GEVOLG);
         Path c = geval("gevolg-ontdaan", "Flevoland", true, "Noordzee");
 
         CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(c));
@@ -139,7 +139,7 @@ class TekstLexeemWitnessTest {
         //     verifier: PASS
         //     ref     : oracle: PASS (3 expectations)
         //     clingo  : clingo: PASS (3 expectations)
-        Path ir = model("tekstlexeem-quote", "GELIJK", "\"Flevoland\"", GEVOLG);
+        Path ir = model("tekstlexeem-quote", "equal", "\"Flevoland\"", GEVOLG);
         beideTakkenSpelen(ir, geval("rauwe-invoer", "Flevoland", false, null));
     }
 
@@ -150,7 +150,7 @@ class TekstLexeemWitnessTest {
         //     verifier: PASS
         //     ref     : oracle: PASS (3 expectations)
         //     clingo  : clingo: PASS (3 expectations)
-        Path ir = model("tekstlexeem-rauw", "GELIJK", "Flevoland", RAUW_GEVOLG);
+        Path ir = model("tekstlexeem-rauw", "equal", "Flevoland", RAUW_GEVOLG);
         beideTakkenSpelen(ir, geval("quote-invoer", "\"Flevoland\"", false, null));
     }
 
@@ -163,7 +163,7 @@ class TekstLexeemWitnessTest {
         //     verifier: PASS
         //     ref     : oracle: PASS (3 expectations) for both cases
         //     clingo  : clingo: PASS (3 expectations) for both cases
-        Path ir = model("tekstlexeem-ongelijk", "ONGELIJK", "\"Flevoland\"", GEVOLG);
+        Path ir = model("tekstlexeem-ongelijk", "notEqual", "\"Flevoland\"", GEVOLG);
         beideTakkenSpelen(ir, geval("ongelijk-zelfde", "\"Flevoland\"", false, null));
         beideTakkenSpelen(ir, geval("ongelijk-ander", "\"Zeeland\"", true, GEVOLG));
     }
@@ -212,7 +212,7 @@ class TekstLexeemWitnessTest {
         for (String einde : List.of("\n", "\r")) {
             String waarde = "uit" + einde + "voer";
             String gevolg = "afslag" + einde + "noord";
-            Path ir = model("tekstlexeem-regeleinde", "GELIJK", waarde, gevolg);
+            Path ir = model("tekstlexeem-regeleinde", "equal", waarde, gevolg);
             beideTakkenSpelen(ir, geval("regeleinde-raakt", waarde, true, gevolg));
         }
     }
@@ -225,7 +225,7 @@ class TekstLexeemWitnessTest {
         // agree with each other) and fire this rule the wire does not license. Measured on the fixed jar:
         //     verifier: PASS
         //     ref     : oracle: PASS (3 expectations)
-        Path ir = model("tekstlexeem-regeleinde", "GELIJK", REGELEINDE, GEVOLG_REGELEINDE);
+        Path ir = model("tekstlexeem-regeleinde", "equal", REGELEINDE, GEVOLG_REGELEINDE);
         beideTakkenSpelen(ir, geval("platgeslagen-invoer", PLATGESLAGEN, false, null));
     }
 
@@ -240,7 +240,7 @@ class TekstLexeemWitnessTest {
         //     verifier: PASS / ref: oracle: PASS (3 expectations) / clingo: clingo: PASS (3 expectations)
         // The shape is "ENDS in a backslash", not "is a backslash": `pad\` refuses the same way and a backslash in
         // the MIDDLE (`pad\naar`, a real backslash) plays in both branches — both measured 2026-09-18.
-        Path ir = model("tekstlexeem-backslash", "GELIJK", "\\", "\\");
+        Path ir = model("tekstlexeem-backslash", "equal", "\\", "\\");
         Path c = geval("backslash-raakt", "\\", true, "\\");
 
         CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(c));
@@ -282,25 +282,24 @@ class TekstLexeemWitnessTest {
     /** The golden's OWN `het keurmerk van de Vondst` reference, so every fixture asks about the same member and the
      *  only thing that varies between them is the literal's lexeme. */
     private static ObjectNode keurmerkRef(ObjectNode ir) {
-        return ((ObjectNode) regel(ir, 0).get("condition").get("links")).deepCopy();
+        return ((ObjectNode) regel(ir, 0).get("condition").get("left")).deepCopy();
     }
 
     private static ObjectNode tekstLiteraal(String waarde) {
         ObjectNode lit = JSON.createObjectNode();
         lit.put("node", "Literal");
         lit.putObject("value").put("text", waarde);
-        lit.set("type", JSON.createObjectNode().put("node", "Tekst"));
+        lit.set("type", JSON.createObjectNode().put("node", "Text"));
         lit.set("source", IrPad.bronrecord(waarde));
         return lit;
     }
 
     private static ObjectNode keurmerkVergelijking(ObjectNode ir, String op, String literaal) {
         ObjectNode v = JSON.createObjectNode();
-        v.put("node", "Vergelijking");
+        v.put("node", "Comparison");
         v.put("op", op);
-        v.set("links", keurmerkRef(ir));
-        v.set("rechts", tekstLiteraal(literaal));
-        v.putNull("periode");
+        v.set("left", keurmerkRef(ir));
+        v.set("right", tekstLiteraal(literaal));
         v.set("source", IrPad.bronrecord("haar keurmerk"));
         return v;
     }
@@ -321,13 +320,13 @@ class TekstLexeemWitnessTest {
 
     /** The same model with the condition widened to a ch. 12 OR-row: TEN_MINSTE 1 of N "is gelijk aan X" cells. */
     private static Path ofRij(String naam, String... literalen) throws Exception {
-        ObjectNode ir = basis("GELIJK", literalen[0], GEVOLG);
+        ObjectNode ir = basis("equal", literalen[0], GEVOLG);
         ObjectNode sam = JSON.createObjectNode();
-        sam.put("node", "Samengesteld");
-        sam.put("kwantor", "TEN_MINSTE");
-        sam.put("drempel", 1);
-        ArrayNode onderdelen = sam.putArray("onderdelen");
-        for (String l : literalen) onderdelen.add(keurmerkVergelijking(ir, "GELIJK", l));
+        sam.put("node", "Compound");
+        sam.put("quantifier", "atLeast");
+        sam.put("threshold", 1);
+        ArrayNode onderdelen = sam.putArray("parts");
+        for (String l : literalen) onderdelen.add(keurmerkVergelijking(ir, "equal", l));
         sam.set("source", IrPad.bronrecord("aan ten minste een van de volgende voorwaarden wordt voldaan"));
         regel(ir, 0).set("condition", sam);
         return tijdelijk(naam, ir.toString());

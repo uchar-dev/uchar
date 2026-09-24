@@ -79,7 +79,7 @@ class BronRolVouwWitnessTest {
     @Test void de_som_over_een_geschreven_bronrol_speelt_in_beide_takken() throws Exception {
         // SOM of romplengte over the LIGGERS: H1 gets S1 (12) + S2 (7) = 19, H2 gets S3 = 20, H3 has none.
         // An empty SOM without a leegwaarde is LEEG (§5.8.2), not 0 — pinned on H3.
-        BeideTakken.groen(vouw("SOM", "liggertal", "liggers", "thuisligging", "ligger"),
+        BeideTakken.groen(vouw("sum", "liggertal", "liggers", "thuisligging", "ligger"),
                 JSON.readTree(zaak("liggertal", "19", "20", null)),
                 "liggertal 19 / 20 / leeg");
     }
@@ -87,14 +87,14 @@ class BronRolVouwWitnessTest {
     @Test void de_minimale_waarde_over_een_bronrol_speelt_in_beide_takken() throws Exception {
         // MINIMUM over the WINTERSCHUITEN: only H2 has any (S1 12, S2 7) -> 7. H1 and H3 read leeg — the
         // §5.8.3 empty MIN, the cell a bare min() accumulate cannot bind at all.
-        BeideTakken.groen(vouw("MINIMUM", "wintertal", "winterschuiten", "winterberging", "winterschuit"),
+        BeideTakken.groen(vouw("minimum", "wintertal", "winterschuiten", "winterberging", "winterschuit"),
                 JSON.readTree(zaak("wintertal", null, "7", null)),
                 "wintertal leeg / 7 / leeg");
     }
 
     @Test void de_maximale_waarde_over_een_bronrol_speelt_in_beide_takken() throws Exception {
         // MAXIMUM over the KEURSCHUITEN: only H1 has any (S1 12, S3 20) -> 20.
-        BeideTakken.groen(vouw("MAXIMUM", "keurtal", "keurschuiten", "keurberging", "keurschuit"),
+        BeideTakken.groen(vouw("maximum", "keurtal", "keurschuiten", "keurberging", "keurschuit"),
                 JSON.readTree(zaak("keurtal", "20", null, null)),
                 "keurtal 20 / leeg / leeg");
     }
@@ -170,8 +170,8 @@ class BronRolVouwWitnessTest {
         // both branches refuse — the §13.3.9 storage-direction half, unchanged by this card. (The document
         // itself is well-formed: verifier PASS, ref PASS, clingo PASS on the very same expectations.)
         ObjectNode ir = somModel();
-        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "thuisligging").get("rollen"))
-            ((ObjectNode) r).put("meervoudig", true);
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "thuisligging").get("roles"))
+            ((ObjectNode) r).put("many", true);
         Path p = tijdelijk("bronrol-beide-meervoudig", ir);
         JsonNode c = JSON.readTree(zaak("liggertal", "19", "20", null));
         for (boolean viaDrl : new boolean[] { false, true }) {
@@ -191,8 +191,8 @@ class BronRolVouwWitnessTest {
         // FactModelGenerator.geenJoinveldReden. No corpus golden reaches this arm (measured, whole corpus, both
         // branches), which is exactly why the branches were free to drift here.
         ObjectNode ir = somModel();
-        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "thuisligging").get("rollen"))
-            ((ObjectNode) r).put("meervoudig", true);
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "thuisligging").get("roles"))
+            ((ObjectNode) r).put("many", true);
         BeideTakken.geweigerd(tijdelijk("bronrol-gedeelde-zin", ir),
                 JSON.readTree(zaak("liggertal", "19", "20", null)),
                 "de rol 'thuishaven' op Schuit is meervoudig, dus haar opslag is het veld aan de overzijde, en ook"
@@ -263,10 +263,10 @@ class BronRolVouwWitnessTest {
             ObjectNode r = (ObjectNode) n.get("versions").get(0);
             switch (n.get("name").asText()) {
                 case "liggertal van een haven" ->
-                        r.set("value", fold("SOM", "liggers", "thuisligging", "ligger"));
+                        r.set("value", fold("sum", "liggers", "thuisligging", "ligger"));
                 case "wintertal van een haven" ->
-                        r.set("value", fold("MINIMUM", "winterschuiten", "winterberging", "winterschuit"));
-                default -> r.set("value", fold("MAXIMUM", "keurschuiten", "keurberging", "keurschuit"));
+                        r.set("value", fold("minimum", "winterschuiten", "winterberging", "winterschuit"));
+                default -> r.set("value", fold("maximum", "keurschuiten", "keurberging", "keurschuit"));
             }
         }
         return tijdelijk("bronrol-drie", ir);
@@ -277,7 +277,7 @@ class BronRolVouwWitnessTest {
         ObjectNode ir = lees();
         IrPad.rules(ir).putArray("factCreations");
         houdRegels(ir, "liggertal van een haven");
-        IrPad.versie(ir, "rules", 0, 0).set("value", fold("SOM", "liggers", "thuisligging", "ligger"));
+        IrPad.versie(ir, "rules", 0, 0).set("value", fold("sum", "liggers", "thuisligging", "ligger"));
         return ir;
     }
 
@@ -295,7 +295,7 @@ class BronRolVouwWitnessTest {
      *  {@code elementType} plus one {@code sourceRole}, the ch. 4.3 one-step form. */
     private static ObjectNode fold(String kind, String meervoud, String feittype, String rol) {
         ObjectNode arg = JSON.createObjectNode();
-        arg.put("node", "AttribuutRef").put("attribuut", "romplengte").put("objecttype", "Schuit");
+        arg.put("node", "AttributeReference").put("attribute", "romplengte").put("subjectType", "Schuit");
         arg.set("source", IrPad.bronrecord("de romplengte van alle " + meervoud + " van de Haven"));
         ObjectNode f = JSON.createObjectNode();
         f.put("node", "Aggregation").put("kind", kind);
@@ -309,14 +309,14 @@ class BronRolVouwWitnessTest {
 
     private static String zin(String kind) {
         return switch (kind) {
-            case "SOM" -> "de som van";
-            case "MINIMUM" -> "de minimale waarde van";
+            case "sum" -> "de som van";
+            case "minimum" -> "de minimale waarde van";
             default -> "de maximale waarde van";
         };
     }
 
     private static ObjectNode rolBinding(String feittype, String rol) {
-        return JSON.createObjectNode().put("node", "RolBinding").put("feittype", feittype).put("rol", rol);
+        return JSON.createObjectNode().put("node", "RoleBinding").put("factType", feittype).put("role", rol);
     }
 
     private static ObjectNode literal(String waarde) {
@@ -328,7 +328,7 @@ class BronRolVouwWitnessTest {
 
     private static ObjectNode numeriek() {
         return JSON.createObjectNode().put("node", "Number").put("whole", true)
-                .put("decimals", 0).put("sign", "NIET_NEGATIEF");
+                .put("decimals", 0).put("sign", "nonNegative");
     }
 
     private static void houdRegels(ObjectNode ir, String... namen) {

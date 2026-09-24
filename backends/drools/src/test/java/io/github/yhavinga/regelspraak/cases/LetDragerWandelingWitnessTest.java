@@ -262,9 +262,9 @@ class LetDragerWandelingWitnessTest {
         return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"%s\"%s}"
                 .formatted(geheel, dec, teken, eenheid == null ? "" : ",\"unit\":" + eenheid);
     }
-    private static String num(int dec) { return num(dec, false, "ONBEPAALD", null); }
-    private static String pos(int dec) { return num(dec, false, "NIET_NEGATIEF", null); }
-    private static final String GEHEEL_POS = num(0, true, "NIET_NEGATIEF", null);
+    private static String num(int dec) { return num(dec, false, "unspecified", null); }
+    private static String pos(int dec) { return num(dec, false, "nonNegative", null); }
+    private static final String GEHEEL_POS = num(0, true, "nonNegative", null);
 
     /** One unit of the two-unit "Afstand" system below (canonical metre, factor to the canonical unit). */
     private static String eenheid(String afkorting, int factor) {
@@ -378,7 +378,7 @@ class LetDragerWandelingWitnessTest {
                 + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
                 + "\"source\":{\"snippet\":\"toeslag\"},\"validity\":{\"node\":\"Validity\"}}")
                 .formatted(ongeordend ? ",\"ongeordend\":true" : "",
-                        verg("GROTER_OF_GELIJK", attr("Jutter", "kindertal", GEHEEL_POS), lit("2", GEHEEL_POS)),
+                        verg("greaterOrEqual", attr("Jutter", "kindertal", GEHEEL_POS), lit("2", GEHEEL_POS)),
                         consequentie, ALTIJD, nulWaarde);
     }
 
@@ -387,12 +387,12 @@ class LetDragerWandelingWitnessTest {
     /** A ch. 10.2 branch guard whose two operands live in DIFFERENT units of one system — the restatement is
      *  what decides the branch, and the guard that refuses it is what keeps the wrong branch off the table. */
     private static String kruisEenheidModel() {
-        String meter = num(0, true, "NIET_NEGATIEF", eenheid("m", 1));
-        String kilometer = num(0, true, "NIET_NEGATIEF", eenheid("km", 1000));
+        String meter = num(0, true, "nonNegative", eenheid("m", 1));
+        String kilometer = num(0, true, "nonNegative", eenheid("km", 1000));
         String stelsel = "{\"node\":\"UnitSystem\",\"name\":\"Afstand\",\"units\":["
                 + eenheid("m", 1) + "," + eenheid("km", 1000) + "]}";
         String waarde = let("a", attr("Baan", "aanloop", meter),
-                ite(verg("GROTER", bref("a", meter), lit("1", kilometer)),
+                ite(verg("greater", bref("a", meter), lit("1", kilometer)),
                         lit("1.00", num(2)), lit("2.00", num(2)), num(2)), num(2));
         return doc(objecttype("Baan", "Baans", attributen("aanloop", meter, "uit", num(2)), ""),
                 "", stelsel,
@@ -403,7 +403,7 @@ class LetDragerWandelingWitnessTest {
     /** A ch. 7 defaults group whose consequence hides a §6.5 division behind a Let. */
     private static String defaultsDelingModel() {
         String consequentie = let("d", attr("Jutter", "deler", pos(2)),
-                binair("GEDEELD_DOOR", attr("Jutter", "inkomen", pos(2)), bref("d", pos(2)), num(4)), num(4));
+                binair("dividedBy", attr("Jutter", "inkomen", pos(2)), bref("d", pos(2)), num(4)), num(4));
         return doc(objecttype("Jutter", "Jutters",
                         attributen("kindertal", GEHEEL_POS, "inkomen", pos(2), "deler", pos(2), "toeslag", num(4)), ""),
                 "", "", new String[]{},
@@ -416,7 +416,7 @@ class LetDragerWandelingWitnessTest {
         String feittype = "{\"node\":\"FactType\",\"name\":\"strandmaatschap\","
                 + "\"reciprocal\":true,\"roles\":[{\"node\":\"Role\",\"name\":\"strandmaat\","
                 + "\"objectType\":\"Jutter\",\"plural\":\"strandmaten\",\"many\":false}]}";
-        String uit = let("k", ver, binair("MAAL", bref("k", num(4)), lit("2.00", num(2)), num(6)), num(6));
+        String uit = let("k", ver, binair("times", bref("k", num(4)), lit("2.00", num(2)), num(6)), num(6));
         return doc(objecttype("Jutter", "Jutters",
                         attributen("strandtegoed", pos(2), "afgeleid", num(4), "uit", num(6)),
                         VERMIST_KENMERK),
@@ -424,9 +424,9 @@ class LetDragerWandelingWitnessTest {
                 new String[]{
                         // never true on this input — its only job is to BE a producer of `vermist`
                         regel("vermissing van een jutter", "KENMERKTOEKENNING", VERMIST_DOEL, WAAR,
-                                verg("GROTER", attr("Jutter", "strandtegoed", pos(2)), lit("999999.00", num(2)))),
+                                verg("greater", attr("Jutter", "strandtegoed", pos(2)), lit("999999.00", num(2)))),
                         regel("afgeleid van een jutter", "BEREKENING", attr("Jutter", "afgeleid", num(4)),
-                                binair("MAAL", attr("Jutter", "strandtegoed", pos(2)), lit("3.00", num(2)), num(4)),
+                                binair("times", attr("Jutter", "strandtegoed", pos(2)), lit("3.00", num(2)), num(4)),
                                 NIET_VERMIST),
                         regel("uit van een jutter", attr("Jutter", "uit", num(6)), uit)},
                 "");
@@ -445,16 +445,16 @@ class LetDragerWandelingWitnessTest {
                 "", "",
                 new String[]{
                         regel("vermissing van een jutter", "KENMERKTOEKENNING", VERMIST_DOEL, WAAR,
-                                verg("GROTER", attr("Jutter", "basis", pos(2)), lit("999999.00", num(2)))),
+                                verg("greater", attr("Jutter", "basis", pos(2)), lit("999999.00", num(2)))),
                         regel("grondslag van een jutter", "BEREKENING", attr("Jutter", "grondslag", num(2)),
-                                binair("MAAL", attr("Jutter", "basis", pos(2)), lit("2.00", num(2)), num(2)),
+                                binair("times", attr("Jutter", "basis", pos(2)), lit("2.00", num(2)), num(2)),
                                 NIET_VERMIST)},
                 groepen);
     }
 
     /** §6.5: "het inkomen gedeeld door de deler", bare or behind a Let. */
     private static String delingModel(boolean achterLet) {
-        String deling = binair("GEDEELD_DOOR", attr("Jutter", "inkomen", pos(2)),
+        String deling = binair("dividedBy", attr("Jutter", "inkomen", pos(2)),
                 attr("Jutter", "deler", pos(2)), num(4));
         String waarde = achterLet ? let("t", deling, bref("t", num(4)), num(4)) : deling;
         return doc(objecttype("Jutter", "Jutters",
@@ -474,10 +474,10 @@ class LetDragerWandelingWitnessTest {
     /** ch. 10.2: a §6.5 division in the branch the condition does NOT take — the IfThenElse bare as the rule
      *  value, or wrapped in a Let whose binder feeds the condition. */
     private static String nietGenomenTakModel(boolean inLetBody) {
-        String deling = binair("GEDEELD_DOOR", attr("Jutter", "inkomen", pos(2)),
+        String deling = binair("dividedBy", attr("Jutter", "inkomen", pos(2)),
                 attr("Jutter", "deler", pos(2)), num(4));
         String links = inLetBody ? bref("a", pos(2)) : attr("Jutter", "a", pos(2));
-        String keuze = ite(verg("GROTER", links, lit("100", GEHEEL_POS)),
+        String keuze = ite(verg("greater", links, lit("100", GEHEEL_POS)),
                 deling, lit("7.0000", num(4)), num(4));
         String waarde = inLetBody ? let("a", attr("Jutter", "a", pos(2)), keuze, num(4)) : keuze;
         return doc(objecttype("Jutter", "Jutters",
@@ -488,7 +488,7 @@ class LetDragerWandelingWitnessTest {
     /** ch. 10.6: the same §6.5 division, bare or as the BODY of a Let whose leeg value is never read (so the
      *  body runs and the fault is real under call-by-need). */
     private static String leegBarriereModel(boolean achterBarriere) {
-        String deling = binair("GEDEELD_DOOR", attr("Jutter", "inkomen", pos(2)),
+        String deling = binair("dividedBy", attr("Jutter", "inkomen", pos(2)),
                 attr("Jutter", "tweede", pos(2)), num(4));
         String waarde = achterBarriere
                 ? let("d", attr("Jutter", "deler", pos(2)), deling, num(4))
@@ -501,10 +501,10 @@ class LetDragerWandelingWitnessTest {
     /** ch. 10.6 clause 2: the same division, but the body reads the leeg binder FIRST — the barrier is raised at
      *  that read and the division behind it is never reached. */
     private static String gepasseerdeBarriereModel() {
-        String deling = binair("GEDEELD_DOOR", attr("Jutter", "inkomen", pos(2)),
+        String deling = binair("dividedBy", attr("Jutter", "inkomen", pos(2)),
                 attr("Jutter", "tweede", pos(2)), num(4));
         String waarde = let("d", attr("Jutter", "deler", pos(2)),
-                binair("PLUS", bref("d", pos(2)), deling, num(4)), num(4));
+                binair("plus", bref("d", pos(2)), deling, num(4)), num(4));
         return doc(objecttype("Jutter", "Jutters",
                         attributen("inkomen", pos(2), "deler", pos(2), "tweede", pos(2), "uit", num(4)), ""),
                 "", "", new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
@@ -512,10 +512,10 @@ class LetDragerWandelingWitnessTest {
 
     /** A non-terminating division as the LEFT operand of a rule's voorwaarde, bare or behind a Let. */
     private static String breukVergelijkingModel(boolean achterLet) {
-        String deling = binair("GEDEELD_DOOR", attr("Jutter", "a", pos(2)), lit("3", GEHEEL_POS), num(6));
+        String deling = binair("dividedBy", attr("Jutter", "a", pos(2)), lit("3", GEHEEL_POS), num(6));
         String links = achterLet ? let("x", deling, bref("x", num(6)), num(6)) : deling;
-        String conditie = verg("GROTER", links,
-                binair("PLUS", attr("Jutter", "b", pos(2)), lit("0.00", num(2)), num(6)));
+        String conditie = verg("greater", links,
+                binair("plus", attr("Jutter", "b", pos(2)), lit("0.00", num(2)), num(6)));
         return doc(objecttype("Jutter", "Jutters",
                         attributen("a", pos(2), "b", pos(2), "uit", num(2)), ""),
                 "", "", new String[]{regel("uit van een jutter", "BEREKENING", attr("Jutter", "uit", num(2)),

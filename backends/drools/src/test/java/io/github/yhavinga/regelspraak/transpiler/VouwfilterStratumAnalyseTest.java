@@ -35,10 +35,10 @@ class VouwfilterStratumAnalyseTest {
      *  {@code jutterswet-uniestratum}: ref and the ASP backend PASS with 11 expectations, both Drools
      *  branches FAIL with {@code verwacht afwezig, werkelijk aanwezig}. */
     @Test void een_kenmerk_onder_GEEN_is_een_negatieve_rand() throws Exception {
-        assertEquals(-1, salience(doc(filter("GEEN")), "consument"),
+        assertEquals(-1, salience(doc(filter("none")), "consument"),
                 "een kenmerk onder GEEN is negatief gelezen (ch. 6.1), dus de consument zinkt een band");
-        assertEquals(-1, salience(doc(filter("TEN_HOOGSTE")), "consument"), "TEN_HOOGSTE is negatie-achtig");
-        assertEquals(-1, salience(doc(filter("PRECIES")), "consument"), "PRECIES is negatie-achtig");
+        assertEquals(-1, salience(doc(filter("atMost")), "consument"), "TEN_HOOGSTE is negatie-achtig");
+        assertEquals(-1, salience(doc(filter("exactly")), "consument"), "PRECIES is negatie-achtig");
     }
 
     /** The other half of the same clause: ALLE / DE / TEN_MINSTE pass the polarity THROUGH rather than
@@ -48,10 +48,10 @@ class VouwfilterStratumAnalyseTest {
      *  notices is wrong. DE is here too: it is the one compound quantifier the fold node refuses
      *  (WF-108 (a)) but {@code Samengesteld} admits, so leaving it out would leave an arm unpinned. */
     @Test void een_kenmerk_onder_ALLE_blijft_positief() throws Exception {
-        assertEquals(0, salience(doc(filter("ALLE")), "consument"),
+        assertEquals(0, salience(doc(filter("all")), "consument"),
                 "ALLE geeft de polariteit door; een positieve lezing blijft positief");
-        assertEquals(0, salience(doc(filter("TEN_MINSTE")), "consument"), "TEN_MINSTE geeft door");
-        assertEquals(0, salience(doc(filter("DE")), "consument"), "DE geeft door");
+        assertEquals(0, salience(doc(filter("atLeast")), "consument"), "TEN_MINSTE geeft door");
+        assertEquals(0, salience(doc(filter("the")), "consument"), "DE geeft door");
     }
 
     /** Two properties of the CONTEXT itself, both unpinned until now.
@@ -64,11 +64,11 @@ class VouwfilterStratumAnalyseTest {
      *  stays negative instead of flipping back to positive. A boolean XOR here would read "niet
      *  gemerkt onder GEEN" as a positive read and let the consumer fire in the transient window. */
     @Test void de_context_stapelt_en_dubbele_negatie_klapt_niet_terug() throws Exception {
-        assertEquals(-1, salience(doc(genest("GEEN", "ALLE", false)), "consument"),
+        assertEquals(-1, salience(doc(genest("none", "all", false)), "consument"),
                 "een ALLE binnen een GEEN houdt de negatie: de polariteit hangt aan het PAD");
-        assertEquals(0, salience(doc(genest("ALLE", "TEN_MINSTE", false)), "consument"),
+        assertEquals(0, salience(doc(genest("all", "atLeast", false)), "consument"),
                 "twee doorgeefkwantoren laten een positieve lezing positief");
-        assertEquals(-1, salience(doc(genest("GEEN", "ALLE", true)), "consument"),
+        assertEquals(-1, salience(doc(genest("none", "all", true)), "consument"),
                 "dubbele negatie klapt NIET terug (ch. 6.1: eenmaal negatief, behoudend negatief)");
         assertEquals(-1, salience(doc(kenmerkCheck(true)), "consument"),
                 "de controle: een kaal genegeerd kenmerk is gewoon negatief");
@@ -83,10 +83,10 @@ class VouwfilterStratumAnalyseTest {
      *  mirror image of the gap fixed on 2026-09-22 — an extra band, and a false negative CYCLE
      *  through the cycle-local fallback. */
     @Test void de_negatiecontext_steekt_geen_expressiegrens_over() throws Exception {
-        assertEquals(0, salience(genesteldDoc("GEEN"), "consument"),
+        assertEquals(0, salience(genesteldDoc("none"), "consument"),
                 "de GEEN negeert de TELLING, niet de lidmaatschapstest in haar filter");
-        assertEquals(0, salience(genesteldDoc("TEN_HOOGSTE"), "consument"), "idem voor TEN_HOOGSTE");
-        assertEquals(0, salience(genesteldDoc("PRECIES"), "consument"), "idem voor PRECIES");
+        assertEquals(0, salience(genesteldDoc("atMost"), "consument"), "idem voor TEN_HOOGSTE");
+        assertEquals(0, salience(genesteldDoc("exactly"), "consument"), "idem voor PRECIES");
     }
 
     /** <b>The quantifier fold's matrix is read conservatively NEGATIVELY</b> — RUNTIME-SEMANTICS
@@ -96,11 +96,11 @@ class VouwfilterStratumAnalyseTest {
      *  Parked on 2026-09-22 on a channel-shift worry that a measurement then refuted, so it is
      *  mirrored here and pinned rather than left as a silent difference from the norm. */
     @Test void de_matrix_van_een_kwantorvouw_leest_behoudend_negatief() throws Exception {
-        assertEquals(-1, salience(kwantorvouwDoc("ALLE", true), "consument"),
+        assertEquals(-1, salience(kwantorvouwDoc("all", true), "consument"),
                 "een POSITIEF kenmerk onder de matrix is toch een negatieve rand (ch. 6.1)");
-        assertEquals(-1, salience(kwantorvouwDoc("TEN_MINSTE", true), "consument"),
+        assertEquals(-1, salience(kwantorvouwDoc("atLeast", true), "consument"),
                 "de lezing hangt aan de VOUW, niet aan de kwantor erboven");
-        assertEquals(-1, salience(kwantorvouwDoc("ALLE", false), "consument"),
+        assertEquals(-1, salience(kwantorvouwDoc("all", false), "consument"),
                 "en in het FILTER van de vouw geldt hetzelfde");
     }
 
@@ -233,7 +233,7 @@ class VouwfilterStratumAnalyseTest {
         String altijd = "{\"node\":\"RoleMembership\",\"factType\":\"vondstaanmelding\",\"role\":\"vondst\","
                 + "\"negated\":false,\"source\":{\"snippet\":\"een vondst zijn\"}}";
         String drempel = switch (kwantor) {
-            case "TEN_MINSTE", "TEN_HOOGSTE", "PRECIES" -> "\"drempel\":1,";
+            case "atLeast", "atMost", "exactly" -> "\"drempel\":1,";
             default -> "";
         };
         String vouw = ("{\"node\":\"QuantifierFold\",\"quantifier\":\"%s\",%s\"elementType\":\"Vondst\","

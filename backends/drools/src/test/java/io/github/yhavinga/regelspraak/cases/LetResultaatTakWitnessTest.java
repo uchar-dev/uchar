@@ -471,7 +471,7 @@ class LetResultaatTakWitnessTest {
 
     // ---------------- the wire shapes (IR-SPEC ch. 4.10) ----------------
 
-    private static final String ONBEPAALD = "ONBEPAALD", NN = "NIET_NEGATIEF";
+    private static final String ONBEPAALD = "unspecified", NN = "nonNegative";
 
     private static String num(int dec, boolean geheel, String teken) {
         return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"%s\"}"
@@ -549,11 +549,11 @@ class LetResultaatTakWitnessTest {
         String inkomen = attr("inkomen", 2, false, NN);
         String z = bref("z", ONBEPAALD);
         String w = let("k", inkomen,
-                let("z", binair("MAAL", bref("k", NN), lit("2", 0, true)),
-                        binair("PLUS",
-                                ite(verg("GROTER", bref("k", NN), lit("10.00", 2, false)), z,
+                let("z", binair("times", bref("k", NN), lit("2", 0, true)),
+                        binair("plus",
+                                ite(verg("greater", bref("k", NN), lit("10.00", 2, false)), z,
                                         lit("0.00", 2, false), ONBEPAALD),
-                                ite(verg("KLEINER", bref("k", NN), lit("99.00", 2, false)), z,
+                                ite(verg("less", bref("k", NN), lit("99.00", 2, false)), z,
                                         lit("0.00", 2, false), ONBEPAALD)),
                         ONBEPAALD), ONBEPAALD);
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{"
@@ -580,93 +580,93 @@ class LetResultaatTakWitnessTest {
         String takopslaggrond = attr("takopslaggrond", 2, false, NN);
         String nuldeler = attr("nuldeler", 0, true, NN);
         String gatdeler = attr("gatdeler", 0, true, NN);
-        String boven10 = verg("GROTER", bref("k", NN), lit("10.00", 2, false));
-        String dubbelDef = binair("MAAL", inkomen, lit("2", 0, true));
+        String boven10 = verg("greater", bref("k", NN), lit("10.00", 2, false));
+        String dubbelDef = binair("times", inkomen, lit("2", 0, true));
 
         String[][] rs = {
             // the variable read in the voorwaarde (substituted) AND in the result (bound)
             {"aandeel van een jutter", attr("aandeel", 2, false, ONBEPAALD),
-             let("dubbel", dubbelDef, binair("PLUS", bref("dubbel", ONBEPAALD), bref("dubbel", ONBEPAALD)), ONBEPAALD),
-             verg("GROTER", dubbelDef, lit("10.00", 2, false))},
+             let("dubbel", dubbelDef, binair("plus", bref("dubbel", ONBEPAALD), bref("dubbel", ONBEPAALD)), ONBEPAALD),
+             verg("greater", dubbelDef, lit("10.00", 2, false))},
             // a later binder reading an earlier one
             {"gestaffeld van een jutter", attr("gestaffeld", 2, false, ONBEPAALD),
              let("basis", inkomen,
-                 let("opslag", binair("MAAL", bref("basis", NN), lit("2", 0, true)),
-                     binair("PLUS", bref("basis", NN), bref("opslag", ONBEPAALD)), ONBEPAALD), ONBEPAALD),
+                 let("opslag", binair("times", bref("basis", NN), lit("2", 0, true)),
+                     binair("plus", bref("basis", NN), bref("opslag", ONBEPAALD)), ONBEPAALD), ONBEPAALD),
              "null"},
             // the zero guard: the division sits inside the variable definition, behind the rule's voorwaarde
             {"quotient van een jutter", attr("quotient", 2, false, ONBEPAALD),
-             let("q", binair("GEDEELD_DOOR", teller, deler),
-                 binair("PLUS", bref("q", ONBEPAALD), lit("1.00", 2, false)), ONBEPAALD),
-             verg("ONGELIJK", deler, lit("0", 0, true))},
+             let("q", binair("dividedBy", teller, deler),
+                 binair("plus", bref("q", ONBEPAALD), lit("1.00", 2, false)), ONBEPAALD),
+             verg("notEqual", deler, lit("0", 0, true))},
             // an outer need that empties must keep the inner (zero-dividing) need unforced
             {"garde van een jutter", attr("garde", 2, false, ONBEPAALD),
              let("veilig", inkomen,
-                 let("q", binair("GEDEELD_DOOR", teller, staffel),
-                     binair("PLUS", bref("veilig", NN), bref("q", ONBEPAALD)), ONBEPAALD), ONBEPAALD),
+                 let("q", binair("dividedBy", teller, staffel),
+                     binair("plus", bref("veilig", NN), bref("q", ONBEPAALD)), ONBEPAALD), ONBEPAALD),
              "null"},
             // the barrier beside its contrast
             {"met let van een jutter", attr("metlet", 2, false, ONBEPAALD),
-             let("ink", inkomen, binair("MAAL", bref("ink", NN), lit("2", 0, true)), ONBEPAALD), "null"},
+             let("ink", inkomen, binair("times", bref("ink", NN), lit("2", 0, true)), ONBEPAALD), "null"},
             {"zonder let van een jutter", attr("zonderlet", 2, false, ONBEPAALD),
-             binair("MAAL", inkomen, lit("2", 0, true)), "null"},
+             binair("times", inkomen, lit("2", 0, true)), "null"},
             // one binder, two reads
             {"dubbelop van een jutter", attr("dubbelop", 2, false, ONBEPAALD),
-             let("ink", inkomen, binair("PLUS", bref("ink", NN), bref("ink", NN)), ONBEPAALD), "null"},
+             let("ink", inkomen, binair("plus", bref("ink", NN), bref("ink", NN)), ONBEPAALD), "null"},
             // name-sameness: shadowed inside, intact outside
             {"schaduw van een jutter", attr("schaduw", 2, false, ONBEPAALD),
              let("x", inkomen,
-                 binair("PLUS", let("x", lit("5.00", 2, false), bref("x", ONBEPAALD), ONBEPAALD),
+                 binair("plus", let("x", lit("5.00", 2, false), bref("x", ONBEPAALD), ONBEPAALD),
                         bref("x", NN)), ONBEPAALD), "null"},
             // sibling bindings: the barrier belongs to the Let that bound the binder that was read
             {"zusters van een jutter", attr("zusters", 2, false, ONBEPAALD),
-             binair("PLUS", let("a", inkomen, bref("a", NN), NN),
+             binair("plus", let("a", inkomen, bref("a", NN), NN),
                     let("b", lit("5.00", 2, false), bref("b", ONBEPAALD), ONBEPAALD)), "null"},
             // the non-regression flank: a variable NO result read reaches gets no Let at all
             {"premie van een jutter", attr("premie", 2, false, ONBEPAALD), lit("7.00", 2, false),
-             verg("GROTER", dubbelDef, lit("50.00", 2, false))},
+             verg("greater", dubbelDef, lit("50.00", 2, false))},
             // a §6.5 site inside a NEED's own value — the companion must still be built for it
             {"heffing van een jutter", attr("heffing", 2, false, ONBEPAALD),
-             let("q", binair("GEDEELD_DOOR", teller, heffingsdeler),
-                 binair("PLUS", bref("q", ONBEPAALD), lit("1.00", 2, false)), ONBEPAALD), "null"},
+             let("q", binair("dividedBy", teller, heffingsdeler),
+                 binair("plus", bref("q", ONBEPAALD), lit("1.00", 2, false)), ONBEPAALD), "null"},
             // the same site BEHIND a barrier — the companion must carry that need as its gate
             {"bescherm van een jutter", attr("bescherm", 2, false, ONBEPAALD),
              let("veilig", inkomen,
-                 let("r", binair("GEDEELD_DOOR", teller, beschermdeler),
-                     binair("PLUS", bref("veilig", NN), bref("r", ONBEPAALD)), ONBEPAALD), ONBEPAALD), "null"},
+                 let("r", binair("dividedBy", teller, beschermdeler),
+                     binair("plus", bref("veilig", NN), bref("r", ONBEPAALD)), ONBEPAALD), ONBEPAALD), "null"},
             // ---- ch. 10.2, the value-level conditional (WF-069: inside a Let body; WF-077: binder guard) ----
             // both arms, one rule
             {"tak van een jutter", attr("tak", 2, false, ONBEPAALD),
-             let("k", inkomen, ite(boven10, binair("MAAL", bref("k", NN), lit("2", 0, true)),
+             let("k", inkomen, ite(boven10, binair("times", bref("k", NN), lit("2", 0, true)),
                      lit("2.00", 2, false), ONBEPAALD), ONBEPAALD), "null"},
             // a §6.5 site in ONE arm — it runs in the entered arm and not in the other
             {"takdeling van een jutter", attr("takdeling", 2, false, ONBEPAALD),
-             let("k", inkomen, ite(boven10, binair("GEDEELD_DOOR", teller, takdeler),
+             let("k", inkomen, ite(boven10, binair("dividedBy", teller, takdeler),
                      lit("7.00", 2, false), ONBEPAALD), ONBEPAALD), "null"},
             // a NEED only the anders arm reads: the dan arm may not force it, nor raise its barrier
             {"takopslag van een jutter", attr("takopslag", 2, false, ONBEPAALD),
              let("g", inkomen,
                  let("o", takopslaggrond,
-                     ite(verg("GROTER", bref("g", NN), lit("10.00", 2, false)), lit("3.00", 2, false),
-                         binair("PLUS", lit("3.00", 2, false), bref("o", NN)), ONBEPAALD), ONBEPAALD), ONBEPAALD), "null"},
+                     ite(verg("greater", bref("g", NN), lit("10.00", 2, false)), lit("3.00", 2, false),
+                         binair("plus", lit("3.00", 2, false), bref("o", NN)), ONBEPAALD), ONBEPAALD), ONBEPAALD), "null"},
             // the tariefstelling shape: a LATER need read by one arm, the guard reading the earlier binder
             {"takketen van een jutter", attr("takketen", 2, false, ONBEPAALD),
              let("a", inkomen,
-                 let("b", binair("MAAL", bref("a", NN), lit("2", 0, true)),
-                     ite(verg("GROTER", bref("a", NN), lit("10.00", 2, false)), bref("b", ONBEPAALD),
+                 let("b", binair("times", bref("a", NN), lit("2", 0, true)),
+                     ite(verg("greater", bref("a", NN), lit("10.00", 2, false)), bref("b", ONBEPAALD),
                          lit("0.00", 2, false), ONBEPAALD), ONBEPAALD), ONBEPAALD), "null"},
             // a Let INSIDE an arm: its need may not be forced when that arm is not chosen
             {"sprong van een jutter", attr("sprong", 2, false, ONBEPAALD),
              let("k", inkomen,
-                 ite(verg("GROTER", bref("k", NN), lit("10.00", 2, false)), lit("5.00", 2, false),
-                     let("z", binair("GEDEELD_DOOR", teller, nuldeler),
-                         binair("PLUS", bref("z", ONBEPAALD), lit("1.00", 2, false)), ONBEPAALD),
+                 ite(verg("greater", bref("k", NN), lit("10.00", 2, false)), lit("5.00", 2, false),
+                     let("z", binair("dividedBy", teller, nuldeler),
+                         binair("plus", bref("z", ONBEPAALD), lit("1.00", 2, false)), ONBEPAALD),
                      ONBEPAALD), ONBEPAALD), "null"},
             // a §6.5 site in the VALUE of a need only ONE arm reads — its companion carries that arm's guard
             {"takgat van een jutter", attr("takgat", 2, false, ONBEPAALD),
              let("k", inkomen,
-                 let("z", binair("GEDEELD_DOOR", teller, gatdeler),
-                     ite(verg("GROTER", bref("k", NN), lit("10.00", 2, false)), lit("4.00", 2, false),
+                 let("z", binair("dividedBy", teller, gatdeler),
+                     ite(verg("greater", bref("k", NN), lit("10.00", 2, false)), lit("4.00", 2, false),
                          bref("z", ONBEPAALD), ONBEPAALD), ONBEPAALD), ONBEPAALD), "null"},
         };
 

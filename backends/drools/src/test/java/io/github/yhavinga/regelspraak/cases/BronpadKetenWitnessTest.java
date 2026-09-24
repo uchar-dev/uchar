@@ -262,16 +262,16 @@ class BronpadKetenWitnessTest {
                     feittype("lading", rol("ladende praam", "Praam", "ladende pramen", false),
                             rol("geladen vat", "Vat", "geladen vaten", true)),
                     String.join(", ",
-                            regel("laagste vracht", "laagste vracht", "MINIMUM", "Praam", "vracht", "null", PAD_VRACHT),
-                            regel("totale vracht", "totale vracht", "SOM", "Praam", "vracht",
+                            regel("laagste vracht", "laagste vracht", "minimum", "Praam", "vracht", "null", PAD_VRACHT),
+                            regel("totale vracht", "totale vracht", "sum", "Praam", "vracht",
                                     "{ \"node\": \"Literal\", \"value\": { \"number\": \"0\" }, \"type\": { \"node\": \"Number\","
                                     + " \"whole\": true, \"decimals\": 0, \"sign\": \"unspecified\" }, \"source\": {\"snippet\": \"0\"} }", PAD_VRACHT),
-                            regel("steenlast", "steenlast", "SOM", "Ankersteen", "steengewicht",
+                            regel("steenlast", "steenlast", "sum", "Ankersteen", "steengewicht",
                                     "{ \"node\": \"Literal\", \"value\": { \"number\": \"0\" }, \"type\": { \"node\": \"Number\","
                                     + " \"whole\": true, \"decimals\": 0, \"sign\": \"unspecified\" }, \"source\": {\"snippet\": \"0\"} }", PAD_STEEN),
-                            regel("laagste zegelvracht", "laagste zegelvracht", "MINIMUM", "Zegelpraam", "vracht",
+                            regel("laagste zegelvracht", "laagste zegelvracht", "minimum", "Zegelpraam", "vracht",
                                     "null", PAD_VRACHT),
-                            regel("laagste vatinhoud", "laagste vatinhoud", "MINIMUM", "Vat", "inhoud", "null", PAD_VAT)));
+                            regel("laagste vatinhoud", "laagste vatinhoud", "minimum", "Vat", "inhoud", "null", PAD_VAT)));
 
     private static final String KETEN = """
             { "format": "uchar-case-v0", "asOfDate": null,

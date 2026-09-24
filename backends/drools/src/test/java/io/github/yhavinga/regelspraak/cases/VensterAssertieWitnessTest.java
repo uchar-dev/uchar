@@ -65,7 +65,7 @@ class VensterAssertieWitnessTest {
     /** A literal window as an ALLE member beside "de meldatum is gevuld": V1 holds both on 2024-06-15, V4 breaks
      *  the first; on 2025-01-01 V1 breaks the window, whose tot is exclusive; time-free both break it. */
     @Test void een_letterlijk_venster_in_een_alle_assertie_speelt() throws Exception {
-        Path ir = document(samen("ALLE", GEVULD, LETTERLIJK));
+        Path ir = document(samen("all", GEVULD, LETTERLIJK));
         BeideTakken.groen(ir, casus("2024-06-15", List.of(V1)), "binnen het venster, gevuld");
         BeideTakken.groen(ir, casus("2024-06-15", List.of(V4), "V4"), "binnen het venster, niet gevuld");
         BeideTakken.groen(ir, casus("2025-01-01", List.of(V1), "V1"), "op de totgrens, die exclusief is");
@@ -74,9 +74,9 @@ class VensterAssertieWitnessTest {
 
     /** WF-112's composite arm at the assertion: both branches refuse, naming the quantifier and the rule. */
     @Test void onder_geen_en_ten_minste_weigeren_beide_takken_het_venster_bij_naam() throws Exception {
-        BeideTakken.geweigerd(document(samen("GEEN", GEVULD, LETTERLIJK)), casus(null, List.of(V1, V4)),
+        BeideTakken.geweigerd(document(samen("none", GEVULD, LETTERLIJK)), casus(null, List.of(V1, V4)),
                 "GEEN-samenstelling (WF-112)", "GEEN[gevuld, venster] als assertie");
-        BeideTakken.geweigerd(document(samenMetDrempel("TEN_MINSTE", 1, GEVULD, LETTERLIJK)),
+        BeideTakken.geweigerd(document(samenMetDrempel("atLeast", 1, GEVULD, LETTERLIJK)),
                 casus(null, List.of(V1, V4)), "TEN_MINSTE-samenstelling (WF-112)",
                 "TEN MINSTE 1[gevuld, venster] als assertie");
     }

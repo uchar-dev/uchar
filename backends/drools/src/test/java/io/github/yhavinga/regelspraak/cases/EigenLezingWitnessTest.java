@@ -77,12 +77,12 @@ class EigenLezingWitnessTest {
         ObjectNode vorm = IrPad.rules(ir).putArray("rules").addObject();
         vorm.put("node", "Rule").put("name", "muntwaarde");
         ObjectNode regel = vorm.putArray("versions").addObject();
-        regel.putObject("validity").put("node", "Geldigheid").putNull("vanaf").putNull("tot");
-        regel.putObject("target").put("node", "AttribuutRef").put("attribuut", "muntwaarde").put("objecttype", "Munt")
+        regel.putObject("validity").put("node", "Validity");
+        regel.putObject("target").put("node", "AttributeReference").put("attribute", "muntwaarde").put("subjectType", "Munt")
              .set("source", IrPad.bronrecord("De muntwaarde van een Munt"));
-        regel.putObject("value").put("node", "AttribuutRef").put("attribuut", "gewicht").put("objecttype", objecttype)
+        regel.putObject("value").put("node", "AttributeReference").put("attribute", "gewicht").put("subjectType", objecttype)
              .set("source", IrPad.bronrecord("het gewicht"));
-        regel.put("initialisation", false).put("presentation", "BEREKENING");
+        regel.put("initialisation", false).put("presentation", "calculation");
         return ir;
     }
 

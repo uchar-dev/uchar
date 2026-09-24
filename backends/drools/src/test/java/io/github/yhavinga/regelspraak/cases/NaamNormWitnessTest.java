@@ -229,7 +229,7 @@ class NaamNormWitnessTest {
         ObjectNode ot = IrPad.objectType(ir, "Strandvondst");
         ObjectNode lid = IrPad.attribute(ot, gedeclareerd);
         lid.remove("timeline");
-        IrPad.timeline(IrPad.addAttribute(ot, spelling, lid.get("datatype").deepCopy()), "JAAR");
+        IrPad.timeline(IrPad.addAttribute(ot, spelling, lid.get("datatype").deepCopy()), "year");
     }
 
     /** Keep only the first uniciteit (the scoped second one plays no part here) and give it {@code sleutels}. */

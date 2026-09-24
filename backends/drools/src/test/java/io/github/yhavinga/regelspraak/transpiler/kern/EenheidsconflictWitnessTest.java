@@ -331,7 +331,7 @@ class EenheidsconflictWitnessTest {
             if (ref == null) continue;
             gezien++;
             ref.putObject("type").put("node", "Number").put("whole", false).put("decimals", 2)
-                    .put("sign", "ONBEPAALD").set("unit", JSON.readTree(VREEMD));
+                    .put("sign", "unspecified").set("unit", JSON.readTree(VREEMD));
             IrLoader.Documentfout f = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(kopie),
                     naam(ir));
             assertTrue(f.plek().endsWith("/value/right/type") && f.getMessage().contains("unknown field"),
@@ -395,7 +395,7 @@ class EenheidsconflictWitnessTest {
         }
         if (!x.isObject()) return;
         if ("Vergelijking".equals(x.path("node").asText())) {
-            JsonNode l = x.get("links"), r = x.get("rechts");
+            JsonNode l = x.get("left"), r = x.get("right");
             String naam = parameterMetEenheid(wortel, l) != null && declaratieVan(wortel, r) != null
                     ? parameterMetEenheid(wortel, l)
                     : (parameterMetEenheid(wortel, r) != null && declaratieVan(wortel, l) != null
@@ -440,7 +440,7 @@ class EenheidsconflictWitnessTest {
      */
     private static ObjectNode additieveRechterRef(JsonNode ir) {
         JsonNode regel = additieveRegel(ir);
-        return regel == null ? null : (ObjectNode) regel.get("value").get("rechts");
+        return regel == null ? null : (ObjectNode) regel.get("value").get("right");
     }
 
     /** The FIRST rule version whose value is an additive join of two attribute reads that BOTH resolve to a
@@ -454,8 +454,8 @@ class EenheidsconflictWitnessTest {
         for (JsonNode r : versies) {
             JsonNode w = r.get("value");
             if (w == null || !"Binair".equals(w.path("node").asText())
-                    || !List.of("PLUS", "MIN", "VERMINDERD_MET").contains(w.path("op").asText())) continue;
-            if (declaratieVan(ir, w.get("links")) == null || declaratieVan(ir, w.get("rechts")) == null) continue;
+                    || !List.of("plus", "minus", "reducedBy").contains(w.path("op").asText())) continue;
+            if (declaratieVan(ir, w.get("left")) == null || declaratieVan(ir, w.get("right")) == null) continue;
             return r;
         }
         return null;
@@ -464,9 +464,9 @@ class EenheidsconflictWitnessTest {
     /** The DECLARATION an {@code AttribuutRef} reads from, when it carries a unit; else null. */
     private static ObjectNode declaratieVan(JsonNode ir, JsonNode ref) {
         if (ref == null || !"AttribuutRef".equals(ref.path("node").asText())) return null;
-        JsonNode ot = zoekLid(ir.path("model").path("objectTypes"), "name", ref.path("objecttype").asText(""));
+        JsonNode ot = zoekLid(ir.path("model").path("objectTypes"), "name", ref.path("subjectType").asText(""));
         if (ot == null) return null;
-        JsonNode lid = zoekLid(ot.path("attributes"), "name", ref.path("attribuut").asText(""));
+        JsonNode lid = zoekLid(ot.path("attributes"), "name", ref.path("attribute").asText(""));
         JsonNode attr = lid == null ? null : lid.get("datatype");
         if (attr == null || !attr.has("unit")) return null;
         return (ObjectNode) attr;

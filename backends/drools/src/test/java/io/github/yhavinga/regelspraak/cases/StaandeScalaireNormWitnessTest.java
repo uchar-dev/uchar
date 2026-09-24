@@ -158,17 +158,17 @@ class StaandeScalaireNormWitnessTest {
         ObjectNode groep = ((ObjectNode) IrPad.rulesLijst(JSON.readTree(Files.readString(
                 CORPUS.resolve("anchor").resolve("jutterswet-nestdiepte").resolve("ir.json"))),
                 "prioritizedDefaults").get(0)).deepCopy();
-        groep.put("naam", "geschatte waarde default (witness)");
-        groep.put("onderwerp", "Vondst");
-        groep.put("attribuut", "geschatte waarde");
+        groep.put("name", "geschatte waarde default (witness)");
+        groep.put("subject", "Vondst");
+        groep.put("attribute", "geschatte waarde");
         groep.set("source", IrPad.bronrecord("witness: gemeld geeft 12.00"));
         ObjectNode d = ((ObjectNode) groep.get("defaults").get(0)).deepCopy();
         d.set("voorwaarde", JSON.readTree(
                 "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gemeld\",\"negated\":false,"
                         + "\"source\":{\"snippet\":\"hij gemeld is\"}}"));
-        ((ObjectNode) d.get("consequentie")).putObject("value").put("number", "12.00");
+        ((ObjectNode) d.get("consequence")).putObject("value").put("number", "12.00");
         d.set("source", IrPad.bronrecord("gemeld: 12.00"));
-        d.remove("excepties");   // absent, not null/[] — the only wire shape a childless Default carries
+        d.remove("exceptions");   // absent, not null/[] — the only wire shape a childless Default carries
         ArrayNode defaults = JSON.createArrayNode();
         defaults.add(d);
         groep.set("defaults", defaults);
@@ -266,7 +266,7 @@ class StaandeScalaireNormWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(CORPUS.resolve("anchor")
                 .resolve("jutterswet-waardestelling").resolve("ir.json").toFile());
         IrPad.versie(ir, "rules", 0, 0).set("validity", JSON.createObjectNode()
-                .put("node", "Geldigheid").put("vanaf", "2026-01-01").put("tot", "2026-12-31"));
+                .put("node", "Validity").put("from", "2026-01-01").put("to", "2026-12-31"));
         Path uit = Files.createTempFile("versie-schrijver", ".json");
         uit.toFile().deleteOnExit();
         Files.writeString(uit, JSON.writerWithDefaultPrettyPrinter().writeValueAsString(ir));
@@ -280,14 +280,14 @@ class StaandeScalaireNormWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(CORPUS.resolve("anchor")
                 .resolve("jutterswet-waardestelling").resolve("ir.json").toFile());
         ObjectNode getal = JSON.createObjectNode();
-        getal.put("node", "Number").put("whole", false).put("decimals", 2).put("sign", "ONBEPAALD");
+        getal.put("node", "Number").put("whole", false).put("decimals", 2).put("sign", "unspecified");
         IrPad.addAttribute(IrPad.objectType(ir, "Vondst"), "tweede taxatie", getal);
 
         ArrayNode regels = IrPad.rulesLijst(ir, "rules");
         ObjectNode tweede = regels.get(0).deepCopy();
         tweede.put("name", "Waardestelling tweede");
         ObjectNode bron = (ObjectNode) tweede.get("versions").get(0).get("value");
-        bron.put("attribuut", "tweede taxatie")
+        bron.put("attribute", "tweede taxatie")
                 .set("source", IrPad.bronrecord("de tweede taxatie van de Vondst"));
         regels.add(tweede);
 

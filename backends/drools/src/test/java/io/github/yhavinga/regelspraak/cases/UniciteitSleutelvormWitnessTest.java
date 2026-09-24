@@ -150,7 +150,7 @@ class UniciteitSleutelvormWitnessTest {
                 JSON.readTree(java.nio.file.Files.readString(
                         ROOD.resolve("uni-two-temporal-keys").resolve("ir.json")));
         ((com.fasterxml.jackson.databind.node.ObjectNode) IrPad.versie(ir, "uniquenesses", 0, 0).get("validity"))
-                .put("vanaf", "2030-01-01");
+                .put("from", "2030-01-01");
         Path tmp = java.nio.file.Files.createTempFile("venster-sleutelvorm", ".json");
         try {
             java.nio.file.Files.writeString(tmp, ir.toString());
@@ -171,7 +171,7 @@ class UniciteitSleutelvormWitnessTest {
                 JSON.readTree(java.nio.file.Files.readString(
                         ROOD.resolve("uu-two-temporal-keys").resolve("ir.json")));
         ((com.fasterxml.jackson.databind.node.ObjectNode) IrPad.versie(ir, "uniquenesses", 0, 0).get("validity"))
-                .put("vanaf", "2030-01-01");
+                .put("from", "2030-01-01");
         Path tmp = java.nio.file.Files.createTempFile("venster-unie-sleutelvorm", ".json");
         try {
             java.nio.file.Files.writeString(tmp, ir.toString());

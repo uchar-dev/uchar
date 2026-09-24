@@ -60,10 +60,10 @@ class DrlEenheidsplekWitnessTest {
             "Binair", 5, "Let", 6, "Aggregation", 7, "BuiltinCall", 7, "Afgerond", 8, "Begrensd", 9);
     /** ch. 2.10 clause 2 splits Binair and the two function nodes by OPERATOR: only these branches derive a result
      *  unit. Every kind that derives is an aggregation's, so no BuiltinCall is ever twisted. */
-    private static final Set<String> AFGELEIDE_OP = Set.of("PLUS", "MIN", "VERMINDERD_MET", "MAAL");
-    private static final Set<String> AFGELEIDE_KIND = Set.of("SOM", "TOTAAL", "MINIMUM", "MAXIMUM", "EERSTE", "LAATSTE");
+    private static final Set<String> AFGELEIDE_OP = Set.of("plus", "minus", "reducedBy", "times");
+    private static final Set<String> AFGELEIDE_KIND = Set.of("sum", "total", "minimum", "maximum", "first", "last");
     /** WF-038: a tijdsduur's unit is the operator's parameter, not a derived result type. */
-    private static final Set<String> GEEN_FUNCTIE = Set.of("TIJDSDUUR", "ABSOLUTE_TIJDSDUUR");
+    private static final Set<String> GEEN_FUNCTIE = Set.of("duration", "absoluteDuration");
 
     @Test void de_drl_tekst_volgt_de_declaraties_niet_de_wire_herhaling() throws Exception {
         int twists = 0;
@@ -105,8 +105,8 @@ class DrlEenheidsplekWitnessTest {
         String node = o.path("node").asText(null);
         // WF-035: the DURATION operand of a date +/- duration carries the calendar unit ref routes on
         JsonNode duur = null;
-        if ("Binair".equals(node) && Set.of("PLUS", "MIN", "VERMINDERD_MET").contains(o.path("op").asText(""))) {
-            JsonNode l = o.get("links"), r = o.get("rechts");
+        if ("Binair".equals(node) && Set.of("plus", "minus", "reducedBy").contains(o.path("op").asText(""))) {
+            JsonNode l = o.get("left"), r = o.get("right");
             if (datumGetypeerd(l) && !datumGetypeerd(r)) duur = r;
             else if (datumGetypeerd(r) && !datumGetypeerd(l)) duur = l;
         }

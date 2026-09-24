@@ -348,7 +348,7 @@ class HerhaaldTypepaarWitnessTest {
         ObjectNode fc = IrPad.versie(ir, "factCreations", 0, 0);
         if (voorwaarde == null) fc.remove("condition"); else fc.set("condition", voorwaarde);
         if (altijd) fc.set("validity", JSON.createObjectNode()
-                .put("node", "Geldigheid").putNull("vanaf").putNull("tot"));
+                .put("node", "Validity"));
         // the ligprijs rule carries its own doel-kenmerk gate in the golden; drop it so this row reads the
         // created link for every Schuit and the creation's guard is the only selector.
         IrPad.versie(ir, "rules", "ligprijs van een schuit").remove("condition");
@@ -371,8 +371,8 @@ class HerhaaldTypepaarWitnessTest {
         ObjectNode ir = lees(DUBBELVERBINDING);
         IrPad.rules(ir).putArray("factCreations");
         houdRegels(ir, "liggertal van een haven", "wintertal van een haven");
-        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "winterberging").get("rollen"))
-            if ("winterhaven".equals(r.get("naam").asText())) ((ObjectNode) r).put("naam", "thuishaven");
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "winterberging").get("roles"))
+            if ("winterhaven".equals(r.get("name").asText())) ((ObjectNode) r).put("name", "thuishaven");
         return tijdelijk("dv-rolnaambotsing", ir);
     }
 
@@ -391,8 +391,8 @@ class HerhaaldTypepaarWitnessTest {
         ObjectNode ir = lees(DUBBELVERBINDING);
         IrPad.rules(ir).putArray("factCreations");
         houdRegels(ir, "liggertal van een haven", "wintertal van een haven");
-        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "thuisligging").get("rollen"))
-            ((ObjectNode) r).put("meervoudig", "thuishaven".equals(r.get("naam").asText()));
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "thuisligging").get("roles"))
+            ((ObjectNode) r).put("many", "thuishaven".equals(r.get("name").asText()));
         return tijdelijk("dv-elementrol-toone", ir);
     }
 
@@ -401,8 +401,8 @@ class HerhaaldTypepaarWitnessTest {
         ObjectNode ir = lees(DUBBELVERBINDING);
         IrPad.rules(ir).putArray("factCreations");
         houdRegels(ir, "liggertal van een haven", "wintertal van een haven");
-        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "thuisligging").get("rollen"))
-            ((ObjectNode) r).put("meervoudig", true);
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "thuisligging").get("roles"))
+            ((ObjectNode) r).put("many", true);
         return tijdelijk("dv-beide-meervoudig", ir);
     }
 
@@ -416,9 +416,9 @@ class HerhaaldTypepaarWitnessTest {
         houdRegels(ir, "liggertal van een haven");
         ObjectNode fold = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value");
         fold.remove("sourceRole");
-        fold.put("kind", "SOM").set("source", IrPad.bronrecord("de som van de romplengte van alle liggers van de Haven"));
+        fold.put("kind", "sum").set("source", IrPad.bronrecord("de som van de romplengte van alle liggers van de Haven"));
         ObjectNode arg = (ObjectNode) fold.get("arguments").get(0);
-        arg.put("attribuut", "romplengte").put("objecttype", "Schuit")
+        arg.put("attribute", "romplengte").put("subjectType", "Schuit")
            .set("source", IrPad.bronrecord("de romplengte van alle liggers van de Haven"));
         return tijdelijk("dv-som", ir);
     }
@@ -439,39 +439,39 @@ class HerhaaldTypepaarWitnessTest {
 
     /** A §8.1.7 characteristic check on the ANKER — no eigenaar, so it hosts on the anker pattern. */
     private static ObjectNode ankerKenmerk(String kenmerk) {
-        return JSON.createObjectNode().put("node", "Kenmerk").put("kenmerk", kenmerk)
-                .put("negatie", false).putNull("eigenaar")
-                .putNull("periode").set("source", IrPad.bronrecord("de Haven " + kenmerk + " is"));
+        return JSON.createObjectNode().put("node", "CharacteristicCheck").put("characteristic", kenmerk)
+                .put("negated", false)
+                .set("source", IrPad.bronrecord("de Haven " + kenmerk + " is"));
     }
 
     /** A §8.1.7 characteristic check HOSTED on the doel (the eigenaar field, WF-100). */
     private static ObjectNode doelKenmerk(String kenmerk) {
-        return JSON.createObjectNode().put("node", "Kenmerk").put("kenmerk", kenmerk)
-                .put("negatie", false).put("eigenaar", "Schuit")
-                .putNull("periode").set("source", IrPad.bronrecord("de ligger " + kenmerk + " is"));
+        return JSON.createObjectNode().put("node", "CharacteristicCheck").put("characteristic", kenmerk)
+                .put("negated", false).put("host", "Schuit")
+                .set("source", IrPad.bronrecord("de ligger " + kenmerk + " is"));
     }
 
     /** A comparison on an attribute of the DOEL — the shape the frontend leaves unresolved and the transpilers
      *  host on the $doel pattern. */
     private static ObjectNode doelVergelijking(String attribuut, String grens) {
         ObjectNode links = JSON.createObjectNode();
-        links.put("node", "AttribuutRef").put("attribuut", attribuut).put("objecttype", "Schuit");
+        links.put("node", "AttributeReference").put("attribute", attribuut).put("subjectType", "Schuit");
         links.set("source", IrPad.bronrecord("de " + attribuut + " van de ligger"));
         ObjectNode rechts = JSON.createObjectNode();
         rechts.put("node", "Literal").putObject("value").put("number", grens);
         rechts.set("type", numeriek());
         rechts.set("source", IrPad.bronrecord(grens));
         ObjectNode v = JSON.createObjectNode();
-        v.put("node", "Vergelijking").put("op", "GROTER");
-        v.set("links", links);
-        v.set("rechts", rechts);
-        v.putNull("periode").set("source", IrPad.bronrecord("de " + attribuut + " van de ligger groter is dan " + grens));
+        v.put("node", "Comparison").put("op", "greater");
+        v.set("left", links);
+        v.set("right", rechts);
+        v.set("source", IrPad.bronrecord("de " + attribuut + " van de ligger groter is dan " + grens));
         return v;
     }
 
     private static ObjectNode numeriek() {
         return JSON.createObjectNode().put("node", "Number").put("whole", true)
-                .put("decimals", 0).put("sign", "NIET_NEGATIEF");
+                .put("decimals", 0).put("sign", "nonNegative");
     }
 
     /** Two havens and two schuiten with BOTH roles of the repeated pair written on S1: it lies in H1

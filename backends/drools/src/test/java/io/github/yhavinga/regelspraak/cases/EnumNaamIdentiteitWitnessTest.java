@@ -95,7 +95,7 @@ class EnumNaamIdentiteitWitnessTest {
 
         ArrayNode kenmerken = vondst.putArray("characteristics");
         for (String k : List.of("kavelgaaf", "kavelongaaf", "normconform"))
-            kenmerken.addObject().put("node", "Characteristic").put("name", k).put("kind", "BIJVOEGLIJK");
+            kenmerken.addObject().put("node", "Characteristic").put("name", k).put("kind", "adjectival");
         IrPad.modelLijst(ir, "factTypes").add(JSON.readTree("""
                 {"node": "FactType", "name": "kavelindeling", "reciprocal": false, "roles": [
                   {"node": "Role", "name": "kavel", "objectType": "Kavel", "many": false},
@@ -107,13 +107,13 @@ class EnumNaamIdentiteitWitnessTest {
 
         ObjectNode staat = eigenStaat(ir);   // before the rules below replace the golden's own
         ArrayNode resolved = IrPad.rules(ir).putArray("rules");
-        resolved.add(kenmerkRegel("keur van de kavel", "kavelgaaf", "GELIJK",
+        resolved.add(kenmerkRegel("keur van de kavel", "kavelgaaf", "equal",
                 navigeerdeKeur(keurtype), literal(keurtype, "gaaf")));
-        resolved.add(kenmerkRegel("ongave kavel", "kavelongaaf", "ONGELIJK",
+        resolved.add(kenmerkRegel("ongave kavel", "kavelongaaf", "notEqual",
                 navigeerdeKeur(keurtype), literal(keurtype, "gaaf")));
         ObjectNode normRef = JSON.createObjectNode();
-        normRef.put("node", "ParameterRef").put("parameter", "keurnorm").set("source", IrPad.bronrecord("de keurnorm"));
-        resolved.add(kenmerkRegel("keurnorm gehaald", "normconform", "GELIJK",
+        normRef.put("node", "ParameterReference").put("parameter", "keurnorm").set("source", IrPad.bronrecord("de keurnorm"));
+        resolved.add(kenmerkRegel("keurnorm gehaald", "normconform", "equal",
                 staat, normRef));
         IrPad.rules(ir).putArray("consistencies");
         IrPad.rules(ir).putArray("uniquenesses");
@@ -217,7 +217,7 @@ class EnumNaamIdentiteitWitnessTest {
             for (String k : namen) {
                 JsonNode v = o.get(k);
                 if (v.isObject() && "Enumeratie".equals(v.path("node").asText()))
-                    o.putObject(k).put("node", "Tekst");
+                    o.putObject(k).put("node", "Text");
                 else naarTekst(v);
             }
         } else if (n instanceof ArrayNode a) {
@@ -238,16 +238,16 @@ class EnumNaamIdentiteitWitnessTest {
      *  arm reads. */
     private static ObjectNode navigeerdeKeur(JsonNode type) {
         ObjectNode a = JSON.createObjectNode();
-        a.put("node", "AttribuutRef").put("attribuut", "keur").put("objecttype", "Kavel");
+        a.put("node", "AttributeReference").put("attribute", "keur").put("subjectType", "Kavel");
         a.set("source", IrPad.bronrecord("de keur van zijn kavel"));
-        a.putArray("navigatieBindingen").addObject()
-         .put("node", "RolBinding").put("feittype", "kavelindeling").put("rol", "kavel");
+        a.putArray("path").addObject()
+         .put("node", "RoleBinding").put("factType", "kavelindeling").put("role", "kavel");
         return a;
     }
 
     /** "zijn staat", lifted from the golden's own first rule so its shape is the emitter's. */
     private static ObjectNode eigenStaat(ObjectNode ir) {
-        return (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition").get("links").deepCopy();
+        return (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition").get("left").deepCopy();
     }
 
     /** A KENMERKTOEKENNING "Een Vondst is {@code kenmerk} indien {@code links op rechts}". */
@@ -262,17 +262,16 @@ class EnumNaamIdentiteitWitnessTest {
                 """);
         r.put("name", naam);
         ObjectNode versie = (ObjectNode) r.get("versions").get(0);
-        ((ObjectNode) versie.get("target")).put("attribuut", kenmerk)
+        ((ObjectNode) versie.get("target")).put("attribute", kenmerk)
                 .set("source", IrPad.bronrecord("Een Vondst is " + kenmerk));
         ObjectNode v = JSON.createObjectNode();
-        v.put("node", "Vergelijking").put("op", op);
-        v.set("links", links);
-        v.set("rechts", rechts);
-        v.putNull("periode");
+        v.put("node", "Comparison").put("op", op);
+        v.set("left", links);
+        v.set("right", rechts);
         v.set("source", IrPad.bronrecord(links.path("source").path("snippet").asText() + " " + op.toLowerCase() + " "
                 + rechts.path("source").path("snippet").asText()));
         versie.set("condition", v);
-        assertTrue(versie.get("target").has("attribuut"));
+        assertTrue(versie.get("target").has("attribute"));
         return r;
     }
 }

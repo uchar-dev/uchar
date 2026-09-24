@@ -150,8 +150,8 @@ class LetBehoefteWitnessTest {
         return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"%s\"}"
                 .formatted(geheel, dec, teken);
     }
-    private static String num(int dec) { return num(dec, false, "ONBEPAALD"); }
-    private static final String GEHEEL_POS = num(0, true, "NIET_NEGATIEF");
+    private static String num(int dec) { return num(dec, false, "unspecified"); }
+    private static final String GEHEEL_POS = num(0, true, "nonNegative");
 
     private static String attr(String naam, String type) {
         return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
@@ -220,7 +220,7 @@ class LetBehoefteWitnessTest {
 
     /** ch. 10.6 clause 3 / its twin: a value that FAULTS, under a binder the body reads or does not. */
     private static String nulDelingModel(boolean gelezen) {
-        String deling = binair("GEDEELD_DOOR", lit("100.00", num(2)), lit("0.00", num(2)), num(2));
+        String deling = binair("dividedBy", lit("100.00", num(2)), lit("0.00", num(2)), num(2));
         String body = gelezen ? bref("q", num(2)) : lit("42.00", num(2));
         return model(attributen("uitkomst", num(2)),
                 new String[]{regel("uitkomst van een jutter", attr("uitkomst", num(2)),
@@ -232,9 +232,9 @@ class LetBehoefteWitnessTest {
      *  need is ever read at all. */
     private static String probeModel() {
         String binnen = let("x", attr("leegwaarde", num(2)),
-                ite(verg("GROTER", bref("k", GEHEEL_POS), lit("1", GEHEEL_POS)),
+                ite(verg("greater", bref("k", GEHEEL_POS), lit("1", GEHEEL_POS)),
                         lit("7.00", num(2)),
-                        binair("MAAL", bref("x", num(2)), lit("2.00", num(2)), num(2)),
+                        binair("times", bref("x", num(2)), lit("2.00", num(2)), num(2)),
                         num(2)),
                 num(2));
         return model(attributen("kindertal", GEHEEL_POS, "leegwaarde", num(2), "uitkomst", num(2)),
@@ -244,11 +244,11 @@ class LetBehoefteWitnessTest {
 
     /** ch. 10.6 clause 1: one §6.5-depositing need, read twice and read once, on one subject. */
     private static String behoefteModel() {
-        String deling = binair("GEDEELD_DOOR", attr("grondslag", num(2)), attr("deler", num(2)), num(2));
+        String deling = binair("dividedBy", attr("grondslag", num(2)), attr("deler", num(2)), num(2));
         return model(attributen("grondslag", num(2), "deler", num(2), "tweemaal", num(2), "eenmaal", num(2)),
                 new String[]{
                         regel("tweemaal van een jutter", attr("tweemaal", num(2)),
-                                let("q", deling, binair("PLUS", bref("q", num(2)), bref("q", num(2)), num(2)), num(2))),
+                                let("q", deling, binair("plus", bref("q", num(2)), bref("q", num(2)), num(2)), num(2))),
                         regel("eenmaal van een jutter", attr("eenmaal", num(2)),
                                 let("q", deling, bref("q", num(2)), num(2)))});
     }

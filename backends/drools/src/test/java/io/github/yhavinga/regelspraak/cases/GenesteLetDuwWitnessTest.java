@@ -232,8 +232,8 @@ class GenesteLetDuwWitnessTest {
         return "{\"node\":\"Number\",\"whole\":false,\"decimals\":%d,\"sign\":\"%s\"}"
                 .formatted(dec, teken);
     }
-    private static String num() { return num(2, "ONBEPAALD"); }
-    private static String pos() { return num(2, "NIET_NEGATIEF"); }
+    private static String num() { return num(2, "unspecified"); }
+    private static String pos() { return num(2, "nonNegative"); }
 
     private static String attr(String naam) {
         return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
@@ -303,7 +303,7 @@ class GenesteLetDuwWitnessTest {
 
     /** "k gedeeld door zijn restpost" — the §6.5 site every branch shape below puts in the anders-arm. */
     private static String deling() {
-        return binair("GEDEELD_DOOR", bref("k", pos()), attr("restpost"));
+        return binair("dividedBy", bref("k", pos()), attr("restpost"));
     }
 
     /** {@code Let k = inkomen in (Let z = k/restpost in <body>)} — the two outer needs all four branch
@@ -319,7 +319,7 @@ class GenesteLetDuwWitnessTest {
 
     /** The same, with a coalescing wrapper around the branch node INSIDE `z`'s body. */
     private static String wikkelModel() {
-        return model(tweeBehoeften(binair("PLUS",
+        return model(tweeBehoeften(binair("plus",
                 let("w", lit("1.00"), ite(boven("k"), bref("w", num()), bref("z", num()))), lit("5.00"))));
     }
 
@@ -330,22 +330,22 @@ class GenesteLetDuwWitnessTest {
 
     /** The same, with an arithmetic wrapper standing BETWEEN the two `Let`s — the shape no route reaches. */
     private static String wikkelTussenModel() {
-        return model(tweeBehoeften(binair("PLUS",
+        return model(tweeBehoeften(binair("plus",
                 let("w", bref("k", pos()), ite(boven("w"), lit("0.00"), bref("z", num()))), lit("5.00"))));
     }
 
     /** `z` read on BOTH arms — the need is wanted whichever arm runs. */
     private static String beideArmenModel() {
         return model(tweeBehoeften(let("w", lit("1.00"), ite(boven("k"),
-                binair("PLUS", bref("w", num()), bref("z", num())), bref("z", num())))));
+                binair("plus", bref("w", num()), bref("z", num())), bref("z", num())))));
     }
 
     /** The branch guard's own binder REBOUND between the `Let` it gates and the branch node — the one name
      *  that means two different bindings at the two positions. */
     private static String herbondenModel() {
         return model(let("w", attr("saldo"),
-                binair("PLUS",
-                        let("z", binair("GEDEELD_DOOR", bref("w", pos()), attr("restpost")),
+                binair("plus",
+                        let("z", binair("dividedBy", bref("w", pos()), attr("restpost")),
                                 let("w", attr("inkomen"),
                                         ite(boven("w"), lit("0.00"), bref("z", num())))),
                         bref("w", pos()))));
@@ -354,6 +354,6 @@ class GenesteLetDuwWitnessTest {
     /** "Let k = inkomen in (Let m = k in (m gedeeld door restpost))" — a need that is itself a binder. */
     private static String ketenModel() {
         return model(let("k", attr("inkomen"),
-                let("m", bref("k", pos()), binair("GEDEELD_DOOR", bref("m", pos()), attr("restpost")))));
+                let("m", bref("k", pos()), binair("dividedBy", bref("m", pos()), attr("restpost")))));
     }
 }

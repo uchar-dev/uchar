@@ -141,9 +141,9 @@ class VerdelingsrolWitnessTest {
         vorm.put("node", "Allocation").put("name", "verdeel de vondstwaarde over de maat");
         ObjectNode v = vorm.putArray("versions").addObject();
         v.put("sourceType", "Jutter").put("sourceAttribute", "vondstwaarde")
-                .put("targetType", "Jutter").put("targetAttribute", "maatdeel").put("method", "GELIJKE_DELEN")
+                .put("targetType", "Jutter").put("targetAttribute", "maatdeel").put("method", "equalShares")
                 .put("descending", false);
-        v.putObject("validity").put("node", "Geldigheid").putNull("vanaf").putNull("tot");
+        v.putObject("validity").put("node", "Validity");
         v.set("connectingRole", binding("maatschap", "maat"));
         return ir;
     }
@@ -157,12 +157,12 @@ class VerdelingsrolWitnessTest {
     /** bergingstoezicht with a third Berging-Berger relation, whose to-one side sits on Berger. */
     private static ObjectNode reserve() throws Exception {
         ObjectNode ir = lees(TOEZICHT);
-        ObjectNode ft = JSON.createObjectNode().put("node", "Feittype").put("naam", "reservedeelname").put("wederkerig", false);
-        ArrayNode rollen = ft.putArray("rollen");
-        rollen.addObject().put("node", "Rol").put("naam", "reserveberging").put("objecttypeNaam", "Berging")
-                .putNull("meervoud").put("meervoudig", false);
-        rollen.addObject().put("node", "Rol").put("naam", "reserveberger").put("objecttypeNaam", "Berger")
-                .put("meervoud", "reservebergers").put("meervoudig", true);
+        ObjectNode ft = JSON.createObjectNode().put("node", "FactType").put("name", "reservedeelname").put("reciprocal", false);
+        ArrayNode rollen = ft.putArray("roles");
+        rollen.addObject().put("node", "Role").put("name", "reserveberging").put("objectType", "Berging")
+                .put("many", false);
+        rollen.addObject().put("node", "Role").put("name", "reserveberger").put("objectType", "Berger")
+                .put("plural", "reservebergers").put("many", true);
         IrPad.modelLijst(ir, "factTypes").add(ft);
         return ir;
     }
@@ -181,7 +181,7 @@ class VerdelingsrolWitnessTest {
     }
 
     private static ObjectNode binding(String feittype, String rol) {
-        return JSON.createObjectNode().put("node", "RolBinding").put("feittype", feittype).put("rol", rol);
+        return JSON.createObjectNode().put("node", "RoleBinding").put("factType", feittype).put("role", rol);
     }
 
     private static ObjectNode lees(Path golden) throws Exception {

@@ -51,25 +51,25 @@ class VensterNestingWitnessTest {
     private int n;
 
     @Test void een_geen_vouw_in_een_alle_samenstelling_weigeren_beide_takken_bij_naam() throws Exception {
-        BeideTakken.geweigerd(document(samen("ALLE", ERVAREN, geenVouw(VENSTER))), casus(), IN_GEEN_VOUW,
+        BeideTakken.geweigerd(document(samen("all", ERVAREN, geenVouw(VENSTER))), casus(), IN_GEEN_VOUW,
                 "ALLE[ervaren, GEEN-vouw(venster)]");
     }
 
     @Test void een_geen_vouw_in_een_de_samenstelling_weigeren_beide_takken_bij_naam() throws Exception {
-        BeideTakken.geweigerd(document(samen("DE", ERVAREN, geenVouw(VENSTER))), casus(), IN_GEEN_VOUW,
+        BeideTakken.geweigerd(document(samen("the", ERVAREN, geenVouw(VENSTER))), casus(), IN_GEEN_VOUW,
                 "DE[ervaren, GEEN-vouw(venster)]");
     }
 
     @Test void een_geen_samenstelling_in_een_alle_samenstelling_weigeren_beide_takken_bij_naam() throws Exception {
-        BeideTakken.geweigerd(document(samen("ALLE", ERVAREN, samen("GEEN", VENSTER))), casus(),
+        BeideTakken.geweigerd(document(samen("all", ERVAREN, samen("none", VENSTER))), casus(),
                 IN_GEEN_SAMENSTELLING, "ALLE[ervaren, GEEN[venster]]");
     }
 
     /** The GEEN composite sits in the FILTER of a sum that is an operand: the position is inside an expression. */
     @Test void een_geen_samenstelling_in_het_filter_van_een_operand_weigeren_beide_takken_bij_naam() throws Exception {
-        BeideTakken.geweigerd(document(samen("ALLE", NIET_ERVAREN, groter(som(samen("GEEN", VENSTER)), 3))), casus(),
+        BeideTakken.geweigerd(document(samen("all", NIET_ERVAREN, groter(som(samen("none", VENSTER)), 3))), casus(),
                 IN_GEEN_SAMENSTELLING, "ALLE[niet ervaren, SOM(… die GEEN[venster]) > 3]");
-        BeideTakken.geweigerd(document(samen("GEEN", groter(som(samen("GEEN", VENSTER)), 3))), casus(),
+        BeideTakken.geweigerd(document(samen("none", groter(som(samen("none", VENSTER)), 3))), casus(),
                 IN_GEEN_SAMENSTELLING, "GEEN[SOM(… die GEEN[venster]) > 3]");
     }
 
@@ -77,8 +77,8 @@ class VensterNestingWitnessTest {
      *  framed as the outer fold's (the DRL-text branch's frame said "kwantorvouw (ALLE over Strandwacht)" around
      *  it until 2026-09-23). */
     @Test void een_geen_vouw_in_de_toets_van_een_alle_vouw_noemt_de_binnenste_vouw() throws Exception {
-        Path ir = metBrevet(document(vouw("ALLE", "Strandwacht", WACHT, null,
-                vouw("GEEN", "Brevet", BREVET, null, BREVET_VENSTER))));
+        Path ir = metBrevet(document(vouw("all", "Strandwacht", WACHT, null,
+                vouw("none", "Brevet", BREVET, null, BREVET_VENSTER))));
         BeideTakken.geweigerd(ir, casus(),
                 "periodevenster in de toets van een kwantorvouw onder GEEN over Brevet (WF-112)",
                 "ALLE-vouw over Strandwacht(GEEN-vouw over Brevet(venster))");
@@ -90,9 +90,9 @@ class VensterNestingWitnessTest {
     /** WF-111 in a fold: a date PARAMETER as the bound, in the toets and in the filter. The refusal names the
      *  bound, and the DRL-text frame no longer calls a fold over a non-§8.2 matrix a §8.2 fold. */
     @Test void een_parametergrens_in_toets_en_filter_van_een_vouw_noemt_de_grens() throws Exception {
-        Path toets = metPeildatum(document(vouw("ALLE", "Strandwacht", WACHT, null, PARAMETERVENSTER)));
+        Path toets = metPeildatum(document(vouw("all", "Strandwacht", WACHT, null, PARAMETERVENSTER)));
         BeideTakken.geweigerd(toets, casus(), GRENSVORM, "de parametergrens in de toets");
-        BeideTakken.geweigerd(metPeildatum(document(vouw("ALLE", "Strandwacht", WACHT, PARAMETERVENSTER, GEDIPLOMEERD))),
+        BeideTakken.geweigerd(metPeildatum(document(vouw("all", "Strandwacht", WACHT, PARAMETERVENSTER, GEDIPLOMEERD))),
                 casus(), GRENSVORM, "de parametergrens in het filter");
         assertFalse(weigering(toets, true).contains("§8.2"), "geen §8.2-kader om een vouw zonder heelperiodematrix");
     }
@@ -149,7 +149,7 @@ class VensterNestingWitnessTest {
     }
 
     private static String geenVouw(String toets) {
-        return vouw("GEEN", "Strandwacht", WACHT, null, toets);
+        return vouw("none", "Strandwacht", WACHT, null, toets);
     }
 
     private static String som(String filter) {

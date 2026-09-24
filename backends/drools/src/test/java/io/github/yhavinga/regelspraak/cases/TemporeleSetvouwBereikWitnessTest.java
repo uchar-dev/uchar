@@ -115,14 +115,14 @@ class TemporeleSetvouwBereikWitnessTest {
     private static ObjectNode setvouw() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(TEMPOVOUW)));
         ObjectNode bewaarlast = IrPad.attribute(IrPad.objectType(ir, "Jutter"), "bewaarlast");
-        IrPad.timeline(bewaarlast, "MAAND");
+        IrPad.timeline(bewaarlast, "month");
         bewaarlast.put("plural", "bewaarlasten");
         bewaarlast.set("datatype", eur());
         IrPad.attribute(IrPad.objectType(ir, "Vondst"), "bewaartarief").set("datatype", eur());
         ObjectNode r = IrPad.versie(ir, "rules", 0, 0);
         // the reads take their type from the declarations above; only the fold carries an annotation of its own
         ObjectNode w = (ObjectNode) r.get("value");
-        w.put("kind", "SOM").set("source", IrPad.bronrecord("de som van het bewaartarief van alle vondsten van de Jutter"));
+        w.put("kind", "sum").set("source", IrPad.bronrecord("de som van het bewaartarief van alle vondsten van de Jutter"));
         w.set("type", eur());
         return ir;
     }
@@ -132,18 +132,18 @@ class TemporeleSetvouwBereikWitnessTest {
     private static ObjectNode herhaaldPaar() throws Exception {
         ObjectNode ir = setvouw();
         ObjectNode ft = IrPad.modelLijst(ir, "factTypes").addObject();
-        ft.put("node", "Feittype").put("naam", "keurbewaring").put("wederkerig", false);
-        ft.putArray("rollen")
+        ft.put("node", "FactType").put("name", "keurbewaring").put("reciprocal", false);
+        ft.putArray("roles")
           .add(rol("keurende jutter", "Jutter", null, false))
           .add(rol("keurvondst", "Vondst", "keurvondsten", true));
         return ir;
     }
 
     private static ObjectNode rol(String naam, String objecttype, String meervoud, boolean meervoudig) {
-        ObjectNode r = JSON.createObjectNode().put("node", "Rol").put("naam", naam)
-                .put("objecttypeNaam", objecttype);
-        if (meervoud == null) r.putNull("meervoud"); else r.put("meervoud", meervoud);
-        return r.put("meervoudig", meervoudig);
+        ObjectNode r = JSON.createObjectNode().put("node", "Role").put("name", naam)
+                .put("objectType", objecttype);
+        if (meervoud != null) r.put("plural", meervoud);
+        return r.put("many", meervoudig);
     }
 
     private static ObjectNode eur() {
@@ -151,7 +151,7 @@ class TemporeleSetvouwBereikWitnessTest {
                 .put("system", "Munt").put("canonical", "EUR");
         e.putObject("factorToCanonical").put("num", 1).put("den", 1);
         ObjectNode n = JSON.createObjectNode().put("node", "Number").put("whole", true)
-                .put("decimals", 0).put("sign", "ONBEPAALD");
+                .put("decimals", 0).put("sign", "unspecified");
         n.set("unit", e);
         return n;
     }

@@ -209,7 +209,7 @@ class TakgelijkheidWitnessTest {
 
     private static ObjectNode numeriek() {
         return JSON.createObjectNode().put("node", "Number").put("whole", true)
-                .put("decimals", 0).put("sign", "ONBEPAALD");
+                .put("decimals", 0).put("sign", "unspecified");
     }
 
     private static Path tijdelijk(String naam, String inhoud) throws Exception {
@@ -239,10 +239,10 @@ class TakgelijkheidWitnessTest {
      *  and clingo-clean. */
     private static Path aggregatieJoinOnafgeleid() throws Exception {
         ObjectNode ir = goldenIr(VONDSTTELLING);
-        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "vondstaanmelding").get("rollen"))
-            if ("aanmelder".equals(r.get("naam").asText())) {
-                ((ObjectNode) r).put("meervoudig", true);
-                ((ObjectNode) r).put("meervoud", "aanmelders");
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "vondstaanmelding").get("roles"))
+            if ("aanmelder".equals(r.get("name").asText())) {
+                ((ObjectNode) r).put("many", true);
+                ((ObjectNode) r).put("plural", "aanmelders");
             }
         return model("aggregatiejoin-onafgeleid", ir);
     }

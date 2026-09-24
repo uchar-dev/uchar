@@ -46,7 +46,7 @@ class NavigatiebindingWitnessTest {
         // four relations between the pair: no derivation of the pair could name one, so the binding is the route
         ObjectNode ir = lees();
         BeideTakken.groen(tijdelijk("nav", ir), casus(1), "the bound hop plays");
-        waarde(ir).set("navigatieBindingen", bindingen("winterberging", "winterhaven"));
+        waarde(ir).set("path", bindingen("winterberging", "winterhaven"));
         BeideTakken.rood(tijdelijk("nav-twist", ir), casus(1), "verwacht leeg, werkelijk 40",
                 "the hop must walk the bound winterhaven");
     }
@@ -72,11 +72,11 @@ class NavigatiebindingWitnessTest {
     @Test void de_genavigeerde_kenmerkcheck_volgt_de_wire_binding() throws Exception {
         ObjectNode ir = lees();
         ObjectNode k = regel(ir).putObject("condition");
-        k.put("node", "Kenmerk").put("kenmerk", "veilig").put("negatie", false)
-         .putNull("eigenaar").putNull("periode").set("source", IrPad.bronrecord("zijn vlaghaven veilig is"));
-        k.set("navigatieBinding", binding("vlagvoering", "vlaghaven"));
+        k.put("node", "CharacteristicCheck").put("characteristic", "veilig").put("negated", false)
+         .set("source", IrPad.bronrecord("zijn vlaghaven veilig is"));
+        k.set("navigation", binding("vlagvoering", "vlaghaven"));
         BeideTakken.groen(tijdelijk("nav-kenmerk", ir), casus(2), "untwisted navigated check plays");
-        k.set("navigatieBinding", binding("winterberging", "winterhaven"));
+        k.set("navigation", binding("winterberging", "winterhaven"));
         BeideTakken.rood(tijdelijk("nav-kenmerk-twist", ir), casus(2), "verwacht 40, werkelijk leeg",
                 "the check must read veilig on the bound winterhaven");
         k.put("navigatie", "vlaghaven");
@@ -93,7 +93,7 @@ class NavigatiebindingWitnessTest {
         // Each branch must refuse for the NAVIGATION, in its own words for it — the rule name alone would let any
         // refusal of this rule pass.
         ObjectNode ir = lees();
-        waarde(ir).set("navigatieBindingen", bindingen("thuisligging", "ligger"));
+        waarde(ir).set("path", bindingen("thuisligging", "ligger"));
         Path p = tijdelijk("nav-past-niet", ir);
         JsonNode c = casus(1);
         CaseRunner.Excluded exec = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(p, c, false));
@@ -112,13 +112,13 @@ class NavigatiebindingWitnessTest {
                 IrPad.attribute(IrPad.objectType(ir, "Haven"), "kadegeld").get("datatype"));
         ObjectNode links = waarde(ir).deepCopy();
         ObjectNode v = regel(ir).putObject("condition");
-        v.put("node", "Vergelijking").put("op", "GROTER");
-        v.set("links", links);
-        ObjectNode dertig = v.putObject("rechts").put("node", "Literal");
+        v.put("node", "Comparison").put("op", "greater");
+        v.set("left", links);
+        ObjectNode dertig = v.putObject("right").put("node", "Literal");
         dertig.putObject("value").put("number", "30");
         dertig.set("type", IrPad.attribute(IrPad.objectType(ir, "Haven"), "kadegeld").get("datatype"));
         dertig.set("source", IrPad.bronrecord("30"));
-        v.putNull("periode").set("source", IrPad.bronrecord("het kadegeld van de vlaghaven van de Schuit groter is dan 30"));
+        v.set("source", IrPad.bronrecord("het kadegeld van de vlaghaven van de Schuit groter is dan 30"));
         BeideTakken.groen(tijdelijk("nav-paar-voorwaarde", ir), casus(1), "the bound read in the guard walks to the Haven");
     }
 
@@ -143,7 +143,7 @@ class NavigatiebindingWitnessTest {
     @Test void een_lege_bindingenlijst_wordt_bij_naam_geweigerd() throws Exception {
         // an empty list would read as the subject's own attribute, so it is no document
         ObjectNode ir = lees();
-        waarde(ir).putArray("navigatieBindingen");
+        waarde(ir).putArray("path");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
         assertEquals("/rules/rules/" + VLAGPRIJS + "/versions/0/value/path", e.plek(), e.getMessage());
     }
@@ -151,13 +151,13 @@ class NavigatiebindingWitnessTest {
     @Test void een_misvormde_binding_wordt_bij_het_laden_benoemd() throws Exception {
         // the verifier and ref give LOAD ERROR naming the field, and so does this loader, at the binding's pointer
         ObjectNode ir = lees();
-        ((ObjectNode) waarde(ir).get("navigatieBindingen").get(0)).remove("rol");
+        ((ObjectNode) waarde(ir).get("path").get(0)).remove("role");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
         assertEquals("/rules/rules/" + VLAGPRIJS + "/versions/0/value/path/0", e.plek(), e.getMessage());
         assertTrue(e.getMessage().contains("missing field 'rol'"), e.getMessage());
 
         ObjectNode ir2 = lees();
-        ((ObjectNode) IrPad.versie(ir2, "rules", 3, 0).get("condition")).putNull("navigatieBinding");
+        ((ObjectNode) IrPad.versie(ir2, "rules", 3, 0).get("condition")).putNull("navigation");
         IrLoader.Documentfout e2 = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir2));
         assertEquals("/rules/rules/3/versions/0/condition/navigation", e2.plek(), e2.getMessage());
     }
@@ -195,7 +195,7 @@ class NavigatiebindingWitnessTest {
     }
 
     private static ObjectNode binding(String feittype, String rol) {
-        return JSON.createObjectNode().put("node", "RolBinding").put("feittype", feittype).put("rol", rol);
+        return JSON.createObjectNode().put("node", "RoleBinding").put("factType", feittype).put("role", rol);
     }
 
     private static ArrayNode bindingen(String feittype, String rol) {
