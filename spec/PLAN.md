@@ -750,15 +750,6 @@ timeline facet (B18), `UnitSystem {name, units}` with spellings and `DayKind
 zone's 540 pre-rounded factors reconstructed and confirmed byte-identical by
 the frontend's re-emission); negatief 400 → 407 with 165 arm fragments; no
 gate-5/6/12 outcome moved; all fourteen gates green on the landing.
-**L3 landed (2026-09-24, `deadbeef`, card `backlog/done/20260924-l3-typesysteem.md`):**
-the type system — `Number` with the `%` unit and the declaration tag (B14),
-`Date {precision}` (B15), the exact rational `factorToCanonical {num, den}`
-(B17 (i); V7's fallback invoked, no canonicalisation pass), the parameter
-timeline facet (B18), `UnitSystem {name, units}` with spellings and `DayKind
-{name, plural?}`; migration `spec/proposals/v1-migratie/m3.py` (the parity
-zone's 540 pre-rounded factors reconstructed and confirmed byte-identical by
-the frontend's re-emission); negatief 400 → 407 with 165 arm fragments; no
-gate-5/6/12 outcome moved; all fourteen gates green on the landing.
 
 ## 10. Rough effort
 
