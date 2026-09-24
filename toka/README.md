@@ -109,8 +109,10 @@ stays honest about where it no longer proves toolchain agreement.
   binding — two zero-hop self-references and one count source naming its own
   subject. No navigation binding was added. One
   derived position the frontend cannot type (`/rules/resolvedRegels/16/waarde`,
-  a date minus a month count) carries `"type": null`, its one L2 spelling, where
-  it carried an `Onbekend`. The 22 `cases/` slices that carry a reference layer
+  from fragments toka-43/44 and not from the holdout toka-45: a `Binair` `MIN`
+  whose left operand is an `AttribuutRef` naming no attribute declared on its
+  object type, and whose right operand is a `Numeriek` parameter in months)
+  carries `"type": null`, its one L2 spelling, where it carried an `Onbekend`. The 22 `cases/` slices that carry a reference layer
   were migrated mechanically (`spec/proposals/v1-migratie/m2.py`), the other 7
   are byte-identical; `casus/ir.json` was migrated the same way and then
   re-emitted by uchar's frontend, which reproduced the migrated file byte for
