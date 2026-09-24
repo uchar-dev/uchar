@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The §13.4.6 objectcreatie's LINK, resolved the same way in both transpiler branches (card
  * drl-creatie-koppelloos, 2026-09-23).
  *
- * <p>The exec branch has read the creation's own {@code verbindendeRol} binding since 2026-08-30, and refuses
+ * <p>The exec branch has read the creation's own {@code connectingRole} binding since 2026-08-30, and refuses
  * by name every creation whose link the bean model cannot hold. The DRL-text branch derived the link from the
  * type pair alone. On a repeated or self-typed pair that derivation answers null, and the branch then emitted
  * an {@code insert($new)} with no link at all, behind a comment line only the marker scan in {@code meet()}

@@ -210,7 +210,7 @@ class OpslagrichtingWitnessTest {
     // refuse the FORM instead — loudly, naming the member that displaced the reference.
 
     @Test void de_creatiearm_weigert_een_naamdelende_terugkoppeling() throws Exception {
-        // The §13.4.6 arm: the creation's own verbindendeRol binding names `opvolger`, whose field the attribute
+        // The §13.4.6 arm: the creation's own connectingRole binding names `opvolger`, whose field the attribute
         // took. ref on exactly this model and case: `oracle: PASS (1 expectations)` — the model is ref-clean AND
         // verifier-clean (`verifier: PASS`), so this is not a broken program filed under "not carried": it is a
         // bean-model limit of THIS backend, which must therefore say so per creation.

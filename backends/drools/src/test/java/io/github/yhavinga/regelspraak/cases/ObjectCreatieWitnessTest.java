@@ -257,7 +257,7 @@ class ObjectCreatieWitnessTest {
     @Test void een_zelfgetypeerd_rollenpaar_koppelt_beide_uiteinden() throws Exception {
         // WAS a refusal witness until 2026-08-30 (card drools-zelfgetypeerd-creatiepaar): a self-typed pair
         // (Wachter creates Wachter over `opvolging`'s two same-typed roles) is now CARRIED, because the creation's
-        // own symbolic verbindendeRol binding rides beside the model and names the role the MINT plays — the only
+        // own symbolic connectingRole binding rides beside the model and names the role the MINT plays — the only
         // route there is, since the by-pair derivation counts two candidates and yields null by construction (ref
         // reads it exactly so: "the explicit back-link binding wins ... the only route for a self-typed pair").
         // Both ends are the point: `opvolger` and `voorganger` are DISTINCT sibling roles filled by the same type,
