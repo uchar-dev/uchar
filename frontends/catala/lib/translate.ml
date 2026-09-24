@@ -278,7 +278,7 @@ let ir_typ (e : I.expr) : I.datatype option =
 (* --- literals ----------------------------------------------------------- *)
 
 let money_str (z : Z.t) : string =
-  (* Catala money is a count of cents; the IR carries a 2-decimal Numeriek
+  (* Catala money is a count of cents; the IR carries a 2-decimal Number
      value lexeme (ref parses it with q_of_lexeme, clingo rescales it). *)
   let hundred = Z.of_int 100 in
   let neg = Z.sign z < 0 in

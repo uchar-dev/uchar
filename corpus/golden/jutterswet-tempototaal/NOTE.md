@@ -62,7 +62,7 @@ target €,     AFTER:   ERROR (line 17): berekening: toekenning:
 
 The fix moved a runtime fault to a compile-time diagnostic and made the
 honest declaration the accepted one. On the wire it is one field:
-`Functie{kind: TOTAAL}.type.eenheid.noemer` is now **held** when the
+`Functie{kind: TOTAAL}.type.unit.denominator` is now **held** when the
 operand is a set read, and still **dropped** when it is not.
 
 The strip itself is untouched, and so is every temporal golden: all 28

@@ -34,8 +34,8 @@ carries the full table. The four things this document needs from it:
 The method is the one Phase 5d used for the `-catala` pair: put the two
 emitted documents side by side and account for **every** difference.
 Against `corpus/golden/jutterswet-wrakrecht/ir.json` there are **39
-differing lines**, counted on the twin's side of the diff (re-measured at L2,
-2026-09-24), in three categories — 19 + 12 + 8 — and no fourth. Until the v1
+differing lines**, counted on the twin's side of the diff (re-measured at L2
+and again at L3, 2026-09-24), in three categories — 19 + 12 + 8 — and no fourth. Until the v1
 wire there were 52: the 8 `onderwerpBron` lines left the wire at L2
 (`spec/proposals/V1-WIREMIGRATIE.md` B11), and the 5 lines of category (iv)
 left with the `regels` index (B3).
@@ -53,7 +53,7 @@ to quote. The node itself — `ALLE` over no parts, the shape WF-050 asks
 for — is identical in both.
 
 **(ii) Literal spelling and the literal's own type annotation (12 lines:
-4 `waarde`, 4 `geheel`, 4 `decimalen`).** `"5,00"` against `"5.00"`, and with it the annotation `geheel/decimalen` on the
+4 `waarde`, 4 `whole`, 4 `decimals`).** `"5,00"` against `"5.00"`, and with it the annotation `whole/decimals` on the
 literal node (`true/0` against `false/2`). The Dutch decimal comma is
 RegelSpraak's lexeme; F-logic writes the point, and the frontend derives
 the literal's scale from the lexeme it was given. This difference already
