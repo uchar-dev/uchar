@@ -46,12 +46,13 @@ counts nor weighs. Unfiltered the two numbers would read 3 and 15.00 — the
 divergence this golden pins shut.
 
 J2 is the sharper half of the same point: the role links exactly one instance,
-so the reached set is NOT empty, and the fold is empty all the same because the
-type filter removes its only member. An executor that answered from the links
-alone would report 1 and 4.00 here; the empty-fold `emptyFallback` is what a fold
-over no members is defined to give.
+so the reached set is NOT empty, and the fold is empty all the same because
+the type filter removes its only member. An executor that answered from the
+links alone would report 1 and 4.00 here; the empty-fold `emptyFallback` is
+what a fold over no members is defined to give.
 
 J3 separates the two ways a sum reaches zero: its member IS a `Munt` and is
 counted, but carries no `gewicht`, so the sum has a member and no value and
-falls to the same `emptyFallback` J2 reaches with no member at all. Only the count
-tells them apart (1 against 0), which is why both folds are pinned per jutter.
+falls to the same `emptyFallback` J2 reaches with no member at all. Only the
+count tells them apart (1 against 0), which is why both folds are pinned per
+jutter.

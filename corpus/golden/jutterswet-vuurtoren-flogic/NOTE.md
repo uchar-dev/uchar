@@ -80,35 +80,35 @@ author chose, so one comprehension has one spelling; that is the same
 normalisation the slice's aggregate rendering already did before the goals
 existed.
 
-**(ii) Declared surface names F-logic has no grammar for (16 lines:
-2 object-type `plural`, the role's `meervoud` ×2 and `naam` ×2, 10
-`rol` in the range bindings).** The two object types carry no `plural` and
-the to-many role's `meervoud` is `null`. F-logic declares no grammatical
-number, so the frontend leaves it unset rather than inventing it. The role is consequently named by one label, `lampen`, where the twin
-carries the singular/plural pair `lamp`/`lampen` — and the shared case files
-key on exactly that string, which the twin matches on `Rol.meervoud` and
-this document on `Rol.naam` (the reference interpreter matches a role by
-either). The five range bindings — the `bronRol` of the four quantifier
-folds and the `sourceRole` of the instance fold — follow the same label in
-their `rol`. `bezield` is `false` in both, so it is not a
-difference here.
+**(ii) Declared surface names F-logic has no grammar for (16 lines: 2
+object-type `plural`, the role's `meervoud` ×2 and `naam` ×2, 10 `rol` in the
+range bindings).** The two object types carry no `plural` and the to-many
+role's `meervoud` is `null`. F-logic declares no grammatical number, so the
+frontend leaves it unset rather than inventing it. The role is consequently
+named by one label, `lampen`, where the twin carries the singular/plural pair
+`lamp`/`lampen` — and the shared case files key on exactly that string, which
+the twin matches on `Rol.meervoud` and this document on `Rol.naam` (the
+reference interpreter matches a role by either). The five range bindings — the
+`bronRol` of the four quantifier folds and the `sourceRole` of the instance
+fold — follow the same label in their `rol`. `bezield` is `false` in both, so
+it is not a difference here.
 
 **(iii) The trailing `prioritizedDefaults` (3 lines).** This frontend's
 serialiser always writes the array; the hand-written twin, which has no
 defaults group, omits the key. Both are schema-valid and the loader reads
 them identically.
 
-**No semantic difference.** Everything else is byte-identical: the two
-object types with the same attributes, characteristics, datatypes and
-`kenmerkSoorten`; the fact type with the same name and the same role
-fillers; the same five `Rule` forms with the same names, the same
-`initialisation` and `presentation` and in the same order; the same four
-`Kwantorvouw` nodes with the same `kwantor`, the same `drempel` where a counting quantifier has one and
+**No semantic difference.** Everything else is byte-identical: the two object
+types with the same attributes, characteristics, datatypes and
+`kenmerkSoorten`; the fact type with the same name and the same role fillers;
+the same five `Rule` forms with the same names, the same `initialisation` and
+`presentation` and in the same order; the same four `Kwantorvouw` nodes with
+the same `kwantor`, the same `drempel` where a counting quantifier has one and
 none where it would contradict the quantifier (WF-108 (e)), the same
-`elementObjecttype`, the same filter on `keurig` and none on the other
-three, the same matrix; and the same AANTAL with the same
-`elementType` and `sourceRole.feittype`. A semantic difference here would
-be a defect in the lowering, not a finding about the languages.
+`elementObjecttype`, the same filter on `keurig` and none on the other three,
+the same matrix; and the same AANTAL with the same `elementType` and
+`sourceRole.feittype`. A semantic difference here would be a defect in the
+lowering, not a finding about the languages.
 
 ## The cells
 
