@@ -147,7 +147,7 @@ Drools PLAYS all three cases in BOTH branches — the exec-model path
 also drives). ref ≡ clingo ≡ Drools, the first corpus witness for which
 that holds on a self-typed **1:1** relation supplied from one end only.
 
-Gate 13: every `Numeriek` here carries `eenheid: null`, so the golden
+Gate 13: no `Number` here carries a `unit`, so the golden
 falls outside the twist set and moves no gate-13 count. Giving
 `kavelbreedte` a unit would pull it in and would force a re-measurement
 of the DRL-branch floor; that is extra work without demonstrated risk,

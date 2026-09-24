@@ -13,8 +13,8 @@ pass and replays it exactly after (ref ≡ clingo).
 `De looptijd van een Bergingsvergunning` (**maand**, whole) :=
 `2 jaar` (literal) **plus** `de basisduur` (**maand**, whole, case input).
 
-`Termijn` stelsel: `maand` canonical (`factorNaarCanoniek = 1`, the **finest**
-base unit), `jaar = 12 maand`. These are plain NUMERIC units on a Numeriek
+Unit system `Termijn`: `maand` canonical (`factorToCanonical` 1/1, the **finest**
+base unit), `jaar = 12 maand`. These are plain NUMERIC units on a `Number`
 attribute (no timeline, no granularity): the additive join runs through the
 exact-rational unit algebra, never the calendar kernel.
 

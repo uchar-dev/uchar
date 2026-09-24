@@ -4,21 +4,22 @@ The **frontend bare-%-literal** witness. This golden's `bron.rgs` uses a
 BARE percentage literal (`21%`, no `van`) in two value positions the grammar
 admits, so uchar's own frontend (`getalWaarde : NUMBER PERCENT_SIGN`,
 RegelSpraak.g4:973; resolver `ExpressieBouwer.java:200`) emits a
-**Percentage-typed `Literal`** — the round-trip gate 10 never exercised
-before (the two existing %-goldens use `%` only as the left operand of
-`PERCENTAGE_VAN`, which the frontend types Numeriek).
+**`Literal` typed as a percentage** (a `Number` with the unit `%`) — the
+round-trip gate 10 never exercised before (the two existing %-goldens use `%`
+only as the left operand of `PERCENTAGE_VAN`, which the frontend types as a
+plain `Number`).
 
 Chosen grammar positions (both admitted, verified by a quick emit test):
 
 1. **berekening RHS** (`gelijkstelling : attribuutVanOnderwerp
    WORDT_BEREKEND_ALS expressie`): `Het bergingstarief van een Vondst moet
-   berekend worden als 21%.` → `Literal{waarde:"21", type:Percentage}`.
+   berekend worden als 21%.` → `Literal{waarde:"21", type: Number with unit %}`.
 2. **comparison RHS** (`vergelijkingsTekenGesplitst : GELIJK IS AAN`):
    `… indien het vondsttarief van de Vondst gelijk is aan 21%.` →
-   the comparison's `rechts` is `Literal{waarde:"21", type:Percentage}`.
+   the comparison's `rechts` is `Literal{waarde:"21", type: Number with unit %}`.
 
 The frontend types a `Percentage (geheel getal)` attribute and a bare `21%`
-literal with a `%` eenheid (afkorting `%`, canoniek `%`, factor 1); both
+literal with the `%` unit (abbreviation `%`, canonical `%`, factor 1/1); both
 sides of the comparison and the assignment carry the SAME unit, so every
 unit restatement is the identity.
 
@@ -27,7 +28,7 @@ unit restatement is the identity.
 `spec/RUNTIME-SEMANTICS.md` ch. 2.2 (Operators, l.288) defines the `/100`
 scaling as a property of the **`percentage van` operator** only (`l/100 × r`,
 exactly). No operator applies here: `21%` stands alone in a value position,
-so nothing scales it. A **bare** Percentage value therefore carries no
+so nothing scales it. A **bare** percentage value therefore carries no
 implicit `/100` — its magnitude is the per-hundred number itself. So `21%`
 standing alone denotes the value **21** (in `%` units), NOT `0,21`.
 
@@ -73,20 +74,20 @@ EXCLUDE transpiler SKIP: regel: bergingstarief van een vondst — regel (waarde 
 ```
 
 The frontend types a `Percentage (geheel getal)` attribute and a bare `21%`
-literal with a `%` eenheid (see `ir.json`). The berekening's scalar-value
+literal with the `%` unit (see `ir.json`). The berekening's scalar-value
 lowering (`ExecModelTranspiler.java:553`, `waarde buiten scope`) declines the
-`%`-unit Percentage operand and returns the skip above; transpilation stops
+`%`-unit operand and returns the skip above; transpilation stops
 there. The comparison rule's Phase-B condition lowering (`:306`, `voorwaarde
 buiten Phase-B scope`) would independently decline the same `%`-unit operand,
 but it is never reached or printed in this golden — it is why the golden could
 not play even if the berekening were carried, not a message the CLI emits here.
 
-EVIDENCE that the divergence is exactly the Percentage/`%`-unit form and
-nothing else: the byte-identical shape with the operands retyped Numeriek
-(no `%`) PLAYS+PASSES through the same Drools jar — `jutterswet-strandgoed`
-(a `Numeriek` `>` comparison) plays, and a minimal `… gelijk is aan 21`
-(bare `Numeriek` equality, `%` stripped) also plays `PLAYED 1`. The bare
-percentage literal is intrinsically Percentage-typed (RegelSpraak.g4:973 →
+EVIDENCE that the divergence is exactly the percentage (`%`-unit) form and
+nothing else: the byte-identical shape with the operands retyped as numbers
+without `%` PLAYS+PASSES through the same Drools jar — `jutterswet-strandgoed`
+(a `>` comparison of numbers without a unit) plays, and a minimal `… gelijk
+is aan 21` (bare number equality, `%` stripped) also plays `PLAYED 1`. The bare
+percentage literal is intrinsically typed as a percentage (RegelSpraak.g4:973 →
 `ExpressieBouwer.java:200`), so no bare-`%` witness can both carry the
 `%`-lexeme AND be lowered by the v0 Drools exec-model — the auto-exclusion is
 unavoidable for this construct, and self-documenting.

@@ -27,7 +27,7 @@ Both systems declare a kilogram, canonical `kg`, factor 1. A unit spelling
 resolves against the first system that declares it, so `kg` and `kilogram`
 reach **Gewicht**'s record, `t` reaches **Massa**'s, and the second
 abbreviation `kgm` is what reaches **Massa**'s kilogram — a record identical
-to Gewicht's in every field but `stelsel`.
+to Gewicht's in every field but `system`.
 
 That gives the two cross-system pairs the document needs:
 

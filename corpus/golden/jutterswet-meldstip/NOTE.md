@@ -1,14 +1,14 @@
-# jutterswet-meldstip — the first `DatumTijd` coverage of the differential
+# jutterswet-meldstip — the first millisecond-precision `Date` coverage of the differential
 
-`DatumTijd` is a declared datatype of the wire, and until this golden **no
-executor differential touched it**. The corpus carried `dateTime` values on
-the case wire that were only ever read in, never compared: **zero**
-`DatumTijd` comparisons and **zero** `DatumTijd` literals. One executor is
-not a differential — any `DatumTijd` semantics that shifted would have
-shifted unseen.
+A `Date` at millisecond precision is a declared datatype of the wire, and
+until this golden **no executor differential touched it**. The corpus
+carried `dateTime` values on the case wire that were only ever read in,
+never compared: **zero** comparisons and **zero** literals at that
+precision. One executor is not a differential — any millisecond-date
+semantics that shifted would have shifted unseen.
 
-This golden closes that. It pins one `DatumTijd` attribute against one
-`DatumTijd` **literal** in the canonical ISO lexeme, in both ordering
+This golden closes that. It pins one millisecond-precision `Date` attribute
+against one such **literal** in the canonical ISO lexeme, in both ordering
 directions, at a **sub-day threshold** — and it is replayed by gate 5
 (`ref`), gate 6 (clingo) and gate 12 (Drools) against the same
 hand-computed values.
@@ -75,7 +75,7 @@ operand is false), so silence, not a fault.
 ## Why the wire is hand-written (no `bron.rgs`)
 
 When this golden was written the RegelSpraak emitter could not produce
-it: for a `DatumTijd` literal it wrote the day-first source snippet into
+it: for a millisecond-precision date literal it wrote the day-first source snippet into
 `waarde` as well as `bron` (measured 2026-09-06), so the golden was
 hand-written wire, the pattern the Catala and `jutterswet-getijdenpaar`
 goldens already follow, carrying the canonical lexeme on purpose.
@@ -86,7 +86,7 @@ the ISO lexeme alone. This golden stays hand-written for one reason that
 is not the lexeme: its references read `haar meldstip` (an `Aanmelding` is
 feminine, a lens decision of the card that wrote it), and the RegelSpraak
 grammar has no `haar`, so the frontend cannot emit these `bron` strings.
-The emitter's own `DatumTijd` route is held by `jutterswet-sluitstip`
+The emitter's own route for that literal is held by `jutterswet-sluitstip`
 instead, which is a `bron.rgs` golden.
 
 The snippet `15-03-2026 12:00:00.000` in this document's `bron` is no

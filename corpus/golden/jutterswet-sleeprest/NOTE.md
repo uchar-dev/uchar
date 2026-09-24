@@ -3,7 +3,7 @@
 Witnesses the **factor-1 unit admission** (ASP-TRANSLATION S6): a MAAL of a
 unitless factor with a unit-carrying attribute, consumed by a restating
 position (MIN) whose other side is a unitless literal that adopts the unit.
-Every unit meeting here is factor-FREE — no `factorNaarCanoniek` is ever
+Every unit meeting here is factor-FREE — no `factorToCanonical` is ever
 applied — so the reference interpreter's exact-rational result equals the
 raw integer arithmetic, and clingo replays it exactly (ref ≡ clingo ≡
 Drools).
@@ -18,7 +18,7 @@ Drools).
 
 - **maal**: `Unitless × Unit km → Unit km`, value unchanged (`Arith.mul`,
   `(Unitless, Unit u) -> Num(v, u)`; NO factor). The km attribute's declared
-  `factorNaarCanoniek = 1000` is never exercised — km never meets a
+  `factorToCanonical` 1000/1 is never exercised — km never meets a
   different unit.
 - **min**: the unitless left literal adopts the right operand's unit
   (`restate_into`, `Unitless, Unit _ -> q`; value unchanged). Result unit km.

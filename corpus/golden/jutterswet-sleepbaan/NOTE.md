@@ -12,7 +12,7 @@ absolute value ref computes over the source units (ref ≡ clingo).
 `De sleeplengte van een Sleepbaan` (**m**, whole) :=
 `2,5 km` (literal) **plus** `de aanloop` (**m**, whole, case input).
 
-`Afstand` stelsel: `m` canonical (`factorNaarCanoniek = 1`, the **finest**
+Unit system `Afstand`: `m` canonical (`factorToCanonical` 1/1, the **finest**
 base unit), `km = 1000 m`. Finest-unit canonical ⇒ every restatement is
 `× 1000`, multiply-only, integer-encodable.
 

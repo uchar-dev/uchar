@@ -1,6 +1,7 @@
-# jutterswet-sluitstip — the emitter's `DatumTijd` literal on the wire
+# jutterswet-sluitstip — the emitter's millisecond-precision date literal on the wire
 
-The first `bron.rgs` golden that carries a `DatumTijd` literal. Until
+The first `bron.rgs` golden that carries a date literal at millisecond
+precision. Until
 2026-09-22 the RegelSpraak emitter wrote the day-first source snippet into
 a datum-tijd literal's `waarde`, and WF-095 admitted it as a second
 spelling for that reason. The emitter now writes the canonical ISO lexeme

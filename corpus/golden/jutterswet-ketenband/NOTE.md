@@ -82,7 +82,7 @@ which that holds on a self-typed 1:N relation supplied from either end.
 NOOP-REFUTING: every case pins computed values absent from the raw
 input, so a do-nothing run mismatches them (gate 7).
 
-Gate 13: every `Numeriek` here carries `eenheid: null`, so the golden
+Gate 13: no `Number` here carries a `unit`, so the golden
 falls outside the twist set and moves no gate-13 count. Giving
 `rangnummer` a unit would pull it in; that is extra work without
 demonstrated risk, so the deliberate default is no unit.
