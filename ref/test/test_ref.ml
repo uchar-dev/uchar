@@ -2827,14 +2827,17 @@ let () =
   expect_num "WV-3.4b-gedeeld-driestaps" (ev w2 "J1" diep) "1.25";
   (* the two shape arms of WF-102, mirrored in the executor: a document that
      reaches ref without passing the verifier must fault by NAME rather than
-     be read as the one-step form with the range dropped *)
-  expect_fault "WV-3.4b-pad-naast-bronrol-faalt" (fun () ->
+     be read as the one-step form with the range dropped. Two spellings of one
+     range are refused in the shared loader's sentence *)
+  expect_fault_msg "WV-3.4b-pad-naast-bronrol-faalt"
+    (fun () ->
       ev w1 "J1"
         (Functie
            { kind = Minimum; argumenten = [ bron "gewicht" "Vondst" ];
              element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
              dimensie_selectie = None; typ = Some num2; bron = None; granulariteit = None;
-             bron_rol = Some (rb "berging" "geborgen vondst"); bron_pad = Some pad2 }));
+             bron_rol = Some (rb "berging" "geborgen vondst"); bron_pad = Some pad2 }))
+    "sourcePath beside sourceRole: a fold carries one range, never two";
   expect_fault "WV-3.4b-eenstaps-pad-faalt"
     (fun () -> ev w1 "J1" (vouw Minimum "gewicht" "Vondst" [ rb "berging" "geborgen vondst" ] None));
   (* a listed fold has no set source (D8 (i): the source is a SINGLE

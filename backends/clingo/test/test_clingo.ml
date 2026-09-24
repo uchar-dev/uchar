@@ -3754,6 +3754,30 @@ let () =
            {|"sourceRole": { "node": "RolBinding", "feittype": "berging", "rol": "geborgen vondst" },
           "sourcePath": [|})
     ~needle:"sourcePath beside sourceRole: a fold carries one range, never two";
+  (* ... and on a node built past the loader, the translation refuses the two
+     spellings in the loader's own sentence *)
+  (let doc, case = load_pair ~ir:bp_doc ~case_text:bp_case in
+   let beide =
+     { doc with
+       resolved_regels =
+         List.map
+           (fun (r : Ir_v0.Ast.resolved_regel) ->
+             match r.waarde with
+             | Some (Functie f) ->
+                 { r with
+                   waarde =
+                     Some
+                       (Functie
+                          { f with
+                            bron_rol = Some { rb_feittype = "berging"; rb_rol = "geborgen vondst" } }) }
+             | _ -> r)
+           doc.resolved_regels }
+   in
+   match translate beide case with
+   | (_ : string) -> check "ch3.4b een pad naast een bronRol, voorbij de lader: expected a fault" false
+   | exception Uchar_ref.Value.Fault m ->
+       check ("ch3.4b een pad naast een bronRol, voorbij de lader (" ^ m ^ ")")
+         (m = "sourcePath beside sourceRole: a fold carries one range, never two"));
   (* (c) a listed fold has no set source (D8 (i): the source is a SINGLE
      argument), so a range beside two operands has nothing to range over, and
      reading the operands while dropping the range would answer over the

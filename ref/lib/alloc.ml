@@ -61,7 +61,6 @@ let allocate (methode : Ir_v0.Ast.methode) ~afnemend ~decimals ~pot ~err
   if recipients = [] then Nothing (* zero recipients: nothing written, no error *)
   else
     match methode with
-    | Complex -> fault "COMPLEX allocation is not admissible IR (WF-024)"
     | Gelijke_delen -> (
         match pot with
         | Empty -> fault "empty source amount in equal-shares allocation (v0 mirror hole, ch. 4.4)"

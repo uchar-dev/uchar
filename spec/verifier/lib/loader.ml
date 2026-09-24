@@ -258,7 +258,7 @@ let rule_presentation =
 
 (* The three real methods (IR-SPEC ch. 3.2). The v0 placeholder of an
    unhandled form, COMPLEX, is no method: an unknown value, refused like any
-   other, so no reader meets [Complex]. *)
+   other, and the in-memory type has no constructor for it. *)
 let methode =
   enum "method"
     [ ("GELIJKE_DELEN", Gelijke_delen); ("NAAR_RATO", Naar_rato); ("OP_VOLGORDE", Op_volgorde) ]

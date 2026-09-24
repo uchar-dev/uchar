@@ -104,7 +104,7 @@ type vergelijk_op =
 type predicaat_soort = Leeg | Gevuld | Elfproef | Numeriek_met_exact | Dagsoort
 type kwantor = De | Alle | Geen | Ten_minste | Ten_hoogste | Precies
 type regel_soort = Gelijkstelling | Berekening | Initialisatie | Kenmerktoekenning
-type methode = Gelijke_delen | Naar_rato | Op_volgorde | Complex
+type methode = Gelijke_delen | Naar_rato | Op_volgorde
 
 (* An exact rational, in the form the wire writes it: a unit's conversion
    factor is [{num; den}] with both at least 1 (the loader refuses any other

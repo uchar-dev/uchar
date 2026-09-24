@@ -1376,7 +1376,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
   | None -> ()
   | Some pad ->
       if bron_rol <> None then
-        Value.fault "a sourcePath beside a sourceRole: the one-step range IS sourceRole (WF-102)";
+        Value.fault "sourcePath beside sourceRole: a fold carries one range, never two";
       (* WF-102 (c), the verifier's sentence: the set source is the single
          argument of an instance fold that carries a range, and a path is the
          range of a VALUE fold's set source only. A count's source names the
@@ -2700,6 +2700,7 @@ let run_verdeling env world (v : resolved_verdeling) =
     let doel_type = req "AllocationVersion.targetType" v.doel_type in
     let bron_attr = req "AllocationVersion.sourceAttribute" v.bron_attribuut in
     let doel_attr = req "AllocationVersion.targetAttribute" v.doel_attribuut in
+    let methode = req "AllocationVersion.method" v.vd_methode in
     over_subjects env world ~otype:bron_type ~rule:name (fun w src cond_err ->
         let cond_ok =
           match v.vd_voorwaarde with
@@ -2736,8 +2737,7 @@ let run_verdeling env world (v : resolved_verdeling) =
           let alloc_errs = ref [] in
           let err ~id (_ : string) = alloc_errs := id :: !alloc_errs in
           let outcome =
-            Alloc.allocate
-              (Option.value v.vd_methode ~default:Complex)
+            Alloc.allocate methode
               ~afnemend:v.afnemend ~decimals:v.afronding_decimalen
               ~pot:(World.attr src bron_attr) ~err recs
           in

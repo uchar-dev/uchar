@@ -1654,7 +1654,7 @@ let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
            sourceRole"
           n;
       if bron_rol <> None then
-        fault "a sourcePath beside a sourceRole: the one-step range IS sourceRole (WF-102)";
+        fault "sourcePath beside sourceRole: a fold carries one range, never two";
       let atoms, _ =
         List.fold_left
           (fun (atoms, cur) (i, rb) ->
@@ -9615,13 +9615,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
       fault "allocation validity windows are not translated (no corpus case)"
   | _ -> ());
-  let methode =
-    match v.vd_methode with
-    | Some Complex | None ->
-        (* WF-024 rejects both before translation; the backstop mirrors ref *)
-        fault "COMPLEX allocation is not admissible IR (WF-024)"
-    | Some m -> m
-  in
+  let methode = req "AllocationVersion.method" v.vd_methode in
   let bt = req "AllocationVersion.sourceType" v.bron_type and dt = req "AllocationVersion.targetType" v.doel_type in
   let ba = req "AllocationVersion.sourceAttribute" v.bron_attribuut and da = req "AllocationVersion.targetAttribute" v.doel_attribuut in
   (* case input on the allocation target: ref (like v0) OVERWRITES the
@@ -9853,7 +9847,6 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   in
   let exact_viol = "allocation: a share does not fit the target scale (an explicit rounding is mandated before precision is lost)" in
   match methode with
-  | Complex -> assert false (* fenced above *)
   | Naar_rato ->
       let rato = req "AllocationVersion.ratioAttribute (proportional)" v.rato_attribuut in
       (* fail-fast guards, mirrored on ref/'s faults and on floor
