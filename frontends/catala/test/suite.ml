@@ -606,13 +606,15 @@ let () =
       {|"initialisation": true|}; {|"condition": {|}; {|"host": "Zaak"|};
       {|"from": "2026-01-01"|}; {|"to": "2027-01-01"|}; {|"plural": "deelzaken"|};
       {|"kind": "adjectival"|}; {|"kind": "possessive"|}; {|"kind": "nominal"|} ];
-  (* The whole-period qualifier is the one L5 form of this serialiser that no
-     document of its own can carry past the verifier: WF-043 wants a temporal
-     operand, and the plugin declares no timeline (the object type's timeline
-     tables refuse above). So its proof is the loader's, in both stances: a
-     qualifier of a year and one of a month, the latter negated, read back
-     into the conditions they were written from. *)
-  Printf.printf "[emit-proef] de kwalificator over een hele periode\n%!";
+  (* Three renamed forms of this serialiser that no document of its own can
+     carry past the verifier: the whole-period qualifier, since WF-043 wants a
+     temporal operand and the plugin declares no timeline (the object type's
+     timeline tables refuse above); a parameter reference, since the document
+     refuses a filled parameter list; and a variable reference, which the
+     translator never binds. So their proof is the loader's, in both stances:
+     a qualifier of a year and one of a month, the latter negated, and the two
+     references, read back into the rule they were written from. *)
+  Printf.printf "[emit-proef] de vormen die alleen de lader kan bewijzen\n%!";
   let numu : A.datatype =
     Numeriek { geheel = true; decimalen = 0; teken = Some Onbepaald; eenheid = None }
   in
@@ -629,11 +631,16 @@ let () =
                 navigatie_binding = None } ];
         bron = Some "beide" }
   in
+  let referenties : A.expr =
+    Binair
+      { op = Plus; links = Some (Parameter_ref { parameter = Some "opslag"; bron = Some "de opslag" });
+        rechts = Some (Variabele_ref { naam = Some "X"; bron = Some "X" }); typ = Some numu;
+        bron = Some "de opslag plus X" }
+  in
   let periode_doc =
     { proef with
       resolved_regels =
-        [ regel "toeslag van een zaak" Berekening "toeslag" (lit (Lv_number "3") num0)
-            (Some met_periode) ];
+        [ regel "toeslag van een zaak" Berekening "toeslag" referenties (Some met_periode) ];
       prioritized_defaults = [] }
   in
   let ptext = Catala_frontend_lib.Emit.to_string periode_doc in
@@ -643,13 +650,15 @@ let () =
   close_out oc;
   List.iter
     (fun needle -> check ("emit-proef : writes " ^ needle) (contains ~needle ptext) ptext)
-    [ {|"wholePeriod": {|}; {|"granularity": "year"|}; {|"granularity": "month"|} ];
+    [ {|"wholePeriod": {|}; {|"granularity": "year"|}; {|"granularity": "month"|};
+      {|"node": "ParameterReference"|}; {|"node": "VariableReference"|} ];
   List.iter
     (fun (stance, reader) ->
-      let name = "emit-proef : " ^ stance ^ " reads the whole-period qualifier back" in
+      let name = "emit-proef : " ^ stance ^ " reads the qualifiers and references back" in
       match Ir_v0.Loader.document ~reader (Yojson.Safe.from_string ptext) with
       | back ->
-          check name ((List.hd back.resolved_regels).rr_voorwaarde = Some met_periode) ptext
+          let r = List.hd back.resolved_regels in
+          check name (r.rr_voorwaarde = Some met_periode && r.waarde = Some referenties) ptext
       | exception Ir_v0.Loader.Error (p, m) -> check name false (p ^ ": " ^ m))
     [ ("the verifier's loader", Ir_v0.Loader.Verifier); ("an executor's loader", Ir_v0.Loader.Executor) ];
   Printf.printf "\n%d checks, %d failures\n%!" !ntests !failures;
