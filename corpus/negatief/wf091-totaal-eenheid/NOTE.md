@@ -1,5 +1,5 @@
 Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a **composite** position,
-`Aggregation`/TOTAAL arm, unit facet: a total over two `EUR/jr` operands,
+`Aggregation`/`total` arm, unit facet: a total over two `EUR/jr` operands,
 annotated `EUR/jr`. §4.20 makes the total INTEGRATE a rate over time, so
 the result drops the `/tijdseenheid` and keeps the numerator: the
 derivation is `EUR`, and repeating the rate is the lie.

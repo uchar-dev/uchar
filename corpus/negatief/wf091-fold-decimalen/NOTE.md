@@ -1,5 +1,5 @@
 Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a **composite** position,
-`Aggregation`/MINIMUM arm, decimals facet: a minimum over operands
+`Aggregation`/`minimum` arm, decimals facet: a minimum over operands
 declared at 4 and 2 decimals, in that order, annotated 4. ch. 2.3 takes a
 min/max at the **least** operand precision — the winner may be either
 operand, so only the floor is knowable — and claiming the higher one

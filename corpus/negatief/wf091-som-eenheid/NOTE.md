@@ -1,5 +1,5 @@
 Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a **composite** position,
-`Aggregation`/SOM arm, unit facet: a sum over a `kg` attribute and a `kg`
+`Aggregation`/`sum` arm, unit facet: a sum over a `kg` attribute and a `kg`
 literal, annotated `t`. §4.6 *Eenheid1* gives a value aggregation its
 first operand's type, so the derivation is `kg`.
 

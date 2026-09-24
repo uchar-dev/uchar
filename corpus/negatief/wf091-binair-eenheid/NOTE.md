@@ -1,5 +1,5 @@
 Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a **composite** position,
-`Binary`/PLUS arm, unit facet: both operands read `Jutter.gewicht`,
+`Binary`/`plus` arm, unit facet: both operands read `Jutter.gewicht`,
 declared in `kg` (canonical `kg`, factor 1), so ch. 2.6 derives `kg` for
 the sum — the result carries the LEFT unit — but the node's own `type`
 carries `t` (the same canonical, factor 1000). Every other crossed facet

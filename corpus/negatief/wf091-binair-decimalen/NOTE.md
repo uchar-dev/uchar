@@ -1,5 +1,5 @@
 Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a **composite** position,
-`Binary`/PLUS arm, decimals facet: the operands are declared at 2 and 4
+`Binary`/`plus` arm, decimals facet: the operands are declared at 2 and 4
 decimals, so ch. 2.3 derives **maxDec** = 4 for the sum, but the node
 claims 2. An **under-report**, and the direction matters: the ch. 2.4
 assignment gate reads the value's declared precision, so a sum that claims

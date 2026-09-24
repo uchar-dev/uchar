@@ -1,7 +1,7 @@
 # wf091-plus-eenheid-kast
 
 Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1, "Unit identity is structural,
-never convertible") at a **composite** position, `Binary`/PLUS arm, unit
+never convertible") at a **composite** position, `Binary`/`plus` arm, unit
 facet, with a lie in CASE alone. Both operands read `Jutter.gewicht`,
 declared in `kg` of system `Gewicht` (canonical `kg`, factor 1), so ch. 2.6
 derives `kg` of `Gewicht` for the sum. The node's own `type` carries `KG` of

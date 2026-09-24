@@ -1,5 +1,5 @@
 Violates WF-038 (`spec/IR-SPEC.md` ch. 4.6), the ordering-fold operand
-clause, in the **set-source** form over a sum type: `MAXIMUM(de stand
+clause, in the **set-source** form over a sum type: `maximum(de stand
 van alle schuiten van de Berging)` folds over `stand` of `Schuit`,
 declared with the sum-type domain `stand`. `SumType` is equality-only by
 the ch. 2.4 orderability paragraph, so the greatest contributor is not

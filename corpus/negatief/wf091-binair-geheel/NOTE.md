@@ -1,5 +1,5 @@
 Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a **composite** position,
-`Binary`/PLUS arm, wholeness facet: a whole operand plus an unbounded
+`Binary`/`plus` arm, wholeness facet: a whole operand plus an unbounded
 (`getal`) one: ch. 2.3 makes the sum whole **iff both** operands are, so
 the derivation is fractional and the node's `whole` claim is a lie. Both
 sides carry 0 decimals, so WF-007's precision-FORM check passes on either

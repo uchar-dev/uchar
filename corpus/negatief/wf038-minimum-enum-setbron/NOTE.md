@@ -1,5 +1,5 @@
 Violates WF-038 (`spec/IR-SPEC.md` ch. 4.6), the ordering-fold operand
-clause, in the **set-source** form: `MINIMUM(de kust van alle schuiten
+clause, in the **set-source** form: `minimum(de kust van alle schuiten
 van de Berging)` folds over `kust` of `Schuit`, declared as the
 enumeration `Kust`. An ordering fold keeps the least contributor, and
 `Enumeration` is equality-only by the ch. 2.4 orderability paragraph —

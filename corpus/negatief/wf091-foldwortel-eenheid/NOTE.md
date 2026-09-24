@@ -1,5 +1,5 @@
 Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a **composite** position,
-`Aggregation`/MAXIMUM arm, unit facet: the fold takes the larger of
+`Aggregation`/`maximum` arm, unit facet: the fold takes the larger of
 `Jutter.gewicht` (declared `kg`) and a `kg` literal, so §4.6 *Eenheid1*
 derives `kg` — the winning contributor's unit IS the node's unit — but the
 fold root is annotated `t` (same canonical, factor 1000).

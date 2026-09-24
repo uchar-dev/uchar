@@ -1,5 +1,5 @@
 Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a composite position,
-`Aggregation`/AANTAL arm, decimals facet: a count annotated at 2 decimals.
+`Aggregation`/`count` arm, decimals facet: a count annotated at 2 decimals.
 ch. 2.3 makes a count a whole, non-negative, unitless number, and that
 derivation reads no operand at all — a count's type is a constant of the
 operator.
