@@ -1,6 +1,8 @@
 # near-side-rolcheck-to-many
 
-*Until L2 a red case, since L2 a golden* (card `l2-referentielaag`, D11).
+*Until L2 a red case, since L2 a golden* (`spec/proposals/V1-WIREMIGRATIE.md`
+B9; `spec/CONSTRUCTS.md` row 5; the L2 card,
+`backlog/done/20260923-l2-referentielaag.md`).
 "Een Wachtpost is bemand indien hij een toegewezen wachtpost is" makes the
 **Wachtpost** the subject of the role check. Before L2 the check named the
 filler on the other end and was read as a null-test on the subject's

@@ -33,17 +33,19 @@ carries the full table. The four things this document needs from it:
 
 The method is the one Phase 5d used for the `-catala` pair: put the two
 emitted documents side by side and account for **every** difference.
-Against `corpus/golden/jutterswet-wrakrecht/ir.json` there are **52
-differing lines** in four categories — 27 + 12 + 8 + 5 — and no fifth.
+Against `corpus/golden/jutterswet-wrakrecht/ir.json` there are **39
+differing lines**, counted on the twin's side of the diff (re-measured at L2,
+2026-09-24), in three categories — 19 + 12 + 8 — and no fourth. Until the v1
+wire there were 52: the 8 `onderwerpBron` lines left the wire at L2
+(`spec/proposals/V1-WIREMIGRATIE.md` B11), and the 5 lines of category (iv)
+left with the `regels` index (B3).
 
-**(i) Source provenance — `bron` and `onderwerpBron` (27 lines: 19 + 8).**
+**(i) Source provenance — `bron` (19 lines).**
 Every such string differs, because each document quotes its own source: `"zijn grondslag"`
 against `"?S.grondslag"`, `"het Strandrecht betwist is"` against
 `"?S : betwist"`, `"de som van … of 0,00 als die er niet zijn"` against
 `"sum{?V | ?V = ?K.'geregistreerde strandrechten'.uitkering}"`. No
-executor reads either field: `onderwerpBron` appears nowhere in the
-reference interpreter, the ASP backend or the verifier's checks, and the
-Drools backend reads it only to phrase a message. One sub-case is the
+executor reads the field. One sub-case is the
 **absence** of a citation rather than a different one: on each base's
 vacuously true justification the twin quotes `"altijd"` where this document
 writes `null`, because an unconditional Horn rule states no justification
@@ -63,9 +65,9 @@ declarations, never from the wire annotation, which is what gate 13
 enforces mechanically.
 
 **(iii) Declared surface names F-logic has no grammar for (8 lines:
-4 `meervoud`, 1 `bezield`, the role's `naam`, 2 `bronRol.rol`).**
-`meervoud` is `null` on all three object types and on the to-many role, and `bezield` is
-`false` on the Kustgemeente. F-logic declares neither grammatical number
+3 object-type `plural`, 1 `animate`, the role's `naam` and `meervoud`, 2
+`bronRol.rol`).** The three object types carry no `plural`, the to-many
+role's `meervoud` is `null`, and `animate` is `false` on the Kustgemeente. F-logic declares neither grammatical number
 nor animacy, so the frontend leaves them unset rather than inventing them.
 The role is consequently named by one label, `geregistreerde
 strandrechten`, where the RegelSpraak twin carries the singular/plural pair
@@ -76,11 +78,12 @@ label. The shape "to-many with no declared plural" is not new here:
 `corpus/golden/jutterswet-kaveltelling` already carries it and plays in
 every executor.
 
-**(iv) The order of the `regels` index (5 lines).** Seven entries with the
-same seven names and the same `soort` in both, but the RegelSpraak twin lists all
-`Regel` heads before all `Uitzondering` heads, while the F-logic frontend
-lists rules in source order — where each exception follows the base it
-qualifies.
+**(iv) The order of the `regels` index (5 lines until the v1 wire).** The
+index left the wire with `spec/proposals/V1-WIREMIGRATIE.md` B3, so this
+category is empty now. It held seven entries with the same seven names and
+the same `soort` in both, but the RegelSpraak twin listed all `Regel` heads
+before all `Uitzondering` heads, while the F-logic frontend listed rules in
+source order — where each exception follows the base it qualifies.
 
 **No semantic difference.** Everything else is byte-identical: the three
 object types with the same attributes, characteristics, datatypes and

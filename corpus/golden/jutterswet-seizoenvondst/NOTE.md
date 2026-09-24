@@ -1,8 +1,8 @@
-# jutterswet-seizoenvondst — the dimension-cell unit witness, verifier-only
+# jutterswet-seizoenvondst — the dimension-cell witness, verifier-only
 
-The **`DimensieCel` unit witness** of the reference-type identity rule
-(`IR-SPEC.md` ch. 4.1, WF-091) and of its domain siblings' cell arm
-(WF-089/WF-090, ch. 2.4). Until this golden the cell-read arm had **no
+The **`DimensieCel` witness** of the domain rules' cell arm (WF-089/WF-090,
+ch. 2.4), and until L2 of the reference-type identity rule (`IR-SPEC.md`
+ch. 4.1, WF-091) at that arm. Until this golden the cell-read arm had **no
 positive witness anywhere**: the corpus carried exactly ONE
 `DimensionCellRead` (in the witness cabinet `jutterswet-vormenkabinet`)
 and it was not unit-bearing, so a verifier that OVER-rejected at that arm
@@ -27,19 +27,21 @@ Het voorjaarsgewicht van een Jutter moet berekend worden als
     zijn vondstgewicht in voorjaar.
 ```
 
-The frontend lowers `zijn vondstgewicht in voorjaar` to a `DimensieCel`
-whose OWN `type` is a copy of the dimensioned attribute's declared
-datatype — unit sub-object included (`kg` of system `Gewicht`, factor 1
-to `kg`) — over an inner `AttribuutRef` that carries the same copy. The
-cell read's own type is what WF-091 crosses at this arm; the inner
-reference is crossed on its own in the same walk.
+The frontend lowers `zijn vondstgewicht in voorjaar` to a `DimensieCel` over
+an inner `AttribuutRef`. Since L2 neither node carries a type of its own
+(`spec/proposals/V1-WIREMIGRATIE.md` B13): the cell read's type is the
+dimensioned attribute's declared datatype (`kg` of system `Gewicht`, factor
+1 to `kg`), and every consumer reads it from that declaration
+(`RUNTIME-SEMANTICS.md` §2.10). Until L2 both nodes carried a copy of that
+datatype, unit sub-object included; WF-091 crossed the cell read's copy at
+this arm and the inner reference's in the same walk.
 
-**Two-sided, measured.** The document is verifier-clean, and a mutant
-that fires at the `DimensieCel` arm on every unit-bearing use site turns
-this document — and, before it landed, no document at all — red. The
-refusal half, on a mutated copy of this same `ir.json` where the cell's
-type is retyped `t` (canonical `kg`, factor 1000) while the declaration
-and the inner reference stay `kg`:
+**Two-sided, measured until L2.** The document was verifier-clean, and a
+mutant that fired at the `DimensieCel` arm on every unit-bearing use site
+turned this document — and, before it landed, no document at all — red.
+The refusal half, on a mutated copy of this same `ir.json` where the cell's
+type was retyped `t` (canonical `kg`, factor 1000) while the declaration
+and the inner reference stayed `kg`:
 
 ```
 WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: dimension-cell
@@ -48,9 +50,13 @@ WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: dimension-cell
   (factor 1 to 'kg')
 ```
 
-(The permanent refusal form is the negatief
-`corpus/negatief/wf091-dimensiecel-eenheid`; what this golden adds is the
-non-over-rejection a negatief can never pin.)
+Since L2 that mutant has no wire form: a `type` on a `DimensieCel` is an
+unknown field and is refused at load (the L2 load table in
+`backends/clingo/test/test_clingo.ml`), and the negatief
+`wf091-dimensiecel-eenheid` left the corpus with that field
+(`corpus/negatief/README.md`). What stays is the half a negatief can never
+pin: the verifier reaches the cell arm over a unit-bearing dimensioned
+attribute and does not over-reject it.
 
 ## Why no replay case — measured, per executor
 
@@ -59,7 +65,9 @@ format has no way to supply one cell of a dimensioned attribute (the
 `uchar-case-v0` value variants are number / date / dateTime / boolean /
 text / enumeration / constructor / list / struct — there is no per-label
 map). Each executor was run on this exact shape with a case supplying a
-scalar `vondstgewicht`, and each declined, in its own words:
+scalar `vondstgewicht`, and each declined, in its own words (re-measured at
+L2, 2026-09-24, for the verifier, `ref` and `clingo`; the Drools row is from
+before L2):
 
 | executor | verdict |
 |---|---|

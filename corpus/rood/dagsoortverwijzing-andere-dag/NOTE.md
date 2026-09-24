@@ -30,7 +30,7 @@ words, rather than two of them being taught a reading no source states.
 What the carrying reading would need is a source for what a test on a fixed
 date MEANS inside a definition about an arbitrary day — a constant conjunct, a
 scoping error, or a shorthand for something else. That is an open question
-(D9), not a decision against.
+(D9 of `backlog/done/20260910-dagsoort-semantiek.md`), not a decision against.
 
 ## What each executor pins
 

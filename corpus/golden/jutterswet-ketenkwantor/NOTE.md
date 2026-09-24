@@ -20,9 +20,11 @@ twice. The second rule is also what makes every case refute a
 do-nothing executor (gate 7): a case whose only verdict is an absent
 kenmerk is satisfied by the raw input.
 
-Under `AANTAL` a count over this range has no wire form (WF-096 keeps the
-instance count off a set source, WF-102 admits a range only on one; see
-`wf096-aantal-setbron-bronpad`). The quantifier fold is a different node
+Under `AANTAL` a count over this range is ill-formed: a count's range is one
+step, spelled `bronRol` (WF-102 (c)), and the verifier, ref and the ASP
+backend refuse it in one sentence (`corpus/negatief/wf102-bronpad-op-niet-setbron`).
+Until L2 WF-096 fenced the same node (`wf096-aantal-setbron-bronpad`, removed
+with WF-096 at L2). The quantifier fold is a different node
 under its own rule, and this document is the witness that it counts over a
 multi-step range, flat.
 

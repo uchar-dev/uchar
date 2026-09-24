@@ -1,11 +1,16 @@
 # jutterswet-aanvoergeld
 
-The **`ParameterRef` unit witness** of the reference-type identity rule
-(`IR-SPEC.md` ch. 4.1, WF-091). Until this golden the `ParameterRef` arm
-of that rule had **no positive witness anywhere in the corpus**: 44
-parameter references over golden + rood, not one of them unit-bearing, so
-a verifier that OVER-rejected at that arm left every gate green. This
-document closes that half.
+Until L2 the **`ParameterRef` unit witness** of the reference-type identity
+rule (`IR-SPEC.md` ch. 4.1, WF-091). Before this golden the `ParameterRef`
+arm of that rule had **no positive witness anywhere in the corpus**: 44
+parameter references over golden + rood, not one of them unit-bearing, so a
+verifier that OVER-rejected at that arm left every gate green. This document
+closed that half. Since L2 a parameter reference carries no type of its own
+(`spec/proposals/V1-WIREMIGRATIE.md` B13), so WF-091 has no copy to cross at
+that arm. What the document pins since then is that two unit-bearing
+parameters, read at the two positions a parameter reference can occupy,
+take their declared units and give the hand-computed values in every
+executor.
 
 ## What it pins
 
@@ -23,21 +28,23 @@ Het aanvoergeld van een Jutter moet berekend worden als
     zijn aanvoerwaarde plus het aanvoertarief.                              <- value
 ```
 
-Each `ParameterRef` on the wire carries a `type` that is a byte-copy of
-its parameter's declared datatype, unit sub-object included (`kg` of
-system `Gewicht`, factor 1 to `kg`; `EUR` of system `Munt`, factor 1 to
-`EUR`). WF-091 crosses exactly that copy against the declaration, facet
-by facet, and the unit facet is the one no other rule can reach — a
-kilogram/tonne copy is *compatible* (same canonical unit, factor 1000),
-so WF-035's and WF-023's convertibility crosses admit it by construction.
+Since L2 a `ParameterRef`'s type is its parameter's declared datatype, unit
+sub-object included (`kg` of system `Gewicht`, factor 1 to `kg`; `EUR` of
+system `Munt`, factor 1 to `EUR`), read from the declaration
+(`RUNTIME-SEMANTICS.md` §2.10). Until L2 each `ParameterRef` on the wire
+carried a byte-copy of that datatype, and WF-091 crossed exactly that copy
+against the declaration, facet by facet. The unit facet was the one no other
+rule could reach: a kilogram/tonne copy is *compatible* (same canonical
+unit, factor 1000), so WF-035's and WF-023's convertibility crosses admit it
+by construction.
 
-**Two-sided, measured.** The document is verifier-clean, and it is a
-POSITIVE witness: a mutant that fires at the `ParameterRef` arm on every
-unit-bearing use site turns this document — and, before this golden
-landed, no document at all — red. The refusal half is pinned the other
-way round on a mutated copy of this same `ir.json`: retyping the
+**Two-sided, measured until L2.** The document was verifier-clean, and it
+was a POSITIVE witness: a mutant that fired at the `ParameterRef` arm on
+every unit-bearing use site turned this document — and, before this golden
+landed, no document at all — red. The refusal half was pinned the other way
+round on a mutated copy of this same `ir.json`: retyping the
 `aanvoerdrempel` reference `t` (canonical `kg`, factor 1000) while the
-declaration stays `kg` is refused, arm-exact:
+declaration stayed `kg` was refused, arm-exact:
 
 ```
 WF-091 FAIL /rules/resolvedRegels/0/voorwaarde/rechts/type: unit mismatch:
@@ -46,9 +53,11 @@ WF-091 FAIL /rules/resolvedRegels/0/voorwaarde/rechts/type: unit mismatch:
   system 'Gewicht' (factor 1 to 'kg')
 ```
 
-(The permanent form of that refusal is the negatief
-`corpus/negatief/wf091-parameterref-eenheid`; what this golden adds is
-the non-over-rejection the negatief can never pin.)
+Since L2 that mutant has no wire form: a `type` on a `ParameterRef` is an
+unknown field and is refused at load (the L2 load table in
+`backends/clingo/test/test_clingo.ml`), and the negatief
+`wf091-parameterref-eenheid` left the corpus with that field
+(`corpus/negatief/README.md`).
 
 ## Hand-computed absolutes
 

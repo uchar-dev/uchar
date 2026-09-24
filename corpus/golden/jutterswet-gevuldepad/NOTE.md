@@ -7,11 +7,14 @@ Bergplaats, and several Boten may share one. The fold counts the filled
 Jutter" — two relations stacked, so the source is a `bronPad` rather than
 a `bronRol`.
 
-Under `AANTAL` this shape has no wire form at all: WF-096 keeps the
-instance count off a set source and WF-102 admits a range only on one, so
-the two fences meet at that node. The filled count reads a VALUE per
-contributor, which is what makes the set source admissible here, and that
-is why ch. 3.4b's word ELEMENTS waited for this kind to exist before it
+Under `AANTAL` this shape is ill-formed: a count's range is one step,
+spelled `bronRol` (WF-102 (c)), and the verifier, ref and the ASP backend
+refuse a count over a `bronPad` in one sentence
+(`corpus/negatief/wf102-bronpad-op-niet-setbron`). Until L2 two fences met at
+that node, WF-096 and WF-102; WF-096 left with L2
+(`spec/proposals/V1-WIREMIGRATIE.md` B11). The filled count reads a VALUE
+per contributor, which is what makes the set source admissible here, and
+that is why ch. 3.4b's word ELEMENTS waited for this kind to exist before it
 had a carrier.
 
 Two cases, one answer, and the difference between them is the whole

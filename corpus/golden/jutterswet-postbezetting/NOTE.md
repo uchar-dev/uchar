@@ -13,7 +13,8 @@ why `IR-SPEC.md` ch. 4.5 recorded it as uncrossed: a clause over it would have
 had no witness. This document is that witness, hand-written, with its
 expectations computed by hand before any executor saw it. Since L2 (2026-09-24)
 both directions of the role check are one node, `RoleMembership {factType,
-role, counterpartType?, negated}` (B9, D11, U12).
+role, counterpartType?, negated}` (`spec/proposals/V1-WIREMIGRATIE.md` B9,
+`spec/CONSTRUCTS.md` row 5; `counterpartType` in IR-SPEC ch. 4.5).
 
 **What the form is.** The same §8.1.7 sentence as the near-side rolcheck
 (`jutterswet-wachtindeling`, the same feittype and the same two roles), read
@@ -37,7 +38,7 @@ filtered on the class. The document therefore declares `Strandjutter` under
 `Jutter` and carries the same check twice over. Rules 1 and 2 ask the
 role-wide question and write no `counterpartType`: the far end is the declared
 filler of `wachtjutter`, `Jutter`. Rules 3 and 4 ask the narrowed one and write
-`counterpartType: "Strandjutter"` (U12), over one and the same relation; that
+`counterpartType: "Strandjutter"` (IR-SPEC ch. 4.5), over one and the same relation; that
 field is what makes case 3 class-distinguishing.
 
 **Hand-computed expectations, written before the first run.**
@@ -97,5 +98,5 @@ filler chain.
 which named the far end's class and the subject's role in two fields that
 had to meet on one declared fact type (WF-034 (t)). L2 merged it with the
 near-side check into `RoleMembership`; the migration derived `factType` and
-`role` from exactly that meeting, and `counterpartType` (U12) carries the
+`role` from exactly that meeting, and `counterpartType` (IR-SPEC ch. 4.5) carries the
 class where it narrows the declared filler.

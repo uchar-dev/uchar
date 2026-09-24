@@ -24,18 +24,25 @@ document pins that reading with absolute hand-computed values, so the
 scope of WF-083 is not a claim in prose but a case that fails the moment
 the scope is dropped.
 
-Measured on this document, both spellings of the verifier:
+Measured on this document, both spellings of the verifier (re-measured at L2,
+2026-09-24; the scope is the `arity = 1` of `source_position` in
+`spec/verifier/lib/checks.ml`):
 
 ```
 scope removed (the whole "a fold source never navigates" family unscoped):
     WF-053 FAIL /rules/resolvedRegels/0/waarde/argumenten/1: navigation bindings
-                on a fold source are ill-formed (the fold's relation is
-                bronRol)
-    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/1: navigatieRol
-                'bewarende jutter' on a fold source that is not the v0
-                instance-fold source …
+                on a fold source are ill-formed (the fold's relation is its
+                range, bronRol or bronPad)
+    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/1: fold-source
+                objecttype 'Jutter' is not the fold's anchor 'Vondst' (a fold
+                without a range reads the subject's own attribute) …
 scope in place:  verifier PASS
 ```
+
+Until L2 the second line was WF-083's `navigatieRol` arm (`navigatieRol
+'bewarende jutter' on a fold source that is not the v0 instance-fold source
+…`). That field left the wire at L2 (`spec/proposals/V1-WIREMIGRATIE.md`
+B11), and WF-083's anchor arm now reports the same operand.
 
 while ref, the ASP backend and BOTH Drools transpiler branches play it and
 agree on every pinned value. A rule that refuses what three executors
@@ -60,9 +67,11 @@ both measured against `frontends/regelspraak` on this branch:
 So the document is hand-written from declarations in the same idiom as
 `jutterswet-tempovouw` (fact type `bewaring`: `bewarende jutter` — Jutter,
 `vondst`/`vondsten` — Vondst), and it carries the navigation the way the
-frontend spells it where it can: a `navigatieRol` **plus** the symbolic
-`navigatieBindingen` hop, so the bound route is exercised and not merely
-the derivable one.
+frontend spells it where it can. Since L2 that is the symbolic
+`navigatieBindingen` hop alone: the written `navigatieRol` left the wire
+(`spec/proposals/V1-WIREMIGRATIE.md` B11), and the binding is the only route
+a reader takes. Until L2 the document carried both, so the bound route was
+exercised and not merely the derivable one.
 
 ## Hand-derivation of the expected values
 

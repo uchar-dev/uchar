@@ -55,17 +55,19 @@ quantifier over no condition would violate WF-108 (d).
 
 The method is the one the `-catala` and `-flogic` pairs used before: put the
 two documents side by side and account for **every** difference. Against
-`corpus/golden/jutterswet-vuurtoren/ir.json` there are **89 differing
-lines** in three categories — 68 + 18 + 3 — and no fourth.
+`corpus/golden/jutterswet-vuurtoren/ir.json` there are **67 differing
+lines**, counted on both sides of the diff (re-measured at L2, 2026-09-24),
+in three categories — 48 + 16 + 3 — and no fourth. Until the v1 wire there
+were 89: the 20 `onderwerpBron` lines left the wire at L2
+(`spec/proposals/V1-WIREMIGRATIE.md` B11), and this document omits the two
+object types' `plural` where it wrote `meervoud: null` (2 lines).
 
-**(i) Source provenance — `bron` and `onderwerpBron` (68 lines: 48 + 20).**
+**(i) Source provenance — `bron` (48 lines).**
 Every such string differs, because each document quotes its own source:
 `"de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan
 5"` against `"count{?V | ?V = ?T.lampen, ?V.sterkte > 5} >= 2"`, `"Een
 Vuurtoren is helder"` against `"?T : helder"`, `"gekeurd zijn"` against
-`"?V : gekeurd"`. No executor reads either field: `onderwerpBron` appears
-nowhere in the reference interpreter, the ASP backend or the verifier's
-checks, and the Drools backend reads it only to phrase a message. One
+`"?V : gekeurd"`. No executor reads the field. One
 sub-case is the **absence** of a citation rather than a different one (8 of
 those 48 lines): on each characteristic assignment's implied value the twin
 quotes `"waar"` where this document writes `null`, because an isa head
@@ -77,9 +79,10 @@ author chose, so one comprehension has one spelling; that is the same
 normalisation the slice's aggregate rendering already did before the goals
 existed.
 
-**(ii) Declared surface names F-logic has no grammar for (18 lines:
-6 `meervoud`, the role's `naam` ×2, 10 `bronRol.rol`).** `meervoud` is
-`null` on both object types and on the to-many role. F-logic declares no
+**(ii) Declared surface names F-logic has no grammar for (16 lines:
+2 object-type `plural`, the role's `meervoud` ×2 and `naam` ×2, 10
+`bronRol.rol`).** The two object types carry no `plural` and the to-many
+role's `meervoud` is `null`. F-logic declares no
 grammatical number, so the frontend leaves it unset rather than inventing
 it. The role is consequently named by one label, `lampen`, where the twin
 carries the singular/plural pair `lamp`/`lampen` — and the shared case files

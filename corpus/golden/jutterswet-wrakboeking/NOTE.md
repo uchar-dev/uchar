@@ -48,11 +48,20 @@ that did not exist in the input, and what this golden exists to pin is that
 the document is ADMITTED and computes, not what the new `Strandrecht` holds.
 
 The creation names its back-link explicitly (`verbindendeRol` on
-`wrakboeking`) rather than leaving it to the ch. 5.5 derivation. That is not
-decoration: with `Wrakrecht ⊑ Strandrecht` the pair is connected twice over
-once the chain closes, and the derivation is what WF-048 refuses to guess at.
-It is also what lets the Drools backend play the golden instead of refusing
-it for an underivable role.
+`wrakboeking`) rather than leaving it to the ch. 5.5 derivation. Until L2 that
+was load-bearing: with `Wrakrecht ⊑ Strandrecht` the pair is connected twice
+over once the chain closes (a Wrakrecht fills both roles of `wrakboeking`),
+and WF-048 refused to guess between the two readings. WF-048 left with L2
+(`spec/proposals/V1-WIREMIGRATIE.md` B12), and an object creation's back-link
+is the one binding a reader still derives when it is absent. Measured at L2
+(2026-09-24) on a copy of this document without the binding: verifier PASS,
+and ref and the ASP backend replay the case with the pinned values. ref's
+derivation (`connecting_pair` in `ref/lib/eval.ml`) first tries the
+orientation in which the subject fills the first role, so it finds one pair.
+The binding stays because it names the relation the creation writes, rather
+than leaving it to that orientation rule. It is also what let the Drools
+backend play the golden instead of refusing it for an underivable role (not
+re-measured at L2).
 
 Sibling documents: `anchor/jutterswet-strandrechtketen` and
 `jutterswet-wrakrecht` pin the two-spelling member write between RULES (both
