@@ -14,5 +14,5 @@ migration wrote `scopeRol` from the written name, and the to-many role is
 what remains. `expect.txt` pins the arm (U1).
 
 Since L4 the uniqueness is a `Uniqueness` with one `Source` (delta B27), and
-the scope binding is the version's `scope`, which the report cites.
-`expect.txt` pins the arm.
+the scope binding is the version's `scope` (`scopeRol` until L4), which the
+report cites. `expect.txt` pins the arm.

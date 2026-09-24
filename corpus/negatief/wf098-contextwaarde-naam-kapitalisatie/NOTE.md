@@ -60,8 +60,8 @@ these two witnesses, 580 after — the wire carries **14** `Constante` nodes ove
 both admissible verbatim. Not one document predating the rule moves.
 
 A hand-broken variant of `corpus/golden/anchor/jutterswet-penningvintage/ir.json`
-— one character recapitalised, a one-line diff; schema-valid, since `naam` is
-typed `["string", "null"]` on the v0 wire.
+— one character recapitalised, a one-line diff; schema-valid, since the
+schema leaves a context value's `name` a free string for this rule to close.
 
 Falsifiable, arm-exact: replace the `| Constante { naam; _ } -> (…)` branch of
 `walk_expr` in `spec/verifier/lib/checks.ml` with `| Constante _ -> []` and this
