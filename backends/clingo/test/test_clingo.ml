@@ -7385,7 +7385,7 @@ let () =
   (* clause (c): a count that names a source of its own beside the union.
      Ill-formed input (WF-110), named here rather than left to the bottom
      sentence, which describes the position and identifies no construct.
-     Since L2 an elementType alone does not load (B12, U2): a
+     Since L2 an elementType alone does not load (B12): a
      single-argument fold that names one carries its range. With the range
      written beside it the node loads and reaches the arm, the shape of
      corpus/negatief/wf110-unie-naast-vouwbron. *)
