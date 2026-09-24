@@ -427,8 +427,8 @@ class SubtypeDialectTest {
     //
     // Measured on the unrepaired base, because it decides what these tests are FOR: five of the six
     // places fail LOUDLY. The wire is well fenced — a name that no declaration carries is refused by
-    // WF-034, a gedurende condition that did not resolve degrades to `Onopgelost` and is refused by
-    // WF-055, an `Onopgelost` reached in evaluation faults with WF-044, and three of the places raise
+    // WF-034, a gedurende condition that did not resolve degrades to `Unresolved` and is refused by
+    // WF-055, an `Unresolved` reached in evaluation faults with WF-044, and three of the places raise
     // an outright frontend ERROR on a document that is not wrong. So the damage is a correct document
     // made unusable, not a wrong number slipping through — with ONE exception, plek 6 below, which
     // emits a member name no declaration carries, verifier-clean and diagnostics-free.
@@ -541,7 +541,7 @@ class SubtypeDialectTest {
     @Test void een_geerfde_tijdlijn_klemt_het_totaal() {
         // Plek 4: the temporality family had NO chain accessor at all, so a subtype subject reading an
         // ancestor's timeline attribute answered "not temporal". The §7.1 gedurende clip then does not
-        // silently disappear — it DEGRADES to an `Onopgelost` filter plus a WARNING, and WF-055 refuses
+        // silently disappear — it DEGRADES to an `Unresolved` filter plus a WARNING, and WF-055 refuses
         // that on the wire. The cost is a correct document made unusable, which is why the repair is
         // owed. Both the operand (attribuutGranulariteit) and the condition (kenmerkGranulariteit) are
         // inherited here, so the two halves are pinned at once.
@@ -561,7 +561,7 @@ class SubtypeDialectTest {
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
         assertTrue(c.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"wachtplichtig\""),
-                () -> "de gedurende-klem hoort gebonden op de wire te staan in plaats van als Onopgelost, "
+                () -> "de gedurende-klem hoort gebonden op de wire te staan in plaats van als Unresolved, "
                         + "dat WF-055 weigert:\n" + c);
     }
 
@@ -625,7 +625,7 @@ class SubtypeDialectTest {
         // `toeslag per maand` is inherited and IS a timeline, so the bullet reads a List<Segment>;
         // judged non-temporal it slipped past the guard into a scalar comparison term. The escape is
         // real IN THE RESOLVER and stops there: WF-055 narrows composite gedurende members to
-        // characteristic checks, so the base's Samengesteld filter is refused on the wire too — with a
+        // characteristic checks, so the base's Compound filter is refused on the wire too — with a
         // different reason than the honest marker the repair produces. Both are refusals; this test
         // pins that the guard itself no longer lets a timeline through. The operand and the first
         // bullet are the subtype's OWN, so nothing but that guard is under test.
@@ -779,7 +779,7 @@ class SubtypeDialectTest {
         // Plek 4, the navigated §7.3.2 base. The operand is a to-one navigated timeline attribute of
         // the RELATED type; that type's facets were read on its own maps, so a related SUBTYPE whose
         // timeline attribute is declared one hop up failed the operand gate and the clip degraded to
-        // an Onopgelost the wire refuses (WF-055) — again unusable, not silently wrong.
+        // an Unresolved the wire refuses (WF-055) — again unusable, not silently wrong.
         String src = """
             Objecttype de Reis (mv: Reizen)
                 het reistarief Numeriek (geheel getal) voor elk jaar;

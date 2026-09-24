@@ -287,12 +287,13 @@ placement since, with no new wire field (card `frontend-bron-annotatie-in-defaul
   loses a distinction and cannot be undone: one annotation that itself contains
   `"; "` reads exactly like two, and the wire already carries such a text (the
   group citation of the golden `jutterswet-samenloop`), so a reader cannot
-  recover the list from a joined `bron`. Recorded, not repaired: `Default.bron`
-  and `PrioritizedDefaults.bron` are single strings, and keeping the list would
-  take a new wire field (option (b) of the proposal's §9.2, not taken). Where
-  the separate annotations matter, write one per block;
-- an unannotated block keeps `bron: null`: the three extension goldens carry no
-  annotation and re-emit byte-identically;
+  recover the list from a joined snippet. Recorded, not repaired: `Default.bron`
+  and `PrioritizedDefaults.bron` are single strings (on the wire the `source`
+  snippet), and keeping the list would take a new wire field (option (b) of
+  the proposal's §9.2, not taken). Where the separate annotations matter, write
+  one per block;
+- an unannotated block writes no `source` (its `bron` stays null): the three
+  extension goldens carry no annotation and re-emit byte-identically;
 - the `Regel` stubs carry no annotation either: since M1 of the v1 wire (delta
   B3) the emitter writes no `regels` list, so a lifted rule's annotation reaches
   the wire through its default alone;
@@ -307,10 +308,11 @@ placement since, with no new wire field (card `frontend-bron-annotatie-in-defaul
   without a word; it now draws a WARNING that names it, instead of being hung
   on a member the author did not choose. The same WARNING, citing §9.10,
   covers an annotation above a `Regelgroep` header (fix round, 2026-09-23).
-  The group's own `bron` field is no place for it: on a `ResolvedRegelGroep`
-  that field is the v0 source snippet of the group's name. A `Beslistabel`
-  header is the one header whose annotation does reach the wire, because the
-  table is rules: the annotation lands in the `bronAnnotaties` of every rule the
+  The group's own `bron` is no place for it: on a `ResolvedRegelGroep` that
+  record's snippet is the group's name (the `source` of its `RuleGroup`). A
+  `Beslistabel` header is the one header whose annotation does reach the wire,
+  because the table is rules: the annotation lands in the `bronAnnotaties` of
+  every rule the
   table desugars to, the multi-version precedent of IR-SPEC ch. 3.1 (one comment
   block above a shared header, stamped per flattened entry). Until the same fix
   round it vanished, since each row is re-parsed in a stream of its own where no
@@ -578,8 +580,9 @@ silently fold the wrong set, which is by far the worse of the two.
 
 Origin: `spec/IR-SPEC.md` ch. 4.3 and `spec/RUNTIME-SEMANTICS.md` ch. 3.4c
 (maintainer decision G9, 2026-09-19). The uchar IR carries an aggregation kind
-`AANTAL_GEVULDE`: over one set source it counts the contributors whose value is
-not leeg, so `{5, 7, leeg}` answers **2** where the instance count answers 3.
+`filledCount` (in memory `AANTAL_GEVULDE`): over one set source it counts the
+contributors whose value is not leeg, so `{5, 7, leeg}` answers **2** where the
+instance count answers 3.
 The kind was written on the wire first and answered by all four executors
 before any frontend could author it; this extension is its producer route.
 

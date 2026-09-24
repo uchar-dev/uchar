@@ -24,7 +24,7 @@ import java.util.List;
  *                       always-valid (the transpiler then emits no Rekendatum guard)
  * @param bronAnnotaties the {@code // Bron: …} statuutannotaties written directly above the rule
  *                       (the text after {@code Bron:}, in source order), so uitleg can cite the
- *                       wetsartikel. In-memory only — deliberately NOT emitted to the v0 wire.
+ *                       wetsartikel. On the wire they are the rule form's statuteAnnotations (WF-082).
  */
 public record ResolvedRegel(String naam, Soort soort, Expr doel, Expr waarde,
                             Conditie voorwaarde, Geldigheid geldigheid, List<String> bronAnnotaties) {

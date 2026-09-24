@@ -84,10 +84,9 @@ test: compile $(JUNIT_JAR)
 	java -jar $(JUNIT_JAR) execute --class-path $(ANTLR4_JAR):$(OUT_DIR) \
 		--scan-class-path --details=tree --disable-banner
 
-# Emit the IR (uchar-ir-v1) — a FAITHFUL JSON dump of the complete resolved model:
-# the container, the reference layer, the type system and the rule and expression
-# layers in their v1 shape, and elsewhere the Dutch v0 field names exactly as the
-# Java records name them. Over one-or-more
+# Emit the IR (uchar-ir-v1) — a FAITHFUL JSON dump of the complete resolved model,
+# every node, key and enumeration value under its IR-SPEC name (the Java records
+# keep their v0 names). Over one-or-more
 # .rgs files (concatenated in listed order). An unresolvable model writes
 # NOTHING and exits 1.
 IR_OUT := $(if $(OUT),$(OUT),$(OUT_DIR)/ir.json)

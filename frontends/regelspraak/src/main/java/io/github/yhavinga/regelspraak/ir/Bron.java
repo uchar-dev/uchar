@@ -8,12 +8,12 @@ import org.antlr.v4.runtime.Token;
  * node was built from, plus the whitespace-normalised source {@code snippet}. It replaces the
  * bare {@code String bron} that {@link Expr}, {@link Conditie} and the {@code Resolved*} forms
  * used to carry, giving diagnostics and (via the {@code // Bron:} statuutannotaties) uitleg a
- * coordinate back into the wetsartikel — without changing what the v0 wire serialises.
+ * coordinate back into the wetsartikel — without changing what the wire serialises.
  *
  * <p><b>Wire discipline.</b> {@link #toString()} returns exactly the {@link #snippet()}, so the
  * emitter (which writes the snippet) stays byte-identical and every prose consumer that spliced
  * a {@code bron()} into a comment keeps its text. Only the added coordinates are new, and they
- * are never emitted to the v0 wire.
+ * are never emitted to the wire.
  *
  * @param file    the source file name (from the token's char stream; {@code "<unknown>"} when the
  *                input was resolved from a bare string, {@code null} for a synthetic node)

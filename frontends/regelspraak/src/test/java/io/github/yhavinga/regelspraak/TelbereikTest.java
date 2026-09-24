@@ -25,8 +25,8 @@ import static org.junit.jupiter.api.Assertions.*;
  *     migration every fold over linked instances carries its range (IR-SPEC ch. 4.3), and no reader derives
  *     one. Where the written name binds no role, the emitter takes the one fact type that relates the
  *     subject to the element type, and because the source under AANTAL names the role it counts (WF-047) it
- *     writes that role's declared name in the source's {@code attribuut}; the written spelling stays in
- *     {@code bron}. Where the pair is not unique — two fact types, or none — there is no range to write and
+ *     writes that role's declared name in the source's {@code attribute}; the written spelling stays in
+ *     its {@code source} snippet. Where the pair is not unique — two fact types, or none — there is no range to write and
  *     the model is refused: the frontend never guesses a relation, and a fold without one has no spelling.
  * </ol>
  *

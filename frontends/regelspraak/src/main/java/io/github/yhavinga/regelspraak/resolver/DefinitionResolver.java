@@ -632,7 +632,7 @@ public final class DefinitionResolver {
         if (t.meervoudigePeriode() != null) vastStartpunt(t.meervoudigePeriode().vastStartpuntDatum(), null, null, null);
     }
 
-    /** Records a fixed startpunt the v0 wire cannot carry in {@link RegelSpraakModel#vasteStartpunten}; at
+    /** Records a fixed startpunt the wire cannot carry in {@link RegelSpraakModel#vasteStartpunten}; at
      *  most one of the four is present. Three start points add nothing to the anchorless tijdlijn and are
      *  left off the wire without loss, unrecorded: day 1 of the month and day 1 of month 1 coincide with the
      *  month and year buckets of RUNTIME-SEMANTICS ch. 3.2; day 1 of months 1, 4, 7 and 10 is the calendar

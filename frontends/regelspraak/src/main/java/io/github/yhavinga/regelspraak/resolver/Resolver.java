@@ -160,8 +160,8 @@ public final class Resolver {
 
     /** The --ir mode body: {@code rest} = [out.json, file.rgs...] after flag removal — the FIRST remaining arg is
      *  the output file, the rest are the source files of the model chain (concatenated in order). Writes a
-     *  FAITHFUL {@code uchar-ir-v1} JSON dump of the complete resolved model (the uchar "mirror" artifact — the
-     *  layers migrated so far in their v1 shape, and the Dutch v0 field names elsewhere, warts included) via
+     *  FAITHFUL {@code uchar-ir-v1} JSON dump of the complete resolved model (the uchar "mirror" artifact, in the
+     *  names of IR-SPEC since the L5 landing, warts included) via
      *  {@link io.github.yhavinga.regelspraak.emit.IrEmitter}.
      *  Returns the process exit code (0 = ir geschreven, 1 = resolver-fouten, 2 = usage) instead of exiting, so the
      *  disk discipline is testable as the REAL CLI path: an unresolvable model writes NOTHING and exits non-zero. */

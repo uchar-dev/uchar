@@ -202,7 +202,7 @@ public sealed interface Conditie {
      *  a marker keeps the document emittable, but the author is told what stayed unresolved and why).
      *  It travels ON the node rather than being reported where the node is built, because a marker is
      *  not final there: several routes re-read a markered condition and replace it. It is NEVER
-     *  serialised — the v0 wire writes {@code node} plus {@code bron} — so carrying it moves no byte.
+     *  serialised — the wire writes {@code node} plus {@code source} — so carrying it moves no byte.
      *
      *  <p>null means the producing route already raises its OWN diagnostic for this marker; the sweep
      *  then stays quiet rather than saying it twice. */

@@ -24,9 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * emitted with exit 0 and {@code diagnostics: []}; the start point left no trace on the wire, so
  * "voor elk jaar startend op dag 15 van maand 10" emitted byte-identically to "voor elk jaar".
  *
- * <p><b>Why a refusal and not a field.</b> The v0 wire has no field for a fixed start point: a
- * {@code Tijdlijn} carries name, {@code variabelStartpunt}, granularity and count; the attribute,
- * characteristic and parameter side-maps carry granularity and count; {@code ResolvedStartpunt} is
+ * <p><b>Why a refusal and not a field.</b> The wire has no field for a fixed start point: a
+ * {@code Timeline} carries name, {@code variableStart}, granularity and count; the attribute,
+ * characteristic and parameter facets carry granularity and count; {@code StartPointDetermination} is
  * the VARIABLE-start anchor (IR-SPEC ch. 3.8) and holds no date. Both executors read an anchorless
  * timeline on the calendar grid (RUNTIME-SEMANTICS ch. 3.2), so a start point off that grid changes
  * the meaning: the period the author declared is refused as off-grid input by the reference

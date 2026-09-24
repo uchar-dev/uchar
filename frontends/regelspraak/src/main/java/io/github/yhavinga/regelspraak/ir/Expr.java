@@ -28,7 +28,7 @@ public sealed interface Expr {
     /** The expression's result datatype (per the typeringen matrix). */
     Datatype type();
     /** The structured source anchor (file/line/column + whitespace-normalised snippet) this node
-     *  was built from. Its {@link Bron#toString()} is the snippet, so the v0 wire stays unchanged. */
+     *  was built from. Its {@link Bron#toString()} is the snippet, the node's {@code source} text on the wire. */
     Bron bron();
 
     /** Whether {@code e} is or contains a sub-expression matching {@code toets} — a generic IR-tree scan over
@@ -242,9 +242,9 @@ public sealed interface Expr {
          *  branches, whose choke points (naviResolve / navReader / navComparisonRole) are pad-aware.
          *
          *  {@code bereikPad} is the resolved MULTI-STEP fold-source RANGE (IR-SPEC ch. 4.3 / WF-102, the
-         *  uchar wire's {@code bronPad} on the enclosing Functie): the symbolic role bindings from the rule
+         *  uchar wire's {@code sourcePath} on the enclosing Aggregation): the symbolic role bindings from the rule
          *  subject to the element type, subject-outwards, one per written set step. Empty for every source
-         *  whose range is ONE relation — that one stays the emitter's {@code bronRol} — and empty whenever
+         *  whose range is ONE relation — that one stays the emitter's {@code sourceRole} — and empty whenever
          *  the written chain declines to resolve, which keeps the resolver's refusal intact instead of
          *  half-binding. It sits on the operand because that is where the written chain is; the emitter
          *  lifts it onto the fold, which is where the wire carries it.
@@ -355,8 +355,8 @@ public sealed interface Expr {
      *  <p>{@code reden} is the Dutch sentence the frontend raises as a WARNING over this marker when it
      *  SURVIVES into the finished model — see {@link Conditie.Onopgelost#reden()} for why the reason
      *  travels on the node instead of being reported where the node is built, and why null means "the
-     *  producing route already speaks for itself". Never serialised: the v0 wire writes {@code node},
-     *  {@code type} and {@code bron}. */
+     *  producing route already speaks for itself". Never serialised: the wire writes {@code node},
+     *  {@code type} and {@code source}. */
     record Onopgelost(Datatype type, Bron bron, String reden) implements Expr {}
 
     /** Every {@link Onopgelost} inside {@code e}, in structural order, handed to {@code uit} as its

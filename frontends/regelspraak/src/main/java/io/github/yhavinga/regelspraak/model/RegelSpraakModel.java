@@ -50,7 +50,7 @@ public final class RegelSpraakModel {
      *  the anchor WRITE itself is an ordinary entry in {@link #resolvedRegels}. */
     public final List<io.github.yhavinga.regelspraak.ir.ResolvedStartpunt> resolvedStartpunten = new ArrayList<>();
     /** §13.3.6.3–.7 the FIXED startpunten that deviate from the calendar period, in source order. The model
-     *  resolves them (granularity and count are right), but the v0 wire has no field for the start point
+     *  resolves them (granularity and count are right), but the wire has no field for the start point
      *  and every executor lays an anchorless tijdlijn on the calendar grid — so the emission boundary
      *  refuses a model that carries one ({@code IrEmitter.wireWeigeringen}). Three start points are not
      *  recorded, because omitting them loses nothing: day 1 of the month and of month 1 (they coincide with the month and year
@@ -521,7 +521,7 @@ public final class RegelSpraakModel {
 
     /**
      * The ONE-STEP RANGE of a set reading over {@code elementType} written from {@code subject} — the
-     * binding the uchar wire carries as {@code bronRol} on an instance fold (IR-SPEC ch. 4.3) and on a
+     * binding the uchar wire carries as {@code sourceRole} on an instance fold (IR-SPEC ch. 4.3) and on a
      * §8.2 quantifier fold alike. One search, two callers: the emitter's fold arm and the resolver's
      * §8.2 lowering must never classify one written range differently, so neither owns a copy of it.
      *

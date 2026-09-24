@@ -844,8 +844,8 @@ final class RuleChecker {
     }
 
     /** The annotations of one block as the single string a {@code bron} field holds: the non-blank entries in
-     *  source order joined with "; ", or null when there are none — so an unannotated block keeps the
-     *  {@code bron: null} every defaults golden without annotations carries. A blank entry is dropped as the
+     *  source order joined with "; ", or null when there are none — so an unannotated block writes no
+     *  {@code source}, as no defaults golden without annotations has one. A blank entry is dropped as the
      *  emitter drops it from {@code bronAnnotaties}: it cites nothing. */
     private static String annotatieTekst(List<String> annotaties) {
         List<String> gevuld = annotaties.stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
@@ -858,7 +858,7 @@ final class RuleChecker {
      *  where the citation has to go. Not an ERROR: the document is sound, only the citation is lost. These two
      *  headers warn because they open rules, which is where an author expects the citation to reach; an
      *  annotation above a definition documents the declaration and has no wire slot to miss. The group's own
-     *  {@code bron} is no place for it either: on a Regelgroep that field is the v0 snippet of its name. */
+     *  {@code bron} is no place for it either: on a rule group that record's snippet is its name. */
     private void kopAnnotatie(ParserRuleContext kop, String kopNaam, String verwijzing, int line) {
         String tekst = annotatieTekst(bronAnnotaties(kop));
         if (tekst == null) return;

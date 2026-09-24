@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * The structured {@link Bron} on a resolved form carries file/line/column back to the source,
  * and a {@code // Bron:} statuutannotatie directly above a rule is retrievable from its
- * {@link ResolvedRegel}. Byte-identity of the v0 wire (the snippet) is proven elsewhere
+ * {@link ResolvedRegel}. Byte-identity of the wire (the source snippet) is proven elsewhere
  * (the emitter goldens); here we prove the ADDED coordinates and annotations.
  */
 class BronTest {
