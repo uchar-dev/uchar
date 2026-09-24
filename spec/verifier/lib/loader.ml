@@ -63,8 +63,7 @@
    and not the schema's, which cannot cross them: a value variant that is
    not the one the literal's type names (WF-114) and a context-value name
    outside the closed set (WF-098). The verifier loads all of these so the
-   rule can cite them; every other reader refuses the last two here, and a
-   number outside the case format's grammar (WF-081) as well, in the rule's
+   rule can cite them; every other reader refuses them here, in the rule's
    own sentence ([reader]). *)
 
 open Ast
@@ -1680,18 +1679,19 @@ let presentatie_annotaties (j : json) : string list =
    frontend — is an [Executor] and refuses both at load, in the rule's own
    sentence without its number ([Checks.literal_variant_refusal],
    [Checks.context_value_refusal]): no evaluator reads {"text": "5"} under
-   a Number as a number, or a session value that does not exist. A number
-   variant outside the case format's number grammar (WF-081) is refused the
-   same way ([Checks.number_lexeme_refusal]): the Drools loader refuses it at
-   load, and an executor that met it only at evaluation would refuse the
-   same document in another phase and in other words. *)
+   a Number as a number, or a session value that does not exist. The string
+   of a number, date or dateTime variant outside its grammar (WF-081,
+   WF-084, WF-095) is refused the same way ([Checks.number_lexeme_refusal],
+   [Checks.date_lexeme_refusal], [Checks.date_time_lexeme_refusal]): an
+   executor that met it only at evaluation would refuse the same document in
+   another phase and in other words than the verifier and the Drools loader. *)
 type reader = Verifier | Executor
 
 (* The executor's refusals, after the structural load: every Literal and
    ContextValue node of the document as written, in document order, a
-   literal's variant crossed against its type before its number is read. A
+   literal's variant crossed against its type before its string is read. A
    literal without a type is WF-034's typeless value node, with no type to
-   cross its variant against; a number it carries is read all the same. *)
+   cross its variant against; its string is read all the same. *)
 let executor_refusals (j : json) =
   let rec walk path = function
     | `Assoc kvs ->
@@ -1704,12 +1704,14 @@ let executor_refusals (j : json) =
                 match Checks.literal_variant_refusal variant typ with
                 | Some sentence -> fail (path / "value") sentence
                 | None -> ()));
-            match variant with
-            | Lv_number w -> (
-                match Checks.number_lexeme_refusal w with
-                | Some sentence -> fail (path / "value") sentence
-                | None -> ())
-            | _ -> ())
+            let spelling =
+              match variant with
+              | Lv_number w -> Checks.number_lexeme_refusal w
+              | Lv_date w -> Checks.date_lexeme_refusal w
+              | Lv_date_time w -> Checks.date_time_lexeme_refusal w
+              | Lv_boolean _ | Lv_text _ | Lv_enumeration _ | Lv_constructor _ -> None
+            in
+            match spelling with Some sentence -> fail (path / "value") sentence | None -> ())
         | Some (`String "ContextValue") -> (
             match Checks.context_value_refusal (str (path / "name") (field path kvs "name")) with
             | Some sentence -> fail (path / "name") sentence

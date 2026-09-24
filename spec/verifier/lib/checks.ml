@@ -400,9 +400,10 @@ let context_value_refusal name =
      ^ "' is not one of the two admissible names Rekendatum, Rekenjaar: the context-value name \
         is a closed set, spelled byte for byte")
 
-(* WF-081 (IR-SPEC ch. 4.1): the string of a number variant outside the case
-   format's number grammar ([lexeme_bare_number]). Shared with the loader
-   like the two sentences above. *)
+(* WF-081, WF-084 and WF-095 (IR-SPEC ch. 4.1): the string of a number, date
+   or dateTime variant outside its grammar ([lexeme_bare_number],
+   [lexeme_iso_date], [lexeme_datum_tijd]). Shared with the loader like the
+   two sentences above. *)
 let number_lexeme_refusal w =
   if lexeme_bare_number w then None
   else
@@ -410,6 +411,22 @@ let number_lexeme_refusal w =
       ("numeric literal lexeme '" ^ w
      ^ "' is not a number of the case format (an optional '-', digits, an optional '.' and \
         digits, or a rational a/b whose denominator has no leading zero — ch. 4.1)")
+
+let date_lexeme_refusal w =
+  if lexeme_iso_date w then None
+  else
+    Some
+      ("date literal lexeme '" ^ w
+     ^ "' is not the ISO form yyyy-mm-dd (fixed field widths, valid ranges — ch. 4.1)")
+
+let date_time_lexeme_refusal w =
+  if lexeme_datum_tijd w then None
+  else
+    Some
+      ("millisecond-precision date literal lexeme '" ^ w
+     ^ "' is not the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' \
+        never a space, the seconds field written, no zone or offset, a fraction of exactly \
+        three digits; the day-first source snippet belongs in `bron` — ch. 4.1)")
 
 (* --- document context --------------------------------------------------- *)
 
@@ -3997,17 +4014,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       match (variant, typ) with
       | Lv_number w, _ when number_lexeme_refusal w <> None ->
           [ v "WF-081" vat (Option.get (number_lexeme_refusal w)) ]
-      | Lv_date w, _ when not (lexeme_iso_date w) ->
-          [ v "WF-084" vat
-              ("date literal lexeme '" ^ w
-               ^ "' is not the ISO form yyyy-mm-dd (fixed field widths, valid ranges — ch. 4.1)") ]
-      | Lv_date_time w, _ when not (lexeme_datum_tijd w) ->
-          [ v "WF-095" vat
-              ("millisecond-precision date literal lexeme '" ^ w
-               ^ "' is not the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field \
-                  widths, 'T' never a space, the seconds field written, no zone or offset, a \
-                  fraction of exactly three digits; the day-first source snippet belongs in \
-                  `bron` — ch. 4.1)") ]
+      | Lv_date w, _ when date_lexeme_refusal w <> None ->
+          [ v "WF-084" vat (Option.get (date_lexeme_refusal w)) ]
+      | Lv_date_time w, _ when date_time_lexeme_refusal w <> None ->
+          [ v "WF-095" vat (Option.get (date_time_lexeme_refusal w)) ]
       | Lv_enumeration w, Some (Enumeratie { waarden; _ }) when not (mem_ci (some_names waarden) w) ->
           [ v "WF-039" vat ("enumeration label '" ^ w ^ "' is not in the declared domain") ]
       | Lv_number w, Some (Numeriek { teken = Some t; _ }) -> (

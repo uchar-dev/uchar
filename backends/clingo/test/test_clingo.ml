@@ -2395,6 +2395,22 @@ let () =
    datum-tijd equality — which WF-036 and the arm's own reason keep out of
    the golden zone. *)
 
+(* A node the loader refuses on the wire, built past it: the right operand
+   of the first rule's comparison rewritten in memory to [variant], so a
+   suite can pin what a reader behind the loader does with it. *)
+let rechts_verdraaid (doc : Ir_v0.Ast.document) (variant : Ir_v0.Ast.literal_variant) =
+  match doc.resolved_regels with
+  | ({ rr_voorwaarde = Some (Vergelijking c); _ } as r) :: rest -> (
+      match c.rechts with
+      | Some (Literal l) ->
+          { doc with
+            resolved_regels =
+              { r with
+                rr_voorwaarde = Some (Vergelijking { c with rechts = Some (Literal { l with variant }) }) }
+              :: rest }
+      | _ -> failwith "rechts_verdraaid: the comparison's right operand is no literal")
+  | _ -> failwith "rechts_verdraaid: the first rule carries no comparison"
+
 let dt_doc ~attributen ~kenmerken ~regels =
   Printf.sprintf
     {|{
@@ -2597,35 +2613,47 @@ let () =
   in
   faults_with ~name:"datum-tijd gelijk-aan is een luide flank" ~ir:gelijk_ir
     ~case_text:vooruit ~needle:"datum-tijd (on)gelijk-aan is not translated";
-  (* 5. an ill-formed literal lexeme reaches the translator only when the
-     verifier is bypassed (WF-095 refuses the document); the arm must still
-     refuse it by name rather than answer some other instant *)
-  let stuk_ir =
+  (* 5. an ill-formed literal lexeme: WF-095 refuses the document, and so
+     does an executor's loader, in the same sentence. Built past the loader
+     it reaches the translator, whose arm must still refuse it by name rather
+     than answer some other instant *)
+  let tijdig_ir lex =
     dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "Date", "precision": "millisecond" }|})
       ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
-      ~regels:
-        (dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip")
-           ~rechts:(dt_lit "2026-03-15T12:00:00.1"))
+      ~regels:(dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip") ~rechts:(dt_lit lex))
   in
-  faults_with ~name:"onleesbaar datum-tijd-literal-lexeem in de vertaling" ~ir:stuk_ir
-    ~case_text:(lit_case "2026-03-15T06:00:00.000" true)
-    ~needle:"malformed datum-tijd lexeme";
+  let voorbij_de_lader ~name lex ~needle =
+    let doc, case =
+      load_pair ~ir:(tijdig_ir "2026-03-15T12:00:00.000")
+        ~case_text:(lit_case "2026-03-15T06:00:00.000" true)
+    in
+    match translate (rechts_verdraaid doc (Lv_date_time lex)) case with
+    | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
+    | exception Uchar_ref.Value.Fault m ->
+        check (name ^ " faults loudly (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
+  in
+  refused_at_load ~name:"onleesbaar datum-tijd-literal-lexeem bij het laden"
+    ~ir:(tijdig_ir "2026-03-15T12:00:00.1")
+    ~needle:
+      "millisecond-precision date literal lexeme '2026-03-15T12:00:00.1' is not the canonical ISO \
+       form";
+  voorbij_de_lader ~name:"onleesbaar datum-tijd-literal-lexeem in de vertaling"
+    "2026-03-15T12:00:00.1" ~needle:"malformed datum-tijd lexeme";
   (* 6. the day-first source snippet in `waarde`. This backend has no lexeme
      reader of its own: it reads the literal through ref's
      [Value.datetime_of_lexeme], so until 2026-09-23 it read the snippet as
      the same instant as the ISO lexeme and translated the rule. WF-095
      admits ISO alone and the emitter writes ISO since card
      p5-datumtijd-lexeem; the snippet is now refused here, quoted, before
-     any program is grounded (card datumtijd-lezers-versmalling). *)
-  let snippet_ir =
-    dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "Date", "precision": "millisecond" }|})
-      ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
-      ~regels:
-        (dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip")
-           ~rechts:(dt_lit "15-03-2026 12:00:00.000"))
-  in
-  faults_with ~name:"dag-eerst-bronsnippet als datum-tijd-literal in de vertaling" ~ir:snippet_ir
-    ~case_text:(lit_case "2026-03-15T06:00:00.000" true)
+     any program is grounded (card datumtijd-lezers-versmalling). Over the
+     wire an executor's loader refuses it first, in WF-095's sentence. *)
+  refused_at_load ~name:"dag-eerst-bronsnippet als datum-tijd-literal bij het laden"
+    ~ir:(tijdig_ir "15-03-2026 12:00:00.000")
+    ~needle:
+      "millisecond-precision date literal lexeme '15-03-2026 12:00:00.000' is not the canonical \
+       ISO form";
+  voorbij_de_lader ~name:"dag-eerst-bronsnippet als datum-tijd-literal in de vertaling"
+    "15-03-2026 12:00:00.000"
     ~needle:"malformed datum-tijd lexeme \"15-03-2026 12:00:00.000\": not the canonical ISO form"
 
 (* THE STATIC DELIVERY OF A TIME-DEPENDENT CHARACTERISTIC (maintainer decision
@@ -8725,13 +8753,15 @@ let () =
 (* the translator has no date reader of its own (card clingo-parameter-
    failfast, the dead-arm sweep): a malformed date literal in a term position
    refuses in ref's reader, in ref's words, where this file used to carry a
-   refusal sentence of its own that no document reached *)
+   refusal sentence of its own that no document reached. Over the wire an
+   executor's loader refuses the literal first, in WF-084's sentence; built
+   past the loader it reaches the reader *)
 let () =
-  let ir =
+  let ir datum =
     pf_doc
       ~objecttypen:[ pf_ot [ ("datum", pf_datum); ("heffing", pf_n2) ] ]
       ~regels:
-        [ pf_regel ~voorwaarde:(pf_cmp "LATER" (pf_a "datum") (pf_l ~typ:pf_datum "2026-13-40"))
+        [ pf_regel ~voorwaarde:(pf_cmp "LATER" (pf_a "datum") (pf_l ~typ:pf_datum datum))
             (pf_l "5") ]
       ()
   in
@@ -8741,14 +8771,23 @@ let () =
         [ {|{ "label": "J1", "objectType": "Jutter", "attributes": { "datum": { "date": "2026-03-15" } }, "roles": {}, "characteristics": [] }|} ]
       [ pf_cons ]
   in
+  refused_at_load ~name:"a malformed date literal is refused at load" ~ir:(ir "2026-13-40")
+    ~needle:
+      "date literal lexeme '2026-13-40' is not the ISO form yyyy-mm-dd (fixed field widths, valid \
+       ranges — ch. 4.1)";
   let needle = {|month out of range in date lexeme "2026-13-40"|} in
-  let doc, case = load_pair ~ir ~case_text in
+  let doc, case = load_pair ~ir:(ir "2026-03-01") ~case_text in
+  let doc = rechts_verdraaid doc (Lv_date "2026-13-40") in
   (match ref_report doc case with
   | _ -> check "a malformed date literal: ref faults (it evaluated)" false
   | exception Uchar_ref.Value.Fault m ->
       check ("a malformed date literal: ref faults (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m));
-  faults_with ~name:"a malformed date literal refuses in ref's reader, in translation" ~ir ~case_text
-    ~needle
+  match translate doc case with
+  | (_ : string) ->
+      check "a malformed date literal refuses in ref's reader, in translation: expected a loud fault" false
+  | exception Uchar_ref.Value.Fault m ->
+      check ("a malformed date literal refuses in ref's reader, in translation (" ^ m ^ ")")
+        (Uchar_ref.Case.contains ~needle m)
 
 (* FIXRONDE 1, point 1: a form-a default reads its OWN justification only when
    its exception groups decide nothing (ch. 7.9), so a parameter in that
@@ -11144,7 +11183,7 @@ let () =
    refusal for all three; the last rows are the three defects an executor
    refuses at load and the verifier loads for its own rule (Loader.reader):
    a variant its type does not name, a context value outside the closed set
-   and a number outside the case format's grammar.
+   and a number, date or dateTime outside its grammar.
    The base document is first held loading, with every L4 form in it; each
    row twists exactly one form and pins the loader's sentence. *)
 let () =
@@ -11296,10 +11335,43 @@ let () =
   let som = {|{ "node": "Aggregation", "kind": "SOM", "arguments": [|} in
   let absoluut = {|{ "node": "BuiltinCall", "kind": "ABSOLUTE_WAARDE", "arguments": [|} in
   let tien = {|"value": { "number": "10" }|} in
-  (* four spellings outside the case format's number grammar (WF-081) *)
-  let getallen =
-    [ ("een getal met een komma", "12,50"); ("een getal zonder leidend cijfer", ".5");
-      ("een noemer met een voorloopnul", "25/04"); ("een eenheid in het getal", "12.50 €") ]
+  (* strings outside their variant's grammar: four numbers (WF-081) in place
+     of the literal 10, and three dates (WF-084) and five dateTimes (WF-095),
+     each under its own precision, in place of the context value that
+     initialises peildatum *)
+  let contextwaarde =
+    {|"value": { "node": "ContextValue", "name": "Rekendatum", "type": { "node": "Date", "precision": "day" }, "bron": "de rekendatum" }|}
+  in
+  let datumliteraal variant precisie w =
+    Printf.sprintf
+      {|"value": { "node": "Literal", "value": { "%s": "%s" }, "type": { "node": "Date", "precision": "%s" }, "bron": "%s" }|}
+      variant w precisie w
+  in
+  let spellingen =
+    List.map
+      (fun (vorm, w) ->
+        ( vorm, tien, Printf.sprintf {|"value": { "number": "%s" }|} w, "WF-081",
+          "numeric literal lexeme '" ^ w
+          ^ "' is not a number of the case format (an optional '-', digits, an optional '.' and digits, or a rational a/b whose denominator has no leading zero — ch. 4.1)" ))
+      [ ("een getal met een komma", "12,50"); ("een getal zonder leidend cijfer", ".5");
+        ("een noemer met een voorloopnul", "25/04"); ("een eenheid in het getal", "12.50 €") ]
+    @ List.map
+        (fun (vorm, w) ->
+          ( vorm, contextwaarde, datumliteraal "date" "day" w, "WF-084",
+            "date literal lexeme '" ^ w
+            ^ "' is not the ISO form yyyy-mm-dd (fixed field widths, valid ranges — ch. 4.1)" ))
+        [ ("een datum dag-eerst", "10-03-2026"); ("een datum buiten de kalender", "2026-02-30");
+          ("een datum met een smal veld", "2026-3-10") ]
+    @ List.map
+        (fun (vorm, w) ->
+          ( vorm, contextwaarde, datumliteraal "dateTime" "millisecond" w, "WF-095",
+            "millisecond-precision date literal lexeme '" ^ w
+            ^ "' is not the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' never a space, the seconds field written, no zone or offset, a fraction of exactly three digits; the day-first source snippet belongs in `bron` — ch. 4.1)" ))
+        [ ("een datumtijd dag-eerst", "15-03-2026 12:00:00.000");
+          ("een datumtijd met een spatie", "2026-03-15 12:00:00.000");
+          ("een datumtijd zonder seconden", "2026-03-15T12:00");
+          ("een datumtijd met een fractie van één cijfer", "2026-03-15T12:00:00.1");
+          ("een datumtijd met een zone", "2026-03-15T12:00:00Z") ]
   in
   let variant =
     {|a literal value is exactly one variant: {"number": string}, {"boolean": true or false}, {"text": string}, {"date": string}, {"dateTime": string}, {"enumeration": string} or {"constructor": string}, without a payload|}
@@ -11442,7 +11514,7 @@ let () =
       ("BoundDay.type null", ({|{ "node": "BoundDay", "type": { "node": "Date", "precision": "day" }|}, {|{ "node": "BoundDay", "type": null|}),
         "a BoundDay carries its datatype");
       (* what an executor refuses at load and the verifier loads for its rule;
-         the numbers follow below the list *)
+         the strings outside their grammar follow below the list *)
       ( "een variant die het type niet noemt", (tien, {|"value": { "text": "10" }|}),
         "literal value is a text value but its type is a Number: the variant is the one the type names" );
       ( "een datum bij een Booleaan", ({|"value": { "boolean": true }|}, {|"value": { "date": "2026-01-01" }|}),
@@ -11451,12 +11523,7 @@ let () =
         "context value 'de dag' is not one of the two admissible names Rekendatum, Rekenjaar: the context-value name is a closed set, spelled byte for byte" );
       ( "een contextwaarde buiten de gesloten verzameling", ({|"name": "Rekendatum"|}, {|"name": "rekendatum"|}),
         "context value 'rekendatum' is not one of the two admissible names Rekendatum, Rekenjaar: the context-value name is a closed set, spelled byte for byte" ) ]
-    @ List.map
-        (fun (vorm, w) ->
-          ( vorm, (tien, Printf.sprintf {|"value": { "number": "%s" }|} w),
-            "numeric literal lexeme '" ^ w
-            ^ "' is not a number of the case format (an optional '-', digits, an optional '.' and digits, or a rational a/b whose denominator has no leading zero — ch. 4.1)" ))
-        getallen
+    @ List.map (fun (vorm, waar, door, _, zin) -> (vorm, (waar, door), zin)) spellingen
     @ [ ( "een getal buiten de grammatica zonder type",
           (tien ^ {|, "type": |} ^ getal, {|"value": { "number": "1,0" }, "type": null|}),
           "numeric literal lexeme '1,0' is not a number of the case format" ) ]
@@ -11465,24 +11532,24 @@ let () =
     (fun (vorm, (waar, door), needle) ->
       refused_at_load ~name:("L4-laadtabel: " ^ vorm) ~ir:(vervang base ~waar ~door) ~needle)
     rows;
-  (* the executor's refusal of a number outside the grammar IS the
-     verifier's WF-081 finding on the same document: one pointer and one
-     sentence, which the loader and the verifier's arm each spell *)
+  (* the executor's refusal of a string outside its variant's grammar IS the
+     verifier's finding on the same document (WF-081, WF-084, WF-095): one
+     pointer and one sentence, which checks.ml spells once for both *)
   List.iter
-    (fun (vorm, w) ->
-      let j = Yojson.Safe.from_string (vervang base ~waar:tien ~door:(Printf.sprintf {|"value": { "number": "%s" }|} w)) in
+    (fun (vorm, waar, door, wf, _) ->
+      let j = Yojson.Safe.from_string (vervang base ~waar ~door) in
       let bevinding =
         List.filter
-          (fun (x : Ir_v0.Checks.violation) -> x.wf = "WF-081")
+          (fun (x : Ir_v0.Checks.violation) -> x.wf = wf)
           (Ir_v0.Checks.all (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier j))
       in
-      let naam = "L4-laadtabel: " ^ vorm ^ " is de WF-081-bevinding van de verifier" in
+      let naam = "L4-laadtabel: " ^ vorm ^ " is de " ^ wf ^ "-bevinding van de verifier" in
       match Ir_v0.Loader.document j with
       | (_ : Ir_v0.Ast.document) -> check (naam ^ " (het document laadt)") false
       | exception Ir_v0.Loader.Error (at, m) ->
           check (naam ^ " (" ^ at ^ ": " ^ m ^ ")")
-            (bevinding = [ { Ir_v0.Checks.wf = "WF-081"; at; reason = m } ]))
-    getallen
+            (bevinding = [ { Ir_v0.Checks.wf; at; reason = m } ]))
+    spellingen
 
 (* A fact creation's two named roles, over the wire: the loader reads a
    creation whose target role does not resolve (its target type stays empty,
