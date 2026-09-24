@@ -3038,6 +3038,25 @@ let () =
   expect_fault_msg "WV-3.4c-kale-rolbron-faalt"
     (fun () -> ev w "J1" (vouw Aantal_gevulde [ telbron ] None None))
     "a role name is a count source only a count folds";
+  (* WF-093 (a) and WF-034, split as the verifier's source reading and the
+     Drools loader split them: with the fold subject known, a role reachable
+     from it is a count source (WF-093 (a)), and any other name declares
+     nothing on the element type (WF-034) — a role of another type's
+     relation included ("geborgen vondsten" is Boot's, not the Jutter's) *)
+  let ev_jutter e =
+    Eval.eval_expr { env with Eval.subj = Some "Jutter" } w (World.get w "J1") ~err:no_err e
+  in
+  expect_fault_msg "WV-3.4c-bereikbare-rolbron-faalt"
+    (fun () -> ev_jutter (vouw Aantal_gevulde [ telbron ] None None))
+    "a role name is a count source only a count folds (WF-093 (a))";
+  expect_fault_msg "WV-3.4c-onbereikbare-rolbron-faalt"
+    (fun () -> ev_jutter (vouw Aantal_gevulde [ setbron "geborgen vondsten" ] None None))
+    "'geborgen vondsten' is not a declared attribute of 'Vondst': a value fold's source reads \
+     an attribute of each contributor (WF-034)";
+  expect_fault_msg "WV-3.4c-onbekende-bron-faalt"
+    (fun () -> ev_jutter (vouw Aantal_gevulde [ setbron "onbekend" ] None None))
+    "'onbekend' is not a declared attribute of 'Vondst': a value fold's source reads an \
+     attribute of each contributor (WF-034)";
   (* D9's other side, WF-093 (b): a count over a name that IS a member of the
      element type reads values, which a count does not fold — refused by name,
      for an attribute and for a characteristic alike *)

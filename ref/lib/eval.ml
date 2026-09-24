@@ -1530,20 +1530,33 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
         let name = req "fold attribute" attribuut in
         let el_decl = objecttype env el in
         (* D8 (iii)/D9: the source's name is read per contributor, on the
-           element type; a name that is no attribute there — the role a count
-           source names — would read leeg on every member and answer a silent
-           0, so it is refused by name *)
+           element type; a name that is no attribute there would read leeg on
+           every member and answer a silent 0, so it is refused by name, as the
+           verifier's source reading and the Drools loader refuse it: a
+           characteristic (WF-080), a role reachable from the fold subject,
+           which is a count source only a count folds (WF-093 (a)), and any
+           other name, which declares nothing on the element type (WF-034). At
+           a position without a subject any declared role name counts *)
         if Ir_v0.Checks.find_ci el_decl.attributen name = None then
           if Ir_v0.Checks.has_kenmerk el_decl name then
             Value.fault
               "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
                ill-formed in an aggregation source position (WF-080)"
               name el
-          else
+          else if
+            match env.subj with
+            | Some st -> Ir_v0.Checks.roles_named_from { doc = env.doc } ~from_type:st ~name <> []
+            | None -> Ir_v0.Checks.is_role_name { doc = env.doc } name
+          then
             Value.fault
               "value aggregation over %S, which is no attribute of %S: a value fold reads an \
                attribute per contributor, and a role name is a count source only a count folds \
-               (WF-093)"
+               (WF-093 (a))"
+              name el
+          else
+            Value.fault
+              "'%s' is not a declared attribute of '%s': a value fold's source reads an attribute \
+               of each contributor (WF-034)"
               name el;
         let members =
           filter_in_order keep

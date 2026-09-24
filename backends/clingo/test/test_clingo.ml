@@ -6895,7 +6895,37 @@ let () =
          ~waar:{|{ "node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst",|}
          ~door:{|{ "node": "AttribuutRef", "attribuut": "vondsten", "objecttype": "Jutter",|})
     ~case_text:aantalgevulde_case
-    ~needle:"a role name is a count source only a count folds";
+    ~needle:"a role name is a count source only a count folds (WF-093 (a))";
+  (* WF-034, split from WF-093 (a) as the verifier and the Drools loader
+     split it: a name that is neither a member of the element type nor a role
+     reachable from the fold subject declares nothing on the element type — a
+     role of another relation's (Vondst's berging, which the Jutter does not
+     fill) included *)
+  faults_with ~name:"AANTAL_GEVULDE over an undeclared name refuses (WF-034)"
+    ~ir:
+      (vervang ir
+         ~waar:{|{ "node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst",|}
+         ~door:{|{ "node": "AttribuutRef", "attribuut": "onbekend", "objecttype": "Vondst",|})
+    ~case_text:aantalgevulde_case
+    ~needle:
+      "'onbekend' is not a declared attribute of 'Vondst': a value fold's source reads an \
+       attribute of each contributor (WF-034)";
+  faults_with ~name:"AANTAL_GEVULDE over a role the subject does not reach refuses (WF-034)"
+    ~ir:
+      (vervang
+         (vervang ir
+            ~waar:{|{ "node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst",|}
+            ~door:{|{ "node": "AttribuutRef", "attribuut": "geborgen vondsten", "objecttype": "Vondst",|})
+         ~waar:{|"factTypes": [|}
+         ~door:
+           {|"factTypes": [
+      { "node": "Feittype", "naam": "berging", "wederkerig": false, "rollen": [
+          { "node": "Rol", "naam": "bergende vondst", "objecttypeNaam": "Vondst",
+            "meervoud": null, "meervoudig": false },
+          { "node": "Rol", "naam": "geborgen vondst", "objecttypeNaam": "Vondst",
+            "meervoud": "geborgen vondsten", "meervoudig": true } ] },|})
+    ~case_text:aantalgevulde_case
+    ~needle:"'geborgen vondsten' is not a declared attribute of 'Vondst'";
   faults_with ~name:"AANTAL over an attribute name refuses (D9)"
     ~ir:(vervang ir ~waar:{|"kind": "AANTAL_GEVULDE"|} ~door:{|"kind": "AANTAL"|})
     ~case_text:aantalgevulde_case

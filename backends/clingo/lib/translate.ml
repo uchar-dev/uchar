@@ -1708,19 +1708,26 @@ let new_part ctx (ro : range_order) =
 
 (* D8 (iii)/D9, ref's refusal word for word: the set source of a value fold
    names an attribute read per contributor on the element type; a name that
-   is no attribute there — the role a count source names — would read no
-   member at all and answer a silent 0 or leeg, so it is refused by name *)
-let set_source_attribute ctx ~el a =
+   is no attribute there would read no member at all and answer a silent 0
+   or leeg, so it is refused by name, split as the verifier's source reading
+   and the Drools loader split it: a characteristic (WF-080), a role
+   reachable from the fold subject (WF-093 (a)), any other name (WF-034) *)
+let set_source_attribute ctx ~subject_ot ~el a =
   if Ir_v0.Checks.find_ci (objecttype ctx el).attributen a = None then
     if Ir_v0.Checks.has_kenmerk (objecttype ctx el) a then
       fault
         "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
          ill-formed in an aggregation source position (WF-080)"
         a el
-    else
+    else if Ir_v0.Checks.roles_named_from { doc = ctx.doc } ~from_type:subject_ot ~name:a <> [] then
       fault
         "value aggregation over %S, which is no attribute of %S: a value fold reads an attribute \
-         per contributor, and a role name is a count source only a count folds (WF-093)"
+         per contributor, and a role name is a count source only a count folds (WF-093 (a))"
+        a el
+    else
+      fault
+        "'%s' is not a declared attribute of '%s': a value fold's source reads an attribute of \
+         each contributor (WF-034)"
         a el;
   a
 
@@ -3422,7 +3429,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          type on the wire (corpus/golden/jutterswet-tempototaal pins both
          rows of that table side by side) — so a mirrored pair of arms
          could only drift. *)
-      let a = set_source_attribute ctx ~el (req "fold attribute" attribuut) in
+      let a = set_source_attribute ctx ~subject_ot ~el (req "fold attribute" attribuut) in
       (* THE ADDITIVE FOLD IS ARITHMETIC, so its members must be amounts.
          A DATE is not: this encoding gives it a day number (the only
          non-numeric datatype [decimals_of_datatype] hands a scale at all),
@@ -3909,7 +3916,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          of these two kinds reached no arm at all and the backend refused
          the expression kind, while ref answered: a live one-answers-one-
          refuses gap under a verifier-clean, frontend-emitted document. *)
-      let a = set_source_attribute ctx ~el (req "fold attribute" attribuut) in
+      let a = set_source_attribute ctx ~subject_ot ~el (req "fold attribute" attribuut) in
       (* a TEMPORAL element attribute has no defined moment to rank at, so
          ref refuses the form outright (ch. 3.6: only som and totaal carry
          the per-element timeline fold). This arm would rank the asOfDate
@@ -3980,7 +3987,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         argumenten = [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ];
         element_objecttype = Some el; bron_rol; bron_pad; filter; _ }
     when bron_rol <> None || bron_pad <> None (* D8 (iii): the set source *) ->
-      let a = set_source_attribute ctx ~el (req "fold attribute" attribuut) in
+      let a = set_source_attribute ctx ~subject_ot ~el (req "fold attribute" attribuut) in
       (* the ch. 3.4c exclusion, on the TEMPORAL axis rather than on a value
          type: a set read of a time-dependent attribute folds twice, and only
          som and totaal define the first collapse. ref refuses the form by
