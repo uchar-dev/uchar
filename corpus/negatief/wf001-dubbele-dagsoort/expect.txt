@@ -1,0 +1,1 @@
+namespace 'dayKinds': names 'schouwdag' and 'Schouwdag' collide case-insensitively

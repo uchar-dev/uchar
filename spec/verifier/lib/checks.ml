@@ -547,19 +547,24 @@ let named_forms ctx =
 (* ======================================================================= *)
 
 let wf001 ctx =
-  let ns name keys =
-    dups_by norm (List.map (fun k -> (k, "/" ^ name)) keys)
+  (* [root] is the in-library path a report is translated from ([m1_root],
+     [m1_named]); [label] is the namespace the message names. The unit
+     systems and the day kinds are named by their wire list, `unitSystems`
+     and `dayKinds`, the lists whose nodes L3 rewrote. *)
+  let ns ?label root keys =
+    let label = Option.value label ~default:root in
+    dups_by norm (List.map (fun k -> (k, "/" ^ root)) keys)
     |> List.map (fun (a, b, at) ->
         v "WF-001" at
-          (Printf.sprintf "namespace '%s': names '%s' and '%s' collide case-insensitively" name a b))
+          (Printf.sprintf "namespace '%s': names '%s' and '%s' collide case-insensitively" label a b))
   in
   ns "objecttypen" (List.map fst ctx.doc.objecttypen)
   @ ns "domeinen" (List.map fst ctx.doc.domeinen)
   @ ns "parameters" (List.map fst ctx.doc.parameters)
-  @ ns "eenheidstelsels" (List.map fst ctx.doc.eenheidstelsels)
+  @ ns ~label:"unitSystems" "eenheidstelsels" (List.map fst ctx.doc.eenheidstelsels)
   @ ns "feittypen" (List.map fst ctx.doc.feittypen)
   @ ns "dimensies" (List.map fst ctx.doc.dimensies)
-  @ ns "dagsoorten" (dagsoort_namen ctx)
+  @ ns ~label:"dayKinds" "dagsoorten" (dagsoort_namen ctx)
 
 let wf002 ctx =
   List.concat_map
