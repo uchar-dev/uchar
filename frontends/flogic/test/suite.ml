@@ -241,5 +241,108 @@ let () =
       | (_ : string) -> check name false "the serialiser wrote a document"
       | exception Failure m -> check name (contains ~needle m) m)
     emit_refusals;
+  (* The serialiser's arms no F-logic source reaches, driven by one hand-built
+     document (the emitter-form proof of the L5 landing): a characteristic
+     check naming its host, a validity with both bounds, a role with its
+     plural, a characteristic defaults group whose default carries a
+     decision, the Text and Date datatypes and the presentation equation.
+     What the serialiser writes must load in every reader and be
+     verifier-clean, exactly as an E2E emission is, and the loader must read
+     each of those forms back into the value it was written from. *)
+  let module A = Ir_v0.Ast in
+  let num0 : A.datatype =
+    Numeriek { geheel = true; decimalen = 0; teken = Some Onbepaald; eenheid = None }
+  in
+  let sein : A.objecttype =
+    { ot_naam = Some "Sein"; ot_supertype = None;
+      attributen =
+        [ ("kleur", Some A.Tekst); ("hijsdatum", Some A.Datum_in_dagen); ("hoogte", Some num0);
+          ("breedte", Some num0) ];
+      attribuut_meervoud = []; attribuut_dimensies = []; attribuut_granulariteit = [];
+      attribuut_tijdlijn_aantal = []; attribuut_tijdlijn_naam = [];
+      kenmerken = [ Some "gehesen"; Some "zichtbaar" ];
+      kenmerk_soorten = [ ("gehesen", Some A.Bijvoeglijk); ("zichtbaar", Some A.Bijvoeglijk) ];
+      kenmerk_granulariteit = []; kenmerk_tijdlijn_aantal = []; bezield = false; meervoud = None }
+  in
+  let aref a : A.expr =
+    Attribuut_ref { attribuut = Some a; objecttype = Some "Sein"; bron = Some a; navigatie_bindingen = None }
+  in
+  let getal n : A.expr = Literal { variant = Lv_number n; typ = Some num0; bron = Some n } in
+  (* the subject's own type as the host: the reading an absent host has *)
+  let gehesen : A.conditie =
+    Kenmerk_check
+      { kenmerk = Some "gehesen"; negatie = false; eigenaar = Some "Sein"; periode = None;
+        bron = Some "?S : gehesen"; navigatie_binding = None }
+  in
+  let seizoen : A.geldigheid = { geld_vanaf = Some "2026-04-01"; geld_tot = Some "2026-10-01" } in
+  let seinpaar : A.feittype =
+    { ft_naam = Some "seinpaar"; wederkerig = false;
+      rollen =
+        [ { rol_naam = Some "hoofdsein"; rol_objecttype_naam = Some "Sein"; rol_meervoud = None;
+            rol_meervoudig = false };
+          { rol_naam = Some "bijsein"; rol_objecttype_naam = Some "Sein";
+            rol_meervoud = Some "bijseinen"; rol_meervoudig = true } ] }
+  in
+  let zichtbaar : A.prioritized_defaults =
+    { pd_naam = Some "zichtbaar sein"; pd_onderwerp = "Sein"; pd_kenmerk = Some "zichtbaar";
+      pd_attribuut = None;
+      defaults =
+        [ { default_besluit = Some true;
+            default_voorwaarde =
+              Some
+                (Vergelijking
+                   { op = Groter; links = Some (aref "hoogte"); rechts = Some (getal "10");
+                     periode = None; bron = Some "?S.hoogte > 10" });
+            default_consequentie = None; default_initialisatie = false; default_excepties = None;
+            default_bron = None } ];
+      pd_ongeordend = false; pd_bron = None; pd_geldigheid = Some { geld_vanaf = None; geld_tot = None } }
+  in
+  let regel naam soort doel waarde cond geldigheid : A.resolved_regel =
+    { rr_naam = Some naam; rr_soort = Some soort; doel = Some (aref doel); waarde = Some waarde;
+      rr_voorwaarde = cond; rr_geldigheid = geldigheid; rr_bron_annotaties = None; rr_pointer = "" }
+  in
+  let proef : A.document =
+    { objecttypen = [ ("Sein", sein) ]; domeinen = []; parameters = []; eenheidstelsels = [];
+      feittypen = [ ("seinpaar", seinpaar) ]; dimensies = []; tijdlijnen = []; dagsoorten = [];
+      resolved_regels =
+        [ regel "hoogte van een sein" Gelijkstelling "hoogte" (getal "12") None None;
+          regel "breedte van een sein" Berekening "breedte" (getal "3") (Some gehesen) (Some seizoen) ];
+      resolved_dagsoorten = []; object_creaties = []; verdelingen = []; consistenties = [];
+      uniciteiten = []; uniciteit_unies = []; feit_creaties = []; resolved_startpunten = [];
+      regel_groepen = []; diagnostics = []; prioritized_defaults = [ zichtbaar ]; function_defs = [];
+      presentatie_annotaties = [] }
+  in
+  Printf.printf "[emit-proef] de vormen die geen F-logic-bron bereikt\n%!";
+  let text = Flogic_frontend_lib.Emit.to_string proef in
+  let out = Filename.temp_file "flogic-proef" ".ir.json" in
+  let oc = open_out out in
+  output_string oc text;
+  close_out oc;
+  let vc, vo = run [ verifier; out ] in
+  check "emit-proef : verifier-clean" (vc = 0 && contains ~needle:"PASS" vo) vo;
+  (match Ir_v0.Loader.document (Yojson.Safe.from_string text) with
+   | back ->
+       check "emit-proef : loads for an executor" true "";
+       let breedte =
+         List.find (fun (r : A.resolved_regel) -> r.rr_naam = Some "breedte van een sein")
+           back.resolved_regels
+       in
+       check "emit-proef : reads the host back" (breedte.rr_voorwaarde = Some gehesen) text;
+       check "emit-proef : reads both validity bounds back" (breedte.rr_geldigheid = Some seizoen) text;
+       check "emit-proef : reads the role plural back"
+         ((List.assoc "seinpaar" back.feittypen).rollen = seinpaar.rollen) text;
+       check "emit-proef : reads the characteristic group and its decision back"
+         (match back.prioritized_defaults with
+          | [ pd ] ->
+              pd.pd_kenmerk = Some "zichtbaar" && pd.pd_attribuut = None
+              && List.map (fun (d : A.default) -> d.default_besluit) pd.defaults = [ Some true ]
+          | _ -> false)
+         text
+   | exception Ir_v0.Loader.Error (p, m) -> check "emit-proef : loads for an executor" false (p ^ ": " ^ m));
+  List.iter
+    (fun needle -> check ("emit-proef : writes " ^ needle) (contains ~needle text) text)
+    [ {|"host": "Sein"|}; {|"from": "2026-04-01"|}; {|"to": "2026-10-01"|};
+      {|"plural": "bijseinen"|}; {|"characteristic": "zichtbaar"|}; {|"decision": true|};
+      {|"node": "Text"|}; {|"precision": "day"|}; {|"presentation": "equation"|} ];
   Printf.printf "\n%d checks, %d failures\n%!" !ntests !failures;
   if !failures > 0 then exit 1

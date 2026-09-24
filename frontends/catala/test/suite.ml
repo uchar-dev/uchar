@@ -482,22 +482,29 @@ let () =
       | exception Failure m -> check name (contains ~needle m) m)
     emit_refusals;
   (* The serialiser's arms no Catala source reaches, driven by one hand-built
-     document (the emitter-form proof of the L4 landing): the two context
-     nodes — the translator builds neither a ContextValue nor a BoundDay —
-     the text and dateTime value variants, and the rule kinds and the rule
-     condition the translator never combines. What the serialiser writes must
-     load in every reader and be verifier-clean, exactly as an E2E emission
-     is. *)
+     document (the emitter-form proof of the L4 landing, widened at the L5
+     landing): the two context nodes — the translator builds neither a
+     ContextValue nor a BoundDay — the text and dateTime value variants, the
+     rule kinds and the rule condition the translator never combines, and the
+     L5 forms no Catala source writes: a characteristic check naming its host,
+     a validity with both bounds, a role with its plural, the three
+     characteristic kinds and an initialisation default. What the serialiser
+     writes must load in every reader and be verifier-clean, exactly as an
+     E2E emission is, and the loader must read each of those forms back into
+     the value it was written from. *)
   let module A = Ir_v0.Ast in
   let num0 : A.datatype = Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = None } in
   let zaak : A.objecttype =
     { ot_naam = Some "Zaak"; ot_supertype = None;
       attributen =
         [ ("peildatum", Some A.Datum_in_dagen); ("dagdatum", Some A.Datum_in_dagen);
-          ("bedrag", Some num0); ("omschrijving", Some A.Tekst); ("moment", Some A.Datum_tijd) ];
+          ("bedrag", Some num0); ("omschrijving", Some A.Tekst); ("moment", Some A.Datum_tijd);
+          ("toeslag", Some num0); ("tarief", Some num0) ];
       attribuut_meervoud = []; attribuut_dimensies = []; attribuut_granulariteit = [];
-      attribuut_tijdlijn_aantal = []; attribuut_tijdlijn_naam = []; kenmerken = [];
-      kenmerk_soorten = []; kenmerk_granulariteit = []; kenmerk_tijdlijn_aantal = [];
+      attribuut_tijdlijn_aantal = []; attribuut_tijdlijn_naam = [];
+      kenmerken = [ Some "spoedeisend"; Some "voorrang"; Some "hoofdzaak" ];
+      kenmerk_soorten = [ ("spoedeisend", Some A.Bijvoeglijk); ("voorrang", Some A.Bezittelijk) ];
+      kenmerk_granulariteit = []; kenmerk_tijdlijn_aantal = [];
       bezield = false; meervoud = Some "Zaken" }
   in
   let aref a : A.expr =
@@ -515,9 +522,37 @@ let () =
       { op = Groter; links = Some (aref a); rechts = Some (lit (Lv_number n) num0); periode = None;
         bron = Some "groter" }
   in
+  (* the subject's own type as the host: the reading an absent host has *)
+  let spoedeisend : A.conditie =
+    Kenmerk_check
+      { kenmerk = Some "spoedeisend"; negatie = false; eigenaar = Some "Zaak"; periode = None;
+        bron = Some "zij is spoedeisend"; navigatie_binding = None }
+  in
+  let jaar2026 : A.geldigheid = { geld_vanaf = Some "2026-01-01"; geld_tot = Some "2027-01-01" } in
+  let koppeling : A.feittype =
+    { ft_naam = Some "Zaakkoppeling"; wederkerig = false;
+      rollen =
+        [ { rol_naam = Some "moederzaak"; rol_objecttype_naam = Some "Zaak"; rol_meervoud = None;
+            rol_meervoudig = false };
+          { rol_naam = Some "deelzaak"; rol_objecttype_naam = Some "Zaak";
+            rol_meervoud = Some "deelzaken"; rol_meervoudig = true } ] }
+  in
+  let tarief : A.prioritized_defaults =
+    { pd_naam = Some "tarief van een zaak"; pd_onderwerp = "Zaak"; pd_kenmerk = None;
+      pd_attribuut = Some "tarief";
+      defaults =
+        [ { default_besluit = None; default_voorwaarde = Some (groter "bedrag" "100");
+            default_consequentie = Some (lit (Lv_number "7") num0); default_initialisatie = false;
+            default_excepties = None; default_bron = Some "zeven bij een groot bedrag" };
+          { default_besluit = None; default_voorwaarde = None;
+            default_consequentie = Some (lit (Lv_number "0") num0); default_initialisatie = true;
+            default_excepties = None; default_bron = Some "anders nul, tenzij al gevuld" } ];
+      pd_ongeordend = false; pd_bron = Some "het tarief";
+      pd_geldigheid = Some { geld_vanaf = None; geld_tot = None } }
+  in
   let proef : A.document =
     { objecttypen = [ ("Zaak", zaak) ]; domeinen = []; parameters = []; eenheidstelsels = [];
-      feittypen = []; dimensies = []; tijdlijnen = []; dagsoorten = [];
+      feittypen = [ ("Zaakkoppeling", koppeling) ]; dimensies = []; tijdlijnen = []; dagsoorten = [];
       resolved_regels =
         [ regel "peildatum van een zaak" Gelijkstelling "peildatum"
             (Constante
@@ -530,10 +565,13 @@ let () =
           regel "omschrijving van een zaak" Berekening "omschrijving" (lit (Lv_text "proef") A.Tekst)
             (Some (groter "bedrag" "0"));
           regel "moment van een zaak" Gelijkstelling "moment"
-            (lit (Lv_date_time "2026-03-15T12:00:00") A.Datum_tijd) None ];
+            (lit (Lv_date_time "2026-03-15T12:00:00") A.Datum_tijd) None;
+          { (regel "toeslag van een zaak" Berekening "toeslag" (lit (Lv_number "3") num0)
+               (Some spoedeisend))
+            with rr_geldigheid = Some jaar2026 } ];
       resolved_dagsoorten = []; object_creaties = []; verdelingen = []; consistenties = [];
       uniciteiten = []; uniciteit_unies = []; feit_creaties = []; resolved_startpunten = [];
-      regel_groepen = []; diagnostics = []; prioritized_defaults = []; function_defs = [];
+      regel_groepen = []; diagnostics = []; prioritized_defaults = [ tarief ]; function_defs = [];
       presentatie_annotaties = [] }
   in
   Printf.printf "[emit-proef] de vormen die geen Catala-bron bereikt\n%!";
@@ -545,12 +583,74 @@ let () =
   let vc, vo = run [ verifier; out ] in
   check "emit-proef : verifier-clean" (vc = 0 && contains ~needle:"PASS" vo) vo;
   (match Ir_v0.Loader.document (Yojson.Safe.from_string text) with
-   | (_ : A.document) -> check "emit-proef : loads for an executor" true ""
+   | back ->
+       check "emit-proef : loads for an executor" true "";
+       let toeslag =
+         List.find (fun (r : A.resolved_regel) -> r.rr_naam = Some "toeslag van een zaak")
+           back.resolved_regels
+       in
+       check "emit-proef : reads the host back" (toeslag.rr_voorwaarde = Some spoedeisend) text;
+       check "emit-proef : reads both validity bounds back" (toeslag.rr_geldigheid = Some jaar2026) text;
+       check "emit-proef : reads the role plural back"
+         ((List.assoc "Zaakkoppeling" back.feittypen).rollen = koppeling.rollen) text;
+       check "emit-proef : reads the initialisation default back"
+         (List.map (fun (d : A.default) -> (d.default_initialisatie, d.default_voorwaarde = None))
+            (List.hd back.prioritized_defaults).defaults
+          = [ (false, false); (true, true) ])
+         text
    | exception Ir_v0.Loader.Error (p, m) -> check "emit-proef : loads for an executor" false (p ^ ": " ^ m));
   List.iter
     (fun needle -> check ("emit-proef : writes " ^ needle) (contains ~needle text) text)
-    [ {|"node": "ContextValue"|}; {|"node": "BoundDay"|}; {|"text": "proef"|};
-      {|"dateTime": "2026-03-15T12:00:00"|}; {|"presentation": "equation"|};
-      {|"initialisation": true|}; {|"condition": {|} ];
+    [ {|"node": "ContextValue"|}; {|"name": "evaluationDate"|}; {|"node": "BoundDay"|};
+      {|"text": "proef"|}; {|"dateTime": "2026-03-15T12:00:00"|}; {|"presentation": "equation"|};
+      {|"initialisation": true|}; {|"condition": {|}; {|"host": "Zaak"|};
+      {|"from": "2026-01-01"|}; {|"to": "2027-01-01"|}; {|"plural": "deelzaken"|};
+      {|"kind": "adjectival"|}; {|"kind": "possessive"|}; {|"kind": "nominal"|} ];
+  (* The whole-period qualifier is the one L5 form of this serialiser that no
+     document of its own can carry past the verifier: WF-043 wants a temporal
+     operand, and the plugin declares no timeline (the object type's timeline
+     tables refuse above). So its proof is the loader's, in both stances: a
+     qualifier of a year and one of a month, the latter negated, read back
+     into the conditions they were written from. *)
+  Printf.printf "[emit-proef] de kwalificator over een hele periode\n%!";
+  let numu : A.datatype =
+    Numeriek { geheel = true; decimalen = 0; teken = Some Onbepaald; eenheid = None }
+  in
+  let met_periode : A.conditie =
+    Samengesteld
+      { kwantor = Alle; drempel = 0;
+        onderdelen =
+          [ Vergelijking
+              { op = Groter; links = Some (aref "bedrag"); rechts = Some (lit (Lv_number "0") numu);
+                periode = Some { gp_jaar = true; gp_niet = false }; bron = Some "het hele jaar" };
+            Kenmerk_check
+              { kenmerk = Some "spoedeisend"; negatie = false; eigenaar = None;
+                periode = Some { gp_jaar = false; gp_niet = true }; bron = Some "niet de hele maand";
+                navigatie_binding = None } ];
+        bron = Some "beide" }
+  in
+  let periode_doc =
+    { proef with
+      resolved_regels =
+        [ regel "toeslag van een zaak" Berekening "toeslag" (lit (Lv_number "3") num0)
+            (Some met_periode) ];
+      prioritized_defaults = [] }
+  in
+  let ptext = Catala_frontend_lib.Emit.to_string periode_doc in
+  let pout = Filename.temp_file "catfe-proef-periode" ".ir.json" in
+  let oc = open_out pout in
+  output_string oc ptext;
+  close_out oc;
+  List.iter
+    (fun needle -> check ("emit-proef : writes " ^ needle) (contains ~needle ptext) ptext)
+    [ {|"wholePeriod": {|}; {|"granularity": "year"|}; {|"granularity": "month"|} ];
+  List.iter
+    (fun (stance, reader) ->
+      let name = "emit-proef : " ^ stance ^ " reads the whole-period qualifier back" in
+      match Ir_v0.Loader.document ~reader (Yojson.Safe.from_string ptext) with
+      | back ->
+          check name ((List.hd back.resolved_regels).rr_voorwaarde = Some met_periode) ptext
+      | exception Ir_v0.Loader.Error (p, m) -> check name false (p ^ ": " ^ m))
+    [ ("the verifier's loader", Ir_v0.Loader.Verifier); ("an executor's loader", Ir_v0.Loader.Executor) ];
   Printf.printf "\n%d checks, %d failures\n%!" !ntests !failures;
   if !failures > 0 then exit 1
