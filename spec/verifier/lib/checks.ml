@@ -3236,8 +3236,12 @@ let connecting_role_candidates ctx ~from_type ~to_type =
 
 (* The SEVEN aggregation kinds that read a VALUE per contributor — every fold
    kind except AANTAL, which reads the contributors themselves (ch. 1.2e: a
-   count is never empty because it never looks inside a member). WF-093's
-   discriminator; the wire spelling is the message's.
+   count is never empty because it never looks inside a member). Until the
+   L2 fix round WF-093's message named the kind through this list; since
+   then that message is the sentence the executors share, which names no
+   kind, and no check here reads the list. It stays as the verifier's
+   statement of the value-fold kinds, which the RegelSpraak frontend's
+   `VouwsoortenGrensTest` holds the frontend's own list against.
 
    Six until 2026-09-20, when AANTAL_GEVULDE joined them (IR-SPEC ch. 4.3,
    RUNTIME-SEMANTICS ch. 3.4c). It is a count in its RESULT and a value fold
@@ -3363,14 +3367,15 @@ let aggregation_source_check ctx at ~element_type ~subject ~kind ~ranged e =
        | None -> [])
       @
       let reading = source_reading ctx ~element_type ~subject ~kind ~ranged a in
-      let kn = match value_fold_name kind with Some k -> k | None -> "AANTAL" in
       (match reading with
        | Src_role_under_value_fold ->
+           (* the sentence ref, the ASP backend and the Drools loader share
+              since the L2 fix round, so a refusal reads the same in all four *)
            [ v "WF-093" at
-               ("the fold source '" ^ a ^ "' names a role of the fold subject and no attribute \
-                of the element type '" ^ element_type
-              ^ "': it is a COUNT source, which yields the linked instances, and only AANTAL \
-                 reads those — it cannot be the source of this " ^ kn ^ " aggregation") ]
+               (Printf.sprintf
+                  "value aggregation over %S, which is no attribute of %S: a value fold reads an \
+                   attribute per contributor, and a role name is a count source only a count folds"
+                  a element_type) ]
        | Src_count_of_member ->
            [ v "WF-093" at
                ("the source of this AANTAL aggregation reads '" ^ a

@@ -43,7 +43,10 @@ red case and no other negatief changed a verdict.
 Since L2 WF-096 is retired (its count half went into WF-093), so this
 mutant no longer reaches the witness. Measured in the L2 fix round
 (2026-09-24) over golden, rood, negatief and the parity zone (718
-documents): exactly one document moves, `wf093-aantalgevulde-wrat`, whose
-WF-093 message then names the kind `AANTAL` instead of `AANTAL_GEVULDE`; no
-document changes its verdict, and this one keeps its WF-037 line, which the
-kind-general facet arm of WF-037 carries.
+documents): exactly one document moved, `wf093-aantalgevulde-wrat`, whose
+WF-093 message then named the kind `AANTAL` instead of `AANTAL_GEVULDE`; no
+document changed its verdict, and this one kept its WF-037 line, which the
+kind-general facet arm of WF-037 carries. Later in the same round WF-093's
+message became the sentence the executors share, which names no kind, so
+no check reads the list any more: measured again, the mutant moves no
+report of the 718.

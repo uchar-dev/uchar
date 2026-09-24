@@ -1,1 +1,1 @@
-it is a COUNT source, which yields the linked instances, and only AANTAL reads those
+value aggregation over "vondsten", which is no attribute of "Vondst": a value fold reads an attribute per contributor
