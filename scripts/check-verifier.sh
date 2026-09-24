@@ -75,8 +75,10 @@ EXPECTED_MIN_NEGATIEF=350   # 2026-09-10: measured 350 (corpus/negatief/**/ir.js
 # expect.txt takes the arm pin of a rewritten witness with it, and its directory keeps passing on
 # the rule number alone. Measured at the L2 landing: every rewritten or replaced witness of the
 # reference layer carries one. Raised in the L2 fix round (84 -> 91): the restored WF-046 witness,
-# the WF-102 (c) witness whose message L2 changed, and five witnesses added after the lens.
-EXPECTED_MIN_EXPECT=91      # 2026-09-24: measured 91 (corpus/negatief/*/expect.txt)
+# the WF-102 (c) witness whose message L2 changed, and five witnesses added after the lens. Raised
+# at L3 (91 -> 157): every rewritten witness of the type-system stamp list and every date witness
+# whose rule reads the precision pins its arm (60), and so do the six witnesses of the new arms.
+EXPECTED_MIN_EXPECT=157     # 2026-09-24: measured 157 (corpus/negatief/*/expect.txt)
 
 # check 2: golden dumps — and the red corpus's documents, whose faults
 # are behavioural, never well-formedness — are verifier-clean.
