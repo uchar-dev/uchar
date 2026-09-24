@@ -75,7 +75,7 @@
               },
               "date": {
                 "node": "ContextValue",
-                "name": "rekendatum",
+                "name": "EvaluationDate",
                 "type": {
                   "node": "Date",
                   "precision": "day"
