@@ -1418,7 +1418,7 @@ public final class IrLoader {
         if (eenBron && fk != Expr.FunctieKind.TOTAAL && !n.has("sourceRole") && !n.has("sourcePath"))
             throw new Documentfout(p, BEREIK_ONTBREEKT);
         // IR-SPEC ch. 4.3 / WF-102: a MULTI-STEP fold-source range. Read VERBATIM — the full ordered list of
-        // RolBinding steps, nothing derived from the presentation strings and nothing re-derived from the endpoint
+        // RoleBinding steps, nothing derived from the presentation strings and nothing re-derived from the endpoint
         // type PAIR. That is the whole point of the field: a by-pair search binds a coincidental DIRECT relation
         // between subject and element type and folds the WRONG set, which is exactly what this executor did when
         // the field was dropped (measured on jutterswet-vondstketen: 5,00 where the sentence says 3,00, with ref
