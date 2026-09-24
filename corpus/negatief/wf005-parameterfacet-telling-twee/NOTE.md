@@ -11,10 +11,11 @@ A parameter's facet has count 1 while `RUNTIME-SEMANTICS.md` ch. 3.12 leaves
 multi-period grids open. No executor evaluates a parameter's count: `ref` and
 the ASP backend take the granularity alone and replay the host's case on this
 document unchanged (measured 2026-09-24: `oracle: PASS (2 expectations)`,
-`clingo: PASS (2 expectations)`), and the Drools loader refuses a count other
-than 1 by name ("this backend carries a parameter's timeline of one period").
-So two executors treated a two-period facet as a one-period one and the third
-refused it, while the verifier passed it. The sibling
+`clingo: PASS (2 expectations)`), and the Drools loader refused a count other
+than 1 as a form it does not carry. So two executors treated a two-period
+facet as a one-period one and the third refused it, while the verifier passed
+it. Since this arm the Drools loader refuses the document in the verifier's
+own sentence, at the same pointer. The sibling
 `wf005-parameterfacet-telling-nul` pins the count below 1.
 
 The document is `corpus/golden/anchor/jutterswet-penningvintage` with the
