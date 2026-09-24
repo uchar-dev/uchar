@@ -1,7 +1,7 @@
 Violates WF-081 (`spec/IR-SPEC.md` ch. 4.1): a number variant spelled with a
 decimal comma, `{"number": "12,50"}`.
 
-    WF-081 FAIL /rules/resolvedRegels/1/versions/0/value/rechts/value: numeric
+    WF-081 FAIL /rules/rules/1/versions/0/value/right/value: numeric
     literal lexeme '12,50' is not a number of the case format (an optional '-',
     digits, an optional '.' and digits, or a rational a/b whose denominator has
     no leading zero — ch. 4.1)

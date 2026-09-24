@@ -4,7 +4,7 @@ with it, a range. The union's selections carry the population and the
 relation, one set per selection; the count's own source is a second claim on
 one node, and nothing decides which of the two a consumer should read.
 
-    WF-110 FAIL /rules/resolvedRegels/0/versions/0/value: a count over an
+    WF-110 FAIL /rules/rules/0/versions/0/value: a count over an
     instance-set union names no source of its own, and this node carries
     elementType + sourceRole: the union's selections carry the population, the
     relation and the subselection, one set per selection, so a source here is a

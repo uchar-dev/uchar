@@ -7,8 +7,8 @@ unchanged — the `m` unit, both declared attributes, the rule, the literal
     WF-092 FAIL /model/unitSystems/0/units/1: unit 'km' names
     canonical unit 'm' but carries no conversion factor into it: a
     half-filled conversion pair is not a unit (both fields, or neither)
-    WF-092 FAIL /rules/resolvedRegels/0/versions/0/value/type/unit: unit 'km' …
-    WF-092 FAIL /rules/resolvedRegels/0/versions/0/value/links/type/unit: unit
+    WF-092 FAIL /rules/rules/0/versions/0/value/type/unit: unit 'km' …
+    WF-092 FAIL /rules/rules/0/versions/0/value/left/type/unit: unit
     'km' …
 
 Why it has to exist: no neighbouring rule can reach this shape. WF-009 walks

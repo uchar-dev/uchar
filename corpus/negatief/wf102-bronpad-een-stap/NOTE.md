@@ -3,7 +3,7 @@
 Violates **WF-102 (b)** (`spec/IR-SPEC.md` ch. 4.3): a one-step range spelled
 as a path.
 
-    WF-102 FAIL /rules/resolvedRegels/0/versions/0/value/sourcePath: a
+    WF-102 FAIL /rules/rules/0/versions/0/value/sourcePath: a
     sourcePath carries at least TWO steps, found 1 — the one-step range is
     spelled sourceRole
 

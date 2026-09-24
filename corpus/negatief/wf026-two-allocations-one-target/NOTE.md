@@ -1,7 +1,7 @@
 Violates WF-026 (`spec/IR-SPEC.md` ch. 3.2): two allocations writing the
 same (type, attribute) target.
 
-    WF-026 FAIL /rules/verdelingen/0/versions/0: two allocations write target
+    WF-026 FAIL /rules/allocations/0/versions/0: two allocations write target
     (Jutter, aantal aangemelde vondsten)
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (i).** As

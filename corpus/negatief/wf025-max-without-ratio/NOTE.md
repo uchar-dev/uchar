@@ -1,7 +1,7 @@
 Violates WF-025 (`spec/IR-SPEC.md` ch. 3.2): a per-recipient maximum without
 a ratio attribute.
 
-    WF-025 FAIL /rules/verdelingen/0/versions/0: maximum requires a ratio
+    WF-025 FAIL /rules/allocations/0/versions/0: maximum requires a ratio
     attribute
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (i).** As

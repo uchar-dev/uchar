@@ -8,7 +8,7 @@ typed `AttribuutRef`, so WF-073 and WF-074 have nothing to say — each
 crosses a use site against the domain it names, never against the
 declaration the value enters.
 
-    WF-090 FAIL /rules/resolvedRegels/2/versions/0: a value of the struct domain
+    WF-090 FAIL /rules/rules/2/versions/0: a value of the struct domain
     'logboek' is assigned to a target of the struct domain 'dossier'
 
 Why it has to exist: this is the flank the use-site-declaration-identity

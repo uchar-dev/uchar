@@ -2,7 +2,7 @@ Violates WF-030 (`spec/IR-SPEC.md` ch. 3.6): a uniqueness key that is no
 declared attribute of its source's object type — `vondstnummers`, the declared
 plural of the attribute `vondstnummer` of `Vondst`.
 
-    WF-030 FAIL /rules/uniciteiten/0/versions/0/sources/0/keys/0: key
+    WF-030 FAIL /rules/uniquenesses/0/versions/0/sources/0/keys/0: key
     'vondstnummers' is not a declared attribute of 'Vondst'
 
 **Why the key must resolve.** A key names the attribute whose values the

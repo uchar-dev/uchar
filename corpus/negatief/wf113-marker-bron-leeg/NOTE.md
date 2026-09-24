@@ -2,8 +2,8 @@ Violates WF-113 (b) (`spec/IR-SPEC.md` ch. 2): an `Onopgelost` marker whose
 `bron` is the empty string, beside a second marker that the document's one
 `WARNING` accounts for.
 
-    WF-113 FAIL /rules/resolvedRegels/0/versions/0/condition: Onopgelost marker
-    whose bron is blank: blank counts as absent, since nearly every message
+    WF-113 FAIL /rules/rules/0/versions/0/condition: Unresolved marker whose
+    source snippet is blank: blank counts as absent, since nearly every message
     contains it and a message about another marker would account for this one
 
 The document of `wf113-marker-bron-null`, with `"bron": ""` on the left marker

@@ -2,7 +2,7 @@ Violates WF-022 (`spec/IR-SPEC.md` ch. 3.1), the member-kind arm in its first
 direction: a rule version carries the `presentation` tag `GELIJKSTELLING`, and
 its target `penninggerechtigd` is a characteristic of `Jutter`.
 
-    WF-022 FAIL /rules/resolvedRegels/0/versions/0/target: a version with a
+    WF-022 FAIL /rules/rules/0/versions/0/target: a version with a
     presentation or with initialisation true writes an attribute, so its target
     MUST name one, and 'penninggerechtigd' is a characteristic of 'Jutter'
 

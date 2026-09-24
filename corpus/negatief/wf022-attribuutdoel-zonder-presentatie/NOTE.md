@@ -2,7 +2,7 @@ Violates WF-022 (`spec/IR-SPEC.md` ch. 3.1), the member-kind arm in its second
 direction: a rule version carries neither a `presentation` tag nor
 `initialisation` true, and its target `meldloon` is an attribute of `Vondst`.
 
-    WF-022 FAIL /rules/resolvedRegels/0/versions/0/target: a version without a
+    WF-022 FAIL /rules/rules/0/versions/0/target: a version without a
     presentation and without initialisation attributes a characteristic, so its
     target MUST name one, and 'meldloon' is an attribute of 'Vondst'
 

@@ -3,9 +3,9 @@ an allocation (unique across all NAMED forms — widened 2026-09-12 from the
 ch. 3 rule forms alone to the ch. 6.1 defaults groups as well; this case is
 the arm between two ch. 3 forms).
 
-    WF-020 FAIL /rules/resolvedRegels/0: name 'Kenmerktoekenning jutter
+    WF-020 FAIL /rules/rules/0: name 'Kenmerktoekenning jutter
     penninggerechtigd' collides with 'Kenmerktoekenning jutter
-    penninggerechtigd' in verdelingen (unique across all named forms)
+    penninggerechtigd' in allocations (unique across all named forms)
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (i).** The allocation
 carried no source type and no recipient role. Since L2 the recipient role is

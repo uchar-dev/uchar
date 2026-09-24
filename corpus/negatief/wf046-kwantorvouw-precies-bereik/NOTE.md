@@ -12,7 +12,7 @@ kleur ongelijk aan 7". `kleur` is input only; the range is the `opvolging`
 relation that the creation fills, and every minted opvolger counts (a leeg
 kleur is ongelijk aan 7).
 
-    WF-046 FAIL /rules/objectCreaties/0/versions/0: negative dependency edge on
+    WF-046 FAIL /rules/objectCreations/0/versions/0: negative dependency edge on
     a cycle: werf een opvolger reads what werf een opvolger produces while werf
     een opvolger is reachable from it (no strata exist)
 

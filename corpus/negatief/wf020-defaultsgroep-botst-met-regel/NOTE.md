@@ -6,7 +6,7 @@ name of the `Rule` in the same document.
 
     WF-020 FAIL /rules/prioritizedDefaults/0: name 'penninggerechtigd tenzij
     uitgesloten' collides with 'penninggerechtigd tenzij uitgesloten' in
-    resolvedRegels (unique across all named forms)
+    rules (unique across all named forms)
 
 The CROSS-KIND shape, and the reason WF-020's name list grew rather than a
 new number being minted: uniqueness of form names is one property, and it

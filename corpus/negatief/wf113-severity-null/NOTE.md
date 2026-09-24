@@ -1,7 +1,7 @@
 Violates WF-113 (a) (`spec/IR-SPEC.md` ch. 2): a diagnostic whose `severity` is
 null.
 
-    WF-113 FAIL /diagnostics/0/severity: diagnostic without a severity: the one wire severity is WARNING
+    WF-113 FAIL /diagnostics/0/severity: diagnostic without a severity: the one wire severity is warning
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-vondstverjaring/ir.json`:
 the golden unchanged, plus one entry in `diagnostics` with `"severity": null`,

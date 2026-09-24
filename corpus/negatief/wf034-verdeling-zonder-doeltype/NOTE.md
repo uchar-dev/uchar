@@ -1,7 +1,7 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2) that
 names no target object type.
 
-    WF-034 FAIL /rules/verdelingen/0/versions/0/targetType: allocation without a
+    WF-034 FAIL /rules/allocations/0/versions/0/targetType: allocation without a
     target object type: it resolves against no declaration
 
 The empty-reference class of the earlier waves, one field further along, and

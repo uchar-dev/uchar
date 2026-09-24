@@ -14,7 +14,7 @@ fills, so only the matrix can close the cycle: merk is the number of a
 Wachter's opvolgers, derived by the rule "merk van een wachter" from what
 the creation mints.
 
-    WF-046 FAIL /rules/objectCreaties/0/versions/0: negative dependency edge on
+    WF-046 FAIL /rules/objectCreations/0/versions/0: negative dependency edge on
     a cycle: werf een opvolger reads what merk van een wachter produces while
     merk van een wachter is reachable from it (no strata exist)
 

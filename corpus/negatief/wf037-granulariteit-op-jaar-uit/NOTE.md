@@ -2,7 +2,7 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.6; the `BuiltinCall` table of
 ch. 4.3): a `granularity` facet on a builtin whose kind does not bucket — the
 `JAAR_UIT` call of a rule value carrying `"granularity": "JAAR"`.
 
-    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: granularity facet on
+    WF-037 FAIL /rules/rules/0/versions/0/value: granularity facet on
     a non-bucketing kind
 
 **Why the facet names nothing here.** A bucket is the period into which

@@ -4,8 +4,8 @@ Violates WF-112 (`spec/IR-SPEC.md` ch. 4.6) at DEPTH: the time window is
 the only member of an `ALLE` composite, and that composite is a member of
 a `GEEN` composite.
 
-    WF-112 FAIL /rules/resolvedRegels/0/versions/0/condition: a time window
-    under GEEN or a counting quantifier: …
+    WF-112 FAIL /rules/rules/0/versions/0/condition: a time window
+    under none or a counting quantifier: …
 
 Derived from `corpus/negatief/wf112-periodevenster-tellende-kwantor`: the
 window member there is wrapped in `ALLE [ … ]`. The inner `ALLE` carries

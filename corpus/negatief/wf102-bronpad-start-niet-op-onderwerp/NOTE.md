@@ -3,7 +3,7 @@
 Violates **WF-102 (d)** (`spec/IR-SPEC.md` ch. 4.3), the FIRST join: the path
 does not start at the fold subject.
 
-    WF-102 FAIL /rules/resolvedRegels/0/versions/0/value/sourcePath/0: the
+    WF-102 FAIL /rules/rules/0/versions/0/value/sourcePath/0: the
     opposite role 'bergende boot' fills 'Boot', but this step starts at 'Jutter'
     (the fold subject) — a sourcePath is a connected walk
 

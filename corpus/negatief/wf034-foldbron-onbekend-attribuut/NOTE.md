@@ -4,7 +4,7 @@ written) names the attribute `bestaatniet`, which no declaration carries. A
 value fold's source reads an attribute of each contributor, and this one
 resolves against nothing.
 
-    WF-034 FAIL /rules/resolvedRegels/1/versions/0/value/arguments/0: 'bestaatniet'
+    WF-034 FAIL /rules/rules/1/versions/0/value/arguments/0: 'bestaatniet'
     is not a declared attribute of 'Jutter': a value fold's source reads an
     attribute of each contributor
 

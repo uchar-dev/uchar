@@ -3,7 +3,7 @@ the doel is a bound object only for a check that carries no whole-period
 qualifier. This guard carries one ("gedurende het gehele jaar gehesen"), so the
 anker is the only object bound and `Sein` names none.
 
-    WF-109 FAIL /rules/feitCreaties/0/versions/0/condition/eigenaar: the
+    WF-109 FAIL /rules/factCreations/0/versions/0/condition/host: the
     characteristic check is hosted on 'Sein', which no object bound here can be:
     this position binds the subject 'Kustvak'
 
@@ -42,8 +42,8 @@ and a recipe that claimed three clean exits would be false:
 
 - **drop the qualifier** — `verifier: PASS`. The bare doel host, which is the
   golden's own shape. This is the one direction that clears the document;
-- **host it on `Kustvak`** — `WF-043 FAIL /rules/feitCreaties/0/versions/0/condition:
-  whole-period qualifier on a non-time-dependent characteristic`. The host is
+- **host it on `Kustvak`** — `WF-043 FAIL /rules/factCreations/0/versions/0/condition:
+  wholePeriod qualifier on a non-time-dependent characteristic`. The host is
   the DECLARATION key (WF-100, ch. 4.6 (q1)), and `gehesen` is time-dependent on
   `Sein` alone; move the key to `Kustvak` and the qualifier sits on a scalar
   characteristic. WF-109 goes silent — the anker satisfies the host — and
@@ -52,7 +52,8 @@ and a recipe that claimed three clean exits would be false:
   host absent the key is the enclosing subject, which is the anker.
 
 So the qualifier and the host are entangled here rather than independent, and
-the document has exactly one clean neighbour. Measured 2026-09-20, all three.
+the document has exactly one clean neighbour. Measured 2026-09-20, all three,
+and again on the L5 wire (2026-09-25).
 
 **Re-weighed 2026-09-23 (card `drl-periode-zink`): the fence stays.** The card
 could either wire the DRL-text branch's whole-period lowering to the pattern it

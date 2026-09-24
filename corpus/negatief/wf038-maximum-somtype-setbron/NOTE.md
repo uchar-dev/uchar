@@ -5,8 +5,8 @@ declared with the sum-type domain `stand`. `SumType` is equality-only by
 the ch. 2.4 orderability paragraph, so the greatest contributor is not
 defined.
 
-    WF-038 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: operand of
-    the MAXIMUM ordering fold is sumtype, must be a number or a date
+    WF-038 FAIL /rules/rules/0/versions/0/value/arguments/0: operand of
+    the maximum ordering fold is sumtype, must be a number or a date
 
 Why it has to exist beside the other three: the four ordering kinds are
 one family in the rule but not in the executors, and the four cases

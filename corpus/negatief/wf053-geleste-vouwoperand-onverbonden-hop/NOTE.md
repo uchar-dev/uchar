@@ -5,10 +5,10 @@ bindings. A read without bindings is the subject's own read, so its
 `objecttype` is the subject type; `Baken` names a type only a navigation
 reaches, and no fact type relates `Vondst` to `Baken` at all.
 
-    WF-053 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/1: an
-    attribute reference without navigation bindings is the subject's own read,
-    so its objecttype is the subject type 'Vondst' — 'Baken' names another type,
-    which only a navigation reaches
+    WF-053 FAIL /rules/rules/0/versions/0/value/arguments/1: an attribute
+    reference without a path is the subject's own read, so its subjectType is
+    the subject type 'Vondst' — 'Baken' names another type, which only a
+    navigation reaches
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (i).** Until L2 the read
 was spelled without a written hop and the verifier derived its route from

@@ -2,7 +2,7 @@ Violates WF-114 (`spec/IR-SPEC.md` ch. 4.1): a `Literal` whose value variant
 is not the one its type names — the value `{"date": "2026-03-15"}` under a
 `Date` of millisecond precision, which names `dateTime`.
 
-    WF-114 FAIL /rules/resolvedRegels/0/versions/0/condition/rechts/value:
+    WF-114 FAIL /rules/rules/0/versions/0/condition/right/value:
     literal value is a date value but its type is a millisecond-precision Date:
     the variant is the one the type names
 

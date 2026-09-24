@@ -3,7 +3,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **dimension-cell read**
 one dimensioned attribute; `attribuut` is where that attribute is named, so
 an empty one resolves against no declaration.
 
-    WF-034 FAIL /rules/resolvedRegels/0/versions/0/value: dimension-cell read
+    WF-034 FAIL /rules/rules/0/versions/0/value: dimension-cell read
     without an attribute reference: it resolves against no declaration
 
 Why nothing else stood in for it: the cell arm resolves only through the

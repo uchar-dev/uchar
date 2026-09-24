@@ -5,8 +5,8 @@ enumeration `Kust`. An ordering fold keeps the least contributor, and
 `Enumeration` is equality-only by the ch. 2.4 orderability paragraph —
 the fold asks for an order the element type does not have.
 
-    WF-038 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: operand of
-    the MINIMUM ordering fold is enumeration, must be a number or a date
+    WF-038 FAIL /rules/rules/0/versions/0/value/arguments/0: operand of
+    the minimum ordering fold is enumeration, must be a number or a date
 
 Why it has to exist: the set-source form spells its contributors as one
 argument — the set source of a fold that carries a range — whose type is

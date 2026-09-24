@@ -4,7 +4,7 @@ of the subject `Jutter` names `vondsten` as its source — a role of the fold
 subject, and no attribute of the element type. `EERSTE` reads a value on each
 contributor; a count source hands it the linked instances.
 
-    WF-093 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: value
+    WF-093 FAIL /rules/rules/0/versions/0/value/arguments/0: value
     aggregation over "vondsten", which is no attribute of "Vondst": a value fold
     reads an attribute per contributor, and a role name is a count source only a
     count folds

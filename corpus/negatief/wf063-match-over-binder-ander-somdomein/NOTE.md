@@ -4,9 +4,9 @@ Violates WF-063 (`spec/IR-SPEC.md` ch. 4.7) through a binder: a `Let` binds
 `oordeel`. A binder read is typed by its binder's declaration — here the
 value it is bound to — so the arms are crossed against `beschikking`.
 
-    WF-063 FAIL /rules/resolvedRegels/0/versions/0/value/body: arm 'Goedgekeurd'
+    WF-063 FAIL /rules/rules/0/versions/0/value/body: arm 'Goedgekeurd'
     is not a declared constructor of the sum type
-    WF-063 FAIL /rules/resolvedRegels/0/versions/0/value/body: arm 'Verworpen'
+    WF-063 FAIL /rules/rules/0/versions/0/value/body: arm 'Verworpen'
     is not a declared constructor of the sum type
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-063, the rule its

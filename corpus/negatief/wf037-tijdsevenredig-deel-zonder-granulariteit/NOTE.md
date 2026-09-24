@@ -2,7 +2,7 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.6; the `BuiltinCall` table of
 ch. 4.3): a bucketing builtin without its bucket — a `TIJDSEVENREDIG_DEEL`
 call that carries no `granularity`.
 
-    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: bucketing builtin
+    WF-037 FAIL /rules/rules/0/versions/0/value: bucketing builtin
     without a granularity
 
 **Why the facet is required.** `TIJDSEVENREDIG_DEEL` and `AANTAL_DAGEN_IN`

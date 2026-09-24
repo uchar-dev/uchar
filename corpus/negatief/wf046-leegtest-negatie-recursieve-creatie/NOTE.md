@@ -12,10 +12,10 @@ Wachter is niet gevuld". The creation writes the successor's rang and the
 `opvolging` link, which the rule reads; the rule writes the merk that the
 creation reads.
 
-    WF-046 FAIL /rules/objectCreaties/0/versions/0: negative dependency edge on
+    WF-046 FAIL /rules/objectCreations/0/versions/0: negative dependency edge on
     a cycle: werf de opvolger reads what merk van een wachter produces while
     merk van een wachter is reachable from it (no strata exist)
-    WF-046 FAIL /rules/resolvedRegels/0/versions/0: negative dependency edge on
+    WF-046 FAIL /rules/rules/0/versions/0: negative dependency edge on
     a cycle: merk van een wachter reads what werf de opvolger produces while
     werf de opvolger is reachable from it (no strata exist)
 

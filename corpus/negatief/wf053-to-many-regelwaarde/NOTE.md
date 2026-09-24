@@ -5,7 +5,7 @@ to-many. A rule value is one value; a to-many step needs an aggregation,
 never a silent first pick. `wf053-to-many-hop-in-scalar` pins the same
 position on another model.
 
-    WF-053 FAIL /rules/resolvedRegels/0/versions/0/value: hop 0 reaches the
+    WF-053 FAIL /rules/rules/0/versions/0/value: hop 0 reaches the
     to-many role 'vondst' in a scalar slot — a to-many step needs an
     aggregation, never a silent first pick
 

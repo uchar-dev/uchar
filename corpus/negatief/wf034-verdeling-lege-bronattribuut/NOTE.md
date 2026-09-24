@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2)
 whose source attribute is *present but blank*. The field is there, it is a
 string, and it names nothing.
 
-    WF-034 FAIL /rules/verdelingen/0/versions/0/sourceAttribute: sourceAttribute
+    WF-034 FAIL /rules/allocations/0/versions/0/sourceAttribute: sourceAttribute
     is present but empty: an attribute name that names nothing resolves against
     no declaration
 

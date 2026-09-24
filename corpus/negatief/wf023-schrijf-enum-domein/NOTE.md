@@ -7,7 +7,7 @@ faithful to `Kust`, so WF-088 is silent). A second rule reads `vaarwater`
 faithfully (scrutinee typed `Vaarwater`, arms `Wad`/`Zeegat`/`Ruimzee`),
 so WF-089 is rightly silent too.
 
-    WF-023 FAIL /rules/resolvedRegels/0/versions/0: a value of the enumeration
+    WF-023 FAIL /rules/rules/0/versions/0: a value of the enumeration
     domain 'Kust' is assigned to a target of the enumeration domain 'Vaarwater'
 
 Why it has to exist: before the domain clause, WF-023 compared FAMILIES

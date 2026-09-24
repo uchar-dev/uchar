@@ -3,7 +3,7 @@ left operand reads `Vondst.gewicht` from the subject `Jutter` through the
 to-many role `vondst` of `vondstaanmelding`. An arithmetic operand is one
 value; a to-many step there needs an aggregation.
 
-    WF-053 FAIL /rules/resolvedRegels/0/versions/0/value/links: hop 0 reaches
+    WF-053 FAIL /rules/rules/0/versions/0/value/left: hop 0 reaches
     the to-many role 'vondst' in a scalar slot — a to-many step needs an
     aggregation, never a silent first pick
 

@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a `ParameterReference` that names
 no parameter. A parameter reference resolves through exactly one field; with
 it absent the node reads nothing at all.
 
-    WF-034 FAIL /rules/resolvedRegels/0/versions/0/condition/rechts: parameter
+    WF-034 FAIL /rules/rules/0/versions/0/condition/right: parameter
     reference without a parameter name: it resolves against no declaration
 
 Why the existing WF-034 parameter arm does not cover it: that arm reports a

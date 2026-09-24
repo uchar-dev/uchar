@@ -4,9 +4,9 @@ maximum annotated `kg`. Only the two bounds carry the foreign unit — the
 base, the clamp's own type and the rule target are `EUR`, so the document
 is well-formed everywhere else and the defect is the unit pair alone.
 
-    WF-099 FAIL /rules/resolvedRegels/0/versions/0/value/minimum: clamp minimum
+    WF-099 FAIL /rules/rules/0/versions/0/value/minimum: clamp minimum
     and base have incompatible units
-    WF-099 FAIL /rules/resolvedRegels/0/versions/0/value/maximum: clamp maximum
+    WF-099 FAIL /rules/rules/0/versions/0/value/maximum: clamp maximum
     and base have incompatible units
 
 Why it has to exist. A clamp restates each bound into the base's unit

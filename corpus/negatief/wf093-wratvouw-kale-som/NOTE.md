@@ -3,7 +3,7 @@ source demands AANTAL (since the L2 landing): a `SOM` over the `Vondst`en of
 the subject `Jutter` names `vondsten` as its source — a role of the fold
 subject, and no attribute of the element type.
 
-    WF-093 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: value
+    WF-093 FAIL /rules/rules/0/versions/0/value/arguments/0: value
     aggregation over "vondsten", which is no attribute of "Vondst": a value fold
     reads an attribute per contributor, and a role name is a count source only a
     count folds

@@ -1,7 +1,7 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2) whose
 source endpoint names an attribute *no declaration carries*.
 
-    WF-034 FAIL /rules/verdelingen/0/versions/0/sourceAttribute: 'bestaatniet'
+    WF-034 FAIL /rules/allocations/0/versions/0/sourceAttribute: 'bestaatniet'
     is not a declared attribute of the source type 'Berging': the allocation's
     sourceAttribute resolves against no declaration
 

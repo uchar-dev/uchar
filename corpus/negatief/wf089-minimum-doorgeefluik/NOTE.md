@@ -7,7 +7,7 @@ with the kind swapped, and it pins that the clause covers the whole
 element-passing family `EERSTE`/`LAATSTE`/`MINIMUM`/`MAXIMUM`, not just
 the two positional folds.
 
-    WF-089 FAIL /rules/resolvedRegels/0/versions/0/value/type: the MINIMUM
+    WF-089 FAIL /rules/rules/0/versions/0/value/type: the minimum
     aggregation is typed with keuzetype domain 'Vaarwater', but operand 0 names
     domain 'Kust'
 

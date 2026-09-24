@@ -2,7 +2,7 @@ Violates WF-047 (`spec/IR-SPEC.md` ch. 2.6; the `sourceRole` row of
 ch. 4.3): a fold-source role binding on a fold that is not an instance fold —
 a `sourceRole` on a listed `LAATSTE` of two operands.
 
-    WF-047 FAIL /rules/resolvedRegels/0/versions/0/value/sourceRole: a
+    WF-047 FAIL /rules/rules/0/versions/0/value/sourceRole: a
     fold-source role binding on a node that is not an instance fold over a
     relation
 

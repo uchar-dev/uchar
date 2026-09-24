@@ -8,8 +8,8 @@ derives `kg` of `Gewicht` for the sum. The node's own `type` carries `KG` of
 system `GEWICHT` (canonical `KG`, factor 1): the same unit under WF-001's
 case-insensitive name resolution, a different spelling of its three names.
 
-    WF-091 FAIL /rules/resolvedRegels/0/versions/0/value/type: unit mismatch:
-    the PLUS composite is typed 'KG' of system 'GEWICHT' (factor 1 to 'KG'), but
+    WF-091 FAIL /rules/rules/0/versions/0/value/type: unit mismatch:
+    the plus composite is typed 'KG' of system 'GEWICHT' (factor 1 to 'KG'), but
     the type derived from its operands is 'kg' of system 'Gewicht' (factor 1 to
     'kg')
 

@@ -1,7 +1,7 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2)
 whose maximum attribute is *present but blank*.
 
-    WF-034 FAIL /rules/verdelingen/0/versions/0/maximumAttribute: maximumAttribute
+    WF-034 FAIL /rules/allocations/0/versions/0/maximumAttribute: maximumAttribute
     is present but empty: an attribute name that names nothing resolves against
     no declaration
 

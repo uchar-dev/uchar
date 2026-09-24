@@ -6,8 +6,8 @@ carries `t` (the same canonical, factor 1000). Every other crossed facet
 agrees, so only the unit differs, and the two units are **convertible**,
 which is what puts the lie beyond WF-035's and WF-023's reach.
 
-    WF-091 FAIL /rules/resolvedRegels/0/versions/0/value/type: unit mismatch:
-    the PLUS composite is typed 't' of system 'Gewicht' (factor 1000 to 'kg'),
+    WF-091 FAIL /rules/rules/0/versions/0/value/type: unit mismatch:
+    the plus composite is typed 't' of system 'Gewicht' (factor 1000 to 'kg'),
     but the type derived from its operands is 'kg' of system 'Gewicht' (factor 1
     to 'kg')
 

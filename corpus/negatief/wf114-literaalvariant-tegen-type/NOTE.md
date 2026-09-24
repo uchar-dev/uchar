@@ -2,7 +2,7 @@ Violates WF-114 (`spec/IR-SPEC.md` ch. 4.1): a `Literal` whose value variant
 is not the one its type names — the value `{"text": "5"}` under the type
 `Number` (with the unit `€`).
 
-    WF-114 FAIL /rules/resolvedRegels/0/versions/0/value/rechts/value: literal
+    WF-114 FAIL /rules/rules/0/versions/0/value/right/value: literal
     value is a text value but its type is a Number: the variant is the one the
     type names
 

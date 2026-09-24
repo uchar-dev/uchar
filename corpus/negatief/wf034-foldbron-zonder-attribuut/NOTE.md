@@ -1,7 +1,7 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **fold-source**
 `AttributeReference` that names no attribute.
 
-    WF-034 FAIL /rules/resolvedRegels/1/versions/0/value/arguments/0: attribute
+    WF-034 FAIL /rules/rules/1/versions/0/value/arguments/0: attribute
     reference on 'Vondst' without an attribute name: it resolves against no
     declaration
 

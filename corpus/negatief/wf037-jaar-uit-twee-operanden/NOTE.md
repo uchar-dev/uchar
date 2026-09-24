@@ -2,7 +2,7 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.6; the `BuiltinCall` table of
 ch. 4.3): a builtin of a one-operand kind with two operands — `JAAR_UIT`
 reading `zijn vondstdatum` twice.
 
-    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: builtin arity 2,
+    WF-037 FAIL /rules/rules/0/versions/0/value: builtin arity 2,
     expected 1
 
 **Why the count is fixed.** The scalar kinds and the date-part extractors

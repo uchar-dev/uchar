@@ -3,9 +3,10 @@ is not one of the two admissible names — `de dagX` where the closed set holds
 `Rekendatum` and `Rekenjaar` (until L4 it held `de dag` as well; see the last
 paragraph).
 
-    WF-098 FAIL /rules/resolvedDagsoorten/0/voorwaarde/onderdelen/0/links/name:
-    context value 'de dagX' is not one of the two admissible names Rekendatum,
-    Rekenjaar: the context-value name is a closed set, spelled byte for byte
+    WF-098 FAIL /rules/dayKindDefinitions/0/condition/parts/0/left/name: context
+    value 'de dagX' is not one of the two admissible names evaluationDate,
+    evaluationYear: the context-value name is a closed set, spelled byte for
+    byte
 
 **Why this is an enumeration and not a resolution.** Nothing in the document
 declares a context value: there is no table for the name to resolve against, so

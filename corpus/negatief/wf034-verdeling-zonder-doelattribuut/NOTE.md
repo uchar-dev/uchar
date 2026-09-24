@@ -3,7 +3,7 @@ that names no target attribute. `targetAttribute` is where every recipient's
 share is written; with the field `null` the write resolves against no
 declaration.
 
-    WF-034 FAIL /rules/verdelingen/0/versions/0/targetAttribute: allocation
+    WF-034 FAIL /rules/allocations/0/versions/0/targetAttribute: allocation
     without a target attribute: it resolves against no declaration
 
 It exists separately from its `sourceAttribute` sibling for the reason the

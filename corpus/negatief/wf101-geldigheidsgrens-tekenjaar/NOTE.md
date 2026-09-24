@@ -3,7 +3,7 @@ bound**: the rule version's `validity.vanaf` reads `+012026-01-01`, the
 sign-prefixed extended-year spelling. It is not the strict `yyyy-mm-dd`
 lexeme, and the document says nothing else wrong.
 
-    WF-101 FAIL /rules/resolvedRegels/0/versions/0/validity/vanaf: validity
+    WF-101 FAIL /rules/rules/0/versions/0/validity/from: validity
     bound '+012026-01-01' is not the ISO form yyyy-mm-dd (fixed field widths,
     valid ranges — ch. 4.1)
 

@@ -4,11 +4,11 @@ Violates WF-110 (`spec/IR-SPEC.md` ch. 4.3), the instance-set union — the
 §5.7 concatenation of subject expressions, landed 2026-09-20 as the source
 of an instance count. Clause (a): the union is admissible under the instance count and nowhere else.
 
-    WF-110 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: an
+    WF-110 FAIL /rules/rules/0/versions/0/value/arguments/0: an
     instance-set union stands where nothing consumes it: the union of subject
     expressions denotes a set of INSTANCES, and the one node that folds
     instances is the instance count — so this node is admissible as the SINGLE
-    argument of an AANTAL aggregation and at no other position (ch. 4.3)
+    argument of a count aggregation and at no other position (ch. 4.3)
 
 The document. The two-selection union as the single operand of
 `ABSOLUTE_WAARDE` — a single-argument BUILTIN, so the arity clause of

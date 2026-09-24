@@ -6,8 +6,8 @@ member of a `GEEN` composite.
 
 Expected verifier report:
 
-    WF-112 FAIL /rules/resolvedRegels/0/versions/0/condition: a time window
-    under GEEN or a counting quantifier: …
+    WF-112 FAIL /rules/rules/0/versions/0/condition: a time window
+    under none or a counting quantifier: …
 
 ## Why the position is ill-formed
 

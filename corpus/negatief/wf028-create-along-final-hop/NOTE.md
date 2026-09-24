@@ -10,7 +10,7 @@ clause.
 A minimal hand-built document on the shape of
 `corpus/golden/anchor/jutterswet-bergingstoezicht/ir.json`.
 
-    WF-028 FAIL /rules/feitCreaties/0/versions/0: the created relation must
+    WF-028 FAIL /rules/factCreations/0/versions/0: the created relation must
     differ from the relation of the final hop
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the

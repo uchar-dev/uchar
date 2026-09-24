@@ -2,7 +2,7 @@ Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) on the family clause: the rule
 writes a read of `Jutter.gewicht`, declared `Number`, into
 `Jutter.etiket`, declared `Tekst` — the mirror of `wf023-text-into-numeric`.
 
-    WF-023 FAIL /rules/resolvedRegels/0/versions/0: a number value is assigned
+    WF-023 FAIL /rules/rules/0/versions/0: a number value is assigned
     to a text target
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-023, the rule its

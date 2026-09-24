@@ -1,9 +1,10 @@
 Violates WF-098 (`spec/IR-SPEC.md` ch. 4.1): a `ContextValue` named `de dag`.
 
     WF-098 FAIL
-    /rules/resolvedDagsoorten/0/voorwaarde/onderdelen/0/links/arguments/0/name:
-    context value 'de dag' is not one of the two admissible names Rekendatum,
-    Rekenjaar: the context-value name is a closed set, spelled byte for byte
+    /rules/dayKindDefinitions/0/condition/parts/0/left/arguments/0/name: context
+    value 'de dag' is not one of the two admissible names evaluationDate,
+    evaluationYear: the context-value name is a closed set, spelled byte for
+    byte
 
 **Why `de dag` is no context value since L4.** Until L4 one node carried the
 two session values and the bound day of a day-kind definition, told apart by

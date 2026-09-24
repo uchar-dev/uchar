@@ -17,7 +17,7 @@ walk_expr's type prologue.
 
 A minimal hand-built document.
 
-    WF-088 FAIL /rules/consistenties/0/versions/0/assertion/rechts/type: enumeration
+    WF-088 FAIL /rules/consistencies/0/versions/0/assertion/right/type: enumeration
     use site disagrees with the declaration of domain 'keurstatus' (the same
     values, in declaration order, required)
 

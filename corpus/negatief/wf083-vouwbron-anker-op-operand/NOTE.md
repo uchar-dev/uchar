@@ -5,8 +5,8 @@ source: the `AANTAL` over the `Vondst`en of the subject `Jutter`, its range
 count source is read on the fold subject: its written role name is the
 subject's relation.
 
-    WF-083 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: fold-source
-    objecttype 'Vondst' is not the fold's anchor 'Jutter' (a count source is
+    WF-083 FAIL /rules/rules/0/versions/0/value/arguments/0: fold-source
+    subjectType 'Vondst' is not the fold's anchor 'Jutter' (a count source is
     read on the fold subject): the executors resolve 'vondsten' against the
     anchor, never against this field, so the two spellings name different
     declarations

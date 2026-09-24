@@ -14,5 +14,5 @@ rather than a second one: with no element type the matrix's subject falls back
 to the outer `Bergingsploeg`, where `dagvergoeding` can only be reached over the
 to-many `berger` role. Admitted ("incidental extra violations are allowed").
 
-Verifier: `WF-108 FAIL /rules/resolvedRegels/0/versions/0/condition/elementObjecttype: quantifier
-fold without an elementObjecttype: the population it ranges over is unnamed`.
+Verifier: `WF-108 FAIL /rules/rules/0/versions/0/condition/elementType: quantifier
+fold without an elementType: the population it ranges over is unnamed`.

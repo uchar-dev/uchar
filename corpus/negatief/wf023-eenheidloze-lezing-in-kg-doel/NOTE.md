@@ -4,7 +4,7 @@ Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) on the unit clause: the rule
 numeric literal (ch. 4.6); a read of a unitless declaration is no literal,
 so the assignment crosses two incompatible units.
 
-    WF-023 FAIL /rules/resolvedRegels/0/versions/0: assignment across
+    WF-023 FAIL /rules/rules/0/versions/0: assignment across
     incompatible units
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-023, the rule its

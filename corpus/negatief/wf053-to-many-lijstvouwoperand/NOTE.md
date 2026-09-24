@@ -5,7 +5,7 @@ through the to-many role `vondst` of `vondstaanmelding`. A listed fold's
 operands are ordinary reads, one value each (§5.8.3); a to-many step there
 needs an aggregation of its own.
 
-    WF-053 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/1: hop 0
+    WF-053 FAIL /rules/rules/0/versions/0/value/arguments/1: hop 0
     reaches the to-many role 'vondst' in a scalar slot — a to-many step needs an
     aggregation, never a silent first pick
 

@@ -3,7 +3,7 @@ Violates WF-070 (`spec/IR-SPEC.md` ch. 4.8): a `MapList` maps over a read of
 with a lambda whose parameter `a` is declared `oordeel`. The parameter of a
 map's function is the source list's element type.
 
-    WF-070 FAIL /rules/resolvedRegels/0/versions/0/value/list/function: lambda
+    WF-070 FAIL /rules/rules/0/versions/0/value/list/function: lambda
     parameter 'a' is sumtype 'oordeel', expected sumtype 'beschikking'
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-070, the rule its

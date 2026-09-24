@@ -6,8 +6,8 @@ sides carry 0 decimals, so WF-007's precision-FORM check passes on either
 spelling — the wholeness flag is the only difference, and it is what gates
 the §5.13 elfproef and the date builtins downstream.
 
-    WF-091 FAIL /rules/resolvedRegels/0/versions/0/value/type: wholeness
-    mismatch: the PLUS composite is typed whole, but the type derived from its
+    WF-091 FAIL /rules/rules/0/versions/0/value/type: wholeness
+    mismatch: the plus composite is typed whole, but the type derived from its
     operands is fractional
 
 Why it has to exist. A composite type is not a copy of one declaration

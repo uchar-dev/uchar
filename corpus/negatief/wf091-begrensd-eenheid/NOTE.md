@@ -4,7 +4,7 @@ makes a clamp return one of three values — the base, the minimum or the
 maximum — all of the base's own type, so the clamp derives its base's type
 whole.
 
-    WF-091 FAIL /rules/resolvedRegels/0/versions/0/value/type: unit mismatch:
+    WF-091 FAIL /rules/rules/0/versions/0/value/type: unit mismatch:
     the clamp is typed 't' of system 'Gewicht' (factor 1000 to 'kg'), but the
     type derived from its base is 'kg' of system 'Gewicht' (factor 1 to 'kg')
 

@@ -2,7 +2,7 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.6; the `BuiltinCall` table of
 ch. 4.3): a builtin of a two-date kind with one operand — a `TIJDSDUUR` that
 keeps `zijn aankomst` and has lost `zijn vertrek`.
 
-    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: builtin arity 1,
+    WF-037 FAIL /rules/rules/0/versions/0/value: builtin arity 1,
     expected 2
 
 **Why the count is fixed.** `TIJDSDUUR` and `ABSOLUTE_TIJDSDUUR` count whole

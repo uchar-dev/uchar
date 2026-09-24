@@ -5,7 +5,7 @@ ch. 6.2): the object creation iterates the `Strandrecht` population and
 creates a `Wrakrecht`, which IS a `Strandrecht` — so every pass hands the
 next pass more subjects and the creation feeds itself.
 
-    WF-045 FAIL /rules/objectCreaties/0/versions/0: dependency cycle through no
+    WF-045 FAIL /rules/objectCreations/0/versions/0: dependency cycle through no
     recursive creation: boek een wrakrecht bij elk strandrecht -> boek een
     wrakrecht bij elk strandrecht
 

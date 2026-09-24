@@ -2,9 +2,10 @@ Violates WF-098 (`spec/IR-SPEC.md` ch. 4.1): a **context value** spelled
 `rekendatum` where the closed set holds `Rekendatum`. One capital, one
 character — the name is admissible up to case and inadmissible on the wire.
 
-    WF-098 FAIL /rules/resolvedRegels/0/versions/0/value/datum/name: context
-    value 'rekendatum' is not one of the two admissible names Rekendatum,
-    Rekenjaar: the context-value name is a closed set, spelled byte for byte
+    WF-098 FAIL /rules/rules/0/versions/0/value/date/name: context value
+    'EvaluationDate' is not one of the two admissible names evaluationDate,
+    evaluationYear: the context-value name is a closed set, spelled byte for
+    byte
 
 **This witness carries the byte-exactness decision** (maintainer decision
 2026-09-10). Its sister

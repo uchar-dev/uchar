@@ -4,7 +4,7 @@ is therefore the binder's — `kg` — while the `Let` node is typed `t` (the
 same canonical unit, factor 1000). A `Let`'s type equals its body's type,
 facet for facet.
 
-    WF-076 FAIL /rules/resolvedRegels/0/versions/0/value/type: the let type
+    WF-076 FAIL /rules/rules/0/versions/0/value/type: the let type
     (number(2 decimals, t)) differs from its body type (number(2 decimals, kg))
     — the let type must equal the body type
 

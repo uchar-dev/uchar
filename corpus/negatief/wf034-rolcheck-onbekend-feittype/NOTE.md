@@ -4,7 +4,7 @@ the fact type `bestaatniet`, which the model does not declare. The node's
 reference is the pair of the fact type and the role, and here its first half
 resolves against nothing.
 
-    WF-034 FAIL /rules/resolvedRegels/0/versions/0/condition/factType: role
+    WF-034 FAIL /rules/rules/0/versions/0/condition/factType: role
     check names fact type 'bestaatniet', which is not declared: the check
     resolves against no declaration
 

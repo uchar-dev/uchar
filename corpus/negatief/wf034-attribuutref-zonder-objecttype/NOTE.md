@@ -3,8 +3,8 @@ names no object type. `objecttype` is the endpoint the attribute's value
 lives on (ch. 4.1a), so a reference without one resolves against no
 declaration at all.
 
-    WF-034 FAIL /rules/resolvedRegels/0/versions/0/condition/links: attribute
-    reference 'aangevoerd gewicht' without an object type: it resolves against
+    WF-034 FAIL /rules/rules/0/versions/0/condition/left: attribute
+    reference 'aangevoerd gewicht' without a subjectType: it resolves against
     no declaration
 
 Why it has to exist: the empty field is not one rule's deferral but a

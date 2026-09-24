@@ -13,7 +13,7 @@ node; the range is the `opvolging` relation that the creation itself fills.
 An opvolger the creation mints has no kleur, and a leeg kleur is ongelijk
 aan 7 (ch. 1.2), so every minted opvolger counts.
 
-    WF-046 FAIL /rules/objectCreaties/0/versions/0: negative dependency edge on
+    WF-046 FAIL /rules/objectCreations/0/versions/0: negative dependency edge on
     a cycle: werf een opvolger reads what werf een opvolger produces while werf
     een opvolger is reachable from it (no strata exist)
 

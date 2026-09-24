@@ -13,7 +13,7 @@ een wachter" writes merk as the number of a Wachter's successors. The fold
 ranges over `ploeg`, which only the case input fills; its matrix reads the
 merk that the rule derives from the creation's own product.
 
-    WF-046 FAIL /rules/objectCreaties/0/versions/0: negative dependency edge on
+    WF-046 FAIL /rules/objectCreations/0/versions/0: negative dependency edge on
     a cycle: werf de opvolger reads what merk van een wachter produces while
     merk van een wachter is reachable from it (no strata exist)
 

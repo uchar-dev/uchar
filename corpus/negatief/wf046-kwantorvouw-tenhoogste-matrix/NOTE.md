@@ -12,7 +12,7 @@ Wachter is kleiner dan 5 en ten hoogste 1 ploeglid van de Wachter heeft een
 merk groter dan 0". The range is the input-only `ploeg` relation; the
 matrix reads the merk the rule derives from the creation's own product.
 
-    WF-046 FAIL /rules/objectCreaties/0/versions/0: negative dependency edge on
+    WF-046 FAIL /rules/objectCreations/0/versions/0: negative dependency edge on
     a cycle: werf een opvolger reads what merk van een wachter produces while
     merk van een wachter is reachable from it (no strata exist)
 

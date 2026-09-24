@@ -3,7 +3,7 @@ decides no member kind: the subject type `Jutter` declares `toelage` twice, once
 as an attribute (a whole `Number`) and once as a characteristic, and a rule
 version writes `toelage`.
 
-    WF-022 FAIL /rules/resolvedRegels/0/versions/0/target: target 'toelage'
+    WF-022 FAIL /rules/rules/0/versions/0/target: target 'toelage'
     names both an attribute and a characteristic of 'Jutter': which member a
     rule writes decides its kind, and this name decides nothing
 

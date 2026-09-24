@@ -8,7 +8,7 @@ element-type arm states. This is the spelling that SHOWED the defect
 instead of describing it: one `ListLiteral` argument (ch. 4.8) under a
 count without an element type.
 
-    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: the count is an
+    WF-037 FAIL /rules/rules/0/versions/0/value: the count is an
     INSTANCE fold and MUST carry an element type: without one its argument is no
     fold source at all — and with no argument there is none — so the count has
     no contributors to count, only its operand, whatever that operand holds (ch.

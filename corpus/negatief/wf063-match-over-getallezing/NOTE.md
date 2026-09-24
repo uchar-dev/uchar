@@ -3,7 +3,7 @@ Match(tarief)` matches over a read of the numeric attribute `tarief`. A
 match ranges over a keuzetype — a sum type or an enumeration — and a number
 is neither.
 
-    WF-063 FAIL /rules/resolvedRegels/0/versions/0/value/scrutinee: match
+    WF-063 FAIL /rules/rules/0/versions/0/value/scrutinee: match
     scrutinee is number, which is no keuzetype (a sum type or an enumeration)
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-063, the rule its

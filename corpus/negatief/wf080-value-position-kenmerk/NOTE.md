@@ -26,7 +26,7 @@ the verifier's static type of this read is none at all (`expr_type` goes
 through `resolved_attr_datatype`, which resolves attributes only) and WF-023
 has no type to cross. The report is the one WF-080 line:
 
-    WF-080 FAIL /rules/resolvedRegels/0/versions/0/value: 'penninggerechtigd' is
+    WF-080 FAIL /rules/rules/0/versions/0/value: 'penninggerechtigd' is
     a characteristic of 'Jutter', not an attribute — a characteristic endpoint
     is ill-formed in a value position
 

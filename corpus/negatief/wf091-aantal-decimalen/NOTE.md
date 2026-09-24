@@ -4,8 +4,8 @@ ch. 2.3 makes a count a whole, non-negative, unitless number, and that
 derivation reads no operand at all — a count's type is a constant of the
 operator.
 
-    WF-091 FAIL /rules/resolvedRegels/0/versions/0/value/type: decimals
-    mismatch: the AANTAL aggregation is typed 2 decimals, but the type a count
+    WF-091 FAIL /rules/rules/0/versions/0/value/type: decimals
+    mismatch: the count aggregation is typed 2 decimals, but the type a count
     derives is 0 decimals
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (m).** (First stamped

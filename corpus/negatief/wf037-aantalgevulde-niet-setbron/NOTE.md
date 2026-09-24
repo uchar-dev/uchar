@@ -5,7 +5,7 @@ literal. The filled count reads a VALUE on each contributor and tests it for
 presence; its source is the set source, an attribute reference read per
 contributor, and a literal is no such read.
 
-    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: the filled count's
+    WF-037 FAIL /rules/rules/0/versions/0/value: the filled count's
     single argument MUST be its set source, an attribute reference read on each
     contributor: this kind reads a VALUE per contributor and tests that value
     for presence (ch. 4.3)

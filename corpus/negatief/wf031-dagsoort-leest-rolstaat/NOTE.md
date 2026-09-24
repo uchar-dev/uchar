@@ -4,9 +4,9 @@ membership — the `RoleMembership` check that the subject fills the role
 fact-base state and falls outside WF-031's closed admission list (dates,
 date components, eerste paasdag, literals, parameters and other day kinds).
 
-    WF-031 FAIL /rules/resolvedDagsoorten/0/voorwaarde: day-kind condition
-    reads role membership 'wachtjutter' — a day-kind voorwaarde references
-    only dates, date-components, eerste-paasdag, literals, parameters and
+    WF-031 FAIL /rules/dayKindDefinitions/0/condition: day-kind condition
+    reads role membership 'wachtjutter' — a day-kind condition references
+    only dates, date-components, easterSunday, literals, parameters and
     other day kinds, never derived object state (an attribute or
     characteristic read)
 

@@ -4,7 +4,7 @@ a prioritized-defaults consequence: the `PrioritizedDefaults` on
 consequence is a `Literal` `Noord` of domain `Kust` (`initialisatie:
 true`). A rule reads `vaarwater` faithfully.
 
-    WF-023 FAIL /rules/prioritizedDefaults/0/defaults/0/consequentie: a value of
+    WF-023 FAIL /rules/prioritizedDefaults/0/defaults/0/consequence: a value of
     the enumeration domain 'Kust' is assigned to a target of the
     enumeration domain 'Vaarwater'
 

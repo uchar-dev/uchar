@@ -4,7 +4,7 @@ lambda declares its parameter `d` with the struct domain `dossier`
 `bedrag` of `d`. `bedrag` is a field of `logboek`; a binder read is typed by
 its binder's declaration.
 
-    WF-074 FAIL /rules/resolvedRegels/1/versions/0/value/list/function/body: 'bedrag'
+    WF-074 FAIL /rules/rules/1/versions/0/value/list/function/body: 'bedrag'
     is not a declared field of struct 'dossier'
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-074, the rule its

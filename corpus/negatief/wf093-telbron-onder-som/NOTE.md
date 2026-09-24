@@ -4,7 +4,7 @@ the subject names `vondsten` as its source — a role of the fold subject, and
 no attribute of the element type `Vondst`. Such a source hands the fold the
 linked instances, and a sum reads a value per contributor.
 
-    WF-093 FAIL /rules/resolvedRegels/1/versions/0/value/arguments/0: value
+    WF-093 FAIL /rules/rules/1/versions/0/value/arguments/0: value
     aggregation over "vondsten", which is no attribute of "Vondst": a value fold
     reads an attribute per contributor, and a role name is a count source only a
     count folds

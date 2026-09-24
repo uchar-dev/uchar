@@ -2,7 +2,7 @@ Violates WF-030 (`spec/IR-SPEC.md` ch. 3.6): a uniqueness source that names
 no declared object type — `objectType` `Vondsten`, the declared plural of
 `Vondst`.
 
-    WF-030 FAIL /rules/uniciteiten/0/versions/0/sources/0/objectType: source
+    WF-030 FAIL /rules/uniquenesses/0/versions/0/sources/0/objectType: source
     type 'Vondsten' is not declared
 
 **Why the plural does not name the type.** A source names its object type by

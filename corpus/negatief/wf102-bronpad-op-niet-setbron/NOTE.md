@@ -3,7 +3,7 @@
 Violates **WF-102 (c)** (`spec/IR-SPEC.md` ch. 4.3): a `sourcePath` on a source
 that is not a value fold's SET source.
 
-    WF-102 FAIL /rules/resolvedRegels/0/versions/0/value/sourcePath: a
+    WF-102 FAIL /rules/rules/0/versions/0/value/sourcePath: a
     sourcePath is admissible only as the range of a single-argument VALUE fold's
     set source — a count's range is one step, spelled sourceRole
 

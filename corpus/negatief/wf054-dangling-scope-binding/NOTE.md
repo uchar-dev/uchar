@@ -2,7 +2,7 @@ Violates WF-054 (`spec/IR-SPEC.md` ch. 3.6): a parent-scoped uniqueness
 whose scope binding names the fact type `wijkindeling`, which the model does
 not declare, so the scope resolves against nothing.
 
-    WF-054 FAIL /rules/uniciteiten/0/versions/0/scope: role binding names
+    WF-054 FAIL /rules/uniquenesses/0/versions/0/scope: role binding names
     undeclared fact type 'wijkindeling'
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the

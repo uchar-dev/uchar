@@ -4,7 +4,7 @@ Wad` reads `Berging.vaarwater`, declared as an ENUMERATION of the domain
 `Vaarwater`, and compares it with a literal typed as a SUM TYPE of a domain
 of the same name.
 
-    WF-036 FAIL /rules/resolvedRegels/0/versions/0/condition: equality across
+    WF-036 FAIL /rules/rules/0/versions/0/condition: equality across
     families: enumeration vs sumtype
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-036, the rule its

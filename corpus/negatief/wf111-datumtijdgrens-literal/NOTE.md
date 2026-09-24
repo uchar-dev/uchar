@@ -4,7 +4,7 @@ Violates WF-111's DAY-PRECISION clause (`spec/IR-SPEC.md` ch. 4.6) with a
 literal: the window's `vanaf` is a `Literal` annotated with a `Date` of
 `precision: millisecond`.
 
-    WF-111 FAIL /rules/resolvedRegels/0/versions/0/condition/vanaf: the vanaf
+    WF-111 FAIL /rules/rules/0/versions/0/condition/from: the from
     bound of a time window is a millisecond-precision date: …
 
 Derived from `corpus/golden/jutterswet-premievenster/ir.json`. Only the

@@ -9,9 +9,9 @@ four sibling cases nor the number-versus-date mix of
 milliseconds are two REPRESENTATIONS: the first names a whole day, the
 second a point inside one, and no order runs between them.
 
-    WF-038 FAIL /rules/resolvedRegels/0/versions/0/value: EERSTE orders dates of
+    WF-038 FAIL /rules/rules/0/versions/0/value: first orders dates of
     two precisions (day and millisecond), which share no order
-    WF-038 FAIL /rules/resolvedRegels/1/versions/0/value: LAATSTE orders dates
+    WF-038 FAIL /rules/rules/1/versions/0/value: last orders dates
     of two precisions (day and millisecond), which share no order
 
 Both fold nodes are refused: the document declares one attribute at each

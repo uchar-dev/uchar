@@ -6,8 +6,8 @@ SUBJECT, so its `objecttype` must name the subject. Here it names another
 declared type, and the annotation and the declaration the executors actually
 consult come apart.
 
-    WF-083 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: fold-source
-    objecttype 'Jutter' is not the fold's anchor 'Vondst' (a fold without a
+    WF-083 FAIL /rules/rules/0/versions/0/value/arguments/0: fold-source
+    subjectType 'Jutter' is not the fold's anchor 'Vondst' (a fold without a
     range reads the subject's own attribute): the executors resolve
     'bewaarvergoeding per maand' against the anchor, never against this field,
     so the two spellings name different declarations

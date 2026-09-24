@@ -3,7 +3,7 @@ names no attribute. The pair `objecttype` + `attribuut` is what a reference
 resolves through; with the member name absent it lands on a declared object
 type and reads nothing there.
 
-    WF-034 FAIL /rules/resolvedRegels/0/versions/0/condition/links: attribute
+    WF-034 FAIL /rules/rules/0/versions/0/condition/left: attribute
     reference on 'Jutter' without an attribute name: it resolves against no
     declaration
 

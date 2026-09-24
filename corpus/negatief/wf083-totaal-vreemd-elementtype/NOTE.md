@@ -6,8 +6,8 @@ no `sourcePath`) is the subject's own read, so the type it folds over is the
 subject type, and its `elementType` must name that type (equality in the
 WF-001 form). Here it names another declared type.
 
-    WF-083 FAIL /rules/resolvedRegels/2/versions/0/value/elementType: the
-    elementType 'Vondst' of a TOTAAL without a range is not the fold subject
+    WF-083 FAIL /rules/rules/2/versions/0/value/elementType: the
+    elementType 'Vondst' of a total without a range is not the fold subject
     'Jutter': without a range the fold is the subject's own read, so its
     elementType must name the subject type
 

@@ -2,7 +2,7 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.6; the `arguments` row of the
 `Aggregation` table in ch. 4.3): a value fold with one operand — a listed
 `EERSTE` without `elementType` whose second operand is gone.
 
-    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: value fold with
+    WF-037 FAIL /rules/rules/0/versions/0/value: value fold with
     fewer than two operands
 
 **Why one operand is no fold.** An aggregation folds either the instances its

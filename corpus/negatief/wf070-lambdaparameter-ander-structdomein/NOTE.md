@@ -3,7 +3,7 @@ Violates WF-070 (`spec/IR-SPEC.md` ch. 4.8), the struct side of
 `Jutter.dossiers`, declared as a list of the struct domain `dossier`, with a
 lambda whose parameter `d` is declared `logboek`.
 
-    WF-070 FAIL /rules/resolvedRegels/1/versions/0/value/list/function: lambda
+    WF-070 FAIL /rules/rules/1/versions/0/value/list/function: lambda
     parameter 'd' is struct 'logboek', expected struct 'dossier'
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-070, the rule its

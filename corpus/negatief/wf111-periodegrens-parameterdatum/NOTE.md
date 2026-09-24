@@ -8,7 +8,7 @@ day-precision `Date` type is a date expression. WF-111 does not.
 
 Expected verifier report:
 
-    WF-111 FAIL /rules/resolvedRegels/0/versions/0/condition/vanaf: the vanaf
+    WF-111 FAIL /rules/rules/0/versions/0/condition/from: the from
     bound of a time window is the parameter 'peildatum' — …
 
 ## Where the rule comes from

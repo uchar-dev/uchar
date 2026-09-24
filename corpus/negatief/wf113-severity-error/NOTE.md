@@ -1,7 +1,7 @@
 Violates WF-113 (a) (`spec/IR-SPEC.md` ch. 2): a diagnostic with severity
 `ERROR`.
 
-    WF-113 FAIL /diagnostics/0/severity: severity ERROR is not a wire severity: an ERROR means the producer refused to write the document, so a document that was written carries none
+    WF-113 FAIL /diagnostics/0/severity: severity error is not a wire severity: an error means the producer refused to write the document, so a document that was written carries none
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-vondstverjaring/ir.json`:
 the golden unchanged, plus one entry in `diagnostics` — severity `ERROR`, a

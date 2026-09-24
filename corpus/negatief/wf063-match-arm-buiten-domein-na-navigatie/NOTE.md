@@ -5,9 +5,9 @@ one-step binding. The arms `Noord`, `Zuid` and `West` belong to the domain
 `Kust`: a navigated read is typed by the attribute it lands on, so the arms
 are crossed against `Vaarwater`.
 
-    WF-063 FAIL /rules/resolvedRegels/0/versions/0/value: arm 'Noord' is not a
+    WF-063 FAIL /rules/rules/0/versions/0/value: arm 'Noord' is not a
     declared enumeration value of the enumeration domain
-    WF-063 FAIL /rules/resolvedRegels/0/versions/0/value: arm 'Zuid' is not a
+    WF-063 FAIL /rules/rules/0/versions/0/value: arm 'Zuid' is not a
     declared enumeration value of the enumeration domain
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-063, the rule its

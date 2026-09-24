@@ -5,7 +5,7 @@ in the third **rule kind**: an initialisation, a version with
 A second rule reads `vaarwater` faithfully through a `Match`. The
 document is `wf023-schrijf-enum-domein` with the rule kind swapped.
 
-    WF-023 FAIL /rules/resolvedRegels/0/versions/0: a value of the enumeration
+    WF-023 FAIL /rules/rules/0/versions/0: a value of the enumeration
     domain 'Kust' is assigned to a target of the enumeration domain 'Vaarwater'
 
 Why it has to exist: write position 1 admits the two presentations

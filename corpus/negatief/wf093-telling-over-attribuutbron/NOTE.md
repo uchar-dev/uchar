@@ -5,8 +5,8 @@ source reads `gewicht`, an attribute of the element type. A count folds the
 contributors themselves; a source that reads a value per contributor hands it
 something it does not consume.
 
-    WF-093 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: the source
-    of this AANTAL aggregation reads 'gewicht', a member of the element type
+    WF-093 FAIL /rules/rules/0/versions/0/value/arguments/0: the source
+    of this count aggregation reads 'gewicht', a member of the element type
     'Vondst': a count folds INSTANCES, so its source is a count source naming
     the relation's role, never a value read per contributor
 

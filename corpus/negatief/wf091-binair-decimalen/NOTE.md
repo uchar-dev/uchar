@@ -6,8 +6,8 @@ assignment gate reads the value's declared precision, so a sum that claims
 fewer decimals than it has walks into a narrower target without the
 explicit rounding the gate exists to demand.
 
-    WF-091 FAIL /rules/resolvedRegels/0/versions/0/value/type: decimals
-    mismatch: the PLUS composite is typed 2 decimals, but the type derived from
+    WF-091 FAIL /rules/rules/0/versions/0/value/type: decimals
+    mismatch: the plus composite is typed 2 decimals, but the type derived from
     its operands is 4 decimals
 
 Why it has to exist. A composite type is not a copy of one declaration

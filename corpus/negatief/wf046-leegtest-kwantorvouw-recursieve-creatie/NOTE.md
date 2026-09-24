@@ -13,7 +13,7 @@ LEEG test on the member's rang. The creation writes the successor's rang, and
 its own condition reads that rang under the test, so the creation depends
 negatively on itself.
 
-    WF-046 FAIL /rules/objectCreaties/0/versions/0: negative dependency edge on
+    WF-046 FAIL /rules/objectCreations/0/versions/0: negative dependency edge on
     a cycle: werf de opvolger reads what werf de opvolger produces while werf de
     opvolger is reachable from it (no strata exist)
 

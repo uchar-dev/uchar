@@ -4,7 +4,7 @@ a prioritized-defaults consequence. The `PrioritizedDefaults` on
 one default whose consequence is a `StructLiteral` of `logboek`
 (`initialisatie: true`); a rule reads `samenvatting.waarde` faithfully.
 
-    WF-090 FAIL /rules/prioritizedDefaults/0/defaults/0/consequentie: a value of
+    WF-090 FAIL /rules/prioritizedDefaults/0/defaults/0/consequence: a value of
     the struct domain 'logboek' is assigned to a target of the struct
     domain 'dossier'
 

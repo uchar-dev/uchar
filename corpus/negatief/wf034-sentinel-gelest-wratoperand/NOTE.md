@@ -11,7 +11,7 @@ The document. A `MAXIMUM` with two arguments and a vestigial
 argument of an aggregation (WF-093); here it is the second of two operands, and
 nothing reads a relation from it.
 
-    WF-034 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/1: 'vondsten'
+    WF-034 FAIL /rules/rules/0/versions/0/value/arguments/1: 'vondsten'
     is neither an attribute nor a characteristic of 'Jutter'
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m), armwissel.** Until L2

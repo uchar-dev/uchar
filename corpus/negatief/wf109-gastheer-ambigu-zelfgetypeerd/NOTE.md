@@ -4,7 +4,7 @@ self-typed — a `Wachter` anker and a `Wachter` doel — so `eigenaar: "Wachter
 picks out the anker and the doel equally well, and the type string settles
 nothing.
 
-    WF-109 FAIL /rules/feitCreaties/0/versions/0/condition/eigenaar: the
+    WF-109 FAIL /rules/factCreations/0/versions/0/condition/host: the
     characteristic check is hosted on 'Wachter', which the anchor 'Wachter' and
     the target 'Wachter' both are: the host names one object and this names two
 

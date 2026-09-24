@@ -13,7 +13,7 @@ counterpart class written on its two strandjutter checks: `Strandjutter` (⊑
 `Jutter`, the narrowing the golden's `case3-strandwacht` pins) on the
 negated one, and `Wachtpost` on the other — the one defect.
 
-    WF-034 FAIL /rules/resolvedRegels/2/versions/0/condition/counterpartType: the
+    WF-034 FAIL /rules/rules/2/versions/0/condition/counterpartType: the
     counterpart type 'Wachtpost' is no subtype of 'Jutter', the filler of the
     other role 'wachtjutter' of fact type 'wachtindeling': the check names a
     link whose other end can never be one

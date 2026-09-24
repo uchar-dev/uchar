@@ -4,7 +4,7 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in the filled count's
 ARITY arm: `AANTAL_GEVULDE` takes exactly one argument, its set source, and
 this node carries two.
 
-    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: the filled count takes
+    WF-037 FAIL /rules/rules/0/versions/0/value: the filled count takes
     exactly ONE argument, its set source, and this node carries 2: there is no
     listed form of this kind — the source language spells it nowhere, so there
     is no articulated operand list to admit (ch. 4.3)

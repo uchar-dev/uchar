@@ -6,7 +6,7 @@ wire. This is the form the decision was taken about: an `AANTAL` with no
 `elementType`, no `sourceRole`, and two ordinary reads as its operand
 list.
 
-    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: a count folds
+    WF-037 FAIL /rules/rules/0/versions/0/value: a count folds
     INSTANCES and has no LISTED form, and this node carries 2 operands: the
     source language spells a count over a subject expression alone (ch. 4.3), so
     there is no articulated operand list to admit — the only reading an operand

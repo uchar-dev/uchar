@@ -6,7 +6,7 @@ sibling cases carry — but an ordering fold keeps the least
 *contributor*, and a date and a number lie in two comparable families
 that share no ordering between them.
 
-    WF-038 FAIL /rules/resolvedRegels/0/versions/0/value: EERSTE orders operands
+    WF-038 FAIL /rules/rules/0/versions/0/value: first orders operands
     of two comparable families, numbers and dates, which share no ordering
 
 Why it has to exist: the clause admits either family, so the per-operand

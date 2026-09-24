@@ -4,8 +4,8 @@ Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1, "Derived-type identity on
 composite positions") at the **twelfth** derived arm, the unit facet: an
 `AANTAL_GEVULDE` annotated `kg` where the operation derives no unit at all.
 
-    WF-091 FAIL /rules/resolvedRegels/0/versions/0/value/type: unit mismatch:
-    the AANTAL_GEVULDE aggregation is typed 'kg' of system 'Gewicht' (factor 1
+    WF-091 FAIL /rules/rules/0/versions/0/value/type: unit mismatch:
+    the filledCount aggregation is typed 'kg' of system 'Gewicht' (factor 1
     to 'kg'), but the type a filled count derives is no unit
 
 **This case exists because the hole was real, and it was found by a review

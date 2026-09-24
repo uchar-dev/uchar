@@ -4,7 +4,7 @@ Violates WF-110 (`spec/IR-SPEC.md` ch. 4.3), the instance-set union — the
 §5.7 concatenation of subject expressions, landed 2026-09-20 as the source
 of an instance count. Clause (d): the selections range over ONE population.
 
-    WF-110 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0/branches/1/elementType:
+    WF-110 FAIL /rules/rules/0/versions/0/value/arguments/0/branches/1/elementType:
     the selections of an instance-set union range over ONE population: selection
     0 names 'Vondst' and this one names 'Kavel' (ch. 4.3)
 

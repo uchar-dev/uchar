@@ -3,8 +3,8 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **fold-source**
 the attribute's value lives on (ch. 4.1a), so a source without one resolves
 against no declaration at all.
 
-    WF-034 FAIL /rules/resolvedRegels/1/versions/0/value/arguments/0: attribute
-    reference 'gewicht' without an object type: it resolves against no
+    WF-034 FAIL /rules/rules/1/versions/0/value/arguments/0: attribute
+    reference 'gewicht' without a subjectType: it resolves against no
     declaration
 
 Why it has to exist *separately* from the sibling case

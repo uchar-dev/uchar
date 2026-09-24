@@ -10,9 +10,9 @@ plus 1 t" has the subject `Munt` (⊑ `Vondst`). Its left operand reads
 `brutogewicht`, an attribute `Munt` inherits from `Vondst`, and writes
 `objecttype: "Vondst"`, without navigation bindings.
 
-    WF-053 FAIL /rules/resolvedRegels/1/versions/0/value/links: an attribute
-    reference without navigation bindings is the subject's own read, so its
-    objecttype is the subject type 'Munt' — 'Vondst' names another type, which
+    WF-053 FAIL /rules/rules/1/versions/0/value/left: an attribute
+    reference without a path is the subject's own read, so its
+    subjectType is the subject type 'Munt' — 'Vondst' names another type, which
     only a navigation reaches
 
 Why equality. The attribute resolves on `Vondst` as well as on `Munt`, so a

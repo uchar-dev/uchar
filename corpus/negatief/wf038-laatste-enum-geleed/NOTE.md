@@ -6,10 +6,10 @@ enumeration `Kust`. The articulated fold keeps the greatest operand
 `Enumeration` is equality-only by the ch. 2.4 orderability paragraph, so
 there is no greatest.
 
-    WF-038 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: operand of
-    the LAATSTE ordering fold is enumeration, must be a number or a date
-    WF-038 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/1: operand of
-    the LAATSTE ordering fold is enumeration, must be a number or a date
+    WF-038 FAIL /rules/rules/0/versions/0/value/arguments/0: operand of
+    the last ordering fold is enumeration, must be a number or a date
+    WF-038 FAIL /rules/rules/0/versions/0/value/arguments/1: operand of
+    the last ordering fold is enumeration, must be a number or a date
 
 Why it has to exist beside the set-source case: this is the form on
 which the three executors do not merely disagree about admissibility —

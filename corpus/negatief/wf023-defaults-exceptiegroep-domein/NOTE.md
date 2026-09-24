@@ -6,7 +6,7 @@ the characteristic `uitzonderlijk` — writes the `Literal` `Noord` of
 domain `Kust`. A rule reads `vaarwater` faithfully through a `Match`.
 
     WF-023 FAIL
-    /rules/prioritizedDefaults/0/defaults/0/excepties/leden/0/defaults/0/consequentie:
+    /rules/prioritizedDefaults/0/defaults/0/exceptions/members/0/defaults/0/consequence:
     a value of the enumeration domain 'Kust' is assigned to a target of
     the enumeration domain 'Vaarwater'
 

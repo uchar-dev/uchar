@@ -2,8 +2,8 @@ Violates WF-054 (`spec/IR-SPEC.md` ch. 3.6): a parent-scoped uniqueness
 whose scope binding binds the role `kavel`, a to-many role. A scope parent
 is one instance; a to-many scope role names many.
 
-    WF-054 FAIL /rules/uniciteiten/0/versions/0/scope: the scope role 'kavel' is
-    to-many — a scope parent is one instance
+    WF-054 FAIL /rules/uniquenesses/0/versions/0/scope: the scope role 'kavel'
+    is to-many — a scope parent is one instance
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (m).** (First stamped
 (i); the L2 fix round measured the document byte-identical to the

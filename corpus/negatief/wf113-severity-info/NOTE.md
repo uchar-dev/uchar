@@ -1,7 +1,7 @@
 Violates WF-113 (a) (`spec/IR-SPEC.md` ch. 2): a diagnostic with severity
 `INFO`.
 
-    WF-113 FAIL /diagnostics/0/severity: severity INFO is not a wire severity: the list is the account of what stayed unresolved, and INFO is tooling talk
+    WF-113 FAIL /diagnostics/0/severity: severity info is not a wire severity: the list is the account of what stayed unresolved, and info is tooling talk
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-vondstverjaring/ir.json`:
 the golden unchanged, plus one `INFO` entry saying that the rule was read

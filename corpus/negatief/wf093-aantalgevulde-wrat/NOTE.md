@@ -5,7 +5,7 @@ the fold subject, and no attribute of the element type. Such a source hands
 the fold the linked instances; the filled count reads a value on each
 contributor and tests it for presence, and an instance has no value to test.
 
-    WF-093 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: value
+    WF-093 FAIL /rules/rules/0/versions/0/value/arguments/0: value
     aggregation over "vondsten", which is no attribute of "Vondst": a value fold
     reads an attribute per contributor, and a role name is a count source only a
     count folds

@@ -4,7 +4,7 @@ Violates WF-110 (`spec/IR-SPEC.md` ch. 4.3), the instance-set union — the
 §5.7 concatenation of subject expressions, landed 2026-09-20 as the source
 of an instance count. Clause (b): a union carries at least TWO selections.
 
-    WF-110 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: an
+    WF-110 FAIL /rules/rules/0/versions/0/value/arguments/0: an
     instance-set union carries at least TWO selections and this one carries 1: a
     single selection IS the ordinary instance count, spelled with the fold's own
     elementType and sourceRole, so one meaning keeps one spelling (ch. 4.3)

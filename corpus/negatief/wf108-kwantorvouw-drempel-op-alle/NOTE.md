@@ -18,7 +18,7 @@ forbids `drempel` under ALLE and GEEN — so it is deliberately schema-invalid a
 well. The negatief zone is gate 3's, not gate 2's: a rule whose only enforcement
 were the schema would have no citable violation.
 
-Verifier: `WF-108 FAIL /rules/resolvedRegels/0/versions/0/condition/drempel: quantifier fold with
-a drempel (2) under a NON-counting kwantor: the threshold is read only by the
+Verifier: `WF-108 FAIL /rules/rules/0/versions/0/condition/threshold: quantifier fold with
+a threshold (2) under a NON-counting quantifier: the threshold is read only by the
 counting quantifiers, and a number no reader consults states a quantification the
-kwantor contradicts`.
+quantifier contradicts`.
