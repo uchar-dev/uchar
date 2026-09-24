@@ -40,9 +40,10 @@ public final class Tijdrekening {
     }
 
     /** The table keyed directly on a SPELLING — the shared body of the two entries above. A null spelling is
-     *  no unit at all and answers null, as the interpreter's own table does: an {@code Eenheid} on this wire
-     *  may carry a null afkorting, and the plural reducer hands a null straight back through its default arm,
-     *  so without this guard the switch below would throw on a document the IR admits. */
+     *  no unit at all and answers null, as the interpreter's own table does. The wire's {@code Unit} always
+     *  carries its abbreviation, but the record's afkorting is nullable and the plural reducer hands a null
+     *  straight back through its default arm, so without this guard the switch below would throw on a record
+     *  that holds none instead of answering. */
     private static String chronoUnitVanSpelling(String spelling) {
         if (spelling == null) return null;
         return switch (RegelSpraakModel.normaliseerTijdseenheid(spelling)) {
