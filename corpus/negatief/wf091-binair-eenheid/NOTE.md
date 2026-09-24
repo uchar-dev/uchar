@@ -27,9 +27,11 @@ own annotation rescales by the factor of 1000, and before this rule
 nothing refused the document.
 
 Falsifiable, facet-exact and arm-exact: drop `unit` from the facet list in
-`use_site_identity` and this case turns **clean** — the derived arm skips
-the residual backstop for a formula that does not claim every facet, so a
-neutered facet has nothing behind it. Disable the additive branch of
+`use_site_identity` and this case turns **clean** — no facet stands behind
+the unit facet (measured again in the L2 fix round, 2026-09-24). Until that
+round the engine had a residual backstop, which the derived arm skipped for
+a formula that does not claim every facet; it was removed with the sign
+facet, since no caller reached either. Disable the additive branch of
 `composite_expectation` and this case turns clean together with the other
 three `wf091-binair-*` cases while the rounding, clamp and aggregation
 cases stay red.
