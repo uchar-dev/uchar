@@ -15,8 +15,8 @@ directions, too many labels as well as too few), and the identity family's
 cross of the **cell read's own `type`** against the declaration the cell
 comes from. Empty the field and both go away together, silently.
 
-That second half is what makes the shape dangerous, and it is measured on
-existing artifacts rather than argued. **Four** of them lose their pin
+That second half was what made the shape dangerous, and it was measured on
+the artifacts of the day rather than argued. **Four** of them lost their pin
 entirely under either spelling of this escape — measured with the verifier of
 the day before this card, replacing each document's cell `attribuut` with
 `null` and, separately, with a numeric literal:
@@ -28,16 +28,29 @@ the day before this card, replacing each document's cell `attribuut` with
 
 The last one is the reason WF-040 is named beside the identity family above:
 its label/dimension cross hangs off the same match and travels with them.
-Spelled out on the first: `corpus/negatief/wf091-dimensiecel-eenheid`
-is refused for a unit lie on the cell's own type —
+Spelled out on the first, until L2: `corpus/negatief/wf091-dimensiecel-eenheid`
+was refused for a unit lie on the cell's own type —
 
-    WF-034 FAIL /rules/resolvedRegels/0/waarde: dimension-cell read without an
-    attribute reference: it resolves against no declaration
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: dimension-cell
+    read of 'kern' is typed 't' of system 'Gewicht' (factor 1000 to 'kg'),
+    but the declaration it reads from is 'kg' of system 'Gewicht' (factor 1
+    to 'kg')
 
-— and emptying that document's `attribuut` field turns the refusal off
+— and emptying that document's `attribuut` field turned the refusal off
 entirely: `verifier: PASS`. A document could therefore buy its way out of the
 unit, precision and domain checks by deleting the very field that identifies
 what it is reading.
+
+*Since L2* the cell read carries no type of its own (B13), so those lies
+cannot be written on it: of the four artifacts, `wf091-dimensiecel-eenheid`
+was removed with reason, `wf089-dimensiecel-enum` and `wf090-dimensiecel`
+were rewritten onto WF-063 and WF-074 (`corpus/negatief/README.md`, section
+L2), and `wf040-unpinned-cell` lost its sign-lie line. What the empty field
+still switches off is WF-040's label/dimension cross. Measured in the L2 fix
+round (2026-09-24), with the `attribuut = None` arm disabled in a copy of
+`spec/verifier/lib/checks.ml`: this document answers `verifier: PASS`, and
+over golden, rood, negatief and the parity zone (718 documents) no other
+report changes, so this witness is the only thing that pins the arm.
 
 *What no measurement here can show,* said plainly: this shape has **no
 executor witness with the current executors**. A cell read is declined as a

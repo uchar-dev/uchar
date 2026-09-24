@@ -4834,12 +4834,15 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
               a cell read reads ONE dimensioned attribute, so its `attribuut`
               child is a reference position, not a general expression slot.
               Anything else there resolves against no declaration and takes
-              the arm above down with it: WF-040's dimension/label cross and
-              the identity family's cross of the cell's OWN type both sit
-              behind the `Some/Some` reference pattern. Measured on
-              `wf091-dimensiecel-eenheid`, whose pinned unit lie sits on the
-              cell type: replacing the reference by a literal turns that
-              refusal off and the document CLEAN. *)
+              the arm above down with it: WF-040's dimension/label cross sits
+              behind the `Some/Some` reference pattern. Until L2 the identity
+              family's cross of the cell's OWN type sat there too, measured
+              on `wf091-dimensiecel-eenheid`, whose pinned unit lie was on the
+              cell type: replacing the reference by a literal turned that
+              refusal off and the document CLEAN. Since L2 the cell carries
+              no type (B13), and with this arm disabled
+              `wf034-dimensiecel-geen-referentie` turns clean while no other
+              report changes (measured in the L2 fix round). *)
            [ v "WF-034" (sub "attribuut")
                "dimension-cell read whose attribute position is not an attribute reference: it \
                 resolves against no declaration" ]
@@ -4847,8 +4850,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
        | None ->
            (* the empty half of the same position, and the same consequence
               one field further: measured verifier-clean on both golden cell
-              positions and on `wf091-dimensiecel-eenheid`, which turns
-              CLEAN when its cell's `attribuut` is emptied *)
+              positions and, until L2, on `wf091-dimensiecel-eenheid`, which
+              turned CLEAN when its cell's `attribuut` was emptied; with this
+              arm disabled `wf034-dimensiecel-zonder-attribuut` turns clean
+              while no other report changes (measured in the L2 fix round) *)
            [ v "WF-034" at
                "dimension-cell read without an attribute reference: it resolves against no \
                 declaration" ])

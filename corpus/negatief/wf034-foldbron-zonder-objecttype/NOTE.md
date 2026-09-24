@@ -19,11 +19,19 @@ characteristic-in-a-value-position check (WF-080) — plus the whole identity
 family, because `resolved_attr_datatype` yields `None` and WF-089/WF-090/
 WF-091 defer on an unresolvable declaration.
 
-This document carries the measured **dangerous** shape, not a neutral one:
-the source reads `Vondst.gewicht`, declared in `kg`, and is typed in `t`
-(same canonical unit, factor 1000 — the convertible class no compatibility
-cross reaches). With `objecttype` filled that lie is refused arm-exact:
+Until L2 this document carried the measured **dangerous** shape, not a
+neutral one: the source read `Vondst.gewicht`, declared in `kg`, and was
+typed in `t` (same canonical unit, factor 1000 — the convertible class no
+compatibility cross reaches). With `objecttype` filled that lie was refused
+arm-exact:
 
+    WF-091 FAIL /rules/resolvedRegels/1/waarde/argumenten/0/type: unit mismatch:
+    fold-source attribute reference 'gewicht' is typed 't' of system
+    'Gewicht' (factor 1000 to 'kg'), but the declaration it reads from is
+    'kg' of system 'Gewicht' (factor 1 to 'kg')
+
+Since L2 the source carries no type of its own (B13), so that lie cannot be
+written any more; what remains is the missing object type.
 
 With the field emptied it was verifier-clean — and **every executor plays
 it**. Measured on this document against
@@ -53,22 +61,32 @@ its WF-034 citation, every other `wf034-*` case staying red — gate 3 turns
 red on it, since the directory declares a rule the report then no longer
 names.
 
-*Honesty correction (2026-09-04), against the paragraphs above.* It does not
-turn CLEAN, and the identity family is not silent on this document either:
-since WF-091 gained its DERIVED-type half (`spec/IR-SPEC.md` ch. 4.1,
-composite positions) the tonne-for-kilogramme lie is caught a second time at
-the fold ROOT, which crosses the aggregation's own type against the type
-derived from operand 0 and needs no resolved declaration to do it. Measured
-with the arm removed:
+*Honesty correction (2026-09-04), against the paragraphs above; it held
+until L2.* It did not turn CLEAN, and the identity family was not silent on
+this document either: since WF-091 gained its DERIVED-type half
+(`spec/IR-SPEC.md` ch. 4.1, composite positions) the tonne-for-kilogramme lie
+was caught a second time at the fold ROOT, which crossed the aggregation's
+own type against the type derived from operand 0 (the source's own `t`) and
+needed no resolved declaration to do it. Measured with the arm removed, until
+L2:
 
-    WF-034 FAIL /rules/resolvedRegels/1/waarde/argumenten/0: attribute
-    reference 'gewicht' without an object type: it resolves against no
-    declaration
+    WF-091 FAIL /rules/resolvedRegels/1/waarde/type: unit mismatch: the SOM
+    aggregation is typed 'kg' of system 'Gewicht' (factor 1 to 'kg'), but the
+    type derived from its first operand is 't' of system 'Gewicht' (factor
+    1000 to 'kg')
 
 So "the whole identity family" above must be read as the arms that need a
-RESOLVED declaration — WF-089/WF-090 and WF-091's reference arms, which do
+RESOLVED declaration — WF-089/WF-090 and WF-091's reference arms, which did
 defer — and the executor measurements quoted above are the state of that
 earlier wave, not of this document today.
+
+*Since L2* operand 0 has no type of its own: its type is its declaration's,
+and a source without an object type has none, so the fold root derives
+nothing to cross. Measured in the L2 fix round (2026-09-24), with the
+`objecttype = None` arm disabled in a copy of `spec/verifier/lib/checks.ml`:
+this document answers `verifier: PASS`, and over golden, rood, negatief and
+the parity zone (718 documents) no other report changes. The arm is the only
+fence on this shape again, as the "Falsifiable" paragraph above first said.
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the fold

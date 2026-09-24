@@ -19,13 +19,15 @@ That is the same lesson the object-type half taught one card earlier
 clause on BOTH paths, because the fold source is the one reference position
 the generic walk does not visit.
 
-This document carries the measured **dangerous** shape: the source reads
-`Vondst.gewicht`, declared in `kg`, and is typed in `t` (same canonical unit,
-factor 1000 — the convertible class no compatibility cross reaches). With the
-name filled that lie is refused arm-exact (`WF-091 FAIL … fold-source
-attribute reference 'gewicht' is typed 't' …`); with the name emptied it was
-verifier-clean, because `resolved_attr_datatype` yields `None` and the whole
-identity family defers.
+Until L2 this document carried the measured **dangerous** shape: the source
+read `Vondst.gewicht`, declared in `kg`, and was typed in `t` (same canonical
+unit, factor 1000 — the convertible class no compatibility cross reaches).
+With the name filled that lie was refused arm-exact (`WF-091 FAIL …
+fold-source attribute reference 'gewicht' is typed 't' …`); with the name
+emptied it was verifier-clean, because `resolved_attr_datatype` yields `None`
+and the whole identity family deferred. Since L2 the source carries no type
+of its own (B13), so the unit lie cannot be written any more; what remains
+is the empty name.
 
 Measured before the closure, on this document against
 `corpus/golden/jutterswet-vondsttelling/case.json`:
@@ -57,21 +59,31 @@ its WF-034 citation, every other `wf034-*` case staying red — gate 3 turns
 red on it, since the directory declares a rule the report then no longer
 names.
 
-*Honesty correction (2026-09-04), against the paragraph above.* It does not
-turn CLEAN, and "the whole identity family defers" is no longer true: since
-WF-091 gained its DERIVED-type half (`spec/IR-SPEC.md` ch. 4.1, composite
-positions) the tonne-for-kilogramme lie is caught a second time at the fold
-ROOT, which crosses the aggregation's own type against the type derived from
-operand 0 and needs no resolved declaration to do it. Measured with the arm
-removed:
+*Honesty correction (2026-09-04), against the paragraph above; it held
+until L2.* It did not turn CLEAN, and "the whole identity family defers" was
+no longer true: since WF-091 gained its DERIVED-type half
+(`spec/IR-SPEC.md` ch. 4.1, composite positions) the tonne-for-kilogramme lie
+was caught a second time at the fold ROOT, which crossed the aggregation's
+own type against the type derived from operand 0 (the source's own `t`) and
+needed no resolved declaration to do it. Measured with the arm removed, until
+L2:
 
-    WF-034 FAIL /rules/resolvedRegels/1/waarde/argumenten/0: attribute
-    reference on 'Vondst' without an attribute name: it resolves against no
-    declaration
+    WF-091 FAIL /rules/resolvedRegels/1/waarde/type: unit mismatch: the SOM
+    aggregation is typed 'kg' of system 'Gewicht' (factor 1 to 'kg'), but the
+    type derived from its first operand is 't' of system 'Gewicht' (factor
+    1000 to 'kg')
 
-What still defers on `resolved_attr_datatype` yielding `None` is the family's
-REFERENCE half — WF-089/WF-090 and WF-091's reference arms — which is what
-that paragraph should be read as saying.
+What still deferred on `resolved_attr_datatype` yielding `None` was the
+family's REFERENCE half — WF-089/WF-090 and WF-091's reference arms — which
+is what that paragraph should be read as saying.
+
+*Since L2* operand 0 has no type of its own: its type is its declaration's,
+and a source that names no attribute has none, so the fold root derives
+nothing to cross. Measured in the L2 fix round (2026-09-24), with the
+`attribuut = None` arm disabled in a copy of `spec/verifier/lib/checks.ml`:
+this document answers `verifier: PASS`, and over golden, rood, negatief and
+the parity zone (718 documents) no other report changes. The arm is the only
+fence on this shape again, as the "Falsifiable" paragraph above first said.
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the fold
