@@ -966,7 +966,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
            delen)
   | Expr_onopgelost _ ->
       Value.fault "Onopgelost reached in evaluation: this rule fails observably (WF-044)"
-  | Constante { naam = Some n; _ } when norm n = norm "Rekendatum" -> (
+  | Constante { naam = Some "Rekendatum"; _ } -> (
       (* ch. 8.2: the execution-date context value — the only
          expression-level access to the evaluation date *)
       match env.as_of with
@@ -974,8 +974,15 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       | None ->
           Value.fault
             "the Rekendatum context value needs an evaluation date; the case carries asOfDate null")
-  | Constante { naam = Some n; _ } when norm n = norm "Rekenjaar" ->
+  | Constante { naam = Some "Rekenjaar"; _ } ->
       Value.fault "the Rekenjaar context value is not exercised by any corpus case (ch. 8.2)"
+  (* any other name is outside WF-098's closed set, spelled byte for byte —
+     the bound day of a day-kind definition included, which is a BoundDay.
+     An executor's loader refuses such a node, so only one built by hand
+     arrives here, and it is refused in the loader's own sentence, never
+     read as the session value or the day it resembles *)
+  | Constante { naam = Some n; _ } when Ir_v0.Checks.context_value_refusal n <> None ->
+      Value.fault "%s" (Option.get (Ir_v0.Checks.context_value_refusal n))
   | Bound_day _ -> (
       (* ch. 3.7/3.8: the BOUND DAY of a day-kind definition (BoundDay) —
          the day the defining predicate is being applied to. It is not a

@@ -6534,7 +6534,36 @@ let () =
     {|malformed number lexeme "12,5"|};
   expect_num "WV-4.1-getal-met-punt"
     (World.attr (World.get (run (litv "12" num0)) "J1") "aantal")
-    "12"
+    "12";
+  (* WV-4.1-contextwaarde (WF-098): a context value's name is one of two,
+     spelled byte for byte. The bound day of a day-kind definition is no
+     context value but a BoundDay, so a context value named after it is
+     refused in the loader's sentence, never read as the bound day; and a
+     recapitalised session value is no session value *)
+  let contextwaarde naam : Ir_v0.Ast.expr =
+    Constante { naam = Some naam; typ = Some Datum_in_dagen; bron = None }
+  in
+  let doc_datum waarde : Ir_v0.Ast.document =
+    { empty_doc with
+      objecttypen = [ ot "Jutter" [ ("peildatum", Some Datum_in_dagen) ] [] ];
+      resolved_regels =
+        [ rr "peildatum" Gelijkstelling (Some (aref "peildatum" "Jutter")) (Some waarde) None ] }
+  in
+  let run_datum waarde =
+    Eval.evaluate
+      { (env_of (doc_datum waarde)) with as_of = Some "2026-03-15" }
+      (World.add_instance World.empty (inst "J1" "Jutter" []))
+  in
+  expect_fault_msg "WV-4.1-de-dag-als-contextwaarde-faalt"
+    (fun () -> run_datum (contextwaarde "de dag"))
+    "context value 'de dag' is not one of the two admissible names Rekendatum, Rekenjaar: the \
+     context-value name is a closed set, spelled byte for byte";
+  expect_fault_msg "WV-4.1-contextwaarde-andere-spelling-faalt"
+    (fun () -> run_datum (contextwaarde "rekendatum"))
+    "context value 'rekendatum' is not one of the two admissible names Rekendatum, Rekenjaar";
+  check "WV-4.1-rekendatum-leest-de-evaluatiedatum"
+    (World.attr (World.get (run_datum (contextwaarde "Rekendatum")) "J1") "peildatum"
+    = Value.date_of_iso "2026-03-15")
 
 let () =
   if !failures > 0 then begin

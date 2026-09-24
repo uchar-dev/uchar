@@ -5032,7 +5032,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       fault
         "a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind \
          evaluation it denotes nothing"
-  | Constante { naam = Some n; _ } when Ir_v0.Checks.norm n = Ir_v0.Checks.norm "Rekendatum" -> (
+  | Constante { naam = Some "Rekendatum"; _ } -> (
       (* ch. 8.2: the execution-date context value is a program constant —
          the session's one evaluation date as a civil day number *)
       match ctx.case.as_of with
@@ -5040,6 +5040,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       | None ->
           fault
             "the Rekendatum context value needs an evaluation date; the case carries asOfDate null")
+  (* a name outside WF-098's closed set, spelled byte for byte (the bound
+     day included, which is a BoundDay): refused at load for an executor, so
+     only a node built by hand arrives, refused in the loader's own sentence *)
+  | Constante { naam = Some n; _ } when Ir_v0.Checks.context_value_refusal n <> None ->
+      fault "%s" (Option.get (Ir_v0.Checks.context_value_refusal n))
   | Construct { typ; constructor_; argument = (None | Some (Literal _)) as argument; _ } ->
       (* ch. 9.1: a constructor value is a ground term when its payload is
          ground — a nullary tag, or a literal payload scaled to the DECLARED
