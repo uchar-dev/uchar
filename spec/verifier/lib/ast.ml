@@ -206,7 +206,7 @@ type expr =
              LOADED, empty included, so the arity is a violation the rule
              reports and never a load failure. The loader admits at most one
              of the two, and demands one on a single-argument fold with an
-             elementObjecttype under any kind but TOTAAL (B12): a range here
+             elementType under any kind but TOTAAL (B12): a range here
              makes the argument the set source (D8), its absence makes it the
              subject's own read *)
     }

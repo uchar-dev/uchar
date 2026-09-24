@@ -26,7 +26,7 @@
    L2 made required is read as required — the creation block, the step
    binding, the allocation's recipient role, a union selection's relation,
    the quantifier fold's range, and the range of a single-argument fold
-   with an elementObjecttype under any kind but TOTAAL (B12, U2). A reader
+   with an elementType under any kind but TOTAAL (B12). A reader
    of this library therefore never meets a bindingless form that it would
    have to derive a binding for.
 
@@ -994,7 +994,7 @@ and conditie path j : conditie =
           kv_filter = opt (path / "filter") conditie (f "filter");
           (* optional at the LOADER, required by WF-108 (d): a missing matrix
              is a citable violation, never a load failure with no rule to name
-             — the WF-102 discipline on bronPad, applied to this node's own
+             — the WF-102 discipline on sourcePath, applied to this node's own
              fields *)
           kv_toets = opt (path / "toets") conditie (f "toets");
           kv_bron = bron ();
