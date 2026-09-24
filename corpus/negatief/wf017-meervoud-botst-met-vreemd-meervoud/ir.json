@@ -12,17 +12,18 @@
             "node": "Attribute",
             "name": "vaste schouwlast",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "schouwdagen",
-                "stelsel": null,
-                "canoniek": "schouwdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "schouwdagen",
+                "canonical": "schouwdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -30,17 +31,18 @@
             "node": "Attribute",
             "name": "extra schouwlast",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "schouwdagen",
-                "stelsel": null,
-                "canoniek": "schouwdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "schouwdagen",
+                "canonical": "schouwdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -48,17 +50,18 @@
             "node": "Attribute",
             "name": "schouwplicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "schouwdagen",
-                "stelsel": null,
-                "canoniek": "schouwdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "schouwdagen",
+                "canonical": "schouwdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -76,22 +79,22 @@
     "parameters": [
       {
         "node": "Parameter",
-        "naam": "schouwdrempel",
+        "name": "schouwdrempel",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "schouwdagen",
-            "stelsel": null,
-            "canoniek": "schouwdagen",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "schouwdagen",
+            "canonical": "schouwdagen",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
           }
-        },
-        "granulariteit": null
+        }
       }
     ],
     "domains": [],
@@ -99,16 +102,17 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [
-      "schouwdag",
-      "stormvloeddag"
-    ],
-    "dagsoortPerEenheid": {
-      "schouwdag": "schouwdag",
-      "schouwdagen": "schouwdag",
-      "stormvloeddag": "stormvloeddag",
-      "stormvloeddagen": "stormvloeddag",
-      "wk": "schouwdag"
-    }
+      {
+        "node": "DayKind",
+        "name": "schouwdag",
+        "plural": "schouwdagen"
+      },
+      {
+        "node": "DayKind",
+        "name": "stormvloeddag",
+        "plural": "SchouwDagen"
+      }
+    ]
   },
   "rules": {
     "resolvedRegels": [
@@ -138,17 +142,18 @@
             "bron": "zijn extra schouwlast"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "schouwdagen",
-              "stelsel": null,
-              "canoniek": "schouwdagen",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "schouwdagen",
+              "canonical": "schouwdagen",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
           },
           "bron": "zijn vaste schouwlast plus zijn extra schouwlast"
@@ -218,7 +223,8 @@
                 "node": "Constante",
                 "naam": "de dag",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "de dag"
               },
@@ -226,7 +232,8 @@
                 "node": "Literal",
                 "waarde": "2026-02-28",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "28-02-2026"
               },
@@ -240,7 +247,8 @@
                 "node": "Constante",
                 "naam": "de dag",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "de dag"
               },
@@ -248,7 +256,8 @@
                 "node": "Literal",
                 "waarde": "2026-10-01",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "01-10-2026"
               },
@@ -279,7 +288,8 @@
                 "node": "Constante",
                 "naam": "de dag",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "de dag"
               },
@@ -287,7 +297,8 @@
                 "node": "Literal",
                 "waarde": "2026-09-30",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "30-09-2026"
               },
@@ -301,7 +312,8 @@
                 "node": "Constante",
                 "naam": "de dag",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "de dag"
               },
@@ -309,7 +321,8 @@
                 "node": "Literal",
                 "waarde": "2027-03-01",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "01-03-2027"
               },

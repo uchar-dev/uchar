@@ -1,0 +1,104 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "huidig penningbedrag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "penningbedrag",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD"
+        },
+        "timeline": {
+          "node": "TimelineFacet",
+          "granularity": "JAAR",
+          "count": 0
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "huidig penningbedrag",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "huidig penningbedrag",
+          "objecttype": "Jutter",
+          "bron": "Het huidig penningbedrag van een Jutter"
+        },
+        "waarde": {
+          "node": "TemporalRead",
+          "basis": {
+            "node": "ParameterRef",
+            "parameter": "penningbedrag",
+            "bron": "het penningbedrag"
+          },
+          "datum": {
+            "node": "Constante",
+            "naam": "Rekendatum",
+            "type": {
+              "node": "Date",
+              "precision": "day"
+            },
+            "bron": "de rekendatum"
+          },
+          "type": {
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
+          },
+          "bron": "het penningbedrag op de rekendatum"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
+}

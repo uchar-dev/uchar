@@ -1,0 +1,1 @@
+the presentation tag "percentage" on a type annotation

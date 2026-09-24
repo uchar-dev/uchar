@@ -1,0 +1,169 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Bergingsvergunning",
+        "animate": false,
+        "plural": "Bergingsvergunningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "basisduur",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "maand",
+                "system": "Termijn",
+                "canonical": "maand",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "looptijd",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "maand",
+                "system": "Termijn",
+                "canonical": "maand",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Termijn",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "maand",
+            "system": "Termijn",
+            "canonical": "maand",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "jaar",
+            "system": "Termijn",
+            "canonical": "maand",
+            "factorToCanonical": {
+              "num": 24,
+              "den": 2
+            }
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "looptijd van een bergingsvergunning",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "looptijd",
+          "objecttype": "Bergingsvergunning",
+          "bron": "De looptijd van een Bergingsvergunning"
+        },
+        "waarde": {
+          "node": "Binair",
+          "op": "PLUS",
+          "links": {
+            "node": "Literal",
+            "waarde": "2",
+            "type": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "jaar",
+                "system": "Termijn",
+                "canonical": "maand",
+                "factorToCanonical": {
+                  "num": 24,
+                  "den": 2
+                }
+              }
+            },
+            "bron": "2 jaar"
+          },
+          "rechts": {
+            "node": "AttribuutRef",
+            "attribuut": "basisduur",
+            "objecttype": "Bergingsvergunning",
+            "bron": "de basisduur van de Bergingsvergunning"
+          },
+          "type": {
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "jaar",
+              "system": "Termijn",
+              "canonical": "maand",
+              "factorToCanonical": {
+                "num": 24,
+                "den": 2
+              }
+            }
+          },
+          "bron": "2 jaar plus de basisduur van de Bergingsvergunning"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
+}
