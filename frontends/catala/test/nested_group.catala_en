@@ -3,7 +3,7 @@
 De tutorial-artikel-3-vorm zonder decimals: een money-doel met een
 onvoorwaardelijke basis, één exceptie dáárop, en twee excepties dáárop
 weer. De boom vertakt ONDER de wortel — precies de vorm die de plugin
-vroeger luid weigerde (`refuse_subroot`). Nu draagt `Default.excepties`
+vroeger luid weigerde (`refuse_subroot`). Nu draagt `Default.exceptions`
 hem: default 0 = `lvl1` (eigen $10) met ongeordende excepties
 {`n >= 100` -> $20, `n >= 200` -> $30}; default 1 = de basis ($40).
 

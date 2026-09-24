@@ -3,7 +3,7 @@
 Exacte 2-decimalen-optelling van twee geldbedragen, een geld-deling die
 Catala op centen afrondt (rekenkundig: $20/3 -> $6.67, geverifieerd tegen
 catala interpret), en een assertie die een consistentie wordt. Draait door
-ref EN clingo (Afgerond-over-deling is in clingo vertaald).
+ref EN clingo (Rounding-over-deling is in clingo vertaald).
 
 ```catala
 declaration scope Loonberekening:

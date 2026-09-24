@@ -1,7 +1,7 @@
 # Payload-enum met totale match — rechtenvrij, eigen auteurschap (row 36, 5b).
-# Bewijst de volle keten: TEnum -> SumType (domein + use-site), EInj ->
+# Bewijst de volle keten: TEnum -> SumType (domain + use-site), EInj ->
 # Construct, EMatch -> Match met payload-binder (BinderRef) en nullaire armen,
-# en sum-gelijkheid -> Vergelijking GELIJK. Draait door verifier, ref EN clingo.
+# en sum-gelijkheid -> Comparison equal. Draait door verifier, ref EN clingo.
 
 ```catala
 declaration enumeration Uitslag:

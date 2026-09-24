@@ -10,7 +10,7 @@
 # verzwakking van WF-087 precies hier doorglipt; de PLUGIN draagt haar eigen
 # kopie van dezelfde regel (`keuzetype_of`), en zonder dit programma glipt
 # diezelfde verzwakking daar ongestraft door: elke andere all-nullary fixture
-# heeft meer dan één constructor. De wire-assertie hieronder (Enumeratie
+# heeft meer dan één constructor. De wire-assertie hieronder (Enumeration
 # aanwezig, SumType/Construct afwezig) is wat de verzwakking rood maakt.
 
 ```catala
