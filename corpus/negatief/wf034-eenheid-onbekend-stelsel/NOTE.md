@@ -5,8 +5,10 @@ the unit system it belongs to — names a system *no declaration carries*.
     'm' declares unit system 'Afstandt', which no declaration carries: the unit
     resolves against no conversion table
 
-(six times, once per unit record in the document that claims the system: two
-attribute declarations and four expression types).
+(four times, once per unit record in the document that claims the system: two
+attribute declarations and two expression types. Until L2 it was six times,
+with four expression types; the rule target and the right operand, both
+references, lost their own `type` with B13, and with it their unit record.)
 
 **What the field is.** Every unit record on the wire carries the name of the
 declared `Eenheidstelsel` it belongs to. That is the unit's one link back to

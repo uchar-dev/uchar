@@ -82,7 +82,8 @@ there (237 + 48 + 438 documents, 714 declarations on the four lists).
 
 ### L2 — the reference layer (2026-09-24)
 
-L2 (card `20260923-l2-referentielaag`) takes the reference layer to its symbolic
+L2 (card `20260923-l2-referentielaag`, `backlog/done/20260923-l2-referentielaag.md`;
+the decision numbers D# and U# below are that card's decision list) takes the reference layer to its symbolic
 form: the five reference classes lose their own `type` (B13), a navigation, a
 fold range, an allocation, a creation step and a scope carry their role binding
 and no written name beside it (B7, B8, B11, B12, D53), the two role checks
@@ -93,11 +94,14 @@ refuses the document at exactly that field (the refusal is quoted), or the
 migration's translation is verifier-clean (its subject left the wire), or the
 translation falls on another rule, and then the witness is rewritten under that
 rule (D17) — `old → new` in the first column. A rewritten or replaced witness
-carries `expect.txt`, one literal line of the verifier message of the arm it now
+with an L2 delta carries `expect.txt`, one literal line of the verifier message of the arm it now
 pins, without a JSON pointer; gate 3 requires that line in the report (U1). The
 arm column names that arm in words, or, for a removed witness, the arm that left.
-The negatief zone went from 444 to 394 documents (with the U12 witness `wf034-rollidmaatschap-vreemde-vullersklasse` added beside the stamps); the floor
-`EXPECTED_MIN_NEGATIEF` did not have to move.
+The negatief zone went from 444 to 394 documents at the L2 union (with the U12
+witness `wf034-rollidmaatschap-vreemde-vullersklasse` added beside the stamps),
+and to 400 in the L2 fix round (the restored `wf046-kwantorvouw-bereik-ander-type`
+and the five witnesses of the last table); the floor `EXPECTED_MIN_NEGATIEF` did
+not have to move.
 
 | directory | rule | delta | stamp | arm | reason |
 | --- | --- | --- | --- | --- | --- |
@@ -149,7 +153,7 @@ The negatief zone went from 444 to 394 documents (with the U12 witness `wf034-ro
 | `wf090-binderref` → `wf074-veld-buiten-structdomein-binder` | WF-090 → WF-074 | B13 | herschreven op WF-074 | WF-074, binder base | binder-reference arm gone; measured: WF-074 (D17) |
 | `wf090-dimensiecel` → `wf074-veld-buiten-structdomein-dimensiecel` | WF-090 → WF-074 | B13 | herschreven op WF-074 | WF-074, cell-read base | cell-read arm gone; measured: WF-074 (D17) |
 | `wf090-doorgeefluik` | WF-090 | B13 | herschreven (m) | aggregation (pass-through) arm, EERSTE | the EERSTE keeps its annotation; operand 0 is typed by its declaration; the WF-038 line beside it is unchanged |
-| `wf090-foldbron` | WF-090 | B13 | verwijderd-met-reden | fold-source reference arm | measured: the translation stays WF-090 through the pass-through aggregation arm, with the message of `wf090-doorgeefluik` (D18) |
+| `wf090-foldbron` | WF-090 | B13 | verwijderd-met-reden | fold-source reference arm | measured: the translation stays WF-090 through the pass-through aggregation arm, on the arm of `wf090-doorgeefluik` (the same arm under EERSTE, with the two struct domains the other way round; D18: an arm change gate 3 cannot see) |
 | `wf090-parameterref` → `wf074-veld-buiten-structdomein-parameter` | WF-090 → WF-074 | B13 | herschreven op WF-074 | WF-074, parameter base | parameter-reference arm gone; measured: WF-074 (D17) |
 | `wf090-schrijf-defaults` | WF-090 | — | herschreven (m) | write half (a StructLiteral of another domain) | no L2 delta; the struct literal keeps its type |
 | `wf090-schrijf-objectcreatie` | WF-090 | — | herschreven (m) | write half (a StructLiteral of another domain) | no L2 delta; the struct literal keeps its type |
@@ -248,10 +252,10 @@ between the L1 and the L2 form of the corpus.
 | directory | rule | delta | stamp | arm | reason |
 | --- | --- | --- | --- | --- | --- |
 | `wf018-parameter-onbekend` | WF-018 | B16 | herschreven (i) | WF-018, a parameter naming an undeclared domain | as `wf003-unresolved-domain`, for a parameter (D15): written by hand as the enumeration naming `Drempels`, compared for equality |
-| `wf020-crossform-collision` | WF-020 | B12 | herschreven (i) | unchanged | the allocation had no source type, so the migration could not derive the required recipient role; written by hand with a fact type `strandgoedverdeling`, `Jutter` as source type and the `ontvanger` role bound; the rule still fires as before |
-| `wf024-complex` | WF-024 | B12 | herschreven (i) | unchanged | the allocation had no source type, so the migration could not derive the required recipient role; written by hand with a fact type `strandgoedverdeling`, `Jutter` as source type and the `ontvanger` role bound; the rule still fires as before |
-| `wf025-max-without-ratio` | WF-025 | B12 | herschreven (i) | unchanged | the allocation had no source type, so the migration could not derive the required recipient role; written by hand with a fact type `strandgoedverdeling`, `Jutter` as source type and the `ontvanger` role bound; the rule still fires as before |
-| `wf026-two-allocations-one-target` | WF-026 | B12 | herschreven (i) | unchanged | the allocation had no source type, so the migration could not derive the required recipient role; written by hand with a fact type `strandgoedverdeling`, `Jutter` as source type and the `ontvanger` role bound; the rule still fires as before |
+| `wf020-crossform-collision` | WF-020 | B12 | herschreven (i) | WF-020, one name shared by a rule and an allocation (names are unique across all named forms) | the allocation had no source type, so the migration could not derive the required recipient role; written by hand with a fact type `strandgoedverdeling`, `Jutter` as source type and the `ontvanger` role bound; the rule still fires as before |
+| `wf024-complex` | WF-024 | B12 | herschreven (i) | WF-024, the allocation method COMPLEX | the allocation had no source type, so the migration could not derive the required recipient role; written by hand with a fact type `strandgoedverdeling`, `Jutter` as source type and the `ontvanger` role bound; the rule still fires as before |
+| `wf025-max-without-ratio` | WF-025 | B12 | herschreven (i) | WF-025, a maximum without a ratio attribute | the allocation had no source type, so the migration could not derive the required recipient role; written by hand with a fact type `strandgoedverdeling`, `Jutter` as source type and the `ontvanger` role bound; the rule still fires as before |
+| `wf026-two-allocations-one-target` | WF-026 | B12 | herschreven (i) | WF-026, two allocations writing one target | the allocation had no source type, so the migration could not derive the required recipient role; written by hand with a fact type `strandgoedverdeling`, `Jutter` as source type and the `ontvanger` role bound; the rule still fires as before |
 | `wf031-dagsoort-leest-rolstaat` | WF-031 | B9 | herschreven (i) | unchanged (role membership read in a day-kind condition) | a day-kind condition has no subject to derive the role check's fact type from; written by hand as `RoleMembership` naming it |
 | `wf035-power-with-unit` | WF-035 | B13 | herschreven (i) | unchanged (a power over a unit-carrying base) | the unit sat on the reference's own type; measured, the translation was verifier-clean; written by hand with the unit on the attribute's declaration |
 | `wf036-order-number-vs-text` | WF-036 | B13 | herschreven (i) | unchanged (an ordering operand that is text) | the text type sat on the reference's own type; measured, the translation was verifier-clean; written by hand with the parameter declared as text |
@@ -264,17 +268,41 @@ between the L1 and the L2 form of the corpus.
 | `wf083-vouwbron-vreemd-elementtype` | WF-083 (c) | B11, B13 | herschreven (m) | anchor of a set source (the fold subject) | as the row above |
 | `wf083-vouwbron-vreemd-objecttype` | WF-083 (c) | B13 | herschreven (m) | anchor of the subject's own read (another type) | a TOTAAL without a range is the subject's own read (D8 (iv)) |
 | `wf102-bronpad-naast-bronrol` | WF-102 (a) | B12 | verwijderd-met-reden | bronPad beside bronRol | one range per fold is the schema's and the loader's since L2 (U2) (m2.py: "bronPad beside bronRol") |
+| `wf102-bronpad-op-niet-setbron` | WF-102 (c) | B13, B11 | herschreven (m) | WF-102 (c), a `bronPad` on a count source (a count's range is one step) | the count source lost its sentinel type (B13) and is recognised at the source itself (D9); the clause's wording and its message moved with the set reading: the admitted position is a VALUE fold's set source. The row and `expect.txt` were added in the L2 fix round; the union had changed the message without a row |
 | `wf108-kwantorvouw-bereik-dubbel` | WF-108 (c) | B12 | verwijderd-met-reden | bronPad beside bronRol on a quantifier fold | as the row above, on a quantifier fold |
 | `wf110-unie-naast-vouwbron` | WF-110 (c) | B12 | herschreven (i) | unchanged (the count's own source beside a union) | a single-argument count with an elementObjecttype carries a range (U2), and nothing derives one beside a union; written by hand with the first selection's relation as `bronRol` |
 | `wf110-unie-tak-zonder-bronrol` | WF-110 (e) | B12 | verwijderd-met-reden | a union selection without its relation | `sourceRole` is required and non-null (D5 (c)) (m2.py: "a union selection without its relation") |
 | `wf007-doeltype-geheel-met-decimalen` | WF-007 | B13 | verwijderd-met-reden | the rule-target arm | the rule target lost its own type, the one position of this arm; measured: the migration's translation is verifier-clean |
 | `wf023-schrijf-doeltype-leugen` | WF-023 | B13 | verwijderd-met-reden | the target's declared type against its own lying type | the target lost its own type; measured: the translation is byte-identical to `wf023-schrijf-enum-domein` and falls on the same WF-023 line |
 | `wf034-foldbron-rolnaam-waardevouw` → `wf093-telbron-onder-som` | WF-034 → WF-093 | B13 | herschreven op WF-093 | WF-093, a count source under SOM | measured: WF-093 recognises the count source at the source (D9), so the role name under SOM falls there (D17) |
-| `wf046-kwantorvouw-bindingloos-bereik` | WF-046 | B12 | verwijderd-met-reden | the range of a quantifier fold without a written range | the loader refuses a quantifier fold without `bronRol` or `bronPad` (B12, U2), so the form cannot be written; measured: the migration derived the range `bemanning`/`post`, and the translation fails WF-046 through the bound range under ALLE on the relation the recursive creation writes through its back-link — the arm `wf046-kwantorvouw-alle-bereik` pins, a duplicate |
+| `wf046-kwantorvouw-bindingloos-bereik` → `wf046-kwantorvouw-bereik-ander-type` | WF-046 | B12 | herschreven (m) | WF-046, the range of an ALLE quantifier fold over the relation a recursive creation of ANOTHER type writes (a Post for a Wachter) | the loader refuses a quantifier fold without `bronRol` or `bronPad` (B12, U2), so the bindingless form cannot be written; the migration derives the range `bemanning`/`post`, and the translation fails WF-046 through the bound range. The L2 union first removed it as a duplicate of `wf046-kwantorvouw-alle-bereik`, which mints a Wachter for a Wachter; the removal criterion (the migration refuses the document, or its translation is verifier-clean) was not met, so the L2 fix round restored the translation, byte for byte, under a name without "bindingloos" |
 
-The witnesses that kept their rule and their arm but whose report lost an
-incidental line to B13 — a reference's own `type` that crossed nothing any more
-(`wf007-whole-with-decimals`, `wf027-lying-attribuutref-type`,
-`wf034-eenheid-onbekend-stelsel`, `wf040-unpinned-cell`, `wf092-factor-zonder-canoniek`,
-`wf092-noemer-zonder-factor`, `wf088-functiondef-drift`) — carry no stamp; where
-their NOTE cited a lost line, the citation was brought to the current report.
+Seven witnesses kept their rule and their arm while their report lost
+incidental lines to B13 — a reference's own `type` that crossed nothing any more.
+Three of them carry a stamp row because their NOTE records the migration:
+`wf088-functiondef-drift` (in the WF-088 rows above) and the two WF-092 rows
+below. The other four carry no stamp: `wf007-whole-with-decimals`,
+`wf027-lying-attribuutref-type`, `wf034-eenheid-onbekend-stelsel` and
+`wf040-unpinned-cell`. Where a NOTE cited a lost line or described the lost
+type as present, the citation was brought to the current report — for
+`wf027-lying-attribuutref-type` and `wf034-eenheid-onbekend-stelsel` in the L2
+fix round.
+
+| directory | rule | delta | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf092-factor-zonder-canoniek` | WF-092 | — | herschreven (m) | a unit with a factor and no canonical unit | no L2 delta on the defect; the rule target and the attribute reference lost their own `type` (B13), and with them two of the five report lines |
+| `wf092-noemer-zonder-factor` | WF-092 | — | herschreven (m) | a denominator unit with a canonical unit and no factor | no L2 delta on the defect; the rule targets and the fold sources lost their own `type` (B13), and with them five of the eleven report lines |
+
+#### Added in the L2 union and the L2 fix round (2026-09-24)
+
+Witnesses that no stamp produced: the U12 witness of the union, and the five
+the lens on the union asked for (`expect.txt` in each).
+
+| directory | rule | delta | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf034-rollidmaatschap-vreemde-vullersklasse` | WF-034 | B9 (U12) | toegevoegd | role arm of `RoleMembership`: `counterpartType` is no subtype of the other role's filler | `counterpartType` carries the narrowing of the far role check that the first L2 form lost (U12); `corpus/golden/jutterswet-postbezetting` with a declared type outside the filler's chain |
+| `wf034-rollidmaatschap-rol-als-meervoud` | WF-034 | B9 | toegevoegd | role arm of `RoleMembership`: `role` is no declared role name of `factType` | `role` spelled as the declared plural of the other role; the arm had no witness (lens on the union) |
+| `wf034-rollidmaatschap-vullersklasse-onbekend` | WF-034 | B9 (U12) | toegevoegd | role arm of `RoleMembership`: `counterpartType` is no declared object type | the arm had no witness (lens on the union) |
+| `wf053-eigen-lezing-supertype` | WF-053 | B11 | toegevoegd | a read without navigation bindings whose `objecttype` is a supertype of the subject | the own read names the subject type itself (equality, IR-SPEC ch. 4.1a); on the union `ref` and the ASP backend admitted the supertype |
+| `wf083-totaal-vreemd-elementtype` | WF-083 (c) | B12 | toegevoegd | the `elementObjecttype` of a `TOTAAL` without a range is not the fold subject | new arm of the fix round; before it the field was verifier-clean and moved no answer |
+| `wf091-plus-eenheid-kast` | WF-091 | B13 | toegevoegd | derived arm, PLUS, unit facet (unit names differ in case alone) | the byte-exact unit names lost their witness with `wf091-attribuutref-eenheid-kast` (removed above); the lie now sits on a composite's annotation |
