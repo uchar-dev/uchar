@@ -22,7 +22,8 @@ readers did not agree on whether the second one is admitted. Measured on the
 L2 union (`bd2c48de`) with the golden's `case.json`: `ref` and the ASP
 backend admitted the supertype (`oracle: PASS (8 expectations)`, `clingo:
 PASS (8 expectations)`, the golden's answers), while the verifier refused it
-here and the Drools loader required equality. The L2 fix round made equality
+here and the Drools backend required equality (the latter as the L2 lens
+reported it; not measured again here). The L2 fix round made equality
 the one rule for every reader (IR-SPEC ch. 4.1a); a read on a supertype names
 the subject type itself or navigates.
 
