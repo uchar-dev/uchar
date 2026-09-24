@@ -86,10 +86,15 @@ import java.util.Map;
  * here), any other a {@link Datatype.Numeriek}; {@code day} is {@link Datatype.DatumInDagen} and {@code millisecond}
  * {@link Datatype.DatumTijd}. The exact factor becomes the record's decimal {@code factorNaarCanoniek} — a whole
  * number exactly, any other fraction rounded to 16 significant digits ({@link MathContext#DECIMAL64}), the rounding
- * the frontend gives a declared "1/N" — and the unit system keeps the fraction itself beside it. From there this
- * backend restates between units with that pre-rounded ratio, where {@code ref} and the ASP backend reckon with the
- * fraction: a tracked delta of the Drools backend (CONSTRUCTS row 26), invisible in the corpus, whose factors are
- * all whole numbers. A type-system node of the L2 shape, or one of its fields, is unknown by name.
+ * the frontend gives a declared "1/N" — and the unit system keeps the fraction itself beside it
+ * ({@code Eenheidstelsel.exacteFactoren}). From there this backend restates between units with the ratio of those
+ * decimals, where {@code ref} reckons with the fraction: a tracked delta of the Drools backend (CONSTRUCTS row 26). The
+ * corpus does not see it, since every factor there is a whole number, but a verifier-clean document the frontend
+ * emits does: with a unit declared "= 1/3" of another, 1.00 of the one plus 3.00 of the other reads 1.9999999999999999
+ * in a 2-decimal attribute, and rounded down to 0 decimals it is 1 where 2 is due ({@code ref}: 2.00 and 2). The
+ * backend's {@code VoorafgerondeFactorWitnessTest} pins that answer, and the like one for 1/24, in both branches.
+ * Closing the delta means restating through the fraction the unit system keeps; this loader does not. A type-system
+ * node of the L2 shape, or one of its fields, is unknown by name.
  *
  * The frontend records this loader fills keep their v0 components (they are the vendored slice the toolchain
  * compiles); what the wire no longer carries is filled with {@code null}, {@code false} or an empty list, and
@@ -876,10 +881,6 @@ public final class IrLoader {
             Map.entry("Booleaan", List.of("node")),
             Map.entry("Enumeratie", List.of("node", "domein", "waarden")));
 
-    /** The type-system nodes of the L2 shape, each with the node that took its place: unknown nodes. */
-    private static final Map<String, String> L2_DATATYPE = Map.of(
-            "Numeriek", "Number", "Percentage", "Number", "DatumInDagen", "Date", "DatumTijd", "Date");
-
     /** IR-SPEC ch. 2.10: a parameter, its datatype, and when it is time-dependent its timeline facet. The datatype is
      *  required, and the facet carries no timeline name; the model's parameter holds the granularity, so a facet of
      *  more than one period is a form this backend does not carry. */
@@ -903,16 +904,18 @@ public final class IrLoader {
         return new Parameter(naam, datatype, granulariteit);
     }
 
-    /** IR-SPEC ch. 2.5: a unit system and its units, each declared once. The model keeps every unit under its
-     *  abbreviation, its further spellings in the alias map, and its exact factor beside the record's decimal one. */
+    /** IR-SPEC ch. 2.5: a unit system and its units, one Unit per abbreviation under the name identity of ch. 2.1
+     *  (WF-009, the identity its canonical lookup resolves under). The model keeps every unit under its abbreviation,
+     *  its further spellings in the alias map, and its exact factor beside the record's decimal one. */
     private Eenheidstelsel unitSystem(String pad, JsonNode n) {
         velden(n, pad, "UnitSystem", List.of("node", "name", "units"), List.of());
         Eenheidstelsel es = new Eenheidstelsel(naam(n, pad, "name"));
         lijst(n, pad, "units", (up, u) -> {
             Eenheid e = unit(u, up, es);
-            if (es.eenheden.putIfAbsent(e.afkorting(), e) != null)
+            if (botsing(es.eenheden.keySet(), e.afkorting()) != null)
                 throw new Documentfout(up + "/abbreviation", "the unit '" + e.afkorting() + "' is declared twice in"
-                        + " the unit system '" + es.naam + "'");
+                        + " the unit system '" + es.naam + "': one Unit per abbreviation (WF-009)");
+            es.eenheden.put(e.afkorting(), e);
             if (u.has("spellings"))
                 for (String spelling : tekstLijst(u, up, "spellings")) es.aliassen.put(spelling, e);
         });
@@ -1033,8 +1036,7 @@ public final class IrLoader {
                 yield switch (precisie) {
                     case "day" -> new Datatype.DatumInDagen();
                     case "millisecond" -> new Datatype.DatumTijd();
-                    default -> throw new Documentfout(pad + "/precision", "'" + precisie
-                            + "' is not one of [day, millisecond]");
+                    default -> throw new Documentfout(pad + "/precision", onbekendeWaarde("precision", precisie));
                 };
             }
             case "Tekst" -> new Datatype.Tekst();
@@ -1044,8 +1046,9 @@ public final class IrLoader {
             // out and a derived position the producer could not type is null — so this node is no form at all
             case "Onbekend" -> throw new Documentfout(pad,
                     "unknown datatype node \"Onbekend\": uchar-ir-v1 has no datatype for an unknown type");
-            case "Numeriek", "Percentage", "DatumInDagen", "DatumTijd" -> throw new Documentfout(pad,
-                    "unknown datatype node \"" + node + "\": uchar-ir-v1 writes it as a " + L2_DATATYPE.get(node));
+            // the four datatype nodes of the L2 shape: no document carries them since L3, in the shared loader's words
+            case "Numeriek", "Percentage", "DatumInDagen", "DatumTijd" -> throw new Documentfout(pad + "/node",
+                    "unknown datatype node \"" + node + "\"");
             default -> throw new Refusal("Datatype:" + node, "unknown datatype node");
         };
     }
@@ -1053,16 +1056,19 @@ public final class IrLoader {
     /** IR-SPEC ch. 2.4: a number, its sign always written. One whose unit is '%' is a percentage, which the model
      *  holds as a {@link Datatype.Percentage}; that record has no sign, and the wire writes a percentage's sign
      *  ONBEPAALD. The presentation tag presents a percentage, stands at a declaration only and means nothing to
-     *  evaluation. The four refusals here are the shared OCaml loader's and the verifier's, in their words. */
+     *  evaluation. Every refusal here is the shared OCaml loader's or the verifier's, in their words. */
     private Datatype number(JsonNode n, String pad, boolean declaratie) {
         velden(n, pad, "Number", List.of("node", "whole", "decimals", "sign"), List.of("unit", "presentation"));
         boolean geheel = waarheid(n, pad, "whole");
         int decimalen = geheel(n, pad, "decimals", "Number.decimals");
-        Datatype.Teken teken = enumOf(Datatype.Teken.class, tekst(n, pad, "sign"), pad + "/sign");
+        Datatype.Teken teken = null;
+        String sign = tekst(n, pad, "sign");
+        for (Datatype.Teken t : Datatype.Teken.values()) if (t.name().equals(sign)) teken = t;
+        if (teken == null) throw new Documentfout(pad + "/sign", onbekendeWaarde("sign", sign));
         Eenheid eenheid = n.has("unit") ? unit(n.get("unit"), pad + "/unit") : null;
         String presentatie = optTekst(n, pad, "presentation");
         if (presentatie != null && !presentatie.equals("percentage"))
-            throw new Documentfout(pad + "/presentation", "'" + presentatie + "' is not one of [percentage]");
+            throw new Documentfout(pad + "/presentation", onbekendeWaarde("presentation", presentatie));
         boolean procent = eenheid != null && eenheid.afkorting().equals("%");
         if (procent && teken != Datatype.Teken.ONBEPAALD)
             throw new Documentfout(pad + "/sign", PROCENT_MET_TEKEN);
@@ -1071,6 +1077,12 @@ public final class IrLoader {
             throw new Documentfout(pad + "/presentation", TAG_OP_ANNOTATIE + " (WF-007)");
         return procent ? new Datatype.Percentage(geheel, decimalen, eenheid)
                 : new Datatype.Numeriek(geheel, decimalen, teken, eenheid);
+    }
+
+    /** The shared loader's sentence for a value outside an enumeration the type system introduced ({@code sign},
+     *  {@code precision}, {@code presentation}). */
+    static String onbekendeWaarde(String veld, String waarde) {
+        return "unknown " + veld + " value \"" + waarde + "\"";
     }
 
     /** The shared loader's sentence: the percentage record has no sign, and the wire writes a percentage unsigned. */

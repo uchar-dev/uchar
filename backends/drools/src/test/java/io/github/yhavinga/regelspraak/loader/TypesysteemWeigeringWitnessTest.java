@@ -74,13 +74,16 @@ class TypesysteemWeigeringWitnessTest {
                 "Percentage", "{\"node\":\"Percentage\",\"geheel\":true,\"decimalen\":0,\"eenheid\":null}",
                 "DatumInDagen", "{\"node\":\"DatumInDagen\"}",
                 "DatumTijd", "{\"node\":\"DatumTijd\"}");
+        // the shared loader's sentence, at the node discriminator as it names it
         for (Map.Entry<String, String> k : knopen.entrySet()) {
             ObjectNode ir = golden(PENNINGJAAR);
             zet(ir, GETAL, k.getValue());
-            assertTrue(weigert(ir, GETAL).getMessage().contains("unknown datatype node \"" + k.getKey() + "\""));
+            assertTrue(weigert(ir, GETAL + "/node").getMessage()
+                    .endsWith(": unknown datatype node \"" + k.getKey() + "\""));
             ir = golden(VONDSTTARIEF);
             zet(ir, ANNOTATIE, k.getValue());
-            assertTrue(weigert(ir, ANNOTATIE).getMessage().contains("unknown datatype node \"" + k.getKey() + "\""));
+            assertTrue(weigert(ir, ANNOTATIE + "/node").getMessage()
+                    .endsWith(": unknown datatype node \"" + k.getKey() + "\""));
         }
     }
 
@@ -175,11 +178,12 @@ class TypesysteemWeigeringWitnessTest {
 
         ir = golden(PENNINGJAAR);
         ((ObjectNode) ir.at(GETAL)).put("sign", "ONBEKEND");
-        assertTrue(weigert(ir, GETAL + "/sign").getMessage().contains("'ONBEKEND' is not one of"));
+        assertTrue(weigert(ir, GETAL + "/sign").getMessage().endsWith(": unknown sign value \"ONBEKEND\""));
 
         ir = golden(VONDSTTARIEF);
         ((ObjectNode) ir.at(TARIEF)).put("presentation", "procent");
-        assertTrue(weigert(ir, TARIEF + "/presentation").getMessage().contains("'procent' is not one of [percentage]"));
+        assertTrue(weigert(ir, TARIEF + "/presentation").getMessage()
+                .endsWith(": unknown presentation value \"procent\""));
 
         ir = golden(VONDSTTARIEF);
         ((ObjectNode) ir.at(TARIEF)).putNull("presentation");
@@ -211,7 +215,7 @@ class TypesysteemWeigeringWitnessTest {
 
         ir = golden(MELDSTIP);
         ((ObjectNode) ir.at(datum)).put("precision", "second");
-        assertTrue(weigert(ir, datum + "/precision").getMessage().contains("'second' is not one of [day, millisecond]"));
+        assertTrue(weigert(ir, datum + "/precision").getMessage().endsWith(": unknown precision value \"second\""));
     }
 
     // ---------------- the spellings ----------------
@@ -230,9 +234,13 @@ class TypesysteemWeigeringWitnessTest {
         ((ObjectNode) ir.at(euro)).putNull("spellings");
         assertTrue(weigert(ir, euro + "/spellings").getMessage().contains("null is neither"));
 
-        ir = golden(PENNINGJAAR);
-        ((ArrayNode) ir.at(STELSEL + "/units")).add(ir.at(euro).deepCopy());
-        assertTrue(weigert(ir, STELSEL + "/units/1/abbreviation").getMessage().contains("declared twice"));
+        // one Unit per abbreviation, under the name identity (WF-009): a second EUR, and an eur, are the same unit
+        for (String tweede : List.of("EUR", "eur")) {
+            ir = golden(PENNINGJAAR);
+            ((ArrayNode) ir.at(STELSEL + "/units")).add(((ObjectNode) ir.at(euro).deepCopy()).put("abbreviation", tweede));
+            assertTrue(weigert(ir, STELSEL + "/units/1/abbreviation").getMessage().endsWith(": the unit '" + tweede
+                    + "' is declared twice in the unit system 'Munt': one Unit per abbreviation (WF-009)"), tweede);
+        }
     }
 
     // ---------------- the parameter ----------------
