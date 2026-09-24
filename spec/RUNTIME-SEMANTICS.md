@@ -142,7 +142,7 @@ table row above); a tie takes the *later* operand (v0's listed fold,
 `acc < x ? acc : x`) — value-equal, so unobservable today. The listed
 fold is dispatched by argument *shape*, for v0's listed family
 minimum/maximum/eerste/laatste ONLY: v0's resolver stamps
-`elementObjecttype` with the first operand's owner even here, a
+the element type (`elementType` on the wire since L4) with the first operand's owner even here, a
 vestigial tag — an instance fold always carries exactly one source
 argument, a listed fold at least two. For som/totaal/aantal the element
 is *load-bearing* (v0's accumulate joins it and reads only the first
@@ -662,7 +662,7 @@ the first witness is step 6 of `scripts/check-reftype-derivation.sh`. Note
 that this class is a set of *positions*, not of node kinds: `GEDEELD_DOOR`
 and `PLUS` are the same node kind (`Binair`), and only one of them derives.
 The clamp therefore keys on **(node, op)** for a `Binair` and on
-**(node, kind)** for a `Functie`, and it separates the two arrivals it can
+**(node, kind)** for an `Aggregation` or a `BuiltinCall` (one `Functie` until L4), and it separates the two arrivals it can
 see — a fourth-class *branch* of a node kind the twist table otherwise
 carries, and a node kind outside the table altogether — each failing the
 gate with the position class and the golden named. Keying on the node alone
@@ -969,14 +969,14 @@ fold names two declarations, and they answer two different questions. The
 source relation (`sourceRole`, or the multi-step `sourcePath` of ch. 3.4b —
 since L2 every instance fold carries one of the two, B12; until L2 WF-048
 derived the role when neither was written) says which instances the
-fold REACHES from its subject. `elementObjecttype` says which instances the
+fold REACHES from its subject. `elementType` says which instances the
 fold RANGES OVER, extensionally (`IR-SPEC.md` ch. 2.2): every instance
 whose type is ⊑ it. The contributors are the intersection — an instance the
 relation reaches whose type the element type does not cover is **not** a
 contributor, and contributes to neither a count nor a value fold.
 
 The two used to be the same set. WF-047 demanded the bound role's filler
-and `elementObjecttype` be the same name, so the relation could not reach
+and `elementType` be the same name, so the relation could not reach
 anything the element type failed to cover; since ch. 2.6 made a role's
 declared filler an UPPER bound and widened "agree" to ⊑-compatibility, the
 filler may be a strict supertype and the two come apart. Where the filler
@@ -989,7 +989,7 @@ condition, since no condition can ask an instance for its type.
 
 Worked example (the `golden/jutterswet-munttelling` golden, verbatim in
 gates 5, 6 and 12). `vondstaanmelding` relates Jutter to **Vondst**; both
-folds declare `elementObjecttype` **Munt**, and `Munt ⊑ Vondst` strictly.
+folds declare `elementType` **Munt**, and `Munt ⊑ Vondst` strictly.
 `J1` is linked to `V1` (a plain Vondst, gewicht 3,00), `M1` (a Munt, 7,00)
 and `M2` (a Munt, 5,00): the reach is all three, the population is {M1,
 M2}, so the count is **2** and the sum **12,00** — unfiltered they would
@@ -1028,7 +1028,7 @@ count 0.
 one source argument carries its range (`sourceRole`, one step — a
 `sourcePath` belongs to a value fold's set source alone, `IR-SPEC.md`
 WF-102 (c)), and the count folds the instances that range reaches from the
-subject, narrowed by `elementObjecttype` as above. The argument's
+subject, narrowed by `elementType` as above. The argument's
 `attribuut` is the WRITTEN name of the bound role and selects nothing: it
 MUST denote the bound role by its declared name or its declared plural
 (`IR-SPEC.md` WF-047), and where the written form did not, the migration to
@@ -1120,12 +1120,12 @@ than one (`IR-SPEC.md` ch. 4.3, `sourcePath`; two or more steps, the
 one-step range stays `sourceRole`). The folded set is the **flat union**:
 start at the fold subject, take step 1's linked instances, take step 2's
 linked instances from each of those, and so on; the instances the last step
-reaches are the fold's REACH, which `elementObjecttype` narrows to the
+reaches are the fold's REACH, which `elementType` narrows to the
 contributors exactly as in the one-step form (ch. 3.4a — the intermediate
 steps are not narrowed, only the landing). It is a SET — an element reachable through
 more than one intermediate instance contributes **once** — and everything
 downstream is unchanged: the element's attribute is read at the
-`elementObjecttype` exactly as in the one-step form, a leeg element
+`elementType` exactly as in the one-step form, a leeg element
 attribute drops out of a value fold (ch. 1.2), the die/dat subselection
 (ch. 3.4a) still evaluates per contributor with the element as its subject,
 and the empty-source rules (ch. 1.2) apply to the union, not to any
@@ -1645,9 +1645,9 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   On the wire the two routes differ by their range. The per-element fold
   carries one (`sourceRole` or `sourcePath`, the relation of its set
   source). The subject's own collapse carries none: of the
-  single-argument aggregations that carry an `elementObjecttype`,
+  single-argument aggregations that carry an `elementType`,
   `TOTAAL` alone may omit its range (since L2, `IR-SPEC.md` ch. 4.3), and
-  it then reads the subject itself, so its `elementObjecttype` and its
+  it then reads the subject itself, so its `elementType` and its
   argument's `objecttype` both name the subject type (WF-083 (c)).
   The two temporal-total routes carry **opposite** input conventions, and
   the asymmetry is deliberate (ch. 8.4 keeps the two case conventions
@@ -1942,12 +1942,12 @@ calendar table does not know and no day kind carries is ill-formed
 MUST be ALTIJD (WF-031), so there is no window to read.
 
 **Evaluation — the predicate of one day.** `P_k(d)` is the definition's
-`voorwaarde`, evaluated with **`de dag` bound to d** and nothing else in
-scope. That binding IS the runtime meaning of the `de dag` context value
-(`IR-SPEC.md` ch. 4.1): it is not a session value — ch. 8.2's evaluation
-date is — but the arbitrary day the definition is about, and it denotes
-nothing anywhere else. An executor that meets `de dag` outside a day-kind
-evaluation **faults**, naming the form; it never reads as leeg and never
+`voorwaarde`, evaluated with **the bound day bound to d** and nothing else
+in scope. That binding IS the runtime meaning of the `BoundDay` node
+(`IR-SPEC.md` ch. 4.1; until L4 the context value `de dag`): it is not a
+session value — ch. 8.2's evaluation date is — but the arbitrary day the
+definition is about, and it denotes nothing anywhere else. An executor that
+meets the bound day outside a day-kind evaluation **faults**, naming the form; it never reads as leeg and never
 falls back on the evaluation date (red case
 `contextwaarde-de-dag-buiten-dagsoort` pins both executors).
 
@@ -2897,7 +2897,7 @@ plain `Berger` on one `Berger`-typed role → **500, 500, leeg**, rest
 **1** (unfiltered it would read 333/333/333, rest 2).
 **Decided (2026-08-16, WF-047/048):** the connecting relation
 is named explicitly — the `connectingRole` binding of `IR-SPEC.md`
-ch. 3.2 (wire `verbindendeRol`), the same symbolic-role move as
+ch. 3.2 (wire `connectingRole`; `verbindendeRol` until L4), the same symbolic-role move as
 `CONSTRUCTS.md` rows 4/22. **Landed L2 (2026-09-24, B12):** the binding is
 required, and executors consume it and nothing else: there is no
 derivation to fall back on, so an allocation without it does not load.
@@ -3176,7 +3176,7 @@ parallel — an empty value writes silently there — and the closed-world
 reading makes leeg and false indistinguishable to a characteristic check,
 as an absent atom is both to the ASP backend; the boolean constant is its
 v0 form), and new object and subject
-are linked over the back-link relation — the explicit `verbindendeRol`
+are linked over the back-link relation — the explicit `connectingRole`
 binding (`IR-SPEC.md` ch. 3.3) when present, else the
 **uniquely-derivable** connecting relation — both ends.
 The 1:1 shape (a to-one created-side role) realises the
@@ -3266,7 +3266,7 @@ deliberately breaks the acyclicity of ch. 5.2 in one controlled way: a
 creation whose output feeds its own condition advances **exactly one
 generation per instance**, and the chain runs to its fixpoint within
 the single evaluation. A self-typed chain names its back-link role
-explicitly (`verbindendeRol`, `IR-SPEC.md` ch. 3.3 — the type-pair
+explicitly (`connectingRole`, `IR-SPEC.md` ch. 3.3 — the type-pair
 derivation is role-ambiguous there and mirrors v0's null). Termination
 is the author's obligation — every
 **object-creation member** of a recursive group MUST be conditional
@@ -3279,7 +3279,7 @@ a named `viol/2` witness → UNSAT).
 Worked example (absolute; the anchor `jutterswet-wachtersketen`
 verbatim): the chain "a wachter of rank n recruits an opvolger of rank
 n + 1, while n < 5", linked over `opvolging` via the explicit
-`verbindendeRol {opvolging, opvolger}`. From rank 1 the chain
+`connectingRole {opvolging, opvolger}`. From rank 1 the chain
 terminates at rank 5 — measured: the direct-successor fold on the
 labelled start reads **2** (from rank 4: **5**), the rank-detector
 consistency (rank < 5) turns the case **inconsistent** exactly because
@@ -4070,8 +4070,8 @@ outcome writes nothing and retracts nothing (ch. 5.6).
 **Wire order** is the order the node declares its operands in: for a
 list-valued slot the list's own order, for named slots the order the
 **schema** gives them — `spec/schema/uchar-ir-v1.schema.json`,
-`$defs/Begrensd` (`node`, `basis`, `minimum`, `maximum`), `$defs/Functie`
-(`argumenten` before `leegwaarde`), `$defs/Fold` (`list` before `init`).
+`$defs/Begrensd` (`node`, `basis`, `minimum`, `maximum`), `$defs/Aggregation`
+(`arguments` before `emptyFallback`), `$defs/Fold` (`list` before `init`).
 For the tijdsduur family the slot is a list: argument 0 is `van`,
 argument 1 is `tot`.
 
@@ -4122,8 +4122,9 @@ normative order still stands, because the spec is engine-neutral and the
 next consumer may carry it.
 
 Node names below are the **wire's**, as the schema spells them. The one
-family that is not a node per name is the `Functie` family: it is a single
-wire node discriminated by its `kind`, so its rows are named by kind
+family that is not a node per name is the aggregation and builtin family:
+two wire nodes, `Aggregation` and `BuiltinCall` (one `Functie` until L4),
+each discriminated by its `kind`, so its rows are named by kind
 (`som`, tijdsduur, `concatenatie`, …) in the source language's spelling
 rather than by a node name it does not have.
 
@@ -4134,9 +4135,9 @@ rather than by a node name it does not have.
 | `Periode` (the period condition) | `vanaf`, `tot` | **visible** | `vanaf`, then `tot`; an absent bound evaluates nothing, and BOTH bounds are read before the evaluation date decides. *Carried by both OCaml executors since 2026-09-20 (ch. 3.10); the order is stated and not yet witnessed by a case, because the two bound shapes WF-111 admits — a literal and an own attribute — have no fault position to order* |
 | `Begrensd` | `basis`, `minimum`, `maximum` | **visible** | `basis`, then `minimum`, then `maximum`; an absent bound evaluates nothing |
 | tijdsduur / absolute tijdsduur | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
-| `datum met` / `datum-tijd met` | the `argumenten` list (WF-037 leaves its arity open) | **visible** | argument order. *ref declines the form; the order is stated, not yet exercised* |
-| aggregation (`som`, `totaal`, `aantal`, `minimum`, `maximum`, `eerste`, `laatste`) | the contributors — the listed `argumenten`, or the instance fold's members each gated by the `filter` — then the `leegwaarde` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `leegwaarde` (WF-037 confines it to the som) |
-| aggregation over a `dimensieSelectie` (the third contributor source; WF-037 admits it on `som`, `minimum`, `maximum`) | the selected cells, then the `leegwaarde` | **visible** | the cells in the selection's own label order, then the `leegwaarde`. *ref declines the form; the order is stated, not yet exercised* |
+| `datum met` / `datum-tijd met` | the `arguments` list (WF-037 leaves its arity open) | **visible** | argument order. *ref declines the form; the order is stated, not yet exercised* |
+| aggregation (`som`, `totaal`, `aantal`, `minimum`, `maximum`, `eerste`, `laatste`) | the contributors — the listed `arguments`, or the instance fold's members each gated by the `filter` — then the `emptyFallback` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `emptyFallback` (WF-037 confines it to the som) |
+| aggregation over a `dimensionSelection` (the third contributor source; WF-037 admits it on `som`, `minimum`, `maximum`) | the selected cells, then the `emptyFallback` | **visible** | the cells in the selection's own label order, then the `emptyFallback`. *ref declines the form; the order is stated, not yet exercised* |
 | `concatenatie`, `TekstReeks` | the inserted parts | **visible** | part order |
 | `ListLiteral` | `elements` | **visible** | element order |
 | `StructLiteral` | `velden` | **visible** | declared field order (WF-073) |
@@ -4151,15 +4152,15 @@ rather than by a node name it does not have.
 | `Afgerond`, `wortel`, `absolute waarde`, `jaar uit`, `maand uit`, `dag uit`, `eerste paasdag`, `ListLength`, `FieldAccess`, `Construct`, `DimensieCel` | one | invisible | — |
 | `uur uit`, `minuut uit`, `seconde uit`, `milliseconde uit` | one | invisible | — *(ref declines them; a single operand carries no order either way)* |
 | `tijdsevenredig deel` | the base, and the `filter` | invisible | WF-056 restricts the base to a **bare** temporal attribute reference, so only the filter is data-dependent — one fault-capable position, no order |
-| `aantal dagen in` | none in `argumenten`; the `filter` carries the condition | invisible | — |
+| `aantal dagen in` | none in `arguments`; the `filter` carries the condition | invisible | — |
 | `TemporalRead` | `datum` only — `basis` **names** the timeline and is never evaluated (ch. 3.3) | invisible | — |
 | `Predicaat` — leeg / gevuld | `operand` | invisible | — |
 | `Predicaat` — elfproef / numeriek met exact / dagsoort | `operand` | invisible | — *(ref declines them)* |
 | `Kenmerk`, `RoleMembership` (until L2 `Rollidmaatschap` and `VerreRollidmaatschap`), `Regelversie` | none | invisible | — |
-| `Literal`, `AttribuutRef`, `ParameterRef`, `VariabeleRef`, `Constante`, `BinderRef`, `ExprOnopgelost`, `ConditieOnopgelost` | none | invisible | — (a `BinderRef` forces its ch. 10.6 need **at its own position** in the parent's order) |
+| `Literal`, `AttribuutRef`, `ParameterRef`, `VariabeleRef`, `ContextValue`, `BoundDay`, `BinderRef`, `ExprOnopgelost`, `ConditieOnopgelost` | none | invisible | — (a `BinderRef` forces its ch. 10.6 need **at its own position** in the parent's order) |
 | `Lambda` | — | not an operand position | never a value (WF-069): it is only the `functie` slot of a `Fold`/`MapList`, applied once per element under that node's row |
 
-**The som's `leegwaarde` is evaluated unconditionally.** It is an
+**The som's `emptyFallback` is evaluated unconditionally.** It is an
 operand of the node, not a lazy alternative: it runs every time the node
 runs, whether or not the contributors leave its value to be used. Its
 faults and its §9.5 deposits therefore happen on documents where the
@@ -4203,7 +4204,7 @@ vaartduur := Let vertrekdatum = zijn vertrek
              in de tijdsduur van de rekendatum tot de vertrekdatum in hele dagen
 ```
 
-`van` = the `Rekendatum` constant evaluates first and **faults** — there
+`van` = the `Rekendatum` context value evaluates first and **faults** — there
 is no evaluation date to read (ch. 8.2). `tot` is never reached. Pinned
 outcome: the rule **fails observably**. Under the reverse order the read
 of `vertrekdatum` would raise the barrier first and there would be no
@@ -4267,7 +4268,7 @@ its own.
 The pin's *static trace walk* (the bookkeeping that decides which
 companion preconditions and which hoists the emitted rules carry) runs
 `Begrensd` maximum-first, the tijdsduur operands in reverse, and the
-aggregation's `leegwaarde` before the contributors, and an arbiter test
+aggregation's `emptyFallback` before the contributors, and an arbiter test
 pins that with absolute channel-fact counts, citing the *reference
 interpreter's host-language argument order* as its evidence — the
 inversion this clause exists to end. But what the pin **emits** is a
@@ -4278,7 +4279,7 @@ different question from what it walks, and it splits the three rows:
   left to right. At fire time the pin is **already** ch. 5.11.
 - **tijdsduur** — likewise: the emitted term takes `van` then `tot`.
   Already ch. 5.11 at fire time.
-- **the aggregation's `leegwaarde`** — **not** already, and this is the
+- **the aggregation's `emptyFallback`** — **not** already, and this is the
   row that matters. The pin emits a *conditional*: the stand-in is
   evaluated only when the contributors turn out empty (in one lowering a
   ternary, in another a fold that reaches its stand-in only at a zero
@@ -4317,8 +4318,8 @@ what reaches the rows a barrier cannot, because a closed fold body
 | `Vergelijking` `links` before `rechts` | `ref/` `WV-5.11-vergelijking-…` (pair) |
 | aggregation contributors, in wire order | `ref/` `WV-5.11-som-bijdrager…` (pair) |
 | the **instance** fold: the filter per member, members in fold order | `ref/` `WV-5.11-instantiefold-…` and `WV-5.11-instantiesom-…` (two pairs — the `Instances` walk an `aantal` takes and the `Values` walk a set-read `som` takes) |
-| aggregation contributors **before** the `leegwaarde` | `ref/` `WV-5.11-som-…-leegwaarde` (pair) |
-| the `leegwaarde` evaluates unconditionally | `som-fallback-always-evaluated` (gate 8) + `ref/` `WV-5.11-som-leegwaarde-onvoorwaardelijk` |
+| aggregation contributors **before** the `emptyFallback` | `ref/` `WV-5.11-som-…-leegwaarde` (pair) |
+| the `emptyFallback` evaluates unconditionally | `som-fallback-always-evaluated` (gate 8) + `ref/` `WV-5.11-som-leegwaarde-onvoorwaardelijk` |
 | `concatenatie` and `TekstReeks` part order | `ref/` `WV-5.11-concat-…`, `WV-5.11-tekstreeks-…` (pairs) |
 | `ListLiteral` element order | `ref/` `WV-5.11-listliteral-…` (pair) |
 | `StructLiteral` field order | `ref/` `WV-5.11-structliteral-…` (pair) |
@@ -4374,8 +4375,8 @@ Each rule form reads and writes nodes:
 | assignment / initialisation | its target attribute | every attribute and characteristic its value expression and condition reference — a navigated reference reads the referenced type's node; population(element type) per instance fold |
 | characteristic attribution | its target characteristic | idem |
 | allocation | target attribute; declared remainder attribute | source amount; ratio, maximum and ordering attributes; condition reads; population(target type) |
-| consistency / uniqueness | channel(own name) | assertion operands / key attributes; a union reads every source's key attributes; a scoped uniqueness also reads relation(scope hop), named by its `scopeRol` binding (since L2 the only spelling of the scope, B8; until L2 a scope without a binding was derived from the written scope field) |
-| object creation | the attributes and characteristics its toekenningen set on the created type; population(created type); relation(the uniquely-derivable connecting fact type — the back-link, ch. 5.5) | condition and toekenning-value reads on the anchor; population(subject type) — iterating the subjects is a read: it orders creation-after-creation, and a self-typed creation becomes a WF-045 cycle instead of a diverging fixpoint or an unbounded grounding |
+| consistency / uniqueness | channel(own name) | assertion operands / key attributes; a union reads every source's key attributes; a scoped uniqueness also reads relation(scope hop), named by its `scope` binding (`scopeRol` until L4; since L2 the only spelling of the scope, B8; until L2 a scope without a binding was derived from the written scope field) |
+| object creation | the attributes and characteristics its `initialisations` set on the created type; population(created type); relation(the uniquely-derivable connecting fact type — the back-link, ch. 5.5) | condition and toekenning-value reads on the anchor; population(subject type) — iterating the subjects is a read: it orders creation-after-creation, and a self-typed creation becomes a WF-045 cycle instead of a diverging fixpoint or an unbounded grounding |
 | relation creation | population(target-role filler type); relation(created fact type) | condition reads on the anchor; relation(each hop of the join-chain traversal, `IR-SPEC.md` ch. 3.4) |
 
 Edges run producer → consumer — from every form that writes a node to
@@ -4709,17 +4710,19 @@ normative:
   timeline into "its value today": the only bridges from a timeline to
   a scalar are the dedicated collapses (ch. 3.6, 3.9) and the explicit
   point read (ch. 3.3, `IR-SPEC.md` ch. 4.3a). The evaluation date is
-  available to expressions solely as the v0 execution-date constant —
-  `Constante` named `Rekendatum` (day precision; its sibling
+  available to expressions solely as the execution-date context value —
+  a `ContextValue` named `Rekendatum` (the v0 `Constante` until L4; day
+  precision; its sibling
   `Rekenjaar`, a whole number, is not yet exercised by any corpus case
   and executors fault on it, recorded).
 
-**The third context value is not a session value.** `IR-SPEC.md` ch. 4.1
-admits a third `Constante` name, `de dag`, and this chapter does **not**
-own it: it denotes the BOUND DAY of a day-kind definition, and its
-runtime meaning is stated where that binding is made — ch. 3.8, the
-day-kind duration forms. Two consequences follow, and both are checked.
-Outside a day-kind evaluation `de dag` denotes nothing and every executor
+**The bound day is not a session value.** Until L4 `IR-SPEC.md` ch. 4.1
+admitted a third context-value name, `de dag`; since L4 it is the node
+`BoundDay`, and this chapter does **not** own it: it denotes the BOUND DAY
+of a day-kind definition, and its runtime meaning is stated where that
+binding is made — ch. 3.8, the day-kind duration forms. Two consequences
+follow, and both are checked. Outside a day-kind evaluation the bound day
+denotes nothing and every executor
 faults by name (red case `contextwaarde-de-dag-buiten-dagsoort`); and the
 converse, a SESSION value inside a day-kind voorwaarde, is refused
 statically (WF-031's position arm, `IR-SPEC.md` ch. 3.7), because a
@@ -6082,8 +6085,8 @@ input) and derived `totaal`; one `Jutter` with **no** vondsten and an
 
 | wire | `totaal` |
 |---|---|
-| what the frontend emits — **no** `Let` at all: the only read of `de bonus` sits in the §5.8.2 leegwaarde, a pure value position under the aggregation, so it is substituted | **1** — the absent read coalesces to 0 inside the `plus` (the ch. 1.2 `plus` row), exactly as v0 |
-| the same IR with that leegwaarde wrapped as `Let bonus = bonusgrond in bonus plus 1` | **leeg** — the read fires clause 2 and empties the rule value |
+| what the frontend emits — **no** `Let` at all: the only read of `de bonus` sits in the §5.8.2 empty-value fallback (the aggregation's `emptyFallback`), a pure value position under the aggregation, so it is substituted | **1** — the absent read coalesces to 0 inside the `plus` (the ch. 1.2 `plus` row), exactly as v0 |
+| the same IR with that `emptyFallback` wrapped as `Let bonus = bonusgrond in bonus plus 1` | **leeg** — the read fires clause 2 and empties the rule value |
 
 The barrier would have promised the second row; the frontend emits the
 first. Both rows are `ref/`-measured on the identical case, and the
