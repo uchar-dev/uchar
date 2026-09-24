@@ -70,9 +70,9 @@ class DefaultsBronAnnotatieTest {
         return m.prioritizedDefaults.get(0);
     }
 
-    /** Every {@code "bron": "<text>"} value on the wire that carries an "art." citation, in emission order. */
+    /** Every source snippet on the wire that carries an "art." citation, in emission order. */
     private static List<String> artikelBronnen(String ir) {
-        Matcher k = Pattern.compile("\"bron\": \"(art\\.[^\"]*)\"").matcher(ir);
+        Matcher k = Pattern.compile("\"snippet\": \"(art\\.[^\"]*)\"").matcher(ir);
         List<String> uit = new ArrayList<>();
         while (k.find()) uit.add(k.group(1));
         return uit;
@@ -86,7 +86,7 @@ class DefaultsBronAnnotatieTest {
         assertEquals("art. 4 lid 2 Jutterswet", g.defaults().get(0).bron(), "de uitzonderingsdefault (hoogste) draagt haar eigen annotatie");
         assertEquals("art. 4 lid 1 Jutterswet", g.defaults().get(1).bron(), "de basisdefault (laagste) draagt de annotatie van de basisregel");
         assertEquals("art. 4 lid 1 Jutterswet", g.bron(), "de groep, genoemd naar de basis, draagt de annotatie van de basisregel");
-        // On the wire, in emission order: the defaults (highest first), then the group's own bron after the array.
+        // On the wire, in emission order: the defaults (highest first), then the group's own source after the array.
         assertEquals(List.of("art. 4 lid 2 Jutterswet", "art. 4 lid 1 Jutterswet", "art. 4 lid 1 Jutterswet"),
                 artikelBronnen(IrEmitter.emit(m)));
     }

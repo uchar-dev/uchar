@@ -153,7 +153,7 @@ class VariabeledeelLoweringTest {
         assertEquals(1, tel(c, "\"node\":\"BinderRef\",\"name\":\"basis\""),
                 () -> "de waarde-lezing is een BinderRef:\n" + c);
         // the condition carries the SUBSTITUTED definition (a MAAL over the attribute), not a BinderRef.
-        assertTrue(c.contains("\"bron\":\"debasisgroterisdan10\""), () -> "de voorwaarde ontbreekt:\n" + c);
+        assertTrue(c.contains("\"source\":{\"snippet\":\"debasisgroterisdan10\"}"), () -> "de voorwaarde ontbreekt:\n" + c);
         assertEquals(2, tel(c, "\"attribuut\":\"grondslag\""),
                 () -> "één definitie in de Let-value, één gesubstitueerd in de voorwaarde:\n" + c);
     }
@@ -389,7 +389,7 @@ class VariabeledeelLoweringTest {
             """;
         String c = emitCompact(vooruit);
         assertEquals(1, tel(c, "\"node\":\"Let\""), () -> "de gelezen variabele krijgt haar Let:\n" + c);
-        assertTrue(c.contains("\"filter\":{\"node\":\"Onopgelost\",\"bron\":\"groterzijndandetweede\"}"),
+        assertTrue(c.contains("\"filter\":{\"node\":\"Onopgelost\",\"source\":{\"snippet\":\"groterzijndandetweede\"}}"),
                 () -> "de voorwaartse verwijzing moet ook in pass 2 onopgelost blijven:\n" + c);
         assertTrue(meldt(meldingen(vooruit), "wordt nog niet omgezet"),
                 () -> "pass 1 meldt de degradatie: " + meldingen(vooruit));

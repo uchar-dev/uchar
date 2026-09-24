@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * WF-113 (b) on the producer route (IR-SPEC ch. 2, 2026-09-23): every {@code Onopgelost} in a document the frontend
- * WRITES is accounted for by a WARNING whose message contains the marker's {@code bron} verbatim. The verifier holds
+ * WRITES is accounted for by a WARNING whose message contains the marker's source snippet verbatim. The verifier holds
  * the rule on every document that reaches it; this suite holds it where the documents are made, on the emitted JSON
  * ({@link Verslag}).
  *
@@ -72,7 +72,7 @@ class MarkerVerslagTest {
     // ---------------- the predicate itself ----------------
 
     @Test void het_predicaat_leest_de_json_en_niet_het_model() {
-        String marker = "{\"node\": \"Onopgelost\", \"bron\": \"de som van \\u00e9\\u00e9n \\\"lid\\\"\"}";
+        String marker = "{\"node\": \"Onopgelost\", \"source\": {\"snippet\": \"de som van \\u00e9\\u00e9n \\\"lid\\\"\"}}";
         String goed = document(marker, "{\"node\": \"Diagnostic\", \"severity\": \"WARNING\", "
                 + "\"message\": \"onopgelost: x \\u2014 'de som van \\u00e9\\u00e9n \\\"lid\\\"' blijft\", \"line\": 3}");
         Verslag.verantwoord(goed);
@@ -86,12 +86,12 @@ class MarkerVerslagTest {
         String fout = document("null", "{\"node\": \"Diagnostic\", \"severity\": \"ERROR\", \"message\": \"x\", \"line\": 1}");
         assertThrows(AssertionError.class, () -> Verslag.verantwoord(fout), "(a): een ERROR op de wire");
 
-        // (b) counts a blank bron as absent: an empty one is contained in every message, so the WARNING beside it
-        // would account for it under a literal reading, and a null one is contained in none
+        // (b) counts a blank snippet as absent: an empty one is contained in every message, so the WARNING beside it
+        // would account for it under a literal reading, and a marker without a source record is contained in none
         String melding = "{\"node\": \"Diagnostic\", \"severity\": \"WARNING\", \"message\": \"iets\", \"line\": 1}";
-        for (String bron : new String[] { "\"\"", "\"   \"", "null" }) {
-            String zonderBron = document("{\"node\": \"Onopgelost\", \"bron\": " + bron + "}", melding);
-            assertThrows(AssertionError.class, () -> Verslag.verantwoord(zonderBron), "(b): een marker met bron " + bron);
+        for (String bron : new String[] { ", \"source\": {\"snippet\": \"\"}", ", \"source\": {\"snippet\": \"   \"}", "" }) {
+            String zonderBron = document("{\"node\": \"Onopgelost\"" + bron + "}", melding);
+            assertThrows(AssertionError.class, () -> Verslag.verantwoord(zonderBron), "(b): een marker" + bron);
         }
     }
 

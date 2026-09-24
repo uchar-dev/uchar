@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * WF-113 read off an emitted document, the way a consumer reads it: (a) every diagnostic is a WARNING, and (b)
- * every {@code Onopgelost} node is accounted for — its {@code bron} is neither null nor blank, and some WARNING's
+ * every {@code Onopgelost} node is accounted for — it carries a source snippet that is not blank, and some WARNING's
  * {@code message} contains it verbatim. The check reads the JSON TEXT and not the model: the sweep that raises the WARNINGs walks the model, so
  * a check over the model would share its blind spots, and a marker the emitter writes from a place the sweep does
  * not visit would pass unseen. The frontend links no JSON library (jar-only: ANTLR and JUnit), hence the small
@@ -30,7 +30,7 @@ final class Verslag {
             meldingen.add((String) d.get("message"));
         }
         for (String bron : markerBronnen(document)) {
-            // blank counts as absent: an empty bron is contained in every message, and a null one in none
+            // blank counts as absent: an empty snippet is contained in every message, and an absent one in none
             assertTrue(bron != null && !bron.isBlank(),
                     () -> "WF-113 (b): een marker zonder bron kan door geen WARNING verantwoord worden: " + bron);
             assertTrue(meldingen.stream().anyMatch(m -> m.contains(bron)),
@@ -39,7 +39,8 @@ final class Verslag {
         }
     }
 
-    /** The {@code bron} of every Onopgelost node in the document, in document order. */
+    /** The source snippet of every Onopgelost node in the document, in document order; null for a marker that
+     *  carries no source record. */
     static List<String> markerBronnen(String json) {
         return markerBronnen(new Lezer(json).document());
     }
@@ -52,7 +53,8 @@ final class Verslag {
 
     private static void verzamel(Object x, List<String> uit) {
         if (x instanceof Map<?, ?> m) {
-            if ("Onopgelost".equals(m.get("node"))) uit.add((String) m.get("bron"));
+            if ("Onopgelost".equals(m.get("node")))
+                uit.add(m.get("source") instanceof Map<?, ?> bron ? (String) bron.get("snippet") : null);
             for (Object v : m.values()) verzamel(v, uit);
         } else if (x instanceof List<?> l) {
             for (Object v : l) verzamel(v, uit);

@@ -208,7 +208,7 @@ class IrEmitterTest {
     @Test void unit_literal_lexeme_is_kaal_eenheid_in_type() {
         // uchar WF-081 (IR-SPEC ch. 4.1): a numeric literal's value is the BARE number;
         // the unit rides the literal's datatype ("unit"), exactly as attribute datatypes carry
-        // it. The source snippet ("5 €") stays in bron. A number carrying its unit ("5 €") is
+        // it. The source snippet ("5 €") stays in the source record. A number carrying its unit ("5 €") is
         // verifier-ill-formed and faults in every uchar executor.
         String src = """
             Eenheidsysteem Munt
@@ -226,7 +226,7 @@ class IrEmitterTest {
                 "{\"node\":\"Literal\",\"value\":{\"number\":\"5\"},\"type\":{\"node\":\"Number\",\"whole\":true,"
                 + "\"decimals\":0,\"sign\":\"ONBEPAALD\",\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"EUR\","
                 + "\"system\":\"Munt\",\"canonical\":\"EUR\",\"factorToCanonical\":{\"num\":1,\"den\":1}}},"
-                + "\"bron\":\"5\\u20ac\"}"),
+                + "\"source\":{\"snippet\":\"5\\u20ac\"}}"),
                 () -> "de unit-literal moet een kaal lexeme dragen met de eenheid in het type:\n" + c);
         assertFalse(c.contains("\"number\":\"5\\u20ac\""),
                 () -> "de eenheid mag niet in het literal-lexeme zitten:\n" + c);
@@ -335,7 +335,7 @@ class IrEmitterTest {
         String c = emitCompact(src);
         assertTrue(c.contains("{\"node\":\"Literal\",\"value\":{\"number\":\"21\"},\"type\":{\"node\":\"Number\",\"whole\":true,"
                 + "\"decimals\":0,\"sign\":\"ONBEPAALD\",\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"%\","
-                + "\"canonical\":\"%\",\"factorToCanonical\":{\"num\":1,\"den\":1}}},\"bron\":\"21%\"}"),
+                + "\"canonical\":\"%\",\"factorToCanonical\":{\"num\":1,\"den\":1}}},\"source\":{\"snippet\":\"21%\"}}"),
                 () -> "de percentage-literal moet een kaal lexeme dragen, als getal met de eenheid %, zonder tag:\n" + c);
         assertTrue(c.contains("{\"node\":\"Attribute\",\"name\":\"heffingspercentage\",\"datatype\":{\"node\":"
                 + "\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"ONBEPAALD\",\"unit\":{\"node\":\"Unit\","
@@ -355,7 +355,7 @@ class IrEmitterTest {
         // uchar WF-084 (IR-SPEC ch. 4.1): a date literal's value is the BARE ISO lexeme the uchar
         // executors parse (yyyy-mm-dd), NOT the Dutch day-first source snippet ("31-01-2024"). The
         // day-first form ("31-01-2024") was silently misread as year 31 (0036-07-16) by both
-        // executors — a differential-blind wrong answer. The source snippet stays in bron.
+        // executors — a differential-blind wrong answer. The source snippet stays in the source record.
         String src = """
             Objecttype de Vondst
                 de vondstdag Datum in dagen;
@@ -368,15 +368,15 @@ class IrEmitterTest {
         String c = emitCompact(src);
         assertTrue(c.contains(
                 "{\"node\":\"Literal\",\"value\":{\"date\":\"2024-01-31\"},\"type\":{\"node\":\"Date\","
-                + "\"precision\":\"day\"},\"bron\":\"31-01-2024\"}"),
-                () -> "de datum-literal moet het kale ISO-lexeme dragen, de bron-snippet in bron:\n" + c);
+                + "\"precision\":\"day\"},\"source\":{\"snippet\":\"31-01-2024\"}}"),
+                () -> "de datum-literal moet het kale ISO-lexeme dragen, de bron-snippet in source:\n" + c);
         assertFalse(c.contains("\"date\":\"31-01-2024\""),
                 () -> "de day-first bron-snippet mag niet in de literalwaarde zitten:\n" + c);
     }
 
     @Test void datum_literal_dedato_prefix_wordt_iso_lexeme() {
         // The §13.2.19 "dd. " de-dato prefix (and the day-first order) belong to the source snippet,
-        // never to the parsed lexeme: "dd. 31-01-2024" emits the date "2024-01-31", bron unchanged.
+        // never to the parsed lexeme: "dd. 31-01-2024" emits the date "2024-01-31", the snippet unchanged.
         String src = """
             Objecttype de Vondst
                 de vondstdag Datum in dagen;
@@ -395,7 +395,7 @@ class IrEmitterTest {
 
     @Test void datumtijd_literal_lexeme_is_iso_snippet_in_bron() {
         // uchar WF-095 (IR-SPEC ch. 4.1, narrowed 2026-09-22): a datum-tijd literal's value is the
-        // canonical ISO lexeme yyyy-mm-ddThh:mm:ss.fff, the day-first source snippet stays in bron —
+        // canonical ISO lexeme yyyy-mm-ddThh:mm:ss.fff, the day-first source snippet stays in source —
         // the same split the date branch makes. The snippet in the value is refused by the verifier,
         // so this is what keeps the emitter's own output on the wire. The "dd. " prefix belongs to
         // the snippet too.
@@ -408,16 +408,16 @@ class IrEmitterTest {
                     Een Aanmelding is tijdig
                     indien zijn meldstip eerder is dan %s.
             """;
-        // emitRaw, not emitCompact: the snippet's own space is part of what bron must keep.
+        // emitRaw, not emitCompact: the snippet's own space is part of what the source snippet must keep.
         String c = emitRaw(src.formatted("15-03-2026 12:00:00.000"));
         java.util.regex.Pattern literal = java.util.regex.Pattern.compile(
                 "\\{\\s*\"node\"\\s*:\\s*\"Literal\",\\s*\"value\"\\s*:\\s*\\{\\s*\"dateTime\"\\s*:\\s*\"([^\"]*)\"\\s*\\},\\s*"
                 + "\"type\"\\s*:\\s*\\{\\s*\"node\"\\s*:\\s*\"Date\",\\s*\"precision\"\\s*:\\s*\"millisecond\"\\s*\\},"
-                + "\\s*\"bron\"\\s*:\\s*\"([^\"]*)\"");
+                + "\\s*\"source\"\\s*:\\s*\\{\\s*\"snippet\"\\s*:\\s*\"([^\"]*)\"");
         java.util.regex.Matcher m = literal.matcher(c);
         assertTrue(m.find(), () -> "geen datum-tijd-literal in de emissie:\n" + c);
         assertEquals("2026-03-15T12:00:00.000", m.group(1), "de waarde draagt het ISO-lexeme");
-        assertEquals("15-03-2026 12:00:00.000", m.group(2), "bron draagt de bron-snippet, spatie inbegrepen");
+        assertEquals("15-03-2026 12:00:00.000", m.group(2), "source draagt de bron-snippet, spatie inbegrepen");
         String d = emitRaw(src.formatted("dd. 5-3-2026 09:07:05.004"));
         java.util.regex.Matcher md = literal.matcher(d);
         assertTrue(md.find(), () -> "geen datum-tijd-literal in de emissie:\n" + d);
@@ -567,11 +567,11 @@ class IrEmitterTest {
         // outer '"' still attached. The delimited form ("\"Flevoland\"") gave v0 two lexeme
         // families for one text value, and since all four consumers compare Tekst verbatim, an
         // emitted golden only played when its case input carried the delimiters too. Third in the
-        // bare-lexeme row beside WF-081 (number) and WF-084 (date); bron keeps the source snippet.
+        // bare-lexeme row beside WF-081 (number) and WF-084 (date); the source record keeps the snippet.
         String c = emitCompact(tekstBron("\"Flevoland\""));
         assertTrue(c.contains(
-                "{\"node\":\"Literal\",\"value\":{\"text\":\"Flevoland\"},\"type\":{\"node\":\"Tekst\"},\"bron\":\"\\\"Flevoland\\\"\"}"),
-                () -> "de tekst-literal moet de geparste waarde dragen, de bron-snippet in bron:\n" + c);
+                "{\"node\":\"Literal\",\"value\":{\"text\":\"Flevoland\"},\"type\":{\"node\":\"Tekst\"},\"source\":{\"snippet\":\"\\\"Flevoland\\\"\"}}"),
+                () -> "de tekst-literal moet de geparste waarde dragen, de bron-snippet in source:\n" + c);
         assertFalse(c.contains("\"text\":\"\\\"Flevoland\\\"\""),
                 () -> "de buitenste aanhalingstekens mogen niet in de literalwaarde zitten:\n" + c);
     }
@@ -598,14 +598,14 @@ class IrEmitterTest {
         // "Outer delimiters off, nothing else" — taken from the STRING_TEXT tokens, not from
         // bron.snippet() minus its first and last char. DefinitionResolver.src collapses every
         // whitespace run to one space, so a snippet-derived value silently rewrote a double space;
-        // bron still shows that collapse, which is exactly why the two fields differ here. A
+        // the snippet still shows that collapse, which is exactly why the two fields differ here. A
         // backslash and a single quote are ordinary characters and stay as written; an empty string
         // stays empty (zero STRING_TEXT chunks, not a two-character lexeme).
         String raw = emitRaw(tekstBron("\"a  b\""));
         assertTrue(raw.contains("\"text\": \"a  b\""),
                 () -> "de dubbele spatie binnen de delimiters hoort bij de waarde:\n" + raw);
-        assertTrue(raw.contains("\"bron\": \"\\\"a b\\\"\""),
-                () -> "bron blijft de (whitespace-gevouwen) bronsnippet:\n" + raw);
+        assertTrue(raw.contains("\"snippet\": \"\\\"a b\\\"\""),
+                () -> "source blijft de (whitespace-gevouwen) bronsnippet:\n" + raw);
 
         String backslash = emitCompact(tekstBron("\"pad\\naar\""));
         assertTrue(backslash.contains("\"text\":\"pad\\\\naar\""),
@@ -616,7 +616,7 @@ class IrEmitterTest {
                 () -> "enkele aanhalingstekens zijn gewone tekens in een Tekst-literal:\n" + enkel);
 
         String leeg = emitCompact(tekstBron("\"\""));
-        assertTrue(leeg.contains("{\"node\":\"Literal\",\"value\":{\"text\":\"\"},\"type\":{\"node\":\"Tekst\"},\"bron\":\"\\\"\\\"\"}"),
+        assertTrue(leeg.contains("{\"node\":\"Literal\",\"value\":{\"text\":\"\"},\"type\":{\"node\":\"Tekst\"},\"source\":{\"snippet\":\"\\\"\\\"\"}}"),
                 () -> "de lege tekst is leeg, niet twee aanhalingstekens:\n" + leeg);
     }
 
@@ -639,11 +639,11 @@ class IrEmitterTest {
 
     /** The one enumeratiewaarde shape the wire admits: the BARE label (WF-039 crosses it byte-exactly
      *  against the declared domain) typed with the domain the position names (WF-034 (r) refuses the
-     *  unknown sentinel), the delimited source lexeme in bron. */
+     *  unknown sentinel), the delimited source lexeme in the source snippet. */
     private static final String GAAF_GETYPEERD =
             "{\"node\":\"Literal\",\"value\":{\"enumeration\":\"gaaf\"},"
             + "\"type\":{\"node\":\"Enumeratie\",\"domein\":\"Keurklasse\",\"waarden\":[\"gaaf\",\"beschadigd\"]},"
-            + "\"bron\":\"'gaaf'\"}";
+            + "\"source\":{\"snippet\":\"'gaaf'\"}}";
 
     @Test void enum_literal_krijgt_zijn_domein_van_het_schrijfdoel() {
         // uchar V8 (spec/proposals/V1-WIREMIGRATIE.md, maintainer decision 2026-09-19): an
@@ -703,7 +703,7 @@ class IrEmitterTest {
             """));
         String enumType = "{\"node\":\"Enumeratie\",\"domein\":\"Keurklasse\",\"waarden\":[\"gaaf\",\"beschadigd\"]}";
         assertTrue(c.contains("\"node\":\"Let\",\"type\":" + enumType + ",\"binder\":\"tint\",\"value\":"
-                        + GAAF_GETYPEERD + ",\"body\":{\"node\":\"BinderRef\",\"name\":\"tint\",\"bron\":"),
+                        + GAAF_GETYPEERD + ",\"body\":{\"node\":\"BinderRef\",\"name\":\"tint\",\"source\":"),
                 () -> "de hele letketen moet het domein van het schrijfdoel dragen:\n" + c);
     }
 
@@ -757,7 +757,7 @@ class IrEmitterTest {
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
         // IR-SPEC ch. 4.4: a marker whose type is unknown carries no type at all
-        assertTrue(c.contains("{\"node\":\"Onopgelost\",\"bron\":\"'gaaf'\"}"),
+        assertTrue(c.contains("{\"node\":\"Onopgelost\",\"source\":{\"snippet\":\"'gaaf'\"}}"),
                 () -> "een enumeratiewaarde zonder domeincontext hoort een marker te zijn:\n" + c);
         assertTrue(m.diagnostics.stream().anyMatch(d -> !d.isError()
                         && d.toString().contains("een enumeratiewaarde ontleent haar domein aan de context")),
@@ -784,8 +784,8 @@ class IrEmitterTest {
             """);
         assertTrue(raw.contains("\"enumeration\": \"licht  blauw\""),
                 () -> "het label moet dezelfde witruimte-run houden als de declaratie:\n" + raw);
-        assertTrue(raw.contains("\"bron\": \"'licht  blauw'\""),
-                () -> "bron is de tokentekst, niet de gevouwen snippet:\n" + raw);
+        assertTrue(raw.contains("\"snippet\": \"'licht  blauw'\""),
+                () -> "de source-snippet is de tokentekst, niet de gevouwen snippet:\n" + raw);
         assertFalse(raw.contains("licht blauw"),
                 () -> "geen enkele positie mag de gevouwen vorm dragen — declaratie en label zouden uiteenlopen:\n" + raw);
     }
@@ -807,9 +807,9 @@ class IrEmitterTest {
         assertTrue(at >= 0, () -> "de pro-rata-node ontbreekt:\n" + c);
         // scope to the node's OWN type field: it sits between the node's granularity
         // (the first one after kind — the argument refs and the Kenmerk filter carry none) and
-        // its bron, so the base argument's type object cannot satisfy the assertion.
+        // its source, so the base argument's type object cannot satisfy the assertion.
         int from = c.indexOf("\"granularity\"", at);
-        int to = c.indexOf("\"bron\"", from);
+        int to = c.indexOf("\"source\"", from);
         assertTrue(from > at && to > from, () -> "de node-veldvolgorde is onverwacht:\n" + c);
         String ownType = c.substring(from, to);
         assertTrue(ownType.contains("\"type\":{\"node\":\"Number\"") && ownType.contains("\"decimals\":2"),
@@ -927,11 +927,11 @@ class IrEmitterTest {
         }
     }
 
-    /** WF-113 (b) at the producer boundary: a marker is accounted for by a WARNING that quotes its {@code bron}
-     *  verbatim, so a marker whose bron is null or blank can be accounted for by nothing and the verifier refuses
+    /** WF-113 (b) at the producer boundary: a marker is accounted for by a WARNING that quotes its source snippet
+     *  verbatim, so a marker whose snippet is null or blank can be accounted for by nothing and the verifier refuses
      *  the document. The frontend can build one ({@code DefinitionResolver.bron} gives an empty snippet for a
      *  missing context or an empty match); the emitter refuses to write it, at either marker node, with a WARNING
-     *  on the model that a literal reading of an empty bron would count as its account. */
+     *  on the model that a literal reading of an empty snippet would count as its account. */
     @Test void wf113b_de_emitter_schrijft_geen_marker_zonder_bron() {
         for (Bron bron : new Bron[] { Bron.synthetisch(""), Bron.synthetisch("   "), Bron.synthetisch(null), null }) {
             for (boolean conditie : new boolean[] { false, true }) {
@@ -983,10 +983,10 @@ class IrEmitterTest {
                     Een Wachtpost is bemand indien hij een wachtjutter heeft.
             """);
         assertTrue(c.contains("\"condition\":{\"node\":\"RoleMembership\",\"factType\":\"wachtindeling\","
-                        + "\"role\":\"wachtjutter\",\"negated\":false,\"bron\":\"hijeenwachtjutteris\"}"),
+                        + "\"role\":\"wachtjutter\",\"negated\":false,\"source\":{\"snippet\":\"hijeenwachtjutteris\"}}"),
                 () -> "de rolcheck aan de nabije zijde:\n" + c);
         assertTrue(c.contains("\"condition\":{\"node\":\"RoleMembership\",\"factType\":\"wachtindeling\","
-                        + "\"role\":\"toegewezenwachtpost\",\"negated\":false,\"bron\":\"hijeenwachtjutterheeft\"}"),
+                        + "\"role\":\"toegewezenwachtpost\",\"negated\":false,\"source\":{\"snippet\":\"hijeenwachtjutterheeft\"}}"),
                 () -> "de rolcheck aan de verre zijde noemt de rol die het onderwerp speelt:\n" + c);
     }
 
@@ -1116,7 +1116,7 @@ class IrEmitterTest {
         m.resolvedRegels.set(0, new ResolvedRegel(r.naam(), r.soort(), r.doel(),
                 new Expr.Binair(b.op(), b.links(), b.rechts(), onbekend, b.bron()), r.voorwaarde(), r.geldigheid()));
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(c.contains("\"type\":null,\"bron\":\"devondsttellervandeJutter"),
+        assertTrue(c.contains("\"type\":null,\"source\":{\"snippet\":\"devondsttellervandeJutter"),
                 () -> "een afgeleide positie zonder type schrijft null:\n" + c);
         assertFalse(c.contains("Onbekend"), () -> "het onbekende type heeft geen spelling:\n" + c);
 
@@ -1131,7 +1131,7 @@ class IrEmitterTest {
                 new Expr.Onopgelost(onbekend, b.bron(), "test"), r.voorwaarde(), r.geldigheid()));
         m.diagnostics.add(new Diagnostic(Severity.WARNING, "onopgelost: " + b.bron().snippet(), 1));
         String marker = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(marker.contains("{\"node\":\"Onopgelost\",\"bron\":\"devondsttellervandeJuttermin6\"}"),
+        assertTrue(marker.contains("{\"node\":\"Onopgelost\",\"source\":{\"snippet\":\"devondsttellervandeJuttermin6\"}}"),
                 () -> "een marker van onbekend type draagt geen type:\n" + marker);
     }
 
@@ -1251,10 +1251,10 @@ class IrEmitterTest {
                     Een Vondst is zwaar indien zijn gewicht groter is dan 10.
             """);
         assertTrue(c.contains("\"value\":{\"number\":\"1\"},\"type\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,"
-                        + "\"sign\":\"ONBEPAALD\"},\"bron\":\"1\"},\"initialisation\":false,\"presentation\":\"GELIJKSTELLING\"}"),
+                        + "\"sign\":\"ONBEPAALD\"},\"source\":{\"snippet\":\"1\"}},\"initialisation\":false,\"presentation\":\"GELIJKSTELLING\"}"),
                 () -> "de gelijkstelling:\n" + c);
         assertTrue(c.contains("\"initialisation\":false,\"presentation\":\"BEREKENING\"}"), () -> "de berekening:\n" + c);
-        assertTrue(c.contains("\"bron\":\"5\"},\"initialisation\":true}"), () -> "de initialisatie, zonder tag:\n" + c);
+        assertTrue(c.contains("\"source\":{\"snippet\":\"5\"}},\"initialisation\":true}"), () -> "de initialisatie, zonder tag:\n" + c);
         assertTrue(c.contains("\"value\":{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Booleaan\"},"),
                 () -> "de kenmerktoekenning schrijft de booleaanse waarde waar:\n" + c);
         assertTrue(c.contains("\"initialisation\":false}]}"), () -> "de kenmerktoekenning draagt geen tag:\n" + c);
@@ -1300,10 +1300,10 @@ class IrEmitterTest {
             """);
         String geldig = "\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}";
         int enkel = c.indexOf("{\"node\":\"Uniqueness\",\"name\":\"nummersuniek\",\"versions\":[{\"sources\":["
-                + "{\"node\":\"Source\",\"objectType\":\"Vierkant\",\"keys\":[\"nummer\"]}]," + geldig + ",\"bron\":");
+                + "{\"node\":\"Source\",\"objectType\":\"Vierkant\",\"keys\":[\"nummer\"]}]," + geldig + ",\"source\":");
         int unie = c.indexOf("{\"node\":\"Uniqueness\",\"name\":\"namenuniek\",\"versions\":[{\"sources\":["
                 + "{\"node\":\"Source\",\"objectType\":\"Cirkel\",\"keys\":[\"naam\"]},"
-                + "{\"node\":\"Source\",\"objectType\":\"Vierkant\",\"keys\":[\"naam\"]}]," + geldig + ",\"bron\":");
+                + "{\"node\":\"Source\",\"objectType\":\"Vierkant\",\"keys\":[\"naam\"]}]," + geldig + ",\"source\":");
         assertTrue(c.indexOf("\"uniciteiten\":[{\"node\":\"Uniqueness\",\"name\":\"nummersuniek\"") >= 0 && enkel >= 0
                         && unie > enkel, () -> "de enkelvoudige vorm eerst, dan de unie, in één lijst:\n" + c);
         assertFalse(c.contains("uniciteitUnies"), () -> "de tweede lijst bestaat op de wire niet meer:\n" + c);
@@ -1361,7 +1361,7 @@ class IrEmitterTest {
                 geldig altijd
                     Het meldjaar van een Vondst moet gesteld worden op het Rekenjaar.
             """);
-        assertTrue(c.contains("{\"node\":\"BoundDay\",\"type\":{\"node\":\"Date\",\"precision\":\"day\"},\"bron\":\"dedag\"}"),
+        assertTrue(c.contains("{\"node\":\"BoundDay\",\"type\":{\"node\":\"Date\",\"precision\":\"day\"},\"source\":{\"snippet\":\"dedag\"}}"),
                 () -> "de gebonden dag:\n" + c);
         assertTrue(c.contains("{\"node\":\"ContextValue\",\"name\":\"Rekendatum\",\"type\":{\"node\":\"Date\","
                 + "\"precision\":\"day\"},"), () -> "de rekendatum:\n" + c);
@@ -1392,7 +1392,8 @@ class IrEmitterTest {
     }
 
     @Test void een_komma_wordt_een_punt_en_de_bron_houdt_de_komma() {
-        // IR-SPEC ch. 4.1 (WF-081): the number is written with a point; the author's decimal comma stays in bron.
+        // IR-SPEC ch. 4.1 (WF-081): the number is written with a point; the author's decimal comma stays in the
+        // source snippet.
         String c = emitCompact("""
             Objecttype de Vondst
                 de waarde Numeriek (getal met 2 decimalen);
@@ -1401,7 +1402,7 @@ class IrEmitterTest {
                     De waarde van een Vondst moet gesteld worden op 12,50.
             """);
         assertTrue(java.util.regex.Pattern.compile("\\{\"node\":\"Literal\",\"value\":\\{\"number\":\"12\\.50\"\\},"
-                + "\"type\":\\{\"node\":\"Number\",[^}]*\\},\"bron\":\"12,50\"\\}").matcher(c).find(),
+                + "\"type\":\\{\"node\":\"Number\",[^}]*\\},\"source\":\\{\"snippet\":\"12,50\"\\}\\}").matcher(c).find(),
                 () -> "punt in de waarde, komma in de bron:\n" + c);
     }
 
@@ -1438,6 +1439,89 @@ class IrEmitterTest {
                 fc.doelRol(), fc.joinRol()));
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         assertTrue(e.getMessage().contains("gedeclareerde vuller van de rol 'sponsorproject'"), e::getMessage);
+    }
+
+    // ---------------- L5: the source record ----------------
+
+    /** A rule group over a rule and a consistency rule: the two nodes whose source record carries a line. */
+    private static final String BRONRECORD = """
+            Objecttype de Vondst (mv: Vondsten)
+                het gewicht Numeriek (geheel getal);
+                de waarde Numeriek (geheel getal);
+
+            Regelgroep weging
+            Regel waarde
+                geldig altijd
+                    De waarde van een Vondst moet berekend worden als het gewicht van de Vondst maal 2.
+
+            Regel positief gewicht
+                geldig altijd
+                    Het gewicht van een Vondst moet groter zijn dan 0.
+            """;
+
+    /** IR-SPEC ch. 4 (B26): a node's source text is its record {@code source}, the snippet first. The line stands in
+     *  the record of a consistency version and of a rule group alone — the two places the model keeps one — and no
+     *  record carries a file or a column, although the model's anchor of every parsed node holds both. */
+    @Test void het_bronrecord_draagt_de_regel_alleen_op_de_consistentieversie_en_de_regelgroep() {
+        RegelSpraakModel m = Resolver.resolve(BRONRECORD);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnoses: " + m.diagnostics);
+        assertNotNull(m.consistenties.get(0).assertie().bron().file(), "het model kent het bestand van de assertie");
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(c.contains("\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null},\"source\":{\"snippet\":"
+                + "\"HetgewichtvaneenVondstmoetgroterzijndan0\",\"line\":12}}"), () -> "de consistentieversie:\n" + c);
+        assertTrue(c.contains("{\"node\":\"ResolvedRegelGroep\",\"naam\":\"weging\",\"recursief\":false,\"leden\":"
+                + "[\"waarde\",\"positiefgewicht\"],\"source\":{\"snippet\":\"weging\",\"line\":5}}"), () -> "de regelgroep:\n" + c);
+        assertEquals(2, c.split("\"line\":", -1).length - 1, () -> "een regel staat alleen op de twee dragers:\n" + c);
+        assertFalse(c.contains("\"file\"") || c.contains("\"column\"") || c.contains("\"bron\""),
+                () -> "het bronrecord draagt geen bestand en geen kolom, en de wire geen bron:\n" + c);
+    }
+
+    /** The model's 0 is "no line": a synthetic node has none, and the record admits a line of at least 1 only, so the
+     *  record goes out without it. A negative line has no meaning and is refused. */
+    @Test void een_regel_0_blijft_weg_en_een_negatieve_regel_wordt_geweigerd() {
+        RegelSpraakModel m = Resolver.resolve(BRONRECORD);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        var cons = m.consistenties.get(0);
+        var groep = m.regelGroepen.get(0);
+        m.consistenties.set(0, new io.github.yhavinga.regelspraak.ir.ResolvedConsistentie(cons.naam(), cons.subject(),
+                cons.assertie(), cons.bron(), 0, cons.geldigheid()));
+        m.regelGroepen.set(0, new io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep(groep.naam(), groep.recursief(),
+                groep.leden(), groep.bron(), 0));
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(c.contains("\"source\":{\"snippet\":\"HetgewichtvaneenVondstmoetgroterzijndan0\"}}"),
+                () -> "de consistentieversie zonder regel:\n" + c);
+        assertTrue(c.contains("\"source\":{\"snippet\":\"weging\"}}"), () -> "de regelgroep zonder regel:\n" + c);
+        assertFalse(c.contains("\"line\":"), () -> "geen regel 0 op de wire:\n" + c);
+
+        m.regelGroepen.set(0, new io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep(groep.naam(), groep.recursief(),
+                groep.leden(), groep.bron(), -1));
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
+        assertTrue(e.getMessage().contains("de bronregel -1 van 'weging' is negatief"), e::getMessage);
+    }
+
+    /** A node without source text carries no record; an empty text is refused, not dropped: a snippet is never empty,
+     *  and a document that lost the record would read as a node without source text. */
+    @Test void een_knoop_zonder_brontekst_draagt_geen_record_en_een_lege_wordt_geweigerd() {
+        RegelSpraakModel m = Resolver.resolve(BRONRECORD);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        var cons = m.consistenties.get(0);
+        Conditie.Vergelijking v = (Conditie.Vergelijking) cons.assertie();
+        Expr.Literal nul = (Expr.Literal) v.rechts();
+        for (String snippet : new String[] { null, "" }) {
+            m.consistenties.set(0, new io.github.yhavinga.regelspraak.ir.ResolvedConsistentie(cons.naam(), cons.subject(),
+                    new Conditie.Vergelijking(v.op(), v.links(), new Expr.Literal(nul.waarde(), nul.type(),
+                            Bron.synthetisch(snippet)), v.periode(), v.bron()), cons.bron(), cons.line(), cons.geldigheid()));
+            if (snippet == null) {
+                String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+                assertTrue(c.contains("\"value\":{\"number\":\"0\"},\"type\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,"
+                        + "\"sign\":\"ONBEPAALD\"}},\"periode\""), () -> "de literal zonder brontekst:\n" + c);
+                continue;
+            }
+            IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
+            assertTrue(e.getMessage().contains("een knoop met een lege brontekst heeft geen spelling in uchar-ir-v1"),
+                    e::getMessage);
+        }
     }
 
     /** The Werknemer–Afdeling model the L2 refusal witnesses share: one fact type between the pair, and a

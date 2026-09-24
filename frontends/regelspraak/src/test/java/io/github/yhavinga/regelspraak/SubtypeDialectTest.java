@@ -370,7 +370,7 @@ class SubtypeDialectTest {
         assertTrue(altijd.onderdelen().isEmpty(), "'altijd' is een ALLE-groep zonder onderdelen");
         assertTrue(emitCompact(m).contains(
                         "\"voorwaarde\":{\"node\":\"Samengesteld\",\"kwantor\":\"ALLE\",\"drempel\":0,"
-                        + "\"onderdelen\":[],\"bron\":\"altijd\"}"),
+                        + "\"onderdelen\":[],\"source\":{\"snippet\":\"altijd\"}}"),
                 () -> "de wire draagt de altijd-rechtvaardiging niet:\n" + emitCompact(m));
     }
 

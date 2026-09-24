@@ -139,7 +139,7 @@ class KwantorvouwTest {
                         + "\"links\":{\"node\":\"AttribuutRef\",\"attribuut\":\"gewicht\",\"objecttype\":\"Vondst\""),
                 () -> "de toets hoort het attribuut op het ELEMENTtype te lezen:\n" + v);
         assertTrue(java.util.regex.Pattern.compile("\"links\":\\{\"node\":\"AttribuutRef\",\"attribuut\":\"gewicht\","
-                        + "\"objecttype\":\"Vondst\",\"bron\":\"[^\"]*\"\\}").matcher(v).find(),
+                        + "\"objecttype\":\"Vondst\",\"source\":\\{\"snippet\":\"[^\"]*\"\\}\\}").matcher(v).find(),
                 () -> "de gekwantificeerde operand hoort als eigen lezing terug te komen, zonder binding:\n" + v);
         String toets = v.substring(v.indexOf("\"toets\":"), v.lastIndexOf("\"bronRol\":"));
         assertFalse(toets.contains("\"bronRol\"") || toets.contains("\"sourceRole\""),

@@ -130,7 +130,7 @@ class TelbereikTest {
 
     /** And its range comes from the TYPE PAIR: no role carries the written name, and the one fact type
      *  between Jutter and Munt is the relation counted over. The source then names that role by its
-     *  declared name; the written "Munten" stays in {@code bron}. */
+     *  declared name; the written "Munten" stays in the source snippet. */
     @Test
     void een_telling_op_een_typemeervoud_draagt_het_bereik_van_het_typenpaar() {
         String c = ir(MODEL + TYPEMEERVOUD_REGEL);
@@ -139,7 +139,7 @@ class TelbereikTest {
         assertTrue(c.contains("\"rol\": \"gevonden munt\""), () -> "de binding noemt de gedeclareerde rol:\n" + c);
         assertTrue(c.contains("\"attribuut\": \"gevonden munt\""),
                 () -> "de telbron noemt de gebonden rol bij haar gedeclareerde naam:\n" + c);
-        assertTrue(c.contains("\"bron\": \"Munten van de Jutter\""),
+        assertTrue(c.contains("\"snippet\": \"Munten van de Jutter\""),
                 () -> "de geschreven spelling blijft in de bron:\n" + c);
         assertFalse(c.contains("\"sourcePath\""),
                 () -> "een eenstaps bereik is nooit een pad:\n" + c);

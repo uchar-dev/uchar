@@ -41,13 +41,13 @@ class EenheidIdentiteitTest {
         assertFalse(c.contains("\"type\":null"),
                 () -> "het product mag niet meer degraderen naar een ontypeerbaar resultaat:\n" + c);
         // the MAAL product carries its own number type with the EUR unit (2 = 0 + 2 decimals, Tabel 13).
-        // NOTE emitCompact strips ALL whitespace, also inside the bron string value.
+        // NOTE emitCompact strips ALL whitespace, also inside the source snippet.
         assertTrue(c.contains("\"op\":\"MAAL\","), () -> "het MAAL-product ontbreekt:\n" + c);
         assertTrue(c.contains(
                 "\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"ONBEPAALD\","
                 + "\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"EUR\",\"system\":\"Munt\",\"canonical\":\"EUR\","
                 + "\"factorToCanonical\":{\"num\":1,\"den\":1}}},"
-                + "\"bron\":\"hetstuktalvandeVerkoopmaaldestukprijsvandeVerkoop\""),
+                + "\"source\":{\"snippet\":\"hetstuktalvandeVerkoopmaaldestukprijsvandeVerkoop\"}"),
                 () -> "het product moet het echte EUR-type (2 decimalen) dragen:\n" + c);
     }
 

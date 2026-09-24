@@ -37,7 +37,9 @@ import java.util.Map;
 /**
  * The mirror emitter: a faithful, engine-neutral JSON dump of the complete resolved
  * {@link RegelSpraakModel} — every declaration, every resolved IR list, and the diagnostics.
- * It writes {@code uchar-ir-v1} in its L4 shape. The container is the v1 one
+ * It writes {@code uchar-ir-v1} in its L4 shape with the source record of L5: a node's source text is its
+ * {@code source} record ({@code snippet}, and the {@code line} on a consistency version and a rule group), absent
+ * where the node has none. The container is the v1 one
  * ({@code {format, model, rules, diagnostics}}, the declarations as lists, an object type's
  * members as {@code Attribute}/{@code Characteristic} nodes, a domain as a {@code Domain}
  * wrapper). The type system is IR-SPEC's: a number is a {@code Number} (a percentage one with the
@@ -289,7 +291,7 @@ public final class IrEmitter {
         for (Default d : p.defaults()) dflt(d);
         w.endArray();
         if (p.ongeordend()) w.key("ongeordend").value(true);        // only on a declared-unordered group member
-        w.key("bron").value(p.bron());
+        bronrecord(p.bron());
         w.key("geldigheid"); geldigheid(p.geldigheid());
         w.endObject();
         huidigSubject = vorigSubject;
@@ -312,7 +314,7 @@ public final class IrEmitter {
             w.endArray();
             w.endObject();
         }
-        w.key("bron").value(d.bron());
+        bronrecord(d.bron());
         w.endObject();
     }
 
@@ -322,7 +324,7 @@ public final class IrEmitter {
         w.key("defaults").beginArray();
         for (Default d : g.defaults()) dflt(d);
         w.endArray();
-        w.key("bron").value(g.bron());
+        bronrecord(g.bron());
         w.endObject();
     }
 
@@ -754,7 +756,7 @@ public final class IrEmitter {
         w.beginObject();
         switch (e) {
             // IR-SPEC ch. 4.1: the value is the variant its type names (the value union of uchar-case-v0); the
-            // author's spelling stays in bron
+            // author's spelling stays in the source snippet
             case Expr.Literal l -> {
                 String variant = variant(l);
                 w.key("node").value("Literal");
@@ -768,7 +770,7 @@ public final class IrEmitter {
                 }
                 w.endObject();
                 w.key("type"); datatype(l.type());
-                w.key("bron").value(l.bron().snippet());
+                bronrecord(l.bron().snippet());
             }
             case Expr.TekstReeks t -> {
                 w.key("node").value("TekstReeks");
@@ -776,7 +778,7 @@ public final class IrEmitter {
                 for (Expr.TekstReeks.Deel d : t.delen()) tekstReeksDeel(d);
                 w.endArray();
                 w.key("type"); datatype(t.type());
-                w.key("bron").value(t.bron().snippet());
+                bronrecord(t.bron().snippet());
             }
             case Expr.Binair b -> {
                 w.key("node").value("Binair");
@@ -784,7 +786,7 @@ public final class IrEmitter {
                 w.key("links"); expr(b.links());
                 w.key("rechts"); expr(b.rechts());
                 w.key("type"); afgeleidType(b.type());
-                w.key("bron").value(b.bron().snippet());
+                bronrecord(b.bron().snippet());
             }
             // IR-SPEC ch. 4.3: the eight fold kinds are an Aggregation, every other function a BuiltinCall, each
             // with the fields of its own node only
@@ -839,7 +841,7 @@ public final class IrEmitter {
                 }
                 if (!aggregatie && f.granulariteit() != null) w.key("granularity").value(f.granulariteit().name());
                 w.key("type"); afgeleidType(f.type());
-                w.key("bron").value(f.bron().snippet());
+                bronrecord(f.bron().snippet());
             }
             case Expr.Afgerond a -> {
                 w.key("node").value("Afgerond");
@@ -847,7 +849,7 @@ public final class IrEmitter {
                 w.key("modus").value(a.modus().name());
                 w.key("decimalen").value(a.decimalen());
                 w.key("type"); afgeleidType(a.type());
-                w.key("bron").value(a.bron().snippet());
+                bronrecord(a.bron().snippet());
             }
             case Expr.Begrensd b -> {
                 w.key("node").value("Begrensd");
@@ -855,13 +857,13 @@ public final class IrEmitter {
                 w.key("minimum"); expr(b.minimum());
                 w.key("maximum"); expr(b.maximum());
                 w.key("type"); afgeleidType(b.type());
-                w.key("bron").value(b.bron().snippet());
+                bronrecord(b.bron().snippet());
             }
             case Expr.AttribuutRef r -> {
                 w.key("node").value("AttribuutRef");
                 w.key("attribuut").value(r == foldBron && foldBronNaam != null ? foldBronNaam : r.attribuut());
                 w.key("objecttype").value(naamVan(r.objecttype()));
-                w.key("bron").value(r.bron().snippet());
+                bronrecord(r.bron().snippet());
                 if (r != foldBron) {
                     List<RegelSpraakModel.RolBindingRef> nb = navigatieBindingen(r);
                     if (!nb.isEmpty()) {
@@ -877,32 +879,32 @@ public final class IrEmitter {
                 w.key("node").value("DimensieCel");
                 w.key("attribuut"); expr(c.attribuut());
                 w.key("labels"); stringList(c.labels());
-                w.key("bron").value(c.bron().snippet());
+                bronrecord(c.bron().snippet());
             }
             case Expr.ParameterRef p -> {
                 w.key("node").value("ParameterRef");
                 w.key("parameter").value(p.parameter() == null ? null : p.parameter().naam());
-                w.key("bron").value(p.bron().snippet());
+                bronrecord(p.bron().snippet());
             }
             case Expr.VariabeleRef v -> {
                 w.key("node").value("VariabeleRef");
                 w.key("naam").value(v.naam());
-                w.key("bron").value(v.bron().snippet());
+                bronrecord(v.bron().snippet());
             }
             // ch. 4.10 the Let cluster. Key ORDER is the schema's required order (node, type, binder,
-            // value, body, bron / node, name, type, bron) — gate 2 round-trips these bytes.
+            // value, body, source / node, name, type, source) — gate 2 round-trips these bytes.
             case Expr.Let l -> {
                 w.key("node").value("Let");
                 w.key("type"); datatype(l.type());
                 w.key("binder").value(l.binder());
                 w.key("value"); expr(l.value());
                 w.key("body"); expr(l.body());
-                w.key("bron").value(l.bron().snippet());
+                bronrecord(l.bron().snippet());
             }
             case Expr.BinderRef b -> {
                 w.key("node").value("BinderRef");
                 w.key("name").value(b.naam());     // the wire field is "name" (not "naam") — ch. 4.10
-                w.key("bron").value(b.bron().snippet());
+                bronrecord(b.bron().snippet());
             }
             // IR-SPEC ch. 4.1: the bound day of a day-kind definition is a node of its own and carries no name; a
             // session value is a ContextValue under one of its two names. Any other name has no spelling.
@@ -921,7 +923,7 @@ public final class IrEmitter {
                     w.key("name").value(c.naam());
                 }
                 w.key("type"); datatype(c.type());
-                w.key("bron").value(c.bron().snippet());
+                bronrecord(c.bron().snippet());
             }
             // ch. 4.10's third cluster node is NEVER EMITTER-PRODUCED: no RegelSpraak construct lowers to an
             // IfThenElse, so the resolver builds none and this arm is unreachable from every emitter path.
@@ -953,17 +955,17 @@ public final class IrEmitter {
                     if (t.elementType() != null) huidigSubject = t.elementType();
                     conditie(t.filter());
                     huidigSubject = vorigSubject;
-                    w.key("bron").value(t.bron().snippet());
+                    bronrecord(t.bron().snippet());
                     w.endObject();
                 }
                 w.endArray();
-                w.key("bron").value(u.bron().snippet());
+                bronrecord(u.bron().snippet());
             }
             case Expr.Onopgelost o -> {
                 w.key("node").value("Onopgelost");
                 // IR-SPEC ch. 4.4: absent is the one spelling of "type unknown"; a real datatype is written
                 if (o.type() != null && !(o.type() instanceof Datatype.Onbekend)) { w.key("type"); datatype(o.type()); }
-                w.key("bron").value(markerBron(o.bron()));
+                bronrecord(markerBron(o.bron()));
             }
         }
         w.endObject();
@@ -990,7 +992,7 @@ public final class IrEmitter {
         w.key("node").value("DimensieSelectie");
         w.key("dimensie").value(ds.dimensie());
         w.key("labels"); stringList(ds.labels());
-        w.key("bron").value(ds.bron().snippet());
+        bronrecord(ds.bron().snippet());
         w.endObject();
     }
 
@@ -1006,7 +1008,7 @@ public final class IrEmitter {
                 w.key("links"); expr(v.links());
                 w.key("rechts"); expr(v.rechts());
                 w.key("periode"); geheelPeriode(v.periode());
-                w.key("bron").value(v.bron().snippet());
+                bronrecord(v.bron().snippet());
             }
             case Conditie.Predicaat p -> {
                 w.key("node").value("Predicaat");
@@ -1016,7 +1018,7 @@ public final class IrEmitter {
                 w.key("negatie").value(p.negatie());
                 w.key("cijfers").value(p.cijfers());
                 w.key("periode"); geheelPeriode(p.periode());
-                w.key("bron").value(p.bron().snippet());
+                bronrecord(p.bron().snippet());
             }
             case Conditie.Kenmerk k -> {
                 w.key("node").value("Kenmerk");
@@ -1024,7 +1026,7 @@ public final class IrEmitter {
                 w.key("negatie").value(k.negatie());
                 w.key("eigenaar").value(naamVan(k.eigenaar()));
                 w.key("periode"); geheelPeriode(k.periode());
-                w.key("bron").value(k.bron().snippet());
+                bronrecord(k.bron().snippet());
                 // the binding IS the hop: a navigated check without one would read the subject's own kenmerk
                 if (k.navigatie() != null) {
                     RegelSpraakModel.RolBindingRef nb = navigatieBinding(k);
@@ -1046,7 +1048,7 @@ public final class IrEmitter {
                 w.key("vanaf"); expr(p.vanaf());
                 w.key("tot"); expr(p.tot());
                 w.key("totInclusief").value(p.totInclusief());
-                w.key("bron").value(p.bron().snippet());
+                bronrecord(p.bron().snippet());
             }
             case Conditie.Samengesteld s -> {
                 w.key("node").value("Samengesteld");
@@ -1055,10 +1057,10 @@ public final class IrEmitter {
                 w.key("onderdelen").beginArray();
                 for (Conditie o : s.onderdelen()) conditie(o);
                 w.endArray();
-                w.key("bron").value(s.bron().snippet());
+                bronrecord(s.bron().snippet());
             }
             // IR-SPEC ch. 4.5 / WF-108. Key ORDER is the schema's property order (node, kwantor, the
-            // counting drempel, elementObjecttype, filter, toets, bron, then the range) — gate 2
+            // counting drempel, elementObjecttype, filter, toets, source, then the range) — gate 2
             // round-trips these bytes.
             case Conditie.Kwantorvouw k -> {
                 w.key("node").value("Kwantorvouw");
@@ -1079,7 +1081,7 @@ public final class IrEmitter {
                 w.key("filter"); conditie(k.filter());
                 w.key("toets"); conditie(k.toets());
                 huidigSubject = vorigSubject;
-                w.key("bron").value(k.bron().snippet());
+                bronrecord(k.bron().snippet());
                 // the range is ONE field with two spellings, mutually exclusive, and required: without it the
                 // fold would range over nothing the sentence named (WF-102, WF-108 (c))
                 if (k.bronPad() != null && !k.bronPad().isEmpty()) {
@@ -1098,26 +1100,50 @@ public final class IrEmitter {
                 w.key("node").value("Regelversie");
                 w.key("regel").value(r.regel());
                 w.key("inconsistent").value(r.inconsistent());
-                w.key("bron").value(r.bron().snippet());
+                bronrecord(r.bron().snippet());
             }
             case Conditie.Onopgelost o -> {
                 w.key("node").value("Onopgelost");
-                w.key("bron").value(markerBron(o.bron()));
+                bronrecord(markerBron(o.bron()));
             }
         }
         w.endObject();
     }
 
-    /** WF-113 (b): a marker is accounted for by a WARNING that quotes its bron verbatim. A null bron is quoted by
-     *  no message and an empty or blank one by every message, so neither accounts for anything and the verifier
-     *  refuses the document; the frontend can build one, since {@code DefinitionResolver.bron} gives an empty
-     *  snippet for a missing context or an empty match. */
+    /** WF-113 (b): a marker is accounted for by a WARNING that quotes its source snippet verbatim. A marker without
+     *  one is quoted by no message and a blank one by every message, so neither accounts for anything and the
+     *  verifier refuses the document; the frontend can build one, since {@code DefinitionResolver.bron} gives an
+     *  empty snippet for a missing context or an empty match. */
     private static String markerBron(Bron b) {
         String s = b == null ? null : b.snippet();
         if (s == null || s.isBlank())
             throw new IllegalStateException("IrEmitter: WF-113 (b) — een Onopgelost-marker zonder bron ('" + s
                     + "') kan door geen WARNING verantwoord worden");
         return s;
+    }
+
+    /** IR-SPEC ch. 4 (B26): the source record, at the place the node's source text stands. A node without source
+     *  text carries no record; an empty text is refused and not dropped, since a snippet is never empty and a
+     *  document that lost the record would read as a node without source text. */
+    private void bronrecord(String snippet) {
+        bronrecord(snippet, 0);
+    }
+
+    /** As {@link #bronrecord(String)}, with the source line after the snippet — called by the consistency version
+     *  and the rule group alone, the two places the model keeps a line. The model's 0 is "no line" (a synthetic
+     *  node) and is left out, as the record admits only a line of at least 1. */
+    private void bronrecord(String snippet, int regel) {
+        if (snippet == null) return;
+        if (snippet.isEmpty())
+            throw new IllegalStateException("IrEmitter: een knoop met een lege brontekst heeft geen spelling in "
+                    + "uchar-ir-v1: een snippet is nooit leeg, en een knoop zonder brontekst draagt geen source");
+        if (regel < 0)
+            throw new IllegalStateException("IrEmitter: de bronregel " + regel + " van '" + snippet + "' is "
+                    + "negatief; een regel in het bronrecord is minstens 1, en 0 betekent geen regel");
+        w.key("source").beginObject();
+        w.key("snippet").value(snippet);
+        if (regel > 0) w.key("line").value(regel);
+        w.endObject();
     }
 
     private void geheelPeriode(Conditie.GeheelPeriode gp) {
@@ -1373,8 +1399,8 @@ public final class IrEmitter {
         huidigSubject = null;
     }
 
-    /** IR-SPEC ch. 3.5: a consistency rule and its versions; the source and line stand on the version, under their v0
-     *  names until the source record lands. */
+    /** IR-SPEC ch. 3.5: a consistency rule and its versions; the source record stands on the version, with the
+     *  line. */
     private void consistency(Vorm<ResolvedConsistentie> vorm) {
         w.beginObject();
         w.key("node").value("Consistency");
@@ -1394,14 +1420,13 @@ public final class IrEmitter {
         w.key("subject").value(naamVan(c.subject()));
         w.key("assertion"); conditie(c.assertie());
         w.key("validity"); validity(c.geldigheid());
-        w.key("bron").value(c.bron().snippet());
-        w.key("line").value(c.line());
+        bronrecord(c.bron().snippet(), c.line());
         w.endObject();
         huidigSubject = null;
     }
 
     /** IR-SPEC ch. 3.6: a uniqueness and its versions; a version is its list of sources, one for the single-type
-     *  form, and the source record stands on the version under its v0 name. */
+     *  form, and the source record stands on the version. */
     private void uniqueness(Vorm<ResolvedUniciteit> vorm) {
         w.beginObject();
         w.key("node").value("Uniqueness");
@@ -1419,7 +1444,7 @@ public final class IrEmitter {
             w.endArray();
             if (u.scopeRol() != null) { w.key("scope"); rolBinding(u.scopeRol()); }
             w.key("validity"); validity(u.geldigheid());
-            w.key("bron").value(u.bron().snippet());
+            bronrecord(u.bron().snippet());
             w.endObject();
         }
         w.endArray();
@@ -1442,7 +1467,7 @@ public final class IrEmitter {
             for (ResolvedUniciteitUnie.Bron b : u.bronnen()) source(u.naam(), naamVan(b.type()), b.sleutels());
             w.endArray();
             w.key("validity"); validity(u.geldigheid());
-            w.key("bron").value(u.bron().snippet());
+            bronrecord(u.bron().snippet());
             w.endObject();
         }
         w.endArray();
@@ -1525,7 +1550,7 @@ public final class IrEmitter {
 
     /** Under AANTAL the source names the role the range binds (WF-047), by declared name or declared plural.
      *  A written name that does neither — a best-effort plural, the plural of the element type — is written
-     *  as the role's declared name, and the written spelling stays in {@code bron}. A name that is a member
+     *  as the role's declared name, and the written spelling stays in the source snippet. A name that is a member
      *  of the element type makes an attribute source, which WF-093 judges; it is written as it stands, as is
      *  every source under another kind. Null: the record's own name. */
     private String telbronNaam(Expr.Functie f, Expr.AttribuutRef arg, RegelSpraakModel.RolBindingRef rb) {
@@ -1694,7 +1719,7 @@ public final class IrEmitter {
         w.key("role").value(l.binding().rol());
         if (l.tegenpartij() != null) w.key("counterpartType").value(l.tegenpartij());
         w.key("negated").value(negatie);
-        w.key("bron").value(bron.snippet());
+        bronrecord(bron.snippet());
     }
 
     /** Whether {@code ot} fills {@code r}: its declared filler type or a subtype of it (IR-SPEC ch. 2.6). */
@@ -1809,8 +1834,7 @@ public final class IrEmitter {
         w.key("naam").value(g.naam());
         w.key("recursief").value(g.recursief());
         w.key("leden"); stringList(g.leden());
-        w.key("bron").value(g.bron().snippet());
-        w.key("line").value(g.line());
+        bronrecord(g.bron().snippet(), g.line());
         w.endObject();
     }
 
