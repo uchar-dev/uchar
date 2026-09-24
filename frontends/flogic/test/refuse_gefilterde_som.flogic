@@ -1,4 +1,4 @@
-// A subselection inside sum{...}: the slice's SOM carries no filter, and
+// A subselection inside sum{...}: the slice's sum carries no filter, and
 // a summed set is not a quantification either.
 
 Boot[|lengte => numeriek(onbepaald, geheel)|].

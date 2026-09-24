@@ -1,12 +1,12 @@
-(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L4 shape
-   with the source record of L5.
+(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L5 shape.
 
    The lowering builds typed [Ir_v0.Ast] values and hands them to exactly
    one serialiser — this module — so schema conformity is structural
-   rather than stringly-typed. Key names, node discriminators and enum
-   spellings mirror [Ir_v0.Loader]'s tables, and the key ORDER is the
-   corpus's own, so the output canonicalises (gate 2's serialiser shape)
-   into the checked-in golden byte for byte.
+   rather than stringly-typed. Key names and node discriminators mirror
+   [Ir_v0.Loader]'s tables, every enumeration value is written through the
+   one translation table the loader reads with ([Ir_v0.Spelling]), and the
+   key ORDER is the corpus's own, so the output canonicalises (gate 2's
+   serialiser shape) into the checked-in golden byte for byte.
 
    The [uchar-ir-v0] library ships a strict loader but no serialiser, so
    a frontend that emits has to carry one. This one covers exactly the
@@ -14,6 +14,7 @@
    on anything else — a guessed shape would be worse than a crash. *)
 
 open Ir_v0.Ast
+module Spelling = Ir_v0.Spelling
 
 type json = Yojson.Safe.t
 
@@ -43,53 +44,38 @@ let fields (kvs : (string * json) list) : (string * json) list =
 
 let node k rest : json = `Assoc (("node", `String k) :: fields rest)
 
-let teken_s = function
-  | Onbepaald -> "ONBEPAALD" | Negatief -> "NEGATIEF"
-  | Niet_negatief -> "NIET_NEGATIEF" | Positief -> "POSITIEF"
+(* A field IR-SPEC calls optional is written whole when present and left out
+   otherwise: since the L5 landing no such field carries a null. *)
+let optional (k : string) (f : 'a -> json) : 'a option -> (string * json) list = function
+  | None -> []
+  | Some x -> [ (k, f x) ]
 
-let kenmerk_soort_s = function
-  | Bijvoeglijk -> "BIJVOEGLIJK" | Bezittelijk -> "BEZITTELIJK"
-  | Zelfstandig -> "ZELFSTANDIG"
-
-let bin_op_s = function
-  | Plus -> "PLUS" | Min -> "MIN" | Verminderd_met -> "VERMINDERD_MET"
-  | Maal -> "MAAL" | Gedeeld_door -> "GEDEELD_DOOR"
-  | Gedeeld_door_abs -> "GEDEELD_DOOR_ABS" | Tot_de_macht -> "TOT_DE_MACHT"
-  | Percentage_van -> "PERCENTAGE_VAN"
-
-let vergelijk_op_s = function
-  | Kleiner -> "KLEINER" | Kleiner_of_gelijk -> "KLEINER_OF_GELIJK"
-  | Groter -> "GROTER" | Groter_of_gelijk -> "GROTER_OF_GELIJK"
-  | Gelijk -> "GELIJK" | Ongelijk -> "ONGELIJK"
-  | Eerder -> "EERDER" | Eerder_of_gelijk -> "EERDER_OF_GELIJK"
-  | Later -> "LATER" | Later_of_gelijk -> "LATER_OF_GELIJK"
-
-let kwantor_s = function
-  | De -> "DE" | Alle -> "ALLE" | Geen -> "GEEN" | Ten_minste -> "TEN_MINSTE"
-  | Ten_hoogste -> "TEN_HOOGSTE" | Precies -> "PRECIES"
+(* An enumeration value, spelled by its family in the translation table;
+   [Spelling.encode] refuses a constructor the family does not spell. *)
+let enum (fam : 'a Spelling.family) (c : 'a) : json = s (Spelling.encode fam c)
 
 (* the slice's two folds, both an Aggregation on the wire (delta B21) *)
-let aggregation_kind_s = function
-  | Som -> "SOM" | Aantal -> "AANTAL"
+let aggregation_kind = function
+  | (Som | Aantal) as k -> enum Spelling.aggregation_kind k
   | _ -> failwith "Emit: aggregation kind not produced by the F-logic slice"
 
-(* The type system in its L3 shape: a Number always carries its sign (a sign
-   the in-memory form leaves open is ONBEPAALD) and, since the slice declares
-   no units, no unit; a day date is a Date at day precision. *)
+(* The type system in its L5 shape: a Number always carries its sign (a sign
+   the in-memory form leaves open is unspecified) and, since the slice
+   declares no units, no unit; a day date is a Date at day precision. *)
 let datatype (d : datatype) : json =
   match d with
   | Numeriek { geheel; decimalen; teken; eenheid } ->
       if eenheid <> None then failwith "Emit: the slice declares no units";
       node "Number"
         [ ("whole", b geheel); ("decimals", i decimalen);
-          ("sign", s (teken_s (Option.value teken ~default:Onbepaald))) ]
-  | Booleaan -> node "Booleaan" []
-  | Tekst -> node "Tekst" []
-  | Datum_in_dagen -> node "Date" [ ("precision", s "day") ]
+          ("sign", enum Spelling.sign (Option.value teken ~default:Onbepaald)) ]
+  | Booleaan -> node "Boolean" []
+  | Tekst -> node "Text" []
+  | Datum_in_dagen -> node "Date" [ ("precision", enum Spelling.precision d) ]
   | _ -> failwith "Emit: datatype not produced by the F-logic slice"
 
 let rol_binding (rb : rol_binding) : json =
-  node "RolBinding" [ ("feittype", s rb.rb_feittype); ("rol", s rb.rb_rol) ]
+  node "RoleBinding" [ ("factType", s rb.rb_feittype); ("role", s rb.rb_rol) ]
 
 (* The typed value of a Literal (IR-SPEC ch. 4.1, delta B22): one key, the
    variant the literal's type names. The slice writes numbers and the
@@ -106,13 +92,14 @@ let rec expr (e : expr) : json =
   | Literal { variant; typ = t; bron = br } ->
       node "Literal" [ ("value", literal_value variant); typ t; source br ]
   | Binair { op; links; rechts; typ = t; bron = br } ->
-      node "Binair"
-        [ ("op", s (bin_op_s op)); ("links", opt expr links);
-          ("rechts", opt expr rechts); typ t; source br ]
+      node "Binary"
+        [ ("op", enum Spelling.binary_op op); ("left", opt expr links);
+          ("right", opt expr rechts); typ t; source br ]
   | Attribuut_ref { attribuut; objecttype; bron = br; navigatie_bindingen } ->
       if navigatie_bindingen <> None then
-        failwith "Emit: the slice synthesises no navigation bindings";
-      node "AttribuutRef" [ ("attribuut", so attribuut); ("objecttype", so objecttype); source br ]
+        failwith "Emit: the slice synthesises no navigation path";
+      node "AttributeReference"
+        [ ("attribute", so attribuut); ("subjectType", so objecttype); source br ]
   | Functie
       { kind; argumenten; element_objecttype; leegwaarde; filter; dimensie_selectie;
         typ = t; bron = br; granulariteit; bron_rol; bron_pad } ->
@@ -128,7 +115,7 @@ let rec expr (e : expr) : json =
       in
       (* an absent optional field is left out (IR-SPEC ch. 4.3) *)
       node "Aggregation"
-        ([ ("kind", s (aggregation_kind_s kind));
+        ([ ("kind", aggregation_kind kind);
            ("arguments", `List (List.map expr argumenten)) ]
         @ (match element_objecttype with None -> [] | Some el -> [ ("elementType", s el) ])
         @ (match leegwaarde with None -> [] | Some f -> [ ("emptyFallback", expr f) ])
@@ -139,13 +126,13 @@ let rec conditie (c : conditie) : json =
   match c with
   | Vergelijking { op; links; rechts; periode; bron = br } ->
       if periode <> None then failwith "Emit: the slice writes no period qualifier";
-      node "Vergelijking"
-        [ ("op", s (vergelijk_op_s op)); ("links", opt expr links);
-          ("rechts", opt expr rechts); ("periode", `Null); source br ]
+      node "Comparison"
+        [ ("op", enum Spelling.comparison_op op); ("left", opt expr links);
+          ("right", opt expr rechts); source br ]
   | Samengesteld { kwantor; drempel; onderdelen; bron = br } ->
-      node "Samengesteld"
-        [ ("kwantor", s (kwantor_s kwantor)); ("drempel", i drempel);
-          ("onderdelen", `List (List.map (fun c ->
+      node "Compound"
+        [ ("quantifier", enum Spelling.quantifier kwantor); ("threshold", i drempel);
+          ("parts", `List (List.map (fun c ->
              match c with
              | Vergelijking _ | Kenmerk_check _ -> conditie_leaf c
              (* a fold beside an ordinary condition of the subject: the two
@@ -154,10 +141,11 @@ let rec conditie (c : conditie) : json =
              | _ -> failwith "Emit: nested composite not produced by the F-logic slice")
              onderdelen));
           source br ]
-  (* The quantifier fold. [drempel] is present EXACTLY under the three
+  (* The quantifier fold. [threshold] is present EXACTLY under the three
      counting quantifiers (WF-108 (e)) and absent otherwise, so it is
      written conditionally rather than as a null nobody may consult; the
-     range is always the one-step [bronRol], never [bronPad]. *)
+     subselection is absent where there is none; the range is always the
+     one-step [sourceRole], never [sourcePath]. *)
   | Kwantorvouw
       { kv_kwantor; kv_drempel; kv_element_objecttype; kv_filter; kv_toets; kv_bron;
         kv_bron_rol; kv_bron_pad } ->
@@ -168,14 +156,12 @@ let rec conditie (c : conditie) : json =
         | Some rb -> rb
         | None -> failwith "Emit: a quantifier fold without its role binding"
       in
-      node "Kwantorvouw"
-        ([ ("kwantor", s (kwantor_s kv_kwantor)) ]
-        @ (match kv_drempel with None -> [] | Some d -> [ ("drempel", i d) ])
-        @ [ ("elementObjecttype", so kv_element_objecttype);
-            ("filter", opt conditie kv_filter);
-            ("toets", opt conditie kv_toets);
-            source kv_bron;
-            ("bronRol", rol_binding rb) ])
+      node "QuantifierFold"
+        ([ ("quantifier", enum Spelling.quantifier kv_kwantor) ]
+        @ optional "threshold" i kv_drempel
+        @ [ ("elementType", so kv_element_objecttype) ]
+        @ optional "filter" conditie kv_filter
+        @ [ ("test", opt conditie kv_toets); source kv_bron; ("sourceRole", rol_binding rb) ])
   | c -> conditie_leaf c
 
 and conditie_leaf (c : conditie) : json =
@@ -183,17 +169,20 @@ and conditie_leaf (c : conditie) : json =
   | Kenmerk_check { kenmerk; negatie; eigenaar; periode; bron = br; navigatie_binding } ->
       if periode <> None || navigatie_binding <> None then
         failwith "Emit: the slice writes no period or navigation on a characteristic check";
-      node "Kenmerk"
-        [ ("kenmerk", so kenmerk); ("negatie", b negatie); ("eigenaar", so eigenaar);
-          ("periode", `Null); source br ]
-  | Vergelijking { op; links; rechts; periode = _; bron = br } ->
-      node "Vergelijking"
-        [ ("op", s (vergelijk_op_s op)); ("links", opt expr links);
-          ("rechts", opt expr rechts); ("periode", `Null); source br ]
+      node "CharacteristicCheck"
+        ([ ("characteristic", so kenmerk); ("negated", b negatie) ]
+        @ optional "host" s eigenaar
+        @ [ source br ])
+  | Vergelijking { op; links; rechts; periode; bron = br } ->
+      if periode <> None then failwith "Emit: the slice writes no period qualifier";
+      node "Comparison"
+        [ ("op", enum Spelling.comparison_op op); ("left", opt expr links);
+          ("right", opt expr rechts); source br ]
   | _ -> failwith "Emit: condition shape not produced by the F-logic slice"
 
+(* an open side of a validity is an absent bound; neither bound is always *)
 let geldigheid (g : geldigheid) : json =
-  node "Geldigheid" [ ("vanaf", so g.geld_vanaf); ("tot", so g.geld_tot) ]
+  node "Validity" (optional "from" s g.geld_vanaf @ optional "to" s g.geld_tot)
 
 (* A list entry of the M1 model carries its name once, on its node, so the
    in-memory map key and the node's own name must be one spelling. *)
@@ -212,13 +201,13 @@ let objecttype (key, (o : objecttype)) : json =
     | [] -> ()
     | _ -> failwith (Printf.sprintf "Emit: object type %S fills %s, which the slice never builds" key table)
   in
-  unfilled "attribuutMeervoud" o.attribuut_meervoud;
-  unfilled "attribuutDimensies" o.attribuut_dimensies;
-  unfilled "attribuutGranulariteit" o.attribuut_granulariteit;
-  unfilled "attribuutTijdlijnAantal" o.attribuut_tijdlijn_aantal;
-  unfilled "attribuutTijdlijnNaam" o.attribuut_tijdlijn_naam;
-  unfilled "kenmerkGranulariteit" o.kenmerk_granulariteit;
-  unfilled "kenmerkTijdlijnAantal" o.kenmerk_tijdlijn_aantal;
+  unfilled "attribuut_meervoud" o.attribuut_meervoud;
+  unfilled "attribuut_dimensies" o.attribuut_dimensies;
+  unfilled "attribuut_granulariteit" o.attribuut_granulariteit;
+  unfilled "attribuut_tijdlijn_aantal" o.attribuut_tijdlijn_aantal;
+  unfilled "attribuut_tijdlijn_naam" o.attribuut_tijdlijn_naam;
+  unfilled "kenmerk_granulariteit" o.kenmerk_granulariteit;
+  unfilled "kenmerk_tijdlijn_aantal" o.kenmerk_tijdlijn_aantal;
   let kenmerken =
     List.map
       (function
@@ -250,18 +239,19 @@ let objecttype (key, (o : objecttype)) : json =
                   | Some (Some soort) -> soort
                   | Some None | None -> Zelfstandig
                 in
-                node "Characteristic" [ ("name", s k); ("kind", s (kenmerk_soort_s kind)) ])
+                node "Characteristic" [ ("name", s k); ("kind", enum Spelling.characteristic_kind kind) ])
               kenmerken)) ])
 
 let rol (r : rol) : json =
-  node "Rol"
-    [ ("naam", so r.rol_naam); ("objecttypeNaam", so r.rol_objecttype_naam);
-      ("meervoud", so r.rol_meervoud); ("meervoudig", b r.rol_meervoudig) ]
+  node "Role"
+    ([ ("name", so r.rol_naam); ("objectType", so r.rol_objecttype_naam) ]
+    @ optional "plural" s r.rol_meervoud
+    @ [ ("many", b r.rol_meervoudig) ])
 
 let feittype (ft : feittype) : json =
-  node "Feittype"
-    [ ("naam", so ft.ft_naam); ("wederkerig", b ft.wederkerig);
-      ("rollen", `List (List.map rol ft.rollen)) ]
+  node "FactType"
+    [ ("name", so ft.ft_naam); ("reciprocal", b ft.wederkerig);
+      ("roles", `List (List.map rol ft.rollen)) ]
 
 (* A rule (IR-SPEC ch. 3, Versioning; ch. 3.1): {node, name, versions}. The
    slice builds every rule with one version, so each in-memory record is one
@@ -284,8 +274,7 @@ let rule (r : resolved_regel) : json =
   | _ -> ());
   let initialisation, presentation =
     match r.rr_soort with
-    | Some Gelijkstelling -> (false, [ ("presentation", s "GELIJKSTELLING") ])
-    | Some Berekening -> (false, [ ("presentation", s "BEREKENING") ])
+    | Some ((Gelijkstelling | Berekening) as k) -> (false, [ ("presentation", enum Spelling.presentation k) ])
     | Some Initialisatie -> (true, [])
     | Some Kenmerktoekenning -> (false, [])
     | None -> failwith "Emit: a rule version without its kind"
@@ -293,7 +282,7 @@ let rule (r : resolved_regel) : json =
   let target =
     match r.doel with
     | Some (Attribuut_ref _ as t) -> expr t
-    | _ -> failwith "Emit: the target of a rule version is an AttribuutRef"
+    | _ -> failwith "Emit: the target of a rule version is an AttributeReference"
   in
   let value =
     match r.waarde with Some v -> expr v | None -> failwith "Emit: a rule version without its value"
@@ -317,30 +306,31 @@ let default (d : default) : json =
     failwith "Emit: default form not produced by the F-logic slice";
   `Assoc
     (fields
-       [ ("node", `String "Default");
-         ("besluit", (match d.default_besluit with None -> `Null | Some x -> `Bool x));
-         ("voorwaarde", opt conditie d.default_voorwaarde);
-         ("consequentie", opt expr d.default_consequentie);
-         source d.default_bron ])
+       ([ ("node", `String "Default") ]
+       @ optional "decision" b d.default_besluit
+       @ optional "justification" conditie d.default_voorwaarde
+       @ optional "consequence" expr d.default_consequentie
+       @ [ source d.default_bron ]))
 
 let prioritized_defaults (pd : prioritized_defaults) : json =
   if pd.pd_ongeordend then failwith "Emit: the slice declares no unordered group";
   `Assoc
     (fields
-       [ ("node", `String "PrioritizedDefaults"); ("naam", so pd.pd_naam);
-         ("onderwerp", `String pd.pd_onderwerp); ("kenmerk", so pd.pd_kenmerk);
-         ("attribuut", so pd.pd_attribuut);
-         ("defaults", `List (List.map default pd.defaults));
-         source pd.pd_bron; ("geldigheid", opt geldigheid pd.pd_geldigheid) ])
+       ([ ("node", `String "PrioritizedDefaults"); ("name", so pd.pd_naam);
+          ("subject", `String pd.pd_onderwerp) ]
+       @ optional "characteristic" s pd.pd_kenmerk
+       @ optional "attribute" s pd.pd_attribuut
+       @ [ ("defaults", `List (List.map default pd.defaults));
+           source pd.pd_bron; ("validity", opt geldigheid pd.pd_geldigheid) ]))
 
 (* The M1 container (decision V3 (b)): the declaration set under "model", the
-   rule lists under "rules" with their v0 keys, in the schema's property
+   rule lists under "rules" with their L5 keys, in the schema's property
    order; prioritizedDefaults is written whole, as it always was. The slice
    builds no domain, parameter, unit system, dimension, timeline, day kind,
    function definition, other rule list or diagnostic, so those lists are
    written empty or, for functionDefs, not at all, and a filled one refuses:
    written as [] it would drop what it held without a word. Its serialiser
-   has no Onopgelost arm, so no written document holds a marker a diagnostic
+   has no Unresolved arm, so no written document holds a marker a diagnostic
    would have to account for (WF-113). *)
 let document (d : document) : json =
   let unfilled list = function
@@ -354,15 +344,15 @@ let document (d : document) : json =
   unfilled "timelines" d.tijdlijnen;
   unfilled "dayKinds" d.dagsoorten;
   unfilled "functionDefs" d.function_defs;
-  unfilled "resolvedDagsoorten" d.resolved_dagsoorten;
-  unfilled "objectCreaties" d.object_creaties;
-  unfilled "verdelingen" d.verdelingen;
-  unfilled "consistenties" d.consistenties;
-  unfilled "uniciteiten" d.uniciteiten;
-  unfilled "uniciteiten" d.uniciteit_unies;
-  unfilled "feitCreaties" d.feit_creaties;
-  unfilled "resolvedStartpunten" d.resolved_startpunten;
-  unfilled "regelGroepen" d.regel_groepen;
+  unfilled "dayKindDefinitions" d.resolved_dagsoorten;
+  unfilled "objectCreations" d.object_creaties;
+  unfilled "allocations" d.verdelingen;
+  unfilled "consistencies" d.consistenties;
+  unfilled "uniquenesses" d.uniciteiten;
+  unfilled "uniquenesses" d.uniciteit_unies;
+  unfilled "factCreations" d.feit_creaties;
+  unfilled "startPointDeterminations" d.resolved_startpunten;
+  unfilled "ruleGroups" d.regel_groepen;
   unfilled "diagnostics" d.diagnostics;
   `Assoc
     [ ("format", `String "uchar-ir-v1");
@@ -384,15 +374,15 @@ let document (d : document) : json =
            ("dayKinds", `List []) ]);
       ("rules",
        `Assoc
-         [ ("resolvedRegels", `List (List.map rule d.resolved_regels));
-           ("resolvedDagsoorten", `List []);
-           ("objectCreaties", `List []);
-           ("verdelingen", `List []);
-           ("consistenties", `List []);
-           ("uniciteiten", `List []);
-           ("feitCreaties", `List []);
-           ("resolvedStartpunten", `List []);
-           ("regelGroepen", `List []);
+         [ ("rules", `List (List.map rule d.resolved_regels));
+           ("dayKindDefinitions", `List []);
+           ("objectCreations", `List []);
+           ("allocations", `List []);
+           ("consistencies", `List []);
+           ("uniquenesses", `List []);
+           ("factCreations", `List []);
+           ("startPointDeterminations", `List []);
+           ("ruleGroups", `List []);
            ("prioritizedDefaults", `List (List.map prioritized_defaults d.prioritized_defaults)) ]);
       ("diagnostics", `List []) ]
 

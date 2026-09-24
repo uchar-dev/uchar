@@ -1,7 +1,7 @@
 // A comprehension whose hop starts at a variable the rule never bound.
 // The same refusal a comprehension in a VALUE position already gave: the
 // range would otherwise be read off a name with no reading, and the wire
-// would carry a bronRol whose provenance quotes it.
+// would carry a sourceRole whose provenance quotes it.
 
 Boot[|lengte => numeriek(onbepaald, geheel)|].
 Reddingsstation[|sterk => kenmerk(bijvoeglijk)|].

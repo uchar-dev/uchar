@@ -49,7 +49,7 @@ instead of failing silently. That is why the verifier, `ref/`, the
 clingo backend and this frontend are OCaml.
 
 The **quantifier fold** is the second construct this frontend guards, and
-it arrived the same way. `Kwantorvouw` had three independent executors and
+it arrived the same way. `QuantifierFold` had three independent executors and
 no source language: RegelSpraak declines the non-temporal matrix, Catala
 does not carry the node, and the corpus witnesses for it were hand-written
 IR. Counting is native here — `count{…}` is an F-logic aggregate, and all
@@ -137,7 +137,7 @@ comparisons (`> >= < <= = !=`) and value bindings `?V = Expr`.
 Flora-2's aggregate body is a comma-separated conjunction of goals. A
 `count` comprehension that carries goals beside the hop states a condition
 of the members it counts, which is a **quantification** over them — the
-`Kwantorvouw` of `IR-SPEC.md` ch. 4.5 (semantics `RUNTIME-SEMANTICS.md`
+`QuantifierFold` of `IR-SPEC.md` ch. 4.5 (semantics `RUNTIME-SEMANTICS.md`
 ch. 3.9a). The slice reads it in a rule body, compared with its threshold:
 
 ```
@@ -153,8 +153,8 @@ whatever letter the author chose.
 
 **A swapped filter and matrix are not a refusal but a different sentence**,
 and the position rule is the only thing standing between them. Under the
-counting quantifiers and GEEN the swap is invisible by arithmetic — those
-read `|{m : F(m) ∧ M(m)}|`, which is symmetric in the two — but under ALLE
+counting quantifiers and `none` the swap is invisible by arithmetic — those
+read `|{m : F(m) ∧ M(m)}|`, which is symmetric in the two — but under `all`
 it is not: `count(F ∧ M) = count(F)` and `count(M ∧ F) = count(M)` are
 different claims, and both `ref` and the ASP backend answer the swapped
 document differently (measured). Writing the qualifying clause last is
@@ -164,15 +164,15 @@ programs to do it.
 
 | form | quantifier |
 |---|---|
-| `… >= n`, n ≥ 1 | TEN MINSTE n |
-| `… <= n`, n ≥ 1 | TEN HOOGSTE n |
-| `… = n`, n ≥ 1 | PRECIES n |
-| `… = 0` | GEEN |
-| `… = count{?V \| ?V = ?X.role, F…}` — the same comprehension WITHOUT its last goal | ALLE |
+| `… >= n`, n ≥ 1 | `atLeast` n |
+| `… <= n`, n ≥ 1 | `atMost` n |
+| `… = n`, n ≥ 1 | `exactly` n |
+| `… = 0` | `none` |
+| `… = count{?V \| ?V = ?X.role, F…}` — the same comprehension WITHOUT its last goal | `all` |
 
 All five are one comparison of a count with a number, which is why the
 slice needs **no negation form** for them and the `\naf` / `\neg` refusals
-below did not move when the fold arrived: `GEEN` is `count = 0` and `ALLE`
+below did not move when the fold arrived: `none` is `count = 0` and `all`
 is `count = |contributors|`, which is what ch. 3.9a states. A comprehension
 with no goal beside the hop states no matrix and stays the plain instance
 fold; a quantifier over no condition would violate WF-108 (d).
@@ -189,7 +189,7 @@ the rule**:
 
 - a target whose only definition is unconditional is a **bare rule** — the
   standing norm of RUNTIME-SEMANTICS ch. 7.8 — and lowers to a
-  `ResolvedRegel`;
+  `Rule`;
 - a target that has any conditional definition lowers to a
   `PrioritizedDefaults` group: the conditional definitions first, in source
   order, the unconditional one last as the base;
@@ -200,10 +200,10 @@ the rule**:
   orders them.
 
 A **characteristic** target is outside that device, and stays a standing
-norm with its condition as the rule's own `voorwaarde`. Two reasons, and
+norm with its condition as the rule's own `condition`. Two reasons, and
 neither is "a characteristic cannot be over-determined" — on the wire it
-can: `PrioritizedDefaults` carries a `kenmerk` target and a `Default`
-carries `besluit`, so *attribute* and *do-not-attribute* are two competing
+can: `PrioritizedDefaults` carries a `characteristic` target and a `Default`
+carries `decision`, so *attribute* and *do-not-attribute* are two competing
 decisions a defaults stack does order (RUNTIME-SEMANTICS ch. 7). The
 reasons are narrower:
 
@@ -213,7 +213,7 @@ reasons are narrower:
   therefore cannot conflict, and a device that orders conflicts has
   nothing to order;
 - **it is what the sibling frontend does.** The RegelSpraak frontend lowers
-  a conditional characteristic assignment to a `ResolvedRegel` with that
+  a conditional characteristic assignment to a `Rule` with that
   condition, not to a defaults group. Lowering the same sentence to a
   group here would make two frontends disagree about the shape of one
   meaning.
@@ -230,13 +230,13 @@ writes `supertype`.
 
 - **Grammatical number and animacy.** RegelSpraak declares a plural for
   every object type and role and marks animate types; F-logic declares
-  neither. The emitted `meervoud` is therefore `null` and `bezield` is
+  neither. The emitted `plural` is therefore absent and `animate` is
   `false` — not invented. A to-many role is named by the label its author
   wrote, which reads as a plural because a `{0..*}` role denotes a set;
   that label is the one a case document keys on.
 - **An empty aggregate.** Flora-2 answers `0` for `sum{…}` and `count{…}`
-  over an empty set (measured on 2.2 beta). The SOM's `leegwaarde` says
-  exactly that in uchar's vocabulary, written at the summed attribute's
+  over an empty set (measured on 2.2 beta). The `sum` fold's `emptyFallback`
+  says exactly that in uchar's vocabulary, written at the summed attribute's
   declared scale; `count` needs no such field.
 - **Instances.** uchar separates program from data, so ground facts are
   refused with a pointer to the `uchar-case-v0` case document.
@@ -276,15 +276,15 @@ the reason and the citation.
    with no id, an id on a form that names nothing, and two definitions
    sharing one id.
 8. **the quantifier fold's own edges**, each by name: a strict `>` or `<`
-   against a counting comprehension (the `drempel` on the wire is the number
+   against a counting comprehension (the `threshold` on the wire is the number
    the source wrote, so the message names the direct spelling), a threshold
    of 0 under `>=` or `<=` (WF-041 pins the bound at 1, and `= 0` is the
-   GEEN spelling), the count on the RIGHT of the comparison, a count
+   spelling of `none`), the count on the RIGHT of the comparison, a count
    compared with anything but a whole non-negative number or its matrix-free
-   twin, an ALLE twin that is a different comprehension, a conditioned
+   twin, an `all` twin that is a different comprehension, a conditioned
    comprehension in a VALUE position (a quantification with no threshold to
    compare against — the counterpart of the set reading a fold source cannot
-   host), a conditioned `sum` (the SOM carries no subselection), a
+   host), a conditioned `sum` (the `sum` fold carries no subselection), a
    conditioned comprehension over an attribute path instead of one role hop,
    a goal inside a comprehension that speaks of the outer subject instead of
    the counted member, a characteristic head naming something the subject

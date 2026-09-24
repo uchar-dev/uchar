@@ -1,6 +1,6 @@
 // A fact type with a to-one and a to-many role, and the two aggregations
 // the slice carries. Flora-2 answers 0 for an aggregate over an empty set
-// (measured on 2.2 beta), which is what the SOM's leegwaarde says here.
+// (measured on 2.2 beta), which is what the sum's emptyFallback says here.
 
 Kavel[|opbrengst => numeriek(niet_negatief, 2)|].
 

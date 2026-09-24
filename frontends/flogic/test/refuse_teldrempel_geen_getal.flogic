@@ -1,4 +1,4 @@
-// A computed threshold: the wire's drempel is an integer (WF-108 (e),
+// A computed threshold: the wire's threshold is an integer (WF-108 (e),
 // WF-041), so a read has no place there.
 
 Boot[|lengte => numeriek(onbepaald, geheel)|].

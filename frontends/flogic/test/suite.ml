@@ -136,7 +136,7 @@ let () =
       ("refuse_telling_vreemde_hop.flogic", "does not start at the rule's subject ?S");
       ("refuse_telling_rechts.flogic", "on the LEFT");
       ("refuse_teldrempel_geen_getal.flogic", "a whole, non-negative number");
-      ("refuse_alle_tweeling.flogic", "the ALLE spelling repeats the comprehension");
+      ("refuse_alle_tweeling.flogic", "the spelling of the quantifier all repeats the comprehension");
       ("refuse_gefilterde_telling_in_waarde.flogic", "is a QUANTIFICATION");
       ("refuse_gefilterde_som.flogic", "sum{...} carries no subselection");
       ("refuse_telling_tweede_hop.flogic", "ONE role hop");
@@ -165,7 +165,7 @@ let () =
         "the frontend wrote an IR document for a refused source")
     refusals;
   (* The serialiser's own refusals, which no F-logic source reaches: the
-     lowering builds no Onopgelost and fills none of the lists the document
+     lowering builds no Unresolved and fills none of the lists the document
      writes empty, so an E2E run never meets these arms. A loaded document
      drives them instead. A marker written without its WARNING fails WF-113
      (b) at the verifier, and a filled list written as [] drops what it held
@@ -175,9 +175,9 @@ let () =
       {|{ "format": "uchar-ir-v1",
   "model": { "objectTypes": [], "factTypes": [], "parameters": [%s], "domains": [%s],
     "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [] },
-  "rules": { "resolvedRegels": [%s], "resolvedDagsoorten": [], "objectCreaties": [],
-    "verdelingen": [], "consistenties": [], "uniciteiten": [],
-    "feitCreaties": [], "resolvedStartpunten": [], "regelGroepen": [] },
+  "rules": { "rules": [%s], "dayKindDefinitions": [], "objectCreations": [],
+    "allocations": [], "consistencies": [], "uniquenesses": [],
+    "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
   "diagnostics": [%s] }|}
       parameters domains regels diagnostics
   in
@@ -187,49 +187,49 @@ let () =
   let regel ~waarde ~voorwaarde =
     Printf.sprintf
       {|{ "node": "Rule", "name": "r", "versions": [ {
-  "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
-  "target": { "node": "AttribuutRef", "attribuut": "a", "objecttype": "T", "source": { "snippet": "de a" } },
-  "value": %s,%s "initialisation": false, "presentation": "BEREKENING" } ] }|}
+  "validity": { "node": "Validity" },
+  "target": { "node": "AttributeReference", "attribute": "a", "subjectType": "T", "source": { "snippet": "de a" } },
+  "value": %s,%s "initialisation": false, "presentation": "calculation" } ] }|}
       waarde
       (match voorwaarde with None -> "" | Some c -> Printf.sprintf {| "condition": %s,|} c)
   in
   let getal =
     {|{ "node": "Literal", "value": { "number": "1" },
-  "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "source": { "snippet": "1" } }|}
+  "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }, "source": { "snippet": "1" } }|}
   in
   let emit_refusals =
-    [ ("an expression Onopgelost",
+    [ ("an expression Unresolved",
        m1_doc
          ~regels:
            (regel ~voorwaarde:None
-              ~waarde:{|{ "node": "Onopgelost", "source": { "snippet": "de onbekende waarde" } }|})
+              ~waarde:{|{ "node": "Unresolved", "source": { "snippet": "de onbekende waarde" } }|})
          (),
        "expression node not produced by the F-logic slice");
-      ("a condition Onopgelost",
+      ("a condition Unresolved",
        m1_doc
          ~regels:
            (regel ~waarde:getal
-              ~voorwaarde:(Some {|{ "node": "Onopgelost", "source": { "snippet": "de onbekende voorwaarde" } }|}))
+              ~voorwaarde:(Some {|{ "node": "Unresolved", "source": { "snippet": "de onbekende voorwaarde" } }|}))
          (),
        "condition shape not produced by the F-logic slice");
       ("a filled diagnostics list",
        m1_doc
          ~diagnostics:
-           {|{ "node": "Diagnostic", "severity": "WARNING", "message": "een melding", "line": 1 }|}
+           {|{ "node": "Diagnostic", "severity": "warning", "message": "een melding", "line": 1 }|}
          (),
        "fills diagnostics");
       ("a filled parameters list",
        m1_doc
          ~parameters:
            {|{ "node": "Parameter", "name": "drempel",
-  "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" } }|}
+  "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" } }|}
          (),
        "fills parameters");
       ("a filled domains list",
        m1_doc
          ~domains:
            {|{ "node": "Domain", "name": "Getijstand",
-  "datatype": { "node": "Enumeratie", "waarden": [ "Eb", "Vloed" ] } }|}
+  "datatype": { "node": "Enumeration", "values": [ "Eb", "Vloed" ] } }|}
          (),
        "fills domains") ]
   in

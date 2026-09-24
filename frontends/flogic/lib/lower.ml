@@ -23,10 +23,10 @@
      operators are refused, so nothing else in the slice can order two
      definitions of one target.
    - [sum{?V | ?V = ?K.role.attr}] and [count{?V | ?V = ?K.role}] are the
-     aggregations; the role hop becomes [bronRol]. Flora-2's aggregates
-     answer 0 over an empty set (measured), which is what the SOM's
-     [leegwaarde] says in uchar's vocabulary, at the target's declared
-     scale. *)
+     aggregations; the role hop becomes the fold's sourceRole. Flora-2's
+     aggregates answer 0 over an empty set (measured), which is what the
+     sum's [leegwaarde] says in uchar's vocabulary, at the target's
+     declared scale. *)
 
 open Syntax
 module A = Ir_v0.Ast
@@ -387,7 +387,7 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
          count{...} >= n"
   | _ ->
       refuse ~line
-        "sum{...} carries no subselection: the slice's SOM adds ONE attribute over one role hop, \
+        "sum{...} carries no subselection: the slice's sum adds ONE attribute over one role hop, \
          and a summed set states no condition of its members");
   match (kind, steps) with
   | "count", [ role ] ->
@@ -437,8 +437,8 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
 
 (* --- conditions ------------------------------------------------------------ *)
 
-(* the vacuously true justification WF-050 asks of a base: ALLE over no
-   parts. F-logic writes no justification for an unconditional rule, so
+(* the vacuously true justification WF-050 asks of a base: the quantifier
+   all over no parts. F-logic writes no justification for an unconditional rule, so
    the [bron] stays null rather than borrowing a phrase. *)
 let always = A.Samengesteld { kwantor = A.Alle; drempel = 0; onderdelen = []; bron = None }
 
@@ -534,13 +534,13 @@ let rec low_cond m ctx (g : goal) : A.conditie =
 (* The fold (IR-SPEC ch. 4.5, RUNTIME-SEMANTICS ch. 3.9a). All five
    quantifiers are one comparison of a COUNT with a number, which is why no
    negation form is needed and the slice's \naf / \neg refusal does not
-   move: GEEN is count = 0 and ALLE is count = |contributors|, written as
+   move: none is count = 0 and all is count = |contributors|, written as
    the same comprehension without its matrix. *)
 and low_kwantorvouw m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
   (* The hop starts at the rule's subject, exactly as it must in a VALUE
      position ([low_agg], same message). Without this the range would be
      read off a variable the rule never bound, and the wire would carry a
-     bronRol whose provenance quotes a name with no reading. *)
+     sourceRole whose provenance quotes a name with no reading. *)
   if q.q_subj <> ctx.c_var then
     refuse ~line "the aggregate path %s does not start at the rule's subject ?%s"
       (show_expr q.q_hop) ctx.c_var;
@@ -580,7 +580,7 @@ and low_kwantorvouw m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
     | _ ->
         refuse ~line
           "the threshold %s of a counting quantifier is not a whole, non-negative number: the \
-           wire carries an integer drempel (WF-108 (e), WF-041)"
+           wire carries an integer threshold (WF-108 (e), WF-041)"
           lex
   in
   let kwantor, drempel =
@@ -591,9 +591,10 @@ and low_kwantorvouw m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
            in the letters the author wrote *)
         if show_expr rhs <> show_expr twin then
           refuse ~line
-            "the ALLE spelling repeats the comprehension without its last goal, and this one \
-             does not — expected %s, found %s: ALLE is count(satisfiers) = count(members), and \
-             the members are the ones the filter leaves"
+            "the spelling of the quantifier all repeats the comprehension without its last \
+             goal, and this one does not — expected %s, found %s: the quantifier all is \
+             count(satisfiers) = count(members), and the members are the ones the filter \
+             leaves"
             (show_agg_source "count" q.q_var q.q_hop q.q_filter)
             (show_agg_source "count" av2 hop2 goals2);
         (A.Alle, None)
@@ -610,7 +611,7 @@ and low_kwantorvouw m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
             refuse ~line
               "a counting quantifier with threshold 0 under '<=': WF-041 pins the bound at 1, and \
                \"no member satisfies the matrix\" has its own spelling — count{...} = 0, which is \
-               GEEN"
+               the quantifier none"
         | ">=", n -> (A.Ten_minste, Some n)
         | "<=", n -> (A.Ten_hoogste, Some n)
         | _, n -> (A.Precies, Some n))
@@ -627,11 +628,11 @@ and low_kwantorvouw m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
           let direct =
             match (o, n) with
             | ">", _ -> Printf.sprintf "'>= %d'" (n + 1)
-            | "<", 1 -> "'= 0', which is the GEEN spelling"
+            | "<", 1 -> "'= 0', which is the spelling of the quantifier none"
             | _ -> Printf.sprintf "'<= %d'" (n - 1)
           in
           refuse ~line
-            "the strict comparison '%s %s' against a counting comprehension: the drempel on the \
+            "the strict comparison '%s %s' against a counting comprehension: the threshold on the \
              wire is the number the source wrote, so the slice reads the direct spelling — write \
              %s"
             o lex direct
@@ -648,7 +649,7 @@ and low_kwantorvouw m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
         refuse ~line
           "the counting comprehension is compared with %s: the right side of a count comparison \
            is a whole, non-negative number (the threshold) or the same comprehension WITHOUT its \
-           last goal (the ALLE spelling)"
+           last goal (the spelling of the quantifier all)"
           (show_expr rhs)
   in
   A.Kwantorvouw

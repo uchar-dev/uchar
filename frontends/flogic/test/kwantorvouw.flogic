@@ -1,5 +1,5 @@
 // The five quantifiers of the fold, written as COUNTS. No negation form
-// is needed and none is used: GEEN is count(satisfiers) = 0 and ALLE is
+// is needed and none is used: none is count(satisfiers) = 0 and all is
 // count(satisfiers) = count(members), so the slice's \naf / \neg refusal
 // stays exactly where it was.
 //
@@ -32,13 +32,13 @@ stationsindeling[|boten   {0..*} => Boot|].
 @!{'bootstal van een station'}
 ?S[bootstal -> count{?V | ?V = ?S.boten}] :- ?S : Reddingsstation.
 
-// ALLE: every member the sentence is about satisfies the matrix, written
+// all: every member the sentence is about satisfies the matrix, written
 // as "as many satisfiers as there are members".
 @!{'slagvaardig station'}
 ?S : slagvaardig :- ?S : Reddingsstation,
     count{?V | ?V = ?S.boten, ?V.lengte > 8} = count{?V | ?V = ?S.boten}.
 
-// GEEN: no member satisfies it.
+// none: no member satisfies it.
 @!{'kansloos station'}
 ?S : kansloos :- ?S : Reddingsstation,
     count{?V | ?V = ?S.boten, ?V.lengte > 8} = 0.
@@ -60,7 +60,7 @@ stationsindeling[|boten   {0..*} => Boot|].
 ?S : beproefd :- ?S : Reddingsstation,
     count{?V | ?V = ?S.boten, ?V : zeewaardig, ?V.lengte > 8} >= 2.
 
-// The filtered range under ALLE: the twin repeats the comprehension
+// The filtered range under all: the twin repeats the comprehension
 // WITHOUT its last goal, so "members" means the filter's survivors.
 @!{'dubbelgekeurd station'}
 ?S : dubbelgekeurd :- ?S : Reddingsstation,
