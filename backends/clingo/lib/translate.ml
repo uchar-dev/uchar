@@ -2403,6 +2403,16 @@ let symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
         fault "temporal text/enum/boolean carriage is a recorded flank; no corpus case";
       let v = fresh ctx "V" in
       ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v)
+  (* a characteristic named where a value is compared: it carries no value
+     (WF-080), in the verifier's sentence and ref's, rather than the bottom
+     sentence below, which describes the position and not this form *)
+  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }
+    when Ir_v0.Checks.find_ci (objecttype ctx ot).attributen a = None
+         && Ir_v0.Checks.has_kenmerk (objecttype ctx ot) a ->
+      fault
+        "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
+         ill-formed in a value position (WF-080)"
+        a ot
   | _ ->
       fault
         "a text/enum/boolean operand here is an own-subject attribute read or a literal (no \

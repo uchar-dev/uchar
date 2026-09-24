@@ -10669,6 +10669,21 @@ let () =
     ~needle:
       "'vrijgesteld' is a characteristic of 'Jutter', not an attribute — a characteristic endpoint \
        is ill-formed in a value position (WF-080)";
+  (* the same characteristic as a compared operand reaches [symbolic_term],
+     which names it rather than falling to its bottom sentence *)
+  faults_with ~name:"WF-080 een kenmerk als vergelijkingsoperand"
+    ~ir:
+      (pf_doc ~objecttypen:[ persoon; jutter ]
+         ~regels:
+           [ pf_regel
+               ~voorwaarde:
+                 (pf_cmp "GELIJK" (pf_a "vrijgesteld") (pf_l ~typ:{|{ "node": "Booleaan" }|} "waar"))
+               (pf_a "leeftijd") ]
+         ())
+    ~case_text
+    ~needle:
+      "'vrijgesteld' is a characteristic of 'Jutter', not an attribute — a characteristic endpoint \
+       is ill-formed in a value position (WF-080)";
   faults_with ~name:"WF-080 een kenmerk als setbron van een waardevouw"
     ~ir:
       (vervang
