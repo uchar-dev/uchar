@@ -191,8 +191,11 @@ class MarkerVerslagTest {
         Verslag.verantwoord(json);
     }
 
+    /** A document of one rule whose one version carries {@code regelwaarde} as its value — only as much of the wire
+     *  as the predicate reads, in the rule layer's own shape. */
     private static String document(String regelwaarde, String diagnostic) {
         return "{\"format\": \"uchar-ir-v1\", \"model\": {}, \"rules\": {\"resolvedRegels\": [{\"node\": "
-                + "\"ResolvedRegel\", \"waarde\": " + regelwaarde + "}]}, \"diagnostics\": [" + diagnostic + "]}";
+                + "\"Rule\", \"name\": \"r\", \"versions\": [{\"value\": " + regelwaarde + "}]}]}, "
+                + "\"diagnostics\": [" + diagnostic + "]}";
     }
 }

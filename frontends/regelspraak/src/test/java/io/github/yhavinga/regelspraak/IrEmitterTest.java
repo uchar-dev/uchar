@@ -10,6 +10,7 @@ import io.github.yhavinga.regelspraak.ir.ResolvedUniciteit;
 import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Diagnostic;
+import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Severity;
 import io.github.yhavinga.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
@@ -1132,6 +1133,311 @@ class IrEmitterTest {
         String marker = IrEmitter.emit(m).replaceAll("\\s+", "");
         assertTrue(marker.contains("{\"node\":\"Onopgelost\",\"bron\":\"devondsttellervandeJuttermin6\"}"),
                 () -> "een marker van onbekend type draagt geen type:\n" + marker);
+    }
+
+    // ---------------- L4: the rule layer and the expression layer ----------------
+
+    /** A rule with two versions, the model's shape of it: one entry per version, named "waarde #1" and "waarde #2". */
+    private static final String TWEE_VERSIES = """
+            Objecttype de Vondst
+                de waarde Numeriek (geheel getal);
+            Regel waarde
+                geldig vanaf 2025 t/m 2025
+                    De waarde van een Vondst moet gesteld worden op 1.
+                geldig vanaf 2026
+                    De waarde van een Vondst moet gesteld worden op 2.
+            """;
+
+    @Test void de_versies_van_een_regel_worden_een_vorm_met_zijn_versies_in_volgorde() {
+        // IR-SPEC ch. 3, Versioning: the model keeps one entry per version and names them "<name> #<i>"; the wire
+        // writes the rule once, under its own name, with its versions in the order of i and each its own validity.
+        // No rgs golden and no document of the parity zone carries two versions, so this is the grouping's witness.
+        RegelSpraakModel m = Resolver.resolve(TWEE_VERSIES);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        assertEquals(List.of("waarde #1", "waarde #2"), m.resolvedRegels.stream().map(ResolvedRegel::naam).toList(),
+                "het model draagt één invoer per versie");
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        String doel = "\"target\":{\"node\":\"AttribuutRef\",\"attribuut\":\"waarde\",\"objecttype\":\"Vondst\",";
+        int eerste = c.indexOf("\"resolvedRegels\":[{\"node\":\"Rule\",\"name\":\"waarde\",\"versions\":[{\"validity\":"
+                + "{\"node\":\"Geldigheid\",\"vanaf\":\"2025-01-01\",\"tot\":\"2025-12-31\"}," + doel);
+        int tweede = c.indexOf("},{\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":\"2026-01-01\",\"tot\":null}," + doel);
+        assertTrue(eerste >= 0 && tweede > eerste, () -> "één vorm met twee versies in volgorde verwacht:\n" + c);
+        assertTrue(c.indexOf("\"value\":{\"number\":\"1\"}") > eerste && c.indexOf("\"value\":{\"number\":\"2\"}") > tweede,
+                () -> "elke versie draagt haar eigen waarde:\n" + c);
+        assertEquals(1, c.split("\"node\":\"Rule\"", -1).length - 1, () -> "precies één vorm:\n" + c);
+        assertFalse(c.contains(" #") || c.contains("#1") || c.contains("#2"),
+                () -> "het versieachtervoegsel is de spelling van het model, niet die van de wire:\n" + c);
+    }
+
+    @Test void een_versiegroep_die_de_wire_niet_kan_spellen_wordt_geweigerd() {
+        // The grouping reads the model's names exactly as m4.py reads the flattened wire, and refuses what it
+        // cannot spell rather than guessing a form: versions that do not stand together, a suffix on one entry
+        // (a form with one version carries its bare name, so "x #1" alone would read as a version of "x"), numbers
+        // that are not exactly 1 to n, a form name that itself ends in a suffix, and versions that carry
+        // different statute annotations (the wire writes one list on the form).
+        record Geval(String reden, List<String> namen, List<List<String>> annotaties) {}
+        List<List<String>> geen = List.of(List.of(), List.of(), List.of());
+        for (Geval g : List.of(
+                new Geval("niet aaneengesloten", List.of("x #1", "y", "x #2"), geen),
+                new Geval("op één invoer", List.of("x #1", "y", "z"), geen),
+                new Geval("niet precies 1 tot en met", List.of("x #1", "x #3", "y"), geen),
+                new Geval("niet precies 1 tot en met", List.of("x #01", "x #2", "y"), geen),
+                new Geval("eindigt zelf op een versieachtervoegsel", List.of("x #1 #1", "x #1 #2", "y"), geen),
+                new Geval("verschillende statuutannotaties", List.of("x #1", "x #2", "y"),
+                        List.of(List.of("art. 1"), List.of("art. 2"), List.of())))) {
+            RegelSpraakModel m = drieRegels();
+            for (int i = 0; i < 3; i++) {
+                ResolvedRegel r = m.resolvedRegels.get(i);
+                m.resolvedRegels.set(i, new ResolvedRegel(g.namen().get(i), r.soort(), r.doel(), r.waarde(),
+                        r.voorwaarde(), r.geldigheid(), g.annotaties().get(i)));
+            }
+            IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
+                    () -> g.namen() + " hoort geweigerd te worden");
+            assertTrue(e.getMessage().contains(g.reden()), () -> g.namen() + ": " + e.getMessage());
+        }
+        // an entry without a suffix beside a group of the same name is a form of its own (WF-020 then speaks)
+        RegelSpraakModel m = drieRegels();
+        List<String> namen = List.of("x", "x #1", "x #2");
+        for (int i = 0; i < 3; i++) {
+            ResolvedRegel r = m.resolvedRegels.get(i);
+            m.resolvedRegels.set(i, new ResolvedRegel(namen.get(i), r.soort(), r.doel(), r.waarde(), r.voorwaarde(),
+                    r.geldigheid(), r.bronAnnotaties()));
+        }
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertEquals(2, c.split("\"node\":\"Rule\",\"name\":\"x\"", -1).length - 1,
+                () -> "de kale naam en de groep zijn twee vormen:\n" + c);
+    }
+
+    /** Three single-version rules on one attribute, for the grouping's refusals to rename. */
+    private static RegelSpraakModel drieRegels() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Vondst
+                de waarde Numeriek (geheel getal);
+            Regel een
+                geldig altijd
+                    De waarde van een Vondst moet gesteld worden op 1.
+            Regel twee
+                geldig altijd
+                    De waarde van een Vondst moet gesteld worden op 2.
+            Regel drie
+                geldig altijd
+                    De waarde van een Vondst moet gesteld worden op 3.
+            """);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        return m;
+    }
+
+    @Test void de_regelsoort_gaat_de_wire_op_als_initialisatie_en_presentatie() {
+        // IR-SPEC ch. 3.1: a gelijkstelling and a berekening are initialisation false with their tag, an
+        // initialisation is initialisation true without one, and a characteristic attribution carries neither —
+        // that its target is a characteristic is the declaration's to say, and its value is the boolean true.
+        String c = emitCompact("""
+            Objecttype de Vondst
+                de waarde Numeriek (geheel getal);
+                het gewicht Numeriek (geheel getal);
+                de drempel Numeriek (geheel getal);
+                is zwaar kenmerk (bijvoeglijk);
+            Regel waarde
+                geldig altijd
+                    De waarde van een Vondst moet gesteld worden op 1.
+            Regel gewicht
+                geldig altijd
+                    Het gewicht van een Vondst moet berekend worden als de waarde van de Vondst plus 1.
+            Regel drempel
+                geldig altijd
+                    De drempel van een Vondst moet geïnitialiseerd worden op 5.
+            Regel zwaar
+                geldig altijd
+                    Een Vondst is zwaar indien zijn gewicht groter is dan 10.
+            """);
+        assertTrue(c.contains("\"value\":{\"number\":\"1\"},\"type\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,"
+                        + "\"sign\":\"ONBEPAALD\"},\"bron\":\"1\"},\"initialisation\":false,\"presentation\":\"GELIJKSTELLING\"}"),
+                () -> "de gelijkstelling:\n" + c);
+        assertTrue(c.contains("\"initialisation\":false,\"presentation\":\"BEREKENING\"}"), () -> "de berekening:\n" + c);
+        assertTrue(c.contains("\"bron\":\"5\"},\"initialisation\":true}"), () -> "de initialisatie, zonder tag:\n" + c);
+        assertTrue(c.contains("\"value\":{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Booleaan\"},"),
+                () -> "de kenmerktoekenning schrijft de booleaanse waarde waar:\n" + c);
+        assertTrue(c.contains("\"initialisation\":false}]}"), () -> "de kenmerktoekenning draagt geen tag:\n" + c);
+        assertFalse(c.contains("\"soort\"") || c.contains("KENMERKTOEKENNING") || c.contains("INITIALISATIE"),
+                () -> "de soort is structuur, geen veld:\n" + c);
+    }
+
+    @Test void een_doel_dat_attribuut_en_kenmerk_noemt_wordt_geweigerd() {
+        // WF-022: which member a rule writes decides its kind, so a target whose name is both an attribute and a
+        // characteristic of the subject type decides nothing; the frontend does not write such a document. The
+        // characteristic is added after resolution, so the rule itself is the resolver's.
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Jutter
+                de toelage Numeriek (geheel getal);
+            Regel toelage
+                geldig altijd
+                    De toelage van een Jutter moet gesteld worden op 1.
+            """);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        assertTrue(IrEmitter.emit(m).contains("\"presentation\": \"GELIJKSTELLING\""), "de ongemoeide regel wordt geschreven");
+        m.objecttypen.get("Jutter").kenmerken.add("Toelage");
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
+        assertTrue(e.getMessage().contains("zowel een attribuut als een kenmerk") && e.getMessage().contains("(WF-022)"),
+                e::getMessage);
+    }
+
+    @Test void de_uniciteiten_staan_in_een_lijst_de_enkelvoudige_eerst() {
+        // IR-SPEC ch. 3.6: one list of uniquenesses, each a version with its sources — one for the single-type form,
+        // two or more for the union — the single-source forms first and then the unions, whatever order the source
+        // wrote them in. No rgs golden and no document of the parity zone carries a union.
+        String c = emitCompact("""
+            Objecttype de Cirkel (mv: Cirkels)
+                de naam Tekst;
+            Objecttype de Vierkant (mv: Vierkanten)
+                de naam Tekst;
+                het nummer Numeriek (geheel getal);
+            Regel namen uniek
+                geldig altijd
+                    De namen van alle Cirkels verenigd met de namen van alle Vierkanten moeten uniek zijn.
+            Regel nummers uniek
+                geldig altijd
+                    De nummers van alle Vierkanten moeten uniek zijn.
+            """);
+        String geldig = "\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}";
+        int enkel = c.indexOf("{\"node\":\"Uniqueness\",\"name\":\"nummersuniek\",\"versions\":[{\"sources\":["
+                + "{\"node\":\"Source\",\"objectType\":\"Vierkant\",\"keys\":[\"nummer\"]}]," + geldig + ",\"bron\":");
+        int unie = c.indexOf("{\"node\":\"Uniqueness\",\"name\":\"namenuniek\",\"versions\":[{\"sources\":["
+                + "{\"node\":\"Source\",\"objectType\":\"Cirkel\",\"keys\":[\"naam\"]},"
+                + "{\"node\":\"Source\",\"objectType\":\"Vierkant\",\"keys\":[\"naam\"]}]," + geldig + ",\"bron\":");
+        assertTrue(c.indexOf("\"uniciteiten\":[{\"node\":\"Uniqueness\",\"name\":\"nummersuniek\"") >= 0 && enkel >= 0
+                        && unie > enkel, () -> "de enkelvoudige vorm eerst, dan de unie, in één lijst:\n" + c);
+        assertFalse(c.contains("uniciteitUnies"), () -> "de tweede lijst bestaat op de wire niet meer:\n" + c);
+    }
+
+    @Test void een_verdeling_zonder_methode_wordt_weggelaten_en_gemeld() {
+        // IR-SPEC ch. 3.2 gives an allocation one of three methods. An allocation the frontend could not give one
+        // (its placeholder) has no spelling: it is left out, and a WARNING that names it is appended to the
+        // diagnostics, line 0 because the model keeps no line for it (WF-113 (a)). The other allocations stand.
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Berging (mv: Bergingen)
+                de opbrengst Numeriek (geheel getal);
+            Objecttype de Berger (mv: Bergers) (bezield)
+                het aandeel Numeriek (geheel getal);
+            Feittype bergingsdeelname
+                de berging Berging
+                de berger (mv: bergers) Berger
+            Eén berging heeft meerdere bergers
+            Regel verdeling
+                geldig altijd
+                    De opbrengst van een berging wordt verdeeld over de aandeel van alle bergers van de berging, waarbij wordt verdeeld in gelijke delen.
+            """);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        assertEquals(1, m.verdelingen.size());
+        assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains("\"method\":\"GELIJKE_DELEN\""),
+                "de ongemoeide verdeling wordt geschreven");
+        io.github.yhavinga.regelspraak.ir.ResolvedVerdeling v = m.verdelingen.get(0);
+        m.verdelingen.set(0, new io.github.yhavinga.regelspraak.ir.ResolvedVerdeling(v.naam(), v.bronType(),
+                v.bronAttribuut(), v.doelType(), v.doelAttribuut(),
+                io.github.yhavinga.regelspraak.ir.ResolvedVerdeling.Methode.COMPLEX, v.ratoAttribuut(),
+                v.maximumAttribuut(), v.afrondingDecimalen(), v.restantAttribuut(), v.groepeerAttribuut(), v.afnemend(),
+                v.voorwaarde(), v.geldigheid()));
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(c.contains("\"verdelingen\":[],"), () -> "de verdeling zonder methode hoort weg te blijven:\n" + c);
+        assertFalse(c.contains("COMPLEX"), () -> "de plaatshouder heeft geen spelling:\n" + c);
+        assertTrue(c.contains("\"diagnostics\":[{\"node\":\"Diagnostic\",\"severity\":\"WARNING\",\"message\":"
+                        + "\"verdeling'verdeling'wordtnietgeschreven:"), () -> "de WARNING noemt de verdeling:\n" + c);
+        assertTrue(c.endsWith("\"line\":0}]}"), () -> "regel 0, als laatste diagnose:\n" + c);
+        assertEquals(1, IrEmitter.ongeschrevenVerdelingen(m).size());
+        Verslag.verantwoord(IrEmitter.emit(m));
+    }
+
+    @Test void de_gebonden_dag_en_de_contextwaarden_hebben_elk_hun_knoop() {
+        // IR-SPEC ch. 4.1: the bound day of a day-kind definition is a node of its own without a name; the session
+        // values are a ContextValue under their name.
+        String c = emitCompact("""
+            Dagsoort de werkdag (mv: werkdagen)
+            Objecttype de Vondst
+                de meldatum Datum in dagen;
+                het meldjaar Numeriek (geheel getal);
+            Regel werkdag
+                geldig altijd
+                    Een dag is een werkdag indien de dag gelijk is aan de Rekendatum.
+            Regel meldjaar
+                geldig altijd
+                    Het meldjaar van een Vondst moet gesteld worden op het Rekenjaar.
+            """);
+        assertTrue(c.contains("{\"node\":\"BoundDay\",\"type\":{\"node\":\"Date\",\"precision\":\"day\"},\"bron\":\"dedag\"}"),
+                () -> "de gebonden dag:\n" + c);
+        assertTrue(c.contains("{\"node\":\"ContextValue\",\"name\":\"Rekendatum\",\"type\":{\"node\":\"Date\","
+                + "\"precision\":\"day\"},"), () -> "de rekendatum:\n" + c);
+        assertTrue(c.contains("{\"node\":\"ContextValue\",\"name\":\"Rekenjaar\",\"type\":{\"node\":\"Number\","),
+                () -> "het rekenjaar:\n" + c);
+        assertFalse(c.contains("Constante"), () -> "de v0-knoop bestaat op de wire niet meer:\n" + c);
+    }
+
+    @Test void een_literal_zonder_type_en_een_onbekende_constante_worden_geweigerd() {
+        // The literal's value is the variant its type names, so a literal without a type has none; a boolean whose
+        // lexeme is not waar or onwaar has no value; and a constant outside the bound day and the two session values
+        // has no spelling at all. Each is refused rather than written in a guessed shape.
+        RegelSpraakModel m = drieRegels();
+        ResolvedRegel r = m.resolvedRegels.get(0);
+        Expr.Literal een = (Expr.Literal) r.waarde();
+        for (Expr waarde : List.<Expr>of(
+                new Expr.Literal(een.waarde(), null, een.bron()),
+                new Expr.Literal("ja", new Datatype.Booleaan(), een.bron()),
+                new Expr.Constante("Rekenmaand", new Datatype.DatumInDagen(), een.bron()),
+                new Expr.Constante("de dag", null, een.bron()))) {
+            m.resolvedRegels.set(0, new ResolvedRegel(r.naam(), r.soort(), r.doel(), waarde, r.voorwaarde(),
+                    r.geldigheid()));
+            IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
+                    () -> "geschreven: " + waarde);
+            assertTrue(e.getMessage().contains("geen type") || e.getMessage().contains("booleaanse waarde")
+                    || e.getMessage().contains("geen spelling"), e::getMessage);
+        }
+    }
+
+    @Test void een_komma_wordt_een_punt_en_de_bron_houdt_de_komma() {
+        // IR-SPEC ch. 4.1 (WF-081): the number is written with a point; the author's decimal comma stays in bron.
+        String c = emitCompact("""
+            Objecttype de Vondst
+                de waarde Numeriek (getal met 2 decimalen);
+            Regel waarde
+                geldig altijd
+                    De waarde van een Vondst moet gesteld worden op 12,50.
+            """);
+        assertTrue(java.util.regex.Pattern.compile("\\{\"node\":\"Literal\",\"value\":\\{\"number\":\"12\\.50\"\\},"
+                + "\"type\":\\{\"node\":\"Number\",[^}]*\\},\"bron\":\"12,50\"\\}").matcher(c).find(),
+                () -> "punt in de waarde, komma in de bron:\n" + c);
+    }
+
+    @Test void een_vouwveld_op_de_andere_functieknoop_wordt_geweigerd() {
+        // IR-SPEC ch. 4.3: an Aggregation has no place for a granularity, a BuiltinCall none for a fold's element
+        // type, empty value or dimension selection. The frontend builds neither, so the fields are grafted on.
+        RegelSpraakModel m = drieRegels();
+        ResolvedRegel r = m.resolvedRegels.get(0);
+        Objecttype vondst = m.objecttypen.get("Vondst");
+        Expr.AttribuutRef lezing = (Expr.AttribuutRef) r.doel();
+        for (Expr waarde : List.<Expr>of(
+                new Expr.Functie(Expr.FunctieKind.ABSOLUTE_WAARDE, List.of(r.waarde()), vondst, null, null, null,
+                        r.waarde().type(), r.waarde().bron()),
+                new Expr.Functie(Expr.FunctieKind.ABSOLUTE_WAARDE, List.of(r.waarde()), null, r.waarde(), null, null,
+                        r.waarde().type(), r.waarde().bron()),
+                new Expr.Functie(Expr.FunctieKind.SOM, List.of(lezing), null, null, null, null,
+                        r.waarde().type(), r.waarde().bron(), RegelSpraakModel.Granulariteit.MAAND))) {
+            m.resolvedRegels.set(0, new ResolvedRegel(r.naam(), r.soort(), r.doel(), waarde, r.voorwaarde(),
+                    r.geldigheid()));
+            IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
+                    () -> "geschreven: " + waarde);
+            assertTrue(e.getMessage().contains("staat dat veld alleen op"), e::getMessage);
+        }
+    }
+
+    @Test void een_feitcreatie_naar_een_ander_type_dan_de_vuller_wordt_geweigerd() {
+        // IR-SPEC ch. 3.4: the target type is not written — a reader takes the declared filler of the target role —
+        // so a creation whose target type the model holds otherwise would be read as another creation.
+        RegelSpraakModel m = Resolver.resolve(FEITCREATIE);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        ResolvedFeitCreatie fc = m.feitCreaties.get(0);
+        m.feitCreaties.set(0, new ResolvedFeitCreatie(fc.naam(), fc.anker(), m.objecttypen.get("Afdeling"), fc.zetVeld(),
+                fc.joinVeld(), fc.tussenstappen(), fc.voorwaarde(), fc.geldigheid(), fc.feittype(), fc.ankerRol(),
+                fc.doelRol(), fc.joinRol()));
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
+        assertTrue(e.getMessage().contains("gedeclareerde vuller van de rol 'sponsorproject'"), e::getMessage);
     }
 
     /** The Werknemer–Afdeling model the L2 refusal witnesses share: one fact type between the pair, and a

@@ -1164,22 +1164,28 @@ public final class IrEmitter {
      */
     private static <T> List<Vorm<T>> vormen(String lijst, List<T> invoeren, java.util.function.Function<T, String> naamVan,
                                             java.util.function.Function<T, List<String>> annotaties) {
-        List<Vorm<T>> uit = new java.util.ArrayList<>();
-        java.util.Set<String> gegroepeerd = new java.util.HashSet<>();
+        // the runs: an entry without the suffix is a run of its own, the suffixed entries of one form name are one
+        // run, and a form name has one run — asked of all runs before any run is written, as m4.py asks it
+        List<List<T>> reeksen = new java.util.ArrayList<>();
+        java.util.Set<String> gezien = new java.util.HashSet<>();
         int k = 0;
         while (k < invoeren.size()) {
-            String naam = naamVan.apply(invoeren.get(k));
+            String basis = basis(naamVan.apply(invoeren.get(k)));
+            int j = k + 1;
+            while (basis != null && j < invoeren.size() && basis.equals(basis(naamVan.apply(invoeren.get(j))))) j++;
+            if (basis != null && !gezien.add(basis))
+                throw versieWeigering(lijst, basis, "haar versies staan niet aaneengesloten");
+            reeksen.add(invoeren.subList(k, j));
+            k = j;
+        }
+        List<Vorm<T>> uit = new java.util.ArrayList<>();
+        for (List<T> reeks : reeksen) {
+            String naam = naamVan.apply(reeks.get(0));
             String basis = basis(naam);
             if (basis == null) {
-                uit.add(new Vorm<>(naam, List.of(invoeren.get(k))));
-                k++;
+                uit.add(new Vorm<>(naam, reeks));
                 continue;
             }
-            int j = k + 1;
-            while (j < invoeren.size() && basis.equals(basis(naamVan.apply(invoeren.get(j))))) j++;
-            List<T> reeks = invoeren.subList(k, j);
-            if (!gegroepeerd.add(basis))
-                throw versieWeigering(lijst, basis, "haar versies staan niet aaneengesloten");
             if (reeks.size() < 2)
                 throw versieWeigering(lijst, basis, "het versieachtervoegsel van '" + naam + "' staat op één invoer, "
                         + "en een vorm met één versie draagt haar kale naam");
@@ -1199,7 +1205,6 @@ public final class IrEmitter {
             List<T> versies = new java.util.ArrayList<>(reeks);
             versies.sort(java.util.Comparator.comparingInt(x -> Integer.parseInt(versienummer(naamVan.apply(x)))));
             uit.add(new Vorm<>(basis, versies));
-            k = j;
         }
         return uit;
     }
