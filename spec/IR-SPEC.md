@@ -3900,9 +3900,10 @@ one hard-codes the unknown type, so no `hij` reaches the wire well-typed.
 This clause therefore cuts no conforming producer route: it adds a second,
 name-level line at a position the verifier rejected already, and the
 frontend's own pronoun handling is untouched by it. **Since L4 the route ends
-at the producer** (delta B23): the emitter writes a `Constante` named `de dag`
-as `BoundDay` and one named `Rekendatum` or `Rekenjaar` as a `ContextValue`,
-and refuses any other name loudly without writing a document — measured
+at the producer** (delta B23): the emitter writes the frontend's in-memory
+`Constante` named `de dag` as `BoundDay` and one named `Rekendatum` or
+`Rekenjaar` as a `ContextValue`, and refuses any other name loudly without
+writing a document — measured
 2026-09-24, the same `indien hij gelijk is aan hij` added to the source of
 `jutterswet-penningrecht` ends the emission with exit 1 on the refusal that
 names `hij`.
@@ -4320,8 +4321,8 @@ written role stays in `bron`.
   executor. Leaving them open would have kept a live one-answers-two-refuse
   class, complete with a crash, behind a boundary that had just been declared
   exact; closing them moves zero documents. That asymmetry decided it.
-  Since L4 none of the six can be written: each needs an `elementObjecttype`
-  on the builtin, and a `BuiltinCall` carries no `elementType` and no range
+  Since L4 none of the six can be written: each needs an element type on
+  the builtin, and a `BuiltinCall` carries no `elementType` and no range
   (delta B21) — the loaders refuse such a field by name.
 
   **One decision, six measured subforms.** They behave differently in the
