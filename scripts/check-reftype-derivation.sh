@@ -25,8 +25,9 @@
 #   5. an empty twist set is a failure, never silently green.
 #   6. every unit-bearing annotation the twister MEETS must sit either in the twist table below
 #      or in the explicit, reason-carrying exception set (where the annotation IS the source).
-#      Table and clamp key on the POSITION CLASS, which for a Binair is (node, op) and for a
-#      Functie is (node, kind) — ch. 2.10 splits those two node kinds by OPERATOR, not by node.
+#      Table and clamp key on the POSITION CLASS, which for a Binair is (node, op) and for an
+#      Aggregation or a BuiltinCall (node, kind) — ch. 2.10 splits those node kinds by OPERATOR,
+#      not by node.
 #      PLUS/MIN/VERMINDERD_MET/MAAL and the six value aggregations derive their result unit;
 #      GEDEELD_DOOR, TOT_DE_MACHT, PERCENTAGE_VAN, an absolute value, a root and the date/time
 #      extractors are ch. 2.10's FOURTH class, where v0 derives nothing. Keying on the node alone
@@ -149,7 +150,7 @@
 #
 # Twisted positions (the class factor in brackets): the composite positions —
 #   Binair/{PLUS,MIN,VERMINDERD_MET,MAAL} [1e5], Let [1e6],
-#   Functie/{SOM,TOTAAL,MINIMUM,MAXIMUM,EERSTE,LAATSTE} [1e7], Afgerond [1e8], Begrensd [1e9]
+#   Aggregation/{SOM,TOTAAL,MINIMUM,MAXIMUM,EERSTE,LAATSTE} [1e7], Afgerond [1e8], Begrensd [1e9]
 #   (the ch. 4.10 Let node reaches this backend as a carrier, and its wire annotation is what the
 #   carrier holds). Until L2 the reference positions were twisted too — AttribuutRef [10],
 #   ParameterRef [100], DimensieCel [1000], BinderRef [10000]; since L2 they write no type, so the
@@ -161,21 +162,21 @@
 #
 # NOT twisted, each because the annotation IS the source there (ch. 2.10's named exceptions), and
 # each therefore EXEMPT from the clamp of step 6:
-#   - a Literal: its type is the lexeme's own carrier ("3,5 EUR"), a copy of nothing. All three
-#     executors read it, and must.
+#   - a Literal: its type is its own value's carrier ({"number": "3.5"} in EUR), a copy of
+#     nothing; the value itself is never twisted. All three executors read it, and must.
 #   - the DURATION operand of a date +/- duration Binair: ref (eval.ml) and the ASP translator
 #     both route the calendar unit off that operand's static type (WF-035). Twisting it would
 #     measure that routing, not a declaration reading. Which operand is the DATE is read the way
 #     the executors read it: off the node's own annotation, and — since a reference writes no
 #     type (L2) — off the declaration a reference names (attribute, parameter, dimension cell,
 #     binder in scope).
-#   - a TIJDSDUUR / ABSOLUTE_TIJDSDUUR Functie's own type: its unit is the OPERATOR's parameter
+#   - a TIJDSDUUR / ABSOLUTE_TIJDSDUUR BuiltinCall's own type: its unit is the OPERATOR's parameter
 #     ("de tijdsduur van A tot B in jaren", WF-038), not a derived result type.
 #
 # Neither twisted nor exempt is NOT silently skipped any more (step 6), and the clamp separates
 # two different arrivals:
 #   - a ch. 2.10 FOURTH-CLASS branch of a node kind the table otherwise carries — a unit-bearing
-#     Binair/GEDEELD_DOOR, /TOT_DE_MACHT, /PERCENTAGE_VAN, or a Functie absolute value, root or
+#     Binair/GEDEELD_DOOR, /TOT_DE_MACHT, /PERCENTAGE_VAN, or a BuiltinCall absolute value, root or
 #     date/time extractor. v0 derives no result unit there, so a twist would probe a rule that
 #     does not exist; the gate reports the witness instead. What that witness must buy is a
 #     derivation rule (or a fence) — never a wider licence to read the wire.
@@ -281,18 +282,22 @@ import json, os, sys
 from fractions import Fraction
 
 # the position classes and their restatement-factor exponents (see the script header). The exponent
-# is per NODE KIND; MEMBERSHIP is per position class, which for Binair/Functie is finer (below).
-KLASSE = {"Binair": 5, "Let": 6, "Functie": 7, "Afgerond": 8, "Begrensd": 9}
-# ch. 2.10 clause 2 splits Binair and Functie by OPERATOR, not by node: only these branches DERIVE a
-# result unit (an additive result carries the left unit / a unitless side adopts the other; a MAAL
-# cancels or forms the opaque product; §4.6 Eenheid1 hands a value aggregation its first operand's).
-# Every OTHER op/kind of those two node kinds is ch. 2.10's FOURTH class — v0 derives nothing there,
-# so it is neither twistable nor exempt, and the clamp reports it.
+# is per NODE KIND; MEMBERSHIP is per position class, which for Binair/Aggregation is finer (below).
+KLASSE = {"Binair": 5, "Let": 6, "Aggregation": 7, "Afgerond": 8, "Begrensd": 9}
+# ch. 2.10 clause 2 splits Binair by OPERATOR and an Aggregation by KIND, not by node: only these
+# branches DERIVE a result unit (an additive result carries the left unit / a unitless side adopts
+# the other; a MAAL cancels or forms the opaque product; §4.6 Eenheid1 hands a value aggregation its
+# first operand's). Every OTHER op/kind of those two node kinds is ch. 2.10's FOURTH class — v0
+# derives nothing there, so it is neither twistable nor exempt, and the clamp reports it.
 AFGELEIDE_OP = {"PLUS", "MIN", "VERMINDERD_MET", "MAAL"}
 AFGELEIDE_KIND = {"SOM", "TOTAAL", "MINIMUM", "MAXIMUM", "EERSTE", "LAATSTE"}
+# A BuiltinCall is a node kind the table carries with no derived branch at all: an absolute value,
+# a root and the date/time extractors are the fourth class, and the two tijdsduur kinds are exempt
+# (below). Since L4 it is the other half of what v0 wrote as one Functie node (delta B21).
+GEDRAGEN = set(KLASSE) | {"BuiltinCall"}
 # The reason-carrying exception set of the step-6 clamp: node kinds OUTSIDE the twist table whose
 # annotation IS the source, so leaving them unprobed is a statement and not a gap.
-UITZONDERING = {"Literal": "the lexeme's own carrier (\"3,5 EUR\") is a copy of no declaration"}
+UITZONDERING = {"Literal": "the literal's type carries its own value's unit ({\"number\": \"3.5\"} in EUR), a copy of no declaration"}
 # WF-038: a tijdsduur's own unit is the operator's parameter, not a derived result type
 GEEN_FUNCTIE = {"TIJDSDUUR", "ABSOLUTE_TIJDSDUUR"}
 DATUM = "Date"
@@ -300,13 +305,14 @@ ACHTERVOEGSEL = "-verdraaid"
 
 
 def positieklasse(x):
-    """The key table and clamp agree on: (node, op) for a Binair, (node, kind) for a Functie, the
-       bare node kind otherwise. Printed as the clamp's witness, so a report names the BRANCH."""
+    """The key table and clamp agree on: (node, op) for a Binair, (node, kind) for an Aggregation
+       or a BuiltinCall, the bare node kind otherwise. Printed as the clamp's witness, so a report
+       names the BRANCH."""
     node = x.get("node")
     if node == "Binair":
         return "Binair/%s" % x.get("op")
-    if node == "Functie":
-        return "Functie/%s" % x.get("kind")
+    if node in ("Aggregation", "BuiltinCall"):
+        return "%s/%s" % (node, x.get("kind"))
     return node
 
 
@@ -316,7 +322,7 @@ def afgeleid(x):
     node = x.get("node")
     if node == "Binair":
         return x.get("op") in AFGELEIDE_OP
-    if node == "Functie":
+    if node == "Aggregation":
         return x.get("kind") in AFGELEIDE_KIND
     return node in KLASSE
 
@@ -427,7 +433,7 @@ def loop(x, telling, sla_eigen_over=False, scope=None):
         elif datum_getypeerd(r, scope) and not datum_getypeerd(l, scope):
             duur = l
     vrijgesteld = sla_eigen_over or node in UITZONDERING \
-        or (node == "Functie" and x.get("kind") in GEEN_FUNCTIE)
+        or (node == "BuiltinCall" and x.get("kind") in GEEN_FUNCTIE)
     if node is not None and eenheiddragend(x.get("type")):
         # step 6, the clamp: account for EVERY unit-bearing annotation, so a position that is
         # neither twisted nor exempt cannot pass unnoticed. The two arrivals are reported apart:
@@ -437,7 +443,7 @@ def loop(x, telling, sla_eigen_over=False, scope=None):
         if vrijgesteld:
             telling["vrijgesteld"] += 1
         elif not afgeleid(x):
-            telling["vierde" if node in KLASSE else "ongedekt"].append(positieklasse(x))
+            telling["vierde" if node in GEDRAGEN else "ongedekt"].append(positieklasse(x))
         elif zusje(x["type"].get("unit"), KLASSE[node]) is None:
             # in the table, but no convertible SISTER exists (a unit with no canonical/factor —
             # a unit system declares no conversion for it). A non-convertible lie would measure
