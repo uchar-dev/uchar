@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -23,22 +23,22 @@
           {
             "node": "Characteristic",
             "name": "inzetbaar",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "krap",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "paraat",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "geschikt",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -55,11 +55,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           }
@@ -68,30 +68,29 @@
           {
             "node": "Characteristic",
             "name": "gekeurd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "sleepindeling",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "sleepindeling",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "vloot",
-            "objecttypeNaam": "Sleepvloot",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "vloot",
+            "objectType": "Sleepvloot",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "boot",
-            "objecttypeNaam": "Sleepboot",
-            "meervoud": "boten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "boot",
+            "objectType": "Sleepboot",
+            "plural": "boten",
+            "many": true
           }
         ]
       }
@@ -104,21 +103,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "inzetbaar bij sleeptijd",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "inzetbaar",
-              "objecttype": "Sleepvloot",
+              "node": "AttributeReference",
+              "attribute": "inzetbaar",
+              "subjectType": "Sleepvloot",
               "source": {
                 "snippet": "Een Sleepvloot is inzetbaar"
               }
@@ -129,30 +126,29 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "TEN_MINSTE",
-              "drempel": 2,
-              "elementObjecttype": "Sleepboot",
-              "filter": null,
-              "toets": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "sleeptijd",
-                  "objecttype": "Sleepboot",
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 2,
+              "elementType": "Sleepboot",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "sleeptijd",
+                  "subjectType": "Sleepboot",
                   "source": {
                     "snippet": "de sleeptijd van ten minste 2 van de boten van de Sleepvloot"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "20"
@@ -161,16 +157,16 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "20"
                   }
                 },
-                "periode": {
-                  "node": "GeheelPeriode",
-                  "jaar": true,
-                  "niet": true
+                "wholePeriod": {
+                  "node": "WholePeriod",
+                  "granularity": "year",
+                  "negated": true
                 },
                 "source": {
                   "snippet": "de sleeptijd van ten minste 2 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20"
@@ -179,10 +175,10 @@
               "source": {
                 "snippet": "de sleeptijd van ten minste 2 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "sleepindeling",
-                "rol": "boot"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "sleepindeling",
+                "role": "boot"
               }
             },
             "initialisation": false
@@ -195,14 +191,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "krap",
-              "objecttype": "Sleepvloot",
+              "node": "AttributeReference",
+              "attribute": "krap",
+              "subjectType": "Sleepvloot",
               "source": {
                 "snippet": "Een Sleepvloot is krap"
               }
@@ -213,30 +207,29 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "TEN_HOOGSTE",
-              "drempel": 1,
-              "elementObjecttype": "Sleepboot",
-              "filter": null,
-              "toets": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "sleeptijd",
-                  "objecttype": "Sleepboot",
+              "node": "QuantifierFold",
+              "quantifier": "atMost",
+              "threshold": 1,
+              "elementType": "Sleepboot",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "sleeptijd",
+                  "subjectType": "Sleepboot",
                   "source": {
                     "snippet": "de sleeptijd van ten hoogste 1 van de boten van de Sleepvloot"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "20"
@@ -245,16 +238,16 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "20"
                   }
                 },
-                "periode": {
-                  "node": "GeheelPeriode",
-                  "jaar": true,
-                  "niet": true
+                "wholePeriod": {
+                  "node": "WholePeriod",
+                  "granularity": "year",
+                  "negated": true
                 },
                 "source": {
                   "snippet": "de sleeptijd van ten hoogste 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20"
@@ -263,10 +256,10 @@
               "source": {
                 "snippet": "de sleeptijd van ten hoogste 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "sleepindeling",
-                "rol": "boot"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "sleepindeling",
+                "role": "boot"
               }
             },
             "initialisation": false
@@ -279,14 +272,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "paraat",
-              "objecttype": "Sleepvloot",
+              "node": "AttributeReference",
+              "attribute": "paraat",
+              "subjectType": "Sleepvloot",
               "source": {
                 "snippet": "Een Sleepvloot is paraat"
               }
@@ -297,30 +288,29 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "PRECIES",
-              "drempel": 1,
-              "elementObjecttype": "Sleepboot",
-              "filter": null,
-              "toets": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "sleeptijd",
-                  "objecttype": "Sleepboot",
+              "node": "QuantifierFold",
+              "quantifier": "exactly",
+              "threshold": 1,
+              "elementType": "Sleepboot",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "sleeptijd",
+                  "subjectType": "Sleepboot",
                   "source": {
                     "snippet": "de sleeptijd van precies 1 van de boten van de Sleepvloot"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "20"
@@ -329,16 +319,16 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "20"
                   }
                 },
-                "periode": {
-                  "node": "GeheelPeriode",
-                  "jaar": true,
-                  "niet": true
+                "wholePeriod": {
+                  "node": "WholePeriod",
+                  "granularity": "year",
+                  "negated": true
                 },
                 "source": {
                   "snippet": "de sleeptijd van precies 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20"
@@ -347,10 +337,10 @@
               "source": {
                 "snippet": "de sleeptijd van precies 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "sleepindeling",
-                "rol": "boot"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "sleepindeling",
+                "role": "boot"
               }
             },
             "initialisation": false
@@ -363,14 +353,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "geschikt",
-              "objecttype": "Sleepvloot",
+              "node": "AttributeReference",
+              "attribute": "geschikt",
+              "subjectType": "Sleepvloot",
               "source": {
                 "snippet": "Een Sleepvloot is geschikt"
               }
@@ -381,39 +369,37 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "TEN_MINSTE",
-              "drempel": 2,
-              "elementObjecttype": "Sleepboot",
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 2,
+              "elementType": "Sleepboot",
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "gekeurd",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "gekeurd",
+                "negated": false,
                 "source": {
                   "snippet": "gekeurd zijn"
                 }
               },
-              "toets": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "sleeptijd",
-                  "objecttype": "Sleepboot",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "sleeptijd",
+                  "subjectType": "Sleepboot",
                   "source": {
                     "snippet": "de sleeptijd van ten minste 2 van de boten van de Sleepvloot die gekeurd zijn"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "20"
@@ -422,16 +408,16 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "20"
                   }
                 },
-                "periode": {
-                  "node": "GeheelPeriode",
-                  "jaar": true,
-                  "niet": true
+                "wholePeriod": {
+                  "node": "WholePeriod",
+                  "granularity": "year",
+                  "negated": true
                 },
                 "source": {
                   "snippet": "de sleeptijd van ten minste 2 van de boten van de Sleepvloot die gekeurd zijn niet gedurende het gehele jaar groter is dan 20"
@@ -440,10 +426,10 @@
               "source": {
                 "snippet": "de sleeptijd van ten minste 2 van de boten van de Sleepvloot die gekeurd zijn niet gedurende het gehele jaar groter is dan 20"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "sleepindeling",
-                "rol": "boot"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "sleepindeling",
+                "role": "boot"
               }
             },
             "initialisation": false
@@ -456,26 +442,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bootal",
-              "objecttype": "Sleepvloot",
+              "node": "AttributeReference",
+              "attribute": "bootal",
+              "subjectType": "Sleepvloot",
               "source": {
                 "snippet": "Het bootal van een Sleepvloot"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "boten",
-                  "objecttype": "Sleepvloot",
+                  "node": "AttributeReference",
+                  "attribute": "boten",
+                  "subjectType": "Sleepvloot",
                   "source": {
                     "snippet": "boten van de Sleepvloot"
                   }
@@ -483,34 +467,34 @@
               ],
               "elementType": "Sleepboot",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "sleepindeling",
-                "rol": "boot"
+                "node": "RoleBinding",
+                "factType": "sleepindeling",
+                "role": "boot"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal boten van de Sleepvloot"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

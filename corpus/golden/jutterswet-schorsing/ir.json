@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -23,12 +23,12 @@
           {
             "node": "Characteristic",
             "name": "recht op de penning",
-            "kind": "BEZITTELIJK"
+            "kind": "possessive"
           },
           {
             "node": "Characteristic",
             "name": "vergunning geschorst",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -42,31 +42,29 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "penningrecht art 3",
-        "onderwerp": "Jutter",
-        "kenmerk": "recht op de penning",
+        "name": "penningrecht art 3",
+        "subject": "Jutter",
+        "characteristic": "recht op de penning",
         "defaults": [
           {
             "node": "Default",
-            "besluit": false,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "vergunning geschorst",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "decision": false,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "vergunning geschorst",
+              "negated": false,
               "source": {
                 "snippet": "hij vergunning geschorst is"
               }
@@ -77,19 +75,19 @@
           },
           {
             "node": "Default",
-            "besluit": true,
-            "voorwaarde": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aantal aangemelde vondsten",
-                "objecttype": "Jutter",
+            "decision": true,
+            "justification": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aantal aangemelde vondsten",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn aantal aangemelde vondsten"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "12"
@@ -98,13 +96,12 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "12"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan 12"
               }
@@ -117,10 +114,8 @@
         "source": {
           "snippet": "Jutterswet art. 3"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

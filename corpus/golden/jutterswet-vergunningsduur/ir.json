@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "maand",
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "maand",
@@ -88,29 +88,27 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "looptijd van een bergingsvergunning",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "looptijd",
-              "objecttype": "Bergingsvergunning",
+              "node": "AttributeReference",
+              "attribute": "looptijd",
+              "subjectType": "Bergingsvergunning",
               "source": {
                 "snippet": "De looptijd van een Bergingsvergunning"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
                 "node": "Literal",
                 "value": {
                   "number": "2"
@@ -119,7 +117,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "jaar",
@@ -135,10 +133,10 @@
                   "snippet": "2 jaar"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "basisduur",
-                "objecttype": "Bergingsvergunning",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "basisduur",
+                "subjectType": "Bergingsvergunning",
                 "source": {
                   "snippet": "de basisduur van de Bergingsvergunning"
                 }
@@ -147,7 +145,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "jaar",
@@ -164,19 +162,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

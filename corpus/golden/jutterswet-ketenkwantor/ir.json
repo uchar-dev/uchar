@@ -12,12 +12,12 @@
           {
             "node": "Characteristic",
             "name": "vondstrijk",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "vondstarm",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -42,7 +42,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -51,44 +51,43 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "bemanning",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "bemanning",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "schipper",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "schipper",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "gevoerde boot",
-            "objecttypeNaam": "Boot",
-            "meervoud": "gevoerde boten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "gevoerde boot",
+            "objectType": "Boot",
+            "plural": "gevoerde boten",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "berging",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "berging",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "bergende boot",
-            "objecttypeNaam": "Boot",
-            "meervoud": "bergende boten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "bergende boot",
+            "objectType": "Boot",
+            "plural": "bergende boten",
+            "many": true
           },
           {
-            "node": "Rol",
-            "naam": "geborgen vondst",
-            "objecttypeNaam": "Vondst",
-            "meervoud": "geborgen vondsten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "geborgen vondst",
+            "objectType": "Vondst",
+            "plural": "geborgen vondsten",
+            "many": true
           }
         ]
       }
@@ -101,21 +100,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "vondstrijk",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vondstrijk",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "vondstrijk",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Een Jutter is vondstrijk"
               }
@@ -126,30 +123,29 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "TEN_MINSTE",
-              "drempel": 4,
-              "elementObjecttype": "Vondst",
-              "filter": null,
-              "toets": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewicht",
-                  "objecttype": "Vondst",
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 4,
+              "elementType": "Vondst",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "1.00"
@@ -158,13 +154,12 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "1,00"
                   }
                 },
-                "periode": null,
                 "source": {
                   "snippet": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
                 }
@@ -172,16 +167,16 @@
               "source": {
                 "snippet": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
               },
-              "bronPad": [
+              "sourcePath": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "bemanning",
-                  "rol": "gevoerde boot"
+                  "node": "RoleBinding",
+                  "factType": "bemanning",
+                  "role": "gevoerde boot"
                 },
                 {
-                  "node": "RolBinding",
-                  "feittype": "berging",
-                  "rol": "geborgen vondst"
+                  "node": "RoleBinding",
+                  "factType": "berging",
+                  "role": "geborgen vondst"
                 }
               ]
             },
@@ -195,14 +190,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vondstarm",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "vondstarm",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Een Jutter is vondstarm"
               }
@@ -213,30 +206,29 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "TEN_HOOGSTE",
-              "drempel": 3,
-              "elementObjecttype": "Vondst",
-              "filter": null,
-              "toets": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewicht",
-                  "objecttype": "Vondst",
+              "node": "QuantifierFold",
+              "quantifier": "atMost",
+              "threshold": 3,
+              "elementType": "Vondst",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "1.00"
@@ -245,13 +237,12 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "1,00"
                   }
                 },
-                "periode": null,
                 "source": {
                   "snippet": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
                 }
@@ -259,16 +250,16 @@
               "source": {
                 "snippet": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
               },
-              "bronPad": [
+              "sourcePath": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "bemanning",
-                  "rol": "gevoerde boot"
+                  "node": "RoleBinding",
+                  "factType": "bemanning",
+                  "role": "gevoerde boot"
                 },
                 {
-                  "node": "RolBinding",
-                  "feittype": "berging",
-                  "rol": "geborgen vondst"
+                  "node": "RoleBinding",
+                  "factType": "berging",
+                  "role": "geborgen vondst"
                 }
               ]
             },
@@ -277,14 +268,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

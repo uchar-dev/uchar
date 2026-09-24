@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -52,7 +52,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "plural": "gewichten"
           }
@@ -73,7 +73,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -82,44 +82,43 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "bemanning",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "bemanning",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "schipper",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "schipper",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "gevoerde boot",
-            "objecttypeNaam": "Boot",
-            "meervoud": "gevoerde boten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "gevoerde boot",
+            "objectType": "Boot",
+            "plural": "gevoerde boten",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "berging",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "berging",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "bergende boot",
-            "objecttypeNaam": "Boot",
-            "meervoud": "bergende boten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "bergende boot",
+            "objectType": "Boot",
+            "plural": "bergende boten",
+            "many": true
           },
           {
-            "node": "Rol",
-            "naam": "geborgen vondst",
-            "objecttypeNaam": "Vondst",
-            "meervoud": "geborgen vondsten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "geborgen vondst",
+            "objectType": "Vondst",
+            "plural": "geborgen vondsten",
+            "many": true
           }
         ]
       }
@@ -132,33 +131,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "laagste muntgewicht",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "laagste muntgewicht",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "laagste muntgewicht",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het laagste muntgewicht van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "MINIMUM",
+              "kind": "minimum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewicht",
-                  "objecttype": "Munt",
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Munt",
                   "source": {
                     "snippet": "het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter"
                   }
@@ -167,28 +164,28 @@
               "elementType": "Munt",
               "sourcePath": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "bemanning",
-                  "rol": "gevoerde boot"
+                  "node": "RoleBinding",
+                  "factType": "bemanning",
+                  "role": "gevoerde boot"
                 },
                 {
-                  "node": "RolBinding",
-                  "feittype": "berging",
-                  "rol": "geborgen vondst"
+                  "node": "RoleBinding",
+                  "factType": "berging",
+                  "role": "geborgen vondst"
                 }
               ],
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de minimale waarde van het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -198,26 +195,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "totaal muntgewicht",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "totaal muntgewicht",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het totaal muntgewicht van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "SOM",
+              "kind": "sum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewicht",
-                  "objecttype": "Munt",
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Munt",
                   "source": {
                     "snippet": "het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter"
                   }
@@ -233,7 +228,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0"
@@ -241,40 +236,40 @@
               },
               "sourcePath": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "bemanning",
-                  "rol": "gevoerde boot"
+                  "node": "RoleBinding",
+                  "factType": "bemanning",
+                  "role": "gevoerde boot"
                 },
                 {
-                  "node": "RolBinding",
-                  "feittype": "berging",
-                  "rol": "geborgen vondst"
+                  "node": "RoleBinding",
+                  "factType": "berging",
+                  "role": "geborgen vondst"
                 }
               ],
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de som van het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter of 0 als die er niet zijn"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

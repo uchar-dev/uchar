@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "plural": "gewichten"
           }
@@ -65,7 +65,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -74,23 +74,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "vondstaanmelding",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "vondstaanmelding",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "aanmelder",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "aanmelder",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "vondst",
-            "objecttypeNaam": "Vondst",
-            "meervoud": "vondsten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
           }
         ]
       }
@@ -103,33 +102,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "laagste muntgewicht",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "laagste muntgewicht",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "laagste muntgewicht",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het laagste muntgewicht van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "MINIMUM",
+              "kind": "minimum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewicht",
-                  "objecttype": "Munt",
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Munt",
                   "source": {
                     "snippet": "het gewicht van alle munten van de Jutter"
                   }
@@ -137,22 +134,22 @@
               ],
               "elementType": "Munt",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "vondstaanmelding",
-                "rol": "vondst"
+                "node": "RoleBinding",
+                "factType": "vondstaanmelding",
+                "role": "vondst"
               },
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de minimale waarde van het gewicht van alle munten van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -162,26 +159,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "hoogste muntgewicht",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "hoogste muntgewicht",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het hoogste muntgewicht van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "MAXIMUM",
+              "kind": "maximum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewicht",
-                  "objecttype": "Munt",
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Munt",
                   "source": {
                     "snippet": "het gewicht van alle munten van de Jutter"
                   }
@@ -189,34 +184,34 @@
               ],
               "elementType": "Munt",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "vondstaanmelding",
-                "rol": "vondst"
+                "node": "RoleBinding",
+                "factType": "vondstaanmelding",
+                "role": "vondst"
               },
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de maximale waarde van het gewicht van alle munten van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

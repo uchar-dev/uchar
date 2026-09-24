@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -34,7 +34,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -53,7 +53,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -63,7 +63,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -82,7 +82,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -92,7 +92,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -111,7 +111,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -120,23 +120,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "kavelindeling",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "kavelindeling",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "kavel",
-            "objecttypeNaam": "Kavel",
-            "meervoud": "kavels",
-            "meervoudig": true
+            "node": "Role",
+            "name": "kavel",
+            "objectType": "Kavel",
+            "plural": "kavels",
+            "many": true
           },
           {
-            "node": "Rol",
-            "naam": "gemeente",
-            "objecttypeNaam": "Gemeente",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "gemeente",
+            "objectType": "Gemeente",
+            "many": false
           }
         ]
       }
@@ -149,33 +148,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "kavelaantal van een gemeente",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "kavelaantal",
-              "objecttype": "Gemeente",
+              "node": "AttributeReference",
+              "attribute": "kavelaantal",
+              "subjectType": "Gemeente",
               "source": {
                 "snippet": "Het kavelaantal van een Gemeente"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "kavels",
-                  "objecttype": "Gemeente",
+                  "node": "AttributeReference",
+                  "attribute": "kavels",
+                  "subjectType": "Gemeente",
                   "source": {
                     "snippet": "alle kavels van de Gemeente"
                   }
@@ -183,31 +180,31 @@
               ],
               "elementType": "Kavel",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "kavelindeling",
-                "rol": "kavel"
+                "node": "RoleBinding",
+                "factType": "kavelindeling",
+                "role": "kavel"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het aantal kavels van de Gemeente"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [
       {
         "node": "Uniqueness",
         "name": "eenmalig kaveletiket",
@@ -223,14 +220,12 @@
               }
             ],
             "scope": {
-              "node": "RolBinding",
-              "feittype": "kavelindeling",
-              "rol": "gemeente"
+              "node": "RoleBinding",
+              "factType": "kavelindeling",
+              "role": "gemeente"
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "source": {
               "snippet": "De etiket van alle Kavel van de gemeente moeten uniek zijn."
@@ -253,14 +248,12 @@
               }
             ],
             "scope": {
-              "node": "RolBinding",
-              "feittype": "kavelindeling",
-              "rol": "gemeente"
+              "node": "RoleBinding",
+              "factType": "kavelindeling",
+              "role": "gemeente"
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "source": {
               "snippet": "De sectiecode van alle Kavel van de gemeente moeten uniek zijn."
@@ -290,9 +283,7 @@
               }
             ],
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "source": {
               "snippet": "Strandvondst verenigd met Wrakvondst moeten uniek zijn."
@@ -322,9 +313,7 @@
               }
             ],
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "source": {
               "snippet": "Baken verenigd met Baken moeten uniek zijn."
@@ -333,9 +322,9 @@
         ]
       }
     ],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

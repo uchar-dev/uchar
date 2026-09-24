@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -61,7 +61,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       },
       {
@@ -71,7 +71,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       }
     ],
@@ -82,21 +82,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "heffing van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De heffing van een Jutter"
               }
@@ -107,13 +105,13 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "binder": "k",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "inkomen",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "inkomen",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn inkomen"
                 }
@@ -124,23 +122,23 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "binder": "z",
                 "value": {
-                  "node": "Binair",
-                  "op": "GEDEELD_DOOR",
-                  "links": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
                     "node": "BinderRef",
                     "name": "k",
                     "source": {
                       "snippet": "de k"
                     }
                   },
-                  "rechts": {
-                    "node": "AttribuutRef",
-                    "attribuut": "restpost",
-                    "objecttype": "Jutter",
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "restpost",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "zijn restpost"
                     }
@@ -149,7 +147,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "de grondslag gedeeld door zijn restpost"
@@ -161,7 +159,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "binder": "w",
                   "value": {
@@ -173,7 +171,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "1,00"
@@ -185,26 +183,25 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "condition": {
-                      "node": "Vergelijking",
-                      "op": "GROTER",
-                      "links": {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
                         "node": "BinderRef",
                         "name": "k",
                         "source": {
                           "snippet": "de k"
                         }
                       },
-                      "rechts": {
-                        "node": "ParameterRef",
+                      "right": {
+                        "node": "ParameterReference",
                         "parameter": "drempel",
                         "source": {
                           "snippet": "de drempel"
                         }
                       },
-                      "periode": null,
                       "source": {
                         "snippet": "de grondslag boven de grens"
                       }
@@ -240,7 +237,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -250,14 +247,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "wikkelheffing",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "wikkelheffing",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De wikkelheffing van een Jutter"
               }
@@ -268,13 +263,13 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "binder": "k",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "inkomen",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "inkomen",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn inkomen"
                 }
@@ -285,23 +280,23 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "binder": "z",
                 "value": {
-                  "node": "Binair",
-                  "op": "GEDEELD_DOOR",
-                  "links": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
                     "node": "BinderRef",
                     "name": "k",
                     "source": {
                       "snippet": "de k"
                     }
                   },
-                  "rechts": {
-                    "node": "AttribuutRef",
-                    "attribuut": "restpost",
-                    "objecttype": "Jutter",
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "restpost",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "zijn restpost"
                     }
@@ -310,22 +305,22 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "de grondslag gedeeld door zijn restpost"
                   }
                 },
                 "body": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
                     "node": "Let",
                     "type": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "binder": "w",
                     "value": {
@@ -337,7 +332,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "1,00"
@@ -349,26 +344,25 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "condition": {
-                        "node": "Vergelijking",
-                        "op": "GROTER",
-                        "links": {
+                        "node": "Comparison",
+                        "op": "greater",
+                        "left": {
                           "node": "BinderRef",
                           "name": "k",
                           "source": {
                             "snippet": "de k"
                           }
                         },
-                        "rechts": {
-                          "node": "ParameterRef",
+                        "right": {
+                          "node": "ParameterReference",
                           "parameter": "drempel",
                           "source": {
                             "snippet": "de drempel"
                           }
                         },
-                        "periode": null,
                         "source": {
                           "snippet": "de grondslag boven de grens"
                         }
@@ -395,8 +389,8 @@
                       "snippet": "de w is w"
                     }
                   },
-                  "rechts": {
-                    "node": "ParameterRef",
+                  "right": {
+                    "node": "ParameterReference",
                     "parameter": "basisheffing",
                     "source": {
                       "snippet": "de basisheffing"
@@ -406,7 +400,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "de staffel plus de basisheffing"
@@ -421,19 +415,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

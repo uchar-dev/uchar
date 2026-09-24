@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -53,23 +53,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "berging",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "berging",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "bergende jutter",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "bergende jutter",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "vondst",
-            "objecttypeNaam": "Vondst",
-            "meervoud": "vondsten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
           }
         ]
       }
@@ -82,33 +81,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "zwaarste van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "zwaarste",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "zwaarste",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het zwaarste van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "MAXIMUM",
+              "kind": "maximum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewicht",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "het gewicht van alle vondsten van de Jutter"
                   }
@@ -116,22 +113,22 @@
               ],
               "elementType": "Vondst",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "berging",
-                "rol": "vondst"
+                "node": "RoleBinding",
+                "factType": "berging",
+                "role": "vondst"
               },
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het maximum van het gewicht van alle vondsten van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -141,26 +138,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "lichtste",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "lichtste",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het lichtste van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "MINIMUM",
+              "kind": "minimum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewicht",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "het gewicht van alle vondsten van de Jutter"
                   }
@@ -168,34 +163,34 @@
               ],
               "elementType": "Vondst",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "berging",
-                "rol": "vondst"
+                "node": "RoleBinding",
+                "factType": "berging",
+                "role": "vondst"
               },
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het minimum van het gewicht van alle vondsten van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -33,7 +33,7 @@
             "node": "Number",
             "whole": false,
             "decimals": 2,
-            "sign": "NIET_NEGATIEF"
+            "sign": "nonNegative"
           }
         }
       },
@@ -44,7 +44,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       }
     ],
@@ -55,21 +55,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "vergoeding van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vergoeding",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "vergoeding",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De vergoeding van een Jutter"
               }
@@ -80,10 +78,10 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
-                "node": "ParameterRef",
+                "node": "ParameterReference",
                 "parameter": "staffelbedragen",
                 "source": {
                   "snippet": "de staffelbedragen"
@@ -98,7 +96,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -107,7 +105,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   }
                 ],
@@ -117,22 +115,22 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "condition": {
-                    "node": "Vergelijking",
-                    "op": "KLEINER_OF_GELIJK",
-                    "links": {
-                      "node": "Binair",
-                      "op": "PLUS",
-                      "links": {
+                    "node": "Comparison",
+                    "op": "lessOrEqual",
+                    "left": {
+                      "node": "Binary",
+                      "op": "plus",
+                      "left": {
                         "node": "BinderRef",
                         "name": "acc",
                         "source": {
                           "snippet": "de opgetelde vergoeding"
                         }
                       },
-                      "rechts": {
+                      "right": {
                         "node": "BinderRef",
                         "name": "x",
                         "source": {
@@ -143,35 +141,34 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "de opgetelde vergoeding plus het staffelbedrag"
                       }
                     },
-                    "rechts": {
-                      "node": "ParameterRef",
+                    "right": {
+                      "node": "ParameterReference",
                       "parameter": "plafond",
                       "source": {
                         "snippet": "het plafond"
                       }
                     },
-                    "periode": null,
                     "source": {
                       "snippet": "de opgetelde vergoeding plus het staffelbedrag kleiner dan of gelijk aan het plafond"
                     }
                   },
                   "then": {
-                    "node": "Binair",
-                    "op": "PLUS",
-                    "links": {
+                    "node": "Binary",
+                    "op": "plus",
+                    "left": {
                       "node": "BinderRef",
                       "name": "acc",
                       "source": {
                         "snippet": "de opgetelde vergoeding"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "BinderRef",
                       "name": "x",
                       "source": {
@@ -182,7 +179,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de opgetelde vergoeding plus het staffelbedrag"
@@ -212,7 +209,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0.00"
@@ -223,19 +220,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

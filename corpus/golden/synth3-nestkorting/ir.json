@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -33,22 +33,22 @@
           {
             "node": "Characteristic",
             "name": "rechtA",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "grondP",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "grondQ",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "grondR",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -62,48 +62,44 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "korting van een jutter",
-        "onderwerp": "Jutter",
-        "kenmerk": null,
-        "attribuut": "korting",
+        "name": "korting van een jutter",
+        "subject": "Jutter",
+        "attribute": "korting",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "rechtA",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "rechtA",
+              "negated": false,
               "source": {
                 "snippet": "hij rechtA heeft"
               }
             },
-            "consequentie": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "grondslag",
-                "objecttype": "Jutter",
+            "consequence": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "grondslag",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "de grondslag van de Jutter"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "90.00"
@@ -112,7 +108,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "90.00"
@@ -122,7 +118,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de grondslag plus 90.00"
@@ -131,37 +127,34 @@
             "source": {
               "snippet": "rechtA: de grondslag plus 90.00, tenzij een uitzonderingsgrond geldt"
             },
-            "excepties": {
-              "ongeordend": true,
-              "leden": [
+            "exceptions": {
+              "unordered": true,
+              "members": [
                 {
                   "node": "ExceptionGroup",
                   "defaults": [
                     {
                       "node": "Default",
-                      "besluit": null,
-                      "voorwaarde": {
-                        "node": "Kenmerk",
-                        "kenmerk": "grondP",
-                        "negatie": false,
-                        "eigenaar": null,
-                        "periode": null,
+                      "justification": {
+                        "node": "CharacteristicCheck",
+                        "characteristic": "grondP",
+                        "negated": false,
                         "source": {
                           "snippet": "hij grondP heeft"
                         }
                       },
-                      "consequentie": {
-                        "node": "Binair",
-                        "op": "PLUS",
-                        "links": {
-                          "node": "AttribuutRef",
-                          "attribuut": "grondslag",
-                          "objecttype": "Jutter",
+                      "consequence": {
+                        "node": "Binary",
+                        "op": "plus",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "grondslag",
+                          "subjectType": "Jutter",
                           "source": {
                             "snippet": "de grondslag van de Jutter"
                           }
                         },
-                        "rechts": {
+                        "right": {
                           "node": "Literal",
                           "value": {
                             "number": "20.00"
@@ -170,7 +163,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           },
                           "source": {
                             "snippet": "20.00"
@@ -180,7 +173,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         },
                         "source": {
                           "snippet": "de grondslag plus 20.00"
@@ -200,29 +193,26 @@
                   "defaults": [
                     {
                       "node": "Default",
-                      "besluit": null,
-                      "voorwaarde": {
-                        "node": "Kenmerk",
-                        "kenmerk": "grondQ",
-                        "negatie": false,
-                        "eigenaar": null,
-                        "periode": null,
+                      "justification": {
+                        "node": "CharacteristicCheck",
+                        "characteristic": "grondQ",
+                        "negated": false,
                         "source": {
                           "snippet": "hij grondQ heeft"
                         }
                       },
-                      "consequentie": {
-                        "node": "Binair",
-                        "op": "PLUS",
-                        "links": {
-                          "node": "AttribuutRef",
-                          "attribuut": "grondslag",
-                          "objecttype": "Jutter",
+                      "consequence": {
+                        "node": "Binary",
+                        "op": "plus",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "grondslag",
+                          "subjectType": "Jutter",
                           "source": {
                             "snippet": "de grondslag van de Jutter"
                           }
                         },
-                        "rechts": {
+                        "right": {
                           "node": "Literal",
                           "value": {
                             "number": "35.00"
@@ -231,7 +221,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           },
                           "source": {
                             "snippet": "35.00"
@@ -241,7 +231,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         },
                         "source": {
                           "snippet": "de grondslag plus 35.00"
@@ -261,32 +251,29 @@
                   "defaults": [
                     {
                       "node": "Default",
-                      "besluit": null,
-                      "voorwaarde": {
-                        "node": "Kenmerk",
-                        "kenmerk": "grondR",
-                        "negatie": false,
-                        "eigenaar": null,
-                        "periode": null,
+                      "justification": {
+                        "node": "CharacteristicCheck",
+                        "characteristic": "grondR",
+                        "negated": false,
                         "source": {
                           "snippet": "hij grondR heeft"
                         }
                       },
-                      "consequentie": {
-                        "node": "Binair",
-                        "op": "PLUS",
-                        "links": {
-                          "node": "Binair",
-                          "op": "PLUS",
-                          "links": {
-                            "node": "AttribuutRef",
-                            "attribuut": "grondslag",
-                            "objecttype": "Jutter",
+                      "consequence": {
+                        "node": "Binary",
+                        "op": "plus",
+                        "left": {
+                          "node": "Binary",
+                          "op": "plus",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "grondslag",
+                            "subjectType": "Jutter",
                             "source": {
                               "snippet": "de grondslag van de Jutter"
                             }
                           },
-                          "rechts": {
+                          "right": {
                             "node": "Literal",
                             "value": {
                               "number": "15.00"
@@ -295,7 +282,7 @@
                               "node": "Number",
                               "whole": false,
                               "decimals": 2,
-                              "sign": "ONBEPAALD"
+                              "sign": "unspecified"
                             },
                             "source": {
                               "snippet": "15.00"
@@ -305,13 +292,13 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           },
                           "source": {
                             "snippet": "de grondslag plus 15.00"
                           }
                         },
-                        "rechts": {
+                        "right": {
                           "node": "Literal",
                           "value": {
                             "number": "5.00"
@@ -320,7 +307,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           },
                           "source": {
                             "snippet": "5.00"
@@ -330,7 +317,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         },
                         "source": {
                           "snippet": "die som plus 5.00"
@@ -350,9 +337,7 @@
           },
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": null,
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "5.00"
@@ -361,13 +346,13 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "5.00"
               }
             },
-            "initialisatie": true,
+            "initialisation": true,
             "source": {
               "snippet": "basis: 5.00"
             }
@@ -376,10 +361,8 @@
         "source": {
           "snippet": "art. 7: de korting met berekende geneste uitzonderingsgronden"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

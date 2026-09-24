@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -23,22 +23,22 @@
           {
             "node": "Characteristic",
             "name": "bekwaam",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "onbekwaam",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "merendeels",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "gangbaar",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -64,23 +64,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "loodsindeling",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "loodsindeling",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "post",
-            "objecttypeNaam": "Loodspost",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "post",
+            "objectType": "Loodspost",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "loods",
-            "objecttypeNaam": "Loods",
-            "meervoud": "loodsen",
-            "meervoudig": true
+            "node": "Role",
+            "name": "loods",
+            "objectType": "Loods",
+            "plural": "loodsen",
+            "many": true
           }
         ]
       }
@@ -93,7 +92,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "NIET_NEGATIEF"
+          "sign": "nonNegative"
         }
       }
     ],
@@ -104,21 +103,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "bekwaam bij keurgrens",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bekwaam",
-              "objecttype": "Loodspost",
+              "node": "AttributeReference",
+              "attribute": "bekwaam",
+              "subjectType": "Loodspost",
               "source": {
                 "snippet": "Een Loodspost is bekwaam"
               }
@@ -129,36 +126,34 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "ALLE",
-              "elementObjecttype": "Loods",
-              "filter": null,
-              "toets": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "ervaring",
-                  "objecttype": "Loods",
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Loods",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "ervaring",
+                  "subjectType": "Loods",
                   "source": {
                     "snippet": "de ervaring van alle loodsen van de Loodspost"
                   }
                 },
-                "rechts": {
-                  "node": "ParameterRef",
+                "right": {
+                  "node": "ParameterReference",
                   "parameter": "keurgrens",
                   "source": {
                     "snippet": "de keurgrens"
                   }
                 },
-                "periode": null,
                 "source": {
                   "snippet": "de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens"
                 }
@@ -166,10 +161,10 @@
               "source": {
                 "snippet": "de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "loodsindeling",
-                "rol": "loods"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "loodsindeling",
+                "role": "loods"
               }
             },
             "initialisation": false
@@ -182,14 +177,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "onbekwaam",
-              "objecttype": "Loodspost",
+              "node": "AttributeReference",
+              "attribute": "onbekwaam",
+              "subjectType": "Loodspost",
               "source": {
                 "snippet": "Een Loodspost is onbekwaam"
               }
@@ -200,36 +193,34 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "GEEN",
-              "elementObjecttype": "Loods",
-              "filter": null,
-              "toets": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "ervaring",
-                  "objecttype": "Loods",
+              "node": "QuantifierFold",
+              "quantifier": "none",
+              "elementType": "Loods",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "ervaring",
+                  "subjectType": "Loods",
                   "source": {
                     "snippet": "de ervaring van geen van de loodsen van de Loodspost"
                   }
                 },
-                "rechts": {
-                  "node": "ParameterRef",
+                "right": {
+                  "node": "ParameterReference",
                   "parameter": "keurgrens",
                   "source": {
                     "snippet": "de keurgrens"
                   }
                 },
-                "periode": null,
                 "source": {
                   "snippet": "de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens"
                 }
@@ -237,10 +228,10 @@
               "source": {
                 "snippet": "de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "loodsindeling",
-                "rol": "loods"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "loodsindeling",
+                "role": "loods"
               }
             },
             "initialisation": false
@@ -253,14 +244,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "merendeels",
-              "objecttype": "Loodspost",
+              "node": "AttributeReference",
+              "attribute": "merendeels",
+              "subjectType": "Loodspost",
               "source": {
                 "snippet": "Een Loodspost is merendeels bekwaam"
               }
@@ -271,37 +260,35 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "TEN_MINSTE",
-              "drempel": 2,
-              "elementObjecttype": "Loods",
-              "filter": null,
-              "toets": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "ervaring",
-                  "objecttype": "Loods",
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 2,
+              "elementType": "Loods",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "ervaring",
+                  "subjectType": "Loods",
                   "source": {
                     "snippet": "de ervaring van ten minste 2 van de loodsen van de Loodspost"
                   }
                 },
-                "rechts": {
-                  "node": "ParameterRef",
+                "right": {
+                  "node": "ParameterReference",
                   "parameter": "keurgrens",
                   "source": {
                     "snippet": "de keurgrens"
                   }
                 },
-                "periode": null,
                 "source": {
                   "snippet": "de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens"
                 }
@@ -309,10 +296,10 @@
               "source": {
                 "snippet": "de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "loodsindeling",
-                "rol": "loods"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "loodsindeling",
+                "role": "loods"
               }
             },
             "initialisation": false
@@ -325,14 +312,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "gangbaar",
-              "objecttype": "Loodspost",
+              "node": "AttributeReference",
+              "attribute": "gangbaar",
+              "subjectType": "Loodspost",
               "source": {
                 "snippet": "Een Loodspost is gangbaar"
               }
@@ -343,36 +328,34 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "ALLE",
-              "elementObjecttype": "Loods",
-              "filter": null,
-              "toets": {
-                "node": "Vergelijking",
-                "op": "KLEINER",
-                "links": {
-                  "node": "ParameterRef",
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Loods",
+              "test": {
+                "node": "Comparison",
+                "op": "less",
+                "left": {
+                  "node": "ParameterReference",
                   "parameter": "keurgrens",
                   "source": {
                     "snippet": "de keurgrens"
                   }
                 },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "ervaring",
-                  "objecttype": "Loods",
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "ervaring",
+                  "subjectType": "Loods",
                   "source": {
                     "snippet": "de ervaring van alle loodsen van de Loodspost"
                   }
                 },
-                "periode": null,
                 "source": {
                   "snippet": "de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost"
                 }
@@ -380,10 +363,10 @@
               "source": {
                 "snippet": "de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "loodsindeling",
-                "rol": "loods"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "loodsindeling",
+                "role": "loods"
               }
             },
             "initialisation": false
@@ -396,26 +379,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "loodstal",
-              "objecttype": "Loodspost",
+              "node": "AttributeReference",
+              "attribute": "loodstal",
+              "subjectType": "Loodspost",
               "source": {
                 "snippet": "Het loodstal van een Loodspost"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "loodsen",
-                  "objecttype": "Loodspost",
+                  "node": "AttributeReference",
+                  "attribute": "loodsen",
+                  "subjectType": "Loodspost",
                   "source": {
                     "snippet": "loodsen van de Loodspost"
                   }
@@ -423,34 +404,34 @@
               ],
               "elementType": "Loods",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "loodsindeling",
-                "rol": "loods"
+                "node": "RoleBinding",
+                "factType": "loodsindeling",
+                "role": "loods"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal loodsen van de Loodspost"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

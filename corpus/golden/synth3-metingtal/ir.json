@@ -17,7 +17,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             }
           },
@@ -28,7 +28,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -38,7 +38,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -54,7 +54,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       }
     ],
@@ -65,21 +65,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "bovental van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bovental",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "bovental",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het bovental van een Jutter"
               }
@@ -90,7 +88,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
                 "node": "MapList",
@@ -100,13 +98,13 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 },
                 "list": {
-                  "node": "AttribuutRef",
-                  "attribuut": "metingen",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "metingen",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn metingen"
                   }
@@ -120,7 +118,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     }
                   ],
@@ -130,26 +128,25 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "condition": {
-                      "node": "Vergelijking",
-                      "op": "GROTER",
-                      "links": {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
                         "node": "BinderRef",
                         "name": "m",
                         "source": {
                           "snippet": "de meting"
                         }
                       },
-                      "rechts": {
-                        "node": "ParameterRef",
+                      "right": {
+                        "node": "ParameterReference",
                         "parameter": "drempel",
                         "source": {
                           "snippet": "de drempel"
                         }
                       },
-                      "periode": null,
                       "source": {
                         "snippet": "de meting groter dan de drempel"
                       }
@@ -163,7 +160,7 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "1"
@@ -178,7 +175,7 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "0"
@@ -202,7 +199,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -211,21 +208,21 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   }
                 ],
                 "body": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
                     "node": "BinderRef",
                     "name": "acc",
                     "source": {
                       "snippet": "het opgetelde aantal"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "BinderRef",
                     "name": "x",
                     "source": {
@@ -236,7 +233,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "het opgetelde aantal plus de indicator"
@@ -255,7 +252,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0"
@@ -266,7 +263,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -276,14 +273,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "somverhoogd",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "somverhoogd",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De somverhoogd van een Jutter"
               }
@@ -294,7 +289,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
                 "node": "MapList",
@@ -304,13 +299,13 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 },
                 "list": {
-                  "node": "AttribuutRef",
-                  "attribuut": "metingen",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "metingen",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn metingen"
                   }
@@ -324,21 +319,21 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     }
                   ],
                   "body": {
-                    "node": "Binair",
-                    "op": "PLUS",
-                    "links": {
+                    "node": "Binary",
+                    "op": "plus",
+                    "left": {
                       "node": "BinderRef",
                       "name": "m",
                       "source": {
                         "snippet": "de meting"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "1.00"
@@ -347,7 +342,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "1.00"
@@ -357,7 +352,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de meting plus 1.00"
@@ -377,7 +372,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -386,21 +381,21 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   }
                 ],
                 "body": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
                     "node": "BinderRef",
                     "name": "acc",
                     "source": {
                       "snippet": "de opgetelde som"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "BinderRef",
                     "name": "x",
                     "source": {
@@ -411,7 +406,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "de opgetelde som plus de opgehoogde meting"
@@ -430,7 +425,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0.00"
@@ -441,19 +436,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

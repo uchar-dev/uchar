@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -54,7 +54,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -64,7 +64,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -73,23 +73,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "kadedeelname",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "kadedeelname",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "kadeberging",
-            "objecttypeNaam": "Kadeberging",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "kadeberging",
+            "objectType": "Kadeberging",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "kadejutter",
-            "objecttypeNaam": "Jutter",
-            "meervoud": "kadejutters",
-            "meervoudig": true
+            "node": "Role",
+            "name": "kadejutter",
+            "objectType": "Jutter",
+            "plural": "kadejutters",
+            "many": true
           }
         ]
       }
@@ -102,10 +101,10 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [
       {
         "node": "Allocation",
         "name": "verdeel de kadeopbrengst van een kadeberging",
@@ -115,31 +114,29 @@
             "sourceAttribute": "kadeopbrengst",
             "targetType": "Jutter",
             "targetAttribute": "kadedeel",
-            "method": "NAAR_RATO",
+            "method": "proportional",
             "ratioAttribute": "vrachtgewicht",
             "maximumAttribute": "kademaximum",
             "roundingDecimals": 2,
             "remainderAttribute": "kaderest",
             "descending": false,
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "connectingRole": {
-              "node": "RolBinding",
-              "feittype": "kadedeelname",
-              "rol": "kadejutter"
+              "node": "RoleBinding",
+              "factType": "kadedeelname",
+              "role": "kadejutter"
             }
           }
         ]
       }
     ],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

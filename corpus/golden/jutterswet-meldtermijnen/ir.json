@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -33,7 +33,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -57,7 +57,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 },
                 {
@@ -84,7 +84,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 },
                 {
@@ -111,7 +111,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       }
     ],
@@ -128,7 +128,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             },
             {
@@ -154,7 +154,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             },
             {
@@ -171,21 +171,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "meldpositie van een meldplicht",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "meldpositie",
-              "objecttype": "Meldplicht",
+              "node": "AttributeReference",
+              "attribute": "meldpositie",
+              "subjectType": "Meldplicht",
               "source": {
                 "snippet": "De meldpositie van een Meldplicht"
               }
@@ -202,7 +200,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -216,9 +214,9 @@
                 ]
               },
               "list": {
-                "node": "AttribuutRef",
-                "attribuut": "meldreeks",
-                "objecttype": "Meldplicht",
+                "node": "AttributeReference",
+                "attribute": "meldreeks",
+                "subjectType": "Meldplicht",
                 "source": {
                   "snippet": "de meldreeks van de meldplicht"
                 }
@@ -238,7 +236,7 @@
                             "node": "Number",
                             "whole": true,
                             "decimals": 0,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           }
                         },
                         {
@@ -264,7 +262,7 @@
                             "node": "Number",
                             "whole": true,
                             "decimals": 0,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           }
                         },
                         {
@@ -287,7 +285,7 @@
                           "node": "Number",
                           "whole": true,
                           "decimals": 0,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         }
                       },
                       {
@@ -323,7 +321,7 @@
                                 "node": "Number",
                                 "whole": true,
                                 "decimals": 0,
-                                "sign": "ONBEPAALD"
+                                "sign": "unspecified"
                               }
                             },
                             {
@@ -359,7 +357,7 @@
                                       "node": "Number",
                                       "whole": true,
                                       "decimals": 0,
-                                      "sign": "ONBEPAALD"
+                                      "sign": "unspecified"
                                     }
                                   },
                                   {
@@ -373,23 +371,22 @@
                                 ]
                               },
                               "condition": {
-                                "node": "Vergelijking",
-                                "op": "KLEINER_OF_GELIJK",
-                                "links": {
+                                "node": "Comparison",
+                                "op": "lessOrEqual",
+                                "left": {
                                   "node": "BinderRef",
                                   "name": "dagen",
                                   "source": {
                                     "snippet": "het aantal verstreken dagen"
                                   }
                                 },
-                                "rechts": {
+                                "right": {
                                   "node": "BinderRef",
                                   "name": "resterend",
                                   "source": {
                                     "snippet": "de resterende termijn"
                                   }
                                 },
-                                "periode": null,
                                 "source": {
                                   "snippet": "het aantal verstreken dagen kleiner of gelijk aan de resterende termijn"
                                 }
@@ -406,7 +403,7 @@
                                         "node": "Number",
                                         "whole": true,
                                         "decimals": 0,
-                                        "sign": "ONBEPAALD"
+                                        "sign": "unspecified"
                                       }
                                     },
                                     {
@@ -421,16 +418,16 @@
                                 },
                                 "constructor": "Openstaand",
                                 "argument": {
-                                  "node": "Binair",
-                                  "op": "MIN",
-                                  "links": {
+                                  "node": "Binary",
+                                  "op": "minus",
+                                  "left": {
                                     "node": "BinderRef",
                                     "name": "resterend",
                                     "source": {
                                       "snippet": "de resterende termijn"
                                     }
                                   },
-                                  "rechts": {
+                                  "right": {
                                     "node": "BinderRef",
                                     "name": "dagen",
                                     "source": {
@@ -441,7 +438,7 @@
                                     "node": "Number",
                                     "whole": true,
                                     "decimals": 0,
-                                    "sign": "ONBEPAALD"
+                                    "sign": "unspecified"
                                   },
                                   "source": {
                                     "snippet": "de resterende termijn min het aantal verstreken dagen"
@@ -463,7 +460,7 @@
                                         "node": "Number",
                                         "whole": true,
                                         "decimals": 0,
-                                        "sign": "ONBEPAALD"
+                                        "sign": "unspecified"
                                       }
                                     },
                                     {
@@ -502,7 +499,7 @@
                                       "node": "Number",
                                       "whole": true,
                                       "decimals": 0,
-                                      "sign": "ONBEPAALD"
+                                      "sign": "unspecified"
                                     }
                                   },
                                   {
@@ -543,7 +540,7 @@
                                 "node": "Number",
                                 "whole": true,
                                 "decimals": 0,
-                                "sign": "ONBEPAALD"
+                                "sign": "unspecified"
                               }
                             },
                             {
@@ -578,7 +575,7 @@
                                 "node": "Number",
                                 "whole": true,
                                 "decimals": 0,
-                                "sign": "ONBEPAALD"
+                                "sign": "unspecified"
                               }
                             },
                             {
@@ -619,7 +616,7 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       }
                     },
                     {
@@ -634,9 +631,9 @@
                 },
                 "constructor": "Openstaand",
                 "argument": {
-                  "node": "AttribuutRef",
-                  "attribuut": "termijn",
-                  "objecttype": "Meldplicht",
+                  "node": "AttributeReference",
+                  "attribute": "termijn",
+                  "subjectType": "Meldplicht",
                   "source": {
                     "snippet": "de termijn van de meldplicht"
                   }
@@ -650,7 +647,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -660,14 +657,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "standaardpositie",
-              "objecttype": "Meldplicht",
+              "node": "AttributeReference",
+              "attribute": "standaardpositie",
+              "subjectType": "Meldplicht",
               "source": {
                 "snippet": "De standaardpositie van een Meldplicht"
               }
@@ -684,7 +679,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -698,9 +693,9 @@
                 ]
               },
               "list": {
-                "node": "AttribuutRef",
-                "attribuut": "meldreeks",
-                "objecttype": "Meldplicht",
+                "node": "AttributeReference",
+                "attribute": "meldreeks",
+                "subjectType": "Meldplicht",
                 "source": {
                   "snippet": "de meldreeks van de meldplicht"
                 }
@@ -720,7 +715,7 @@
                             "node": "Number",
                             "whole": true,
                             "decimals": 0,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           }
                         },
                         {
@@ -746,7 +741,7 @@
                             "node": "Number",
                             "whole": true,
                             "decimals": 0,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           }
                         },
                         {
@@ -769,7 +764,7 @@
                           "node": "Number",
                           "whole": true,
                           "decimals": 0,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         }
                       },
                       {
@@ -805,7 +800,7 @@
                                 "node": "Number",
                                 "whole": true,
                                 "decimals": 0,
-                                "sign": "ONBEPAALD"
+                                "sign": "unspecified"
                               }
                             },
                             {
@@ -841,7 +836,7 @@
                                       "node": "Number",
                                       "whole": true,
                                       "decimals": 0,
-                                      "sign": "ONBEPAALD"
+                                      "sign": "unspecified"
                                     }
                                   },
                                   {
@@ -855,23 +850,22 @@
                                 ]
                               },
                               "condition": {
-                                "node": "Vergelijking",
-                                "op": "KLEINER_OF_GELIJK",
-                                "links": {
+                                "node": "Comparison",
+                                "op": "lessOrEqual",
+                                "left": {
                                   "node": "BinderRef",
                                   "name": "dagen",
                                   "source": {
                                     "snippet": "het aantal verstreken dagen"
                                   }
                                 },
-                                "rechts": {
+                                "right": {
                                   "node": "BinderRef",
                                   "name": "resterend",
                                   "source": {
                                     "snippet": "de resterende termijn"
                                   }
                                 },
-                                "periode": null,
                                 "source": {
                                   "snippet": "het aantal verstreken dagen kleiner of gelijk aan de resterende termijn"
                                 }
@@ -888,7 +882,7 @@
                                         "node": "Number",
                                         "whole": true,
                                         "decimals": 0,
-                                        "sign": "ONBEPAALD"
+                                        "sign": "unspecified"
                                       }
                                     },
                                     {
@@ -903,16 +897,16 @@
                                 },
                                 "constructor": "Openstaand",
                                 "argument": {
-                                  "node": "Binair",
-                                  "op": "MIN",
-                                  "links": {
+                                  "node": "Binary",
+                                  "op": "minus",
+                                  "left": {
                                     "node": "BinderRef",
                                     "name": "resterend",
                                     "source": {
                                       "snippet": "de resterende termijn"
                                     }
                                   },
-                                  "rechts": {
+                                  "right": {
                                     "node": "BinderRef",
                                     "name": "dagen",
                                     "source": {
@@ -923,7 +917,7 @@
                                     "node": "Number",
                                     "whole": true,
                                     "decimals": 0,
-                                    "sign": "ONBEPAALD"
+                                    "sign": "unspecified"
                                   },
                                   "source": {
                                     "snippet": "de resterende termijn min het aantal verstreken dagen"
@@ -945,7 +939,7 @@
                                         "node": "Number",
                                         "whole": true,
                                         "decimals": 0,
-                                        "sign": "ONBEPAALD"
+                                        "sign": "unspecified"
                                       }
                                     },
                                     {
@@ -984,7 +978,7 @@
                                       "node": "Number",
                                       "whole": true,
                                       "decimals": 0,
-                                      "sign": "ONBEPAALD"
+                                      "sign": "unspecified"
                                     }
                                   },
                                   {
@@ -1025,7 +1019,7 @@
                                 "node": "Number",
                                 "whole": true,
                                 "decimals": 0,
-                                "sign": "ONBEPAALD"
+                                "sign": "unspecified"
                               }
                             },
                             {
@@ -1060,7 +1054,7 @@
                                 "node": "Number",
                                 "whole": true,
                                 "decimals": 0,
-                                "sign": "ONBEPAALD"
+                                "sign": "unspecified"
                               }
                             },
                             {
@@ -1101,7 +1095,7 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       }
                     },
                     {
@@ -1116,7 +1110,7 @@
                 },
                 "constructor": "Openstaand",
                 "argument": {
-                  "node": "ParameterRef",
+                  "node": "ParameterReference",
                   "parameter": "standaardtermijn",
                   "source": {
                     "snippet": "de standaardtermijn"
@@ -1131,19 +1125,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

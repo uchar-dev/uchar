@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -53,23 +53,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "aanmelding",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "aanmelding",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "aanmeldende jutter",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "aanmeldende jutter",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "vondst",
-            "objecttypeNaam": "Vondst",
-            "meervoud": "vondsten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
           }
         ]
       }
@@ -82,33 +81,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "drempelgewicht van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "drempelgewicht",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "drempelgewicht",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het drempelgewicht van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "SOM",
+              "kind": "sum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewicht",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "het gewicht van alle vondsten van de Jutter die groter zijn dan de drempel"
                   }
@@ -116,17 +113,17 @@
               ],
               "elementType": "Vondst",
               "filter": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewicht",
-                  "objecttype": "Vondst",
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "groter zijn dan de drempel"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "5"
@@ -135,13 +132,12 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "5"
                   }
                 },
-                "periode": null,
                 "source": {
                   "snippet": "groter zijn dan de drempel"
                 }
@@ -155,29 +151,29 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0"
                 }
               },
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "aanmelding",
-                "rol": "vondst"
+                "node": "RoleBinding",
+                "factType": "aanmelding",
+                "role": "vondst"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de som van het gewicht van alle vondsten van de Jutter die groter zijn dan de drempel of 0 als die er niet zijn"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -187,14 +183,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "drempelaandeel",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "drempelaandeel",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het drempelaandeel van een Jutter"
               }
@@ -205,28 +199,28 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "binder": "vangst",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "drempelgewicht",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "drempelgewicht",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "het drempelgewicht van de Jutter"
                 }
               },
               "body": {
-                "node": "Binair",
-                "op": "PLUS",
-                "links": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
                   "node": "BinderRef",
                   "name": "vangst",
                   "source": {
                     "snippet": "de vangst"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "BinderRef",
                   "name": "vangst",
                   "source": {
@@ -237,7 +231,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "de vangst plus de vangst"
@@ -248,19 +242,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

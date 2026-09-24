@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -52,30 +52,29 @@
           {
             "node": "Characteristic",
             "name": "waardevol",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "aanmelding",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "aanmelding",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "aanmeldende jutter",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "aanmeldende jutter",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "vondst",
-            "objecttypeNaam": "Vondst",
-            "meervoud": "vondsten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
           }
         ]
       }
@@ -88,21 +87,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "waardevol bij gewicht",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "waardevol",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "waardevol",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is waardevol"
               }
@@ -113,24 +110,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "gewicht",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "het gewicht van de Vondst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "10"
@@ -139,13 +136,12 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "10"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "het gewicht van de Vondst groter is dan 10"
               }
@@ -160,26 +156,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "zwaargewicht",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "zwaargewicht",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het zwaargewicht van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "SOM",
+              "kind": "sum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewicht",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "het gewicht van alle vondsten van de Jutter die groter zijn dan 5"
                   }
@@ -187,17 +181,17 @@
               ],
               "elementType": "Vondst",
               "filter": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewicht",
-                  "objecttype": "Vondst",
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "groter zijn dan 5"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "5"
@@ -206,13 +200,12 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "5"
                   }
                 },
-                "periode": null,
                 "source": {
                   "snippet": "groter zijn dan 5"
                 }
@@ -226,29 +219,29 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0"
                 }
               },
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "aanmelding",
-                "rol": "vondst"
+                "node": "RoleBinding",
+                "factType": "aanmelding",
+                "role": "vondst"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de som van het gewicht van alle vondsten van de Jutter die groter zijn dan 5 of 0 als die er niet zijn"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -258,26 +251,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "pronkstukaantal",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "pronkstukaantal",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het pronkstukaantal van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "vondsten",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "vondsten",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "vondsten van de Jutter die waardevol zijn"
                   }
@@ -285,44 +276,42 @@
               ],
               "elementType": "Vondst",
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "waardevol",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "waardevol",
+                "negated": false,
                 "source": {
                   "snippet": "waardevol zijn"
                 }
               },
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "aanmelding",
-                "rol": "vondst"
+                "node": "RoleBinding",
+                "factType": "aanmelding",
+                "role": "vondst"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal vondsten van de Jutter die waardevol zijn"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

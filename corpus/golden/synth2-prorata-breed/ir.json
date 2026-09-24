@@ -15,11 +15,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "JAAR",
+              "granularity": "year",
               "count": 1
             }
           },
@@ -30,11 +30,11 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
@@ -45,11 +45,11 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "JAAR",
+              "granularity": "year",
               "count": 1
             }
           },
@@ -60,11 +60,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
@@ -75,11 +75,11 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "JAAR",
+              "granularity": "year",
               "count": 1
             }
           },
@@ -90,11 +90,11 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
@@ -105,7 +105,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -113,10 +113,10 @@
           {
             "node": "Characteristic",
             "name": "bezet",
-            "kind": "BIJVOEGLIJK",
+            "kind": "adjectival",
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           }
@@ -132,61 +132,57 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "ligdeel van een ligplaats",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "ligdeel",
-              "objecttype": "Ligplaats",
+              "node": "AttributeReference",
+              "attribute": "ligdeel",
+              "subjectType": "Ligplaats",
               "source": {
                 "snippet": "Het ligdeel van een Ligplaats"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "TIJDSEVENREDIG_DEEL",
+              "kind": "timeProportionalPart",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "jaarforfait",
-                  "objecttype": "Ligplaats",
+                  "node": "AttributeReference",
+                  "attribute": "jaarforfait",
+                  "subjectType": "Ligplaats",
                   "source": {
                     "snippet": "haar jaarforfait"
                   }
                 }
               ],
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "bezet",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "bezet",
+                "negated": false,
                 "source": {
                   "snippet": "gedurende de tijd dat zij bezet is"
                 }
               },
-              "granularity": "MAAND",
+              "granularity": "month",
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het tijdsevenredig deel per maand van haar jaarforfait gedurende de tijd dat zij bezet is"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -196,54 +192,50 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "heffingdeel",
-              "objecttype": "Ligplaats",
+              "node": "AttributeReference",
+              "attribute": "heffingdeel",
+              "subjectType": "Ligplaats",
               "source": {
                 "snippet": "Het heffingdeel van een Ligplaats"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "TIJDSEVENREDIG_DEEL",
+              "kind": "timeProportionalPart",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "staffelbasis",
-                  "objecttype": "Ligplaats",
+                  "node": "AttributeReference",
+                  "attribute": "staffelbasis",
+                  "subjectType": "Ligplaats",
                   "source": {
                     "snippet": "haar staffelbasis"
                   }
                 }
               ],
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "bezet",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "bezet",
+                "negated": false,
                 "source": {
                   "snippet": "gedurende de tijd dat zij bezet is"
                 }
               },
-              "granularity": "MAAND",
+              "granularity": "month",
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het tijdsevenredig deel per maand van haar staffelbasis gedurende de tijd dat zij bezet is"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -253,64 +245,60 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "toeslagdeel",
-              "objecttype": "Ligplaats",
+              "node": "AttributeReference",
+              "attribute": "toeslagdeel",
+              "subjectType": "Ligplaats",
               "source": {
                 "snippet": "Het toeslagdeel van een Ligplaats"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "TIJDSEVENREDIG_DEEL",
+              "kind": "timeProportionalPart",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "seizoenbasis",
-                  "objecttype": "Ligplaats",
+                  "node": "AttributeReference",
+                  "attribute": "seizoenbasis",
+                  "subjectType": "Ligplaats",
                   "source": {
                     "snippet": "haar seizoenbasis"
                   }
                 }
               ],
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "bezet",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "bezet",
+                "negated": false,
                 "source": {
                   "snippet": "gedurende de tijd dat zij bezet is"
                 }
               },
-              "granularity": "MAAND",
+              "granularity": "month",
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het tijdsevenredig deel per maand van haar seizoenbasis gedurende de tijd dat zij bezet is"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "lengte",
-                "objecttype": "Ligplaats",
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "lengte",
+                "subjectType": "Ligplaats",
                 "source": {
                   "snippet": "de lengte van de Ligplaats"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "15"
@@ -319,31 +307,30 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "15"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "de lengte van de Ligplaats is groter of gelijk aan 15"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

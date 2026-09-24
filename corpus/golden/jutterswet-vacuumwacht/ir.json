@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -61,21 +61,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "vacuumteken van een vacuumwacht",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vacuumteken",
-              "objecttype": "Vacuumwacht",
+              "node": "AttributeReference",
+              "attribute": "vacuumteken",
+              "subjectType": "Vacuumwacht",
               "source": {
                 "snippet": "Het vacuumteken van een Vacuumwacht"
               }
@@ -89,37 +87,37 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "TEN_HOOGSTE",
-              "drempel": 2,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "atMost",
+              "threshold": 2,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "Afgerond",
-                    "basis": {
-                      "node": "Binair",
-                      "op": "GEDEELD_DOOR",
-                      "links": {
-                        "node": "AttribuutRef",
-                        "attribuut": "vangstwaarde",
-                        "objecttype": "Vacuumwacht",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Rounding",
+                    "base": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "vangstwaarde",
+                        "subjectType": "Vacuumwacht",
                         "source": {
                           "snippet": "de vangstwaarde van de Vacuumwacht"
                         }
                       },
-                      "rechts": {
-                        "node": "AttribuutRef",
-                        "attribuut": "ploegomvang",
-                        "objecttype": "Vacuumwacht",
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "ploegomvang",
+                        "subjectType": "Vacuumwacht",
                         "source": {
                           "snippet": "de ploegomvang van de Vacuumwacht"
                         }
@@ -128,25 +126,25 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht"
                       }
                     },
-                    "modus": "NAAR_BENEDEN",
-                    "decimalen": 0,
+                    "mode": "floor",
+                    "decimals": 0,
                     "type": {
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht naar beneden afgerond op 0 decimalen"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -155,29 +153,28 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "het aandeel is groter dan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "ploegomvang",
-                    "objecttype": "Vacuumwacht",
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ploegomvang",
+                    "subjectType": "Vacuumwacht",
                     "source": {
                       "snippet": "zijn ploegomvang"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -186,13 +183,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn ploegomvang is gelijk aan 0"
                   }
@@ -203,7 +199,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -213,14 +209,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "stopteken",
-              "objecttype": "Vacuumwacht",
+              "node": "AttributeReference",
+              "attribute": "stopteken",
+              "subjectType": "Vacuumwacht",
               "source": {
                 "snippet": "Het stopteken van een Vacuumwacht"
               }
@@ -234,29 +228,29 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "TEN_HOOGSTE",
-              "drempel": 2,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "atMost",
+              "threshold": 2,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "ploegomvang",
-                    "objecttype": "Vacuumwacht",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ploegomvang",
+                    "subjectType": "Vacuumwacht",
                     "source": {
                       "snippet": "zijn ploegomvang"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "100"
@@ -265,29 +259,28 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "100"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn ploegomvang is groter dan 100"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "vangstwaarde",
-                    "objecttype": "Vacuumwacht",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "vangstwaarde",
+                    "subjectType": "Vacuumwacht",
                     "source": {
                       "snippet": "zijn vangstwaarde"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "100000"
@@ -296,37 +289,36 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "100000"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn vangstwaarde is groter dan 100000"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "Afgerond",
-                    "basis": {
-                      "node": "Binair",
-                      "op": "GEDEELD_DOOR",
-                      "links": {
-                        "node": "AttribuutRef",
-                        "attribuut": "vangstwaarde",
-                        "objecttype": "Vacuumwacht",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Rounding",
+                    "base": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "vangstwaarde",
+                        "subjectType": "Vacuumwacht",
                         "source": {
                           "snippet": "de vangstwaarde van de Vacuumwacht"
                         }
                       },
-                      "rechts": {
-                        "node": "AttribuutRef",
-                        "attribuut": "ploegomvang",
-                        "objecttype": "Vacuumwacht",
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "ploegomvang",
+                        "subjectType": "Vacuumwacht",
                         "source": {
                           "snippet": "de ploegomvang van de Vacuumwacht"
                         }
@@ -335,25 +327,25 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht"
                       }
                     },
-                    "modus": "NAAR_BENEDEN",
-                    "decimalen": 0,
+                    "mode": "floor",
+                    "decimals": 0,
                     "type": {
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht naar beneden afgerond op 0 decimalen"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -362,29 +354,28 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "het aandeel is groter dan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "ploegomvang",
-                    "objecttype": "Vacuumwacht",
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ploegomvang",
+                    "subjectType": "Vacuumwacht",
                     "source": {
                       "snippet": "zijn ploegomvang"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -393,13 +384,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn ploegomvang is gelijk aan 0"
                   }
@@ -410,19 +400,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

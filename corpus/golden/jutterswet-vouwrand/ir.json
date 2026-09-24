@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -61,21 +61,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "vouwteken van een randwacht",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vouwteken",
-              "objecttype": "Randwacht",
+              "node": "AttributeReference",
+              "attribute": "vouwteken",
+              "subjectType": "Randwacht",
               "source": {
                 "snippet": "Het vouwteken van een Randwacht"
               }
@@ -89,29 +87,29 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "ploegomvang",
-                    "objecttype": "Randwacht",
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ploegomvang",
+                    "subjectType": "Randwacht",
                     "source": {
                       "snippet": "zijn ploegomvang"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -120,36 +118,35 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn ploegomvang is gelijk aan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
                     "node": "Aggregation",
-                    "kind": "EERSTE",
+                    "kind": "first",
                     "arguments": [
                       {
-                        "node": "AttribuutRef",
-                        "attribuut": "grootgetal",
-                        "objecttype": "Randwacht",
+                        "node": "AttributeReference",
+                        "attribute": "grootgetal",
+                        "subjectType": "Randwacht",
                         "source": {
                           "snippet": "zijn grootgetal"
                         }
                       },
                       {
-                        "node": "AttribuutRef",
-                        "attribuut": "bedrag",
-                        "objecttype": "Randwacht",
+                        "node": "AttributeReference",
+                        "attribute": "bedrag",
+                        "subjectType": "Randwacht",
                         "source": {
                           "snippet": "zijn bedrag"
                         }
@@ -159,13 +156,13 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de eerste van zijn grootgetal en zijn bedrag"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -174,13 +171,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "de eerste van zijn grootgetal en zijn bedrag is groter dan 0"
                   }
@@ -191,19 +187,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

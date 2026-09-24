@@ -14,7 +14,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -24,7 +24,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -44,7 +44,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             }
           },
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -80,7 +80,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -88,19 +88,19 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         },
         "body": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
+          "node": "Binary",
+          "op": "plus",
+          "left": {
             "node": "BinderRef",
             "name": "grondslag",
             "source": {
               "snippet": "grondslag"
             }
           },
-          "rechts": {
+          "right": {
             "node": "Literal",
             "value": {
               "number": "100"
@@ -109,7 +109,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "source": {
               "snippet": "100"
@@ -119,7 +119,7 @@
             "node": "Number",
             "whole": true,
             "decimals": 0,
-            "sign": "ONBEPAALD"
+            "sign": "unspecified"
           }
         },
         "source": {
@@ -129,37 +129,35 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "berekening bedrag",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bedrag",
-              "objecttype": "Kamerbedrag",
+              "node": "AttributeReference",
+              "attribute": "bedrag",
+              "subjectType": "Kamerbedrag",
               "source": {
                 "snippet": "de bedrag"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "grondslag",
-                "objecttype": "Kamerbedrag",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "grondslag",
+                "subjectType": "Kamerbedrag",
                 "source": {
                   "snippet": "de grondslag"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "100"
@@ -168,7 +166,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "100"
@@ -178,11 +176,11 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -192,14 +190,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Kamerheffing",
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Kamerheffing",
               "source": {
                 "snippet": "de heffing"
               }
@@ -210,7 +206,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
                 "node": "MapList",
@@ -220,13 +216,13 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 },
                 "list": {
-                  "node": "AttribuutRef",
-                  "attribuut": "grondslagen",
-                  "objecttype": "Kamerheffing",
+                  "node": "AttributeReference",
+                  "attribute": "grondslagen",
+                  "subjectType": "Kamerheffing",
                   "source": {
                     "snippet": "de grondslagen"
                   }
@@ -240,7 +236,7 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       }
                     }
                   ],
@@ -250,7 +246,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "function": "Kamerbedrag",
                     "arguments": [
@@ -280,7 +276,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -289,21 +285,21 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   }
                 ],
                 "body": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
                     "node": "BinderRef",
                     "name": "acc",
                     "source": {
                       "snippet": "acc"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "BinderRef",
                     "name": "b",
                     "source": {
@@ -314,7 +310,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 }
               },
@@ -327,7 +323,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0"
@@ -335,19 +331,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": []
   },
   "diagnostics": []

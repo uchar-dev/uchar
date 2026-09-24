@@ -15,14 +15,14 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
             "node": "Attribute",
             "name": "status",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           }
         ],
@@ -30,7 +30,7 @@
           {
             "node": "Characteristic",
             "name": "geclaimd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -44,21 +44,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "vrijgave zonder beletsel",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "status",
-              "objecttype": "Bergingszaak",
+              "node": "AttributeReference",
+              "attribute": "status",
+              "subjectType": "Bergingszaak",
               "source": {
                 "snippet": "De status van een Bergingszaak"
               }
@@ -69,39 +67,37 @@
                 "text": "vrijgegeven"
               },
               "type": {
-                "node": "Tekst"
+                "node": "Text"
               },
               "source": {
                 "snippet": "'vrijgegeven'"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "GEEN",
-              "drempel": 0,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "none",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "geclaimd",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "geclaimd",
+                  "negated": false,
                   "source": {
                     "snippet": "de Bergingszaak geclaimd is"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "bezwaren",
-                    "objecttype": "Bergingszaak",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "bezwaren",
+                    "subjectType": "Bergingszaak",
                     "source": {
                       "snippet": "de bezwaren van de Bergingszaak"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -110,13 +106,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "haar bezwaren groter zijn dan 0"
                   }
@@ -127,7 +122,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -137,14 +132,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "status",
-              "objecttype": "Bergingszaak",
+              "node": "AttributeReference",
+              "attribute": "status",
+              "subjectType": "Bergingszaak",
               "source": {
                 "snippet": "De status van een Bergingszaak"
               }
@@ -155,39 +148,37 @@
                 "text": "aangehouden"
               },
               "type": {
-                "node": "Tekst"
+                "node": "Text"
               },
               "source": {
                 "snippet": "'aangehouden'"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "TEN_MINSTE",
-              "drempel": 1,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "parts": [
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "geclaimd",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "geclaimd",
+                  "negated": false,
                   "source": {
                     "snippet": "de Bergingszaak geclaimd is"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "bezwaren",
-                    "objecttype": "Bergingszaak",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "bezwaren",
+                    "subjectType": "Bergingszaak",
                     "source": {
                       "snippet": "de bezwaren van de Bergingszaak"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -196,13 +187,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "haar bezwaren groter zijn dan 0"
                   }
@@ -213,19 +203,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

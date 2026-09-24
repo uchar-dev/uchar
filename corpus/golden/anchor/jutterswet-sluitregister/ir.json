@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -33,12 +33,12 @@
           {
             "node": "Characteristic",
             "name": "sluitend",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "afwijkend",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -52,21 +52,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "sluitend register",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "sluitend",
-              "objecttype": "Register",
+              "node": "AttributeReference",
+              "attribute": "sluitend",
+              "subjectType": "Register",
               "source": {
                 "snippet": "Een Register is sluitend"
               }
@@ -77,32 +75,31 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "telling",
-                "objecttype": "Register",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "telling",
+                "subjectType": "Register",
                 "source": {
                   "snippet": "de telling van het Register"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "opgave",
-                "objecttype": "Register",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "opgave",
+                "subjectType": "Register",
                 "source": {
                   "snippet": "de opgave van het Register"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn telling gelijk is aan zijn opgave"
               }
@@ -117,14 +114,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "afwijkend",
-              "objecttype": "Register",
+              "node": "AttributeReference",
+              "attribute": "afwijkend",
+              "subjectType": "Register",
               "source": {
                 "snippet": "Een Register is afwijkend"
               }
@@ -135,32 +130,31 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "ONGELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "telling",
-                "objecttype": "Register",
+              "node": "Comparison",
+              "op": "notEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "telling",
+                "subjectType": "Register",
                 "source": {
                   "snippet": "de telling van het Register"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "opgave",
-                "objecttype": "Register",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "opgave",
+                "subjectType": "Register",
                 "source": {
                   "snippet": "de opgave van het Register"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn telling ongelijk is aan zijn opgave"
               }
@@ -170,14 +164,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

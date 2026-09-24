@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -51,7 +51,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 {
@@ -66,7 +66,7 @@
                           "node": "Number",
                           "whole": true,
                           "decimals": 0,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       },
                       {
@@ -75,7 +75,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       }
                     ]
@@ -91,7 +91,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -101,7 +101,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -123,7 +123,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -132,7 +132,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             }
           ]
@@ -150,7 +150,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -165,7 +165,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -174,7 +174,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   }
                 ]
@@ -190,21 +190,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "waardering van een vangst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "waardering",
-              "objecttype": "Vangst"
+              "node": "AttributeReference",
+              "attribute": "waardering",
+              "subjectType": "Vangst"
             },
             "value": {
               "node": "StructLiteral",
@@ -218,7 +216,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -233,7 +231,7 @@
                             "node": "Number",
                             "whole": true,
                             "decimals": 0,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         },
                         {
@@ -242,7 +240,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         }
                       ]
@@ -254,9 +252,9 @@
                 {
                   "name": "toeslag",
                   "value": {
-                    "node": "AttribuutRef",
-                    "attribuut": "toeslagbedrag",
-                    "objecttype": "Vangst"
+                    "node": "AttributeReference",
+                    "attribute": "toeslagbedrag",
+                    "subjectType": "Vangst"
                   }
                 },
                 {
@@ -273,7 +271,7 @@
                             "node": "Number",
                             "whole": true,
                             "decimals": 0,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         },
                         {
@@ -282,7 +280,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         }
                       ]
@@ -291,17 +289,17 @@
                       {
                         "name": "eenheden",
                         "value": {
-                          "node": "AttribuutRef",
-                          "attribuut": "stuks",
-                          "objecttype": "Vangst"
+                          "node": "AttributeReference",
+                          "attribute": "stuks",
+                          "subjectType": "Vangst"
                         }
                       },
                       {
                         "name": "grondslag",
                         "value": {
-                          "node": "AttribuutRef",
-                          "attribuut": "grondbedrag",
-                          "objecttype": "Vangst"
+                          "node": "AttributeReference",
+                          "attribute": "grondbedrag",
+                          "subjectType": "Vangst"
                         }
                       }
                     ]
@@ -310,7 +308,7 @@
               ]
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -320,25 +318,23 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Vangst"
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Vangst"
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
                 "node": "FieldAccess",
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "base": {
                   "node": "FieldAccess",
@@ -352,7 +348,7 @@
                           "node": "Number",
                           "whole": true,
                           "decimals": 0,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       },
                       {
@@ -361,32 +357,32 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       }
                     ]
                   },
                   "base": {
-                    "node": "AttribuutRef",
-                    "attribuut": "waardering",
-                    "objecttype": "Vangst"
+                    "node": "AttributeReference",
+                    "attribute": "waardering",
+                    "subjectType": "Vangst"
                   },
                   "field": "kern"
                 },
                 "field": "grondslag"
               },
-              "rechts": {
+              "right": {
                 "node": "FieldAccess",
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "base": {
-                  "node": "AttribuutRef",
-                  "attribuut": "waardering",
-                  "objecttype": "Vangst"
+                  "node": "AttributeReference",
+                  "attribute": "waardering",
+                  "subjectType": "Vangst"
                 },
                 "field": "toeslag"
               },
@@ -394,11 +390,11 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -408,14 +404,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "grondslagkopie",
-              "objecttype": "Vangst"
+              "node": "AttributeReference",
+              "attribute": "grondslagkopie",
+              "subjectType": "Vangst"
             },
             "value": {
               "node": "FieldAccess",
@@ -423,7 +417,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "base": {
                 "node": "FieldAccess",
@@ -437,7 +431,7 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     },
                     {
@@ -446,34 +440,34 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     }
                   ]
                 },
                 "base": {
-                  "node": "AttribuutRef",
-                  "attribuut": "waardering",
-                  "objecttype": "Vangst"
+                  "node": "AttributeReference",
+                  "attribute": "waardering",
+                  "subjectType": "Vangst"
                 },
                 "field": "kern"
               },
               "field": "grondslag"
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

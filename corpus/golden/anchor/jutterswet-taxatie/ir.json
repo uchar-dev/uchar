@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 5,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 1,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -65,7 +65,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -75,7 +75,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -85,7 +85,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -95,7 +95,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -111,40 +111,38 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "stukprijs van een kavel",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "stukprijs",
-              "objecttype": "Kavel",
+              "node": "AttributeReference",
+              "attribute": "stukprijs",
+              "subjectType": "Kavel",
               "source": {
                 "snippet": "De stukprijs van een Kavel"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "GEDEELD_DOOR_ABS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "opbrengst",
-                "objecttype": "Kavel",
+              "node": "Binary",
+              "op": "dividedByAbs",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "opbrengst",
+                "subjectType": "Kavel",
                 "source": {
                   "snippet": "de opbrengst van de Kavel"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "partijen",
-                "objecttype": "Kavel",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "partijen",
+                "subjectType": "Kavel",
                 "source": {
                   "snippet": "de partijen van de Kavel"
                 }
@@ -153,14 +151,14 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 5,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de opbrengst van de Kavel gedeeld door abs de partijen van de Kavel"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -170,30 +168,28 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "oppervlakte",
-              "objecttype": "Kavel",
+              "node": "AttributeReference",
+              "attribute": "oppervlakte",
+              "subjectType": "Kavel",
               "source": {
                 "snippet": "De oppervlakte van een Kavel"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "TOT_DE_MACHT",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "zijde",
-                "objecttype": "Kavel",
+              "node": "Binary",
+              "op": "power",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "zijde",
+                "subjectType": "Kavel",
                 "source": {
                   "snippet": "de zijde van de Kavel"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "2"
@@ -202,7 +198,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "source": {
                   "snippet": "2"
@@ -212,14 +208,14 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "de zijde van de Kavel tot de macht 2"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -229,30 +225,28 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "inhoud",
-              "objecttype": "Kavel",
+              "node": "AttributeReference",
+              "attribute": "inhoud",
+              "subjectType": "Kavel",
               "source": {
                 "snippet": "De inhoud van een Kavel"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "TOT_DE_MACHT",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "ribbe",
-                "objecttype": "Kavel",
+              "node": "Binary",
+              "op": "power",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "ribbe",
+                "subjectType": "Kavel",
                 "source": {
                   "snippet": "de ribbe van de Kavel"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "3"
@@ -261,7 +255,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "source": {
                   "snippet": "3"
@@ -271,14 +265,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "de ribbe van de Kavel tot de macht 3"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -288,30 +282,28 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "krimpmaat",
-              "objecttype": "Kavel",
+              "node": "AttributeReference",
+              "attribute": "krimpmaat",
+              "subjectType": "Kavel",
               "source": {
                 "snippet": "De krimpmaat van een Kavel"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "TOT_DE_MACHT",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "krimp",
-                "objecttype": "Kavel",
+              "node": "Binary",
+              "op": "power",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "krimp",
+                "subjectType": "Kavel",
                 "source": {
                   "snippet": "de krimp van de Kavel"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "3"
@@ -320,7 +312,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "source": {
                   "snippet": "3"
@@ -330,26 +322,26 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de krimp van de Kavel tot de macht 3"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

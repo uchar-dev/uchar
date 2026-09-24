@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -51,21 +51,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "bergingsaandeel van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bergingsaandeel",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "bergingsaandeel",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het bergingsaandeel van een Jutter"
               }
@@ -79,29 +77,29 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "ONGELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "ploegomvang",
-                    "objecttype": "Jutter",
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ploegomvang",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "zijn ploegomvang"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -110,37 +108,36 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn ploegomvang is ongelijk aan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "Afgerond",
-                    "basis": {
-                      "node": "Binair",
-                      "op": "GEDEELD_DOOR",
-                      "links": {
-                        "node": "AttribuutRef",
-                        "attribuut": "vangstwaarde",
-                        "objecttype": "Jutter",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Rounding",
+                    "base": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "vangstwaarde",
+                        "subjectType": "Jutter",
                         "source": {
                           "snippet": "de vangstwaarde van de Jutter"
                         }
                       },
-                      "rechts": {
-                        "node": "AttribuutRef",
-                        "attribuut": "ploegomvang",
-                        "objecttype": "Jutter",
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "ploegomvang",
+                        "subjectType": "Jutter",
                         "source": {
                           "snippet": "de ploegomvang van de Jutter"
                         }
@@ -149,25 +146,25 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "de vangstwaarde van de Jutter gedeeld door de ploegomvang van de Jutter"
                       }
                     },
-                    "modus": "NAAR_BENEDEN",
-                    "decimalen": 0,
+                    "mode": "floor",
+                    "decimals": 0,
                     "type": {
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de vangstwaarde van de Jutter gedeeld door de ploegomvang van de Jutter naar beneden afgerond op 0 decimalen"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -176,13 +173,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "het aandeel is groter dan 0"
                   }
@@ -193,19 +189,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

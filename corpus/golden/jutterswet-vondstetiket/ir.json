@@ -12,21 +12,21 @@
             "node": "Attribute",
             "name": "etiket",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           },
           {
             "node": "Attribute",
             "name": "rubriek",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           },
           {
             "node": "Attribute",
             "name": "afschrift",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           }
         ],
@@ -34,12 +34,12 @@
           {
             "node": "Characteristic",
             "name": "erkend",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "omstreden",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -53,21 +53,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "erkenning naar etiket",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "erkend",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "erkend",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is erkend"
               }
@@ -78,36 +76,35 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "etiket",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "etiket",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "het etiket van de Vondst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "text": "zeevondst"
                 },
                 "type": {
-                  "node": "Tekst"
+                  "node": "Text"
                 },
                 "source": {
                   "snippet": "'zeevondst'"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "haar etiket gelijk is aan 'zeevondst'"
               }
@@ -122,14 +119,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "omstreden",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "omstreden",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is omstreden"
               }
@@ -140,36 +135,35 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "ONGELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "etiket",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "notEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "etiket",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "het etiket van de Vondst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "text": "zeevondst"
                 },
                 "type": {
-                  "node": "Tekst"
+                  "node": "Text"
                 },
                 "source": {
                   "snippet": "'zeevondst'"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "haar etiket ongelijk is aan 'zeevondst'"
               }
@@ -184,14 +178,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "rubriek",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "rubriek",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De rubriek van een Vondst"
               }
@@ -202,24 +194,22 @@
                 "text": "strandgoed"
               },
               "type": {
-                "node": "Tekst"
+                "node": "Text"
               },
               "source": {
                 "snippet": "'strandgoed'"
               }
             },
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "erkend",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "erkend",
+              "negated": false,
               "source": {
                 "snippet": "de Vondst is erkend"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -229,40 +219,38 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "afschrift",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "afschrift",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Het afschrift van een Vondst"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "etiket",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "etiket",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "het etiket van de Vondst"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

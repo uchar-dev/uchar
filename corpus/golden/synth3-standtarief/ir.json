@@ -21,7 +21,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 {
@@ -34,7 +34,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 }
               ]
@@ -47,7 +47,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -57,7 +57,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -79,7 +79,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -92,7 +92,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             }
           ]
@@ -105,21 +105,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "tarief van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "tarief",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "tarief",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het tarief van een Jutter"
               }
@@ -130,12 +128,12 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "scrutinee": {
-                "node": "AttribuutRef",
-                "attribuut": "stand",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "stand",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn stand"
                 }
@@ -145,16 +143,16 @@
                   "constructor": "Geborgen",
                   "binder": "w",
                   "body": {
-                    "node": "Binair",
-                    "op": "PLUS",
-                    "links": {
+                    "node": "Binary",
+                    "op": "plus",
+                    "left": {
                       "node": "BinderRef",
                       "name": "w",
                       "source": {
                         "snippet": "de geborgen waarde"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "0.00"
@@ -163,7 +161,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "0.00"
@@ -173,7 +171,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de geborgen waarde plus 0.00"
@@ -192,7 +190,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0.00"
@@ -203,19 +201,19 @@
                   "constructor": "Betwist",
                   "binder": "a",
                   "body": {
-                    "node": "Afgerond",
-                    "basis": {
-                      "node": "Binair",
-                      "op": "GEDEELD_DOOR",
-                      "links": {
-                        "node": "AttribuutRef",
-                        "attribuut": "grondslag",
-                        "objecttype": "Jutter",
+                    "node": "Rounding",
+                    "base": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "grondslag",
+                        "subjectType": "Jutter",
                         "source": {
                           "snippet": "zijn grondslag"
                         }
                       },
-                      "rechts": {
+                      "right": {
                         "node": "BinderRef",
                         "name": "a",
                         "source": {
@@ -226,19 +224,19 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "zijn grondslag gedeeld door de betwiste noemer"
                       }
                     },
-                    "modus": "REKENKUNDIG",
-                    "decimalen": 2,
+                    "mode": "halfAwayFromZero",
+                    "decimals": 2,
                     "type": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "zijn grondslag gedeeld door de betwiste noemer rekenkundig afgerond op 2 decimalen"
@@ -251,19 +249,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

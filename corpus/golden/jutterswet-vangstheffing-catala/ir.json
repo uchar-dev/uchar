@@ -14,7 +14,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -24,7 +24,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -34,7 +34,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -52,7 +52,7 @@
           {
             "node": "Characteristic",
             "name": "grootvangst",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -66,35 +66,33 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "berekening vangstheffing bruto",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vangstheffing bruto",
-              "objecttype": "Vangstheffing",
+              "node": "AttributeReference",
+              "attribute": "vangstheffing bruto",
+              "subjectType": "Vangstheffing",
               "source": {
                 "snippet": "de vangstheffing bruto"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "aangebrachte_waarde",
-              "objecttype": "Vangstheffing",
+              "node": "AttributeReference",
+              "attribute": "aangebrachte_waarde",
+              "subjectType": "Vangstheffing",
               "source": {
                 "snippet": "de aangebrachte_waarde"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -104,30 +102,28 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vangstheffing na_opslag",
-              "objecttype": "Vangstheffing",
+              "node": "AttributeReference",
+              "attribute": "vangstheffing na_opslag",
+              "subjectType": "Vangstheffing",
               "source": {
                 "snippet": "de vangstheffing na_opslag"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vangstheffing bruto",
-                "objecttype": "Vangstheffing",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vangstheffing bruto",
+                "subjectType": "Vangstheffing",
                 "source": {
                   "snippet": "de vangstheffing bruto"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "5.00"
@@ -136,7 +132,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "5.00"
@@ -146,56 +142,52 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "vangstheffing netto",
-        "onderwerp": "Vangstheffing",
-        "kenmerk": null,
-        "attribuut": "vangstheffing netto",
+        "name": "vangstheffing netto",
+        "subject": "Vangstheffing",
+        "attribute": "vangstheffing netto",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "grootvangst",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "grootvangst",
+              "negated": false,
               "source": {
                 "snippet": "grootvangst"
               }
             },
-            "consequentie": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vangstheffing na_opslag",
-                "objecttype": "Vangstheffing",
+            "consequence": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vangstheffing na_opslag",
+                "subjectType": "Vangstheffing",
                 "source": {
                   "snippet": "de vangstheffing na_opslag"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "20.00"
@@ -204,7 +196,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "20.00"
@@ -214,7 +206,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             },
             "source": {
@@ -223,28 +215,27 @@
           },
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [],
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
               "source": {
                 "snippet": "altijd"
               }
             },
-            "consequentie": {
-              "node": "Binair",
-              "op": "VERMINDERD_MET",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vangstheffing na_opslag",
-                "objecttype": "Vangstheffing",
+            "consequence": {
+              "node": "Binary",
+              "op": "reducedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vangstheffing na_opslag",
+                "subjectType": "Vangstheffing",
                 "source": {
                   "snippet": "de vangstheffing na_opslag"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "12.00"
@@ -253,7 +244,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "12.00"
@@ -263,7 +254,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             },
             "source": {
@@ -274,10 +265,8 @@
         "source": {
           "snippet": "vangstheffing netto"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

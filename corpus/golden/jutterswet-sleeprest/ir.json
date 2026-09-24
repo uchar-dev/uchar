@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "km",
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "km",
@@ -61,7 +61,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "NIET_NEGATIEF"
+          "sign": "nonNegative"
         }
       }
     ],
@@ -99,29 +99,27 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "resterende sleepafstand van een berging",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "resterende sleepafstand",
-              "objecttype": "Berging",
+              "node": "AttributeReference",
+              "attribute": "resterende sleepafstand",
+              "subjectType": "Berging",
               "source": {
                 "snippet": "De resterende sleepafstand van een Berging"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "MIN",
-              "links": {
+              "node": "Binary",
+              "op": "minus",
+              "left": {
                 "node": "Literal",
                 "value": {
                   "number": "50"
@@ -130,26 +128,26 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "50"
                 }
               },
-              "rechts": {
-                "node": "Binair",
-                "op": "MAAL",
-                "links": {
-                  "node": "ParameterRef",
+              "right": {
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "ParameterReference",
                   "parameter": "bergingsfactor",
                   "source": {
                     "snippet": "de bergingsfactor"
                   }
                 },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "sleepafstand",
-                  "objecttype": "Berging",
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "sleepafstand",
+                  "subjectType": "Berging",
                   "source": {
                     "snippet": "de sleepafstand van de Berging"
                   }
@@ -158,7 +156,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "km",
@@ -178,7 +176,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "km",
@@ -195,19 +193,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

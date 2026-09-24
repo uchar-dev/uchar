@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -57,7 +57,7 @@
                           "node": "Number",
                           "whole": true,
                           "decimals": 0,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       },
                       {
@@ -66,7 +66,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       }
                     ]
@@ -78,7 +78,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 }
               ]
@@ -91,7 +91,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -101,7 +101,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -123,7 +123,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -132,7 +132,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             }
           ]
@@ -156,7 +156,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -165,7 +165,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   }
                 ]
@@ -177,7 +177,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             }
           ]
@@ -190,21 +190,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "pakket van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "pakket",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "pakket",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het pakket van een Jutter"
               }
@@ -227,7 +225,7 @@
                             "node": "Number",
                             "whole": true,
                             "decimals": 0,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         },
                         {
@@ -236,7 +234,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         }
                       ]
@@ -248,7 +246,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   }
                 ]
@@ -268,7 +266,7 @@
                             "node": "Number",
                             "whole": true,
                             "decimals": 0,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         },
                         {
@@ -277,7 +275,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         }
                       ]
@@ -286,9 +284,9 @@
                       {
                         "name": "stuks",
                         "value": {
-                          "node": "AttribuutRef",
-                          "attribuut": "stuks",
-                          "objecttype": "Jutter",
+                          "node": "AttributeReference",
+                          "attribute": "stuks",
+                          "subjectType": "Jutter",
                           "source": {
                             "snippet": "zijn stuks"
                           }
@@ -297,9 +295,9 @@
                       {
                         "name": "prijs",
                         "value": {
-                          "node": "AttribuutRef",
-                          "attribuut": "prijs",
-                          "objecttype": "Jutter",
+                          "node": "AttributeReference",
+                          "attribute": "prijs",
+                          "subjectType": "Jutter",
                           "source": {
                             "snippet": "zijn prijs"
                           }
@@ -314,9 +312,9 @@
                 {
                   "name": "opslag",
                   "value": {
-                    "node": "AttribuutRef",
-                    "attribuut": "opslag",
-                    "objecttype": "Jutter",
+                    "node": "AttributeReference",
+                    "attribute": "opslag",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "zijn opslag"
                     }
@@ -328,7 +326,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -338,14 +336,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "kernprijs",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "kernprijs",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De kernprijs van een Jutter"
               }
@@ -356,7 +352,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "base": {
                 "node": "FieldAccess",
@@ -370,7 +366,7 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     },
                     {
@@ -379,15 +375,15 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     }
                   ]
                 },
                 "base": {
-                  "node": "AttribuutRef",
-                  "attribuut": "pakket",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "pakket",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn pakket"
                   }
@@ -403,7 +399,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -413,28 +409,26 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "totaal",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "totaal",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het totaal van een Jutter"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
                 "node": "FieldAccess",
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "base": {
                   "node": "FieldAccess",
@@ -448,7 +442,7 @@
                           "node": "Number",
                           "whole": true,
                           "decimals": 0,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       },
                       {
@@ -457,15 +451,15 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       }
                     ]
                   },
                   "base": {
-                    "node": "AttribuutRef",
-                    "attribuut": "pakket",
-                    "objecttype": "Jutter",
+                    "node": "AttributeReference",
+                    "attribute": "pakket",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "zijn pakket"
                     }
@@ -480,18 +474,18 @@
                   "snippet": "de prijs van de kern van zijn pakket"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "FieldAccess",
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "base": {
-                  "node": "AttribuutRef",
-                  "attribuut": "pakket",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "pakket",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn pakket"
                   }
@@ -505,26 +499,26 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de kernprijs plus de opslag"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -12,7 +12,7 @@
             "node": "Attribute",
             "name": "geborgd",
             "datatype": {
-              "node": "Booleaan"
+              "node": "Boolean"
             }
           }
         ],
@@ -20,17 +20,17 @@
           {
             "node": "Characteristic",
             "name": "afgehandeld",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "openstaand",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "betwist",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -44,21 +44,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "afhandeling van een geborgen berging",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "afgehandeld",
-              "objecttype": "Berging",
+              "node": "AttributeReference",
+              "attribute": "afgehandeld",
+              "subjectType": "Berging",
               "source": {
                 "snippet": "Een Berging is afgehandeld"
               }
@@ -69,36 +67,35 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "geborgd",
-                "objecttype": "Berging",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "geborgd",
+                "subjectType": "Berging",
                 "source": {
                   "snippet": "de geborgd van de Berging"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "boolean": true
                 },
                 "type": {
-                  "node": "Booleaan"
+                  "node": "Boolean"
                 },
                 "source": {
                   "snippet": "waar"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "haar geborgd gelijk is aan waar"
               }
@@ -113,14 +110,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "openstaand",
-              "objecttype": "Berging",
+              "node": "AttributeReference",
+              "attribute": "openstaand",
+              "subjectType": "Berging",
               "source": {
                 "snippet": "Een Berging is openstaand"
               }
@@ -131,36 +126,35 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "geborgd",
-                "objecttype": "Berging",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "geborgd",
+                "subjectType": "Berging",
                 "source": {
                   "snippet": "de geborgd van de Berging"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "boolean": false
                 },
                 "type": {
-                  "node": "Booleaan"
+                  "node": "Boolean"
                 },
                 "source": {
                   "snippet": "onwaar"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "haar geborgd gelijk is aan onwaar"
               }
@@ -175,14 +169,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "betwist",
-              "objecttype": "Berging",
+              "node": "AttributeReference",
+              "attribute": "betwist",
+              "subjectType": "Berging",
               "source": {
                 "snippet": "Een Berging is betwist"
               }
@@ -193,36 +185,35 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "ONGELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "geborgd",
-                "objecttype": "Berging",
+              "node": "Comparison",
+              "op": "notEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "geborgd",
+                "subjectType": "Berging",
                 "source": {
                   "snippet": "de geborgd van de Berging"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "boolean": true
                 },
                 "type": {
-                  "node": "Booleaan"
+                  "node": "Boolean"
                 },
                 "source": {
                   "snippet": "waar"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "haar geborgd ongelijk is aan waar"
               }
@@ -232,14 +223,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

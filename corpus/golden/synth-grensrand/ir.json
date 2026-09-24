@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "cm",
@@ -65,7 +65,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "cm",
@@ -85,7 +85,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "cm",
@@ -105,7 +105,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -138,40 +138,38 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "grensproduct van een meting",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "grensproduct",
-              "objecttype": "Meting",
+              "node": "AttributeReference",
+              "attribute": "grensproduct",
+              "subjectType": "Meting",
               "source": {
                 "snippet": "Het grensproduct van een Meting"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "MAAL",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "factorEen",
-                "objecttype": "Meting",
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "factorEen",
+                "subjectType": "Meting",
                 "source": {
                   "snippet": "de factorEen van de Meting"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "factorTwee",
-                "objecttype": "Meting",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "factorTwee",
+                "subjectType": "Meting",
                 "source": {
                   "snippet": "de factorTwee van de Meting"
                 }
@@ -180,14 +178,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de factorEen van de Meting maal de factorTwee van de Meting"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -197,33 +195,31 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "totaal",
-              "objecttype": "Meting",
+              "node": "AttributeReference",
+              "attribute": "totaal",
+              "subjectType": "Meting",
               "source": {
                 "snippet": "Het totaal van een Meting"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "lengteA",
-                "objecttype": "Meting",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "lengteA",
+                "subjectType": "Meting",
                 "source": {
                   "snippet": "de lengteA van de Meting"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "lengteB",
-                "objecttype": "Meting",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "lengteB",
+                "subjectType": "Meting",
                 "source": {
                   "snippet": "de lengteB van de Meting"
                 }
@@ -232,7 +228,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "cm",
@@ -249,7 +245,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -259,14 +255,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "indicatie",
-              "objecttype": "Meting",
+              "node": "AttributeReference",
+              "attribute": "indicatie",
+              "subjectType": "Meting",
               "source": {
                 "snippet": "De indicatie van een Meting"
               }
@@ -280,50 +274,49 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "lengteA",
-                "objecttype": "Meting",
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "lengteA",
+                "subjectType": "Meting",
                 "source": {
                   "snippet": "de lengteA van de Meting"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "lengteB",
-                "objecttype": "Meting",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "lengteB",
+                "subjectType": "Meting",
                 "source": {
                   "snippet": "de lengteB van de Meting"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "de lengteA van de Meting is groter of gelijk aan de lengteB van de Meting"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

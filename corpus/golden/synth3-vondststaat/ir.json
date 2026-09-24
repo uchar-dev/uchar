@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -41,7 +41,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 {
@@ -50,7 +50,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 }
               ]
@@ -63,7 +63,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -71,7 +71,7 @@
           {
             "node": "Characteristic",
             "name": "groot",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -91,7 +91,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -100,7 +100,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             }
           ]
@@ -113,21 +113,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "staat van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "staat",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "staat",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De staat van een Jutter"
               }
@@ -144,7 +142,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -153,7 +151,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   }
                 ]
@@ -162,9 +160,9 @@
                 {
                   "name": "omvang",
                   "value": {
-                    "node": "AttribuutRef",
-                    "attribuut": "omvang",
-                    "objecttype": "Jutter",
+                    "node": "AttributeReference",
+                    "attribute": "omvang",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "zijn omvang"
                     }
@@ -173,9 +171,9 @@
                 {
                   "name": "waarde",
                   "value": {
-                    "node": "AttribuutRef",
-                    "attribuut": "waarde",
-                    "objecttype": "Jutter",
+                    "node": "AttributeReference",
+                    "attribute": "waarde",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "zijn waarde"
                     }
@@ -187,7 +185,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -197,14 +195,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "kernwaarde",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "kernwaarde",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De kernwaarde van een Jutter"
               }
@@ -215,12 +211,12 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "base": {
-                "node": "AttribuutRef",
-                "attribuut": "staat",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "staat",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn staat"
                 }
@@ -231,7 +227,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -241,14 +237,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "groot",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "groot",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Een Jutter is groot"
               }
@@ -259,24 +253,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "staat",
-                "objecttype": "Jutter",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "staat",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn staat"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "StructLiteral",
                 "type": {
                   "node": "StructType",
@@ -288,7 +282,7 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     },
                     {
@@ -297,7 +291,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     }
                   ]
@@ -314,7 +308,7 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       },
                       "source": {
                         "snippet": "5"
@@ -332,7 +326,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       },
                       "source": {
                         "snippet": "100.00"
@@ -344,7 +338,6 @@
                   "snippet": "de standaardstaat"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn staat gelijk is aan de standaardstaat"
               }
@@ -354,14 +347,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

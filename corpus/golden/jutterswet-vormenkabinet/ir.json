@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "dimensions": [
               "seizoen"
@@ -28,7 +28,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -46,7 +46,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -56,11 +56,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "JAAR",
+              "granularity": "year",
               "count": 1,
               "timelineName": "boekjaar"
             }
@@ -70,12 +70,12 @@
           {
             "node": "Characteristic",
             "name": "bewaakt",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "omheind",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -86,11 +86,11 @@
     "unitSystems": [],
     "dimensions": [
       {
-        "node": "Dimensie",
-        "naam": "seizoen",
-        "naamMeervoud": "seizoenen",
-        "voorzetsel": "in",
-        "waarden": [
+        "node": "Dimension",
+        "name": "seizoen",
+        "plural": "seizoenen",
+        "preposition": "in",
+        "labels": [
           "voorjaar",
           "najaar"
         ]
@@ -98,11 +98,11 @@
     ],
     "timelines": [
       {
-        "node": "Tijdlijn",
-        "naam": "boekjaar",
-        "variabelStartpunt": true,
-        "granulariteit": "JAAR",
-        "aantal": 1
+        "node": "Timeline",
+        "name": "boekjaar",
+        "variableStart": true,
+        "granularity": "year",
+        "count": 1
       }
     ],
     "dayKinds": [
@@ -119,31 +119,29 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "vakcijfer uit voorjaarsopbrengst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vakcijfer",
-              "objecttype": "Schouwveld",
+              "node": "AttributeReference",
+              "attribute": "vakcijfer",
+              "subjectType": "Schouwveld",
               "source": {
                 "snippet": "Het vakcijfer van een Schouwveld"
               }
             },
             "value": {
-              "node": "DimensieCel",
-              "attribuut": {
-                "node": "AttribuutRef",
-                "attribuut": "opbrengst",
-                "objecttype": "Schouwveld",
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "opbrengst",
+                "subjectType": "Schouwveld",
                 "source": {
                   "snippet": "de opbrengst in het voorjaar"
                 }
@@ -156,7 +154,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -166,14 +164,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "peiling",
-              "objecttype": "Schouwveld",
+              "node": "AttributeReference",
+              "attribute": "peiling",
+              "subjectType": "Schouwveld",
               "source": {
                 "snippet": "De peiling van een Schouwveld"
               }
@@ -187,40 +183,36 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "bewaakt",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "bewaakt",
+                  "negated": false,
                   "source": {
                     "snippet": "het Schouwveld bewaakt is"
                   }
                 },
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "omheind",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "omheind",
+                  "negated": false,
                   "source": {
                     "snippet": "het Schouwveld omheind is"
                   }
                 },
                 {
-                  "node": "Periode",
-                  "vanaf": {
+                  "node": "TimeWindow",
+                  "from": {
                     "node": "Literal",
                     "value": {
                       "date": "2026-01-01"
@@ -233,8 +225,7 @@
                       "snippet": "2026-01-01"
                     }
                   },
-                  "tot": null,
-                  "totInclusief": false,
+                  "toInclusive": false,
                   "source": {
                     "snippet": "vanaf 1 januari 2026"
                   }
@@ -245,26 +236,26 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [
       {
-        "node": "ResolvedStartpunt",
-        "tijdlijn": "boekjaar",
-        "objecttype": "Schouwveld",
-        "lid": "meetdatum"
+        "node": "StartPointDetermination",
+        "timeline": "boekjaar",
+        "objectType": "Schouwveld",
+        "member": "meetdatum"
       }
     ],
-    "regelGroepen": []
+    "ruleGroups": []
   },
   "diagnostics": []
 }

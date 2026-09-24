@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -41,21 +41,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "heffing van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De heffing van een Jutter"
               }
@@ -66,13 +64,13 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "binder": "grondslag",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "grondslag",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "grondslag",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn grondslag"
                 }
@@ -83,22 +81,22 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "condition": {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "Binair",
-                    "op": "MAAL",
-                    "links": {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Binary",
+                    "op": "times",
+                    "left": {
                       "node": "BinderRef",
                       "name": "grondslag",
                       "source": {
                         "snippet": "de grondslag"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "1.00"
@@ -107,7 +105,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "1,00"
@@ -117,13 +115,13 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de grondslag maal 1,00"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0.00"
@@ -132,13 +130,12 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0,00"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "de grondslag maal 1,00 groter dan 0,00"
                   }
@@ -152,7 +149,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "5,00"
@@ -167,7 +164,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "9,00"
@@ -182,19 +179,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

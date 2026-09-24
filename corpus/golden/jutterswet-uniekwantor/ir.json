@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -23,7 +23,7 @@
           {
             "node": "Characteristic",
             "name": "alarmerend",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -40,7 +40,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -48,51 +48,49 @@
           {
             "node": "Characteristic",
             "name": "gemerkt",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "vondstaanmelding",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "vondstaanmelding",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "aanmelder",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "aanmelder",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "aangemelde vondst",
-            "objecttypeNaam": "Vondst",
-            "meervoud": "aangemelde vondsten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "aangemelde vondst",
+            "objectType": "Vondst",
+            "plural": "aangemelde vondsten",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "vondstberging",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "vondstberging",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "berger",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "berger",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "geborgen vondst",
-            "objecttypeNaam": "Vondst",
-            "meervoud": "geborgen vondsten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "geborgen vondst",
+            "objectType": "Vondst",
+            "plural": "geborgen vondsten",
+            "many": true
           }
         ]
       }
@@ -105,28 +103,26 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "ongemerkt aantal",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "ongemerkt aantal",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "ongemerkt aantal",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het ongemerkt aantal van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
                   "node": "InstanceSetUnion",
@@ -135,21 +131,19 @@
                       "node": "InstanceSetBranch",
                       "elementType": "Vondst",
                       "sourceRole": {
-                        "node": "RolBinding",
-                        "feittype": "vondstaanmelding",
-                        "rol": "aangemelde vondst"
+                        "node": "RoleBinding",
+                        "factType": "vondstaanmelding",
+                        "role": "aangemelde vondst"
                       },
                       "filter": {
-                        "node": "Samengesteld",
-                        "kwantor": "GEEN",
-                        "drempel": 0,
-                        "onderdelen": [
+                        "node": "Compound",
+                        "quantifier": "none",
+                        "threshold": 0,
+                        "parts": [
                           {
-                            "node": "Kenmerk",
-                            "kenmerk": "gemerkt",
-                            "negatie": false,
-                            "eigenaar": null,
-                            "periode": null,
+                            "node": "CharacteristicCheck",
+                            "characteristic": "gemerkt",
+                            "negated": false,
                             "source": {
                               "snippet": "gemerkt zijn"
                             }
@@ -167,21 +161,19 @@
                       "node": "InstanceSetBranch",
                       "elementType": "Vondst",
                       "sourceRole": {
-                        "node": "RolBinding",
-                        "feittype": "vondstberging",
-                        "rol": "geborgen vondst"
+                        "node": "RoleBinding",
+                        "factType": "vondstberging",
+                        "role": "geborgen vondst"
                       },
                       "filter": {
-                        "node": "Samengesteld",
-                        "kwantor": "GEEN",
-                        "drempel": 0,
-                        "onderdelen": [
+                        "node": "Compound",
+                        "quantifier": "none",
+                        "threshold": 0,
+                        "parts": [
                           {
-                            "node": "Kenmerk",
-                            "kenmerk": "gemerkt",
-                            "negatie": false,
-                            "eigenaar": null,
-                            "periode": null,
+                            "node": "CharacteristicCheck",
+                            "characteristic": "gemerkt",
+                            "negated": false,
                             "source": {
                               "snippet": "gemerkt zijn"
                             }
@@ -205,14 +197,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal ongemerkte vondsten van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -222,14 +214,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "alarmerend",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "alarmerend",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Een Jutter is alarmerend"
               }
@@ -240,18 +230,18 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
                 "node": "Aggregation",
-                "kind": "AANTAL",
+                "kind": "count",
                 "arguments": [
                   {
                     "node": "InstanceSetUnion",
@@ -260,21 +250,19 @@
                         "node": "InstanceSetBranch",
                         "elementType": "Vondst",
                         "sourceRole": {
-                          "node": "RolBinding",
-                          "feittype": "vondstaanmelding",
-                          "rol": "aangemelde vondst"
+                          "node": "RoleBinding",
+                          "factType": "vondstaanmelding",
+                          "role": "aangemelde vondst"
                         },
                         "filter": {
-                          "node": "Samengesteld",
-                          "kwantor": "GEEN",
-                          "drempel": 0,
-                          "onderdelen": [
+                          "node": "Compound",
+                          "quantifier": "none",
+                          "threshold": 0,
+                          "parts": [
                             {
-                              "node": "Kenmerk",
-                              "kenmerk": "gemerkt",
-                              "negatie": false,
-                              "eigenaar": null,
-                              "periode": null,
+                              "node": "CharacteristicCheck",
+                              "characteristic": "gemerkt",
+                              "negated": false,
                               "source": {
                                 "snippet": "gemerkt zijn"
                               }
@@ -292,21 +280,19 @@
                         "node": "InstanceSetBranch",
                         "elementType": "Vondst",
                         "sourceRole": {
-                          "node": "RolBinding",
-                          "feittype": "vondstberging",
-                          "rol": "geborgen vondst"
+                          "node": "RoleBinding",
+                          "factType": "vondstberging",
+                          "role": "geborgen vondst"
                         },
                         "filter": {
-                          "node": "Samengesteld",
-                          "kwantor": "GEEN",
-                          "drempel": 0,
-                          "onderdelen": [
+                          "node": "Compound",
+                          "quantifier": "none",
+                          "threshold": 0,
+                          "parts": [
                             {
-                              "node": "Kenmerk",
-                              "kenmerk": "gemerkt",
-                              "negatie": false,
-                              "eigenaar": null,
-                              "periode": null,
+                              "node": "CharacteristicCheck",
+                              "characteristic": "gemerkt",
+                              "negated": false,
                               "source": {
                                 "snippet": "gemerkt zijn"
                               }
@@ -330,13 +316,13 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "source": {
                   "snippet": "het aantal ongemerkte vondsten van de Jutter"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "0"
@@ -345,13 +331,12 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "source": {
                   "snippet": "0"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "het aantal ongemerkte vondsten van de Jutter groter is dan 0"
               }
@@ -366,14 +351,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "gemerkt",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "gemerkt",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is gemerkt"
               }
@@ -384,24 +367,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "gewicht",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "het gewicht van de Vondst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "5"
@@ -410,13 +393,12 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "5"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "het gewicht van de Vondst groter is dan 5"
               }
@@ -426,14 +408,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -20,7 +20,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 },
                 {
@@ -29,7 +29,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 }
               ]
@@ -50,7 +50,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -59,7 +59,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   }
                 ]
@@ -73,7 +73,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -83,7 +83,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -93,7 +93,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -103,7 +103,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -125,7 +125,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             },
             {
@@ -134,7 +134,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             }
           ]
@@ -147,50 +147,48 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "berekening dossierpenning",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "dossierpenning",
-              "objecttype": "Dossierrecht",
+              "node": "AttributeReference",
+              "attribute": "dossierpenning",
+              "subjectType": "Dossierrecht",
               "source": {
                 "snippet": "de dossierpenning"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
                 "node": "FieldAccess",
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "base": {
-                  "node": "AttribuutRef",
-                  "attribuut": "dossier",
-                  "objecttype": "Dossierrecht",
+                  "node": "AttributeReference",
+                  "attribute": "dossier",
+                  "subjectType": "Dossierrecht",
                   "source": {
                     "snippet": "de dossier"
                   }
                 },
                 "field": "waarde"
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "opslag",
-                "objecttype": "Dossierrecht",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "opslag",
+                "subjectType": "Dossierrecht",
                 "source": {
                   "snippet": "de opslag"
                 }
@@ -199,11 +197,11 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -213,14 +211,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "totaalwaarde",
-              "objecttype": "Dossierrecht",
+              "node": "AttributeReference",
+              "attribute": "totaalwaarde",
+              "subjectType": "Dossierrecht",
               "source": {
                 "snippet": "de totaalwaarde"
               }
@@ -231,7 +227,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
                 "node": "MapList",
@@ -241,13 +237,13 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 },
                 "list": {
-                  "node": "AttribuutRef",
-                  "attribuut": "dossiers",
-                  "objecttype": "Dossierrecht",
+                  "node": "AttributeReference",
+                  "attribute": "dossiers",
+                  "subjectType": "Dossierrecht",
                   "source": {
                     "snippet": "de dossiers"
                   }
@@ -267,7 +263,7 @@
                               "node": "Number",
                               "whole": false,
                               "decimals": 2,
-                              "sign": "ONBEPAALD"
+                              "sign": "unspecified"
                             }
                           },
                           {
@@ -276,7 +272,7 @@
                               "node": "Number",
                               "whole": true,
                               "decimals": 0,
-                              "sign": "ONBEPAALD"
+                              "sign": "unspecified"
                             }
                           }
                         ]
@@ -289,7 +285,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "base": {
                       "node": "BinderRef",
@@ -314,7 +310,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -323,21 +319,21 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   }
                 ],
                 "body": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
                     "node": "BinderRef",
                     "name": "acc",
                     "source": {
                       "snippet": "acc"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "BinderRef",
                     "name": "w",
                     "source": {
@@ -348,7 +344,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 }
               },
@@ -361,7 +357,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0.00"
@@ -369,7 +365,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -379,14 +375,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vondstaantal",
-              "objecttype": "Dossierrecht",
+              "node": "AttributeReference",
+              "attribute": "vondstaantal",
+              "subjectType": "Dossierrecht",
               "source": {
                 "snippet": "de vondstaantal"
               }
@@ -397,12 +391,12 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "base": {
-                "node": "AttribuutRef",
-                "attribuut": "dossier",
-                "objecttype": "Dossierrecht",
+                "node": "AttributeReference",
+                "attribute": "dossier",
+                "subjectType": "Dossierrecht",
                 "source": {
                   "snippet": "de dossier"
                 }
@@ -410,19 +404,19 @@
               "field": "telling"
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": []
   },
   "diagnostics": []

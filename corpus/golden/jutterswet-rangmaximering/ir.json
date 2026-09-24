@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -54,7 +54,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -64,7 +64,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -74,7 +74,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -83,23 +83,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "wachtdienst",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "wachtdienst",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "penningkas",
-            "objecttypeNaam": "Penningkas",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "penningkas",
+            "objectType": "Penningkas",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "wachter",
-            "objecttypeNaam": "Wachter",
-            "meervoud": "wachters",
-            "meervoudig": true
+            "node": "Role",
+            "name": "wachter",
+            "objectType": "Wachter",
+            "plural": "wachters",
+            "many": true
           }
         ]
       }
@@ -112,10 +111,10 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [
       {
         "node": "Allocation",
         "name": "verdeel het penningbudget van een penningkas",
@@ -125,7 +124,7 @@
             "sourceAttribute": "penningbudget",
             "targetType": "Wachter",
             "targetAttribute": "penningtoewijzing",
-            "method": "OP_VOLGORDE",
+            "method": "ordered",
             "ratioAttribute": "voorranggewicht",
             "maximumAttribute": "penningmaximum",
             "roundingDecimals": 0,
@@ -133,24 +132,22 @@
             "orderingAttribute": "wachtjaar",
             "descending": false,
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "connectingRole": {
-              "node": "RolBinding",
-              "feittype": "wachtdienst",
-              "rol": "wachter"
+              "node": "RoleBinding",
+              "factType": "wachtdienst",
+              "role": "wachter"
             }
           }
         ]
       }
     ],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

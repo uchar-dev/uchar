@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -65,7 +65,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -81,21 +81,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "hoogsteteken van een seinwacht",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "hoogsteteken",
-              "objecttype": "Seinwacht",
+              "node": "AttributeReference",
+              "attribute": "hoogsteteken",
+              "subjectType": "Seinwacht",
               "source": {
                 "snippet": "Het hoogsteteken van een Seinwacht"
               }
@@ -109,29 +107,29 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "TEN_HOOGSTE",
-              "drempel": 1,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "atMost",
+              "threshold": 1,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "ploegomvang",
-                    "objecttype": "Seinwacht",
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ploegomvang",
+                    "subjectType": "Seinwacht",
                     "source": {
                       "snippet": "zijn ploegomvang"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -140,29 +138,28 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn ploegomvang is gelijk aan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "vangstwaarde",
-                    "objecttype": "Seinwacht",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "vangstwaarde",
+                    "subjectType": "Seinwacht",
                     "source": {
                       "snippet": "zijn vangstwaarde"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -171,37 +168,36 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn vangstwaarde is groter dan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "Afgerond",
-                    "basis": {
-                      "node": "Binair",
-                      "op": "GEDEELD_DOOR",
-                      "links": {
-                        "node": "AttribuutRef",
-                        "attribuut": "vangstwaarde",
-                        "objecttype": "Seinwacht",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Rounding",
+                    "base": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "vangstwaarde",
+                        "subjectType": "Seinwacht",
                         "source": {
                           "snippet": "de vangstwaarde van de Seinwacht"
                         }
                       },
-                      "rechts": {
-                        "node": "AttribuutRef",
-                        "attribuut": "ploegomvang",
-                        "objecttype": "Seinwacht",
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "ploegomvang",
+                        "subjectType": "Seinwacht",
                         "source": {
                           "snippet": "de ploegomvang van de Seinwacht"
                         }
@@ -210,25 +206,25 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht"
                       }
                     },
-                    "modus": "NAAR_BENEDEN",
-                    "decimalen": 0,
+                    "mode": "floor",
+                    "decimals": 0,
                     "type": {
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht naar beneden afgerond op 0 decimalen"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -237,13 +233,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "het aandeel is groter dan 0"
                   }
@@ -254,7 +249,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -264,14 +259,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "preciesteken",
-              "objecttype": "Seinwacht",
+              "node": "AttributeReference",
+              "attribute": "preciesteken",
+              "subjectType": "Seinwacht",
               "source": {
                 "snippet": "Het preciesteken van een Seinwacht"
               }
@@ -285,29 +278,29 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "PRECIES",
-              "drempel": 1,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "exactly",
+              "threshold": 1,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "ploegomvang",
-                    "objecttype": "Seinwacht",
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ploegomvang",
+                    "subjectType": "Seinwacht",
                     "source": {
                       "snippet": "zijn ploegomvang"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -316,29 +309,28 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn ploegomvang is gelijk aan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "vangstwaarde",
-                    "objecttype": "Seinwacht",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "vangstwaarde",
+                    "subjectType": "Seinwacht",
                     "source": {
                       "snippet": "zijn vangstwaarde"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -347,37 +339,36 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn vangstwaarde is groter dan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "Afgerond",
-                    "basis": {
-                      "node": "Binair",
-                      "op": "GEDEELD_DOOR",
-                      "links": {
-                        "node": "AttribuutRef",
-                        "attribuut": "vangstwaarde",
-                        "objecttype": "Seinwacht",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Rounding",
+                    "base": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "vangstwaarde",
+                        "subjectType": "Seinwacht",
                         "source": {
                           "snippet": "de vangstwaarde van de Seinwacht"
                         }
                       },
-                      "rechts": {
-                        "node": "AttribuutRef",
-                        "attribuut": "ploegomvang",
-                        "objecttype": "Seinwacht",
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "ploegomvang",
+                        "subjectType": "Seinwacht",
                         "source": {
                           "snippet": "de ploegomvang van de Seinwacht"
                         }
@@ -386,25 +377,25 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht"
                       }
                     },
-                    "modus": "NAAR_BENEDEN",
-                    "decimalen": 0,
+                    "mode": "floor",
+                    "decimals": 0,
                     "type": {
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht naar beneden afgerond op 0 decimalen"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -413,13 +404,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "het aandeel is groter dan 0"
                   }
@@ -430,7 +420,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -440,14 +430,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "minsteteken",
-              "objecttype": "Seinwacht",
+              "node": "AttributeReference",
+              "attribute": "minsteteken",
+              "subjectType": "Seinwacht",
               "source": {
                 "snippet": "Het minsteteken van een Seinwacht"
               }
@@ -461,37 +449,37 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "TEN_MINSTE",
-              "drempel": 3,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 3,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "Afgerond",
-                    "basis": {
-                      "node": "Binair",
-                      "op": "GEDEELD_DOOR",
-                      "links": {
-                        "node": "AttribuutRef",
-                        "attribuut": "vangstwaarde",
-                        "objecttype": "Seinwacht",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Rounding",
+                    "base": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "vangstwaarde",
+                        "subjectType": "Seinwacht",
                         "source": {
                           "snippet": "de vangstwaarde van de Seinwacht"
                         }
                       },
-                      "rechts": {
-                        "node": "AttribuutRef",
-                        "attribuut": "ploegomvang",
-                        "objecttype": "Seinwacht",
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "ploegomvang",
+                        "subjectType": "Seinwacht",
                         "source": {
                           "snippet": "de ploegomvang van de Seinwacht"
                         }
@@ -500,25 +488,25 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht"
                       }
                     },
-                    "modus": "NAAR_BENEDEN",
-                    "decimalen": 0,
+                    "mode": "floor",
+                    "decimals": 0,
                     "type": {
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht naar beneden afgerond op 0 decimalen"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -527,29 +515,28 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "het aandeel is groter dan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "ploegomvang",
-                    "objecttype": "Seinwacht",
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ploegomvang",
+                    "subjectType": "Seinwacht",
                     "source": {
                       "snippet": "zijn ploegomvang"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -558,13 +545,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn ploegomvang is gelijk aan 0"
                   }
@@ -575,7 +561,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -585,14 +571,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "randteken",
-              "objecttype": "Seinwacht",
+              "node": "AttributeReference",
+              "attribute": "randteken",
+              "subjectType": "Seinwacht",
               "source": {
                 "snippet": "Het randteken van een Seinwacht"
               }
@@ -606,37 +590,37 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "PRECIES",
-              "drempel": 3,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "exactly",
+              "threshold": 3,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "Afgerond",
-                    "basis": {
-                      "node": "Binair",
-                      "op": "GEDEELD_DOOR",
-                      "links": {
-                        "node": "AttribuutRef",
-                        "attribuut": "vangstwaarde",
-                        "objecttype": "Seinwacht",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Rounding",
+                    "base": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "vangstwaarde",
+                        "subjectType": "Seinwacht",
                         "source": {
                           "snippet": "de vangstwaarde van de Seinwacht"
                         }
                       },
-                      "rechts": {
-                        "node": "AttribuutRef",
-                        "attribuut": "ploegomvang",
-                        "objecttype": "Seinwacht",
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "ploegomvang",
+                        "subjectType": "Seinwacht",
                         "source": {
                           "snippet": "de ploegomvang van de Seinwacht"
                         }
@@ -645,25 +629,25 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht"
                       }
                     },
-                    "modus": "NAAR_BENEDEN",
-                    "decimalen": 0,
+                    "mode": "floor",
+                    "decimals": 0,
                     "type": {
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht naar beneden afgerond op 0 decimalen"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -672,29 +656,28 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "het aandeel is groter dan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "ploegomvang",
-                    "objecttype": "Seinwacht",
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ploegomvang",
+                    "subjectType": "Seinwacht",
                     "source": {
                       "snippet": "zijn ploegomvang"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -703,13 +686,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn ploegomvang is gelijk aan 0"
                   }
@@ -720,19 +702,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

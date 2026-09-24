@@ -16,7 +16,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             }
           },
@@ -27,7 +27,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -37,7 +37,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -63,7 +63,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             }
           ]
@@ -76,21 +76,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "berekening hoogste",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "hoogste",
-              "objecttype": "Penningstaffel",
+              "node": "AttributeReference",
+              "attribute": "hoogste",
+              "subjectType": "Penningstaffel",
               "source": {
                 "snippet": "de hoogste"
               }
@@ -101,7 +99,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "scrutinee": {
                 "node": "Fold",
@@ -119,15 +117,15 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       }
                     }
                   ]
                 },
                 "list": {
-                  "node": "AttribuutRef",
-                  "attribuut": "bedragen",
-                  "objecttype": "Penningstaffel",
+                  "node": "AttributeReference",
+                  "attribute": "bedragen",
+                  "subjectType": "Penningstaffel",
                   "source": {
                     "snippet": "de bedragen"
                   }
@@ -151,7 +149,7 @@
                               "node": "Number",
                               "whole": false,
                               "decimals": 2,
-                              "sign": "ONBEPAALD"
+                              "sign": "unspecified"
                             }
                           }
                         ]
@@ -163,7 +161,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       }
                     }
                   ],
@@ -183,7 +181,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           }
                         }
                       ]
@@ -215,7 +213,7 @@
                                   "node": "Number",
                                   "whole": false,
                                   "decimals": 2,
-                                  "sign": "ONBEPAALD"
+                                  "sign": "unspecified"
                                 }
                               }
                             ]
@@ -252,7 +250,7 @@
                                   "node": "Number",
                                   "whole": false,
                                   "decimals": 2,
-                                  "sign": "ONBEPAALD"
+                                  "sign": "unspecified"
                                 }
                               }
                             ]
@@ -264,26 +262,25 @@
                               "node": "Number",
                               "whole": false,
                               "decimals": 2,
-                              "sign": "ONBEPAALD"
+                              "sign": "unspecified"
                             },
                             "condition": {
-                              "node": "Vergelijking",
-                              "op": "GROTER",
-                              "links": {
+                              "node": "Comparison",
+                              "op": "greater",
+                              "left": {
                                 "node": "BinderRef",
                                 "name": "x",
                                 "source": {
                                   "snippet": "x"
                                 }
                               },
-                              "rechts": {
+                              "right": {
                                 "node": "BinderRef",
                                 "name": "y",
                                 "source": {
                                   "snippet": "y"
                                 }
-                              },
-                              "periode": null
+                              }
                             },
                             "then": {
                               "node": "BinderRef",
@@ -330,7 +327,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         }
                       }
                     ]
@@ -358,7 +355,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0.00"
@@ -382,7 +379,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -392,14 +389,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "totaal",
-              "objecttype": "Penningstaffel",
+              "node": "AttributeReference",
+              "attribute": "totaal",
+              "subjectType": "Penningstaffel",
               "source": {
                 "snippet": "de totaal"
               }
@@ -410,12 +405,12 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
-                "node": "AttribuutRef",
-                "attribuut": "bedragen",
-                "objecttype": "Penningstaffel",
+                "node": "AttributeReference",
+                "attribute": "bedragen",
+                "subjectType": "Penningstaffel",
                 "source": {
                   "snippet": "de bedragen"
                 }
@@ -429,7 +424,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -438,21 +433,21 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   }
                 ],
                 "body": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
                     "node": "BinderRef",
                     "name": "acc",
                     "source": {
                       "snippet": "acc"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "BinderRef",
                     "name": "b",
                     "source": {
@@ -463,7 +458,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 }
               },
@@ -476,7 +471,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0.00"
@@ -484,19 +479,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": []
   },
   "diagnostics": []

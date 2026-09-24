@@ -14,7 +14,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -24,7 +24,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -34,7 +34,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 4,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -60,21 +60,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "berekening aanslag",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aanslag",
-              "objecttype": "Penningplichtige",
+              "node": "AttributeReference",
+              "attribute": "aanslag",
+              "subjectType": "Penningplichtige",
               "source": {
                 "snippet": "de aanslag"
               }
@@ -85,15 +83,15 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "binder": "aftrek",
               "value": {
-                "node": "Afgerond",
-                "basis": {
-                  "node": "Binair",
-                  "op": "MAAL",
-                  "links": {
+                "node": "Rounding",
+                "base": {
+                  "node": "Binary",
+                  "op": "times",
+                  "left": {
                     "node": "Literal",
                     "value": {
                       "number": "250.00"
@@ -102,16 +100,16 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "250.00"
                     }
                   },
-                  "rechts": {
-                    "node": "AttribuutRef",
-                    "attribuut": "kindertal",
-                    "objecttype": "Penningplichtige",
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "kindertal",
+                    "subjectType": "Penningplichtige",
                     "source": {
                       "snippet": "de kindertal"
                     }
@@ -120,16 +118,16 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 },
-                "modus": "REKENKUNDIG",
-                "decimalen": 2,
+                "mode": "halfAwayFromZero",
+                "decimals": 2,
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 }
               },
               "body": {
@@ -138,26 +136,26 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "binder": "belasting",
                 "value": {
-                  "node": "Afgerond",
-                  "basis": {
-                    "node": "Binair",
-                    "op": "MAAL",
-                    "links": {
-                      "node": "AttribuutRef",
-                      "attribuut": "inkomen",
-                      "objecttype": "Penningplichtige",
+                  "node": "Rounding",
+                  "base": {
+                    "node": "Binary",
+                    "op": "times",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "inkomen",
+                      "subjectType": "Penningplichtige",
                       "source": {
                         "snippet": "de inkomen"
                       }
                     },
-                    "rechts": {
-                      "node": "AttribuutRef",
-                      "attribuut": "tarief",
-                      "objecttype": "Penningplichtige",
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "tarief",
+                      "subjectType": "Penningplichtige",
                       "source": {
                         "snippet": "de tarief"
                       }
@@ -166,16 +164,16 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
-                  "modus": "REKENKUNDIG",
-                  "decimalen": 2,
+                  "mode": "halfAwayFromZero",
+                  "decimals": 2,
                   "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 },
                 "body": {
@@ -184,26 +182,25 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "condition": {
-                    "node": "Vergelijking",
-                    "op": "GROTER",
-                    "links": {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
                       "node": "BinderRef",
                       "name": "aftrek",
                       "source": {
                         "snippet": "aftrek"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "BinderRef",
                       "name": "belasting",
                       "source": {
                         "snippet": "belasting"
                       }
-                    },
-                    "periode": null
+                    }
                   },
                   "then": {
                     "node": "Literal",
@@ -214,23 +211,23 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0.00"
                     }
                   },
                   "else": {
-                    "node": "Binair",
-                    "op": "VERMINDERD_MET",
-                    "links": {
+                    "node": "Binary",
+                    "op": "reducedBy",
+                    "left": {
                       "node": "BinderRef",
                       "name": "belasting",
                       "source": {
                         "snippet": "belasting"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "BinderRef",
                       "name": "aftrek",
                       "source": {
@@ -241,7 +238,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   }
                 },
@@ -254,42 +251,40 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "tarief",
-        "onderwerp": "Penningplichtige",
-        "kenmerk": null,
-        "attribuut": "tarief",
+        "name": "tarief",
+        "subject": "Penningplichtige",
+        "attribute": "tarief",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "kindertal",
-                "objecttype": "Penningplichtige",
+            "justification": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "kindertal",
+                "subjectType": "Penningplichtige",
                 "source": {
                   "snippet": "de kindertal"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "2"
@@ -298,15 +293,14 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "2"
                 }
-              },
-              "periode": null
+              }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "0.1500"
@@ -315,7 +309,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 4,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "0.1500"
@@ -324,27 +318,26 @@
             "source": {
               "snippet": "tarief"
             },
-            "excepties": {
-              "ongeordend": true,
-              "leden": [
+            "exceptions": {
+              "unordered": true,
+              "members": [
                 {
                   "node": "ExceptionGroup",
                   "defaults": [
                     {
                       "node": "Default",
-                      "besluit": null,
-                      "voorwaarde": {
-                        "node": "Vergelijking",
-                        "op": "GROTER_OF_GELIJK",
-                        "links": {
-                          "node": "AttribuutRef",
-                          "attribuut": "kindertal",
-                          "objecttype": "Penningplichtige",
+                      "justification": {
+                        "node": "Comparison",
+                        "op": "greaterOrEqual",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "kindertal",
+                          "subjectType": "Penningplichtige",
                           "source": {
                             "snippet": "de kindertal"
                           }
                         },
-                        "rechts": {
+                        "right": {
                           "node": "Literal",
                           "value": {
                             "number": "4"
@@ -353,15 +346,14 @@
                             "node": "Number",
                             "whole": true,
                             "decimals": 0,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           },
                           "source": {
                             "snippet": "4"
                           }
-                        },
-                        "periode": null
+                        }
                       },
-                      "consequentie": {
+                      "consequence": {
                         "node": "Literal",
                         "value": {
                           "number": "0.1000"
@@ -370,7 +362,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 4,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         },
                         "source": {
                           "snippet": "0.1000"
@@ -390,19 +382,18 @@
                   "defaults": [
                     {
                       "node": "Default",
-                      "besluit": null,
-                      "voorwaarde": {
-                        "node": "Vergelijking",
-                        "op": "KLEINER_OF_GELIJK",
-                        "links": {
-                          "node": "AttribuutRef",
-                          "attribuut": "inkomen",
-                          "objecttype": "Penningplichtige",
+                      "justification": {
+                        "node": "Comparison",
+                        "op": "lessOrEqual",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "inkomen",
+                          "subjectType": "Penningplichtige",
                           "source": {
                             "snippet": "de inkomen"
                           }
                         },
-                        "rechts": {
+                        "right": {
                           "node": "Literal",
                           "value": {
                             "number": "10000.00"
@@ -411,15 +402,14 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           },
                           "source": {
                             "snippet": "10000.00"
                           }
-                        },
-                        "periode": null
+                        }
                       },
-                      "consequentie": {
+                      "consequence": {
                         "node": "Literal",
                         "value": {
                           "number": "0.0000"
@@ -428,7 +418,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 4,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         },
                         "source": {
                           "snippet": "0.0000"
@@ -448,17 +438,16 @@
           },
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [],
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
               "source": {
                 "snippet": "altijd"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "0.2000"
@@ -467,7 +456,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 4,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "0.2000"
@@ -481,10 +470,8 @@
         "source": {
           "snippet": "tarief"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

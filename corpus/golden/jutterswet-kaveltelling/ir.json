@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -50,44 +50,41 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "kaveltoewijzing",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "kaveltoewijzing",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "pachter",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "pachter",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "duinkavel",
-            "objecttypeNaam": "Duinkavel",
-            "meervoud": null,
-            "meervoudig": true
+            "node": "Role",
+            "name": "duinkavel",
+            "objectType": "Duinkavel",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "vatberging",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "vatberging",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "berger",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "berger",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "vat",
-            "objecttypeNaam": "Vat",
-            "meervoud": "vaten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "vat",
+            "objectType": "Vat",
+            "plural": "vaten",
+            "many": true
           }
         ]
       }
@@ -100,33 +97,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "aantal duinkavels",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aantal duinkavels",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "aantal duinkavels",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het aantal duinkavels van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "duinkavel",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "duinkavel",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "duinkavels van de Jutter"
                   }
@@ -134,22 +129,22 @@
               ],
               "elementType": "Duinkavel",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "kaveltoewijzing",
-                "rol": "duinkavel"
+                "node": "RoleBinding",
+                "factType": "kaveltoewijzing",
+                "role": "duinkavel"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal duinkavels van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -159,26 +154,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aantal geborgen vaten",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "aantal geborgen vaten",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het aantal geborgen vaten van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "vat",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "vat",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "vat van de Jutter"
                   }
@@ -186,34 +179,34 @@
               ],
               "elementType": "Vat",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "vatberging",
-                "rol": "vat"
+                "node": "RoleBinding",
+                "factType": "vatberging",
+                "role": "vat"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal vat van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -29,12 +29,12 @@
           {
             "node": "Characteristic",
             "name": "tijdig",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "verlaat",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -48,21 +48,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "Sluitstip",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "sluitstip",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "sluitstip",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De sluitstip van een Vondst"
               }
@@ -81,7 +79,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -91,14 +89,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "tijdig",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "tijdig",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is tijdig"
               }
@@ -109,24 +105,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "EERDER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "afgiftestip",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "earlier",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "afgiftestip",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn afgiftestip"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "dateTime": "2026-07-01T08:30:00.000"
@@ -139,7 +135,6 @@
                   "snippet": "01-07-2026 08:30:00.000"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn afgiftestip eerder is dan 01-07-2026 08:30:00.000"
               }
@@ -154,14 +149,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "verlaat",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "verlaat",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is verlaat"
               }
@@ -172,24 +165,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "LATER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "afgiftestip",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "later",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "afgiftestip",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn afgiftestip"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "dateTime": "2026-07-01T08:30:00.000"
@@ -202,7 +195,6 @@
                   "snippet": "1-07-2026 08:30:00.000"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn afgiftestip later is dan 1-07-2026 08:30:00.000"
               }
@@ -212,14 +204,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

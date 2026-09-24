@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -61,21 +61,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "geenteken van een wacht",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "geenteken",
-              "objecttype": "Wacht",
+              "node": "AttributeReference",
+              "attribute": "geenteken",
+              "subjectType": "Wacht",
               "source": {
                 "snippet": "Het geenteken van een Wacht"
               }
@@ -89,29 +87,29 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "GEEN",
-              "drempel": 0,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "none",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "ploegomvang",
-                    "objecttype": "Wacht",
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ploegomvang",
+                    "subjectType": "Wacht",
                     "source": {
                       "snippet": "zijn ploegomvang"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -120,37 +118,36 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn ploegomvang is gelijk aan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "Afgerond",
-                    "basis": {
-                      "node": "Binair",
-                      "op": "GEDEELD_DOOR",
-                      "links": {
-                        "node": "AttribuutRef",
-                        "attribuut": "vangstwaarde",
-                        "objecttype": "Wacht",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Rounding",
+                    "base": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "vangstwaarde",
+                        "subjectType": "Wacht",
                         "source": {
                           "snippet": "de vangstwaarde van de Wacht"
                         }
                       },
-                      "rechts": {
-                        "node": "AttribuutRef",
-                        "attribuut": "ploegomvang",
-                        "objecttype": "Wacht",
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "ploegomvang",
+                        "subjectType": "Wacht",
                         "source": {
                           "snippet": "de ploegomvang van de Wacht"
                         }
@@ -159,25 +156,25 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "de vangstwaarde van de Wacht gedeeld door de ploegomvang van de Wacht"
                       }
                     },
-                    "modus": "NAAR_BENEDEN",
-                    "decimalen": 0,
+                    "mode": "floor",
+                    "decimals": 0,
                     "type": {
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de vangstwaarde van de Wacht gedeeld door de ploegomvang van de Wacht naar beneden afgerond op 0 decimalen"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -186,13 +183,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "het aandeel is groter dan 0"
                   }
@@ -203,7 +199,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -213,14 +209,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "minsteteken",
-              "objecttype": "Wacht",
+              "node": "AttributeReference",
+              "attribute": "minsteteken",
+              "subjectType": "Wacht",
               "source": {
                 "snippet": "Het minsteteken van een Wacht"
               }
@@ -234,29 +228,29 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "TEN_MINSTE",
-              "drempel": 1,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "ploegomvang",
-                    "objecttype": "Wacht",
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ploegomvang",
+                    "subjectType": "Wacht",
                     "source": {
                       "snippet": "zijn ploegomvang"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -265,37 +259,36 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn ploegomvang is gelijk aan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "Afgerond",
-                    "basis": {
-                      "node": "Binair",
-                      "op": "GEDEELD_DOOR",
-                      "links": {
-                        "node": "AttribuutRef",
-                        "attribuut": "vangstwaarde",
-                        "objecttype": "Wacht",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Rounding",
+                    "base": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "vangstwaarde",
+                        "subjectType": "Wacht",
                         "source": {
                           "snippet": "de vangstwaarde van de Wacht"
                         }
                       },
-                      "rechts": {
-                        "node": "AttribuutRef",
-                        "attribuut": "ploegomvang",
-                        "objecttype": "Wacht",
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "ploegomvang",
+                        "subjectType": "Wacht",
                         "source": {
                           "snippet": "de ploegomvang van de Wacht"
                         }
@@ -304,25 +297,25 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "de vangstwaarde van de Wacht gedeeld door de ploegomvang van de Wacht"
                       }
                     },
-                    "modus": "NAAR_BENEDEN",
-                    "decimalen": 0,
+                    "mode": "floor",
+                    "decimals": 0,
                     "type": {
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de vangstwaarde van de Wacht gedeeld door de ploegomvang van de Wacht naar beneden afgerond op 0 decimalen"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -331,13 +324,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "het aandeel is groter dan 0"
                   }
@@ -348,19 +340,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

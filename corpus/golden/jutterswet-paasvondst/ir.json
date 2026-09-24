@@ -23,7 +23,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -33,7 +33,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -41,12 +41,12 @@
           {
             "node": "Characteristic",
             "name": "zomervondst",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "paasvondst",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -60,33 +60,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "Berekening vondstjaar",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vondstjaar",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "vondstjaar",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Het vondstjaar van een Vondst"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "JAAR_UIT",
+              "kind": "yearOf",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "vondstdatum",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "vondstdatum",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "zijn vondstdatum"
                   }
@@ -96,14 +94,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het jaar uit zijn vondstdatum"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -113,26 +111,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vondstdag",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "vondstdag",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De vondstdag van een Vondst"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "DAG_UIT",
+              "kind": "dayOf",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "vondstdatum",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "vondstdatum",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "zijn vondstdatum"
                   }
@@ -142,14 +138,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de dag uit zijn vondstdatum"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -159,14 +155,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "zomervondst",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "zomervondst",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is zomervondst"
               }
@@ -177,28 +171,28 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "TEN_MINSTE",
-              "drempel": 1,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
                     "node": "BuiltinCall",
-                    "kind": "MAAND_UIT",
+                    "kind": "monthOf",
                     "arguments": [
                       {
-                        "node": "AttribuutRef",
-                        "attribuut": "vondstdatum",
-                        "objecttype": "Vondst",
+                        "node": "AttributeReference",
+                        "attribute": "vondstdatum",
+                        "subjectType": "Vondst",
                         "source": {
                           "snippet": "zijn vondstdatum"
                         }
@@ -208,13 +202,13 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de maand uit zijn vondstdatum"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "7"
@@ -223,28 +217,27 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "7"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "de maand uit zijn vondstdatum is gelijk aan 7"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
                     "node": "BuiltinCall",
-                    "kind": "MAAND_UIT",
+                    "kind": "monthOf",
                     "arguments": [
                       {
-                        "node": "AttribuutRef",
-                        "attribuut": "vondstdatum",
-                        "objecttype": "Vondst",
+                        "node": "AttributeReference",
+                        "attribute": "vondstdatum",
+                        "subjectType": "Vondst",
                         "source": {
                           "snippet": "zijn vondstdatum"
                         }
@@ -254,13 +247,13 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de maand uit zijn vondstdatum"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "8"
@@ -269,13 +262,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "8"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "de maand uit zijn vondstdatum is gelijk aan 8"
                   }
@@ -295,14 +287,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "paasvondst",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "paasvondst",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is paasvondst"
               }
@@ -313,35 +303,35 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vondstdatum",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstdatum",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn vondstdatum"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "BuiltinCall",
-                "kind": "EERSTE_PAASDAG",
+                "kind": "easterSunday",
                 "arguments": [
                   {
                     "node": "BuiltinCall",
-                    "kind": "JAAR_UIT",
+                    "kind": "yearOf",
                     "arguments": [
                       {
-                        "node": "AttribuutRef",
-                        "attribuut": "vondstdatum",
-                        "objecttype": "Vondst",
+                        "node": "AttributeReference",
+                        "attribute": "vondstdatum",
+                        "subjectType": "Vondst",
                         "source": {
                           "snippet": "zijn vondstdatum"
                         }
@@ -351,7 +341,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "het jaar uit zijn vondstdatum"
@@ -366,7 +356,6 @@
                   "snippet": "de eerste paasdag van het jaar uit zijn vondstdatum"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn vondstdatum gelijk is aan de eerste paasdag van het jaar uit zijn vondstdatum"
               }
@@ -376,14 +365,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -23,22 +23,22 @@
           {
             "node": "Characteristic",
             "name": "paraat",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "geoefend",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "stil",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "wisselend",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -65,7 +65,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -73,30 +73,29 @@
           {
             "node": "Characteristic",
             "name": "gediplomeerd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "postindeling",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "postindeling",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "post",
-            "objecttypeNaam": "Reddingspost",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "post",
+            "objectType": "Reddingspost",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "redder",
-            "objecttypeNaam": "Redder",
-            "meervoud": "redders",
-            "meervoudig": true
+            "node": "Role",
+            "name": "redder",
+            "objectType": "Redder",
+            "plural": "redders",
+            "many": true
           }
         ]
       }
@@ -109,21 +108,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "paraat bij ploegkeur",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "paraat",
-              "objecttype": "Reddingspost",
+              "node": "AttributeReference",
+              "attribute": "paraat",
+              "subjectType": "Reddingspost",
               "source": {
                 "snippet": "Een Reddingspost is paraat"
               }
@@ -134,34 +131,33 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "ALLE",
-              "elementObjecttype": "Redder",
-              "filter": null,
-              "toets": {
-                "node": "Samengesteld",
-                "kwantor": "ALLE",
-                "drempel": 0,
-                "onderdelen": [
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Redder",
+              "test": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
                   {
-                    "node": "Vergelijking",
-                    "op": "GROTER",
-                    "links": {
-                      "node": "AttribuutRef",
-                      "attribuut": "dienstjaren",
-                      "objecttype": "Redder",
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "dienstjaren",
+                      "subjectType": "Redder",
                       "source": {
                         "snippet": "zijn dienstjaren"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "5"
@@ -170,23 +166,20 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "5"
                       }
                     },
-                    "periode": null,
                     "source": {
                       "snippet": "zijn dienstjaren groter zijn dan 5"
                     }
                   },
                   {
-                    "node": "Kenmerk",
-                    "kenmerk": "gediplomeerd",
-                    "negatie": false,
-                    "eigenaar": null,
-                    "periode": null,
+                    "node": "CharacteristicCheck",
+                    "characteristic": "gediplomeerd",
+                    "negated": false,
                     "source": {
                       "snippet": "hij gediplomeerd is"
                     }
@@ -199,10 +192,10 @@
               "source": {
                 "snippet": "alle redders van de Reddingspost aan alle volgende voorwaarden voldoen"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "postindeling",
-                "rol": "redder"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "postindeling",
+                "role": "redder"
               }
             },
             "initialisation": false
@@ -215,14 +208,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "geoefend",
-              "objecttype": "Reddingspost",
+              "node": "AttributeReference",
+              "attribute": "geoefend",
+              "subjectType": "Reddingspost",
               "source": {
                 "snippet": "Een Reddingspost is geoefend"
               }
@@ -233,34 +224,33 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "ALLE",
-              "elementObjecttype": "Redder",
-              "filter": null,
-              "toets": {
-                "node": "Samengesteld",
-                "kwantor": "TEN_MINSTE",
-                "drempel": 1,
-                "onderdelen": [
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Redder",
+              "test": {
+                "node": "Compound",
+                "quantifier": "atLeast",
+                "threshold": 1,
+                "parts": [
                   {
-                    "node": "Vergelijking",
-                    "op": "GROTER",
-                    "links": {
-                      "node": "AttribuutRef",
-                      "attribuut": "conditie",
-                      "objecttype": "Redder",
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "conditie",
+                      "subjectType": "Redder",
                       "source": {
                         "snippet": "zijn conditie"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "7"
@@ -269,44 +259,41 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "7"
                       }
                     },
-                    "periode": null,
                     "source": {
                       "snippet": "zijn conditie groter is dan 7"
                     }
                   },
                   {
-                    "node": "Samengesteld",
-                    "kwantor": "ALLE",
-                    "drempel": 0,
-                    "onderdelen": [
+                    "node": "Compound",
+                    "quantifier": "all",
+                    "threshold": 0,
+                    "parts": [
                       {
-                        "node": "Kenmerk",
-                        "kenmerk": "gediplomeerd",
-                        "negatie": false,
-                        "eigenaar": null,
-                        "periode": null,
+                        "node": "CharacteristicCheck",
+                        "characteristic": "gediplomeerd",
+                        "negated": false,
                         "source": {
                           "snippet": "hij gediplomeerd is"
                         }
                       },
                       {
-                        "node": "Vergelijking",
-                        "op": "GROTER",
-                        "links": {
-                          "node": "AttribuutRef",
-                          "attribuut": "dienstjaren",
-                          "objecttype": "Redder",
+                        "node": "Comparison",
+                        "op": "greater",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "dienstjaren",
+                          "subjectType": "Redder",
                           "source": {
                             "snippet": "zijn dienstjaren"
                           }
                         },
-                        "rechts": {
+                        "right": {
                           "node": "Literal",
                           "value": {
                             "number": "2"
@@ -315,13 +302,12 @@
                             "node": "Number",
                             "whole": true,
                             "decimals": 0,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           },
                           "source": {
                             "snippet": "2"
                           }
                         },
-                        "periode": null,
                         "source": {
                           "snippet": "zijn dienstjaren groter zijn dan 2"
                         }
@@ -339,10 +325,10 @@
               "source": {
                 "snippet": "alle redders van de Reddingspost aan ten minste 1 van de volgende voorwaarden voldoen"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "postindeling",
-                "rol": "redder"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "postindeling",
+                "role": "redder"
               }
             },
             "initialisation": false
@@ -355,14 +341,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "stil",
-              "objecttype": "Reddingspost",
+              "node": "AttributeReference",
+              "attribute": "stil",
+              "subjectType": "Reddingspost",
               "source": {
                 "snippet": "Een Reddingspost is stil"
               }
@@ -373,34 +357,33 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "GEEN",
-              "elementObjecttype": "Redder",
-              "filter": null,
-              "toets": {
-                "node": "Samengesteld",
-                "kwantor": "ALLE",
-                "drempel": 0,
-                "onderdelen": [
+              "node": "QuantifierFold",
+              "quantifier": "none",
+              "elementType": "Redder",
+              "test": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
                   {
-                    "node": "Vergelijking",
-                    "op": "GROTER",
-                    "links": {
-                      "node": "AttribuutRef",
-                      "attribuut": "dienstjaren",
-                      "objecttype": "Redder",
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "dienstjaren",
+                      "subjectType": "Redder",
                       "source": {
                         "snippet": "zijn dienstjaren"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "5"
@@ -409,23 +392,20 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "5"
                       }
                     },
-                    "periode": null,
                     "source": {
                       "snippet": "zijn dienstjaren groter zijn dan 5"
                     }
                   },
                   {
-                    "node": "Kenmerk",
-                    "kenmerk": "gediplomeerd",
-                    "negatie": false,
-                    "eigenaar": null,
-                    "periode": null,
+                    "node": "CharacteristicCheck",
+                    "characteristic": "gediplomeerd",
+                    "negated": false,
                     "source": {
                       "snippet": "hij gediplomeerd is"
                     }
@@ -438,10 +418,10 @@
               "source": {
                 "snippet": "geen van de redders van de Reddingspost aan alle volgende voorwaarden voldoet"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "postindeling",
-                "rol": "redder"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "postindeling",
+                "role": "redder"
               }
             },
             "initialisation": false
@@ -454,14 +434,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "wisselend",
-              "objecttype": "Reddingspost",
+              "node": "AttributeReference",
+              "attribute": "wisselend",
+              "subjectType": "Reddingspost",
               "source": {
                 "snippet": "Een Reddingspost is wisselend"
               }
@@ -472,44 +450,41 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "ALLE",
-              "elementObjecttype": "Redder",
-              "filter": null,
-              "toets": {
-                "node": "Samengesteld",
-                "kwantor": "TEN_HOOGSTE",
-                "drempel": 1,
-                "onderdelen": [
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Redder",
+              "test": {
+                "node": "Compound",
+                "quantifier": "atMost",
+                "threshold": 1,
+                "parts": [
                   {
-                    "node": "Kenmerk",
-                    "kenmerk": "gediplomeerd",
-                    "negatie": false,
-                    "eigenaar": null,
-                    "periode": null,
+                    "node": "CharacteristicCheck",
+                    "characteristic": "gediplomeerd",
+                    "negated": false,
                     "source": {
                       "snippet": "hij gediplomeerd is"
                     }
                   },
                   {
-                    "node": "Vergelijking",
-                    "op": "GROTER",
-                    "links": {
-                      "node": "AttribuutRef",
-                      "attribuut": "conditie",
-                      "objecttype": "Redder",
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "conditie",
+                      "subjectType": "Redder",
                       "source": {
                         "snippet": "zijn conditie"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "7"
@@ -518,29 +493,28 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "7"
                       }
                     },
-                    "periode": null,
                     "source": {
                       "snippet": "zijn conditie groter is dan 7"
                     }
                   },
                   {
-                    "node": "Vergelijking",
-                    "op": "GROTER",
-                    "links": {
-                      "node": "AttribuutRef",
-                      "attribuut": "dienstjaren",
-                      "objecttype": "Redder",
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "dienstjaren",
+                      "subjectType": "Redder",
                       "source": {
                         "snippet": "zijn dienstjaren"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "5"
@@ -549,13 +523,12 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "5"
                       }
                     },
-                    "periode": null,
                     "source": {
                       "snippet": "zijn dienstjaren groter zijn dan 5"
                     }
@@ -568,10 +541,10 @@
               "source": {
                 "snippet": "alle redders van de Reddingspost aan ten hoogste 1 van de volgende voorwaarden voldoen"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "postindeling",
-                "rol": "redder"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "postindeling",
+                "role": "redder"
               }
             },
             "initialisation": false
@@ -584,26 +557,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "redderstal",
-              "objecttype": "Reddingspost",
+              "node": "AttributeReference",
+              "attribute": "redderstal",
+              "subjectType": "Reddingspost",
               "source": {
                 "snippet": "Het redderstal van een Reddingspost"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "redders",
-                  "objecttype": "Reddingspost",
+                  "node": "AttributeReference",
+                  "attribute": "redders",
+                  "subjectType": "Reddingspost",
                   "source": {
                     "snippet": "redders van de Reddingspost"
                   }
@@ -611,34 +582,34 @@
               ],
               "elementType": "Redder",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "postindeling",
-                "rol": "redder"
+                "node": "RoleBinding",
+                "factType": "postindeling",
+                "role": "redder"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal redders van de Reddingspost"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

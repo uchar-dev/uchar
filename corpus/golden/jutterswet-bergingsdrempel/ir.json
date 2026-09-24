@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -23,12 +23,12 @@
           {
             "node": "Characteristic",
             "name": "bergingsbevoegd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "noodweer verklaard",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -42,52 +42,50 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "bergingsbevoegd bij quotum",
-        "onderwerp": "Jutter",
-        "kenmerk": "bergingsbevoegd",
+        "name": "bergingsbevoegd bij quotum",
+        "subject": "Jutter",
+        "characteristic": "bergingsbevoegd",
         "defaults": [
           {
             "node": "Default",
-            "besluit": true,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+            "decision": true,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "noodweer verklaard",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "noodweer verklaard",
+                  "negated": false,
                   "source": {
                     "snippet": "hij is noodweer verklaard"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER_OF_GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "aantal geborgen wrakken",
-                    "objecttype": "Jutter",
+                  "node": "Comparison",
+                  "op": "greaterOrEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "aantal geborgen wrakken",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "zijn aantal geborgen wrakken"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "8"
@@ -96,13 +94,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "8"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn aantal geborgen wrakken is groter of gelijk aan 8"
                   }
@@ -115,19 +112,19 @@
           },
           {
             "node": "Default",
-            "besluit": true,
-            "voorwaarde": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aantal geborgen wrakken",
-                "objecttype": "Jutter",
+            "decision": true,
+            "justification": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aantal geborgen wrakken",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn aantal geborgen wrakken"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "20"
@@ -136,23 +133,20 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "20"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn aantal geborgen wrakken groter of gelijk is aan 20"
               }
             }
           }
         ],
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

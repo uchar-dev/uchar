@@ -23,7 +23,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -41,7 +41,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -51,7 +51,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -73,7 +73,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -105,7 +105,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 {
@@ -120,7 +120,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "NIET_NEGATIEF"
+          "sign": "nonNegative"
         },
         "body": {
           "node": "Match",
@@ -128,7 +128,7 @@
             "node": "Number",
             "whole": false,
             "decimals": 2,
-            "sign": "NIET_NEGATIEF"
+            "sign": "nonNegative"
           },
           "scrutinee": {
             "node": "BinderRef",
@@ -161,7 +161,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "source": {
                   "snippet": "0.00"
@@ -180,21 +180,19 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "erkende som van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "erkende som",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "erkende som",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De erkende som van een Jutter"
               }
@@ -205,7 +203,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
                 "node": "MapList",
@@ -215,13 +213,13 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 "list": {
-                  "node": "AttribuutRef",
-                  "attribuut": "aanspraken",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "aanspraken",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn aanspraken"
                   }
@@ -241,7 +239,7 @@
                               "node": "Number",
                               "whole": false,
                               "decimals": 2,
-                              "sign": "NIET_NEGATIEF"
+                              "sign": "nonNegative"
                             }
                           },
                           {
@@ -258,7 +256,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     },
                     "function": "aanspraakwaarde",
                     "arguments": [
@@ -291,7 +289,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -300,21 +298,21 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   }
                 ],
                 "body": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
                     "node": "BinderRef",
                     "name": "acc",
                     "source": {
                       "snippet": "de opgetelde som"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "BinderRef",
                     "name": "x",
                     "source": {
@@ -325,7 +323,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "de opgetelde som plus de aanspraakwaarde"
@@ -344,7 +342,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0.00"
@@ -355,7 +353,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -365,14 +363,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aantal erkend",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "aantal erkend",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het aantal erkend van een Jutter"
               }
@@ -383,7 +379,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
                 "node": "FilterList",
@@ -399,7 +395,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       },
                       {
@@ -410,25 +406,25 @@
                   }
                 },
                 "list": {
-                  "node": "AttribuutRef",
-                  "attribuut": "aanspraken",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "aanspraken",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn aanspraken"
                   }
                 },
                 "binder": "a",
                 "condition": {
-                  "node": "Vergelijking",
-                  "op": "ONGELIJK",
-                  "links": {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
                     "node": "BinderRef",
                     "name": "a",
                     "source": {
                       "snippet": "de aanspraak"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Construct",
                     "type": {
                       "node": "SumType",
@@ -440,7 +436,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         },
                         {
@@ -455,7 +451,6 @@
                       "snippet": "vervallen"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "de aanspraak ongelijk is aan vervallen"
                   }
@@ -469,19 +464,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -23,7 +23,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "dagen"
@@ -91,37 +91,35 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "Berekening vervaldatum",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vervaldatum",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "vervaldatum",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De vervaldatum van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aangiftedatum",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aangiftedatum",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn aangiftedatum"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "2"
@@ -130,7 +128,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "wk"
@@ -149,7 +147,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -159,30 +157,28 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "toetsdatum",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "toetsdatum",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De toetsdatum van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aangiftedatum",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aangiftedatum",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn aangiftedatum"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "1"
@@ -191,7 +187,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "maand"
@@ -210,7 +206,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -220,30 +216,28 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "herinneringsdatum",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "herinneringsdatum",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De herinneringsdatum van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "MIN",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aangiftedatum",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "minus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aangiftedatum",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn aangiftedatum"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "1"
@@ -252,7 +246,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "week"
@@ -271,7 +265,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -281,33 +275,31 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "gedoogdatum",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "gedoogdatum",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De gedoogdatum van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aangiftedatum",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aangiftedatum",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn aangiftedatum"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "uitsteldagen",
-                "objecttype": "Vondst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "uitsteldagen",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn uitsteldagen"
                 }
@@ -321,7 +313,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -331,30 +323,28 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "respijtdatum",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "respijtdatum",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De respijtdatum van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "MIN",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aangiftedatum",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "minus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aangiftedatum",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn aangiftedatum"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "1.9"
@@ -363,7 +353,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 1,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "mnd"
@@ -382,7 +372,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -392,30 +382,28 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "opschortdatum",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "opschortdatum",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De opschortdatum van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aangiftedatum",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aangiftedatum",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn aangiftedatum"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "1"
@@ -424,7 +412,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "kw"
@@ -443,19 +431,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

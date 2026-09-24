@@ -23,7 +23,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -41,7 +41,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -57,7 +57,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       }
     ],
@@ -74,7 +74,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -91,21 +91,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "totaal van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "totaal",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "totaal",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het totaal van een Jutter"
               }
@@ -116,12 +114,12 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
-                "node": "AttribuutRef",
-                "attribuut": "vangsten",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "vangsten",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn vangsten"
                 }
@@ -135,7 +133,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -150,7 +148,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         },
                         {
@@ -167,7 +165,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "scrutinee": {
                     "node": "BinderRef",
@@ -186,22 +184,22 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         },
                         "condition": {
-                          "node": "Vergelijking",
-                          "op": "KLEINER_OF_GELIJK",
-                          "links": {
-                            "node": "Binair",
-                            "op": "PLUS",
-                            "links": {
+                          "node": "Comparison",
+                          "op": "lessOrEqual",
+                          "left": {
+                            "node": "Binary",
+                            "op": "plus",
+                            "left": {
                               "node": "BinderRef",
                               "name": "acc",
                               "source": {
                                 "snippet": "de opgetelde vangst"
                               }
                             },
-                            "rechts": {
+                            "right": {
                               "node": "BinderRef",
                               "name": "b",
                               "source": {
@@ -212,35 +210,34 @@
                               "node": "Number",
                               "whole": false,
                               "decimals": 2,
-                              "sign": "ONBEPAALD"
+                              "sign": "unspecified"
                             },
                             "source": {
                               "snippet": "de opgetelde vangst plus de vangstwaarde"
                             }
                           },
-                          "rechts": {
-                            "node": "ParameterRef",
+                          "right": {
+                            "node": "ParameterReference",
                             "parameter": "plafond",
                             "source": {
                               "snippet": "het plafond"
                             }
                           },
-                          "periode": null,
                           "source": {
                             "snippet": "de opgetelde vangst plus de vangstwaarde kleiner dan of gelijk aan het plafond"
                           }
                         },
                         "then": {
-                          "node": "Binair",
-                          "op": "PLUS",
-                          "links": {
+                          "node": "Binary",
+                          "op": "plus",
+                          "left": {
                             "node": "BinderRef",
                             "name": "acc",
                             "source": {
                               "snippet": "de opgetelde vangst"
                             }
                           },
-                          "rechts": {
+                          "right": {
                             "node": "BinderRef",
                             "name": "b",
                             "source": {
@@ -251,7 +248,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           },
                           "source": {
                             "snippet": "de opgetelde vangst plus de vangstwaarde"
@@ -298,7 +295,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0.00"
@@ -309,19 +306,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

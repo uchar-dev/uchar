@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -61,21 +61,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "vangstsom van een vangst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vangstsom",
-              "objecttype": "Vangst",
+              "node": "AttributeReference",
+              "attribute": "vangstsom",
+              "subjectType": "Vangst",
               "source": {
                 "snippet": "De vangstsom van een Vangst"
               }
@@ -86,42 +84,42 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "binder": "deel",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "deelvangst",
-                "objecttype": "Vangst",
+                "node": "AttributeReference",
+                "attribute": "deelvangst",
+                "subjectType": "Vangst",
                 "source": {
                   "snippet": "zijn deelvangst"
                 }
               },
               "body": {
-                "node": "Binair",
-                "op": "PLUS",
-                "links": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
                   "node": "BinderRef",
                   "name": "deel",
                   "source": {
                     "snippet": "het deel"
                   }
                 },
-                "rechts": {
-                  "node": "Binair",
-                  "op": "GEDEELD_DOOR",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "teller",
-                    "objecttype": "Vangst",
+                "right": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "teller",
+                    "subjectType": "Vangst",
                     "source": {
                       "snippet": "zijn teller"
                     }
                   },
-                  "rechts": {
-                    "node": "AttribuutRef",
-                    "attribuut": "noemer",
-                    "objecttype": "Vangst",
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "noemer",
+                    "subjectType": "Vangst",
                     "source": {
                       "snippet": "zijn noemer"
                     }
@@ -130,7 +128,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "zijn teller gedeeld door zijn noemer"
@@ -140,7 +138,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "het deel plus zijn teller gedeeld door zijn noemer"
@@ -151,19 +149,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

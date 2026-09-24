@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 4,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -61,29 +61,27 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "factor van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "factor",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "factor",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De factor van een Jutter"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
                 "node": "Literal",
                 "value": {
                   "number": "1.0000"
@@ -92,24 +90,24 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 4,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "1,0000"
                 }
               },
-              "rechts": {
-                "node": "Binair",
-                "op": "GEDEELD_DOOR",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "kindertal",
-                  "objecttype": "Jutter",
+              "right": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "kindertal",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "het kindertal van de Jutter"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "2.0000"
@@ -118,7 +116,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 4,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "2,0000"
@@ -128,7 +126,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 4,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "het kindertal van de Jutter gedeeld door 2,0000"
@@ -138,14 +136,14 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 4,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1,0000 plus het kindertal van de Jutter gedeeld door 2,0000"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -155,51 +153,49 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "gewogen",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "gewogen",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het gewogen inkomen van een Jutter"
               }
             },
             "value": {
-              "node": "Afgerond",
-              "basis": {
+              "node": "Rounding",
+              "base": {
                 "node": "Let",
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 6,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "binder": "ink2",
                 "value": {
-                  "node": "AttribuutRef",
-                  "attribuut": "inkomen",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "inkomen",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "het inkomen van de Jutter"
                   }
                 },
                 "body": {
-                  "node": "Binair",
-                  "op": "MAAL",
-                  "links": {
+                  "node": "Binary",
+                  "op": "times",
+                  "left": {
                     "node": "BinderRef",
                     "name": "ink2",
                     "source": {
                       "snippet": "ink2"
                     }
                   },
-                  "rechts": {
-                    "node": "AttribuutRef",
-                    "attribuut": "factor",
-                    "objecttype": "Jutter",
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "factor",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "de factor van de Jutter"
                     }
@@ -208,7 +204,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 6,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "ink2 maal de factor van de Jutter"
@@ -218,32 +214,32 @@
                   "snippet": "ink2 is het inkomen van de Jutter"
                 }
               },
-              "modus": "REKENKUNDIG",
-              "decimalen": 2,
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "ink2 maal de factor van de Jutter rekenkundig afgerond op 2 decimalen"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

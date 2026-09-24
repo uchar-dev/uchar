@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -69,7 +69,7 @@
             "plural": "keurtarieven",
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           }
@@ -78,30 +78,29 @@
           {
             "node": "Characteristic",
             "name": "gekeurd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "keuring",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "keuring",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "keurende jutter",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "keurende jutter",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "vondst",
-            "objecttypeNaam": "Vondst",
-            "meervoud": "vondsten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
           }
         ]
       }
@@ -155,33 +154,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "keurlast van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "keurlast",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "keurlast",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De keurlast van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "TOTAAL",
+              "kind": "total",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "keurtarief",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "keurtarief",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "het keurtarief van alle vondsten van de Jutter die gekeurd zijn"
                   }
@@ -189,25 +186,23 @@
               ],
               "elementType": "Vondst",
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "gekeurd",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "gekeurd",
+                "negated": false,
                 "source": {
                   "snippet": "gekeurd zijn"
                 }
               },
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "keuring",
-                "rol": "vondst"
+                "node": "RoleBinding",
+                "factType": "keuring",
+                "role": "vondst"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "EUR",
@@ -224,19 +219,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -38,7 +38,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -82,11 +82,11 @@
     ],
     "dimensions": [
       {
-        "node": "Dimensie",
-        "naam": "seizoen",
-        "naamMeervoud": "seizoenen",
-        "voorzetsel": "in",
-        "waarden": [
+        "node": "Dimension",
+        "name": "seizoen",
+        "plural": "seizoenen",
+        "preposition": "in",
+        "labels": [
           "voorjaar",
           "najaar"
         ]
@@ -96,31 +96,29 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "voorjaarsgewicht van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "voorjaarsgewicht",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "voorjaarsgewicht",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het voorjaarsgewicht van een Jutter"
               }
             },
             "value": {
-              "node": "DimensieCel",
-              "attribuut": {
-                "node": "AttribuutRef",
-                "attribuut": "vondstgewicht",
-                "objecttype": "Jutter",
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "vondstgewicht",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn vondstgewicht in voorjaar"
                 }
@@ -133,19 +131,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

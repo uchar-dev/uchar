@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -41,7 +41,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       },
       {
@@ -51,7 +51,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 3,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       },
       {
@@ -61,7 +61,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       }
     ],
@@ -72,21 +72,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "heffing van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De heffing van een Jutter"
               }
@@ -97,13 +95,13 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "binder": "g",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "grondslag",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "grondslag",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn grondslag"
                 }
@@ -114,21 +112,21 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "binder": "ruw",
                 "value": {
-                  "node": "Binair",
-                  "op": "MAAL",
-                  "links": {
+                  "node": "Binary",
+                  "op": "times",
+                  "left": {
                     "node": "BinderRef",
                     "name": "g",
                     "source": {
                       "snippet": "de grondslag"
                     }
                   },
-                  "rechts": {
-                    "node": "ParameterRef",
+                  "right": {
+                    "node": "ParameterReference",
                     "parameter": "tarief",
                     "source": {
                       "snippet": "het tarief"
@@ -138,7 +136,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 5,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "de grondslag maal het tarief"
@@ -150,25 +148,25 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "binder": "volle",
                   "value": {
-                    "node": "Afgerond",
-                    "basis": {
+                    "node": "Rounding",
+                    "base": {
                       "node": "BinderRef",
                       "name": "ruw",
                       "source": {
                         "snippet": "de grondslag maal het tarief"
                       }
                     },
-                    "modus": "REKENKUNDIG",
-                    "decimalen": 2,
+                    "mode": "halfAwayFromZero",
+                    "decimals": 2,
                     "type": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de grondslag maal het tarief rekenkundig afgerond op 2 decimalen"
@@ -180,41 +178,40 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "condition": {
-                      "node": "Vergelijking",
-                      "op": "GROTER",
-                      "links": {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
                         "node": "BinderRef",
                         "name": "g",
                         "source": {
                           "snippet": "de grondslag"
                         }
                       },
-                      "rechts": {
-                        "node": "ParameterRef",
+                      "right": {
+                        "node": "ParameterReference",
                         "parameter": "drempel",
                         "source": {
                           "snippet": "de drempel"
                         }
                       },
-                      "periode": null,
                       "source": {
                         "snippet": "de grondslag groter dan de drempel"
                       }
                     },
                     "then": {
-                      "node": "Binair",
-                      "op": "PLUS",
-                      "links": {
-                        "node": "ParameterRef",
+                      "node": "Binary",
+                      "op": "plus",
+                      "left": {
+                        "node": "ParameterReference",
                         "parameter": "basisheffing",
                         "source": {
                           "snippet": "de basisheffing"
                         }
                       },
-                      "rechts": {
+                      "right": {
                         "node": "BinderRef",
                         "name": "volle",
                         "source": {
@@ -225,14 +222,14 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "de basisheffing plus de volle heffing"
                       }
                     },
                     "else": {
-                      "node": "ParameterRef",
+                      "node": "ParameterReference",
                       "parameter": "basisheffing",
                       "source": {
                         "snippet": "de basisheffing"
@@ -255,19 +252,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

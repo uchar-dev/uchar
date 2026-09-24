@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -65,7 +65,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -75,7 +75,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -85,7 +85,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -95,7 +95,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -105,7 +105,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -115,7 +115,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -125,7 +125,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -133,7 +133,7 @@
           {
             "node": "Characteristic",
             "name": "actief",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -147,43 +147,41 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "heffing van een meting",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Meting",
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Meting",
               "source": {
                 "snippet": "De heffing van een Meting"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "VERMINDERD_MET",
-              "links": {
-                "node": "Binair",
-                "op": "MAAL",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "grondslag",
-                  "objecttype": "Meting",
+              "node": "Binary",
+              "op": "reducedBy",
+              "left": {
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "grondslag",
+                  "subjectType": "Meting",
                   "source": {
                     "snippet": "de grondslag van de Meting"
                   }
                 },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "factor",
-                  "objecttype": "Meting",
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "factor",
+                  "subjectType": "Meting",
                   "source": {
                     "snippet": "de factor van de Meting"
                   }
@@ -192,16 +190,16 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "de grondslag van de Meting maal de factor van de Meting"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "korting",
-                "objecttype": "Meting",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "korting",
+                "subjectType": "Meting",
                 "source": {
                   "snippet": "de korting van de Meting"
                 }
@@ -210,14 +208,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de grondslag van de Meting maal de factor van de Meting verminderd met de korting van de Meting"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -227,44 +225,42 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "rest",
-              "objecttype": "Meting",
+              "node": "AttributeReference",
+              "attribute": "rest",
+              "subjectType": "Meting",
               "source": {
                 "snippet": "De rest van een Meting"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "VERMINDERD_MET",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aftrek",
-                "objecttype": "Meting",
+              "node": "Binary",
+              "op": "reducedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aftrek",
+                "subjectType": "Meting",
                 "source": {
                   "snippet": "de aftrek van de Meting"
                 }
               },
-              "rechts": {
-                "node": "Binair",
-                "op": "MAAL",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "tarief",
-                  "objecttype": "Meting",
+              "right": {
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Meting",
                   "source": {
                     "snippet": "het tarief van de Meting"
                   }
                 },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "aantal",
-                  "objecttype": "Meting",
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "aantal",
+                  "subjectType": "Meting",
                   "source": {
                     "snippet": "het aantal van de Meting"
                   }
@@ -273,7 +269,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "het tarief van de Meting maal het aantal van de Meting"
@@ -283,14 +279,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de aftrek van de Meting verminderd met het tarief van de Meting maal het aantal van de Meting"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -300,36 +296,34 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "uitkomst",
-              "objecttype": "Meting",
+              "node": "AttributeReference",
+              "attribute": "uitkomst",
+              "subjectType": "Meting",
               "source": {
                 "snippet": "De uitkomst van een Meting"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "Binair",
-                "op": "GEDEELD_DOOR",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "som",
-                  "objecttype": "Meting",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "som",
+                  "subjectType": "Meting",
                   "source": {
                     "snippet": "de som van de Meting"
                   }
                 },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "deler",
-                  "objecttype": "Meting",
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "deler",
+                  "subjectType": "Meting",
                   "source": {
                     "snippet": "de deler van de Meting"
                   }
@@ -338,16 +332,16 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "de som van de Meting gedeeld door de deler van de Meting"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "toeslag",
-                "objecttype": "Meting",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "toeslag",
+                "subjectType": "Meting",
                 "source": {
                   "snippet": "de toeslag van de Meting"
                 }
@@ -356,36 +350,34 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de som van de Meting gedeeld door de deler van de Meting plus de toeslag van de Meting"
               }
             },
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "actief",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "actief",
+              "negated": false,
               "source": {
                 "snippet": "de Meting is actief"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

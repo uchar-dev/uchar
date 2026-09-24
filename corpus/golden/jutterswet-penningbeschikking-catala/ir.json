@@ -20,7 +20,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 },
                 {
@@ -41,7 +41,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -49,12 +49,12 @@
           {
             "node": "Characteristic",
             "name": "voorlopig",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "beslist",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -74,7 +74,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             },
             {
@@ -95,21 +95,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "berekening penningrecht",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "penningrecht",
-              "objecttype": "Penningbeschikking",
+              "node": "AttributeReference",
+              "attribute": "penningrecht",
+              "subjectType": "Penningbeschikking",
               "source": {
                 "snippet": "de penningrecht"
               }
@@ -120,12 +118,12 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "scrutinee": {
-                "node": "AttribuutRef",
-                "attribuut": "penningstatus",
-                "objecttype": "Penningbeschikking",
+                "node": "AttributeReference",
+                "attribute": "penningstatus",
+                "subjectType": "Penningbeschikking",
                 "source": {
                   "snippet": "de penningstatus"
                 }
@@ -135,16 +133,16 @@
                   "constructor": "Verleend",
                   "binder": "bedrag",
                   "body": {
-                    "node": "Binair",
-                    "op": "PLUS",
-                    "links": {
+                    "node": "Binary",
+                    "op": "plus",
+                    "left": {
                       "node": "BinderRef",
                       "name": "bedrag",
                       "source": {
                         "snippet": "bedrag"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "30.00"
@@ -153,7 +151,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "30.00"
@@ -163,7 +161,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   }
                 },
@@ -179,7 +177,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0.00"
@@ -198,7 +196,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "15.00"
@@ -211,7 +209,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -221,14 +219,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "voorlopig",
-              "objecttype": "Penningbeschikking",
+              "node": "AttributeReference",
+              "attribute": "voorlopig",
+              "subjectType": "Penningbeschikking",
               "source": {
                 "snippet": "de voorlopig"
               }
@@ -239,24 +235,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "penningstatus",
-                "objecttype": "Penningbeschikking",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "penningstatus",
+                "subjectType": "Penningbeschikking",
                 "source": {
                   "snippet": "de penningstatus"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Construct",
                 "type": {
                   "node": "SumType",
@@ -268,7 +264,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       }
                     },
                     {
@@ -286,8 +282,7 @@
                 "source": {
                   "snippet": "Aangehouden"
                 }
-              },
-              "periode": null
+              }
             },
             "initialisation": false
           }
@@ -299,14 +294,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "beslist",
-              "objecttype": "Penningbeschikking",
+              "node": "AttributeReference",
+              "attribute": "beslist",
+              "subjectType": "Penningbeschikking",
               "source": {
                 "snippet": "de beslist"
               }
@@ -317,24 +310,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "ONGELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "penningstatus",
-                "objecttype": "Penningbeschikking",
+              "node": "Comparison",
+              "op": "notEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "penningstatus",
+                "subjectType": "Penningbeschikking",
                 "source": {
                   "snippet": "de penningstatus"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Construct",
                 "type": {
                   "node": "SumType",
@@ -346,7 +339,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       }
                     },
                     {
@@ -364,22 +357,21 @@
                 "source": {
                   "snippet": "Aangehouden"
                 }
-              },
-              "periode": null
+              }
             },
             "initialisation": false
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": []
   },
   "diagnostics": []

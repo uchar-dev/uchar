@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -75,7 +75,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -95,7 +95,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -115,7 +115,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -135,7 +135,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -217,31 +217,29 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "ondergewicht van een vangst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "ondergewicht",
-              "objecttype": "Vangst",
+              "node": "AttributeReference",
+              "attribute": "ondergewicht",
+              "subjectType": "Vangst",
               "source": {
                 "snippet": "Het ondergewicht van een Vangst"
               }
             },
             "value": {
-              "node": "Begrensd",
-              "basis": {
-                "node": "AttribuutRef",
-                "attribuut": "ruwgewicht",
-                "objecttype": "Vangst",
+              "node": "Clamp",
+              "base": {
+                "node": "AttributeReference",
+                "attribute": "ruwgewicht",
+                "subjectType": "Vangst",
                 "source": {
                   "snippet": "het ruwgewicht van de Vangst"
                 }
@@ -255,7 +253,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "t",
@@ -271,12 +269,11 @@
                   "snippet": "1 t"
                 }
               },
-              "maximum": null,
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "kg",
@@ -293,7 +290,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -303,28 +300,26 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "spiegelgewicht",
-              "objecttype": "Vangst",
+              "node": "AttributeReference",
+              "attribute": "spiegelgewicht",
+              "subjectType": "Vangst",
               "source": {
                 "snippet": "Het spiegelgewicht van een Vangst"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "ruwgewicht",
-              "objecttype": "Vangst",
+              "node": "AttributeReference",
+              "attribute": "ruwgewicht",
+              "subjectType": "Vangst",
               "source": {
                 "snippet": "het ruwgewicht van de Vangst"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -334,33 +329,31 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "somgewicht",
-              "objecttype": "Vangst",
+              "node": "AttributeReference",
+              "attribute": "somgewicht",
+              "subjectType": "Vangst",
               "source": {
                 "snippet": "Het somgewicht van een Vangst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "ruwgewicht",
-                "objecttype": "Vangst",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "ruwgewicht",
+                "subjectType": "Vangst",
                 "source": {
                   "snippet": "het ruwgewicht van de Vangst"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "spiegelgewicht",
-                "objecttype": "Vangst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "spiegelgewicht",
+                "subjectType": "Vangst",
                 "source": {
                   "snippet": "het spiegelgewicht van de Vangst"
                 }
@@ -369,7 +362,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "kg",
@@ -386,7 +379,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -396,30 +389,28 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "toeslaggewicht",
-              "objecttype": "Vangst",
+              "node": "AttributeReference",
+              "attribute": "toeslaggewicht",
+              "subjectType": "Vangst",
               "source": {
                 "snippet": "Het toeslaggewicht van een Vangst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "ruwgewicht",
-                "objecttype": "Vangst",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "ruwgewicht",
+                "subjectType": "Vangst",
                 "source": {
                   "snippet": "het ruwgewicht van de Vangst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "1"
@@ -428,7 +419,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "t",
@@ -448,7 +439,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "kg",
@@ -465,7 +456,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -475,29 +466,26 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "lastgewicht",
-              "objecttype": "Vangst",
+              "node": "AttributeReference",
+              "attribute": "lastgewicht",
+              "subjectType": "Vangst",
               "source": {
                 "snippet": "Het lastgewicht van een Vangst"
               }
             },
             "value": {
-              "node": "Begrensd",
-              "basis": {
-                "node": "AttribuutRef",
-                "attribuut": "ruwgewicht",
-                "objecttype": "Vangst",
+              "node": "Clamp",
+              "base": {
+                "node": "AttributeReference",
+                "attribute": "ruwgewicht",
+                "subjectType": "Vangst",
                 "source": {
                   "snippet": "het ruwgewicht van de Vangst"
                 }
               },
-              "minimum": null,
               "maximum": {
                 "node": "Literal",
                 "value": {
@@ -507,7 +495,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "t",
@@ -527,7 +515,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "kg",
@@ -544,7 +532,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -554,38 +542,36 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "keurgewicht",
-              "objecttype": "Vangst",
+              "node": "AttributeReference",
+              "attribute": "keurgewicht",
+              "subjectType": "Vangst",
               "source": {
                 "snippet": "Het keurgewicht van een Vangst"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "ruwgewicht",
-              "objecttype": "Vangst",
+              "node": "AttributeReference",
+              "attribute": "ruwgewicht",
+              "subjectType": "Vangst",
               "source": {
                 "snippet": "het ruwgewicht van de Vangst"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "spiegelgewicht",
-                "objecttype": "Vangst",
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "spiegelgewicht",
+                "subjectType": "Vangst",
                 "source": {
                   "snippet": "het spiegelgewicht van de Vangst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "1000"
@@ -594,7 +580,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "kg",
@@ -610,25 +596,24 @@
                   "snippet": "1000 kg"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "het spiegelgewicht van de Vangst groter is dan 1000 kg"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

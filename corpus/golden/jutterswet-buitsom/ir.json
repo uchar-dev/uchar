@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -34,7 +34,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -43,23 +43,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "berging",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "berging",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "bergende jutter",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "bergende jutter",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "vondst",
-            "objecttypeNaam": "Vondst",
-            "meervoud": "vondsten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
           }
         ]
       }
@@ -72,33 +71,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "buitsom van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "buitsom",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "buitsom",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De buitsom van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "SOM",
+              "kind": "sum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "waarde",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "waarde",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "de waarde van alle vondsten van de Jutter"
                   }
@@ -106,34 +103,34 @@
               ],
               "elementType": "Vondst",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "berging",
-                "rol": "vondst"
+                "node": "RoleBinding",
+                "factType": "berging",
+                "role": "vondst"
               },
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de som van de waarde van alle vondsten van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

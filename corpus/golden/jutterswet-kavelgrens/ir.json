@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -44,23 +44,23 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "kavelgrens",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "kavelgrens",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "noordbuur",
-            "objecttypeNaam": "Duinkavel",
-            "meervoud": "noordburen",
-            "meervoudig": false
+            "node": "Role",
+            "name": "noordbuur",
+            "objectType": "Duinkavel",
+            "plural": "noordburen",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "zuidbuur",
-            "objecttypeNaam": "Duinkavel",
-            "meervoud": "zuidburen",
-            "meervoudig": false
+            "node": "Role",
+            "name": "zuidbuur",
+            "objectType": "Duinkavel",
+            "plural": "zuidburen",
+            "many": false
           }
         ]
       }
@@ -73,42 +73,40 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "noordbuurbreedte",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "noordbuurbreedte",
-              "objecttype": "Duinkavel",
+              "node": "AttributeReference",
+              "attribute": "noordbuurbreedte",
+              "subjectType": "Duinkavel",
               "source": {
                 "snippet": "De noordbuurbreedte van een Duinkavel"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "kavelbreedte",
-              "objecttype": "Duinkavel",
+              "node": "AttributeReference",
+              "attribute": "kavelbreedte",
+              "subjectType": "Duinkavel",
               "source": {
                 "snippet": "de kavelbreedte van de noordbuur van het Duinkavel"
               },
-              "navigatieBindingen": [
+              "path": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "kavelgrens",
-                  "rol": "noordbuur"
+                  "node": "RoleBinding",
+                  "factType": "kavelgrens",
+                  "role": "noordbuur"
                 }
               ]
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -118,47 +116,45 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "zuidbuurbreedte",
-              "objecttype": "Duinkavel",
+              "node": "AttributeReference",
+              "attribute": "zuidbuurbreedte",
+              "subjectType": "Duinkavel",
               "source": {
                 "snippet": "De zuidbuurbreedte van een Duinkavel"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "kavelbreedte",
-              "objecttype": "Duinkavel",
+              "node": "AttributeReference",
+              "attribute": "kavelbreedte",
+              "subjectType": "Duinkavel",
               "source": {
                 "snippet": "de kavelbreedte van de zuidbuur van het Duinkavel"
               },
-              "navigatieBindingen": [
+              "path": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "kavelgrens",
-                  "rol": "zuidbuur"
+                  "node": "RoleBinding",
+                  "factType": "kavelgrens",
+                  "role": "zuidbuur"
                 }
               ]
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

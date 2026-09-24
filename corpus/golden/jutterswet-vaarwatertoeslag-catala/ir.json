@@ -11,9 +11,9 @@
             "node": "Attribute",
             "name": "vaarwater",
             "datatype": {
-              "node": "Enumeratie",
-              "domein": "Vaarwater",
-              "waarden": [
+              "node": "Enumeration",
+              "domain": "Vaarwater",
+              "values": [
                 "Wad",
                 "Zeegat",
                 "Ruimzee"
@@ -27,7 +27,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -37,7 +37,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -47,7 +47,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -55,7 +55,7 @@
           {
             "node": "Characteristic",
             "name": "zeewaardige_berging",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -67,8 +67,8 @@
         "node": "Domain",
         "name": "Vaarwater",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "Wad",
             "Zeegat",
             "Ruimzee"
@@ -82,21 +82,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "berekening vaarwatertarief",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vaarwatertarief",
-              "objecttype": "Bergingstoeslag",
+              "node": "AttributeReference",
+              "attribute": "vaarwatertarief",
+              "subjectType": "Bergingstoeslag",
               "source": {
                 "snippet": "de vaarwatertarief"
               }
@@ -107,12 +105,12 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "scrutinee": {
-                "node": "AttribuutRef",
-                "attribuut": "vaarwater",
-                "objecttype": "Bergingstoeslag",
+                "node": "AttributeReference",
+                "attribute": "vaarwater",
+                "subjectType": "Bergingstoeslag",
                 "source": {
                   "snippet": "de vaarwater"
                 }
@@ -130,7 +128,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "3"
@@ -149,7 +147,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "7"
@@ -168,7 +166,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "12"
@@ -181,7 +179,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -191,36 +189,34 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bergingstoeslag",
-              "objecttype": "Bergingstoeslag",
+              "node": "AttributeReference",
+              "attribute": "bergingstoeslag",
+              "subjectType": "Bergingstoeslag",
               "source": {
                 "snippet": "de bergingstoeslag"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "Binair",
-                "op": "MAAL",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "vaarwatertarief",
-                  "objecttype": "Bergingstoeslag",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "vaarwatertarief",
+                  "subjectType": "Bergingstoeslag",
                   "source": {
                     "snippet": "de vaarwatertarief"
                   }
                 },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "geborgen_tonnage",
-                  "objecttype": "Bergingstoeslag",
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "geborgen_tonnage",
+                  "subjectType": "Bergingstoeslag",
                   "source": {
                     "snippet": "de geborgen_tonnage"
                   }
@@ -229,10 +225,10 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "15"
@@ -241,7 +237,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "15"
@@ -251,11 +247,11 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -265,14 +261,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "zeewaardige_berging",
-              "objecttype": "Bergingstoeslag",
+              "node": "AttributeReference",
+              "attribute": "zeewaardige_berging",
+              "subjectType": "Bergingstoeslag",
               "source": {
                 "snippet": "de zeewaardige_berging"
               }
@@ -283,32 +277,32 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vaarwater",
-                "objecttype": "Bergingstoeslag",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vaarwater",
+                "subjectType": "Bergingstoeslag",
                 "source": {
                   "snippet": "de vaarwater"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "enumeration": "Ruimzee"
                 },
                 "type": {
-                  "node": "Enumeratie",
-                  "domein": "Vaarwater",
-                  "waarden": [
+                  "node": "Enumeration",
+                  "domain": "Vaarwater",
+                  "values": [
                     "Wad",
                     "Zeegat",
                     "Ruimzee"
@@ -317,22 +311,21 @@
                 "source": {
                   "snippet": "Ruimzee"
                 }
-              },
-              "periode": null
+              }
             },
             "initialisation": false
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": []
   },
   "diagnostics": []

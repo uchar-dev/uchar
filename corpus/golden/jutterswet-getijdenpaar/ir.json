@@ -31,7 +31,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "uur"
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "dagen"
@@ -81,41 +81,39 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "Berekening uurspanne",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "uurspanne",
-              "objecttype": "Getijdenpaar",
+              "node": "AttributeReference",
+              "attribute": "uurspanne",
+              "subjectType": "Getijdenpaar",
               "source": {
                 "snippet": "De uurspanne van een Getijdenpaar"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "TIJDSDUUR",
+              "kind": "duration",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "aankomst",
-                  "objecttype": "Getijdenpaar",
+                  "node": "AttributeReference",
+                  "attribute": "aankomst",
+                  "subjectType": "Getijdenpaar",
                   "source": {
                     "snippet": "zijn aankomst"
                   }
                 },
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "vertrek",
-                  "objecttype": "Getijdenpaar",
+                  "node": "AttributeReference",
+                  "attribute": "vertrek",
+                  "subjectType": "Getijdenpaar",
                   "source": {
                     "snippet": "zijn vertrek"
                   }
@@ -125,7 +123,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "uur"
@@ -136,7 +134,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -146,34 +144,32 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "dagspanne",
-              "objecttype": "Getijdenpaar",
+              "node": "AttributeReference",
+              "attribute": "dagspanne",
+              "subjectType": "Getijdenpaar",
               "source": {
                 "snippet": "De dagspanne van een Getijdenpaar"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "TIJDSDUUR",
+              "kind": "duration",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "aankomst",
-                  "objecttype": "Getijdenpaar",
+                  "node": "AttributeReference",
+                  "attribute": "aankomst",
+                  "subjectType": "Getijdenpaar",
                   "source": {
                     "snippet": "zijn aankomst"
                   }
                 },
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "vertrek",
-                  "objecttype": "Getijdenpaar",
+                  "node": "AttributeReference",
+                  "attribute": "vertrek",
+                  "subjectType": "Getijdenpaar",
                   "source": {
                     "snippet": "zijn vertrek"
                   }
@@ -183,7 +179,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "dagen"
@@ -194,7 +190,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -204,30 +200,28 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "hersteltijd",
-              "objecttype": "Getijdenpaar",
+              "node": "AttributeReference",
+              "attribute": "hersteltijd",
+              "subjectType": "Getijdenpaar",
               "source": {
                 "snippet": "De hersteltijd van een Getijdenpaar"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aankomst",
-                "objecttype": "Getijdenpaar",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aankomst",
+                "subjectType": "Getijdenpaar",
                 "source": {
                   "snippet": "zijn aankomst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "26"
@@ -236,7 +230,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "uur"
@@ -255,7 +249,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -265,30 +259,28 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "ijkdatum",
-              "objecttype": "Getijdenpaar",
+              "node": "AttributeReference",
+              "attribute": "ijkdatum",
+              "subjectType": "Getijdenpaar",
               "source": {
                 "snippet": "De ijkdatum van een Getijdenpaar"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aankomst",
-                "objecttype": "Getijdenpaar",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aankomst",
+                "subjectType": "Getijdenpaar",
                 "source": {
                   "snippet": "zijn aankomst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "1"
@@ -297,7 +289,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "maand"
@@ -316,19 +308,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

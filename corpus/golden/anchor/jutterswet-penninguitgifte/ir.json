@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -53,7 +53,7 @@
           {
             "node": "Characteristic",
             "name": "penninggerechtigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -70,7 +70,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -78,7 +78,7 @@
           {
             "node": "Characteristic",
             "name": "uitgereikt",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -93,44 +93,42 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "penningbezit",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "penningbezit",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "houder",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "houder",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "penning",
-            "objecttypeNaam": "Penning",
-            "meervoud": "penningen",
-            "meervoudig": true
+            "node": "Role",
+            "name": "penning",
+            "objectType": "Penning",
+            "plural": "penningen",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "dossiervoering",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "dossiervoering",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "dossierhouder",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "dossierhouder",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "dossier",
-            "objecttypeNaam": "Dossier",
-            "meervoud": "dossiers",
-            "meervoudig": false
+            "node": "Role",
+            "name": "dossier",
+            "objectType": "Dossier",
+            "plural": "dossiers",
+            "many": false
           }
         ]
       }
@@ -143,33 +141,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "aantal penningen van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aantal penningen",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "aantal penningen",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het aantal penningen van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "penningen",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "penningen",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "penningen van de Jutter"
                   }
@@ -177,22 +173,22 @@
               ],
               "elementType": "Penning",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "penningbezit",
-                "rol": "penning"
+                "node": "RoleBinding",
+                "factType": "penningbezit",
+                "role": "penning"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal penningen van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -202,26 +198,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "penningtotaal",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "penningtotaal",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het penningtotaal van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "SOM",
+              "kind": "sum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "bedrag",
-                  "objecttype": "Penning",
+                  "node": "AttributeReference",
+                  "attribute": "bedrag",
+                  "subjectType": "Penning",
                   "source": {
                     "snippet": "het bedrag van alle penningen van de Jutter"
                   }
@@ -237,29 +231,29 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0"
                 }
               },
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "penningbezit",
-                "rol": "penning"
+                "node": "RoleBinding",
+                "factType": "penningbezit",
+                "role": "penning"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de som van het bedrag van alle penningen van de Jutter of 0 als die er niet zijn"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -269,26 +263,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aantal dossiers",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "aantal dossiers",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het aantal dossiers van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "dossiers",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "dossiers",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "dossiers van de Jutter"
                   }
@@ -296,28 +288,28 @@
               ],
               "elementType": "Dossier",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "dossiervoering",
-                "rol": "dossier"
+                "node": "RoleBinding",
+                "factType": "dossiervoering",
+                "role": "dossier"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal dossiers van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
+    "dayKindDefinitions": [],
+    "objectCreations": [
       {
         "node": "ObjectCreation",
         "name": "penning voor een gerechtigde jutter",
@@ -327,50 +319,46 @@
             "subject": "Jutter",
             "initialisations": [
               {
-                "node": "Toekenning",
-                "attribuut": "bedrag",
-                "waarde": {
-                  "node": "AttribuutRef",
-                  "attribuut": "vondstwaarde",
-                  "objecttype": "Jutter",
+                "node": "MemberInit",
+                "member": "bedrag",
+                "value": {
+                  "node": "AttributeReference",
+                  "attribute": "vondstwaarde",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "de vondstwaarde van de Jutter"
                   }
                 },
-                "kenmerk": false
+                "characteristic": false
               },
               {
-                "node": "Toekenning",
-                "attribuut": "uitgereikt",
-                "waarde": {
+                "node": "MemberInit",
+                "member": "uitgereikt",
+                "value": {
                   "node": "Literal",
                   "value": {
                     "boolean": true
                   },
                   "type": {
-                    "node": "Booleaan"
+                    "node": "Boolean"
                   },
                   "source": {
                     "snippet": "waar"
                   }
                 },
-                "kenmerk": true
+                "characteristic": true
               }
             ],
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "penninggerechtigd",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "penninggerechtigd",
+              "negated": false,
               "source": {
                 "snippet": "de Jutter is penninggerechtigd"
               }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
@@ -384,26 +372,22 @@
             "subject": "Jutter",
             "initialisations": [],
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "penninggerechtigd",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "penninggerechtigd",
+              "negated": false,
               "source": {
                 "snippet": "de Jutter is penninggerechtigd"
               }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
       }
     ],
-    "verdelingen": [],
-    "consistenties": [
+    "allocations": [],
+    "consistencies": [
       {
         "node": "Consistency",
         "name": "penningcontrole",
@@ -411,19 +395,15 @@
           {
             "subject": "Penning",
             "assertion": {
-              "node": "Kenmerk",
-              "kenmerk": "uitgereikt",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "uitgereikt",
+              "negated": false,
               "source": {
                 "snippet": "de Penning is uitgereikt"
               }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "source": {
               "snippet": "Er moet worden voldaan aan: elke Penning is uitgereikt",
@@ -439,16 +419,16 @@
           {
             "subject": "Penning",
             "assertion": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
                 "node": "Aggregation",
-                "kind": "AANTAL",
+                "kind": "count",
                 "arguments": [
                   {
-                    "node": "AttribuutRef",
-                    "attribuut": "houder",
-                    "objecttype": "Penning",
+                    "node": "AttributeReference",
+                    "attribute": "houder",
+                    "subjectType": "Penning",
                     "source": {
                       "snippet": "houder van de Penning"
                     }
@@ -456,21 +436,21 @@
                 ],
                 "elementType": "Jutter",
                 "sourceRole": {
-                  "node": "RolBinding",
-                  "feittype": "penningbezit",
-                  "rol": "houder"
+                  "node": "RoleBinding",
+                  "factType": "penningbezit",
+                  "role": "houder"
                 },
                 "type": {
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "source": {
                   "snippet": "het aantal houder van de Penning"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "1"
@@ -479,21 +459,18 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "1"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "het aantal houder van de Penning is groter of gelijk aan 1"
               }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "source": {
               "snippet": "Er moet worden voldaan aan: elke Penning heeft een houder",
@@ -503,10 +480,10 @@
         ]
       }
     ],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

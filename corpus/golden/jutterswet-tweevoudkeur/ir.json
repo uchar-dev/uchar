@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,14 +25,14 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
             "node": "Attribute",
             "name": "oordeel",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           }
         ],
@@ -40,12 +40,12 @@
           {
             "node": "Characteristic",
             "name": "gemerkt",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "gewogen",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -59,21 +59,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "oordeel bij tweevoudige keur",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "oordeel",
-              "objecttype": "Keurstuk",
+              "node": "AttributeReference",
+              "attribute": "oordeel",
+              "subjectType": "Keurstuk",
               "source": {
                 "snippet": "Het oordeel van een Keurstuk"
               }
@@ -84,49 +82,45 @@
                 "text": "tweevoudig"
               },
               "type": {
-                "node": "Tekst"
+                "node": "Text"
               },
               "source": {
                 "snippet": "'tweevoudig'"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "PRECIES",
-              "drempel": 2,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "exactly",
+              "threshold": 2,
+              "parts": [
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "gemerkt",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "gemerkt",
+                  "negated": false,
                   "source": {
                     "snippet": "het Keurstuk gemerkt is"
                   }
                 },
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "gewogen",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "gewogen",
+                  "negated": false,
                   "source": {
                     "snippet": "het Keurstuk gewogen is"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER_OF_GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "zegels",
-                    "objecttype": "Keurstuk",
+                  "node": "Comparison",
+                  "op": "greaterOrEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "zegels",
+                    "subjectType": "Keurstuk",
                     "source": {
                       "snippet": "de zegels van het Keurstuk"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "2"
@@ -135,13 +129,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "2"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn zegels groter of gelijk zijn aan 2"
                   }
@@ -152,7 +145,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -162,40 +155,38 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "zegelafschrift",
-              "objecttype": "Keurstuk",
+              "node": "AttributeReference",
+              "attribute": "zegelafschrift",
+              "subjectType": "Keurstuk",
               "source": {
                 "snippet": "Het zegelafschrift van een Keurstuk"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "zegels",
-              "objecttype": "Keurstuk",
+              "node": "AttributeReference",
+              "attribute": "zegels",
+              "subjectType": "Keurstuk",
               "source": {
                 "snippet": "de zegels van het Keurstuk"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

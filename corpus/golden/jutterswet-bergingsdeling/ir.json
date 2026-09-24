@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -64,7 +64,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -83,7 +83,7 @@
           {
             "node": "Characteristic",
             "name": "gemachtigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -101,7 +101,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -111,7 +111,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -130,23 +130,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "hoofdbergingsdeelname",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "hoofdbergingsdeelname",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "hoofdberging",
-            "objecttypeNaam": "Berging",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "hoofdberging",
+            "objectType": "Berging",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "hoofdberger",
-            "objecttypeNaam": "Hoofdberger",
-            "meervoud": "hoofdbergers",
-            "meervoudig": true
+            "node": "Role",
+            "name": "hoofdberger",
+            "objectType": "Hoofdberger",
+            "plural": "hoofdbergers",
+            "many": true
           }
         ]
       }
@@ -181,21 +180,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "toeslag van een hoofdberger",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "toeslag",
-              "objecttype": "Hoofdberger",
+              "node": "AttributeReference",
+              "attribute": "toeslag",
+              "subjectType": "Hoofdberger",
               "source": {
                 "snippet": "De toeslag van een Hoofdberger"
               }
@@ -209,7 +206,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "EUR",
@@ -226,24 +223,22 @@
               }
             },
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "gemachtigd",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "gemachtigd",
+              "negated": false,
               "source": {
                 "snippet": "de Hoofdberger gemachtigd is"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [
       {
         "node": "Allocation",
         "name": "verdeel de opbrengst van een berging",
@@ -253,29 +248,27 @@
             "sourceAttribute": "opbrengst",
             "targetType": "Hoofdberger",
             "targetAttribute": "bergingsaandeel",
-            "method": "GELIJKE_DELEN",
+            "method": "equalShares",
             "roundingDecimals": 0,
             "remainderAttribute": "onverdeelde rest",
             "descending": false,
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "connectingRole": {
-              "node": "RolBinding",
-              "feittype": "hoofdbergingsdeelname",
-              "rol": "hoofdberger"
+              "node": "RoleBinding",
+              "factType": "hoofdbergingsdeelname",
+              "role": "hoofdberger"
             }
           }
         ]
       }
     ],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

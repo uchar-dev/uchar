@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -65,7 +65,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -81,37 +81,35 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "bruto van een vondst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bruto",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "bruto",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De bruto van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "gewicht",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "het gewicht"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "5"
@@ -120,7 +118,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "5"
@@ -130,14 +128,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het gewicht van de Vondst plus 5"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -147,33 +145,31 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "marge",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "marge",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De marge van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "MIN",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "gewicht",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "minus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "het gewicht"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "korting",
-                "objecttype": "Vondst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "korting",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de korting"
                 }
@@ -182,14 +178,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het gewicht van de Vondst min de korting"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -199,33 +195,31 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "netto",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "netto",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De netto van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "VERMINDERD_MET",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "gewicht",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "reducedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "het gewicht"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "korting",
-                "objecttype": "Vondst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "korting",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de korting"
                 }
@@ -234,14 +228,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het gewicht van de Vondst verminderd met de korting"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -251,22 +245,20 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "som",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "som",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De som van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
                 "node": "Literal",
                 "value": {
                   "number": "5"
@@ -275,16 +267,16 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "5"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "korting",
-                "objecttype": "Vondst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "korting",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de korting"
                 }
@@ -293,26 +285,26 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "5 plus de korting van de Vondst"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -33,7 +33,7 @@
           {
             "node": "Characteristic",
             "name": "gehesen",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -50,7 +50,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -58,7 +58,7 @@
           {
             "node": "Characteristic",
             "name": "gehesen",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -72,93 +72,89 @@
           {
             "node": "Characteristic",
             "name": "gehesen",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "kustligging",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "kustligging",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "kustvak",
-            "objecttypeNaam": "Kustvak",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "kustvak",
+            "objectType": "Kustvak",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "post",
-            "objecttypeNaam": "Post",
-            "meervoud": "posten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "post",
+            "objectType": "Post",
+            "plural": "posten",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "seinvoering",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "seinvoering",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "post",
-            "objecttypeNaam": "Post",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "post",
+            "objectType": "Post",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "sein",
-            "objecttypeNaam": "Sein",
-            "meervoud": "seinen",
-            "meervoudig": true
+            "node": "Role",
+            "name": "sein",
+            "objectType": "Sein",
+            "plural": "seinen",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "vakbeseining",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "vakbeseining",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "seinvak",
-            "objecttypeNaam": "Kustvak",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "seinvak",
+            "objectType": "Kustvak",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "vaksein",
-            "objecttypeNaam": "Sein",
-            "meervoud": "vakseinen",
-            "meervoudig": true
+            "node": "Role",
+            "name": "vaksein",
+            "objectType": "Sein",
+            "plural": "vakseinen",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "vakverduistering",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "vakverduistering",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "duistervak",
-            "objecttypeNaam": "Kustvak",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "duistervak",
+            "objectType": "Kustvak",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "duistersein",
-            "objecttypeNaam": "Sein",
-            "meervoud": "duisterseinen",
-            "meervoudig": true
+            "node": "Role",
+            "name": "duistersein",
+            "objectType": "Sein",
+            "plural": "duisterseinen",
+            "many": true
           }
         ]
       }
@@ -171,33 +167,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "seinaantal van een post",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "seinaantal",
-              "objecttype": "Post",
+              "node": "AttributeReference",
+              "attribute": "seinaantal",
+              "subjectType": "Post",
               "source": {
                 "snippet": "Het seinaantal van een Post"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "seinen",
-                  "objecttype": "Post",
+                  "node": "AttributeReference",
+                  "attribute": "seinen",
+                  "subjectType": "Post",
                   "source": {
                     "snippet": "seinen van de post"
                   }
@@ -205,22 +199,22 @@
               ],
               "elementType": "Sein",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "seinvoering",
-                "rol": "sein"
+                "node": "RoleBinding",
+                "factType": "seinvoering",
+                "role": "sein"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal seinen van de post"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -230,26 +224,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vakseinaantal",
-              "objecttype": "Kustvak",
+              "node": "AttributeReference",
+              "attribute": "vakseinaantal",
+              "subjectType": "Kustvak",
               "source": {
                 "snippet": "Het vakseinaantal van een Kustvak"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "vakseinen",
-                  "objecttype": "Kustvak",
+                  "node": "AttributeReference",
+                  "attribute": "vakseinen",
+                  "subjectType": "Kustvak",
                   "source": {
                     "snippet": "vakseinen van het kustvak"
                   }
@@ -257,22 +249,22 @@
               ],
               "elementType": "Sein",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "vakbeseining",
-                "rol": "vaksein"
+                "node": "RoleBinding",
+                "factType": "vakbeseining",
+                "role": "vaksein"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal vakseinen van het kustvak"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -282,26 +274,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "duisteraantal",
-              "objecttype": "Kustvak",
+              "node": "AttributeReference",
+              "attribute": "duisteraantal",
+              "subjectType": "Kustvak",
               "source": {
                 "snippet": "Het duisteraantal van een Kustvak"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "duisterseinen",
-                  "objecttype": "Kustvak",
+                  "node": "AttributeReference",
+                  "attribute": "duisterseinen",
+                  "subjectType": "Kustvak",
                   "source": {
                     "snippet": "duisterseinen van het kustvak"
                   }
@@ -309,32 +299,32 @@
               ],
               "elementType": "Sein",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "vakverduistering",
-                "rol": "duistersein"
+                "node": "RoleBinding",
+                "factType": "vakverduistering",
+                "role": "duistersein"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal duisterseinen van het kustvak"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [
       {
         "node": "FactCreation",
         "name": "vakbeseining door het kustvak",
@@ -346,30 +336,27 @@
             "anchor": "Kustvak",
             "path": [
               {
-                "node": "RolBinding",
-                "feittype": "kustligging",
-                "rol": "post"
+                "node": "RoleBinding",
+                "factType": "kustligging",
+                "role": "post"
               },
               {
-                "node": "RolBinding",
-                "feittype": "seinvoering",
-                "rol": "sein"
+                "node": "RoleBinding",
+                "factType": "seinvoering",
+                "role": "sein"
               }
             ],
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "gehesen",
-              "negatie": false,
-              "eigenaar": "Sein",
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "gehesen",
+              "negated": false,
+              "host": "Sein",
               "source": {
                 "snippet": "het sein gehesen is"
               }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
@@ -385,37 +372,34 @@
             "anchor": "Kustvak",
             "path": [
               {
-                "node": "RolBinding",
-                "feittype": "kustligging",
-                "rol": "post"
+                "node": "RoleBinding",
+                "factType": "kustligging",
+                "role": "post"
               },
               {
-                "node": "RolBinding",
-                "feittype": "seinvoering",
-                "rol": "sein"
+                "node": "RoleBinding",
+                "factType": "seinvoering",
+                "role": "sein"
               }
             ],
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "gehesen",
-              "negatie": true,
-              "eigenaar": "Sein",
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "gehesen",
+              "negated": true,
+              "host": "Sein",
               "source": {
                 "snippet": "het sein niet gehesen is"
               }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
       }
     ],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

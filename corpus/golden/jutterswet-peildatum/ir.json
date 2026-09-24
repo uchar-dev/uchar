@@ -47,7 +47,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -57,7 +57,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -67,7 +67,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -77,7 +77,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -93,41 +93,39 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "peildatum van een vondst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "peildatum",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "peildatum",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De peildatum van een Vondst"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "EERSTE",
+              "kind": "first",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "vondstdatum",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "vondstdatum",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "haar vondstdatum"
                   }
                 },
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "melddatum",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "melddatum",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "haar melddatum"
                   }
@@ -143,7 +141,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -153,34 +151,32 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "sluitdatum",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "sluitdatum",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De sluitdatum van een Vondst"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "LAATSTE",
+              "kind": "last",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "vondstdatum",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "vondstdatum",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "haar vondstdatum"
                   }
                 },
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "melddatum",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "melddatum",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "haar melddatum"
                   }
@@ -196,7 +192,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -206,34 +202,32 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "laagloon",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "laagloon",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Het laagloon van een Vondst"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "EERSTE",
+              "kind": "first",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "bergloon",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "bergloon",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "haar bergloon"
                   }
                 },
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "meldloon",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "meldloon",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "haar meldloon"
                   }
@@ -244,14 +238,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de eerste van haar bergloon en haar meldloon"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -261,34 +255,32 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "hoogloon",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "hoogloon",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Het hoogloon van een Vondst"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "LAATSTE",
+              "kind": "last",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "bergloon",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "bergloon",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "haar bergloon"
                   }
                 },
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "meldloon",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "meldloon",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "haar meldloon"
                   }
@@ -299,26 +291,26 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de laatste van haar bergloon en haar meldloon"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

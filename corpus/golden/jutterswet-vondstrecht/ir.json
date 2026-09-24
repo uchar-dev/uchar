@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -103,21 +103,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "vondstrecht van een vondst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vondstrecht",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "vondstrecht",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Het vondstrecht van een Vondst"
               }
@@ -128,7 +126,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "EUR",
@@ -142,25 +140,25 @@
               },
               "binder": "toeslag",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "meerprijs",
-                "objecttype": "Vondst",
+                "node": "AttributeReference",
+                "attribute": "meerprijs",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de meerprijs van de Vondst"
                 }
               },
               "body": {
-                "node": "Binair",
-                "op": "PLUS",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "grondrecht",
-                  "objecttype": "Vondst",
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "grondrecht",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "het grondrecht van de Vondst"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "BinderRef",
                   "name": "toeslag",
                   "source": {
@@ -171,7 +169,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "EUR",
@@ -192,19 +190,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

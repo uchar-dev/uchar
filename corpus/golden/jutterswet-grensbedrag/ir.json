@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -61,31 +61,29 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "ondergrens van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "ondergrens",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "ondergrens",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De ondergrens van een Jutter"
               }
             },
             "value": {
-              "node": "Begrensd",
-              "basis": {
-                "node": "AttribuutRef",
-                "attribuut": "ruwbedrag",
-                "objecttype": "Jutter",
+              "node": "Clamp",
+              "base": {
+                "node": "AttributeReference",
+                "attribute": "ruwbedrag",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "het ruwbedrag van de Jutter"
                 }
@@ -99,25 +97,24 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "10"
                 }
               },
-              "maximum": null,
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het ruwbedrag van de Jutter begrensd op minimaal 10"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -127,29 +124,26 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bovengrens",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "bovengrens",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De bovengrens van een Jutter"
               }
             },
             "value": {
-              "node": "Begrensd",
-              "basis": {
-                "node": "AttribuutRef",
-                "attribuut": "ruwbedrag",
-                "objecttype": "Jutter",
+              "node": "Clamp",
+              "base": {
+                "node": "AttributeReference",
+                "attribute": "ruwbedrag",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "het ruwbedrag van de Jutter"
                 }
               },
-              "minimum": null,
               "maximum": {
                 "node": "Literal",
                 "value": {
@@ -159,7 +153,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "100"
@@ -169,14 +163,14 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het ruwbedrag van de Jutter begrensd op maximaal 100"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -186,24 +180,22 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bandbreedte",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "bandbreedte",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De bandbreedte van een Jutter"
               }
             },
             "value": {
-              "node": "Begrensd",
-              "basis": {
-                "node": "AttribuutRef",
-                "attribuut": "ruwbedrag",
-                "objecttype": "Jutter",
+              "node": "Clamp",
+              "base": {
+                "node": "AttributeReference",
+                "attribute": "ruwbedrag",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "het ruwbedrag van de Jutter"
                 }
@@ -217,7 +209,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "10"
@@ -232,7 +224,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "100"
@@ -242,26 +234,26 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het ruwbedrag van de Jutter begrensd op minimaal 10 en maximaal 100"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

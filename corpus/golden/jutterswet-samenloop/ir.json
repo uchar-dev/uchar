@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -43,12 +43,12 @@
           {
             "node": "Characteristic",
             "name": "berger",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "wachter",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -62,71 +62,64 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "samenloop van aanspraken",
-        "onderwerp": "Jutter",
-        "kenmerk": null,
-        "attribuut": "vergoeding",
+        "name": "samenloop van aanspraken",
+        "subject": "Jutter",
+        "attribute": "vergoeding",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "berger",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "berger",
+                  "negated": false,
                   "source": {
                     "snippet": "hij berger is"
                   }
                 },
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "wachter",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "wachter",
+                  "negated": false,
                   "source": {
                     "snippet": "hij wachter is"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "wachtgeld",
-                    "objecttype": "Jutter",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "wachtgeld",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "zijn wachtgeld"
                     }
                   },
-                  "rechts": {
-                    "node": "AttribuutRef",
-                    "attribuut": "berggeld",
-                    "objecttype": "Jutter",
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berggeld",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "zijn berggeld"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn wachtgeld hoger is dan zijn berggeld"
                   }
@@ -136,10 +129,10 @@
                 "snippet": "hij berger en wachter is en zijn wachtgeld hoger is dan zijn berggeld"
               }
             },
-            "consequentie": {
-              "node": "AttribuutRef",
-              "attribuut": "wachtgeld",
-              "objecttype": "Jutter",
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "wachtgeld",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "zijn wachtgeld"
               }
@@ -150,21 +143,18 @@
           },
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "berger",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "berger",
+              "negated": false,
               "source": {
                 "snippet": "hij berger is"
               }
             },
-            "consequentie": {
-              "node": "AttribuutRef",
-              "attribuut": "berggeld",
-              "objecttype": "Jutter",
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berggeld",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "zijn berggeld"
               }
@@ -175,21 +165,18 @@
           },
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "wachter",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "wachter",
+              "negated": false,
               "source": {
                 "snippet": "hij wachter is"
               }
             },
-            "consequentie": {
-              "node": "AttribuutRef",
-              "attribuut": "wachtgeld",
-              "objecttype": "Jutter",
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "wachtgeld",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "zijn wachtgeld"
               }
@@ -202,10 +189,8 @@
         "source": {
           "snippet": "samenloopbepaling: berggeld voor de berger, wachtgeld voor de wachter; bij samenloop van beide aanspraken geldt de hoogste"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -43,7 +43,7 @@
           {
             "node": "Characteristic",
             "name": "betwist",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -61,7 +61,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -80,7 +80,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -90,7 +90,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -99,23 +99,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "strandrechtregistratie",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "strandrechtregistratie",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "registrerende kustgemeente",
-            "objecttypeNaam": "Kustgemeente",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "registrerende kustgemeente",
+            "objectType": "Kustgemeente",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "geregistreerd strandrecht",
-            "objecttypeNaam": "Strandrecht",
-            "meervoud": "geregistreerde strandrechten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "geregistreerd strandrecht",
+            "objectType": "Strandrecht",
+            "plural": "geregistreerde strandrechten",
+            "many": true
           }
         ]
       }
@@ -128,21 +127,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "registratiekosten van een strandrecht",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "registratiekosten",
-              "objecttype": "Strandrecht",
+              "node": "AttributeReference",
+              "attribute": "registratiekosten",
+              "subjectType": "Strandrecht",
               "source": {
                 "snippet": "De registratiekosten van een Strandrecht"
               }
@@ -156,14 +153,14 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "5.00"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -173,26 +170,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "uitkeringstotaal",
-              "objecttype": "Kustgemeente",
+              "node": "AttributeReference",
+              "attribute": "uitkeringstotaal",
+              "subjectType": "Kustgemeente",
               "source": {
                 "snippet": "Het uitkeringstotaal van een Kustgemeente"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "SOM",
+              "kind": "sum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "uitkering",
-                  "objecttype": "Strandrecht",
+                  "node": "AttributeReference",
+                  "attribute": "uitkering",
+                  "subjectType": "Strandrecht",
                   "source": {
                     "snippet": "de uitkering van alle geregistreerde strandrechten van de Kustgemeente"
                   }
@@ -208,29 +203,29 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0.00"
                 }
               },
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "strandrechtregistratie",
-                "rol": "geregistreerd strandrecht"
+                "node": "RoleBinding",
+                "factType": "strandrechtregistratie",
+                "role": "geregistreerd strandrecht"
               },
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "de som van de uitkering van alle geregistreerde strandrechten van de Kustgemeente of 0,00 als die er niet zijn"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -240,26 +235,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "registertal",
-              "objecttype": "Kustgemeente",
+              "node": "AttributeReference",
+              "attribute": "registertal",
+              "subjectType": "Kustgemeente",
               "source": {
                 "snippet": "Het registertal van een Kustgemeente"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "geregistreerde strandrechten",
-                  "objecttype": "Kustgemeente",
+                  "node": "AttributeReference",
+                  "attribute": "geregistreerde strandrechten",
+                  "subjectType": "Kustgemeente",
                   "source": {
                     "snippet": "geregistreerde strandrechten van de Kustgemeente"
                   }
@@ -267,56 +260,52 @@
               ],
               "elementType": "Strandrecht",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "strandrechtregistratie",
-                "rol": "geregistreerd strandrecht"
+                "node": "RoleBinding",
+                "factType": "strandrechtregistratie",
+                "role": "geregistreerd strandrecht"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal geregistreerde strandrechten van de Kustgemeente"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "uitkering van een strandrecht",
-        "onderwerp": "Strandrecht",
-        "kenmerk": null,
-        "attribuut": "uitkering",
+        "name": "uitkering van een strandrecht",
+        "subject": "Strandrecht",
+        "attribute": "uitkering",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "betwist",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "betwist",
+              "negated": false,
               "source": {
                 "snippet": "het Strandrecht betwist is"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "99.00"
@@ -325,7 +314,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "99.00"
@@ -337,20 +326,19 @@
           },
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [],
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
               "source": {
                 "snippet": "altijd"
               }
             },
-            "consequentie": {
-              "node": "AttribuutRef",
-              "attribuut": "grondslag",
-              "objecttype": "Strandrecht",
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "grondslag",
+              "subjectType": "Strandrecht",
               "source": {
                 "snippet": "zijn grondslag"
               }
@@ -363,34 +351,30 @@
         "source": {
           "snippet": "art. 3: de uitkering van een Strandrecht"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       },
       {
         "node": "PrioritizedDefaults",
-        "naam": "uitkering van een wrakrecht",
-        "onderwerp": "Wrakrecht",
-        "kenmerk": null,
-        "attribuut": "uitkering",
+        "name": "uitkering van een wrakrecht",
+        "subject": "Wrakrecht",
+        "attribute": "uitkering",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "bergingsdiepte",
-                "objecttype": "Wrakrecht",
+            "justification": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "bergingsdiepte",
+                "subjectType": "Wrakrecht",
                 "source": {
                   "snippet": "zijn bergingsdiepte"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "20"
@@ -399,18 +383,17 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "20"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn bergingsdiepte groter is dan 20"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "55.00"
@@ -419,7 +402,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "55.00"
@@ -431,28 +414,27 @@
           },
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [],
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
               "source": {
                 "snippet": "altijd"
               }
             },
-            "consequentie": {
-              "node": "Binair",
-              "op": "MAAL",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "grondslag",
-                "objecttype": "Wrakrecht",
+            "consequence": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "grondslag",
+                "subjectType": "Wrakrecht",
                 "source": {
                   "snippet": "zijn grondslag"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "2"
@@ -461,7 +443,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "2"
@@ -471,7 +453,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "zijn grondslag maal 2"
@@ -485,10 +467,8 @@
         "source": {
           "snippet": "art. 4: de uitkering van een Wrakrecht"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

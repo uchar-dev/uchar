@@ -12,14 +12,14 @@
             "node": "Attribute",
             "name": "soort",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           },
           {
             "node": "Attribute",
             "name": "rubriek",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           },
           {
@@ -29,7 +29,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -37,17 +37,17 @@
           {
             "node": "Characteristic",
             "name": "gekeurd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "geborgen",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "weegplichtig",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -61,21 +61,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "rubriek bij organische soort",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "rubriek",
-              "objecttype": "Aanspoelsel",
+              "node": "AttributeReference",
+              "attribute": "rubriek",
+              "subjectType": "Aanspoelsel",
               "source": {
                 "snippet": "De rubriek van een Aanspoelsel"
               }
@@ -86,69 +84,67 @@
                 "text": "organisch"
               },
               "type": {
-                "node": "Tekst"
+                "node": "Text"
               },
               "source": {
                 "snippet": "'organisch'"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "TEN_MINSTE",
-              "drempel": 1,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "soort",
-                    "objecttype": "Aanspoelsel",
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "soort",
+                    "subjectType": "Aanspoelsel",
                     "source": {
                       "snippet": "de soort van het Aanspoelsel"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "text": "zeewier"
                     },
                     "type": {
-                      "node": "Tekst"
+                      "node": "Text"
                     },
                     "source": {
                       "snippet": "'zeewier'"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn soort gelijk is aan 'zeewier'"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "soort",
-                    "objecttype": "Aanspoelsel",
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "soort",
+                    "subjectType": "Aanspoelsel",
                     "source": {
                       "snippet": "de soort van het Aanspoelsel"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "text": "wrakhout"
                     },
                     "type": {
-                      "node": "Tekst"
+                      "node": "Text"
                     },
                     "source": {
                       "snippet": "'wrakhout'"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn soort gelijk is aan 'wrakhout'"
                   }
@@ -159,7 +155,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -169,14 +165,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "rubriek",
-              "objecttype": "Aanspoelsel",
+              "node": "AttributeReference",
+              "attribute": "rubriek",
+              "subjectType": "Aanspoelsel",
               "source": {
                 "snippet": "De rubriek van een Aanspoelsel"
               }
@@ -187,69 +181,67 @@
                 "text": "overig"
               },
               "type": {
-                "node": "Tekst"
+                "node": "Text"
               },
               "source": {
                 "snippet": "'overig'"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "ONGELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "soort",
-                    "objecttype": "Aanspoelsel",
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "soort",
+                    "subjectType": "Aanspoelsel",
                     "source": {
                       "snippet": "de soort van het Aanspoelsel"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "text": "zeewier"
                     },
                     "type": {
-                      "node": "Tekst"
+                      "node": "Text"
                     },
                     "source": {
                       "snippet": "'zeewier'"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn soort ongelijk is aan 'zeewier'"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "ONGELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "soort",
-                    "objecttype": "Aanspoelsel",
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "soort",
+                    "subjectType": "Aanspoelsel",
                     "source": {
                       "snippet": "de soort van het Aanspoelsel"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "text": "wrakhout"
                     },
                     "type": {
-                      "node": "Tekst"
+                      "node": "Text"
                     },
                     "source": {
                       "snippet": "'wrakhout'"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn soort ongelijk is aan 'wrakhout'"
                   }
@@ -260,7 +252,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -270,14 +262,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "weegplichtig",
-              "objecttype": "Aanspoelsel",
+              "node": "AttributeReference",
+              "attribute": "weegplichtig",
+              "subjectType": "Aanspoelsel",
               "source": {
                 "snippet": "Een Aanspoelsel is weegplichtig"
               }
@@ -288,49 +278,45 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "TEN_MINSTE",
-              "drempel": 2,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 2,
+              "parts": [
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "gekeurd",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "gekeurd",
+                  "negated": false,
                   "source": {
                     "snippet": "het Aanspoelsel gekeurd is"
                   }
                 },
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "geborgen",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "geborgen",
+                  "negated": false,
                   "source": {
                     "snippet": "het Aanspoelsel geborgen is"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER_OF_GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "stuks",
-                    "objecttype": "Aanspoelsel",
+                  "node": "Comparison",
+                  "op": "greaterOrEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "stuks",
+                    "subjectType": "Aanspoelsel",
                     "source": {
                       "snippet": "het stuks van het Aanspoelsel"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "10"
@@ -339,13 +325,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "10"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "het stuks groter of gelijk is aan 10"
                   }
@@ -360,14 +345,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

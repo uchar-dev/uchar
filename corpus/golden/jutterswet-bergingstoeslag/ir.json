@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -61,38 +61,36 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "bergingstoeslag van een jutter",
-        "onderwerp": "Jutter",
-        "kenmerk": null,
-        "attribuut": "bergingstoeslag",
+        "name": "bergingstoeslag van een jutter",
+        "subject": "Jutter",
+        "attribute": "bergingstoeslag",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aantal geborgen wrakken",
-                "objecttype": "Jutter",
+            "justification": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aantal geborgen wrakken",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn aantal geborgen wrakken"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "2"
@@ -101,45 +99,44 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "2"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn aantal geborgen wrakken groter of gelijk is aan 2"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Let",
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "binder": "bergingsgrond",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "bergingsgrondslag",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "bergingsgrondslag",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn bergingsgrondslag"
                 }
               },
               "body": {
-                "node": "Binair",
-                "op": "PLUS",
-                "links": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
                   "node": "BinderRef",
                   "name": "bergingsgrond",
                   "source": {
                     "snippet": "bergingsgrond"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "100.00"
@@ -148,7 +145,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "100.00"
@@ -158,7 +155,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "de bergingsgrond plus 100,00"
@@ -174,17 +171,16 @@
           },
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [],
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
               "source": {
                 "snippet": "altijd"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "0.00"
@@ -193,7 +189,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "0.00"
@@ -204,44 +200,40 @@
             }
           }
         ],
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       },
       {
         "node": "PrioritizedDefaults",
-        "naam": "bergingsforfait van een jutter",
-        "onderwerp": "Jutter",
-        "kenmerk": null,
-        "attribuut": "bergingsforfait",
+        "name": "bergingsforfait van een jutter",
+        "subject": "Jutter",
+        "attribute": "bergingsforfait",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [],
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
               "source": {
                 "snippet": "altijd"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Let",
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "binder": "bergingsgrond",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "bergingsgrondslag",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "bergingsgrondslag",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn bergingsgrondslag"
                 }
@@ -255,7 +247,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "42,00"
@@ -271,17 +263,16 @@
           },
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [],
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
               "source": {
                 "snippet": "altijd"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "0.00"
@@ -290,7 +281,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "0.00"
@@ -301,10 +292,8 @@
             }
           }
         ],
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

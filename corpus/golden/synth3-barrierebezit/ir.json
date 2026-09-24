@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -41,21 +41,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "heffing van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De heffing van een Jutter"
               }
@@ -66,40 +64,40 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "binder": "grondslag",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "grondslag",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "grondslag",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn grondslag"
                 }
               },
               "body": {
-                "node": "Binair",
-                "op": "PLUS",
-                "links": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
                   "node": "Let",
                   "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "binder": "opgehoogd",
                   "value": {
-                    "node": "Binair",
-                    "op": "PLUS",
-                    "links": {
+                    "node": "Binary",
+                    "op": "plus",
+                    "left": {
                       "node": "BinderRef",
                       "name": "grondslag",
                       "source": {
                         "snippet": "de grondslag"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "1.00"
@@ -108,7 +106,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "1,00"
@@ -118,7 +116,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de grondslag plus 1,00"
@@ -135,7 +133,7 @@
                     "snippet": "het opgehoogde is de grondslag plus 1,00"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "100.00"
@@ -144,7 +142,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "100,00"
@@ -154,7 +152,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "het opgehoogde plus 100,00"
@@ -165,19 +163,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

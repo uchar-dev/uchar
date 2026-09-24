@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -34,7 +34,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -54,7 +54,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -62,30 +62,29 @@
           {
             "node": "Characteristic",
             "name": "ongemeten",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "ligplaats",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "ligplaats",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "werf",
-            "objecttypeNaam": "Werf",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "werf",
+            "objectType": "Werf",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "schuit",
-            "objecttypeNaam": "Schuit",
-            "meervoud": "schuiten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "schuit",
+            "objectType": "Schuit",
+            "plural": "schuiten",
+            "many": true
           }
         ]
       }
@@ -98,21 +97,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "meldpremie van een schuit",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "meldpremie",
-              "objecttype": "Schuit",
+              "node": "AttributeReference",
+              "attribute": "meldpremie",
+              "subjectType": "Schuit",
               "source": {
                 "snippet": "De meldpremie van een Schuit"
               }
@@ -126,33 +123,31 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "40"
               }
             },
             "condition": {
-              "node": "Predicaat",
-              "soort": "LEEG",
+              "node": "Predicate",
+              "kind": "empty",
               "operand": {
-                "node": "AttribuutRef",
-                "attribuut": "lengte",
-                "objecttype": "Schuit",
+                "node": "AttributeReference",
+                "attribute": "lengte",
+                "subjectType": "Schuit",
                 "source": {
                   "snippet": "de lengte van de Schuit"
                 }
               },
-              "dagsoort": null,
-              "negatie": true,
-              "cijfers": 0,
-              "periode": null,
+              "negated": true,
+              "digits": 0,
               "source": {
                 "snippet": "de lengte van de Schuit niet leeg is"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -162,14 +157,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "ongemeten",
-              "objecttype": "Schuit",
+              "node": "AttributeReference",
+              "attribute": "ongemeten",
+              "subjectType": "Schuit",
               "source": {
                 "snippet": "Een Schuit is ongemeten"
               }
@@ -180,27 +173,25 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Predicaat",
-              "soort": "GEVULD",
+              "node": "Predicate",
+              "kind": "filled",
               "operand": {
-                "node": "AttribuutRef",
-                "attribuut": "lengte",
-                "objecttype": "Schuit",
+                "node": "AttributeReference",
+                "attribute": "lengte",
+                "subjectType": "Schuit",
                 "source": {
                   "snippet": "de lengte van de Schuit"
                 }
               },
-              "dagsoort": null,
-              "negatie": true,
-              "cijfers": 0,
-              "periode": null,
+              "negated": true,
+              "digits": 0,
               "source": {
                 "snippet": "de lengte van de Schuit niet gevuld is"
               }
@@ -215,14 +206,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "werfpremie",
-              "objecttype": "Schuit",
+              "node": "AttributeReference",
+              "attribute": "werfpremie",
+              "subjectType": "Schuit",
               "source": {
                 "snippet": "De werfpremie van een Schuit"
               }
@@ -236,52 +225,50 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "25"
               }
             },
             "condition": {
-              "node": "Predicaat",
-              "soort": "LEEG",
+              "node": "Predicate",
+              "kind": "empty",
               "operand": {
-                "node": "AttribuutRef",
-                "attribuut": "tarief",
-                "objecttype": "Werf",
+                "node": "AttributeReference",
+                "attribute": "tarief",
+                "subjectType": "Werf",
                 "source": {
                   "snippet": "het tarief van de werf van de Schuit"
                 },
-                "navigatieBindingen": [
+                "path": [
                   {
-                    "node": "RolBinding",
-                    "feittype": "ligplaats",
-                    "rol": "werf"
+                    "node": "RoleBinding",
+                    "factType": "ligplaats",
+                    "role": "werf"
                   }
                 ]
               },
-              "dagsoort": null,
-              "negatie": true,
-              "cijfers": 0,
-              "periode": null,
+              "negated": true,
+              "digits": 0,
               "source": {
                 "snippet": "het tarief van de werf van de Schuit niet leeg is"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

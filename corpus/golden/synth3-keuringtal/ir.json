@@ -23,7 +23,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -36,7 +36,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   }
                 ]
@@ -50,7 +50,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -60,7 +60,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -70,7 +70,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -92,7 +92,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -105,7 +105,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             }
           ]
@@ -118,21 +118,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "aantalAfgekeurd van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aantalAfgekeurd",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "aantalAfgekeurd",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het aantalAfgekeurd van een Jutter"
               }
@@ -143,7 +141,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
                 "node": "FilterList",
@@ -159,7 +157,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       },
                       {
@@ -172,32 +170,32 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       }
                     ]
                   }
                 },
                 "list": {
-                  "node": "AttribuutRef",
-                  "attribuut": "keuringen",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "keuringen",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn keuringen"
                   }
                 },
                 "binder": "k",
                 "condition": {
-                  "node": "Vergelijking",
-                  "op": "GELIJK",
-                  "links": {
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
                     "node": "BinderRef",
                     "name": "k",
                     "source": {
                       "snippet": "de keuring"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Construct",
                     "type": {
                       "node": "SumType",
@@ -209,7 +207,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         },
                         {
@@ -222,7 +220,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         }
                       ]
@@ -233,7 +231,6 @@
                       "snippet": "afgekeurd"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "de keuring gelijk is aan afgekeurd"
                   }
@@ -247,7 +244,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -257,14 +254,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aantalNietAfgekeurd",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "aantalNietAfgekeurd",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het aantalNietAfgekeurd van een Jutter"
               }
@@ -275,7 +270,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
                 "node": "FilterList",
@@ -291,7 +286,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       },
                       {
@@ -304,32 +299,32 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       }
                     ]
                   }
                 },
                 "list": {
-                  "node": "AttribuutRef",
-                  "attribuut": "keuringen",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "keuringen",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn keuringen"
                   }
                 },
                 "binder": "k",
                 "condition": {
-                  "node": "Vergelijking",
-                  "op": "ONGELIJK",
-                  "links": {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
                     "node": "BinderRef",
                     "name": "k",
                     "source": {
                       "snippet": "de keuring"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Construct",
                     "type": {
                       "node": "SumType",
@@ -341,7 +336,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         },
                         {
@@ -354,7 +349,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "NIET_NEGATIEF"
+                            "sign": "nonNegative"
                           }
                         }
                       ]
@@ -365,7 +360,6 @@
                       "snippet": "afgekeurd"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "de keuring ongelijk is aan afgekeurd"
                   }
@@ -379,7 +373,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -389,14 +383,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "totaalKeuringen",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "totaalKeuringen",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het totaalKeuringen van een Jutter"
               }
@@ -407,12 +399,12 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
-                "node": "AttribuutRef",
-                "attribuut": "keuringen",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "keuringen",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn keuringen"
                 }
@@ -422,19 +414,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

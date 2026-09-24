@@ -14,7 +14,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -22,7 +22,7 @@
           {
             "node": "Characteristic",
             "name": "overzees",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -38,7 +38,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -48,7 +48,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -58,7 +58,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -67,23 +67,21 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "Vondstaanslag_eigenaar",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "Vondstaanslag_eigenaar",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "eigenaar_houder",
-            "objecttypeNaam": "Vondstaanslag",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "eigenaar_houder",
+            "objectType": "Vondstaanslag",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "eigenaar",
-            "objecttypeNaam": "Eigenaar",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "eigenaar",
+            "objectType": "Eigenaar",
+            "many": false
           }
         ]
       }
@@ -96,21 +94,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "kenmerktoekenning overzees",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "overzees",
-              "objecttype": "Eigenaar",
+              "node": "AttributeReference",
+              "attribute": "overzees",
+              "subjectType": "Eigenaar",
               "source": {
                 "snippet": "de overzees"
               }
@@ -121,24 +117,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "registratiezone",
-                "objecttype": "Eigenaar",
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "registratiezone",
+                "subjectType": "Eigenaar",
                 "source": {
                   "snippet": "de registratiezone"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "100"
@@ -147,21 +143,20 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "100"
                 }
-              },
-              "periode": null
+              }
             },
             "initialisation": false
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
+    "dayKindDefinitions": [],
+    "objectCreations": [
       {
         "node": "ObjectCreation",
         "name": "richt eigenaar op",
@@ -171,77 +166,71 @@
             "subject": "Vondstaanslag",
             "initialisations": [
               {
-                "node": "Toekenning",
-                "attribuut": "registratiezone",
-                "waarde": {
-                  "node": "AttribuutRef",
-                  "attribuut": "registratiezone",
-                  "objecttype": "Vondstaanslag",
+                "node": "MemberInit",
+                "member": "registratiezone",
+                "value": {
+                  "node": "AttributeReference",
+                  "attribute": "registratiezone",
+                  "subjectType": "Vondstaanslag",
                   "source": {
                     "snippet": "de registratiezone"
                   }
                 },
-                "kenmerk": false
+                "characteristic": false
               }
             ],
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "connectingRole": {
-              "node": "RolBinding",
-              "feittype": "Vondstaanslag_eigenaar",
-              "rol": "eigenaar"
+              "node": "RoleBinding",
+              "factType": "Vondstaanslag_eigenaar",
+              "role": "eigenaar"
             }
           }
         ]
       }
     ],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "heffing",
-        "onderwerp": "Vondstaanslag",
-        "kenmerk": null,
-        "attribuut": "heffing",
+        "name": "heffing",
+        "subject": "Vondstaanslag",
+        "attribute": "heffing",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "overzees",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "overzees",
+              "negated": false,
               "source": {
                 "snippet": "de eigenaar is overzees"
               },
-              "navigatieBinding": {
-                "node": "RolBinding",
-                "feittype": "Vondstaanslag_eigenaar",
-                "rol": "eigenaar"
+              "navigation": {
+                "node": "RoleBinding",
+                "factType": "Vondstaanslag_eigenaar",
+                "role": "eigenaar"
               }
             },
-            "consequentie": {
-              "node": "Binair",
-              "op": "MAAL",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vondstwaarde",
-                "objecttype": "Vondstaanslag",
+            "consequence": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstwaarde",
+                "subjectType": "Vondstaanslag",
                 "source": {
                   "snippet": "de vondstwaarde"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "2"
@@ -250,7 +239,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "2"
@@ -260,7 +249,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             },
             "source": {
@@ -269,20 +258,19 @@
           },
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [],
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
               "source": {
                 "snippet": "altijd"
               }
             },
-            "consequentie": {
-              "node": "AttribuutRef",
-              "attribuut": "vondstwaarde",
-              "objecttype": "Vondstaanslag",
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "vondstwaarde",
+              "subjectType": "Vondstaanslag",
               "source": {
                 "snippet": "de vondstwaarde"
               }
@@ -295,10 +283,8 @@
         "source": {
           "snippet": "heffing"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

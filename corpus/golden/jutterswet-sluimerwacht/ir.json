@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -33,17 +33,17 @@
           {
             "node": "Characteristic",
             "name": "bemand",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "verlicht",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "sluimerend",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -57,21 +57,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "sluimerstand bij beperkte dienst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "sluimerend",
-              "objecttype": "Seinpost",
+              "node": "AttributeReference",
+              "attribute": "sluimerend",
+              "subjectType": "Seinpost",
               "source": {
                 "snippet": "Een Seinpost is sluimerend"
               }
@@ -82,49 +80,45 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "TEN_HOOGSTE",
-              "drempel": 1,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "atMost",
+              "threshold": 1,
+              "parts": [
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "bemand",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "bemand",
+                  "negated": false,
                   "source": {
                     "snippet": "de Seinpost bemand is"
                   }
                 },
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "verlicht",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "verlicht",
+                  "negated": false,
                   "source": {
                     "snippet": "de Seinpost verlicht is"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "meldingen",
-                    "objecttype": "Seinpost",
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "meldingen",
+                    "subjectType": "Seinpost",
                     "source": {
                       "snippet": "de meldingen van de Seinpost"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "2"
@@ -133,13 +127,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "2"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "haar meldingen groter zijn dan 2"
                   }
@@ -159,40 +152,38 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "meldingsafschrift",
-              "objecttype": "Seinpost",
+              "node": "AttributeReference",
+              "attribute": "meldingsafschrift",
+              "subjectType": "Seinpost",
               "source": {
                 "snippet": "Het meldingsafschrift van een Seinpost"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "meldingen",
-              "objecttype": "Seinpost",
+              "node": "AttributeReference",
+              "attribute": "meldingen",
+              "subjectType": "Seinpost",
               "source": {
                 "snippet": "de meldingen van de Seinpost"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

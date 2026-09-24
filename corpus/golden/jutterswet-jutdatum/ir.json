@@ -29,17 +29,17 @@
           {
             "node": "Characteristic",
             "name": "midzomers",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "nagekomen",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "vroeg",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -53,21 +53,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "midzomerse vondst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "midzomers",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "midzomers",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is midzomers"
               }
@@ -78,24 +76,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vondstdatum",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstdatum",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de vondstdatum van de Vondst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "date": "2026-06-21"
@@ -108,7 +106,6 @@
                   "snippet": "21-06-2026"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "haar vondstdatum gelijk is aan 21-06-2026"
               }
@@ -123,14 +120,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "nagekomen",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "nagekomen",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is nagekomen"
               }
@@ -141,24 +136,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "ONGELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vondstdatum",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "notEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstdatum",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de vondstdatum van de Vondst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "date": "2026-06-21"
@@ -171,7 +166,6 @@
                   "snippet": "21-06-2026"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "haar vondstdatum ongelijk is aan 21-06-2026"
               }
@@ -186,14 +180,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vroeg",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "vroeg",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is vroeg"
               }
@@ -204,24 +196,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "EERDER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vondstdatum",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "earlier",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstdatum",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de vondstdatum van de Vondst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "date": "2026-06-01"
@@ -234,7 +226,6 @@
                   "snippet": "01-06-2026"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "haar vondstdatum eerder is dan 01-06-2026"
               }
@@ -249,40 +240,38 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "keurdatum",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "keurdatum",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De keurdatum van een Vondst"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "vondstdatum",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "vondstdatum",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "de vondstdatum van de Vondst"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

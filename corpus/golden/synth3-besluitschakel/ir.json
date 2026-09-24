@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -31,7 +31,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 {
@@ -48,7 +48,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -64,7 +64,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       }
     ],
@@ -81,7 +81,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -98,21 +98,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "uitkomst bij hoge score",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "uitkomst",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "uitkomst",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De uitkomst van een Jutter"
               }
@@ -129,7 +127,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -140,9 +138,9 @@
               },
               "constructor": "Toegewezen",
               "argument": {
-                "node": "AttribuutRef",
-                "attribuut": "score",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "score",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn score"
                 }
@@ -152,30 +150,29 @@
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "score",
-                "objecttype": "Jutter",
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "score",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn score"
                 }
               },
-              "rechts": {
-                "node": "ParameterRef",
+              "right": {
+                "node": "ParameterReference",
                 "parameter": "drempel",
                 "source": {
                   "snippet": "de drempel"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn score groter of gelijk aan de drempel"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -185,14 +182,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "uitkomst",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "uitkomst",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De uitkomst van een Jutter"
               }
@@ -209,7 +204,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -225,30 +220,29 @@
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "KLEINER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "score",
-                "objecttype": "Jutter",
+              "node": "Comparison",
+              "op": "less",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "score",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn score"
                 }
               },
-              "rechts": {
-                "node": "ParameterRef",
+              "right": {
+                "node": "ParameterReference",
                 "parameter": "drempel",
                 "source": {
                   "snippet": "de drempel"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn score kleiner dan de drempel"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -258,14 +252,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bedrag",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "bedrag",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het bedrag van een Jutter"
               }
@@ -276,12 +268,12 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "scrutinee": {
-                "node": "AttribuutRef",
-                "attribuut": "uitkomst",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "uitkomst",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn uitkomst"
                 }
@@ -291,16 +283,16 @@
                   "constructor": "Toegewezen",
                   "binder": "b",
                   "body": {
-                    "node": "Binair",
-                    "op": "PLUS",
-                    "links": {
+                    "node": "Binary",
+                    "op": "plus",
+                    "left": {
                       "node": "BinderRef",
                       "name": "b",
                       "source": {
                         "snippet": "het toegewezen bedrag"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "10.00"
@@ -309,7 +301,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "10.00"
@@ -319,7 +311,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "het toegewezen bedrag plus 10.00"
@@ -338,7 +330,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0.00"
@@ -351,19 +343,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

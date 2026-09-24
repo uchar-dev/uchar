@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "%",
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "%",
@@ -53,12 +53,12 @@
           {
             "node": "Characteristic",
             "name": "overbelast",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "bergergunstig",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -72,21 +72,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "overbelast bij gezamenlijke afdracht",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "overbelast",
-              "objecttype": "Wrakstuk",
+              "node": "AttributeReference",
+              "attribute": "overbelast",
+              "subjectType": "Wrakstuk",
               "source": {
                 "snippet": "Een Wrakstuk is overbelast"
               }
@@ -97,30 +95,30 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "Binair",
-                "op": "PLUS",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "bergloonpercentage",
-                  "objecttype": "Wrakstuk",
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "bergloonpercentage",
+                  "subjectType": "Wrakstuk",
                   "source": {
                     "snippet": "het bergloonpercentage van het Wrakstuk"
                   }
                 },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "havengeldpercentage",
-                  "objecttype": "Wrakstuk",
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "havengeldpercentage",
+                  "subjectType": "Wrakstuk",
                   "source": {
                     "snippet": "het havengeldpercentage van het Wrakstuk"
                   }
@@ -129,7 +127,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "%",
@@ -144,7 +142,7 @@
                   "snippet": "het bergloonpercentage van het Wrakstuk plus het havengeldpercentage van het Wrakstuk"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "50"
@@ -153,7 +151,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "%",
@@ -168,7 +166,6 @@
                   "snippet": "50%"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "het bergloonpercentage van het Wrakstuk plus het havengeldpercentage van het Wrakstuk groter is dan 50%"
               }
@@ -183,14 +180,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bergergunstig",
-              "objecttype": "Wrakstuk",
+              "node": "AttributeReference",
+              "attribute": "bergergunstig",
+              "subjectType": "Wrakstuk",
               "source": {
                 "snippet": "Een Wrakstuk is bergergunstig"
               }
@@ -201,30 +196,30 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "Binair",
-                "op": "MIN",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "bergloonpercentage",
-                  "objecttype": "Wrakstuk",
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Binary",
+                "op": "minus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "bergloonpercentage",
+                  "subjectType": "Wrakstuk",
                   "source": {
                     "snippet": "het bergloonpercentage van het Wrakstuk"
                   }
                 },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "havengeldpercentage",
-                  "objecttype": "Wrakstuk",
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "havengeldpercentage",
+                  "subjectType": "Wrakstuk",
                   "source": {
                     "snippet": "het havengeldpercentage van het Wrakstuk"
                   }
@@ -233,7 +228,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "%",
@@ -248,7 +243,7 @@
                   "snippet": "het bergloonpercentage van het Wrakstuk min het havengeldpercentage van het Wrakstuk"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "20"
@@ -257,7 +252,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "%",
@@ -272,7 +267,6 @@
                   "snippet": "20%"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "het bergloonpercentage van het Wrakstuk min het havengeldpercentage van het Wrakstuk groter is dan 20%"
               }
@@ -282,14 +276,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

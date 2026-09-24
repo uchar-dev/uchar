@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 1,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 1,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 1,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -65,7 +65,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 1,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -75,7 +75,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -85,7 +85,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -95,7 +95,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -105,7 +105,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 1,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -115,7 +115,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 1,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -125,7 +125,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -135,7 +135,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 1,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -151,40 +151,38 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "oppervlak van een zeil",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "oppervlak",
-              "objecttype": "Zeil",
+              "node": "AttributeReference",
+              "attribute": "oppervlak",
+              "subjectType": "Zeil",
               "source": {
                 "snippet": "Het oppervlak van een Zeil"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "MAAL",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "hoogte",
-                "objecttype": "Zeil",
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "hoogte",
+                "subjectType": "Zeil",
                 "source": {
                   "snippet": "de hoogte van het Zeil"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "breedte",
-                "objecttype": "Zeil",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "breedte",
+                "subjectType": "Zeil",
                 "source": {
                   "snippet": "de breedte van het Zeil"
                 }
@@ -193,14 +191,14 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de hoogte van het Zeil maal de breedte van het Zeil"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -210,33 +208,31 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "zoomlengte",
-              "objecttype": "Zeil",
+              "node": "AttributeReference",
+              "attribute": "zoomlengte",
+              "subjectType": "Zeil",
               "source": {
                 "snippet": "De zoomlengte van een Zeil"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "naadtoeslag",
-                "objecttype": "Zeil",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "naadtoeslag",
+                "subjectType": "Zeil",
                 "source": {
                   "snippet": "de naadtoeslag van het Zeil"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "basiszoom",
-                "objecttype": "Zeil",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "basiszoom",
+                "subjectType": "Zeil",
                 "source": {
                   "snippet": "de basiszoom van het Zeil"
                 }
@@ -245,14 +241,14 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de naadtoeslag van het Zeil plus de basiszoom van het Zeil"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -262,33 +258,31 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "stukprijs",
-              "objecttype": "Zeil",
+              "node": "AttributeReference",
+              "attribute": "stukprijs",
+              "subjectType": "Zeil",
               "source": {
                 "snippet": "De stukprijs van een Zeil"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "GEDEELD_DOOR",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "materiaalkosten",
-                "objecttype": "Zeil",
+              "node": "Binary",
+              "op": "dividedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "materiaalkosten",
+                "subjectType": "Zeil",
                 "source": {
                   "snippet": "de materiaalkosten van het Zeil"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "panelen",
-                "objecttype": "Zeil",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "panelen",
+                "subjectType": "Zeil",
                 "source": {
                   "snippet": "de panelen van het Zeil"
                 }
@@ -297,14 +291,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de materiaalkosten van het Zeil gedeeld door de panelen van het Zeil"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -314,44 +308,42 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "restlengte",
-              "objecttype": "Zeil",
+              "node": "AttributeReference",
+              "attribute": "restlengte",
+              "subjectType": "Zeil",
               "source": {
                 "snippet": "De restlengte van een Zeil"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "VERMINDERD_MET",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "rollengte",
-                "objecttype": "Zeil",
+              "node": "Binary",
+              "op": "reducedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "rollengte",
+                "subjectType": "Zeil",
                 "source": {
                   "snippet": "de rollengte van het Zeil"
                 }
               },
-              "rechts": {
-                "node": "Binair",
-                "op": "MAAL",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "baanlengte",
-                  "objecttype": "Zeil",
+              "right": {
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "baanlengte",
+                  "subjectType": "Zeil",
                   "source": {
                     "snippet": "de baanlengte van het Zeil"
                   }
                 },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "aantalBanen",
-                  "objecttype": "Zeil",
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "aantalBanen",
+                  "subjectType": "Zeil",
                   "source": {
                     "snippet": "het aantalBanen van het Zeil"
                   }
@@ -360,7 +352,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 1,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "de baanlengte van het Zeil maal het aantalBanen van het Zeil"
@@ -370,26 +362,26 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 1,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de rollengte van het Zeil verminderd met de baanlengte van het Zeil maal het aantalBanen van het Zeil"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

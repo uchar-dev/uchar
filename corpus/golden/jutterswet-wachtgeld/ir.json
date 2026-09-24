@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -23,17 +23,17 @@
           {
             "node": "Characteristic",
             "name": "kustwacht",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "havenmeester",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "strandvoogd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -47,37 +47,33 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "wachtgeld voor kustwachters",
-        "onderwerp": "Jutter",
-        "kenmerk": null,
-        "attribuut": "wachtgeld",
+        "name": "wachtgeld voor kustwachters",
+        "subject": "Jutter",
+        "attribute": "wachtgeld",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "kustwacht",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "kustwacht",
+              "negated": false,
               "source": {
                 "snippet": "hij kustwacht is"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "30"
@@ -86,7 +82,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "30"
@@ -94,34 +90,28 @@
             }
           }
         ],
-        "ongeordend": true,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "unordered": true,
+        "validity": {
+          "node": "Validity"
         }
       },
       {
         "node": "PrioritizedDefaults",
-        "naam": "wachtgeld voor havenmeesters",
-        "onderwerp": "Jutter",
-        "kenmerk": null,
-        "attribuut": "wachtgeld",
+        "name": "wachtgeld voor havenmeesters",
+        "subject": "Jutter",
+        "attribute": "wachtgeld",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "havenmeester",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "havenmeester",
+              "negated": false,
               "source": {
                 "snippet": "hij havenmeester is"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "45"
@@ -130,7 +120,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "45"
@@ -138,34 +128,28 @@
             }
           }
         ],
-        "ongeordend": true,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "unordered": true,
+        "validity": {
+          "node": "Validity"
         }
       },
       {
         "node": "PrioritizedDefaults",
-        "naam": "wachtgeld voor strandvoogden",
-        "onderwerp": "Jutter",
-        "kenmerk": null,
-        "attribuut": "wachtgeld",
+        "name": "wachtgeld voor strandvoogden",
+        "subject": "Jutter",
+        "attribute": "wachtgeld",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "strandvoogd",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "strandvoogd",
+              "negated": false,
               "source": {
                 "snippet": "hij strandvoogd is"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "30"
@@ -174,7 +158,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "30"
@@ -182,11 +166,9 @@
             }
           }
         ],
-        "ongeordend": true,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "unordered": true,
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 5,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -33,7 +33,7 @@
             "node": "Number",
             "whole": true,
             "decimals": 0,
-            "sign": "NIET_NEGATIEF"
+            "sign": "nonNegative"
           }
         }
       }
@@ -45,21 +45,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "kaptotaal van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "kaptotaal",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "kaptotaal",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het kaptotaal van een Jutter"
               }
@@ -70,10 +68,10 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 5,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
-                "node": "ParameterRef",
+                "node": "ParameterReference",
                 "parameter": "kindertallen",
                 "source": {
                   "snippet": "de kindertallen"
@@ -88,7 +86,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 5,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -97,31 +95,31 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   }
                 ],
                 "body": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
                     "node": "BinderRef",
                     "name": "acc",
                     "source": {
                       "snippet": "het opgetelde kapdeel"
                     }
                   },
-                  "rechts": {
-                    "node": "Binair",
-                    "op": "GEDEELD_DOOR_ABS",
-                    "links": {
+                  "right": {
+                    "node": "Binary",
+                    "op": "dividedByAbs",
+                    "left": {
                       "node": "BinderRef",
                       "name": "x",
                       "source": {
                         "snippet": "het kindertal"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "3"
@@ -130,7 +128,7 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "3"
@@ -140,7 +138,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 5,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "het kindertal absoluut gedeeld door 3"
@@ -150,7 +148,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 5,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "het opgetelde kapdeel plus het kapdeel"
@@ -169,7 +167,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 5,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0.00000"
@@ -180,19 +178,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

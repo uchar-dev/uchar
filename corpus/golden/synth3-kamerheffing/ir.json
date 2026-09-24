@@ -15,14 +15,14 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
             "node": "Attribute",
             "name": "omvangrijk",
             "datatype": {
-              "node": "Booleaan"
+              "node": "Boolean"
             }
           },
           {
@@ -32,7 +32,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -51,7 +51,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -61,7 +61,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -69,30 +69,28 @@
           {
             "node": "Characteristic",
             "name": "groot",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "kamerbinding",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "kamerbinding",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "houder",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "houder",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "kamer",
-            "objecttypeNaam": "Kamer",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "kamer",
+            "objectType": "Kamer",
+            "many": false
           }
         ]
       }
@@ -105,37 +103,35 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "heffing van een grote kamer",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Kamer",
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Kamer",
               "source": {
                 "snippet": "De heffing van een grote Kamer"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "MAAL",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "grondslag",
-                "objecttype": "Kamer",
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "grondslag",
+                "subjectType": "Kamer",
                 "source": {
                   "snippet": "de grondslag van de Kamer"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "2"
@@ -144,7 +140,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "2"
@@ -154,24 +150,22 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de grondslag van de Kamer maal 2"
               }
             },
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "groot",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "groot",
+              "negated": false,
               "source": {
                 "snippet": "de Kamer is groot"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -181,38 +175,34 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Kamer",
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Kamer",
               "source": {
                 "snippet": "De heffing van een gewone Kamer"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "grondslag",
-              "objecttype": "Kamer",
+              "node": "AttributeReference",
+              "attribute": "grondslag",
+              "subjectType": "Kamer",
               "source": {
                 "snippet": "de grondslag van de Kamer"
               }
             },
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "groot",
-              "negatie": true,
-              "eigenaar": null,
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "groot",
+              "negated": true,
               "source": {
                 "snippet": "de Kamer is niet groot"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -222,41 +212,39 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De heffing van een Jutter"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Kamer",
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Kamer",
               "source": {
                 "snippet": "de heffing van haar kamer"
               },
-              "navigatieBindingen": [
+              "path": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "kamerbinding",
-                  "rol": "kamer"
+                  "node": "RoleBinding",
+                  "factType": "kamerbinding",
+                  "role": "kamer"
                 }
               ]
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
+    "dayKindDefinitions": [],
+    "objectCreations": [
       {
         "node": "ObjectCreation",
         "name": "richt de kamer op",
@@ -266,52 +254,50 @@
             "subject": "Jutter",
             "initialisations": [
               {
-                "node": "Toekenning",
-                "attribuut": "grondslag",
-                "waarde": {
-                  "node": "AttribuutRef",
-                  "attribuut": "grondslag",
-                  "objecttype": "Jutter",
+                "node": "MemberInit",
+                "member": "grondslag",
+                "value": {
+                  "node": "AttributeReference",
+                  "attribute": "grondslag",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "de grondslag van de Jutter"
                   }
                 },
-                "kenmerk": false
+                "characteristic": false
               },
               {
-                "node": "Toekenning",
-                "attribuut": "groot",
-                "waarde": {
-                  "node": "AttribuutRef",
-                  "attribuut": "omvangrijk",
-                  "objecttype": "Jutter",
+                "node": "MemberInit",
+                "member": "groot",
+                "value": {
+                  "node": "AttributeReference",
+                  "attribute": "omvangrijk",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "de omvangrijk van de Jutter"
                   }
                 },
-                "kenmerk": true
+                "characteristic": true
               }
             ],
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "connectingRole": {
-              "node": "RolBinding",
-              "feittype": "kamerbinding",
-              "rol": "kamer"
+              "node": "RoleBinding",
+              "factType": "kamerbinding",
+              "role": "kamer"
             }
           }
         ]
       }
     ],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

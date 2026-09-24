@@ -15,11 +15,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "JAAR",
+              "granularity": "year",
               "count": 1
             }
           },
@@ -30,11 +30,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "JAAR",
+              "granularity": "year",
               "count": 1
             }
           },
@@ -45,11 +45,11 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
@@ -60,11 +60,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
@@ -81,20 +81,20 @@
           {
             "node": "Characteristic",
             "name": "vergund",
-            "kind": "BIJVOEGLIJK",
+            "kind": "adjectival",
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
           {
             "node": "Characteristic",
             "name": "aanwezig",
-            "kind": "BIJVOEGLIJK",
+            "kind": "adjectival",
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           }
@@ -110,62 +110,58 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "jaarpacht van een strandpachter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "jaarpacht",
-              "objecttype": "Strandpachter",
+              "node": "AttributeReference",
+              "attribute": "jaarpacht",
+              "subjectType": "Strandpachter",
               "source": {
                 "snippet": "De jaarpacht van een Strandpachter"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "TIJDSEVENREDIG_DEEL",
+              "kind": "timeProportionalPart",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "pachttarief",
-                  "objecttype": "Strandpachter",
+                  "node": "AttributeReference",
+                  "attribute": "pachttarief",
+                  "subjectType": "Strandpachter",
                   "source": {
                     "snippet": "zijn pachttarief"
                   }
                 }
               ],
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "vergund",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "vergund",
+                "negated": false,
                 "source": {
                   "snippet": "gedurende de tijd dat hij vergund is"
                 }
               },
-              "granularity": "JAAR",
+              "granularity": "year",
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het tijdsevenredig deel per jaar van zijn pachttarief gedurende de tijd dat hij vergund is"
               }
             },
             "condition": {
-              "node": "Periode",
-              "vanaf": {
+              "node": "TimeWindow",
+              "from": {
                 "node": "Literal",
                 "value": {
                   "date": "2025-01-01"
@@ -178,14 +174,13 @@
                   "snippet": "1 januari 2025"
                 }
               },
-              "tot": null,
-              "totInclusief": false,
+              "toInclusive": false,
               "source": {
                 "snippet": "vanaf 1 januari 2025"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -195,55 +190,51 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "maandpacht",
-              "objecttype": "Strandpachter",
+              "node": "AttributeReference",
+              "attribute": "maandpacht",
+              "subjectType": "Strandpachter",
               "source": {
                 "snippet": "De maandpacht van een Strandpachter"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "TIJDSEVENREDIG_DEEL",
+              "kind": "timeProportionalPart",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "pachttarief",
-                  "objecttype": "Strandpachter",
+                  "node": "AttributeReference",
+                  "attribute": "pachttarief",
+                  "subjectType": "Strandpachter",
                   "source": {
                     "snippet": "zijn pachttarief"
                   }
                 }
               ],
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "vergund",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "vergund",
+                "negated": false,
                 "source": {
                   "snippet": "gedurende de tijd dat hij vergund is"
                 }
               },
-              "granularity": "MAAND",
+              "granularity": "month",
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het tijdsevenredig deel per maand van zijn pachttarief gedurende de tijd dat hij vergund is"
               }
             },
             "condition": {
-              "node": "Periode",
-              "vanaf": {
+              "node": "TimeWindow",
+              "from": {
                 "node": "Literal",
                 "value": {
                   "date": "2025-03-01"
@@ -256,7 +247,7 @@
                   "snippet": "1 maart 2025"
                 }
               },
-              "tot": {
+              "to": {
                 "node": "Literal",
                 "value": {
                   "date": "2025-04-30"
@@ -269,13 +260,13 @@
                   "snippet": "30 april 2025"
                 }
               },
-              "totInclusief": true,
+              "toInclusive": true,
               "source": {
                 "snippet": "van 1 maart 2025 tot en met 30 april 2025"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -285,54 +276,50 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "zomerdagen",
-              "objecttype": "Strandpachter",
+              "node": "AttributeReference",
+              "attribute": "zomerdagen",
+              "subjectType": "Strandpachter",
               "source": {
                 "snippet": "De zomerdagen van een Strandpachter"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "AANTAL_DAGEN_IN",
+              "kind": "dayCount",
               "arguments": [],
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "aanwezig",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "aanwezig",
+                "negated": false,
                 "source": {
                   "snippet": "gedurende de tijd dat hij aanwezig is"
                 }
               },
-              "granularity": "MAAND",
+              "granularity": "month",
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal dagen in de maand dat hij aanwezig is"
               }
             },
             "condition": {
-              "node": "Periode",
-              "vanaf": {
-                "node": "AttribuutRef",
-                "attribuut": "ingangsdatum",
-                "objecttype": "Strandpachter",
+              "node": "TimeWindow",
+              "from": {
+                "node": "AttributeReference",
+                "attribute": "ingangsdatum",
+                "subjectType": "Strandpachter",
                 "source": {
                   "snippet": "de ingangsdatum van de Strandpachter"
                 }
               },
-              "tot": {
+              "to": {
                 "node": "Literal",
                 "value": {
                   "date": "2025-09-01"
@@ -345,25 +332,25 @@
                   "snippet": "1 september 2025"
                 }
               },
-              "totInclusief": false,
+              "toInclusive": false,
               "source": {
                 "snippet": "vanaf de ingangsdatum van de Strandpachter tot 1 september 2025"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

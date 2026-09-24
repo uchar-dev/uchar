@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -31,7 +31,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "NIET_NEGATIEF"
+          "sign": "nonNegative"
         }
       },
       {
@@ -43,7 +43,7 @@
             "node": "Number",
             "whole": true,
             "decimals": 0,
-            "sign": "NIET_NEGATIEF"
+            "sign": "nonNegative"
           }
         }
       }
@@ -55,21 +55,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "lettotaal van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "lettotaal",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "lettotaal",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het lettotaal van een Jutter"
               }
@@ -80,10 +78,10 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
-                "node": "ParameterRef",
+                "node": "ParameterReference",
                 "parameter": "kindertallen",
                 "source": {
                   "snippet": "de kindertallen"
@@ -98,7 +96,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -107,40 +105,40 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   }
                 ],
                 "body": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
                     "node": "BinderRef",
                     "name": "acc",
                     "source": {
                       "snippet": "de opgetelde bijdrage"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Let",
                     "type": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "binder": "bijdrage",
                     "value": {
-                      "node": "Binair",
-                      "op": "MAAL",
-                      "links": {
-                        "node": "ParameterRef",
+                      "node": "Binary",
+                      "op": "times",
+                      "left": {
+                        "node": "ParameterReference",
                         "parameter": "grondslag",
                         "source": {
                           "snippet": "de grondslag"
                         }
                       },
-                      "rechts": {
+                      "right": {
                         "node": "BinderRef",
                         "name": "x",
                         "source": {
@@ -151,7 +149,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "de grondslag maal het kindertal"
@@ -172,7 +170,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "de opgetelde bijdrage plus de bijdrage"
@@ -191,7 +189,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0.00"
@@ -202,19 +200,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

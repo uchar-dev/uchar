@@ -15,11 +15,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
@@ -30,7 +30,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -40,7 +40,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -50,7 +50,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -60,7 +60,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -76,21 +76,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "klipteken van een kustwacht",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "klipteken",
-              "objecttype": "Kustwacht",
+              "node": "AttributeReference",
+              "attribute": "klipteken",
+              "subjectType": "Kustwacht",
               "source": {
                 "snippet": "Het klipteken van een Kustwacht"
               }
@@ -104,29 +102,29 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "ONGELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "ploegomvang",
-                    "objecttype": "Kustwacht",
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ploegomvang",
+                    "subjectType": "Kustwacht",
                     "source": {
                       "snippet": "zijn ploegomvang"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -135,28 +133,27 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn ploegomvang is ongelijk aan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
                     "node": "Aggregation",
-                    "kind": "TOTAAL",
+                    "kind": "total",
                     "arguments": [
                       {
-                        "node": "AttribuutRef",
-                        "attribuut": "wachtvergoeding per maand",
-                        "objecttype": "Kustwacht",
+                        "node": "AttributeReference",
+                        "attribute": "wachtvergoeding per maand",
+                        "subjectType": "Kustwacht",
                         "source": {
                           "snippet": "zijn wachtvergoeding per maand"
                         }
@@ -164,17 +161,17 @@
                     ],
                     "elementType": "Kustwacht",
                     "filter": {
-                      "node": "Vergelijking",
-                      "op": "GROTER",
-                      "links": {
-                        "node": "AttribuutRef",
-                        "attribuut": "wachtvergoeding per maand",
-                        "objecttype": "Kustwacht",
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "wachtvergoeding per maand",
+                        "subjectType": "Kustwacht",
                         "source": {
                           "snippet": "zijn wachtvergoeding per maand"
                         }
                       },
-                      "rechts": {
+                      "right": {
                         "node": "Literal",
                         "value": {
                           "number": "10"
@@ -183,13 +180,12 @@
                           "node": "Number",
                           "whole": true,
                           "decimals": 0,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         },
                         "source": {
                           "snippet": "10"
                         }
                       },
-                      "periode": null,
                       "source": {
                         "snippet": "gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10"
                       }
@@ -198,13 +194,13 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -213,13 +209,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "(het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10) is groter dan 0"
                   }
@@ -230,7 +225,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -240,14 +235,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "randklipteken",
-              "objecttype": "Kustwacht",
+              "node": "AttributeReference",
+              "attribute": "randklipteken",
+              "subjectType": "Kustwacht",
               "source": {
                 "snippet": "Het randklipteken van een Kustwacht"
               }
@@ -261,29 +254,29 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "1"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "ONGELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "ploegomvang",
-                    "objecttype": "Kustwacht",
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ploegomvang",
+                    "subjectType": "Kustwacht",
                     "source": {
                       "snippet": "zijn ploegomvang"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -292,28 +285,27 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn ploegomvang is ongelijk aan 0"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
                     "node": "Aggregation",
-                    "kind": "TOTAAL",
+                    "kind": "total",
                     "arguments": [
                       {
-                        "node": "AttribuutRef",
-                        "attribuut": "wachtvergoeding per maand",
-                        "objecttype": "Kustwacht",
+                        "node": "AttributeReference",
+                        "attribute": "wachtvergoeding per maand",
+                        "subjectType": "Kustwacht",
                         "source": {
                           "snippet": "zijn wachtvergoeding per maand"
                         }
@@ -321,25 +313,24 @@
                     ],
                     "elementType": "Kustwacht",
                     "filter": {
-                      "node": "Vergelijking",
-                      "op": "GROTER",
-                      "links": {
-                        "node": "AttribuutRef",
-                        "attribuut": "wachtvergoeding per maand",
-                        "objecttype": "Kustwacht",
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "wachtvergoeding per maand",
+                        "subjectType": "Kustwacht",
                         "source": {
                           "snippet": "zijn wachtvergoeding per maand"
                         }
                       },
-                      "rechts": {
-                        "node": "AttribuutRef",
-                        "attribuut": "drempelbedrag",
-                        "objecttype": "Kustwacht",
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "drempelbedrag",
+                        "subjectType": "Kustwacht",
                         "source": {
                           "snippet": "zijn drempelbedrag"
                         }
                       },
-                      "periode": null,
                       "source": {
                         "snippet": "gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag"
                       }
@@ -348,13 +339,13 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "0"
@@ -363,13 +354,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "(het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag) is groter dan 0"
                   }
@@ -380,19 +370,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

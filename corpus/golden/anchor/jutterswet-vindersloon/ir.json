@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -65,7 +65,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -75,7 +75,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -85,7 +85,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -95,7 +95,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -105,7 +105,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -115,7 +115,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -125,7 +125,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -135,7 +135,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -145,7 +145,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -155,7 +155,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 1,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -165,7 +165,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 1,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -175,7 +175,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 1,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -191,40 +191,38 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "loon van een vondst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "loon",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "loon",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Het loon van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "MAAL",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "waardering",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "waardering",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de waardering van de Vondst"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "factor",
-                "objecttype": "Vondst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "factor",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de factor van de Vondst"
                 }
@@ -233,14 +231,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de waardering van de Vondst maal de factor van de Vondst"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -250,22 +248,20 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vindersloon",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "vindersloon",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Het vindersloon van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PERCENTAGE_VAN",
-              "links": {
+              "node": "Binary",
+              "op": "percentageOf",
+              "left": {
                 "node": "Literal",
                 "value": {
                   "number": "20"
@@ -274,7 +270,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "%",
@@ -289,10 +285,10 @@
                   "snippet": "20%"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "opbrengst",
-                "objecttype": "Vondst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "opbrengst",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de opbrengst van de Vondst"
                 }
@@ -301,14 +297,14 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "20% van de opbrengst van de Vondst"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -318,33 +314,31 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "deel",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "deel",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Het deel van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "GEDEELD_DOOR",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "opbrengst",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "dividedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "opbrengst",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de opbrengst van de Vondst"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "aandeel",
-                "objecttype": "Vondst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "aandeel",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "het aandeel van de Vondst"
                 }
@@ -353,14 +347,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de opbrengst van de Vondst gedeeld door het aandeel van de Vondst"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -370,35 +364,33 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "portie",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "portie",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De portie van een Vondst"
               }
             },
             "value": {
-              "node": "Afgerond",
-              "basis": {
-                "node": "Binair",
-                "op": "GEDEELD_DOOR",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "opbrengst",
-                  "objecttype": "Vondst",
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "opbrengst",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "de opbrengst van de Vondst"
                   }
                 },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "weging",
-                  "objecttype": "Vondst",
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "weging",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "de weging van de Vondst"
                   }
@@ -407,26 +399,26 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "de opbrengst van de Vondst gedeeld door de weging van de Vondst"
                 }
               },
-              "modus": "NAAR_BENEDEN",
-              "decimalen": 0,
+              "mode": "floor",
+              "decimals": 0,
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de opbrengst van de Vondst gedeeld door de weging van de Vondst naar beneden afgerond op 0 decimalen"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -436,33 +428,31 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bonus",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "bonus",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De bonus van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "GEDEELD_DOOR",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "opbrengst",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "dividedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "opbrengst",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de opbrengst van de Vondst"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "kaveldeel",
-                "objecttype": "Vondst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "kaveldeel",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "het kaveldeel van de Vondst"
                 }
@@ -471,24 +461,24 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de opbrengst van de Vondst gedeeld door het kaveldeel van de Vondst"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "waardering",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "waardering",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de waardering van de Vondst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "100"
@@ -497,19 +487,18 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "100"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "de waardering van de Vondst is groter of gelijk aan 100"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -519,33 +508,31 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "middenprijs",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "middenprijs",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De middenprijs van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "GEDEELD_DOOR",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "koopsom",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "dividedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "koopsom",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de koopsom van de Vondst"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "partijen",
-                "objecttype": "Vondst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "partijen",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de partijen van de Vondst"
                 }
@@ -554,14 +541,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de koopsom van de Vondst gedeeld door de partijen van de Vondst"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -571,33 +558,31 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "krimp",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "krimp",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De krimp van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "MAAL",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "spanwijdte",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "spanwijdte",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de spanwijdte van de Vondst"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "rek",
-                "objecttype": "Vondst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "rek",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de rek van de Vondst"
                 }
@@ -606,26 +591,26 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de spanwijdte van de Vondst maal de rek van de Vondst"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

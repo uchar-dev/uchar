@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -33,7 +33,7 @@
           {
             "node": "Characteristic",
             "name": "erkend",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -47,45 +47,41 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "waardering van erkende jutters",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "waardering",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "waardering",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De waardering van een Jutter"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "basisbedrag",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "basisbedrag",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "zijn basisbedrag"
               }
             },
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "erkend",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "erkend",
+              "negated": false,
               "source": {
                 "snippet": "hij erkend is"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -95,14 +91,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "waardering",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "waardering",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De waardering van een Jutter"
               }
@@ -116,7 +110,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "25"
@@ -127,14 +121,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

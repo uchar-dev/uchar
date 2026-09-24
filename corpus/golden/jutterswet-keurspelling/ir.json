@@ -12,9 +12,9 @@
             "node": "Attribute",
             "name": "staat",
             "datatype": {
-              "node": "Enumeratie",
-              "domein": "Keurklasse",
-              "waarden": [
+              "node": "Enumeration",
+              "domain": "Keurklasse",
+              "values": [
                 "gaaf",
                 "beschadigd",
                 "wrakhout"
@@ -26,9 +26,9 @@
             "node": "Attribute",
             "name": "herkeuring",
             "datatype": {
-              "node": "Enumeratie",
-              "domein": "Keurklasse",
-              "waarden": [
+              "node": "Enumeration",
+              "domain": "Keurklasse",
+              "values": [
                 "gaaf",
                 "beschadigd",
                 "wrakhout"
@@ -40,17 +40,17 @@
           {
             "node": "Characteristic",
             "name": "veilbaar",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "afgekeurd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "bevestigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -62,8 +62,8 @@
         "node": "Domain",
         "name": "Keurklasse",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "gaaf",
             "beschadigd",
             "wrakhout"
@@ -77,21 +77,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "veilbaarheid naar staat",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "veilbaar",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "veilbaar",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is veilbaar"
               }
@@ -102,32 +100,32 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "staat",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "staat",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn staat"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "enumeration": "gaaf"
                 },
                 "type": {
-                  "node": "Enumeratie",
-                  "domein": "Keurklasse",
-                  "waarden": [
+                  "node": "Enumeration",
+                  "domain": "Keurklasse",
+                  "values": [
                     "gaaf",
                     "beschadigd",
                     "wrakhout"
@@ -137,7 +135,6 @@
                   "snippet": "'gaaf'"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn staat gelijk is aan 'gaaf'"
               }
@@ -152,14 +149,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "afgekeurd",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "afgekeurd",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is afgekeurd"
               }
@@ -170,32 +165,32 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "ONGELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "staat",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "notEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "staat",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn staat"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "enumeration": "gaaf"
                 },
                 "type": {
-                  "node": "Enumeratie",
-                  "domein": "Keurklasse",
-                  "waarden": [
+                  "node": "Enumeration",
+                  "domain": "Keurklasse",
+                  "values": [
                     "gaaf",
                     "beschadigd",
                     "wrakhout"
@@ -205,7 +200,6 @@
                   "snippet": "'gaaf'"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn staat ongelijk is aan 'gaaf'"
               }
@@ -220,14 +214,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bevestigd",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "bevestigd",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is bevestigd"
               }
@@ -238,32 +230,31 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "herkeuring",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "herkeuring",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn herkeuring"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "staat",
-                "objecttype": "Vondst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "staat",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn staat"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn herkeuring gelijk is aan zijn staat"
               }
@@ -273,10 +264,10 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
       {
         "node": "Consistency",
         "name": "geen wrakhout ter keuring",
@@ -284,25 +275,25 @@
           {
             "subject": "Vondst",
             "assertion": {
-              "node": "Vergelijking",
-              "op": "ONGELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "staat",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "notEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "staat",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "De staat van een Vondst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "enumeration": "wrakhout"
                 },
                 "type": {
-                  "node": "Enumeratie",
-                  "domein": "Keurklasse",
-                  "waarden": [
+                  "node": "Enumeration",
+                  "domain": "Keurklasse",
+                  "values": [
                     "gaaf",
                     "beschadigd",
                     "wrakhout"
@@ -312,15 +303,12 @@
                   "snippet": "'wrakhout'"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "De staat van een Vondst moet ongelijk zijn aan 'wrakhout'"
               }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "source": {
               "snippet": "De staat van een Vondst moet ongelijk zijn aan 'wrakhout'",
@@ -336,33 +324,30 @@
           {
             "subject": "Vondst",
             "assertion": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "herkeuring",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "herkeuring",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "De herkeuring van een Vondst"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "staat",
-                "objecttype": "Vondst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "staat",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de staat van de Vondst"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "De herkeuring van een Vondst moet gelijk zijn aan de staat van de Vondst"
               }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "source": {
               "snippet": "De herkeuring van een Vondst moet gelijk zijn aan de staat van de Vondst",
@@ -372,7 +357,7 @@
         ]
       }
     ],
-    "uniciteiten": [
+    "uniquenesses": [
       {
         "node": "Uniqueness",
         "name": "eenmalige staat",
@@ -388,9 +373,7 @@
               }
             ],
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "source": {
               "snippet": "De staten van alle Vondsten moeten uniek zijn."
@@ -399,9 +382,9 @@
         ]
       }
     ],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

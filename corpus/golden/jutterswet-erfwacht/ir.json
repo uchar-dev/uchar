@@ -15,11 +15,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           }
@@ -28,10 +28,10 @@
           {
             "node": "Characteristic",
             "name": "wachtplichtig",
-            "kind": "BIJVOEGLIJK",
+            "kind": "adjectival",
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           }
@@ -51,7 +51,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -67,33 +67,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "wachtsom van een klipjutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "wachtsom",
-              "objecttype": "Klipjutter",
+              "node": "AttributeReference",
+              "attribute": "wachtsom",
+              "subjectType": "Klipjutter",
               "source": {
                 "snippet": "De wachtsom van een Klipjutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "TOTAAL",
+              "kind": "total",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "wachtvergoeding per maand",
-                  "objecttype": "Klipjutter",
+                  "node": "AttributeReference",
+                  "attribute": "wachtvergoeding per maand",
+                  "subjectType": "Klipjutter",
                   "source": {
                     "snippet": "zijn wachtvergoeding per maand"
                   }
@@ -101,11 +99,9 @@
               ],
               "elementType": "Klipjutter",
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "wachtplichtig",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "wachtplichtig",
+                "negated": false,
                 "source": {
                   "snippet": "gedurende de tijd dat hij wachtplichtig is"
                 }
@@ -114,26 +110,26 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -20,30 +20,29 @@
           {
             "node": "Characteristic",
             "name": "bemand",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "wachtindeling",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "wachtindeling",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "wachtjutter",
-            "objecttypeNaam": "Jutter",
-            "meervoud": "wachtjutters",
-            "meervoudig": true
+            "node": "Role",
+            "name": "wachtjutter",
+            "objectType": "Jutter",
+            "plural": "wachtjutters",
+            "many": true
           },
           {
-            "node": "Rol",
-            "naam": "toegewezen wachtpost",
-            "objecttypeNaam": "Wachtpost",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "toegewezen wachtpost",
+            "objectType": "Wachtpost",
+            "many": false
           }
         ]
       }
@@ -56,21 +55,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "bemand met jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bemand",
-              "objecttype": "Wachtpost",
+              "node": "AttributeReference",
+              "attribute": "bemand",
+              "subjectType": "Wachtpost",
               "source": {
                 "snippet": "Een Wachtpost is bemand"
               }
@@ -81,7 +78,7 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
@@ -101,14 +98,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

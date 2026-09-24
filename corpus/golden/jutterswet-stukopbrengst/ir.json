@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -65,7 +65,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -113,51 +113,49 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "opbrengst van een vondst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "opbrengst",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "opbrengst",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De opbrengst van een Vondst"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "basisbedrag",
-                "objecttype": "Vondst",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "basisbedrag",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "het basisbedrag van de Vondst"
                 }
               },
-              "rechts": {
-                "node": "Binair",
-                "op": "MAAL",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "stuktal",
-                  "objecttype": "Vondst",
+              "right": {
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "stuktal",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "het stuktal van de Vondst"
                   }
                 },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "stukprijs",
-                  "objecttype": "Vondst",
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "stukprijs",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "de stukprijs van de Vondst"
                   }
@@ -166,7 +164,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "EUR",
@@ -186,7 +184,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 0,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "EUR",
@@ -203,19 +201,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

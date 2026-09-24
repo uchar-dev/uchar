@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -33,12 +33,12 @@
           {
             "node": "Characteristic",
             "name": "betwist",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "geborgen",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -56,7 +56,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -72,38 +72,34 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "uitkering bij betwisting",
-        "onderwerp": "Strandrecht",
-        "kenmerk": null,
-        "attribuut": "uitkering",
-        "ongeordend": true,
+        "name": "uitkering bij betwisting",
+        "subject": "Strandrecht",
+        "attribute": "uitkering",
+        "unordered": true,
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "betwist",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "betwist",
+              "negated": false,
               "source": {
                 "snippet": "het Strandrecht betwist is"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "99.00"
@@ -112,7 +108,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "99.00"
@@ -126,34 +122,28 @@
         "source": {
           "snippet": "99,00 indien het Strandrecht betwist is"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       },
       {
         "node": "PrioritizedDefaults",
-        "naam": "uitkering bij berging",
-        "onderwerp": "Strandrecht",
-        "kenmerk": null,
-        "attribuut": "uitkering",
-        "ongeordend": true,
+        "name": "uitkering bij berging",
+        "subject": "Strandrecht",
+        "attribute": "uitkering",
+        "unordered": true,
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "geborgen",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "geborgen",
+              "negated": false,
               "source": {
                 "snippet": "het Strandrecht geborgen is"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "44.00"
@@ -162,7 +152,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "44.00"
@@ -176,10 +166,8 @@
         "source": {
           "snippet": "44,00 indien het Strandrecht geborgen is"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

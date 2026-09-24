@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -23,12 +23,12 @@
           {
             "node": "Characteristic",
             "name": "penninggerechtigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "hardheid toegepast",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -42,21 +42,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "penninggerechtigd bij drempel",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "penninggerechtigd",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "penninggerechtigd",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Een Jutter is penninggerechtigd"
               }
@@ -67,24 +65,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aantal aangemelde vondsten",
-                "objecttype": "Jutter",
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aantal aangemelde vondsten",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn aantal aangemelde vondsten"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "12"
@@ -93,13 +91,12 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "12"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan 12"
               }
@@ -114,14 +111,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "penninggerechtigd",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "penninggerechtigd",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Een Jutter is penninggerechtigd"
               }
@@ -132,39 +127,37 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "hardheid toegepast",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "hardheid toegepast",
+                  "negated": false,
                   "source": {
                     "snippet": "hij is hardheid toegepast"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER_OF_GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "aantal aangemelde vondsten",
-                    "objecttype": "Jutter",
+                  "node": "Comparison",
+                  "op": "greaterOrEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "aantal aangemelde vondsten",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "zijn aantal aangemelde vondsten"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "6"
@@ -173,13 +166,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "6"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "zijn aantal aangemelde vondsten is groter of gelijk aan 6"
                   }
@@ -194,14 +186,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

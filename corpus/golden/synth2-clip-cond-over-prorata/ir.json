@@ -15,11 +15,11 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
@@ -30,11 +30,11 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
@@ -45,11 +45,11 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
@@ -60,7 +60,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -68,10 +68,10 @@
           {
             "node": "Characteristic",
             "name": "borgplichtig",
-            "kind": "BIJVOEGLIJK",
+            "kind": "adjectival",
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           }
@@ -87,61 +87,57 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "borgdeel",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "borgdeel",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "borgdeel",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het borgdeel"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "TIJDSEVENREDIG_DEEL",
+              "kind": "timeProportionalPart",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "borgtarief",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "borgtarief",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn borgtarief"
                   }
                 }
               ],
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "borgplichtig",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "borgplichtig",
+                "negated": false,
                 "source": {
                   "snippet": "gedurende de tijd dat hij borgplichtig is"
                 }
               },
-              "granularity": "MAAND",
+              "granularity": "month",
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "tijdsevenredig deel"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -151,26 +147,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "wachtsom",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "wachtsom",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De wachtsom"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "TOTAAL",
+              "kind": "total",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "bedrag",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "bedrag",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn bedrag"
                   }
@@ -178,17 +172,17 @@
               ],
               "elementType": "Jutter",
               "filter": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "borgdeel",
-                  "objecttype": "Jutter",
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "borgdeel",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn borgdeel"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "5.00"
@@ -197,13 +191,12 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "5.00"
                   }
                 },
-                "periode": null,
                 "source": {
                   "snippet": "gedurende de tijd dat zijn borgdeel groter is dan 5"
                 }
@@ -212,26 +205,26 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "totaal van bedrag gedurende borgdeel>5"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

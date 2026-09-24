@@ -14,7 +14,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -24,7 +24,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -34,7 +34,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -52,7 +52,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -62,7 +62,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -72,7 +72,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -80,30 +80,28 @@
           {
             "node": "Characteristic",
             "name": "hardheid",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "Bergingsaanslag_rekenkamer",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "Bergingsaanslag_rekenkamer",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "rekenkamer_houder",
-            "objecttypeNaam": "Bergingsaanslag",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "rekenkamer_houder",
+            "objectType": "Bergingsaanslag",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "rekenkamer",
-            "objecttypeNaam": "Rekenkamer",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "rekenkamer",
+            "objectType": "Rekenkamer",
+            "many": false
           }
         ]
       }
@@ -116,40 +114,38 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "berekening heffing",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Rekenkamer",
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Rekenkamer",
               "source": {
                 "snippet": "de heffing"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "VERMINDERD_MET",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "bergingswaarde",
-                "objecttype": "Rekenkamer",
+              "node": "Binary",
+              "op": "reducedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "bergingswaarde",
+                "subjectType": "Rekenkamer",
                 "source": {
                   "snippet": "de bergingswaarde"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "aftrek",
-                "objecttype": "Rekenkamer",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "aftrek",
+                "subjectType": "Rekenkamer",
                 "source": {
                   "snippet": "de aftrek"
                 }
@@ -158,11 +154,11 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -172,41 +168,39 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "verschuldigd",
-              "objecttype": "Bergingsaanslag",
+              "node": "AttributeReference",
+              "attribute": "verschuldigd",
+              "subjectType": "Bergingsaanslag",
               "source": {
                 "snippet": "de verschuldigd"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Rekenkamer",
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Rekenkamer",
               "source": {
                 "snippet": "de heffing van de rekenkamer"
               },
-              "navigatieBindingen": [
+              "path": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "Bergingsaanslag_rekenkamer",
-                  "rol": "rekenkamer"
+                  "node": "RoleBinding",
+                  "factType": "Bergingsaanslag_rekenkamer",
+                  "role": "rekenkamer"
                 }
               ]
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
+    "dayKindDefinitions": [],
+    "objectCreations": [
       {
         "node": "ObjectCreation",
         "name": "richt rekenkamer op",
@@ -216,77 +210,71 @@
             "subject": "Bergingsaanslag",
             "initialisations": [
               {
-                "node": "Toekenning",
-                "attribuut": "bergingswaarde",
-                "waarde": {
-                  "node": "AttribuutRef",
-                  "attribuut": "bergingswaarde",
-                  "objecttype": "Bergingsaanslag",
+                "node": "MemberInit",
+                "member": "bergingswaarde",
+                "value": {
+                  "node": "AttributeReference",
+                  "attribute": "bergingswaarde",
+                  "subjectType": "Bergingsaanslag",
                   "source": {
                     "snippet": "de bergingswaarde"
                   }
                 },
-                "kenmerk": false
+                "characteristic": false
               }
             ],
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "connectingRole": {
-              "node": "RolBinding",
-              "feittype": "Bergingsaanslag_rekenkamer",
-              "rol": "rekenkamer"
+              "node": "RoleBinding",
+              "factType": "Bergingsaanslag_rekenkamer",
+              "role": "rekenkamer"
             }
           }
         ]
       }
     ],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "aftrek",
-        "onderwerp": "Rekenkamer",
-        "kenmerk": null,
-        "attribuut": "aftrek",
+        "name": "aftrek",
+        "subject": "Rekenkamer",
+        "attribute": "aftrek",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "hardheid",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "hardheid",
+              "negated": false,
               "source": {
                 "snippet": "hardheid"
               },
-              "navigatieBinding": {
-                "node": "RolBinding",
-                "feittype": "Bergingsaanslag_rekenkamer",
-                "rol": "rekenkamer_houder"
+              "navigation": {
+                "node": "RoleBinding",
+                "factType": "Bergingsaanslag_rekenkamer",
+                "role": "rekenkamer_houder"
               }
             },
-            "consequentie": {
-              "node": "AttribuutRef",
-              "attribuut": "hardheidsaftrek",
-              "objecttype": "Bergingsaanslag",
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "hardheidsaftrek",
+              "subjectType": "Bergingsaanslag",
               "source": {
                 "snippet": "de hardheidsaftrek"
               },
-              "navigatieBindingen": [
+              "path": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "Bergingsaanslag_rekenkamer",
-                  "rol": "rekenkamer_houder"
+                  "node": "RoleBinding",
+                  "factType": "Bergingsaanslag_rekenkamer",
+                  "role": "rekenkamer_houder"
                 }
               ]
             },
@@ -296,17 +284,16 @@
           },
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [],
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
               "source": {
                 "snippet": "altijd"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "100"
@@ -315,7 +302,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "100"
@@ -329,10 +316,8 @@
         "source": {
           "snippet": "aftrek"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

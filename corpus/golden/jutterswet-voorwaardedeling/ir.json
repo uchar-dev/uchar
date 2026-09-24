@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -54,7 +54,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -63,23 +63,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "bergdeelname",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "bergdeelname",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "strandberging",
-            "objecttypeNaam": "Strandberging",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "strandberging",
+            "objectType": "Strandberging",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "bergjutter",
-            "objecttypeNaam": "Jutter",
-            "meervoud": "bergjutters",
-            "meervoudig": true
+            "node": "Role",
+            "name": "bergjutter",
+            "objectType": "Jutter",
+            "plural": "bergjutters",
+            "many": true
           }
         ]
       }
@@ -92,10 +91,10 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [
       {
         "node": "Allocation",
         "name": "verdeel de bergopbrengst van een vrijgegeven strandberging",
@@ -105,21 +104,21 @@
             "sourceAttribute": "bergopbrengst",
             "targetType": "Jutter",
             "targetAttribute": "bergdeel",
-            "method": "NAAR_RATO",
+            "method": "proportional",
             "ratioAttribute": "berggewicht",
             "descending": false,
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vrijgavescore",
-                "objecttype": "Strandberging",
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vrijgavescore",
+                "subjectType": "Strandberging",
                 "source": {
                   "snippet": "de vrijgavescore van de strandberging"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "10"
@@ -128,36 +127,33 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "10"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "de vrijgavescore van de strandberging groter of gelijk is aan 10"
               }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "connectingRole": {
-              "node": "RolBinding",
-              "feittype": "bergdeelname",
-              "rol": "bergjutter"
+              "node": "RoleBinding",
+              "factType": "bergdeelname",
+              "role": "bergjutter"
             }
           }
         ]
       }
     ],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

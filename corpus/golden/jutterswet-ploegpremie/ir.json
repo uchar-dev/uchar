@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -23,12 +23,12 @@
           {
             "node": "Characteristic",
             "name": "premiegerechtigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "wisselvallig",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -45,11 +45,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           }
@@ -59,23 +59,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "ploegindeling",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "ploegindeling",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "ploeg",
-            "objecttypeNaam": "Bergingsploeg",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "ploeg",
+            "objectType": "Bergingsploeg",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "berger",
-            "objecttypeNaam": "Berger",
-            "meervoud": "bergers",
-            "meervoudig": true
+            "node": "Role",
+            "name": "berger",
+            "objectType": "Berger",
+            "plural": "bergers",
+            "many": true
           }
         ]
       }
@@ -88,21 +87,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "premiegerechtigd bij dagvergoeding",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "premiegerechtigd",
-              "objecttype": "Bergingsploeg",
+              "node": "AttributeReference",
+              "attribute": "premiegerechtigd",
+              "subjectType": "Bergingsploeg",
               "source": {
                 "snippet": "Een Bergingsploeg is premiegerechtigd"
               }
@@ -113,29 +110,28 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "ALLE",
-              "elementObjecttype": "Berger",
-              "filter": null,
-              "toets": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "dagvergoeding",
-                  "objecttype": "Berger",
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Berger",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "dagvergoeding",
+                  "subjectType": "Berger",
                   "source": {
                     "snippet": "de dagvergoeding van alle bergers van de Bergingsploeg"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "40"
@@ -144,16 +140,16 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "40"
                   }
                 },
-                "periode": {
-                  "node": "GeheelPeriode",
-                  "jaar": true,
-                  "niet": false
+                "wholePeriod": {
+                  "node": "WholePeriod",
+                  "granularity": "year",
+                  "negated": false
                 },
                 "source": {
                   "snippet": "de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40"
@@ -162,10 +158,10 @@
               "source": {
                 "snippet": "de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "ploegindeling",
-                "rol": "berger"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "ploegindeling",
+                "role": "berger"
               }
             },
             "initialisation": false
@@ -178,14 +174,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "wisselvallig",
-              "objecttype": "Bergingsploeg",
+              "node": "AttributeReference",
+              "attribute": "wisselvallig",
+              "subjectType": "Bergingsploeg",
               "source": {
                 "snippet": "Een Bergingsploeg is wisselvallig"
               }
@@ -196,29 +190,28 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kwantorvouw",
-              "kwantor": "GEEN",
-              "elementObjecttype": "Berger",
-              "filter": null,
-              "toets": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "dagvergoeding",
-                  "objecttype": "Berger",
+              "node": "QuantifierFold",
+              "quantifier": "none",
+              "elementType": "Berger",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "dagvergoeding",
+                  "subjectType": "Berger",
                   "source": {
                     "snippet": "de dagvergoeding van geen van de bergers van de Bergingsploeg"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "40"
@@ -227,16 +220,16 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "40"
                   }
                 },
-                "periode": {
-                  "node": "GeheelPeriode",
-                  "jaar": true,
-                  "niet": false
+                "wholePeriod": {
+                  "node": "WholePeriod",
+                  "granularity": "year",
+                  "negated": false
                 },
                 "source": {
                   "snippet": "de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40"
@@ -245,10 +238,10 @@
               "source": {
                 "snippet": "de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40"
               },
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "ploegindeling",
-                "rol": "berger"
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "ploegindeling",
+                "role": "berger"
               }
             },
             "initialisation": false
@@ -261,26 +254,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bergertal",
-              "objecttype": "Bergingsploeg",
+              "node": "AttributeReference",
+              "attribute": "bergertal",
+              "subjectType": "Bergingsploeg",
               "source": {
                 "snippet": "Het bergertal van een Bergingsploeg"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "bergers",
-                  "objecttype": "Bergingsploeg",
+                  "node": "AttributeReference",
+                  "attribute": "bergers",
+                  "subjectType": "Bergingsploeg",
                   "source": {
                     "snippet": "bergers van de Bergingsploeg"
                   }
@@ -288,34 +279,34 @@
               ],
               "elementType": "Berger",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "ploegindeling",
-                "rol": "berger"
+                "node": "RoleBinding",
+                "factType": "ploegindeling",
+                "role": "berger"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal bergers van de Bergingsploeg"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

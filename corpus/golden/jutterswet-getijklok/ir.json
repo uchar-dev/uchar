@@ -23,7 +23,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "springtijdagen",
@@ -70,40 +70,38 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "sluittijdstip van een getijpost",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "sluittijdstip",
-              "objecttype": "Getijpost",
+              "node": "AttributeReference",
+              "attribute": "sluittijdstip",
+              "subjectType": "Getijpost",
               "source": {
                 "snippet": "Het sluittijdstip van een Getijpost"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "meldtijdstip",
-                "objecttype": "Getijpost",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijdstip",
+                "subjectType": "Getijpost",
                 "source": {
                   "snippet": "zijn meldtijdstip"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "wachttermijn",
-                "objecttype": "Getijpost",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "wachttermijn",
+                "subjectType": "Getijpost",
                 "source": {
                   "snippet": "zijn wachttermijn"
                 }
@@ -117,7 +115,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -127,33 +125,31 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "openingstijdstip",
-              "objecttype": "Getijpost",
+              "node": "AttributeReference",
+              "attribute": "openingstijdstip",
+              "subjectType": "Getijpost",
               "source": {
                 "snippet": "Het openingstijdstip van een Getijpost"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "MIN",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "meldtijdstip",
-                "objecttype": "Getijpost",
+              "node": "Binary",
+              "op": "minus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijdstip",
+                "subjectType": "Getijpost",
                 "source": {
                   "snippet": "zijn meldtijdstip"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "wachttermijn",
-                "objecttype": "Getijpost",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "wachttermijn",
+                "subjectType": "Getijpost",
                 "source": {
                   "snippet": "zijn wachttermijn"
                 }
@@ -167,26 +163,26 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [
+    "dayKindDefinitions": [
       {
-        "node": "ResolvedDagsoort",
-        "naam": "springtijdag",
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 1,
-          "onderdelen": [
+        "node": "DayKindDefinition",
+        "dayKind": "springtijdag",
+        "condition": {
+          "node": "Compound",
+          "quantifier": "atLeast",
+          "threshold": 1,
+          "parts": [
             {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
                 "node": "BuiltinCall",
-                "kind": "DAG_UIT",
+                "kind": "dayOf",
                 "arguments": [
                   {
                     "node": "BoundDay",
@@ -203,13 +199,13 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "source": {
                   "snippet": "de dag uit de dag"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "1"
@@ -218,23 +214,22 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "1"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "de dag uit de dag gelijk is aan 1"
               }
             },
             {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
                 "node": "BuiltinCall",
-                "kind": "DAG_UIT",
+                "kind": "dayOf",
                 "arguments": [
                   {
                     "node": "BoundDay",
@@ -251,13 +246,13 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "source": {
                   "snippet": "de dag uit de dag"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "15"
@@ -266,13 +261,12 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "15"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "de dag uit de dag gelijk is aan 15"
               }
@@ -282,20 +276,18 @@
             "snippet": "er aan ten minste 1 van de volgende voorwaarden wordt voldaan: - de dag uit de dag gelijk is aan 1 - de dag uit de dag gelijk is aan 15."
           }
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

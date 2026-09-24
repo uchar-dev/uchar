@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -51,7 +51,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       },
       {
@@ -61,7 +61,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       }
     ],
@@ -72,21 +72,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "heffing van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "heffing",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De heffing van een Jutter"
               }
@@ -97,13 +95,13 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "binder": "g",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "grondslag",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "grondslag",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn grondslag"
                 }
@@ -114,13 +112,13 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "binder": "o",
                 "value": {
-                  "node": "AttribuutRef",
-                  "attribuut": "opslag",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "opslag",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn opslag"
                   }
@@ -131,48 +129,47 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "condition": {
-                    "node": "Vergelijking",
-                    "op": "GROTER",
-                    "links": {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
                       "node": "BinderRef",
                       "name": "g",
                       "source": {
                         "snippet": "de grondslag"
                       }
                     },
-                    "rechts": {
-                      "node": "ParameterRef",
+                    "right": {
+                      "node": "ParameterReference",
                       "parameter": "drempel",
                       "source": {
                         "snippet": "de drempel"
                       }
                     },
-                    "periode": null,
                     "source": {
                       "snippet": "de grondslag groter dan de drempel"
                     }
                   },
                   "then": {
-                    "node": "ParameterRef",
+                    "node": "ParameterReference",
                     "parameter": "basisheffing",
                     "source": {
                       "snippet": "de basisheffing"
                     }
                   },
                   "else": {
-                    "node": "Binair",
-                    "op": "PLUS",
-                    "links": {
-                      "node": "ParameterRef",
+                    "node": "Binary",
+                    "op": "plus",
+                    "left": {
+                      "node": "ParameterReference",
                       "parameter": "basisheffing",
                       "source": {
                         "snippet": "de basisheffing"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "BinderRef",
                       "name": "o",
                       "source": {
@@ -183,7 +180,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "de basisheffing plus de opslag"
@@ -202,19 +199,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

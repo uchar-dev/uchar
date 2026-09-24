@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -43,7 +43,7 @@
           {
             "node": "Characteristic",
             "name": "seingerechtigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -60,7 +60,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -70,7 +70,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -80,7 +80,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -88,7 +88,7 @@
           {
             "node": "Characteristic",
             "name": "risicopost",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -105,7 +105,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -115,7 +115,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -134,7 +134,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -143,86 +143,82 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "postbezetting",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "postbezetting",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "wachter",
-            "objecttypeNaam": "Wachter",
-            "meervoud": "wachters",
-            "meervoudig": true
+            "node": "Role",
+            "name": "wachter",
+            "objectType": "Wachter",
+            "plural": "wachters",
+            "many": true
           },
           {
-            "node": "Rol",
-            "naam": "post",
-            "objecttypeNaam": "Post",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "post",
+            "objectType": "Post",
+            "many": false
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "kustligging",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "kustligging",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "kustvak",
-            "objecttypeNaam": "Kustvak",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "kustvak",
+            "objectType": "Kustvak",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "post",
-            "objecttypeNaam": "Post",
-            "meervoud": "posten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "post",
+            "objectType": "Post",
+            "plural": "posten",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "seinvoering",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "seinvoering",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "post",
-            "objecttypeNaam": "Post",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "post",
+            "objectType": "Post",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "sein",
-            "objecttypeNaam": "Sein",
-            "meervoud": "seinen",
-            "meervoudig": true
+            "node": "Role",
+            "name": "sein",
+            "objectType": "Sein",
+            "plural": "seinen",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "vakbeseining",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "vakbeseining",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "seinvak",
-            "objecttypeNaam": "Kustvak",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "seinvak",
+            "objectType": "Kustvak",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "vaksein",
-            "objecttypeNaam": "Sein",
-            "meervoud": "vakseinen",
-            "meervoudig": true
+            "node": "Role",
+            "name": "vaksein",
+            "objectType": "Sein",
+            "plural": "vakseinen",
+            "many": true
           }
         ]
       }
@@ -235,42 +231,40 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "uitkijkbonus van een wachter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "uitkijkbonus",
-              "objecttype": "Wachter",
+              "node": "AttributeReference",
+              "attribute": "uitkijkbonus",
+              "subjectType": "Wachter",
               "source": {
                 "snippet": "De uitkijkbonus van een Wachter"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "hoogte",
-              "objecttype": "Post",
+              "node": "AttributeReference",
+              "attribute": "hoogte",
+              "subjectType": "Post",
               "source": {
                 "snippet": "de hoogte van zijn post"
               },
-              "navigatieBindingen": [
+              "path": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "postbezetting",
-                  "rol": "post"
+                  "node": "RoleBinding",
+                  "factType": "postbezetting",
+                  "role": "post"
                 }
               ]
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -280,40 +274,38 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "gevarenrang",
-              "objecttype": "Wachter",
+              "node": "AttributeReference",
+              "attribute": "gevarenrang",
+              "subjectType": "Wachter",
               "source": {
                 "snippet": "De gevarenrang van een Wachter"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "gevarenklasse",
-              "objecttype": "Kustvak",
+              "node": "AttributeReference",
+              "attribute": "gevarenklasse",
+              "subjectType": "Kustvak",
               "source": {
                 "snippet": "de gevarenklasse van het kustvak van zijn post"
               },
-              "navigatieBindingen": [
+              "path": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "postbezetting",
-                  "rol": "post"
+                  "node": "RoleBinding",
+                  "factType": "postbezetting",
+                  "role": "post"
                 },
                 {
-                  "node": "RolBinding",
-                  "feittype": "kustligging",
-                  "rol": "kustvak"
+                  "node": "RoleBinding",
+                  "factType": "kustligging",
+                  "role": "kustvak"
                 }
               ]
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -323,14 +315,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "seingerechtigd",
-              "objecttype": "Wachter",
+              "node": "AttributeReference",
+              "attribute": "seingerechtigd",
+              "subjectType": "Wachter",
               "source": {
                 "snippet": "Een Wachter is seingerechtigd"
               }
@@ -341,25 +331,23 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "risicopost",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "risicopost",
+              "negated": false,
               "source": {
                 "snippet": "zijn post risicopost is"
               },
-              "navigatieBinding": {
-                "node": "RolBinding",
-                "feittype": "postbezetting",
-                "rol": "post"
+              "navigation": {
+                "node": "RoleBinding",
+                "factType": "postbezetting",
+                "role": "post"
               }
             },
             "initialisation": false
@@ -372,26 +360,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "seinaantal",
-              "objecttype": "Post",
+              "node": "AttributeReference",
+              "attribute": "seinaantal",
+              "subjectType": "Post",
               "source": {
                 "snippet": "Het seinaantal van een Post"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "seinen",
-                  "objecttype": "Post",
+                  "node": "AttributeReference",
+                  "attribute": "seinen",
+                  "subjectType": "Post",
                   "source": {
                     "snippet": "seinen van de post"
                   }
@@ -399,22 +385,22 @@
               ],
               "elementType": "Sein",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "seinvoering",
-                "rol": "sein"
+                "node": "RoleBinding",
+                "factType": "seinvoering",
+                "role": "sein"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal seinen van de post"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -424,26 +410,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "seingewicht",
-              "objecttype": "Post",
+              "node": "AttributeReference",
+              "attribute": "seingewicht",
+              "subjectType": "Post",
               "source": {
                 "snippet": "Het seingewicht van een Post"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "SOM",
+              "kind": "sum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewicht",
-                  "objecttype": "Sein",
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Sein",
                   "source": {
                     "snippet": "het gewicht van alle seinen van de post"
                   }
@@ -459,29 +443,29 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0"
                 }
               },
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "seinvoering",
-                "rol": "sein"
+                "node": "RoleBinding",
+                "factType": "seinvoering",
+                "role": "sein"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de som van het gewicht van alle seinen van de post of 0 als die er niet zijn"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -491,26 +475,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vakseinaantal",
-              "objecttype": "Kustvak",
+              "node": "AttributeReference",
+              "attribute": "vakseinaantal",
+              "subjectType": "Kustvak",
               "source": {
                 "snippet": "Het vakseinaantal van een Kustvak"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "vakseinen",
-                  "objecttype": "Kustvak",
+                  "node": "AttributeReference",
+                  "attribute": "vakseinen",
+                  "subjectType": "Kustvak",
                   "source": {
                     "snippet": "vakseinen van het kustvak"
                   }
@@ -518,31 +500,31 @@
               ],
               "elementType": "Sein",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "vakbeseining",
-                "rol": "vaksein"
+                "node": "RoleBinding",
+                "factType": "vakbeseining",
+                "role": "vaksein"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal vakseinen van het kustvak"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [
       {
         "node": "Uniqueness",
         "name": "wachtnummer uniek per post",
@@ -558,14 +540,12 @@
               }
             ],
             "scope": {
-              "node": "RolBinding",
-              "feittype": "postbezetting",
-              "rol": "post"
+              "node": "RoleBinding",
+              "factType": "postbezetting",
+              "role": "post"
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "source": {
               "snippet": "De wachtnummer van alle Wachter van de post moeten uniek zijn."
@@ -574,7 +554,7 @@
         ]
       }
     ],
-    "feitCreaties": [
+    "factCreations": [
       {
         "node": "FactCreation",
         "name": "vakbeseining door het kustvak",
@@ -586,27 +566,25 @@
             "anchor": "Kustvak",
             "path": [
               {
-                "node": "RolBinding",
-                "feittype": "kustligging",
-                "rol": "post"
+                "node": "RoleBinding",
+                "factType": "kustligging",
+                "role": "post"
               },
               {
-                "node": "RolBinding",
-                "feittype": "seinvoering",
-                "rol": "sein"
+                "node": "RoleBinding",
+                "factType": "seinvoering",
+                "role": "sein"
               }
             ],
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
       }
     ],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

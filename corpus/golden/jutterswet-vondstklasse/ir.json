@@ -12,9 +12,9 @@
             "node": "Attribute",
             "name": "klasse",
             "datatype": {
-              "node": "Enumeratie",
-              "domein": "Vondstklasse",
-              "waarden": [
+              "node": "Enumeration",
+              "domain": "Vondstklasse",
+              "values": [
                 "drijfgoed",
                 "strandgoed",
                 "wrakgoed"
@@ -25,9 +25,9 @@
             "node": "Attribute",
             "name": "bestemming",
             "datatype": {
-              "node": "Enumeratie",
-              "domein": "Vondstklasse",
-              "waarden": [
+              "node": "Enumeration",
+              "domain": "Vondstklasse",
+              "values": [
                 "drijfgoed",
                 "strandgoed",
                 "wrakgoed"
@@ -39,7 +39,7 @@
           {
             "node": "Characteristic",
             "name": "bergingsplichtig",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -51,8 +51,8 @@
         "node": "Domain",
         "name": "Vondstklasse",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "drijfgoed",
             "strandgoed",
             "wrakgoed"
@@ -66,21 +66,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "bestemming van drijfgoed",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bestemming",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "bestemming",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De bestemming van een Vondst"
               }
@@ -91,9 +89,9 @@
                 "enumeration": "wrakgoed"
               },
               "type": {
-                "node": "Enumeratie",
-                "domein": "Vondstklasse",
-                "waarden": [
+                "node": "Enumeration",
+                "domain": "Vondstklasse",
+                "values": [
                   "drijfgoed",
                   "strandgoed",
                   "wrakgoed"
@@ -104,25 +102,25 @@
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "klasse",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "klasse",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn klasse"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "enumeration": "drijfgoed"
                 },
                 "type": {
-                  "node": "Enumeratie",
-                  "domein": "Vondstklasse",
-                  "waarden": [
+                  "node": "Enumeration",
+                  "domain": "Vondstklasse",
+                  "values": [
                     "drijfgoed",
                     "strandgoed",
                     "wrakgoed"
@@ -132,13 +130,12 @@
                   "snippet": "'drijfgoed'"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn klasse gelijk is aan 'drijfgoed'"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -148,46 +145,44 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bestemming",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "bestemming",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De bestemming van een Vondst"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "klasse",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "klasse",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "zijn klasse"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "ONGELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "klasse",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "notEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "klasse",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn klasse"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "enumeration": "drijfgoed"
                 },
                 "type": {
-                  "node": "Enumeratie",
-                  "domein": "Vondstklasse",
-                  "waarden": [
+                  "node": "Enumeration",
+                  "domain": "Vondstklasse",
+                  "values": [
                     "drijfgoed",
                     "strandgoed",
                     "wrakgoed"
@@ -197,13 +192,12 @@
                   "snippet": "'drijfgoed'"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn klasse ongelijk is aan 'drijfgoed'"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -213,14 +207,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bergingsplichtig",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "bergingsplichtig",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is bergingsplichtig"
               }
@@ -231,32 +223,32 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "bestemming",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "bestemming",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn bestemming"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "enumeration": "wrakgoed"
                 },
                 "type": {
-                  "node": "Enumeratie",
-                  "domein": "Vondstklasse",
-                  "waarden": [
+                  "node": "Enumeration",
+                  "domain": "Vondstklasse",
+                  "values": [
                     "drijfgoed",
                     "strandgoed",
                     "wrakgoed"
@@ -266,7 +258,6 @@
                   "snippet": "'wrakgoed'"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn bestemming gelijk is aan 'wrakgoed'"
               }
@@ -276,14 +267,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

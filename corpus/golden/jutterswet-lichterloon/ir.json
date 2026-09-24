@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -103,21 +103,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "lichterloon van een lichterbeurt",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "lichterloon",
-              "objecttype": "Lichterbeurt",
+              "node": "AttributeReference",
+              "attribute": "lichterloon",
+              "subjectType": "Lichterbeurt",
               "source": {
                 "snippet": "Het lichterloon van een Lichterbeurt"
               }
@@ -128,7 +126,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 0,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "EUR",
@@ -142,20 +140,20 @@
               },
               "binder": "grondloon",
               "value": {
-                "node": "Binair",
-                "op": "MAAL",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "vrachttal",
-                  "objecttype": "Lichterbeurt",
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "vrachttal",
+                  "subjectType": "Lichterbeurt",
                   "source": {
                     "snippet": "het vrachttal van de Lichterbeurt"
                   }
                 },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "eenheidsloon",
-                  "objecttype": "Lichterbeurt",
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "eenheidsloon",
+                  "subjectType": "Lichterbeurt",
                   "source": {
                     "snippet": "het eenheidsloon van de Lichterbeurt"
                   }
@@ -164,7 +162,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "EUR",
@@ -181,29 +179,29 @@
                 }
               },
               "body": {
-                "node": "Binair",
-                "op": "PLUS",
-                "links": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
                   "node": "BinderRef",
                   "name": "grondloon",
                   "source": {
                     "snippet": "het grondloon"
                   }
                 },
-                "rechts": {
-                  "node": "Binair",
-                  "op": "MAAL",
-                  "links": {
+                "right": {
+                  "node": "Binary",
+                  "op": "times",
+                  "left": {
                     "node": "BinderRef",
                     "name": "grondloon",
                     "source": {
                       "snippet": "het grondloon"
                     }
                   },
-                  "rechts": {
-                    "node": "AttribuutRef",
-                    "attribuut": "spoedtal",
-                    "objecttype": "Lichterbeurt",
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "spoedtal",
+                    "subjectType": "Lichterbeurt",
                     "source": {
                       "snippet": "het spoedtal van de Lichterbeurt"
                     }
@@ -212,7 +210,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 0,
-                    "sign": "ONBEPAALD",
+                    "sign": "unspecified",
                     "unit": {
                       "node": "Unit",
                       "abbreviation": "EUR",
@@ -232,7 +230,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "EUR",
@@ -253,19 +251,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

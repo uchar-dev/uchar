@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -51,37 +51,37 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "jutheffing naar jaartarief",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": "2025-01-01",
-              "tot": "2025-12-31"
+              "node": "Validity",
+              "from": "2025-01-01",
+              "to": "2025-12-31"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "jutheffing",
-              "objecttype": "Jutaangifte",
+              "node": "AttributeReference",
+              "attribute": "jutheffing",
+              "subjectType": "Jutaangifte",
               "source": {
                 "snippet": "De jutheffing van een Jutaangifte"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aangiftewaarde",
-                "objecttype": "Jutaangifte",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aangiftewaarde",
+                "subjectType": "Jutaangifte",
                 "source": {
                   "snippet": "de aangiftewaarde van de Jutaangifte"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "30"
@@ -90,7 +90,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "30"
@@ -100,41 +100,41 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de aangiftewaarde van de Jutaangifte vermeerderd met 30"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           },
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": "2026-01-01",
-              "tot": "2026-12-31"
+              "node": "Validity",
+              "from": "2026-01-01",
+              "to": "2026-12-31"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "jutheffing",
-              "objecttype": "Jutaangifte",
+              "node": "AttributeReference",
+              "attribute": "jutheffing",
+              "subjectType": "Jutaangifte",
               "source": {
                 "snippet": "De jutheffing van een Jutaangifte"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aangiftewaarde",
-                "objecttype": "Jutaangifte",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aangiftewaarde",
+                "subjectType": "Jutaangifte",
                 "source": {
                   "snippet": "de aangiftewaarde van de Jutaangifte"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "70"
@@ -143,7 +143,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "70"
@@ -153,14 +153,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de aangiftewaarde van de Jutaangifte vermeerderd met 70"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -170,30 +170,28 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "registratiegetal",
-              "objecttype": "Jutaangifte",
+              "node": "AttributeReference",
+              "attribute": "registratiegetal",
+              "subjectType": "Jutaangifte",
               "source": {
                 "snippet": "Het registratiegetal van een Jutaangifte"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aangiftewaarde",
-                "objecttype": "Jutaangifte",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aangiftewaarde",
+                "subjectType": "Jutaangifte",
                 "source": {
                   "snippet": "de aangiftewaarde van de Jutaangifte"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "1"
@@ -202,7 +200,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "1"
@@ -212,26 +210,26 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de aangiftewaarde van de Jutaangifte vermeerderd met 1"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

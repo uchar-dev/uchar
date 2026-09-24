@@ -14,7 +14,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -22,12 +22,12 @@
           {
             "node": "Characteristic",
             "name": "hardheid_toegepast",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "penninggerechtigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -41,52 +41,50 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "penninggerechtigd",
-        "onderwerp": "Penningrecht",
-        "kenmerk": "penninggerechtigd",
+        "name": "penninggerechtigd",
+        "subject": "Penningrecht",
+        "characteristic": "penninggerechtigd",
         "defaults": [
           {
             "node": "Default",
-            "besluit": true,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+            "decision": true,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "hardheid_toegepast",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "hardheid_toegepast",
+                  "negated": false,
                   "source": {
                     "snippet": "hardheid_toegepast"
                   }
                 },
                 {
-                  "node": "Vergelijking",
-                  "op": "GROTER_OF_GELIJK",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "aantal_aangemelde_vondsten",
-                    "objecttype": "Penningrecht",
+                  "node": "Comparison",
+                  "op": "greaterOrEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "aantal_aangemelde_vondsten",
+                    "subjectType": "Penningrecht",
                     "source": {
                       "snippet": "de aantal_aangemelde_vondsten"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "6"
@@ -95,13 +93,12 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "6"
                     }
-                  },
-                  "periode": null
+                  }
                 }
               ],
               "source": {
@@ -114,19 +111,19 @@
           },
           {
             "node": "Default",
-            "besluit": true,
-            "voorwaarde": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aantal_aangemelde_vondsten",
-                "objecttype": "Penningrecht",
+            "decision": true,
+            "justification": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aantal_aangemelde_vondsten",
+                "subjectType": "Penningrecht",
                 "source": {
                   "snippet": "de aantal_aangemelde_vondsten"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "12"
@@ -135,13 +132,12 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "12"
                 }
-              },
-              "periode": null
+              }
             },
             "source": {
               "snippet": "penninggerechtigd"
@@ -149,12 +145,12 @@
           },
           {
             "node": "Default",
-            "besluit": false,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [],
+            "decision": false,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
               "source": {
                 "snippet": "altijd"
               }
@@ -167,10 +163,8 @@
         "source": {
           "snippet": "penninggerechtigd"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]
