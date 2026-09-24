@@ -2077,7 +2077,7 @@ One node covers computing an attribute and attributing a characteristic
 | `value` | expression | the computed value; for a characteristic target: the boolean constant true — v0 mirror, the emitter's only form (Phase 4 generalises this into the default model; the ch. 3.3 initialisation form now generalises the characteristic value to a boolean-typed expression, WF-027 — the v1 relaxation the Catala frontend uses) |
 | `condition` | Condition? | absent = unconditional |
 | `initialisation` | boolean | write-only-if-empty (§9.6) — the defeasible default of `CONSTRUCTS.md` row 7; semantics in `RUNTIME-SEMANTICS.md` ch. 7 |
-| `presentation` | (`GELIJKSTELLING` \| `BEREKENING`)? | dialect tag: which surface form (§13.4.4/.9) produced it; no semantic difference. Written only on a computing version and never beside `initialisation` true; absent is no tag. The values keep their v0 spelling until their own landing, which spells them `equation` and `calculation` |
+| `presentation` | (`equation` \| `calculation`)? | dialect tag: which surface form (§13.4.4/.9) produced it; no semantic difference. Written only on a computing version and never beside `initialisation` true; absent is no tag. v0 values: `GELIJKSTELLING` → `equation`, `BEREKENING` → `calculation` |
 
 v0 name: `ResolvedRegel` with `Soort` ∈ {GELIJKSTELLING, BEREKENING,
 INITIALISATIE, KENMERKTOEKENNING}. **Delta (tracked, `CONSTRUCTS.md`
@@ -2133,21 +2133,23 @@ literal `{"boolean": true}` since L4.)
   document that this rule refuses, which is what gives it a witness.
   **What this rule is NOT about.** Three other arrays put a name on this
   wire, and until M1 a fourth did (all four were top-level arrays until M1;
-  since M1 `resolvedDagsoorten` and `regelGroepen` sit under `rules`,
-  `tijdlijnen` is the model list `timelines`, and the `regels` stubs left the
-  wire), and the boundary is drawn per array rather than left to be inferred
-  (each measured 2026-09-12 over the four zones):
-  - `resolvedDagsoorten` — a **day-kind definition**'s name is which day
+  since M1 the day-kind definitions and the rule groups sit under `rules` —
+  `dayKindDefinitions` and `ruleGroups` since L5, `resolvedDagsoorten` and
+  `regelGroepen` until then —, `tijdlijnen` is the model list `timelines`,
+  and the `regels` stubs left the wire), and the boundary is drawn per array
+  rather than left to be inferred (each measured 2026-09-12 over the four
+  zones):
+  - `dayKindDefinitions` — a **day-kind definition**'s name is which day
     kind it defines and lives in the day-kind namespace, not the named
     forms', so its presence is **WF-031**'s clause, beside that rule's own
     uniqueness and its own dead-definition test.
-  - `tijdlijnen` — a **timeline**'s name is its identity too, and it is
+  - `timelines` — a **timeline**'s name is its identity too, and it is
     already covered: WF-015 keys the declaration on it and every reference
     resolves against it, so a nameless timeline takes every reference to it
     down with it and the document falls on **WF-003** (measured: a nameless
     `het penningjaar` yields `WF-003 FAIL … reference to undeclared timeline
     'penningjaar'`). A second rule here would only re-refuse it.
-  - `regelGroepen` — a **rule group**'s name is a label. WF-033 resolves a
+  - `ruleGroups` — a **rule group**'s name is a label. WF-033 resolves a
     group's MEMBERS by name and nothing reads the group's own, so a nameless
     group is inert rather than ambiguous, and refusing it would be a rule
     without a failure.
@@ -2197,7 +2199,7 @@ literal `{"boolean": true}` since L4.)
   (`wf022-kenmerkdoel-met-presentatie`), and a computed value without tag or
   flag faults on the value clause above
   (`wf022-attribuutdoel-zonder-presentatie`). A version without tag or flag
-  that writes `{"boolean": true}` to a `Booleaan` attribute is evaluated
+  that writes `{"boolean": true}` to a `Boolean` attribute is evaluated
   without any refusal as a characteristic attribution, and the attribute
   stays empty: measured on `jutterswet-borgvlag` with such a version on
   `Berging.geborgd`, both executors answer leeg where the case expects waar.
@@ -2256,7 +2258,7 @@ literal `{"boolean": true}` since L4.)
 - **WF-079** A (type, attribute) target that carries no defaults MUST NOT
   be written by two **unconditional** computing versions of **different
   forms** whose validities overlap. A computing version is one tagged
-  `presentation` GELIJKSTELLING or BEREKENING (so its `initialisation` is
+  `presentation` `equation` or `calculation` (so its `initialisation` is
   false, and WF-022 makes its target an attribute); unconditional means it
   carries no `condition`; two versions belong to different forms when
   their forms' names differ under WF-020's comparison (a version of a
@@ -2268,7 +2270,7 @@ literal `{"boolean": true}` since L4.)
   days they share, with no explicit priority — the single-writer
   discipline of WF-026/WF-050/WF-052 extended to bare attribute writers
   (`RUNTIME-SEMANTICS.md` ch. 7.7: the desugaring admits at most one
-  version-free computing rule per target). Priority is a defaults group (explicit defaults) or `ongeordend`
+  version-free computing rule per target). Priority is a defaults group (explicit defaults) or `unordered`
   (explicitly absent), never implicit agenda order. Characteristic
   attributions (a version with neither tag nor flag) are exempt — a monotone
   many-grounds-one-truth — and a guarded case split (each writer carrying
@@ -2322,9 +2324,10 @@ below (minus `name`) is one version's body.
 v0's fourth method value `COMPLEX` — the donor's unhandled-form placeholder
 — is not admissible IR, and since L4 it cannot be written: `method` is a
 closed enum of the three real methods in the schema and in every loader,
-so a `COMPLEX` is a load error (`unknown method value "COMPLEX"`). The
-three values keep their v0 spelling (`GELIJKE_DELEN`, `NAAR_RATO`,
-`OP_VOLGORDE`) until their own landing. *History:* until L4 the wire
+so a `COMPLEX` is a load error (`unknown method value "COMPLEX"`). Since L5
+the three values carry the spelling of the table.
+v0 values: `GELIJKE_DELEN` → `equalShares`, `NAAR_RATO` → `proportional`,
+`OP_VOLGORDE` → `ordered`. *History:* until L4 the wire
 admitted the placeholder and WF-024 refused it (witness `wf024-complex`,
 removed at L4); v0 could also carry ordering fields alongside COMPLEX (set
 before the method was demoted), and such hybrids disappeared with the
@@ -2370,8 +2373,9 @@ chapter rule; the table below (minus `name`) is one version's body.
 (boolean — v0 `kenmerk`: true = §13.4.6.4 characteristic-value form, the
 member names a declared characteristic and the value is a boolean-typed
 expression — a boolean constant is the v0 form; false = §13.4.6.3
-attribute-value form). On the wire a MemberInit is still the v0 node
-`Toekenning` (`attribuut`, `waarde`, `kenmerk`) until its own landing.
+attribute-value form). The wire has written it as the node `MemberInit`
+since L5; v0 wrote it as the node `Toekenning` (`attribuut`, `waarde`,
+`kenmerk`).
 
 The created object's **back-link** relation may be named explicitly
 through the extension field `connectingRole` (a RoleBinding per the
@@ -2434,7 +2438,7 @@ L2 (2026-09-24, B7) the symbolic form is the only one on the wire:
 **The guard is the one position that binds TWO objects.** Everywhere else in
 this specification a condition is about the enclosing form's subject; here the
 anchor is iterated and the target is reached, and both are in scope. Which of
-the two a characteristic check is about is said by its `eigenaar` — the
+the two a characteristic check is about is said by its `host` — the
 GASTHEER, ch. 4.6 (q2), WF-109 — and by nothing else: an absent owner, or one
 the anchor satisfies, guards the ANCHOR and the creation makes nothing for an
 anchor that fails it; an owner the target satisfies guards the TARGET, and the
@@ -2544,7 +2548,7 @@ the chapter rule; the table below (minus `name`) is one version's body.
 | `subject` | type ref | the asserted-about type |
 | `assertion` | Condition | must hold for every instance |
 | `validity` | Validity | — |
-| `bron`, `line` | string?, integer | the version's source text and line, under their v0 names until the source record lands (on the version since L4) |
+| `source` | source reference? | the version's source text and, where the producer reports one, its source line — `snippet` and `line` of the structured source reference (ch. 4). On the version since L4; the record since L5, where the v0 fields `bron` and `line` went into it (`line` only beside a `bron` string, and dropped where `bron` was null) |
 
 - **WF-029** The assertion MUST have a single subject type: the version's
   `subject` is present and declared. *v0 mirror
@@ -2567,7 +2571,7 @@ table below (minus `name`) is one version's body.
 | `sources` | list of Source, ≥ 1 | one = single-type; more = union |
 | `scope` | navigation ref? | absent = global; present = unique per scope owner. Only on a version with one source: a version with two or more carries none (the scoped union is an open design question, below) |
 | `validity` | Validity | — |
-| `bron` | string? | the version's source text, under its v0 name until the source record lands (on the version since L4) |
+| `source` | source reference? | the version's source text, the `snippet` of the structured source reference (ch. 4). On the version since L4; the record since L5 (v0 `bron`) |
 
 **Source**: `objectType` (ref), `keys` (list of attribute names, ≥ 1 — a
 multi-attribute key is jointly unique by positional concatenation, §5.7).
@@ -2601,7 +2605,8 @@ representable in v0 and stays out.
 **Landed L4 (2026-09-24, delta B27):** the two v0 forms are one
 `Uniqueness` node whose versions carry a list of `sources`, each a
 `Source` node; the v0 list `uniciteitUnies` left the wire, and every
-uniqueness stands in the one list `uniciteiten` (the migration and the
+uniqueness stands in the one list `uniquenesses` (`uniciteiten` until L5;
+the migration and the
 emitters write the single-source ones first, then the unions, each in v0
 order; the order carries no meaning). A version with two or more sources
 carries no `scope`: the scoped union is an open design question, and the
@@ -2627,6 +2632,8 @@ one source is the single-type form since L4, and that arm's witness
 
 The predicate that defines a declared DayKind (model layer, ch. 2.9): a
 condition over "the day". v0 name: `ResolvedDagsoort`.
+A **DayKindDefinition** node carries it on the wire (since L5), in the list
+`dayKindDefinitions` under `rules` (ch. 2).
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -2649,7 +2656,7 @@ condition over "the day". v0 name: `ResolvedDagsoort`.
   bare date before the rule graph, with no fact base); the bound day of
   the definition itself (**`BoundDay`**, until L4 the context value
   `de dag`) is admitted, and a `ContextValue` naming a **session** value
-  (`Rekendatum`, `Rekenjaar`) is refused,
+  (`evaluationDate`, `evaluationYear`) is refused,
   because the predicate is evaluated per calendar day
   (`RUNTIME-SEMANTICS.md` ch. 3.8) and a session-dependent one would
   classify the same day differently in two runs of the same document
@@ -2663,7 +2670,7 @@ condition over "the day". v0 name: `ResolvedDagsoort`.
   closed set stays WF-098's alone, and a context value without a name
   cannot be written since L4); there MUST be
   exactly one definition per DayKind; the validity MUST be ALTIJD —
-  `vanaf` and `tot` both null (a bounded window is refused, since no
+  `from` and `to` both absent (a bounded window is refused, since no
   evaluator consults a day-kind validity, so a bounded one would be
   silently dead). *v0 mirror note:* a missing condition is warn-and-drop;
   a duplicate definition warns and appends with first-wins lookup; the
@@ -2674,8 +2681,8 @@ condition over "the day". v0 name: `ResolvedDagsoort`.
   definitions are refused by WF-085 below, derived-state reads by the purity clause
   here.
 - **WF-085** The day-kind **reference graph** MUST be acyclic. A day-kind
-  voorwaarde may reference other day kinds (a `Predicaat` of soort
-  `DAGSOORT`), which builds an edge from the defined day kind to each day
+  voorwaarde may reference other day kinds (a `Predicate` of kind
+  `dayKind`), which builds an edge from the defined day kind to each day
   kind it names; mutually recursive definitions have no fixpoint and are
   refused (ch. 5.4). An undeclared reference is WF-034's concern and carries
   no edge here. *v0 mirror note:* v0 permits the references and resolves a
@@ -2690,6 +2697,8 @@ The anchor metadata for a variable-start timeline: which member of which
 type carries the per-object start date. The *write* of that member is an
 ordinary Rule (ch. 3.1) — the determination itself carries no condition
 and no validity (they ride the write rule). v0 name: `ResolvedStartpunt`.
+A **StartPointDetermination** node carries it on the wire (since L5), in the
+list `startPointDeterminations` under `rules` (ch. 2).
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -2710,13 +2719,15 @@ and no validity (they ride the write rule). v0 name: `ResolvedStartpunt`.
 
 Namespacing over member rules plus a recursion marker (§9.10, documented
 extension; stays out of the core per PLAN §9, decision 5). v0 name:
-`ResolvedRegelGroep`.
+`ResolvedRegelGroep`. The wire has written it as a `RuleGroup` node since
+L5, in the list `ruleGroups` under `rules` (ch. 2).
 
 | Field | Type | Meaning |
 |---|---|---|
 | `name` | string | — |
 | `recursive` | boolean | the §9.10 marker |
 | `members` | list of rule names | written order |
+| `source` | source reference? | the group's source text and, where the producer reports one, its source line — `snippet` and `line` of the structured source reference (ch. 4). Since L5; the v0 fields `bron` and `line` went into it (`line` only beside a `bron` string, and dropped where `bron` was null) |
 
 Members are ordinary rules; a non-recursive group adds no execution
 semantics (namespacing only). The `recursive` marker HAS its neutral
@@ -2759,11 +2770,12 @@ WF-101 (2026-09-11) no reader held it: a bound reading `niet-een-datum`
 was a well-formed document for the verifier, the reference interpreter and
 the ASP backend alike.
 
-Every version of a named form writes its `validity` since L4 (the version's
-`validity`, a `Geldigheid` node until its own landing); always is the node
-with both bounds null. *History:* until L4 the v0 spelling of always on a
-rule or a consistency was `geldigheid: null`, which the L4 migration wrote
-as that node.
+Every version of a named form writes its `validity` since L4, and since L5
+that is a `Validity` node; always is the node with neither bound. *History:*
+until L4 the v0 spelling of always on a rule or a consistency was
+`geldigheid: null`, which the L4 migration wrote as a `Geldigheid` node with
+both bounds null; since L5 the node is `Validity` and an open bound is
+absent rather than null.
 
 ---
 
