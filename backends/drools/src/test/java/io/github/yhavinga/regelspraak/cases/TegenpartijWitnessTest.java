@@ -57,6 +57,16 @@ class TegenpartijWitnessTest {
                 "kenmerk strandbemand: verwacht afwezig, werkelijk aanwezig", "the check without its narrowing");
     }
 
+    @Test void de_rolnaam_wordt_in_de_wf001_vorm_vergeleken() throws Exception {
+        // A role is named as every declared name is compared (WF-001): case and runs of blanks folded. The
+        // verifier passes "Toegewezen  wachtpost" for the declared "toegewezen wachtpost"; until L2's advisory
+        // round this backend compared case alone and called the document malformed.
+        ObjectNode ir = lees();
+        for (int r : new int[] { 0, 1, 2, 3 }) regel(ir, r).put("role", "Toegewezen  wachtpost");
+        for (Path zaak : zaken()) BeideTakken.groen(tijdelijk(ir), JSON.readTree(Files.readString(zaak)),
+                "the role named with another case and a doubled blank, " + zaak.getFileName());
+    }
+
     // ---------------- the link stored on the SUBJECT: a null-test and a type test on its reference ----------------
 
     @Test void de_vernauwing_op_het_subject_lowert_in_beide_takken_met_een_typetoets() throws Exception {

@@ -291,7 +291,7 @@ public final class IrLoader {
         lijst(rules, "/rules", "resolvedRegels", (p, n) -> m.resolvedRegels.add(resolvedRegel(n)));
         lijst(rules, "/rules", "resolvedDagsoorten", (p, n) -> {
             velden(n, p, "ResolvedDagsoort", List.of("node", "naam", "voorwaarde", "geldigheid"), List.of());
-            m.resolvedDagsoorten.add(new ResolvedDagsoort(text(n, "naam"), conditie(n.get("voorwaarde")),
+            m.resolvedDagsoorten.add(new ResolvedDagsoort(text(n, "naam"), conditie(knoopVeld(n, "voorwaarde")),
                     geldigheid(n)));
         });
         lijst(rules, "/rules", "objectCreaties", (p, n) -> m.objectCreaties.add(objectCreatie(n)));
@@ -456,17 +456,20 @@ public final class IrLoader {
                     + "\", so no link of it can hold the subject there (WF-034)");
     }
 
-    /** The declared fact type of that name, case-insensitively, or null. */
+    /** The declared fact type of that name in the WF-001 form (case and runs of blanks folded), or null. */
     private Feittype feittypeOpNaam(String naam) {
         if (naam == null) return null;
-        for (Feittype ft : m.feittypen.values()) if (naam.equalsIgnoreCase(ft.naam)) return ft;
+        String n = Namen.norm(naam);
+        for (Feittype ft : m.feittypen.values()) if (n.equals(Namen.norm(ft.naam))) return ft;
         return null;
     }
 
-    /** The role of {@code ft} with that DECLARED name (the plural does not name a role here), or null. */
+    /** The role of {@code ft} with that DECLARED name (the plural does not name a role here), in the WF-001 form,
+     *  or null. */
     private static RegelSpraakModel.Rol rolOpNaam(Feittype ft, String naam) {
         if (ft == null || naam == null) return null;
-        for (RegelSpraakModel.Rol r : ft.rollen) if (naam.equalsIgnoreCase(r.naam())) return r;
+        String n = Namen.norm(naam);
+        for (RegelSpraakModel.Rol r : ft.rollen) if (r.naam() != null && n.equals(Namen.norm(r.naam()))) return r;
         return null;
     }
 
@@ -653,7 +656,7 @@ public final class IrLoader {
         if ((kenmerk == null) == (attribuut == null))
             throw new Refusal("PrioritizedDefaults", "defaults must carry exactly one of kenmerk/attribuut (WF-050)");
         List<Default> defaults = new ArrayList<>();
-        forEach(n.get("defaults"), r -> defaults.add(dflt(r)));
+        elementen(n, "defaults", r -> defaults.add(dflt(r)));
         return new PrioritizedDefaults(text(n, "naam"), onderwerp, kenmerk, attribuut, bool(n, "ongeordend"),
                 defaults, text(n, "bron"), geldigheid(n));
     }
@@ -663,22 +666,22 @@ public final class IrLoader {
                 List.of("consequentie", "initialisatie", "excepties"));
         JsonNode b = n.get("besluit");
         Boolean besluit = b == null || b.isNull() ? null : b.asBoolean();
-        return new Default(besluit, conditie(n.get("voorwaarde")), expr(n.get("consequentie")),
-                bool(n, "initialisatie"), excepties(n.get("excepties")), text(n, "bron"));
+        return new Default(besluit, conditie(knoopVeld(n, "voorwaarde")), expr(knoopVeld(n, "consequentie")),
+                bool(n, "initialisatie"), excepties(knoopVeld(n, "excepties")), text(n, "bron"));
     }
 
     private Default.Excepties excepties(JsonNode n) {
         if (n == null || n.isNull()) return null;
         velden(n, padVan(n), null, List.of("ongeordend", "leden"), List.of());
         List<ExceptionGroup> leden = new ArrayList<>();
-        forEach(n.get("leden"), s -> leden.add(exceptionGroup(s)));
+        elementen(n, "leden", s -> leden.add(exceptionGroup(s)));
         return new Default.Excepties(bool(n, "ongeordend"), leden);
     }
 
     private ExceptionGroup exceptionGroup(JsonNode n) {
         velden(n, padVan(n), "ExceptionGroup", List.of("node", "defaults", "bron"), List.of());
         List<Default> defaults = new ArrayList<>();
-        forEach(n.get("defaults"), r -> defaults.add(dflt(r)));
+        elementen(n, "defaults", r -> defaults.add(dflt(r)));
         return new ExceptionGroup(defaults, text(n, "bron"));
     }
 
@@ -900,7 +903,7 @@ public final class IrLoader {
         velden(n, pad, "Feittype", List.of("node", "naam", "wederkerig", "rollen"), List.of());
         Feittype ft = new Feittype(naam(n, pad, "naam"));
         ft.wederkerig = bool(n, "wederkerig");
-        forEach(n.get("rollen"), r -> {
+        elementen(n, "rollen", r -> {
             velden(r, padVan(r), "Rol", List.of("node", "naam", "objecttypeNaam", "meervoud", "meervoudig"), List.of());
             ft.rollen.add(new RegelSpraakModel.Rol(
                     text(r, "naam"), text(r, "objecttypeNaam"), text(r, "meervoud"), bool(r, "meervoudig")));
@@ -1016,12 +1019,11 @@ public final class IrLoader {
 
     /** The discriminator of an expression or condition node, and — for the kinds this loader reads — its key set,
      *  checked as {@link #velden} checks every node since L2's fix round: no key outside the node's own, every
-     *  required key present, an optional one written whole or not at all. Until then a field no node has was
-     *  read past on most rule-side nodes, a condition marker carrying a type among them. */
+     *  required key present, an optional one written whole or not at all. Until then a field no node has was read
+     *  past on most rule-side nodes, a condition marker carrying a type among them. A scalar where the node should
+     *  stand is refused by the caller's {@link #knoopVeld} or {@link #elementen}, at the field's pointer. */
     private String knoopSoort(JsonNode n, Map<String, Sleutels> tabel, String wat) {
-        if (!n.isObject())
-            throw new Documentfout(n.isArray() ? padVan(n) : wat,
-                    "expected " + ("expression".equals(wat) ? "an " : "a ") + wat + " node, got " + kort(n));
+        // every caller reads the node through knoopVeld or elementen, which refuse a non-object at its pointer
         String p = padVan(n);
         JsonNode soort = n.get("node");
         if (soort == null) throw new Documentfout(p, "missing field 'node' (the " + wat + " discriminator)");
@@ -1037,17 +1039,18 @@ public final class IrLoader {
         if (n == null || n.isNull()) return null;
         String node = knoopSoort(n, EXPRESSIE, "expression");
         return switch (node) {
-            case "Literal" -> new Expr.Literal(text(n, "waarde"), datatype(n.get("type")), bron(n));
+            case "Literal" -> new Expr.Literal(text(n, "waarde"), typeVeld(n), bron(n));
             case "TekstReeks" -> {
+                afgeleidType(n);
                 List<Expr.TekstReeks.Deel> delen = new ArrayList<>();
-                forEach(n.get("delen"), d -> delen.add(tekstReeksDeel(d)));
+                elementen(n, "delen", d -> delen.add(tekstReeksDeel(d)));
                 yield new Expr.TekstReeks(delen, bron(n));
             }
             case "Binair" -> new Expr.Binair(enumOf(Expr.BinOp.class, n, "op"),
-                    expr(n.get("links")), expr(n.get("rechts")), datatype(n.get("type")), bron(n));
+                    expr(knoopVeld(n, "links")), expr(knoopVeld(n, "rechts")), typeVeld(n), bron(n));
             case "Functie" -> {
                 List<Expr> args = new ArrayList<>();
-                forEach(n.get("argumenten"), a -> args.add(expr(a)));
+                elementen(n, "argumenten", a -> args.add(expr(a)));
                 // A kind this backend's IR records do not carry is a NAMED per-form Refusal, on the
                 // Kwantorvouw.kwantor precedent below: Enum.valueOf would otherwise throw an unattributed
                 // IllegalArgumentException, which gate 12 reads as an ERROR on the golden rather than as a
@@ -1063,8 +1066,9 @@ public final class IrLoader {
                             + " this backend does not carry; the wire form is defined (IR-SPEC ch. 4.3) and a"
                             + " transpiler arm for it has not landed here yet");
                 Expr.Functie f = new Expr.Functie(fk, args,
-                        ot(text(n, "elementObjecttype")), expr(n.get("leegwaarde")), conditie(n.get("filter")),
-                        dimensieSelectie(n.get("dimensieSelectie")), datatype(n.get("type")), bron(n),
+                        ot(text(n, "elementObjecttype")), expr(knoopVeld(n, "leegwaarde")),
+                        conditie(knoopVeld(n, "filter")),
+                        dimensieSelectie(knoopVeld(n, "dimensieSelectie")), typeVeld(n), bron(n),
                         enumOf(Granulariteit.class, n, "granulariteit"));
                 // IR-SPEC ch. 4.3: the range of a fold over ONE source is one field with two spellings, and a fold
                 // with an element type and a kind other than TOTAAL carries it — without it the argument is the
@@ -1105,9 +1109,16 @@ public final class IrLoader {
                 plekken.put(f, p);
                 yield f;
             }
-            case "Afgerond" -> new Expr.Afgerond(expr(n.get("basis")),
-                    enumOf(Expr.AfrondModus.class, n, "modus"), intOf(n, "decimalen"), bron(n));
-            case "Begrensd" -> new Expr.Begrensd(expr(n.get("basis")), expr(n.get("minimum")), expr(n.get("maximum")), bron(n));
+            case "Afgerond" -> {
+                afgeleidType(n);
+                yield new Expr.Afgerond(expr(knoopVeld(n, "basis")), enumOf(Expr.AfrondModus.class, n, "modus"),
+                        intOf(n, "decimalen"), bron(n));
+            }
+            case "Begrensd" -> {
+                afgeleidType(n);
+                yield new Expr.Begrensd(expr(knoopVeld(n, "basis")), expr(knoopVeld(n, "minimum")),
+                        expr(knoopVeld(n, "maximum")), bron(n));
+            }
             // IR-SPEC ch. 4.1/4.1a: the reference nodes carry no type (the declaration is the one source) and a read
             // carries no written navigation; the record's components for both stay empty
             case "AttribuutRef" -> {
@@ -1127,7 +1138,8 @@ public final class IrLoader {
                 yield a;
             }
             case "DimensieCel" -> {
-                yield new Expr.DimensieCel((Expr.AttribuutRef) expr(n.get("attribuut")), stringList(n.get("labels")),
+                yield new Expr.DimensieCel((Expr.AttribuutRef) expr(knoopVeld(n, "attribuut")),
+                        stringList(n.get("labels")),
                         bron(n));
             }
             case "ParameterRef" -> {
@@ -1136,7 +1148,7 @@ public final class IrLoader {
             case "VariabeleRef" -> {
                 yield new Expr.VariabeleRef(text(n, "naam"), null, bron(n));
             }
-            case "Constante" -> new Expr.Constante(text(n, "naam"), datatype(n.get("type")), bron(n));
+            case "Constante" -> new Expr.Constante(text(n, "naam"), typeVeld(n), bron(n));
             // reden null: it is the FRONTEND's own field (the WARNING it raises over a surviving marker)
             // and the wire carries no such key, so a marker read off the wire has none to recover. IR-SPEC
             // ch. 4.4: an absent type is an unknown one, and the record holds null for it.
@@ -1149,17 +1161,17 @@ public final class IrLoader {
             // IfThenElse's are "condition"/"then"/"else" — the condition reuses the ordinary conditie union.
             case "Let" -> let(new Expr.Let(
                     verplicht("Let", "binder", text(n, "binder")),
-                    verplicht("Let", "value", expr(n.get("value"))),
-                    verplicht("Let", "body", expr(n.get("body"))),
-                    verplicht("Let", "type", datatype(n.get("type"))), bron(n)));
+                    verplicht("Let", "value", expr(knoopVeld(n, "value"))),
+                    verplicht("Let", "body", expr(knoopVeld(n, "body"))),
+                    verplicht("Let", "type", typeVeld(n)), bron(n)));
             case "BinderRef" -> {
                 yield new Expr.BinderRef(verplicht("BinderRef", "name", text(n, "name")), null, bron(n));
             }
             case "IfThenElse" -> new Expr.IfThenElse(
-                    verplicht("IfThenElse", "condition", conditie(n.get("condition"))),
-                    verplicht("IfThenElse", "then", expr(n.get("then"))),
-                    verplicht("IfThenElse", "else", expr(n.get("else"))),
-                    verplicht("IfThenElse", "type", datatype(n.get("type"))), bron(n));
+                    verplicht("IfThenElse", "condition", conditie(knoopVeld(n, "condition"))),
+                    verplicht("IfThenElse", "then", expr(knoopVeld(n, "then"))),
+                    verplicht("IfThenElse", "else", expr(knoopVeld(n, "else"))),
+                    verplicht("IfThenElse", "type", typeVeld(n)), bron(n));
             // IR-SPEC ch. 4.3 / WF-110: the §5.7 concatenation of subject expressions as the source of an
             // instance count. Read VERBATIM, one selection per branch, for the reason bronPad is: every
             // selection names its own population and its own relation, and a backend that re-derived either
@@ -1169,7 +1181,7 @@ public final class IrLoader {
             // passing the verifier fails naming the shape it violates.
             case "InstanceSetUnion" -> {
                 List<Expr.InstanceSetUnion.Tak> takken = new ArrayList<>();
-                forEach(n.get("branches"), b -> {
+                elementen(n, "branches", b -> {
                     String bp = padVan(b);
                     velden(b, bp, "InstanceSetBranch", List.of("node", "elementType", "sourceRole", "filter", "bron"),
                             List.of());
@@ -1178,7 +1190,7 @@ public final class IrLoader {
                     // IR-SPEC ch. 4.3: every selection names its relation; nothing derives a missing one
                     RolBindingRef rb = rolBinding(b, bp, "sourceRole");
                     if (rb == null) throw new Documentfout(bp + "/sourceRole", "expected a RolBinding, got null");
-                    takken.add(new Expr.InstanceSetUnion.Tak(el, rb, conditie(b.get("filter")), bron(b)));
+                    takken.add(new Expr.InstanceSetUnion.Tak(el, rb, conditie(knoopVeld(b, "filter")), bron(b)));
                 });
                 if (takken.size() < 2)
                     throw new Refusal("InstanceSetUnion.branches",
@@ -1335,6 +1347,19 @@ public final class IrLoader {
             throw new Documentfout(p + "/bronPad", "a range is bronRol or bronPad, never both (WF-102 (a))");
     }
 
+    /** A derived position whose record computes its own type — a rounding and a clamp from their base, a text
+     *  sequence as Tekst: the wire's {@code type} there is still a datatype or null (IR-SPEC ch. 2.10), so it is read
+     *  for its defects and not kept. An {@code Onbekend} or a scalar in it is no document, as the verifier holds;
+     *  until L2's advisory round the field was not read at all. */
+    private void afgeleidType(JsonNode n) {
+        typeVeld(n);
+    }
+
+    /** The datatype at a node's {@code type} field, with that field's pointer for every defect in it. */
+    private Datatype typeVeld(JsonNode n) {
+        return datatype(n.get("type"), padVan(n) + "/type");
+    }
+
     /** Index one {@link Expr.Let} (see {@link Loaded#lets()}) and return it — the node itself goes into the tree. */
     private Expr let(Expr.Let l) {
         lets.add(l);
@@ -1345,7 +1370,7 @@ public final class IrLoader {
         String node = knoopSoort(d, DEEL, "text part");
         return switch (node) {
             case "Letterlijk" -> new Expr.TekstReeks.Letterlijk(text(d, "tekst"));
-            case "Ingevoegd" -> new Expr.TekstReeks.Ingevoegd(expr(d.get("expr")));
+            case "Ingevoegd" -> new Expr.TekstReeks.Ingevoegd(expr(knoopVeld(d, "expr")));
             default -> throw new Refusal("TekstReeks.Deel:" + node, "unknown tekstreeks part");
         };
     }
@@ -1363,13 +1388,14 @@ public final class IrLoader {
         String node = knoopSoort(n, CONDITIE, "condition");
         return switch (node) {
             case "Vergelijking" -> new Conditie.Vergelijking(enumOf(Conditie.Operator.class, n, "op"),
-                    expr(n.get("links")), expr(n.get("rechts")), geheelPeriode(n.get("periode")), bron(n));
+                    expr(knoopVeld(n, "links")), expr(knoopVeld(n, "rechts")), geheelPeriode(knoopVeld(n, "periode")),
+                    bron(n));
             case "Predicaat" -> predicaat(n);
             // IR-SPEC ch. 4.5: the binding IS the hop — a check without one tests the subject's own kenmerk
             case "Kenmerk" -> {
                 String p = padVan(n);
                 Conditie.Kenmerk k = new Conditie.Kenmerk(text(n, "kenmerk"), null, bool(n, "negatie"),
-                        ot(text(n, "eigenaar")), geheelPeriode(n.get("periode")), bron(n));
+                        ot(text(n, "eigenaar")), geheelPeriode(knoopVeld(n, "periode")), bron(n));
                 RolBindingRef nb = rolBinding(n, p, "navigatieBinding");
                 if (nb != null) navigatieBindingen.put(k, List.of(nb));
                 yield k;
@@ -1413,10 +1439,11 @@ public final class IrLoader {
             // the two role checks of the L1 shape, which RoleMembership replaced: nodes this format no longer has
             case "Rollidmaatschap", "VerreRollidmaatschap" -> throw new Documentfout(padVan(n) + "/node",
                     "unknown condition node \"" + node + "\": uchar-ir-v1 spells a role check as RoleMembership");
-            case "Periode" -> new Conditie.Periode(expr(n.get("vanaf")), expr(n.get("tot")), bool(n, "totInclusief"), bron(n));
+            case "Periode" -> new Conditie.Periode(expr(knoopVeld(n, "vanaf")), expr(knoopVeld(n, "tot")),
+                    bool(n, "totInclusief"), bron(n));
             case "Samengesteld" -> {
                 List<Conditie> delen = new ArrayList<>();
-                forEach(n.get("onderdelen"), o -> delen.add(conditie(o)));
+                elementen(n, "onderdelen", o -> delen.add(conditie(o)));
                 yield new Conditie.Samengesteld(enumOf(Conditie.Kwantor.class, n, "kwantor"),
                         intOf(n, "drempel"), delen, bron(n));
             }
@@ -1463,7 +1490,7 @@ public final class IrLoader {
                             + (telt ? " and no drempel" : " and one"));
                 yield new Conditie.Kwantorvouw(kw, telt ? intOf(n, "drempel") : 0,
                         ot(text(n, "elementObjecttype")),
-                        conditie(n.get("filter")), conditie(n.get("toets")),
+                        conditie(knoopVeld(n, "filter")), conditie(knoopVeld(n, "toets")),
                         rolBinding(n, p, "bronRol"), List.of(), bron(n));
             }
             case "Regelversie" -> new Conditie.Regelversie(text(n, "regel"), bool(n, "inconsistent"), bron(n));
@@ -1489,7 +1516,7 @@ public final class IrLoader {
     private Conditie.Predicaat predicaat(JsonNode n) {
         Conditie.Predicaatsoort soort = enumOf(Conditie.Predicaatsoort.class, n, "soort");
         boolean negatie = bool(n, "negatie");
-        Conditie.GeheelPeriode periode = geheelPeriode(n.get("periode"));
+        Conditie.GeheelPeriode periode = geheelPeriode(knoopVeld(n, "periode"));
         boolean leegOfGevuld = soort == Conditie.Predicaatsoort.LEEG || soort == Conditie.Predicaatsoort.GEVULD;
         if (leegOfGevuld && periode != null && !negatie)
             throw new Refusal("Predicaat.periode",
@@ -1501,7 +1528,8 @@ public final class IrLoader {
             soort = soort == Conditie.Predicaatsoort.LEEG ? Conditie.Predicaatsoort.GEVULD : Conditie.Predicaatsoort.LEEG;
             negatie = false;
         }
-        return new Conditie.Predicaat(soort, expr(n.get("operand")), text(n, "dagsoort"), negatie, intOf(n, "cijfers"),
+        return new Conditie.Predicaat(soort, expr(knoopVeld(n, "operand")), text(n, "dagsoort"), negatie,
+                intOf(n, "cijfers"),
                 periode, bron(n));
     }
 
@@ -1518,7 +1546,7 @@ public final class IrLoader {
                 "geldigheid"), List.of("bronAnnotaties"));
         List<String> bronAnnotaties = n.has("bronAnnotaties") ? stringList(n.get("bronAnnotaties")) : List.of();
         ResolvedRegel r = new ResolvedRegel(text(n, "naam"), enumOf(ResolvedRegel.Soort.class, n, "soort"),
-                expr(n.get("doel")), expr(n.get("waarde")), conditie(n.get("voorwaarde")),
+                expr(knoopVeld(n, "doel")), expr(knoopVeld(n, "waarde")), conditie(knoopVeld(n, "voorwaarde")),
                 geldigheid(n), bronAnnotaties);
         // WF-022's value clause: a characteristic attribution writes the boolean constant true. Neither branch
         // reads the value — the exec-model one writes true whatever it says, the DRL-text one writes what it
@@ -1541,13 +1569,13 @@ public final class IrLoader {
         velden(n, padVan(n), "ResolvedObjectCreatie", List.of("node", "naam", "nieuwType", "subject", "toekenningen",
                 "voorwaarde", "geldigheid"), List.of("verbindendeRol"));
         List<ResolvedObjectCreatie.Toekenning> tk = new ArrayList<>();
-        forEach(n.get("toekenningen"), t -> {
+        elementen(n, "toekenningen", t -> {
             velden(t, padVan(t), "Toekenning", List.of("node", "attribuut", "waarde", "kenmerk"), List.of());
-            tk.add(new ResolvedObjectCreatie.Toekenning(text(t, "attribuut"), expr(t.get("waarde")),
+            tk.add(new ResolvedObjectCreatie.Toekenning(text(t, "attribuut"), expr(knoopVeld(t, "waarde")),
                     bool(t, "kenmerk")));
         });
         ResolvedObjectCreatie oc = new ResolvedObjectCreatie(text(n, "naam"), ot(text(n, "nieuwType")),
-                ot(text(n, "subject")), tk, conditie(n.get("voorwaarde")), geldigheid(n));
+                ot(text(n, "subject")), tk, conditie(knoopVeld(n, "voorwaarde")), geldigheid(n));
         // IR-SPEC ch. 3.3: the symbolic verbindendeRol is NOT a field of the (vendored, pinned)
         // ResolvedObjectCreatie record, so it cannot be reconstructed INTO the model the way a feitcreatie's
         // joinRol can. ch. 5.5 makes it AUTHORITATIVE (the reference interpreter lets it win over the type-pair
@@ -1566,7 +1594,7 @@ public final class IrLoader {
                 ot(text(n, "doelType")), text(n, "doelAttribuut"),
                 enumOf(ResolvedVerdeling.Methode.class, n, "methode"), text(n, "ratoAttribuut"),
                 text(n, "maximumAttribuut"), integerOf(n, "afrondingDecimalen"), text(n, "restantAttribuut"),
-                text(n, "groepeerAttribuut"), bool(n, "afnemend"), conditie(n.get("voorwaarde")),
+                text(n, "groepeerAttribuut"), bool(n, "afnemend"), conditie(knoopVeld(n, "voorwaarde")),
                 geldigheid(n));
         // IR-SPEC ch. 3.2: the recipient role binding IS the join, and it is required. Not a field of the vendored
         // record, so it rides beside the model like the objectcreatie's; see Loaded#rolBindingen.
@@ -1580,7 +1608,7 @@ public final class IrLoader {
     private ResolvedConsistentie consistentie(JsonNode n) {
         velden(n, padVan(n), "ResolvedConsistentie", List.of("node", "naam", "subject", "assertie", "bron", "line",
                 "geldigheid"), List.of());
-        return new ResolvedConsistentie(text(n, "naam"), ot(text(n, "subject")), conditie(n.get("assertie")),
+        return new ResolvedConsistentie(text(n, "naam"), ot(text(n, "subject")), conditie(knoopVeld(n, "assertie")),
                 bron(n), intOf(n, "line"), geldigheid(n));
     }
 
@@ -1597,7 +1625,7 @@ public final class IrLoader {
         velden(n, padVan(n), "ResolvedUniciteitUnie", List.of("node", "naam", "bronnen", "bron", "geldigheid"),
                 List.of());
         List<ResolvedUniciteitUnie.Bron> bronnen = new ArrayList<>();
-        forEach(n.get("bronnen"), b -> {
+        elementen(n, "bronnen", b -> {
             velden(b, padVan(b), "Bron", List.of("node", "type", "sleutels"), List.of());
             bronnen.add(new ResolvedUniciteitUnie.Bron(ot(text(b, "type")), stringList(b.get("sleutels"))));
         });
@@ -1621,7 +1649,7 @@ public final class IrLoader {
         RolBindingRef join = rolBinding(n, p, "joinRol");
         if (join == null) throw new Documentfout(p + "/joinRol", "expected a RolBinding, got null");
         return new ResolvedFeitCreatie(text(n, "naam"), ot(text(n, "anker")), ot(text(n, "doel")),
-                null, null, ts, conditie(n.get("voorwaarde")), geldigheid(n),
+                null, null, ts, conditie(knoopVeld(n, "voorwaarde")), geldigheid(n),
                 tekst(n, p, "feittype"), tekst(n, p, "ankerRol"), tekst(n, p, "doelRol"), join);
     }
 
@@ -1656,8 +1684,8 @@ public final class IrLoader {
      *  exercises this today (measured 2026-09-11: 0 of 424 carriers in golden plus rood), which is exactly
      *  why it is written down and asserted rather than left to be discovered. */
     private Geldigheid geldigheid(JsonNode eigenaar) {
-        JsonNode n = eigenaar.get("geldigheid");
-        if (n == null || n.isNull()) return null;
+        JsonNode n = knoopVeld(eigenaar, "geldigheid");
+        if (n == null) return null;
         velden(n, padVan(n), "Geldigheid", List.of("node", "vanaf", "tot"), List.of());
         String naam = text(eigenaar, "naam"), soort = text(eigenaar, "node");
         String plek = (naam != null ? naam : "<unnamed " + (soort == null ? "carrier" : soort) + ">")
@@ -1759,6 +1787,28 @@ public final class IrLoader {
 
     private static void forEach(JsonNode array, java.util.function.Consumer<JsonNode> f) {
         if (array != null && array.isArray()) array.forEach(f);
+    }
+
+    /** The node at {@code veld} of {@code ouder}: null when the field is absent or null, and a scalar or an array
+     *  there refused at the field's own pointer. A node is found by identity ({@link #padVan}), which a scalar does
+     *  not have — Jackson shares small numbers, booleans and null — so its place is the parent's and the field's. */
+    private JsonNode knoopVeld(JsonNode ouder, String veld) {
+        JsonNode c = ouder.get(veld);
+        if (c == null || c.isNull()) return null;
+        if (!c.isObject()) throw new Documentfout(padVan(ouder) + "/" + veld, "expected a JSON object, got " + kort(c));
+        return c;
+    }
+
+    /** Each node of the list at {@code veld} of {@code ouder}, in order; an absent list is empty, and an entry that is
+     *  not an object is refused at its own pointer (see {@link #knoopVeld}). */
+    private void elementen(JsonNode ouder, String veld, java.util.function.Consumer<JsonNode> f) {
+        JsonNode a = ouder.get(veld);
+        if (a == null || !a.isArray()) return;
+        for (int i = 0; i < a.size(); i++) {
+            JsonNode e = a.get(i);
+            if (!e.isObject()) throw new Documentfout(padVan(a) + "/" + i, "expected a JSON object, got " + kort(e));
+            f.accept(e);
+        }
     }
 
     private static void forEachField(JsonNode obj, java.util.function.BiConsumer<String, JsonNode> f) {

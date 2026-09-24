@@ -290,12 +290,14 @@ public final class FactModelGenerator {
     public static Rol[] gebondenRolpaar(RegelSpraakModel model, RegelSpraakModel.RolBindingRef rb) {
         if (model == null || rb == null || rb.feittype() == null || rb.rol() == null) return null;
         Feittype ft = null;
+        // the WF-001 form of a name, as the verifier and ref compare it (case and runs of blanks folded)
+        String feittype = Namen.norm(rb.feittype()), rol = Namen.norm(rb.rol());
         for (Map.Entry<String, Feittype> e : model.feittypen.entrySet())
-            if (e.getKey().equalsIgnoreCase(rb.feittype())) { ft = e.getValue(); break; }
+            if (Namen.norm(e.getKey()).equals(feittype)) { ft = e.getValue(); break; }
         if (ft == null) return null;
         Rol gebonden = null;
         for (Rol r : ft.rollen)
-            if (r.naam() != null && r.naam().equalsIgnoreCase(rb.rol())) { gebonden = r; break; }
+            if (r.naam() != null && Namen.norm(r.naam()).equals(rol)) { gebonden = r; break; }
         if (gebonden == null) return null;
         if (ft.wederkerig) return new Rol[]{gebonden, gebonden};
         for (Rol r : ft.rollen)

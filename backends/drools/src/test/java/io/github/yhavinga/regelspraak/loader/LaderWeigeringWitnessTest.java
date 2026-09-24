@@ -289,7 +289,8 @@ class LaderWeigeringWitnessTest {
     // with a reason that named no defect, or died in a NullPointerException naming no place.
 
     @Test void een_datatype_zonder_node_weigert_met_een_plek() throws Exception {
-        // at an M1 position (the attribute, the domain) with its JSON pointer, at a v0 position with the kind
+        // at an M1 position (the attribute, the domain) and, since L2's advisory round, at a rule-side position
+        // too, each with its JSON pointer (the rule side named only the kind until then)
         ObjectNode ir = golden(BAKENMEESTER);
         String attr = lidPad(ir, "Bakenmeester", "attributes", "onderhoudstarief");
         ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("datatype"))
@@ -303,7 +304,7 @@ class LaderWeigeringWitnessTest {
 
         ir = golden(BAKENMEESTER);
         ((ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("waarde").get("type")).remove("node");
-        IrLoader.Documentfout e = weigert(ir, "Datatype.node");
+        IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/0/waarde/type");
         assertTrue(e.getMessage().contains("missing field 'node'"), e.getMessage());
     }
 

@@ -124,6 +124,54 @@ class OnbekendVeldWitnessTest {
         assertTrue(f.getMessage().contains("null is neither"), f.getMessage());
     }
 
+    /** The derived positions whose record computes its own type — a rounding, a clamp, a text sequence — still
+     *  carry a wire type that is a datatype or null; until the advisory round of L2 it was not read at all, so an
+     *  {@code Onbekend} there loaded. */
+    @Test void een_onbekend_type_op_een_afgeleide_positie_weigert() throws Exception {
+        String w = "/rules/resolvedRegels/0/waarde";
+        String literal = "{\"node\":\"Literal\",\"waarde\":\"2\",\"type\":{\"node\":\"Numeriek\",\"geheel\":true,"
+                + "\"decimalen\":0,\"teken\":\"ONBEPAALD\",\"eenheid\":null},\"bron\":\"2\"}";
+        String onbekend = "{\"node\":\"Onbekend\",\"reden\":\"niet opgelost\"}";
+        Map<String, String> rijen = new java.util.LinkedHashMap<>();
+        rijen.put("Afgerond", "{\"node\":\"Afgerond\",\"basis\":" + literal + ",\"modus\":\"REKENKUNDIG\","
+                + "\"decimalen\":0,\"type\":" + onbekend + ",\"bron\":\"x\"}");
+        rijen.put("Begrensd", "{\"node\":\"Begrensd\",\"basis\":" + literal + ",\"minimum\":null,"
+                + "\"maximum\":null,\"type\":" + onbekend + ",\"bron\":\"x\"}");
+        rijen.put("TekstReeks", "{\"node\":\"TekstReeks\",\"delen\":[],\"type\":" + onbekend + ",\"bron\":\"x\"}");
+        for (Map.Entry<String, String> r : rijen.entrySet()) {
+            JsonNode doc = golden(PENNINGDREMPEL);
+            ((ObjectNode) doc.at("/rules/resolvedRegels/0")).set("waarde", JSON.readTree(r.getValue()));
+            IrLoader.Documentfout f = weigert(doc, r.getKey());
+            assertEquals(w + "/type", f.plek(), r.getKey() + ": " + f.getMessage());
+            assertTrue(f.getMessage().contains("unknown datatype node \"Onbekend\""),
+                    r.getKey() + ": " + f.getMessage());
+        }
+    }
+
+    /** A scalar where a node stands is refused at its own pointer. Jackson shares small numbers, so a scalar has no
+     *  place of its own to look up; until the advisory round of L2 {@code geldigheid: 1} ended in an
+     *  IllegalStateException that named no place, and a scalar expression in a placeholder place. */
+    @Test void een_scalair_op_de_plek_van_een_knoop_weigert_met_een_plek() throws Exception {
+        String[][] rijen = {
+                { "/rules/resolvedRegels/0", "geldigheid", "/rules/resolvedRegels/0/geldigheid" },
+                { "/rules/resolvedRegels/0", "waarde", "/rules/resolvedRegels/0/waarde" },
+                { "/rules/resolvedRegels/0", "voorwaarde", "/rules/resolvedRegels/0/voorwaarde" } };
+        for (String[] rij : rijen) {
+            JsonNode doc = golden(PENNINGDREMPEL);
+            ((ObjectNode) doc.at(rij[0])).put(rij[1], 1);
+            IrLoader.Documentfout f = weigert(doc, rij[1]);
+            assertEquals(rij[2], f.plek(), rij[1] + ": " + f.getMessage());
+            assertTrue(f.getMessage().contains("expected a JSON object, got 1"), rij[1] + ": " + f.getMessage());
+        }
+        // ...and an entry of a node list, at its index
+        JsonNode doc = golden(PENNINGDREMPEL);
+        ((ObjectNode) doc.at("/rules/resolvedRegels/0")).set("waarde", JSON.readTree("{\"node\":\"Functie\","
+                + "\"kind\":\"SOM\",\"argumenten\":[1],\"elementObjecttype\":null,\"leegwaarde\":null,"
+                + "\"filter\":null,\"dimensieSelectie\":null,\"type\":null,\"bron\":\"x\",\"granulariteit\":null}"));
+        IrLoader.Documentfout f = weigert(doc, "argumenten");
+        assertEquals("/rules/resolvedRegels/0/waarde/argumenten/0", f.plek(), f.getMessage());
+    }
+
     private static JsonNode golden(String naam) throws Exception {
         JsonNode doc = JSON.readTree(Files.readString(CORPUS.resolve(naam).resolve("ir.json")));
         IrLoader.loadAll(doc);   // the untwisted golden loads, so the refusal is the twist's alone
