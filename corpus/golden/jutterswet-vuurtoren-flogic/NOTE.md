@@ -99,16 +99,17 @@ defaults group, omits the key. Both are schema-valid and the loader reads
 them identically.
 
 **No semantic difference.** Everything else is byte-identical: the two object
-types with the same attributes, characteristics, datatypes and
-`kenmerkSoorten`; the fact type with the same name and the same role fillers;
-the same five `Rule` forms with the same names, the same `initialisation` and
-`presentation` and in the same order; the same four `Kwantorvouw` nodes with
-the same `kwantor`, the same `drempel` where a counting quantifier has one and
-none where it would contradict the quantifier (WF-108 (e)), the same
-`elementObjecttype`, the same filter on `keurig` and none on the other three,
-the same matrix; and the same AANTAL with the same `elementType` and
-`sourceRole.feittype`. A semantic difference here would be a defect in the
-lowering, not a finding about the languages.
+types with the same attributes, characteristics and datatypes and the same
+`kind` on every `Characteristic` (`kenmerkSoorten` until L1, B5); the fact
+type with the same name and the same role fillers; the same five `Rule` forms
+with the same names, the same `initialisation` and `presentation` and in the
+same order; the same four `Kwantorvouw` nodes with the same `kwantor`, the
+same `drempel` where a counting quantifier has one and none where it would
+contradict the quantifier (WF-108 (e)), the same `elementObjecttype`, the same
+filter on `keurig` and none on the other three, the same matrix; and the same
+AANTAL with the same `elementType` and `sourceRole.feittype`. A semantic
+difference here would be a defect in the lowering, not a finding about the
+languages.
 
 ## The cells
 

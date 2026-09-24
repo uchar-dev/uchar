@@ -8,8 +8,9 @@ anker is the only object bound and `Sein` names none.
     this position binds the subject 'Kustvak'
 
 Broken from `corpus/golden/jutterswet-seinhijsing` by two moves: `gehesen` on
-`Sein` becomes time-dependent (`kenmerkGranulariteit: JAAR`) and the guard gains
-a `GeheelPeriode` qualifier. The host field is untouched.
+`Sein` becomes time-dependent (`granularity: JAAR` in the `timeline` of its
+`Characteristic`; `kenmerkGranulariteit` until L1, B5) and the guard gains a
+`GeheelPeriode` qualifier. The host field is untouched.
 
 Why the fence exists, measured rather than assumed (2026-09-19, on this exact
 document with a whole-year S1 and a half-year S2):

@@ -25,9 +25,10 @@ defaults in descending priority:
    `aantal geborgen wrakken >= 20`.
 
 Both the base rule and the exception leave `resolvedRegels` (WF-050
-single-writer: their semantics live in the defaults); each keeps a `Regel`
-stub in `regels`. The base rule's `geldig altijd` is carried onto the
-defaults as `geldigheid {vanaf:null, tot:null}`.
+single-writer: their semantics live in the defaults). Until L1 each also kept
+a `Regel` stub in the `regels` register, which left the wire with the M1
+card (B3). The base rule's `geldig altijd` is carried onto the defaults as
+`geldigheid {vanaf:null, tot:null}`.
 
 ## Case derivations (hand-computed, absolute)
 

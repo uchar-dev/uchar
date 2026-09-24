@@ -91,15 +91,15 @@ recht dat kan eindigen of herleven.
 Afgeleide attributen: `inkomensgrens`, `verstreken periode` (in hele dagen),
 `nieuwe maxdatum`. Doel-kenmerk van de defaults: `recht op uitkering`.
 
-Het doelkenmerk is bezittelijk (`kenmerkSoorten`: `BEZITTELIJK`), de drie
-invoerkenmerken zijn bijvoeglijk. De soort stuurt alleen de spelling in een
-RegelSpraak-bron: `heeft (geen) recht op uitkering` in plaats van `is (niet)
-recht op uitkering`. Ze staat zo omdat een RegelSpraak-tweeling van dit
-anker die spelling schrijft en byte-identiek op dit anker moet uitkomen. De
-uitvoering hangt er niet van af: met `BIJVOEGLIJK` en met `BEZITTELIJK`
-geven ref, clingo en de Drools-exectak dezelfde uitkomsten op alle tien
-cases, krijgt clingo hetzelfde ASP-programma en krijgt de Drools-bean
-hetzelfde veld.
+Het doelkenmerk is bezittelijk (`kind: BEZITTELIJK` op zijn `Characteristic`;
+tot L1 `kenmerkSoorten`, B5), de drie invoerkenmerken zijn bijvoeglijk. De
+soort stuurt alleen de spelling in een RegelSpraak-bron:
+`heeft (geen) recht op uitkering` in plaats van
+`is (niet) recht op uitkering`. Ze staat zo omdat een RegelSpraak-tweeling van
+dit anker die spelling schrijft en byte-identiek op dit anker moet uitkomen.
+De uitvoering hangt er niet van af: met `BIJVOEGLIJK` en met `BEZITTELIJK`
+geven ref, clingo en de Drools-exectak dezelfde uitkomsten op alle tien cases,
+krijgt clingo hetzelfde ASP-programma en krijgt de Drools-bean hetzelfde veld.
 
 ### De defaults (het genest kenmerk-doel `recht op uitkering`)
 
