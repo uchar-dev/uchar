@@ -481,5 +481,74 @@ let () =
       | (_ : string) -> check name false "the serialiser wrote a document"
       | exception Failure m -> check name (contains ~needle m) m)
     emit_refusals;
+  (* The serialiser's arms no Catala source reaches, driven by one hand-built
+     document (the emitter-form proof of the L4 landing): the two context
+     nodes — the translator builds neither a ContextValue nor a BoundDay —
+     the text and dateTime value variants, and the rule kinds and the rule
+     condition the translator never combines. What the serialiser writes must
+     load in every reader and be verifier-clean, exactly as an E2E emission
+     is. *)
+  let module A = Ir_v0.Ast in
+  let num0 : A.datatype = Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = None } in
+  let zaak : A.objecttype =
+    { ot_naam = Some "Zaak"; ot_supertype = None;
+      attributen =
+        [ ("peildatum", Some A.Datum_in_dagen); ("dagdatum", Some A.Datum_in_dagen);
+          ("bedrag", Some num0); ("omschrijving", Some A.Tekst); ("moment", Some A.Datum_tijd) ];
+      attribuut_meervoud = []; attribuut_dimensies = []; attribuut_granulariteit = [];
+      attribuut_tijdlijn_aantal = []; attribuut_tijdlijn_naam = []; kenmerken = [];
+      kenmerk_soorten = []; kenmerk_granulariteit = []; kenmerk_tijdlijn_aantal = [];
+      bezield = false; meervoud = Some "Zaken" }
+  in
+  let aref a : A.expr =
+    Attribuut_ref { attribuut = Some a; objecttype = Some "Zaak"; bron = Some a; navigatie_bindingen = None }
+  in
+  let lit v t : A.expr =
+    Literal { waarde = Some (Ir_v0.Loader.literal_lexeme v); variant = v; typ = Some t; bron = Some "proef" }
+  in
+  let regel naam soort doel waarde cond : A.resolved_regel =
+    { rr_naam = Some naam; rr_soort = Some soort; doel = Some (aref doel); waarde = Some waarde;
+      rr_voorwaarde = cond; rr_geldigheid = None; rr_bron_annotaties = None; rr_pointer = "" }
+  in
+  let groter a n : A.conditie =
+    Vergelijking
+      { op = Groter; links = Some (aref a); rechts = Some (lit (Lv_number n) num0); periode = None;
+        bron = Some "groter" }
+  in
+  let proef : A.document =
+    { objecttypen = [ ("Zaak", zaak) ]; domeinen = []; parameters = []; eenheidstelsels = [];
+      feittypen = []; dimensies = []; tijdlijnen = []; dagsoorten = [];
+      resolved_regels =
+        [ regel "peildatum van een zaak" Gelijkstelling "peildatum"
+            (Constante { naam = Some "Rekendatum"; typ = Some A.Datum_in_dagen; bron = Some "de rekendatum" })
+            None;
+          regel "dagdatum van een zaak" Berekening "dagdatum"
+            (Bound_day { typ = Some A.Datum_in_dagen; bron = Some "de dag" }) None;
+          regel "bedrag van een zaak" Initialisatie "bedrag" (lit (Lv_number "5") num0) None;
+          regel "omschrijving van een zaak" Berekening "omschrijving" (lit (Lv_text "proef") A.Tekst)
+            (Some (groter "bedrag" "0"));
+          regel "moment van een zaak" Gelijkstelling "moment"
+            (lit (Lv_date_time "2026-03-15T12:00:00") A.Datum_tijd) None ];
+      resolved_dagsoorten = []; object_creaties = []; verdelingen = []; consistenties = [];
+      uniciteiten = []; uniciteit_unies = []; feit_creaties = []; resolved_startpunten = [];
+      regel_groepen = []; diagnostics = []; prioritized_defaults = []; function_defs = [];
+      presentatie_annotaties = [] }
+  in
+  Printf.printf "[emit-proef] de vormen die geen Catala-bron bereikt\n%!";
+  let text = Catala_frontend_lib.Emit.to_string proef in
+  let out = Filename.temp_file "catfe-proef" ".ir.json" in
+  let oc = open_out out in
+  output_string oc text;
+  close_out oc;
+  let vc, vo = run [ verifier; out ] in
+  check "emit-proef : verifier-clean" (vc = 0 && contains ~needle:"PASS" vo) vo;
+  (match Ir_v0.Loader.document (Yojson.Safe.from_string text) with
+   | (_ : A.document) -> check "emit-proef : loads for an executor" true ""
+   | exception Ir_v0.Loader.Error (p, m) -> check "emit-proef : loads for an executor" false (p ^ ": " ^ m));
+  List.iter
+    (fun needle -> check ("emit-proef : writes " ^ needle) (contains ~needle text) text)
+    [ {|"node": "ContextValue"|}; {|"node": "BoundDay"|}; {|"text": "proef"|};
+      {|"dateTime": "2026-03-15T12:00:00"|}; {|"presentation": "GELIJKSTELLING"|};
+      {|"initialisation": true|}; {|"condition": {|} ];
   Printf.printf "\n%d checks, %d failures\n%!" !ntests !failures;
   if !failures > 0 then exit 1
