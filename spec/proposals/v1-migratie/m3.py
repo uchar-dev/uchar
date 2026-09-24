@@ -28,14 +28,21 @@ verbatim, in its own key order. The six L3 nodes are written in the schema's
 - Every Eenheid, at every position and in a noemer recursively, becomes Unit {node,
   abbreviation, system?, canonical?, factorToCanonical?, denominator?}; a null field is
   left out. The factor becomes the exact rational {num, den}: a factor written as a whole
-  number is carried verbatim over 1; any other factor x becomes n/d for the smallest
-  d <= 10^6 with float(round(x*d))/d == x exactly, reduced to lowest terms, and a
-  factor for which no such d exists fails the document.
+  number is carried verbatim over 1; any other factor becomes the fraction with the
+  smallest denominator whose value lies within 10^-14 relative of the L2 double, with no
+  bound on the denominator, and a factor for which that fraction has a denominator above
+  10^9 fails the document. The tolerance is there because the v0 doubles are products of
+  ratios rounded to 16 digits per step, so exact double equality does not find the
+  intended fraction (the parity zone's time units: 1/24, 1/1440, 1/86400, 1/86400000).
+  What checks the result against the truth is the frontend's re-emission of the casus
+  dump, which knows the declared 1/N forms.
 - Eenheidstelsel becomes UnitSystem {node, name, units}. The map of units becomes a
   list in map order, one Unit per abbreviation; a map key that differs from its unit's
   abbreviation becomes the first spelling of that unit, and every alias becomes a
   spelling of the unit with the same abbreviation, in alias-map order ('spellings',
-  written after the unit's other fields, and only on these declarations).
+  written after the unit's other fields, and only on these declarations). A spelling is
+  never the abbreviation itself: an alias equal to its unit's abbreviation is left out,
+  and a unit with no spelling left carries no 'spellings'.
 - Parameter becomes {node, name, datatype, timeline?}: a granulariteit becomes the
   timeline facet {node: TimelineFacet, granularity, count: 1} without a timeline name;
   a null granulariteit is left out.
@@ -48,7 +55,7 @@ verbatim, in its own key order. The six L3 nodes are written in the schema's
 
 Loud by construction: an L2 value the L3 shape cannot carry fails the document with
 its file name and the JSON pointer into the L2 input; nothing is repaired. That covers a
-factor <= 0 or one without the rational above, a third day-kind spelling, a registry
+factor <= 0 or one without a fraction as above, a third day-kind spelling, a registry
 entry that resolves to no declared day kind (the L3 shape has no registry to carry it),
 a null in a unit-system map, an alias of a unit the system does not declare or whose
 unit differs from the declared one, two map entries that spell one abbreviation with
@@ -72,6 +79,7 @@ import math
 import os
 import re
 import sys
+from fractions import Fraction
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -91,13 +99,16 @@ PARAMETER_KEYS = ('node', 'naam', 'datatype', 'granulariteit')
 DATE_PRECISION = {'DatumInDagen': 'day', 'DatumTijd': 'millisecond'}
 L2_NODES = ('Numeriek', 'Percentage', 'DatumInDagen', 'DatumTijd', 'Eenheid', 'Eenheidstelsel')
 
-# the one reconstruction bound of the rational factor (the L3 card)
-MAX_DEN = 10 ** 6
+# the reconstruction of a factor that is not a whole number (the L3 card): the fraction with the
+# smallest denominator within TOLERANCE, relative, of the L2 double; above MAX_DEN it is refused
+TOLERANCE = Fraction(1, 10 ** 14)
+MAX_DEN = 10 ** 9
 
 COUNT_NAMES = ('getallen', 'tekens aangevuld', 'percentages declaratie', 'percentages annotatie',
                'ingebouwde %', 'datums dag', 'datums milliseconde', 'eenheden', 'factoren geheel',
                'factoren gereconstrueerd', 'stelsels', 'stelseleenheden',
-               'kaartsleutels als spelling', 'aliassen als spelling', 'aliassen gelijk aan afkorting',
+               'kaartsleutels als spelling', 'aliassen als spelling',
+               'aliassen gelijk aan afkorting vervallen',
                'parameters', 'parameterfacetten', 'dagsoorten', 'registrysleutels gelijk aan naam',
                'dagsoortmeervouden')
 
@@ -148,19 +159,25 @@ def plain(v):
     return v
 
 
+def simplest_between(lo, hi):
+    """The fraction with the smallest denominator in the closed interval [lo, hi], 0 < lo < hi:
+       an integer if one lies in it, else the reciprocal step of the continued fraction."""
+    fl = lo.numerator // lo.denominator
+    if fl == lo:
+        return Fraction(fl)
+    if fl + 1 <= hi:
+        return Fraction(fl + 1)
+    return fl + 1 / simplest_between(1 / (hi - fl), 1 / (lo - fl))
+
+
 def rational(lexeme):
-    """(num, den) for a factor lexeme that is not a whole number, or None: the smallest
-       den <= MAX_DEN whose n/den has exactly the double of the lexeme, in lowest terms."""
+    """(num, den) in lowest terms for a positive factor lexeme that is not a whole number, or
+       None: the fraction with the smallest denominator within TOLERANCE, relative, of the
+       lexeme's double, when that denominator is at most MAX_DEN."""
     if lexeme not in _RATIONAL:
-        x = float(lexeme)
-        found = None
-        for d in range(1, MAX_DEN + 1):
-            n = round(x * d)
-            if float(n) / d == x:
-                g = math.gcd(n, d)
-                found = (n // g, d // g)
-                break
-        _RATIONAL[lexeme] = found
+        x = Fraction(float(lexeme))
+        r = simplest_between(x * (1 - TOLERANCE), x * (1 + TOLERANCE))
+        _RATIONAL[lexeme] = (r.numerator, r.denominator) if r.denominator <= MAX_DEN else None
     return _RATIONAL[lexeme]
 
 
@@ -343,8 +360,9 @@ class Migration:
             return None
         r = rational(s)
         if r is None:
-            self.fail(p, 'the factor %s: no n/d with d <= %d has exactly its double, so the L3 '
-                      'shape cannot write it as an exact rational' % (s, MAX_DEN))
+            self.fail(p, 'the factor %s: no fraction with a denominator of at most %d lies within '
+                      '%s, relative, of its double, so the L3 shape cannot write it as an exact '
+                      'rational' % (s, MAX_DEN, TOLERANCE))
             return None
         n, d = r
         self.counts['factoren gereconstrueerd'] += 1
@@ -407,10 +425,12 @@ class Migration:
                 self.fail(q, 'an alias whose unit differs from the declared unit %s: as a '
                           'spelling it would lose that difference' % json.dumps(a))
                 continue
+            if key == a:
+                # a spelling is never the abbreviation itself: that is the unit's primary spelling
+                self.counts['aliassen gelijk aan afkorting vervallen'] += 1
+                continue
             units[a][2].append(key)
             self.counts['aliassen als spelling'] += 1
-            if key == a:
-                self.counts['aliassen gelijk aan afkorting'] += 1
         out_units = []
         for a, (cu, keys, alias_keys) in units.items():
             spellings = keys + alias_keys
