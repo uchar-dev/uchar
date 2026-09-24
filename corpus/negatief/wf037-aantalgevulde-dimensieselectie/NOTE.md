@@ -30,8 +30,16 @@ line above PLUS a co-firing WF-096 on the source, the set fence's exemption
 still standing at six. With the arms (md5
 `d970a571d0ecbc88de4bea5b14da9fc7`): the WF-037 line alone.
 
-Falsifiable, arm-exact: the same one-line mutant as its facet siblings —
+Falsifiable, arm-exact, until L2: the same one-line mutant as its facet siblings —
 take the `Aantal_gevulde` row out of `value_fold_name` in
 `spec/verifier/lib/checks.ml`. Swept over golden + rood + negatief + parity
-(695 documents) exactly four documents move, this one among them, and no
-golden, red case or other negatief changes a verdict.
+(695 documents) exactly four documents moved, this one among them, and no
+golden, red case or other negatief changed a verdict.
+
+Since L2 WF-096 is retired (its count half went into WF-093), so this
+mutant no longer reaches the witness. Measured in the L2 fix round
+(2026-09-24) over golden, rood, negatief and the parity zone (718
+documents): exactly one document moves, `wf093-aantalgevulde-wrat`, whose
+WF-093 message then names the kind `AANTAL` instead of `AANTAL_GEVULDE`; no
+document changes its verdict, and this one keeps its WF-037 line, which the
+kind-general facet arm of WF-037 carries.

@@ -32,10 +32,18 @@ exemption still stopped at six value folds and this kind was not yet one of
 them. With the arms (md5 `d970a571d0ecbc88de4bea5b14da9fc7`): the WF-037
 line alone.
 
-Falsifiable, arm-exact: take the `Aantal_gevulde` row back out of
+Falsifiable, arm-exact, until L2: take the `Aantal_gevulde` row back out of
 `value_fold_name` in `spec/verifier/lib/checks.ml` — the six-to-seven
 widening of WF-096's exemption, one line. Swept over golden + rood +
-negatief + parity (695 documents) exactly four documents move: this one and
-its two facet siblings regain the co-firing WF-096, and
-`wf093-aantalgevulde-wrat` falls back from WF-093 to WF-034. No golden, no
-red case and no other negatief changes a verdict.
+negatief + parity (695 documents) exactly four documents moved: this one and
+its two facet siblings regained the co-firing WF-096, and
+`wf093-aantalgevulde-wrat` fell back from WF-093 to WF-034. No golden, no
+red case and no other negatief changed a verdict.
+
+Since L2 WF-096 is retired (its count half went into WF-093), so this
+mutant no longer reaches the witness. Measured in the L2 fix round
+(2026-09-24) over golden, rood, negatief and the parity zone (718
+documents): exactly one document moves, `wf093-aantalgevulde-wrat`, whose
+WF-093 message then names the kind `AANTAL` instead of `AANTAL_GEVULDE`; no
+document changes its verdict, and this one keeps its WF-037 line, which the
+kind-general facet arm of WF-037 carries.
