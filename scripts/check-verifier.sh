@@ -12,9 +12,13 @@
 #      without cases is reported explicitly, never silently green. A case
 #      directory that carries an expect.txt (card l2-referentielaag, U1) must
 #      also be rejected on the ARM that file names: its one line is a literal
-#      fragment of the expected verifier message, without a JSON pointer, and
-#      it must occur verbatim (grep -F) in the verifier's report; an empty or
-#      blank expect.txt, or one of more than one line, fails.
+#      fragment of the expected verifier message, without a JSON pointer and
+#      without a rule number, and it must occur verbatim (grep -F) in the
+#      MESSAGE of a report line of the declared rule — the text after
+#      "WF-### FAIL <pointer>: " on a line that begins with the declared
+#      rule — so neither the line prefix nor a message of another rule can
+#      satisfy it; an empty or blank expect.txt, or one of more than one
+#      line, fails.
 #
 # With explicit file arguments it runs the verifier against those files and
 # prints the reports (handy for a dump outside the repo).
@@ -125,9 +129,15 @@ while IFS= read -r f; do
         elif printf '%s\n' "$frag" | grep -qE '/(model|rules|diagnostics)/'; then
             printf 'FAIL: %s carries a JSON pointer: the fragment is the message, which a path shift must not break\n' "$arm" >&2
             status=1
-        elif ! printf '%s\n' "$out" | grep -qF -- "$frag"; then
-            printf 'FAIL: negatief case %s rejected for %s, but not on the arm %s names:\n  expected fragment: %s\n%s\n' \
-                "$f" "$expect" "$arm" "$frag" "$out" >&2
+        elif printf '%s\n' "$frag" | grep -qE 'WF-[0-9]{3}'; then
+            printf 'FAIL: %s carries a rule number: the rule is the directory name, the fragment is the message of its arm\n' "$arm" >&2
+            status=1
+        elif ! printf '%s\n' "$out" | sed -n "s/^$expect FAIL [^ ]*: //p" | grep -qF -- "$frag"; then
+            # Only the messages of the declared rule's lines count: sought in the whole report,
+            # a fragment such as "FAIL", the rule number, or a line of another rule's message
+            # would pass without pinning an arm of this rule (measured at the L2 lens).
+            printf 'FAIL: negatief case %s rejected for %s, but not on the arm %s names (sought in the messages of the %s lines):\n  expected fragment: %s\n%s\n' \
+                "$f" "$expect" "$arm" "$expect" "$frag" "$out" >&2
             status=1
         fi
     fi
