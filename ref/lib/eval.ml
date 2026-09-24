@@ -1334,24 +1334,40 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
      rule in this file refused. The order matters too: (a) first, so a
      document carrying both spellings is named for carrying both rather
      than for whatever else the surviving one happens to violate. *)
+  (* WF-093 (b), the verifier's sentence, judged before the range's shape
+     as the verifier and the Drools loader judge it: a count source names a
+     role, and a name that is a MEMBER of the element type — an attribute or a
+     characteristic — reads a value per contributor, which a count does not
+     fold, however its range is spelled *)
+  (match (kind, element_objecttype, argumenten) with
+  | Aantal, Some el, [ Attribuut_ref { attribuut = Some a; navigatie_bindingen = None; _ } ]
+    when (bron_rol <> None || bron_pad <> None)
+         && (Ir_v0.Checks.find_ci (objecttype env el).attributen a <> None
+            || Ir_v0.Checks.has_kenmerk (objecttype env el) a) ->
+      Value.fault
+        "the source of this AANTAL aggregation reads '%s', a member of the element type '%s': a \
+         count folds INSTANCES, so its source is a count source naming the relation's role, never \
+         a value read per contributor (WF-093)"
+        a el
+  | _ -> ());
   (match bron_pad with
   | None -> ()
-  | Some pad -> (
+  | Some pad ->
       if bron_rol <> None then
         Value.fault "a bronPad beside a bronRol: the one-step range IS bronRol (WF-102)";
-      if List.length pad < 2 then
-        Value.fault "a bronPad carries at least TWO steps, found %d (WF-102)"
-          (List.length pad);
       (* WF-102 (c), the verifier's sentence: the set source is the single
          argument of an instance fold that carries a range, and a path is the
          range of a VALUE fold's set source only. A count's source names the
-         one relation whose role it counts, so its range is one step *)
-      match (kind, element_objecttype, argumenten) with
+         one relation whose role it counts, so its range is one step. Judged
+         before the arity, as clingo and the Drools loader judge it *)
+      (match (kind, element_objecttype, argumenten) with
       | k, Some _, [ Attribuut_ref { navigatie_bindingen = None; _ } ] when k <> Aantal -> ()
       | _ ->
           Value.fault
             "a bronPad is admissible only as the range of a single-argument VALUE fold's set \
-             source — a count's range is one step, spelled bronRol (WF-102)"));
+             source — a count's range is one step, spelled bronRol (WF-102)");
+      if List.length pad < 2 then
+        Value.fault "a bronPad carries at least TWO steps, found %d (WF-102)" (List.length pad));
   (* WF-083 (c), the verifier's sentence: a TOTAAL without a range is the
      subject's own read, so the type it folds over is the subject type. The
      field is checked here because a foreign type in it otherwise moves no
@@ -1504,23 +1520,9 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
        set source never navigates: the range is its whole relation. *)
     let ranged = bron_rol <> None || bron_pad <> None in
     match (element_objecttype, argumenten) with
-    | Some el, [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ]
-      when ranged && kind = Aantal ->
-        (* WF-093 (b), the verifier's sentence: a count source names a role;
-           a name that is a MEMBER of the element type — an attribute or a
-           characteristic — reads a value per contributor, which a count does
-           not fold, so it is refused rather than counted as though it named
-           the role *)
-        (match attribuut with
-        | Some a
-          when Ir_v0.Checks.find_ci (objecttype env el).attributen a <> None
-               || Ir_v0.Checks.has_kenmerk (objecttype env el) a ->
-            Value.fault
-              "the source of this AANTAL aggregation reads '%s', a member of the element type \
-               '%s': a count folds INSTANCES, so its source is a count source naming the \
-               relation's role, never a value read per contributor (WF-093)"
-              a el
-        | _ -> ());
+    | Some el, [ Attribuut_ref { navigatie_bindingen = None; _ } ] when ranged && kind = Aantal ->
+        (* a source that names a member of the element type was refused at
+           the head of this function (WF-093 (b)), so this one names a role *)
         `Instances
           (filter_in_order keep
              (fold_members ?binding:bron_rol ?path:bron_pad env world self ~element:el))

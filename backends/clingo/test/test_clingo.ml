@@ -3825,6 +3825,29 @@ let () =
   in
   faults_with ~name:"ch3.4b een telling over een pad" ~ir:telling ~case_text:bp_case
     ~needle:"a count's range is one step, spelled bronRol (WF-102)";
+  (* WF-093 (b) before WF-102, as the verifier and the Drools loader judge
+     it: a count whose source names a MEMBER of the element type is refused
+     for that, over a path of two steps and of one step alike; a count whose
+     source names a role over one step is refused by WF-102 (c) *)
+  let een_stap doc =
+    vervang doc
+      ~waar:
+        {|{
+              "node": "RolBinding",
+              "feittype": "bemanning",
+              "rol": "gevoerde boot"
+            },
+            |}
+      ~door:""
+  in
+  let lidtelling = vervang bp_doc ~waar:{|"kind": "MINIMUM"|} ~door:{|"kind": "AANTAL"|} in
+  faults_with ~name:"ch3.4b een telling over een lid, met een pad" ~ir:lidtelling ~case_text:bp_case
+    ~needle:"reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES";
+  faults_with ~name:"ch3.4b een telling over een lid, met een pad van een stap"
+    ~ir:(een_stap lidtelling) ~case_text:bp_case
+    ~needle:"reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES";
+  faults_with ~name:"ch3.4b een roltelling over een pad van een stap" ~ir:(een_stap telling)
+    ~case_text:bp_case ~needle:"a count's range is one step, spelled bronRol (WF-102)";
   faults_with ~name:"ch3.4b een telling over een pad met filter"
     ~ir:
       (vervang telling ~waar:{|"filter": null|}

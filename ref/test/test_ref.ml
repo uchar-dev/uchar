@@ -2765,6 +2765,27 @@ let () =
   expect_fault_msg "WV-3.4b-telling-over-een-pad-met-filter-faalt"
     (fun () -> ev w1 "J1" (telling (Some zwaar)))
     "a count's range is one step, spelled bronRol (WF-102)";
+  (* WF-093 (b) before WF-102, as the verifier and the Drools loader judge
+     it: a count whose source names a MEMBER of the element type is refused
+     for that, over a path of two steps and of one step alike. A count whose
+     source names a role over one step is refused by WF-102 (c), judged
+     before the arity *)
+  let telling_over bronnaam bronot pad : Ir_v0.Ast.expr =
+    Functie
+      { kind = Aantal; argumenten = [ bron bronnaam bronot ]; element_objecttype = Some "Vondst";
+        leegwaarde = None; filter = None; dimensie_selectie = None; typ = Some num0; bron = None;
+        granulariteit = None; bron_rol = None; bron_pad = Some pad }
+  in
+  let een_stap = [ rb "berging" "geborgen vondst" ] in
+  expect_fault_msg "WV-3.4b-telling-over-een-lid-met-pad-faalt"
+    (fun () -> ev w1 "J1" (telling_over "gewicht" "Vondst" pad2))
+    "reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES";
+  expect_fault_msg "WV-3.4b-telling-over-een-lid-met-eenstapspad-faalt"
+    (fun () -> ev w1 "J1" (telling_over "gewicht" "Vondst" een_stap))
+    "reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES";
+  expect_fault_msg "WV-3.4b-roltelling-over-een-eenstapspad-faalt"
+    (fun () -> ev w1 "J1" (telling_over "geborgen vondsten" "Jutter" een_stap))
+    "a count's range is one step, spelled bronRol (WF-102)";
   (* WF-080: a characteristic is no attribute, so a value fold's set source
      never names one — the verifier's aggregation-source sentence *)
   expect_fault_msg "WV-3.4b-kenmerk-als-setbron-faalt"

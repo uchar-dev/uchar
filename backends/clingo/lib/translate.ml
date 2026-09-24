@@ -3328,6 +3328,22 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       fault
         "an instance-set union stands where a value term is wanted: it denotes the INSTANCES of a \
          §5.7 concatenation, and only an instance count consumes them (WF-110)"
+  (* WF-093 (b), the verifier's sentence and ref's check, judged before the
+     range's shape as the verifier and the Drools loader judge it: a count
+     source names a role, and a name that is a MEMBER of the element type —
+     an attribute or a characteristic — reads a value per contributor, which
+     a count does not fold, however its range is spelled *)
+  | Functie
+      { kind = Aantal; argumenten = [ Attribuut_ref { attribuut = Some a; navigatie_bindingen = None; _ } ];
+        element_objecttype = Some el; bron_rol; bron_pad; _ }
+    when (bron_rol <> None || bron_pad <> None)
+         && (Ir_v0.Checks.find_ci (objecttype ctx el).attributen a <> None
+            || Ir_v0.Checks.has_kenmerk (objecttype ctx el) a) ->
+      fault
+        "the source of this AANTAL aggregation reads '%s', a member of the element type '%s': a \
+         count folds INSTANCES, so its source is a count source naming the relation's role, never \
+         a value read per contributor (WF-093)"
+        a el
   (* WF-102 (c), the verifier's sentence and ref's arm: a path is the range
      of a single-argument VALUE fold's set source only. Anywhere else it would
      be dropped, and the fold would answer over the wrong population; a
@@ -3353,22 +3369,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          without a range the fold is the subject's own read, so the type it folds over is the \
          subject type, and the executors never read this field there (WF-083)"
         el subject_ot
-  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol = Some _ as bron_rol; filter; _ } ->
-      (* WF-093 (b), the verifier's sentence and ref's arm: a count source
-         names a role; a name that is a MEMBER of the element type — an
-         attribute or a characteristic — reads a value per contributor, which
-         a count does not fold *)
-      (match attribuut with
-      | Some a
-        when Ir_v0.Checks.find_ci (objecttype ctx el).attributen a <> None
-             || Ir_v0.Checks.has_kenmerk (objecttype ctx el) a ->
-          fault
-            "the source of this AANTAL aggregation reads '%s', a member of the element type '%s': \
-             a count folds INSTANCES, so its source is a count source naming the relation's \
-             role, never a value read per contributor (WF-093)"
-            a el
-      | _ -> ());
-      (* D8 (ii), the count source: the single argument of a count that
+  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol = Some _ as bron_rol; filter; _ } ->
+      (* D8 (ii), the count source (a source naming a member of the element
+         type was refused above, WF-093 (b)): the single argument of a count that
          carries a range names the counted role, and the count folds the
          INSTANCES its one-step range reaches (a path is refused above),
          built in [source_join] as for the set folds below. The die/dat

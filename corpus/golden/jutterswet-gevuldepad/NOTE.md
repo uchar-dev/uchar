@@ -7,15 +7,19 @@ Bergplaats, and several Boten may share one. The fold counts the filled
 Jutter" — two relations stacked, so the source is a `bronPad` rather than
 a `bronRol`.
 
-Under `AANTAL` this shape is ill-formed: a count's range is one step,
-spelled `bronRol` (WF-102 (c)), and the verifier, ref and the ASP backend
-refuse a count over a `bronPad` in one sentence
-(`corpus/negatief/wf102-bronpad-op-niet-setbron`). Until L2 two fences met at
-that node, WF-096 and WF-102; WF-096 left with L2
-(`spec/proposals/V1-WIREMIGRATIE.md` B11). The filled count reads a VALUE
-per contributor, which is what makes the set source admissible here, and
-that is why ch. 3.4b's word ELEMENTS waited for this kind to exist before it
-had a carrier.
+Under `AANTAL` this shape is ill-formed, and the ground is its source:
+`vangstgewicht` is a member of the element type, and a count folds
+INSTANCES, never a value read per contributor. The verifier reports it as
+WF-093 (b), and ref and the ASP backend refuse it in that sentence
+(measured 2026-09-24 on this document with `AANTAL` for `AANTAL_GEVULDE`).
+Since L2 WF-093 (b) carries the ground WF-096 carried until then; WF-096 left
+with L2 (`spec/proposals/V1-WIREMIGRATIE.md` B11). A count whose source names
+a role is refused over a `bronPad` for another reason: a count's range is one
+step, spelled `bronRol` (WF-102 (c),
+`corpus/negatief/wf102-bronpad-op-niet-setbron`). The filled count reads a
+VALUE per contributor, which is what makes the set source admissible here,
+and that is why ch. 3.4b's word ELEMENTS waited for this kind to exist before
+it had a carrier.
 
 Two cases, one answer, and the difference between them is the whole
 witness:
