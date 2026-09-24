@@ -288,12 +288,17 @@ already in the L2 shape is left untouched.
 the same interface and the same serialiser. It rewrites the type system
 mechanically: the tag only where a percentage stood at a declaration, an
 absent unit of a percentage as the built-in `%`, a factor written as a whole
-number verbatim over 1 and any other factor as the rational with the smallest
-denominator (at most 10^6) whose double is exactly the factor's, a unit
-system's map keys and aliases as the spellings of their unit, a day kind's
+number verbatim over 1 and any other factor as the fraction with the smallest
+denominator whose value lies within 10^-14, relative, of the factor's double
+(the v0 factors are products of ratios rounded to 16 digits per step, so exact
+double equality does not find the intended fraction; the frontend's
+re-emission of its declared `1/N` forms is what checks the result), a unit
+system's map keys and aliases as the spellings of their unit (never the
+abbreviation itself: an alias equal to it is left out), a day kind's
 registered spellings as its plural. It refuses, with the file name and a JSON
 pointer into the L2 input, every L2 value the L3 shape cannot carry: a factor
-that is not positive or has no such rational, a third spelling of a day kind,
+that is not positive or whose fraction within that tolerance has a denominator
+above 10^9, a third spelling of a day kind,
 a registry entry that names no declared day kind, a null in a unit system's
 maps, an alias of a unit the system does not declare, a percentage whose unit
 is not `%`. One line on stderr per migrated document counts what was
