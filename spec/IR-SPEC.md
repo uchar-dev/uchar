@@ -2873,12 +2873,19 @@ declaration. The
 write-side **precision gate** of WF-023 — a computed value against its
 target's declared precision — needs expression-shape analysis and is a
 different question that stays OPEN. Deferrals are the family's: either
-side absent, or a declaration that does not resolve. *(History until L2,
-2026-09-24: the rest of this paragraph records the waves that closed the
-empty and unresolvable reference shapes on the L1 wire, where a reference,
-a fold source and a rule target still carried their own `type` and the
-unknown-type sentinel could stand in it; those fields left the wire with
-L2, and the arms (m), (o) and (t) of ch. 4.6 with them.)* Since 2026-09-04
+side absent, or a declaration that does not resolve. *(Partly history
+since L2, 2026-09-24: the rest of this paragraph records the waves that
+closed the empty and unresolvable reference shapes on the L1 wire. The
+name-level arms it lists stay in force unchanged — a reference naming no
+`objecttype` or no `attribuut`, a `ParameterRef` naming no `parameter`, a
+`DimensieCel` whose `attribuut` is null or no reference, a `Kenmerk`
+check naming no `kenmerk`, an allocation's name fields. The type-level
+shapes left with their fields: a reference, a fold source and a rule
+target carry no `type` of their own since L2 (B13) and the unknown-type
+node is no datatype (B16), so the sentinel and absent-type arms name
+shapes that cannot be written. Of the arms of ch. 4.6, (m) left with the
+bean fields of the fact creation (B7), and (o) and (t) were replaced by
+the role arm over `RoleMembership`, which ch. 4.6 states as (o) (B9).)* Since 2026-09-04
 the shapes measured IN THESE FOUR WAVES AND THEIR FIX ROUND to let a
 document **self-serve** one are WF-034-ill-formed (further measured
 shapes stay open below). Both halves of the resolving
@@ -3561,7 +3568,7 @@ committed source, and the 14 whose source writes `hij`, not one emits a
 aan hij` emits two of them with `diagnostics: []` — but it leaks carrying the
 UNKNOWN-TYPE SENTINEL ("niet opgelost"), which WF-034's type prologue already
 refused at the same node (since L2 the unknown-type node is no datatype at
-all, B16, and the emitter refuses to write it, D14). That is structural, not a sample:
+all, and the emitter refuses to write it, B16). That is structural, not a sample:
 the frontend has exactly THREE `Constante` construction sites and the `hij`
 one hard-codes the unknown type, so no `hij` reaches the wire well-typed.
 This clause therefore cuts no conforming producer route: it adds a second,
@@ -3589,15 +3596,25 @@ An attribute reference whose value lives off-subject **navigates**: its
 `objecttype` is the endpoint the attribute lives on, and the walk from
 the subject to that endpoint takes one role hop per step.
 
-**Landed L2 (2026-09-24, B11, D10, D53): one explicit path.** The walk is
+**Landed L2 (2026-09-24, B11): one explicit path.** The walk is
 carried by **`navigatieBindingen`** on the attribute reference — a list of
 RoleBindings (ch. 2.6), one per hop, subject-outward, each with **the
 role the hop reaches bound** (the far role; its filler is the type the
 walk stands on next) — and by **`navigatieBinding`** on the
 characteristic check, its one hop in the same orientation. Written whole
 or not at all, never null, never empty. A reference without bindings is
-the subject's **own read**: nothing is derived, and its `objecttype` is
-the subject type. The zero-hop self-reference ("het strandtegoed van de
+the subject's **own read**: nothing is derived, and its `objecttype`
+EQUALS the subject type (compared in the WF-001 form). Equality and not
+⊑: the executors read an own read on the subject itself and never let the
+field choose the type, so the field has one correct value, and a
+supertype of the subject — which the subject's instances do belong to —
+is a second spelling of the same read that one reader could admit and
+another refuse (until the L2 fix round `ref` and the ASP backend admitted
+a supertype there while the verifier and the Drools backend refused it). A
+read of an attribute the subject inherits from a supertype names the
+subject type, whose supertype chain declares the attribute (ch. 2.2). One
+rule for every reader: the verifier refuses any other `objecttype` under
+WF-053, and every executor refuses it with the same sentence. The zero-hop self-reference ("het strandtegoed van de
 aanmelder", read on the Jutter who *is* the aanmelder) is such an own
 read: the reference denotes the subject and reads its own attribute, and
 the written role that named the subject stays in `bron`. *(History until
@@ -3621,8 +3638,11 @@ were removed with reason (`corpus/negatief/README.md`, L2).
   role's filler is ⊑ the reference's `objecttype` (the endpoint;
   one-sided, since the executors refuse the other direction per
   instance). A reference WITHOUT bindings is the subject's own read, so
-  its `objecttype` MUST be the subject type (D10): a foreign type there
-  names what only a navigation reaches (`wf053-geleste-vouwoperand-onverbonden-hop`).
+  its `objecttype` MUST EQUAL the subject type (WF-001 form; equality, not
+  ⊑): a foreign type there names what only a navigation reaches
+  (`wf053-geleste-vouwoperand-onverbonden-hop`), and a supertype of the
+  subject is refused as well (`wf053-eigen-lezing-supertype`) — a read of
+  an inherited attribute names the subject type.
   Every hop's reached role MUST be to-one — a to-many step needs an
   aggregation, never a silent first pick (the v0 resolver builds only
   to-one chains; its NAAR_VEEL marker, lifted to well-formedness); since
@@ -3658,9 +3678,9 @@ ch. 2.2 there); percentage-van — sugar over kernel arithmetic, mirrored as
 an operator. *v0 mirror note:* a typing failure degrades the node's `type`
 to the unknown-type node rather than erroring the node away. Since L2 that
 node is no datatype (B16): at a derived position like this one the producer
-writes `type: null` where it cannot type the node (U3 of the L2 card), and
-WF-034 refuses such a node in a verified document (a value node without a
-static type).
+writes `type: null` where it cannot type the node (recorded in the L2
+card, `backlog/done/20260923-l2-referentielaag.md`), and WF-034 refuses
+such a node in a verified document (a value node without a static type).
 
 **Rounding** (`base`, `mode`, `decimals`, `type`, `source`) — the five
 modes of `RUNTIME-SEMANTICS.md` ch. 2.5; the type carries the rounded
@@ -3685,7 +3705,7 @@ embedded expressions) — sugar verdict (row 31), mirrored; empty coerces to
 | `filter` | Condition? — the die/dat-subselection, evaluated PER CONTRIBUTOR (the element is the condition's subject; a leeg operand fails it, ch. 1.2d; an all-excluding filter leaves an empty source — the sum fallback fires, a count reads 0). **Landed (2026-08-19):** executes in both executors (`jutterswet-strandgoed`, an emitter golden; `RUNTIME-SEMANTICS.md` ch. 3.4a). The reference interpreter carries the full condition set; the ASP backend's corpus-exercised fragment faults loudly on the rest — the standing executor asymmetry, differential-gated over the corpus. The SAME field also carries the §7.1 gedurende timeline clip (on the temporal total, where the element type is the subject itself) — a timeline operation, never an instance subselection. **Landed (2026-08-19, WF-055):** the clip executes in both executors (`jutterswet-getijdenwacht`; `RUNTIME-SEMANTICS.md` ch. 3.6): intersect the full value timeline with the condition's true-periods (an own temporal characteristic, or a per-segment comparison against a scalar bound), then total whole units per clipped segment — floor, never pro-rata; a gap in the condition clips away; a fully clipped-away or absent timeline totals 0, never leeg. The negated clip (the complement) and the Gelijk/Ongelijk comparison clip execute in the reference interpreter only — the ASP side faults loudly on both. A negated characteristic subselection never reaches the wire executable (v0 marks it Onopgelost) |
 | `emptyFallback` | expression? — **sum only**: the §5.8.2 "of … als die er niet zijn" clause |
 | `dimensionSelection` | ? — **sum/min/max only**: fold over an ordered label selection instead of instances (dialect, row 28) |
-| `sourceRole` | RoleBinding? — **extension field** (v0 wire `bronRol`), instance folds only: the connecting relation, with **the role whose filler instances the fold RANGES OVER bound** — the reach, which `elementType` then narrows to the population (ch. 2.2); the opposite role's filler is the fold's subject type (WF-047, ⊑-compatible since ch. 2.6, so the bound role's filler may be an ancestor of `elementType`). **Since L2 (2026-09-24, B12, D7, U2)** a fold with ONE argument and an `elementType` carries its range — this field or `sourcePath` — under every kind but `TOTAAL`, where its absence makes the argument the subject's own read; the schema and every loader refuse a bindingless fold elsewhere, so nothing derives a range (until L2 WF-048 demanded a uniquely derivable one). A binding on a node that is no instance fold is ill-formed (WF-047) |
+| `sourceRole` | RoleBinding? — **extension field** (v0 wire `bronRol`), instance folds only: the connecting relation, with **the role whose filler instances the fold RANGES OVER bound** — the reach, which `elementType` then narrows to the population (ch. 2.2); the opposite role's filler is the fold's subject type (WF-047, ⊑-compatible since ch. 2.6, so the bound role's filler may be an ancestor of `elementType`). **Since L2 (2026-09-24, B12)** a fold with ONE argument and an `elementType` carries its range — this field or `sourcePath` — under every kind but `TOTAAL`, where its absence makes the argument the subject's own read; the schema and every loader refuse a bindingless fold elsewhere, so nothing derives a range (until L2 WF-048 demanded a uniquely derivable one). A binding on a node that is no instance fold is ill-formed (WF-047) |
 | `sourcePath` | RoleBinding list? — **extension field** (v0 wire `bronPad`), the MULTI-STEP range of a value fold's set source: the relations walked subject-outwards, each step spelled exactly as `sourceRole` is. Two or more steps; the one-step range IS `sourceRole`, and since L2 the schema and every loader admit at most one of the two fields (WF-102) |
 | `type`, `source` | — |
 
@@ -3714,7 +3734,7 @@ a document whose listed operand navigates is well-formed, pinned by
 `corpus/golden/jutterswet-sluitsom` through `ref`, the ASP backend and both
 Drools transpiler branches.
 
-**The reading of the source (landed L2, 2026-09-24, D8).** The fold's range
+**The reading of the source (landed L2, 2026-09-24, B11, B12).** The fold's range
 decides it, and nothing else on the argument does. (i) With a range —
 `sourceRole` or `sourcePath` — the single argument is the **set source**:
 the fold reads it on each instance the range reaches and `elementType`
@@ -3725,9 +3745,10 @@ name or declared plural (WF-047). (iii) Under the value folds and
 `AANTAL_GEVULDE` the source's `attribute` is read on each contributor and
 resolves on `elementType`. (iv) Without a range the argument is the
 subject's **own read** — the ch. 3.6 temporal total; the schema and every
-loader admit that only under `TOTAAL` (U2: a single-argument fold with an
-`elementType` carries a range under every other kind). The count source is
-recognised at the source itself (D9, WF-093 below): its `attribute` names no
+loader admit that only under `TOTAAL` (B12: a single-argument fold with an
+`elementType` carries a range under every other kind), and its
+`elementType` is then the subject type (WF-083 (c)). The count source is
+recognised at the source itself (WF-093 below): its `attribute` names no
 member — no attribute and no characteristic — of the element type.
 *(History until L2:)* the reading was carried by fields of the argument — a
 set flag on the reference, and the unknown-type sentinel on its own `type`
@@ -3746,12 +3767,16 @@ The argument's `objecttype` MUST name that anchor.
 It is not a free annotation, and the precise reason is worth stating,
 because the obvious one is false. The field is not ignored: for the own
 read the ASP backend's `fold_operand_otype` RETURNS it as the anchor, and
-`ref`'s temporal-total arm guards on `norm aot = norm self.otype` — both
-read it. What neither does is let it CHOOSE where the read happens. **It is
+`ref`'s temporal-total arm guards on it — both read it (until L2 the
+guard was the name comparison `norm aot = norm self.otype`). What neither
+does is let it CHOOSE where the read happens. **It is
 a guard, not a selector**: it may only confirm the anchor the fold has
-already fixed. A spelling that disagrees is refused outright by `ref` (the
-arm's guard fails and the fold falls through to its loud fault) or resolved
-by the ASP backend against a declaration on a type the fold never walks. At
+already fixed. A spelling naming a type the subject is no instance of is
+refused outright by `ref` (the arm's guard fails and the fold falls
+through to its loud fault) or resolved by the ASP backend against a
+declaration on a type the fold never walks; this rule compares the names
+(equality, WF-001 form), so it refuses a supertype of the subject as
+well. At
 the set source the field is inert in both — `ref`'s set-source arm binds no
 `objecttype` at all and every ASP read hangs on the element variable —
 which is not a reason to leave it free but the reason to pin it: a field
@@ -3777,15 +3802,23 @@ written role stays in `bron`.
   (B11), and so did the witnesses of (b) (`corpus/negatief/README.md`,
   L2). Navigation bindings on a fold source are WF-053's (the fold's
   relation is its range). (c) The fold source's `objecttype` MUST name the
-  fold's anchor, per position (D8): the `elementType` for the set source of
-  a value fold, the fold subject for the count source and for the
-  subject's own read (a `TOTAAL` without a range). Where WF-093 refuses
-  the reading itself — a count source under a value fold, a member read
-  under `AANTAL` — the anchor has nothing to add and is not crossed.
+  fold's anchor, per position (the reading of the source above): the
+  `elementType` for the set source of a value fold, the fold subject for
+  the count source and for the subject's own read (a `TOTAAL` without a
+  range). Where WF-093 refuses the reading itself — a count source under a
+  value fold, a member read under `AANTAL` — the anchor is not crossed, so
+  one defect is reported under one rule. For the subject's own read the
+  node's own `elementType` MUST name the fold subject too (equality, WF-001
+  form; since the L2 fix round): without a range the fold totals the
+  subject's own timeline, no executor reads the field there, and a
+  foreign type in it names instances the fold does not fold over
+  (measured before the clause: verifier-clean, every answer unchanged).
   Witnesses: `wf083-vouwbron-vreemd-elementtype` (a set source anchored on
   the subject), `wf083-vouwbron-anker-op-operand` (a count source anchored
   on the element type), `wf083-vouwbron-vreemd-objecttype` (an own read
-  anchored on another type). **A `sourcePath`'s INTERMEDIATE types are
+  anchored on another type), `wf083-totaal-vreemd-elementtype` (a `TOTAAL`
+  without a range whose `elementType` names another type than the
+  subject). **A `sourcePath`'s INTERMEDIATE types are
   range, never anchor (2026-09-11).** The path (WF-102) introduces a third
   class of type into this position — the types the walk passes THROUGH —
   and the anchor is unmoved by them: every member of the folded set is
