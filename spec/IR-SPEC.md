@@ -2788,22 +2788,45 @@ of every operator named here. Layer marks: core, with exactly five inline
 dialect exceptions — the date-builtin library and the three dialect
 predicate kinds (ch. 4.3/4.5), the abs-division operator (ch. 4.2), the
 dimension forms `DimensionCellRead` and `dimensionSelection` (ch. 4.3, row
-28), and the whole-period qualifier (ch. 4.5). Every node carries a source
-reference; **pending delta
-(tracked, `CONSTRUCTS.md` row 3):** today that is the v0 `bron` string —
-the structured source reference (`file, line, column, snippet`) lands with
-the cross-repo source-anchoring card and will change the wire format and
-the schema when it does.
+28), and the whole-period qualifier (ch. 4.5).
+
+**The source reference.** A node MAY carry a source reference under the key
+`source`: the structured source reference (`file, line, column, snippet`)
+of the source-anchoring design (`CONSTRUCTS.md` row 3), of which the wire
+writes two fields. `snippet` is the source text the node was produced from,
+never empty; `line` is its source line, an integer ≥ 1, written only on a
+consistency version (ch. 3.5) and on a rule group (ch. 3.9), and only beside
+a `snippet`. The record carries no `node` and has no node name. The schema
+admits it on the expression and condition nodes of this chapter, on a
+`FunctionDef` (ch. 2.11), on the versions of a consistency and a uniqueness
+(ch. 3.5, 3.6), on a rule group (ch. 3.9) and on the three nodes of the
+defaults layer (ch. 6.1), where it stands in the position the v0 `bron`
+string had. A node without source text carries no `source`, and every reader
+takes an absent `source` as no source text. An `Unresolved` node (ch. 4.4)
+MUST carry one, because WF-113 (b) accounts for the marker through its
+snippet. Every reader, the verifier included, refuses an empty snippet at
+load with the sentence "a source snippet is never empty: a node without
+source text carries no source", under no WF number: the schema requires at
+least one character, so no document can carry the defect as a witness.
+`file` and `column` are not written yet: their conventions — the base of
+`line` and `column`, the form of `file`, and what `snippet` means beside a
+position — belong to the first producer that writes positions, and the
+schema admits neither field until then. **Landed at M7 (landing L5, delta
+B26):** the v0 `bron` string became `source.snippet`, byte for byte and
+whitespace included; a `bron` of `null` became an absent `source`; and the
+v0 `line` of a consistency version and of a rule group went into
+`source.line` where the node had a `bron` string, and was dropped where it
+had none.
 
 ### 4.1 Literals and references
 
 | Node | Fields | Notes |
 |---|---|---|
-| Literal | `value`, `type`, `source` | **Delta (row 27), landed at L4 (2026-09-24, delta B22):** v0 carried a LEXEME as the value — a string the executors parse — and v1 carries a **typed value**: `value` is exactly one variant of the value union of the case format (`uchar-case-v0`) — `{"number": string}`, `{"boolean": true\|false}`, `{"text": string}`, `{"date": string}`, `{"dateTime": string}`, `{"enumeration": string}` or `{"constructor": string}`, the last without a payload (a literal names a constructor, it does not apply one) — and the variant is the one the literal's `type` names (**WF-114**, below). The strings keep the lexemes the rules below pin: WF-081 the number with a point, WF-084 the ISO date, WF-095 the ISO datetime; a `text` is the string BETWEEN the source delimiters (maintainer decision 2026-09-18); an `enumeration` is the BARE label, which WF-039 crosses byte-exactly against the declared value list. The unparsed source slice lives in `source` (`bron` on the wire), which keeps the author's spelling — a decimal comma included — and is where a reader that wants it looks. `type` is nullable: a typeless value node is WF-034's. *History:* until L4 the value was the lexeme `waarde` (`waar`/`onwaar` for a boolean; a number with either decimal separator, which the L4 migration and the emitter write with a point); the sentence that once stood here — "an enumeratiewaarde keeps its `'…'` delimiters, which readers strip" — described a FRONTEND reader, never the wire (maintainer decision 2026-09-19); and WF-095 admitted the day-first snippet for `DatumTijd` until 2026-09-22 (card `p5-datumtijd-lexeem`) |
-| AttributeReference | `attribute`, `subjectType`, `path` (role steps), `source` | **Delta (row 4):** v0 split navigation over a written role name (`navigatieRol`), a written path (`navigatiePad`) and a set flag (`set`), and kept a transpiler-facing subject spelling (`onderwerpBron`); v1 unifies into one explicit path of role steps, with result cardinality derived from the declared role cardinalities. **Landed (2026-08-18):** the symbolic path rides the wire as the `navigatieBindingen` extension field (ch. 4.1a, WF-053); the anchor `jutterswet-kustwacht` executes all three navigated shapes through both executors. **Landed L2 (2026-09-24, B11, B13):** the written-name fields, the set flag and the reference's own `type` left the wire. A reference carries no type: its type is the declaration it reads (`RUNTIME-SEMANTICS.md` ch. 2.10). A read without `navigatieBindingen` is the subject's own read, and its `objecttype` EQUALS the subject type — a supertype of the subject does not suffice (ch. 4.1a, WF-053) |
+| Literal | `value`, `type`, `source` | **Delta (row 27), landed at L4 (2026-09-24, delta B22):** v0 carried a LEXEME as the value — a string the executors parse — and v1 carries a **typed value**: `value` is exactly one variant of the value union of the case format (`uchar-case-v0`) — `{"number": string}`, `{"boolean": true\|false}`, `{"text": string}`, `{"date": string}`, `{"dateTime": string}`, `{"enumeration": string}` or `{"constructor": string}`, the last without a payload (a literal names a constructor, it does not apply one) — and the variant is the one the literal's `type` names (**WF-114**, below). The strings keep the lexemes the rules below pin: WF-081 the number with a point, WF-084 the ISO date, WF-095 the ISO datetime; a `text` is the string BETWEEN the source delimiters (maintainer decision 2026-09-18); an `enumeration` is the BARE label, which WF-039 crosses byte-exactly against the declared value list. The unparsed source slice lives in `source.snippet` (the v0 `bron` string), which keeps the author's spelling — a decimal comma included — and is where a reader that wants it looks; a literal without source text, where v0 wrote `bron: null`, carries no `source`. `type` is nullable: a typeless value node is WF-034's. *History:* until L4 the value was the lexeme `waarde` (`waar`/`onwaar` for a boolean; a number with either decimal separator, which the L4 migration and the emitter write with a point); the sentence that once stood here — "an enumeratiewaarde keeps its `'…'` delimiters, which readers strip" — described a FRONTEND reader, never the wire (maintainer decision 2026-09-19); and WF-095 admitted the day-first snippet for `DatumTijd` until 2026-09-22 (card `p5-datumtijd-lexeem`) |
+| AttributeReference | `attribute`, `subjectType`, `path` (role steps), `source` | **Delta (row 4):** v0 split navigation over a written role name (`navigatieRol`), a written path (`navigatiePad`) and a set flag (`set`), and kept a transpiler-facing subject spelling (`onderwerpBron`); v1 unifies into one explicit path of role steps, with result cardinality derived from the declared role cardinalities. **Landed (2026-08-18):** the symbolic path rides the wire as the `path` extension field (`navigatieBindingen` until L5; ch. 4.1a, WF-053); the anchor `jutterswet-kustwacht` executes all three navigated shapes through both executors. **Landed L2 (2026-09-24, B11, B13):** the written-name fields, the set flag and the reference's own `type` left the wire. A reference carries no type: its type is the declaration it reads (`RUNTIME-SEMANTICS.md` ch. 2.10). A read without `path` is the subject's own read, and its `subjectType` EQUALS the subject type — a supertype of the subject does not suffice (ch. 4.1a, WF-053). **Landed L5:** the node is `AttributeReference` on the wire, with the fields `attribute`, `subjectType` and `path` (v0 `AttribuutRef` with `attribuut`, `objecttype` and `navigatieBindingen`); `subjectType` names the endpoint the attribute lives on, which is the subject type for an own read (ch. 4.1a) |
 | ParameterReference | `parameter` (name ref), `source` | the wire form is symbolic (the emitter writes the name) — the "embed the model object" wart is in-memory only. No `type` since L2 (B13): the parameter's declaration is the one source |
 | VariableReference | `name`, `source` | a rule-local let-binding (§13.4.2.10); binding is frontend scope resolution; the node survives only as the marker for a variable the resolver could not bind. No `type` since L2 (B13; `CONSTRUCTS.md` row 24) |
-| ContextValue | `name` ∈ evaluation-date, evaluation-year; `type`, `source` | **WF-098 (below):** the name is a CLOSED SET of exactly two — `Rekendatum`, `Rekenjaar` — crossed BYTE-EXACTLY, and the `type` is required. Nothing in the document declares a context value, so this is an enumeration, not a resolution. **Delta (row 25), landed at L4 (2026-09-24, delta B23):** split from v0's `Constante` grab-bag; the pronoun referents that shared that node are surface forms the frontend resolves away, and the bound day of a day-kind definition, which v0 spelled as a context value named `de dag`, is the node `BoundDay` (next row). `Rekendatum` is the ch. 8.2 execution-date constant and the index of the ch. 8.3 vintage read (`RUNTIME-SEMANTICS.md`), typed day-precision; `Rekenjaar` is the execution year, a whole number, admitted-and-unexecuted: no document carries it and the reference interpreter faults on it by name, which is the honest answer, so it stays in the set without a carrier. The names keep their v0 spelling until their own landing. The converse of the bound day — a SESSION value inside a day-kind voorwaarde — is refused by WF-031's position arm (ch. 3.7); WF-098 itself stays flat |
+| ContextValue | `name` ∈ `evaluationDate`, `evaluationYear`; `type`, `source` | **WF-098 (below):** the name is a CLOSED SET of exactly two — `evaluationDate`, `evaluationYear` — crossed BYTE-EXACTLY, and the `type` is required. Nothing in the document declares a context value, so this is an enumeration, not a resolution. **Delta (row 25), landed at L4 (2026-09-24, delta B23):** split from v0's `Constante` grab-bag; the pronoun referents that shared that node are surface forms the frontend resolves away, and the bound day of a day-kind definition, which v0 spelled as a context value named `de dag`, is the node `BoundDay` (next row). `evaluationDate` is the ch. 8.2 execution-date constant and the index of the ch. 8.3 vintage read (`RUNTIME-SEMANTICS.md`), typed day-precision; `evaluationYear` is the execution year, a whole number, admitted-and-unexecuted: no document carries it and the reference interpreter faults on it by name, which is the honest answer, so it stays in the set without a carrier. v0 values: `Rekendatum` → `evaluationDate`, `Rekenjaar` → `evaluationYear`; since L5 the two v0 spellings fall outside the set like any other name (WF-098). The converse of the bound day — a SESSION value inside a day-kind voorwaarde — is refused by WF-031's position arm (ch. 3.7); WF-098 itself stays flat |
 | BoundDay | `type`, `source` | the **bound day** of a day-kind definition (ch. 3.7): the arbitrary day the definition is about, not a session value, typed day-precision. It carries no name. **Landed at L4 (2026-09-24, delta B23):** v0 spelled it as a `Constante` named `de dag`, having no node kind of its own for it; since L4 it has one, and a `ContextValue` named `de dag` falls outside WF-098's set like any other name. Its RUNTIME meaning **landed 2026-09-19** in `RUNTIME-SEMANTICS.md` ch. 3.8, with the day-kind duration forms that bind it — not in ch. 8, which is time SELECTION and owns the session values only: the meaning is stated where the binding is made, and outside a day-kind definition the bound day denotes nothing and every executor faults by name (red case `contextwaarde-de-dag-buiten-dagsoort`) |
 
 **The reference carries no type (landed L2, 2026-09-24, B13).** The five
@@ -2822,7 +2845,7 @@ one removed, or rewritten on the rule its translation falls on
 **Domain identity (WF-089, ch. 2.4).** A use site that takes a keuzetype
 value from somewhere names the same keuzetype as its source. Since L2 the
 read-side use site is the **element-passing aggregation**
-(`EERSTE`/`LAATSTE`/`MINIMUM`/`MAXIMUM`): it returns a contributor
+(`first`/`last`/`minimum`/`maximum`): it returns a contributor
 unchanged, so its own `type` is a use site of its operand's and must name
 the same domain. *(History until L2:)* an `AttributeReference`'s or
 `ParameterReference`'s `type` was a use site of the declaration it reads —
@@ -2910,7 +2933,7 @@ FIDELITY is another question, and a consumer that reads those three
 names literally to pick its conversion diverges silently on an
 annotation that differs in case alone. Since L2 the unit names this rule
 crosses stand on derived positions: `wf091-plus-eenheid-kast` annotates a
-`PLUS` over two reads of `Jutter.gewicht` (declared `kg`, system
+`plus` over two reads of `Jutter.gewicht` (declared `kg`, system
 `Gewicht`, canonical `kg`, factor 1) with `KG`, system `GEWICHT`,
 canonical `KG`, factor 1, and the unit facet refuses it. *Measured until
 L2, on a reference's own copy:* a `KG`/`GEWICHT`/`KG` copy of a
@@ -2951,10 +2974,10 @@ The sixth use site WF-089/WF-090 name — the **element-passing
 aggregation** against **each** operand — is crossed there on the **domain
 facet alone**, and stays outside the *identity* sentence above. A
 reference type is a *copy* of one declaration; an aggregation `type` is a
-**derived** type over an operand LIST. A `MINIMUM`/`MAXIMUM` takes its
+**derived** type over an operand LIST. A `minimum`/`maximum` takes its
 decimals as the least operand precision, its wholeness as the conjunction
 over the operands, and its sign and unit from operand 0; an
-`EERSTE`/`LAATSTE` takes operand 0's type in full. Identity against EVERY
+`first`/`last` takes operand 0's type in full. Identity against EVERY
 operand is therefore unsatisfiable the moment two operands differ — which
 the form ch. 4.6 blesses, "het minimum van het gewicht en 0", a unitless
 literal beside a `kg` attribute, does by construction. The domain is the
@@ -2981,7 +3004,7 @@ the same law: an annotation repeats what is fixed *elsewhere*, and here
 "The same number" therefore means the same *rule for choosing* the number,
 not one number for the whole clause. The DOMAIN facet reports under
 **WF-089** (keuzetype domains) and **WF-090** (struct domains) at a composite
-exactly as it did at a reference until L2: a `PLUS` or a `Rounding` annotated with a
+exactly as it did at a reference until L2: a `plus` or a `Rounding` annotated with a
 keuzetype domain its derivation does not name is refused on WF-089's
 one-sided arm (`wf089-composiet-domein`). Only the facets that carry no
 number of their own — soort, unit, decimals, wholeness — are WF-091's here.
@@ -2995,7 +3018,7 @@ through operands this law actually crosses, and it **breaks at a
 fourth-class operand**.
 A division, a power, a percentage-of, a root, an absolute value and the
 date/time extractors carry an annotation nothing crosses, so a composite that
-reads one consumes a **fabrication** as ground truth — a `GEDEELD_DOOR` over
+reads one consumes a **fabrication** as ground truth — a `dividedBy` over
 two unitless operands may be annotated `kg`, and a rounding above it then
 derives `kg`, and a `kg` target accepts it, all verifier-clean (measured on a
 probe; the shape is admitted, not carried). *Measured 2026-09-04:* the corpus
@@ -3025,35 +3048,35 @@ verifier removed both.
 
 | Position | Derived type | Facets claimed |
 |---|---|---|
-| `Binary` plus / min / verminderd-met, numeric | maxDec; whole iff **both** operands are; the **left** operand's unit. The soort **follows that unit** as a reader reads a `Number` (ch. 2.4): a result whose unit is `%` — a rate whose numerator is `%` among them — is a percentage, any other a number. *(History until L3:)* the soort collapsed to a number, `Percentage + Percentage` derived `number`, and a number was the only annotation the position admitted; since L3 that annotation carries the unit `%` and is itself a percentage | soort, domain, unit, decimals, wholeness |
-| `Binary` plus / min over a date and a duration | the **date** operand's type, unchanged (the duration carries the calendar unit and contributes nothing to the result type) | soort, domain, unit, decimals, wholeness |
-| `Binary` maal | the ch. 2.6 join: a unitless operand hands the other unit through; a rate times its convertible denominator unit **cancels** to the numerator. The soort follows the unit as it does on the additive row (until L3 it collapsed to a number there too) | soort, domain, unit |
+| `Binary` `plus` / `minus` / `reducedBy`, numeric | maxDec; whole iff **both** operands are; the **left** operand's unit. The soort **follows that unit** as a reader reads a `Number` (ch. 2.4): a result whose unit is `%` — a rate whose numerator is `%` among them — is a percentage, any other a number. *(History until L3:)* the soort collapsed to a number, `Percentage + Percentage` derived `number`, and a number was the only annotation the position admitted; since L3 that annotation carries the unit `%` and is itself a percentage | soort, domain, unit, decimals, wholeness |
+| `Binary` `plus` / `minus` over a date and a duration | the **date** operand's type, unchanged (the duration carries the calendar unit and contributes nothing to the result type) | soort, domain, unit, decimals, wholeness |
+| `Binary` `times` | the ch. 2.6 join: a unitless operand hands the other unit through; a rate times its convertible denominator unit **cancels** to the numerator. The soort follows the unit as it does on the additive row (until L3 it collapsed to a number there too) | soort, domain, unit |
 | `Rounding` over a numeric or percentage base | the base's soort, unit and sign, with the node's **own** decimal count (whole iff zero) — ch. 2.4's *facing* precision | soort, domain, unit, decimals, wholeness |
 | `Rounding` over any other base | the base's type, unchanged — the fall-through of the row above, and a shape ch. 2.4 does not describe: see *Measured, and open* | soort, domain, unit, decimals, wholeness |
 | `Clamp` | the base's type, unchanged (ch. 2.7 returns the base, the minimum or the maximum) | soort, domain, unit, decimals, wholeness |
-| `Aggregation` som | operand 0's type, unchanged (§4.6 *Eenheid1*) | soort, domain, unit, decimals, wholeness |
-| `Aggregation` eerste / laatste | operand 0's type, unchanged | soort, unit, decimals, wholeness — **not the domain**, which WF-089/WF-090's own arm already crosses at this position, once per operand |
-| `Aggregation` totaal | operand 0's type with a rate's **denominator stripped** — but only where the fold *integrates over time*. The scheidslijn is the emitter's own predicate: the **non-temporal set reading** ("het totaal van *x* van alle *elementen*" over a plain attribute) is an alias of the sum, folds over instances and integrates over nothing, so it passes operand 0's type through unchanged; every other reading — the non-set rate read, and the set read over a **temporal** attribute, which is the §7.1 per-element timeline fold — integrates, and there `EUR/jr` totals to `EUR` (§4.20) — and a rate whose numerator is `%` (`%/jr`) totals to `%`, which is still a percentage | soort, domain, unit, decimals, wholeness |
-| `Aggregation` minimum / maximum | the **least** operand precision, the **conjunction** of wholeness, operand 0's sign and unit — over a percentage operand 0 as over a number (since L3 a `%` number is a percentage; a percentage carries no sign) | soort, unit, decimals, wholeness (the domain for the same reason as eerste/laatste) |
-| `Aggregation` aantal | whole, zero decimals, unitless — a constant of the operator, reading no operand | soort, domain, unit, decimals, wholeness |
-| `Aggregation` aantal gevulde | the same constant, on its own row because the engine matches on the KIND: a filled count answers a cardinality whatever unit the folded attribute carries (`RUNTIME-SEMANTICS.md` ch. 3.4c). Added 2026-09-20, and not as bookkeeping — until it existed this was the one aggregation whose node type nothing crossed, so a filled count annotated `kg` into an equally-lying `kg` target was verifier-clean and `ref` played it | soort, domain, unit, decimals, wholeness |
+| `Aggregation` `sum` | operand 0's type, unchanged (§4.6 *Eenheid1*) | soort, domain, unit, decimals, wholeness |
+| `Aggregation` `first` / `last` | operand 0's type, unchanged | soort, unit, decimals, wholeness — **not the domain**, which WF-089/WF-090's own arm already crosses at this position, once per operand |
+| `Aggregation` `total` | operand 0's type with a rate's **denominator stripped** — but only where the fold *integrates over time*. The scheidslijn is the emitter's own predicate: the **non-temporal set reading** ("het totaal van *x* van alle *elementen*" over a plain attribute) is an alias of the sum, folds over instances and integrates over nothing, so it passes operand 0's type through unchanged; every other reading — the non-set rate read, and the set read over a **temporal** attribute, which is the §7.1 per-element timeline fold — integrates, and there `EUR/jr` totals to `EUR` (§4.20) — and a rate whose numerator is `%` (`%/jr`) totals to `%`, which is still a percentage | soort, domain, unit, decimals, wholeness |
+| `Aggregation` `minimum` / `maximum` | the **least** operand precision, the **conjunction** of wholeness, operand 0's sign and unit — over a percentage operand 0 as over a number (since L3 a `%` number is a percentage; a percentage carries no sign) | soort, unit, decimals, wholeness (the domain for the same reason as `first`/`last`) |
+| `Aggregation` `count` | whole, zero decimals, unitless — a constant of the operator, reading no operand | soort, domain, unit, decimals, wholeness |
+| `Aggregation` `filledCount` | the same constant, on its own row because the engine matches on the KIND: a filled count answers a cardinality whatever unit the folded attribute carries (`RUNTIME-SEMANTICS.md` ch. 3.4c). Added 2026-09-20, and not as bookkeeping — until it existed this was the one aggregation whose node type nothing crossed, so a filled count annotated `kg` into an equally-lying `kg` target was verifier-clean and `ref` played it | soort, domain, unit, decimals, wholeness |
 
 "Unchanged" above is about the *derivation*, never about the wholeness facet:
 a pass-through hands on whatever precision form its operand carries, whole or
 fractional, and the wholeness facet then crosses that form like any other.
 
-The `maal` row states the join in the two shapes the IR *fixes*. It has a
+The `times` row states the join in the two shapes the IR *fixes*. It has a
 third and a fourth, and the rule claims neither: ch. 2.5's opaque
 **product** of two plain units, whose algebra the spec fixes (a sorted
 multiset of atomic factors, no canonical, no factor) but whose wire
 *spelling* it does not — an identity cross there would pin an
 `abbreviation` and a `system` ch. 2.5 does not require — and the
 unspellable rate factor the producing frontend refuses outright
-(`RUNTIME-SEMANTICS.md` ch. 2.10). *Measured 2026-09-04:* no `maal` node
+(`RUNTIME-SEMANTICS.md` ch. 2.10). *Measured 2026-09-04:* no `times` node
 in any of the four zones carries two unit-bearing operands at all, so the
 cancel rule itself rests on one negatief.
 
-The `totaal` row is the one place this law does not compute its own formula
+The `total` row is the one place this law does not compute its own formula
 but **mirrors a producer's**. The four sources disagree about the strip and
 they do not disagree symmetrically: `ref` and the ASP translator do not
 strip at all (both answer operand 0's unit whole), while the RegelSpraak
@@ -3071,7 +3094,7 @@ golden: `jutterswet-tempototaal` carries both readings, and dropping the
 strip entirely turns its temporal node red (and `wf091-totaal-eenheid`
 clean), while making it unconditional turns its set-fold node red. The
 **granularity half** of the predicate has no witness in these zones at all —
-no `totaal` in golden, rood, negatief or the parity zone reads a *temporal*
+no `total` in golden, rood, negatief or the parity zone reads a *temporal*
 attribute as a set, so removing that half leaves gate 3 green. It is carried
 on the emitter's authority alone: the frontend narrowed its own predicate to
 that half against a measured executor divergence on the shape (a set read
@@ -3080,7 +3103,7 @@ does integrate), and neither this corpus nor the frontend's suite carries the
 shape. Where the operand names an object type the document does not
 declare, the granularity is unreadable and the arm **defers** — the family's
 treatment of an unresolvable declaration; the corpus carries no such
-`totaal` either.
+`total` either.
 
 Two exclusions from that table are **measured**, not chosen, and each was
 priced before it was taken.
@@ -3088,23 +3111,23 @@ priced before it was taken.
 - The **sign** is claimed at no derived position — at none of the eleven,
   without exception. It runs both ways, which is why neither direction can
   be crossed. A derivation mostly *under*-claims a sign restriction
-  (`ONBEPAALD`) while the document narrows it truthfully: a sum of two
+  (`unspecified`) while the document narrows it truthfully: a sum of two
   non-negative operands is non-negative, and — the sharpest case — a clamp
   with a minimum of `0` **is** non-negative whatever its base says. And it
-  over-claims in the other direction at the `aantal` arm, where the formula
-  says `NIET_NEGATIEF` and two anchor goldens write `ONBEPAALD`. *Measured
+  over-claims in the other direction at the `count` arm, where the formula
+  says `nonNegative` and two anchor goldens write `unspecified`. *Measured
   2026-09-04:* **12** documents over golden, rood and negatief narrow it
   truthfully and **5** widen it; crossing the sign on the additive arm alone
   turns 5 golden+rood documents red, at every derived arm 7 (the two extra
-  are the `aantal` widenings), and emptying every exclusion in the table 27.
+  are the `count` widenings), and emptying every exclusion in the table 27.
   The exclusion became total only in fix round 2026-09-04: six arms — clamp,
-  rounding, `som`, `eerste`/`laatste`, `totaal` and a single-operand
+  rounding, `sum`, `first`/`last`, `total` and a single-operand
   `minimum`/`maximum` — were crossing the sign against the text of this
   bullet. Those six carry **zero** golden+rood witnesses, so removing the
   cross left the verifier's report over all four zones byte-identical; what
   it stopped refusing is pinned by a probe rather than by the corpus (the
   clamp-with-a-minimum-of-0 shape above, refused before and clean after).
-- The **precision** of a `maal` is claimed nowhere either, and its price
+- The **precision** of a `times` is claimed nowhere either, and its price
   needs both numbers stated, because they are not the same measurement.
   ch. 2.3's rule is "the SUM of the operands' decimals, never whole", and
   the frontend follows it, while this corpus's other producers do not — the
@@ -3119,7 +3142,7 @@ priced before it was taken.
   ch. 2.3 costs.
 
 **What stays uncrossed, and is named.** ch. 2.10's **fourth class** — a
-division (`GEDEELD_DOOR`, `GEDEELD_DOOR_ABS`), a power, a percentage-of, a
+division (`dividedBy`, `dividedByAbs`), a power, a percentage-of, a
 root, an absolute value and the seven date/time extractors — derives no
 result unit in v0, so this rule claims nothing there. A duration node's own
 type is the operator's parameter (WF-038), not a derived result. `IfThenElse`
@@ -3132,16 +3155,17 @@ its own set on (node, operator) for the same reason, and the two sets were
 **aligned by hand** — they are two independently maintained lists, and no
 tripwire compares them today. Where they differ, they differ for a reason and
 the difference is measured, not accidental: gate 13's derived set carries no
-`AANTAL` (a count derives no *unit*, which is all that harness twists, while
+`count` (a count derives no *unit*, which is all that harness twists, while
 this rule claims its whole numeric shape); gate 13 exempts an axis this rule
 has no notion of, the DURATION **operand** of a date ± duration node, because
 both executors route the calendar unit off that operand's static type; gate 13
 twists a `Let`, which this rule leaves to WF-076; and gate 13's prose lists the
-fourth-class branches without `GEDEELD_DOOR_ABS`, which its set-complement in
+fourth-class branches without `dividedByAbs`, which its set-complement in
 fact covers and which this rule names. Keeping them aligned is a reviewer's
 duty, not a mechanism — and making it one is a card, not a claim to make here.
 
-*Measured, and open.* The pro-rata builtin (`tijdsevenredig deel`) is a
+*Measured, and open.* The pro-rata builtin (`timeProportionalPart`, the
+dialect's `tijdsevenredig deel`) is a
 pass-through in the frontend and in **no other source** — ch. 2.3 lists no
 row for it, and neither executor-side derivation reaches it — and one
 golden annotates it with its TARGET's type rather than its base's (two
@@ -3190,7 +3214,7 @@ roundings in the four zones stand over a plain `Numeriek` base, so both rows
 are stated and unexercised. And the UNIT facet, the facet this whole rule was
 built for, has a
 golden witness at **three** of the eleven positions only — the additive
-`Binary` (8 documents), `maal` (3) and `som` (1). At the other eight it is
+`Binary` (8 documents), `times` (3) and `sum` (1). At the other eight it is
 pinned by a negatief and by nothing else, and a negatief pins a refusal, never
 a non-refusal: nothing in this corpus would notice if those eight arms
 over-claimed a unit.
@@ -3205,11 +3229,13 @@ target's declared precision — needs expression-shape analysis and is a
 different question that stays OPEN. Deferrals are the family's: either
 side absent, or a declaration that does not resolve. *(Partly history
 since L2, 2026-09-24: the rest of this paragraph records the waves that
-closed the empty and unresolvable reference shapes on the L1 wire. The
-name-level arms it lists stay in force unchanged — a reference naming no
-`objecttype` or no `attribuut`, a `ParameterRef` naming no `parameter`, a
-`DimensieCel` whose `attribuut` is null or no reference, a `Kenmerk`
-check naming no `kenmerk`, an allocation's name fields. The type-level
+closed the empty and unresolvable reference shapes on the L1 wire, in the
+v0 names that wire carried. The name-level arms it lists stay in force
+unchanged, in the L5 names — a reference naming no `subjectType` or no
+`attribute`, a `ParameterReference` naming no `parameter`, a
+`DimensionCellRead` whose `attribute` is null or no reference, a
+`CharacteristicCheck` naming no `characteristic`, an allocation's name
+fields. The type-level
 shapes left with their fields: a reference, a fold source and a rule
 target carry no `type` of their own since L2 (B13) and the unknown-type
 node is no datatype (B16), so the sentinel and absent-type arms name
@@ -3480,11 +3506,11 @@ so `2024-01-2026` was silently 2024-01-20 on both of its transpiler
 branches, and it also read the day-first snippet) and answered no value,
 naming the unreadable lexeme at a comparison and refusing the rule under
 its position's own reason elsewhere. The emitter writes the bare ISO lexeme and keeps the source
-snippet in `bron`. Scope: the `date` variant; the `dateTime`
+snippet in `source`. Scope: the `date` variant; the `dateTime`
 variant is WF-095 in the
 paragraph below — the same ISO discipline and, since 2026-09-06, the same
 normative standing; since 2026-09-22 also the same single spelling, the
-snippet living in `bron` alone.
+snippet living in `source` alone.
 
 **The datetime-literal lexeme (WF-095).** A `Literal` whose value is the
 `dateTime` variant (the variant a millisecond-precision `Date` names,
@@ -3510,7 +3536,7 @@ not a space where the lexeme writes `T`, not a one-digit hour, not a
 missing seconds field, not a fraction of any width but three, not a lexeme
 with text around it — and not the day-first RegelSpraak source snippet
 (`15-03-2026 12:00:00.000`, optionally `dd. `-prefixed), which belongs in
-`bron` and nowhere else on this wire.
+`source` and nowhere else on this wire.
 
 *Why the snippet was admitted, and why it no longer is.* From 2026-09-06
 to 2026-09-22 this rule admitted the snippet as a SECOND spelling, because
@@ -3519,7 +3545,7 @@ ISO into the lexeme and the snippet into `bron`, but for a `DatumTijd`
 literal it wrote the snippet into both (measured 2026-09-06), so a
 single-spelling rule would have made the producer non-conforming. The
 emitter now writes the ISO lexeme into the `dateTime` variant of `value`
-(`waarde` until L4) and keeps the snippet in `bron`, symmetric with the date branch (card `p5-datumtijd-lexeem`,
+(`waarde` until L4) and keeps the snippet in `source` (`bron` until L5), symmetric with the date branch (card `p5-datumtijd-lexeem`,
 2026-09-22), and the rule narrowed with it. The narrowing moved no
 document: counted that day over the four zones plus the parity zone, the
 only `DatumTijd` literals anywhere were golden `jutterswet-meldstip`'s two,
@@ -3658,14 +3684,14 @@ here so the next producer knows which form to target — the canonical one
 is what this rule names first and what a consumer reads.
 
 **The text-literal lexeme (maintainer decision 2026-09-18).** A `Literal`
-whose `type` is `Tekst` carries as its value the PARSED string: what
+whose `type` is `Text` carries as its value the PARSED string: what
 stands between the source form's delimiters, with the outer `"…"` removed
 and every character between them kept verbatim — no unescaping, no
 whitespace folding, no case folding. The RegelSpraak string grammar admits
 no escape sequence (a `"` always closes the string), so the removal is
 total and lossless and an emitted value can never itself contain a `"`.
 Unlike WF-081/084/095 this is NOT a well-formedness rule and carries no WF
-number: a `Tekst` literal legitimately carries arbitrary text, so no wire
+number: a `Text` literal legitimately carries arbitrary text, so no wire
 value can be rejected on its shape — a hand-authored document whose value
 carries its own outer quotes stays well-formed, and every executor
 compares it VERBATIM (ch. 4.1's raw-string comparison). The rule binds the
@@ -3677,9 +3703,9 @@ erTest.tekst_literal_lexeme_is_de_geparste_waarde_snippet_in_bron`, gate
 
 **The literal's variant against its type (WF-114).** A `Literal`'s value
 variant MUST be the one its `type` names: `number` for a `Number` (a
-percentage included), `boolean` for a `Booleaan`, `text` for a `Tekst`,
+percentage included), `boolean` for a `Boolean`, `text` for a `Text`,
 `date` for a day-precision `Date`, `dateTime` for a millisecond-precision
-`Date`, `enumeration` for an `Enumeratie`, `constructor` for a `SumType`. A
+`Date`, `enumeration` for an `Enumeration`, `constructor` for a `SumType`. A
 literal whose `type` is null is WF-034's typeless value node and this rule
 does not reach it; a list or struct type names no variant. One datatype
 union serves every literal, so the schema cannot cross the two, and the
@@ -3688,8 +3714,8 @@ one place where variant and type are crossed. The verifier reports
 `literal value is <a|an> <variant> value but its type is <type>: the
 variant is the one the type names`, with `an` before `enumeration` and `a`
 before every other variant, and `<type>` one of `a Number` (a percentage
-included), `a Booleaan`, `a Tekst`, `a day-precision Date`, `a
-millisecond-precision Date`, `an Enumeratie`, `a SumType`, `a ListType` or
+included), `a Boolean`, `a Text`, `a day-precision Date`, `a
+millisecond-precision Date`, `an Enumeration`, `a SumType`, `a ListType` or
 `a StructType`; every executor refuses the same literal at
 load with the same sentence — the shared OCaml loader when an executor
 loads the document, and the Drools loader — so no executor reads
@@ -3738,7 +3764,8 @@ which carries an enumeration literal in both positions and replays through
 ref and clingo against hand-computed values (gates 3, 5 and 6).
 
 **The validity bound's lexeme (WF-101).** A validity window's bounds
-(ch. 3.10, v0 `Geldigheid`) are each either `null` — the open bound — or
+(ch. 3.10, the `Validity` node, v0 `Geldigheid`) are each either absent —
+the open bound — or
 the **strict ISO date lexeme WF-084 names above**, matched by that same
 grammar and that same calendar: fixed field widths (four-two-two), single
 `-` separators, month 1–12, day 1..days-in-month, leap-aware. Nothing else
@@ -3748,9 +3775,9 @@ uniqueness rules and their unions, fact creations, defaults groups, and
 day-kind definitions, where WF-031 refuses a bounded window outright, so
 that position is unreachable in a conforming document and the rule holds
 of it anyway rather than of eight carriers out of nine. Scope is the
-PRESENT bound: `null` is not the empty half of a field here but the
-declared way to leave a side open, so it is admitted by the rule, not
-merely unreached by it.
+PRESENT bound: an absent bound (`null` until L5) is not the empty half of a
+field here but the declared way to leave a side open, so it is admitted by
+the rule, not merely unreached by it.
 
 **Why this is a rule and not a description of what readers happen to do.**
 Until 2026-09-23 three readers held a bound as an **opaque string** and
@@ -3838,22 +3865,26 @@ has to break.
 `name` one of exactly **two** names, and MUST spell it **byte for byte**:
 
 ```
-Rekendatum   -- the ch. 8.2 execution date, and the index of the ch. 8.3
-                vintage read (day precision)
-Rekenjaar    -- the execution year (whole number)
+evaluationDate   -- the ch. 8.2 execution date, and the index of the ch. 8.3
+                    vintage read (day precision)
+evaluationYear   -- the execution year (whole number)
 ```
 
 Nothing else is a context value. Not a third name, not a recapitalisation of
-one of these two, and not `de dag`: since L4 the bound day of a day-kind
+one of these two, not their v0 spellings `Rekendatum` and `Rekenjaar`, which
+since L5 fall outside the set like any other name (witness
+`wf098-v0-naam-rekendatum`), and not `de dag`: since L4 the bound day of a day-kind
 definition is the node `BoundDay` (the table above), so a `ContextValue`
 named `de dag` falls outside the set like any other name (witness
 `wf098-de-dag-als-contextwaarde`). The verifier reports `context value '<n>'
-is not one of the two admissible names Rekendatum, Rekenjaar: the
+is not one of the two admissible names evaluationDate, evaluationYear: the
 context-value name is a closed set, spelled byte for byte`, and every
 executor refuses the same node at load with the same sentence (the shared
 OCaml loader when an executor loads the document, and the Drools loader).
 *History:* until L4 the node was the v0 `Constante`, its name was `naam`,
-and the set held three names, `de dag` the third.
+and the set held three names, `de dag` the third; until L5 the two names
+kept their v0 spelling, `Rekendatum` and `Rekenjaar`, and the measurements
+below were taken on that spelling.
 
 **This is an enumeration, not a resolution.** No table in the document declares
 a context value, so there is nothing for the name to resolve against and
@@ -3878,7 +3909,7 @@ WIRE: with the name pinned at verification time a document carrying
 `rekendatum` never reaches an executor, which makes the normalisation inside
 the two OCaml consumers unreachable on any conforming document and leaves the
 Drools readers as they are. The corpus cannot show that divergence as a
-differential — of the three `Rekendatum` carriers, the anchor golden is
+differential — of the three carriers (`evaluationDate` since L5), the anchor golden is
 excluded by the Drools loader for an unrelated reason and the other two are red
 documents, required to fail — and a purpose-built player would be a document
 whose entire content is the defect. Closing the wire is the route taken instead
@@ -3918,12 +3949,12 @@ day means OUTSIDE a day-kind voorwaarde is a runtime fault in every executor
 (red case `contextwaarde-de-dag-buiten-dagsoort`) and not yet a static rule —
 the mirror arm, recorded and open.
 
-**`Rekenjaar` stays in the set without a carrier.** No document in any zone
+**`evaluationYear` stays in the set without a carrier.** No document in any zone
 carries it, and every executor refuses it by name with one sentence — the
 reference interpreter and the ASP backend at evaluation, the Drools backend
 before lowering (an EXCLUDE, never a fired result; until the L4 landing it
-computed the year of the evaluation date): "the Rekenjaar context value is
-not exercised by any corpus case (ch. 8.2)". That refusal is the honest
+computed the year of the evaluation date): "the evaluationYear context
+value is not exercised by any corpus case (ch. 8.2)". That refusal is the honest
 answer for a name the spec admits and no executor implements, so the name is
 admitted-and-unexecuted rather than dropped: removing it from the set would
 make a document ill-formed for using a construct ch. 8.2 defines.
@@ -3972,7 +4003,9 @@ name-level line at a position the verifier rejected already, and the
 frontend's own pronoun handling is untouched by it. **Since L4 the route ends
 at the producer** (delta B23): the emitter writes the frontend's in-memory
 `Constante` named `de dag` as `BoundDay` and one named `Rekendatum` or
-`Rekenjaar` as a `ContextValue`, and refuses any other name loudly without
+`Rekenjaar` as a `ContextValue` — since L5 named `evaluationDate` or
+`evaluationYear`, while the in-memory names keep their v0 spelling —, and
+refuses any other name loudly without
 writing a document — measured
 2026-09-24, the same `indien hij gelijk is aan hij` added to the source of
 `jutterswet-penningrecht` ends the emission with exit 1 on the refusal that
@@ -3996,17 +4029,19 @@ rule already rejects the document.
 ### 4.1a The navigated read (WF-053)
 
 An attribute reference whose value lives off-subject **navigates**: its
-`objecttype` is the endpoint the attribute lives on, and the walk from
+`subjectType` is the endpoint the attribute lives on, and the walk from
 the subject to that endpoint takes one role hop per step.
 
 **Landed L2 (2026-09-24, B11): one explicit path.** The walk is
-carried by **`navigatieBindingen`** on the attribute reference — a list of
+carried by **`path`** on the attribute reference (`navigatieBindingen`
+until L5) — a list of
 RoleBindings (ch. 2.6), one per hop, subject-outward, each with **the
 role the hop reaches bound** (the far role; its filler is the type the
-walk stands on next) — and by **`navigatieBinding`** on the
-characteristic check, its one hop in the same orientation. Written whole
+walk stands on next) — and by **`navigation`** on the
+characteristic check (`navigatieBinding` until L5), its one hop in the same
+orientation. Written whole
 or not at all, never null, never empty. A reference without bindings is
-the subject's **own read**: nothing is derived, and its `objecttype`
+the subject's **own read**: nothing is derived, and its `subjectType`
 EQUALS the subject type (compared in the WF-001 form). Equality and not
 ⊑: the executors read an own read on the subject itself and never let the
 field choose the type, so the field has one correct value, and a
@@ -4016,11 +4051,11 @@ another refuse (until the L2 fix round `ref` and the ASP backend admitted
 a supertype there while the verifier and the Drools backend refused it). A
 read of an attribute the subject inherits from a supertype names the
 subject type, whose supertype chain declares the attribute (ch. 2.2). One
-rule for every reader: the verifier refuses any other `objecttype` under
+rule for every reader: the verifier refuses any other `subjectType` under
 WF-053, and every executor refuses it with the same sentence. The zero-hop self-reference ("het strandtegoed van de
 aanmelder", read on the Jutter who *is* the aanmelder) is such an own
 read: the reference denotes the subject and reads its own attribute, and
-the written role that named the subject stays in `bron`. *(History until
+the written role that named the subject stays in `source`. *(History until
 L2:)* the wire carried the walk in three written shapes beside the
 bindings — a written role name (possibly a plural, single hop), a chain
 of declared role names (multi-hop), or a directly named object type with
@@ -4038,10 +4073,10 @@ were removed with reason (`corpus/negatief/README.md`, L2).
   the plural does not bind — two roles, or one reciprocal), each hop's
   opposite role is filled by the type the walk stands on (the subject for
   hop one; ⊑ through the supertype chain, ch. 2.6), and the last bound
-  role's filler is ⊑ the reference's `objecttype` (the endpoint;
+  role's filler is ⊑ the reference's `subjectType` (the endpoint;
   one-sided, since the executors refuse the other direction per
   instance). A reference WITHOUT bindings is the subject's own read, so
-  its `objecttype` MUST EQUAL the subject type (WF-001 form; equality, not
+  its `subjectType` MUST EQUAL the subject type (WF-001 form; equality, not
   ⊑): a foreign type there names what only a navigation reaches
   (`wf053-geleste-vouwoperand-onverbonden-hop`), and a supertype of the
   subject is refused as well (`wf053-eigen-lezing-supertype`) — a read of
@@ -4060,7 +4095,7 @@ were removed with reason (`corpus/negatief/README.md`, L2).
 
 Emitter discipline (the pin-bump contract): an emitter binds the
 **scalar navigated read and the navigated characteristic check only** —
-a fold-source argument never carries `navigatieBindingen`, its relation
+a fold-source argument never carries a `path`, its relation
 is the fold's own range (`sourceRole` or `sourcePath`). WF-053 enforces this:
 bindings on a fold source are ill-formed.
 
@@ -4073,12 +4108,18 @@ negated.
 ### 4.2 Operators
 
 **Binary** (`op`, `left`, `right`, `type`, `source`). The operator set,
-with layer marks per `CONSTRUCTS.md` ch. 2.1: plus, min, maal,
-gedeeld-door, tot-de-macht — core kernel; verminderd-met — core with its
-own empty rule (`RUNTIME-SEMANTICS.md` ch. 1.2; its fate is tied to the
-row-18 decision); gedeeld-door-abs — dialect (a defined collapse point,
-ch. 2.2 there); percentage-van — sugar over kernel arithmetic, mirrored as
-an operator. *v0 mirror note:* a typing failure degrades the node's `type`
+with layer marks per `CONSTRUCTS.md` ch. 2.1: `plus`, `minus`, `times`,
+`dividedBy`, `power` — core kernel; `reducedBy` — core with its own empty
+rule (`RUNTIME-SEMANTICS.md` ch. 1.2; its fate is tied to the row-18
+decision); `dividedByAbs` — dialect (a defined collapse point, ch. 2.2
+there; `Abs` names the dialect variant); `percentageOf` — sugar over kernel
+arithmetic, mirrored as an operator.
+v0 values: `PLUS` → `plus`, `MIN` → `minus`, `VERMINDERD_MET` → `reducedBy`,
+`MAAL` → `times`, `GEDEELD_DOOR` → `dividedBy`, `GEDEELD_DOOR_ABS` →
+`dividedByAbs`, `TOT_DE_MACHT` → `power`, `PERCENTAGE_VAN` → `percentageOf`;
+until L5 this chapter spelled them `plus`, `min`, `maal`, `gedeeld-door`,
+`tot-de-macht`, `verminderd-met`, `gedeeld-door-abs` and `percentage-van`.
+*v0 mirror note:* a typing failure degrades the node's `type`
 to the unknown-type node rather than erroring the node away. Since L2 that
 node is no datatype (B16): at a derived position like this one the producer
 writes `type: null` where it cannot type the node (recorded in the L2
@@ -4086,12 +4127,25 @@ card, `backlog/done/20260923-l2-referentielaag.md`), and WF-034 refuses
 such a node in a verified document (a value node without a static type).
 
 **Rounding** (`base`, `mode`, `decimals`, `type`, `source`) — the five
-modes of `RUNTIME-SEMANTICS.md` ch. 2.5; the type carries the rounded
-precision (the WF-023/ch. 2.4 gate leans on this). **Clamp** (`base`,
-`minimum?`, `maximum?`) — sugar verdict (row 1), mirrored as a node; at
-least one bound present. **TextComposition** (`parts`: literal chunks and
-embedded expressions) — sugar verdict (row 31), mirrored; empty coerces to
-`""` per `RUNTIME-SEMANTICS.md` ch. 1.2.
+modes of `RUNTIME-SEMANTICS.md` ch. 2.5, `mode` ∈ `floor` (toward −∞),
+`ceiling` (toward +∞), `towardZero`, `awayFromZero`, `halfAwayFromZero`;
+the type carries the rounded precision (the WF-023/ch. 2.4 gate leans on
+this).
+v0 values: `NAAR_BENEDEN` → `floor`, `NAAR_BOVEN` → `ceiling`,
+`RICHTING_NUL` → `towardZero`, `WEG_VAN_NUL` → `awayFromZero`,
+`REKENKUNDIG` → `halfAwayFromZero`.
+
+**Clamp** (`base`, `minimum?`, `maximum?`) — sugar verdict (row 1),
+mirrored as a node; at least one bound present; an absent bound is no bound
+on that side (a `null` until L5).
+
+**TextComposition** (`parts`: literal chunks and embedded expressions) —
+sugar verdict (row 31), mirrored; empty coerces to `""` per
+`RUNTIME-SEMANTICS.md` ch. 1.2. Each part is a node: a **LiteralChunk**
+(`text`, the chunk's literal text) or an **EmbeddedExpression** (`expr`,
+the expression whose value is inserted). In v0 the three nodes were
+`TekstReeks` (with `delen`), `Letterlijk` (with `tekst`) and `Ingevoegd`
+(with `expr`), the wire names until L5.
 
 ### 4.3 Aggregation and builtin calls
 
