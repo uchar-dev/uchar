@@ -335,11 +335,13 @@ admitted until the card that first writes positions fixes their conventions.
 Where the sections above name `bron`, they describe the shape before this step.
 `../proposals/v1-migratie/m5.py --stage m7` performs the step, with the interface
 and the serialiser of `m4.py`, and refuses, with the file name and a JSON pointer
-into the L4 input, an empty `bron`, an `Onopgelost` whose `bron` is null or
-absent, a `line` below 1 or without a `bron` beside it, and a document that
-mixes the two shapes; the two negatief witnesses of WF-113 (b) that carry such a
-marker are written by hand. Gate 2 holds the record's closures in the L5 rows of
-its shape self-test.
+into the L4 input, an empty `bron` or one that is neither a string nor null, an
+`Onopgelost` whose `bron` is null or absent, a `line` that is not an integer of
+at least 1, that stands without a `bron` beside it or that stands on another
+node than the two carriers and a `Diagnostic`, and a document that mixes the two
+shapes; the two negatief witnesses of WF-113 (b) whose marker it refuses are
+written by hand. Gate 2 holds the record's closures in the L5 rows of its shape
+self-test.
 
 ## `uchar-ir-v1.schema.json`
 
