@@ -96,6 +96,6 @@
   },
   "expectedFault": {
     "ref": "Unresolved condition reached in evaluation",
-    "clingo": "Onopgelost condition reached in translation"
+    "clingo": "Unresolved condition reached in translation"
   }
 }

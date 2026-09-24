@@ -35,6 +35,6 @@
   },
   "expectedFault": {
     "ref": "maal: expected a number, got 2024-01-15",
-    "clingo": "the gedurende-clipped TOTAAL over the timeline of \"wachtvergoeding per maand\" on \"Klipjutter\" multiplies DATE-valued timeline segments by their whole grid units: a temporal total is arithmetic, a date is a calendar POSITION, and scaling one has no meaning \u2014 this translation would multiply its day number and answer a definite number no calendar reads back. Declined in translation"
+    "clingo": "the gedurende-clipped total over the timeline of \"wachtvergoeding per maand\" on \"Klipjutter\" multiplies DATE-valued timeline segments by their whole grid units: a temporal total is arithmetic, a date is a calendar POSITION, and scaling one has no meaning \u2014 this translation would multiply its day number and answer a definite number no calendar reads back. Declined in translation"
   }
 }

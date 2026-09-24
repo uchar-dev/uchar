@@ -38,13 +38,13 @@ spec bug.
   created for each Werf and restpost leeg, refuses in the named
   sentence where ref faults at p in the pass before the creation. The
   same holds for a short circuit that a created member settles at the
-  fixpoint (decision of the main session, 2026-09-23): a TEN MINSTE
-  composite's prefix or a TEN MINSTE fold's open prefix is open in that
+  fixpoint (decision of the main session, 2026-09-23): an `atLeast`
+  composite's prefix or an `atLeast` fold's open prefix is open in that
   pass, and the read behind it, or the value of a Let whose binder such
   a read reads, gets the named refusal. The pass is followed through
-  the reads ch. 6.3 counts positive (a TEN MINSTE fold's range, filter
-  and matrix, an ALLE fold's matrix, the members of an ALLE, DE or TEN
-  MINSTE composite, and a comparison, a navigated characteristic or a
+  the reads ch. 6.3 counts positive (an `atLeast` fold's range, filter
+  and matrix, an `all` fold's matrix, the members of an `all`, `the` or
+  `atLeast` composite, and a comparison, a navigated characteristic or a
   role check that reads through a role, read there with the case's own
   links only); the read's own members are taken to be there, as a
   member a creation adds is there before the members added to its own
@@ -121,14 +121,14 @@ spec bug.
     refusal is named (above). Whether ref's fault in such a pass is
     the arbiter's answer is a norm question for the maintainer. [S4] A
     condition that holds on absence (ch. 6.1: a count against zero,
-    read positively) with a creation as writer, in an ALLE prefix, in
+    read positively) with a creation as writer, in an `all` prefix, in
     a taken arm or in a rule's condition: `ALLE [het aantal schuiten =
     0, p > 0]`, `Let n = het aantal schuiten in (als n > 0 dan 99
     anders p)`, or `keur = p indien het aantal schuiten = 0`, with one
     schuit created for each Werf. In the pass before the creation the
     member holds, the other arm is taken or the condition holds, and
-    ref faults there; clingo answers the fixpoint. Only a TEN MINSTE
-    prefix gets that pass (above); an ALLE prefix, a branch condition
+    ref faults there; clingo answers the fixpoint. Only an `atLeast`
+    prefix gets that pass (above); an `all` prefix, a branch condition
     and a rule's condition are read at the fixpoint.
 
   Each tagged entry, here and under Recorded limitations ([V1], [V2],
@@ -199,7 +199,7 @@ spec bug.
   and the read is `From <= D, D < To`. A gap or an empty date index
   leaves the body unbound — leeg as absence, exactly ref/'s
   leeg-on-gap and empty-index rules.
-- The `Rekendatum` constant is the session's evaluation date as a
+- The `evaluationDate` context value is the session's evaluation date as a
   program constant (ch. 8.2), and the ch. 8.4 session-start
   Parameterset coverage check runs before a program is emitted — the
   shared data-plane validation of `uchar-ref` (like the case loader),
@@ -245,7 +245,7 @@ spec bug.
 
 The backend reuses the loader (`uchar-ir-v0`) and the case loading and
 value lexing of `uchar-ref` (IO). The connecting role of an allocation
-or fold is the node's explicit `RolBinding`: since L2 the wire writes
+or fold is the node's explicit `RoleBinding`: since L2 the wire writes
 every range and every recipient role, and the loader refuses a node that
 omits one (`spec/proposals/V1-WIREMIGRATIE.md` B12). Until L2 the backend
 shared the type-pair derivation for bindingless v0 dumps with `uchar-ref`

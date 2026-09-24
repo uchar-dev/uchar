@@ -42,6 +42,6 @@
   },
   "expectedFault": {
     "ref": "plus: expected a number, got 2024-01-15",
-    "clingo": "a TOTAAL fold over the set source \"vondstdatum\" adds DATE-valued members of \"Vondst\": an additive fold is arithmetic, a date is a calendar POSITION, and adding two of them has no meaning \u2014 this translation would add their day numbers and answer a definite number no calendar reads back. Declined in translation"
+    "clingo": "a total fold over the set source \"vondstdatum\" adds DATE-valued members of \"Vondst\": an additive fold is arithmetic, a date is a calendar POSITION, and adding two of them has no meaning \u2014 this translation would add their day numbers and answer a definite number no calendar reads back. Declined in translation"
   }
 }

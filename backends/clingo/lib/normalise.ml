@@ -247,7 +247,7 @@ let rec has_restatable ~tu (e : expr) : bool =
    ordering folds, exactly the [Translate.units_identical_ok] sites this pass
    lifts (mirroring [eff_unit]'s unit-carrying forms). Multiplicative/division
    positions are deliberately NOT descended: they demand a unit-FREE operand
-   (or, for PERCENTAGE_VAN, pure-%), which restating cannot satisfy, so they
+   (or, for percentageOf, pure-%), which restating cannot satisfy, so they
    keep the existing refusal. *)
 let rec norm_expr ~tu ~to_finest (e : expr) : expr =
   let recurse = norm_expr ~tu ~to_finest in

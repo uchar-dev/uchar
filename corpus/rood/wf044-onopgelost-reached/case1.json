@@ -15,6 +15,6 @@
   },
   "expectedFault": {
     "ref": "Unresolved reached in evaluation",
-    "clingo": "Onopgelost reached in translation"
+    "clingo": "Unresolved reached in translation"
   }
 }

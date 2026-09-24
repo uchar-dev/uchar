@@ -18,6 +18,6 @@
   },
   "expectedFault": {
     "ref": "division by numeric zero",
-    "clingo": "a Begrensd minimum bound that is not a ground literal"
+    "clingo": "a Clamp minimum bound that is not a ground literal"
   }
 }
