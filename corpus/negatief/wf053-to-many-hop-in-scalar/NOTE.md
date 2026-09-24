@@ -4,9 +4,9 @@ rule value: the rule of a `Wachter` reads `hoogte` of the `Post` that
 to-many. A rule value is one value; a to-many step needs an aggregation,
 never a silent first pick.
 
-    WF-053 FAIL /rules/resolvedRegels/0/waarde: hop 0 reaches the to-many role
-    'post' in a scalar slot — a to-many step needs an aggregation, never a
-    silent first pick
+    WF-053 FAIL /rules/resolvedRegels/0/versions/0/value: hop 0 reaches the
+    to-many role 'post' in a scalar slot — a to-many step needs an aggregation,
+    never a silent first pick
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (m).** (First stamped
 (i); the L2 fix round measured the document byte-identical to the

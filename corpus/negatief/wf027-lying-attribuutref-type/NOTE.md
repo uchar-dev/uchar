@@ -3,7 +3,7 @@ in an object creation carries an `AttribuutRef` value whose declaration is
 numeric, where the value of a characteristic must be a boolean-typed
 expression.
 
-    WF-027 FAIL /rules/objectCreaties/0/toekenningen/0: characteristic
+    WF-027 FAIL /rules/objectCreaties/0/versions/0/initialisations/0: characteristic
     initialisation's value must be a boolean-typed expression
 
 Pins the cross-validation flank of the Phase 5c WF-027 relaxation. The relaxed
@@ -23,3 +23,8 @@ non-boolean write; a guardless model would deposit silently). L2 (B13) took
 the field off the wire, so the declaration is the only source of the type
 and the lie cannot be written any more; the document is now a numeric read
 in a boolean slot, refused by the same arm with the same message.
+
+Since L4 an object creation is an `ObjectCreation` with its versions (delta
+B19); the defect sits on the `ObjectCreationVersion`, whose fields are
+`createdType`, `subject`, `initialisations` (each a `Toekenning`) and
+`connectingRole`. `expect.txt` pins the arm.

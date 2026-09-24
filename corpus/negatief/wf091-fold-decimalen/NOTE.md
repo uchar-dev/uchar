@@ -5,9 +5,9 @@ min/max at the **least** operand precision — the winner may be either
 operand, so only the floor is knowable — and claiming the higher one
 over-reports a precision the value need not have.
 
-    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: decimals mismatch: the MINIMUM
-    aggregation is typed 4 decimals, but the type derived from its operands is
-    2 decimals
+    WF-091 FAIL /rules/resolvedRegels/0/versions/0/value/type: decimals
+    mismatch: the MINIMUM aggregation is typed 4 decimals, but the type derived
+    from its operands is 2 decimals
 
 Why it has to exist. A composite type is not a copy of one declaration
 but a **derivation** over its operands, so until this card nothing crossed

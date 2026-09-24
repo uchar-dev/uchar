@@ -1,9 +1,9 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2) whose
 ordering key names an attribute *no declaration carries*.
 
-    WF-034 FAIL /rules/verdelingen/0/groepeerAttribuut: 'bestaatniet' is not a
-    declared attribute of the target type 'Jutter': the allocation's
-    groepeerAttribuut resolves against no declaration
+    WF-034 FAIL /rules/verdelingen/0/versions/0/orderingAttribute: 'bestaatniet'
+    is not a declared attribute of the target type 'Jutter': the allocation's
+    orderingAttribute resolves against no declaration
 
 The clause is the one described in full in the sibling NOTE
 (`wf034-verdeling-onbekend-ratoattribuut`): every filled attribute name on the
@@ -48,3 +48,10 @@ field repointed, a one-line diff; schema-valid, since
 Falsifiable, clause-exact: drop `wf034_verdeling_naamresolutie` from the
 verifier's check list and this case and its five `-onbekend-` allocation
 siblings, those six and nothing else, turn clean.
+
+Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
+version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
+`targetType`, `targetAttribute`, `method`, `ratioAttribute`,
+`maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
+`connectingRole`); the report cites the version and names the L4 field.
+`expect.txt` pins the arm.

@@ -4,11 +4,10 @@ Violates WF-110 (`spec/IR-SPEC.md` ch. 4.3), the instance-set union — the
 §5.7 concatenation of subject expressions, landed 2026-09-20 as the source
 of an instance count. Clause (b): a union carries at least TWO selections.
 
-    WF-110 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: an instance-set
-    union carries at least TWO selections and this one carries 1: a single
-    selection IS the ordinary instance count, spelled with the fold's own
-    elementObjecttype and bronRol, so one meaning keeps one spelling
-    (ch. 4.3)
+    WF-110 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: an
+    instance-set union carries at least TWO selections and this one carries 1: a
+    single selection IS the ordinary instance count, spelled with the fold's own
+    elementType and sourceRole, so one meaning keeps one spelling (ch. 4.3)
 
 The document. A `Jutter` who counts her `aantal strandvondsten` over a
 union with exactly ONE selection — the aangemelde vondsten, the relation
@@ -50,3 +49,9 @@ construction, exactly as it exempts a Lambda) is unreachable without one.
 Arm-exact: the (b) arm reads `branches` and nothing else, so it cannot
 reach a two-or-more union; the empty union falls on the same arm (measured,
 same sentence with `0`).
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

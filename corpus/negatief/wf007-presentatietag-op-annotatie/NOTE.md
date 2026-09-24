@@ -6,7 +6,7 @@ compares the attribute `vondsttarief` with the literal `21`, whose `type` is a
 percentage — a `Number` with the unit `%`. Here that `Literal.type` carries
 the tag.
 
-    WF-007 FAIL /rules/resolvedRegels/1/voorwaarde/rechts/type/presentation:
+    WF-007 FAIL /rules/resolvedRegels/1/versions/0/condition/rechts/type/presentation:
     the presentation tag "percentage" on a type annotation: the tag is written
     only where a datatype is declared
 

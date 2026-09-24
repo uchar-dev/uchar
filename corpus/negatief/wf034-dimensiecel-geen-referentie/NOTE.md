@@ -2,9 +2,9 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **dimension-cell read**
 (ch. 4.1) whose attribute position holds something that is not an attribute
 reference — here a numeric literal typed in the same unit as the cell.
 
-    WF-034 FAIL /rules/resolvedRegels/0/waarde/attribuut: dimension-cell read whose
-    attribute position is not an attribute reference: it resolves against no
-    declaration
+    WF-034 FAIL /rules/resolvedRegels/0/versions/0/value/attribuut: dimension-cell
+    read whose attribute position is not an attribute reference: it resolves
+    against no declaration
 
 This is the **second spelling** of the escape its sibling
 (`wf034-dimensiecel-zonder-attribuut`) closes in its first, and it needs its

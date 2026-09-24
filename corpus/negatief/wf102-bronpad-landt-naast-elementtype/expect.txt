@@ -1,1 +1,1 @@
-the last step's bound role 'ingepakte kist' fills 'Kist', but the fold's elementObjecttype is 'Vondst' — the path must land on the element type
+the last step's bound role 'ingepakte kist' fills 'Kist', but the fold's elementType is 'Vondst' — the path must land on the element type

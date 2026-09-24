@@ -9,10 +9,10 @@ four sibling cases nor the number-versus-date mix of
 milliseconds are two REPRESENTATIONS: the first names a whole day, the
 second a point inside one, and no order runs between them.
 
-    WF-038 FAIL /rules/resolvedRegels/0/waarde: EERSTE orders dates of two
-    precisions (day and millisecond), which share no order
-    WF-038 FAIL /rules/resolvedRegels/1/waarde: LAATSTE orders dates of two
-    precisions (day and millisecond), which share no order
+    WF-038 FAIL /rules/resolvedRegels/0/versions/0/value: EERSTE orders dates of
+    two precisions (day and millisecond), which share no order
+    WF-038 FAIL /rules/resolvedRegels/1/versions/0/value: LAATSTE orders dates
+    of two precisions (day and millisecond), which share no order
 
 Both fold nodes are refused: the document declares one attribute at each
 precision and reads that same pair twice, once per ordering kind.
@@ -53,3 +53,9 @@ representations are one `Date` node with a `precision`, `day` or
 `millisecond` (delta B15 of `spec/proposals/V1-WIREMIGRATIE.md`); the
 document is the translation of `spec/proposals/v1-migratie/m3.py`, and the
 arm reads the precision. `expect.txt` pins the arm.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

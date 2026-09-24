@@ -1,11 +1,11 @@
-Violates WF-098 (`spec/IR-SPEC.md` ch. 4.1): a **context value** whose `naam`
-is not one of the three admissible names — `de dagX` where the closed set holds
-`Rekendatum`, `Rekenjaar` and `de dag`.
+Violates WF-098 (`spec/IR-SPEC.md` ch. 4.1): a **context value** whose `name`
+is not one of the two admissible names — `de dagX` where the closed set holds
+`Rekendatum` and `Rekenjaar` (until L4 it held `de dag` as well; see the last
+paragraph).
 
-    WF-098 FAIL /rules/resolvedDagsoorten/0/voorwaarde/onderdelen/0/links/naam:
-    context value 'de dagX' is not one of the three admissible names
-    Rekendatum, Rekenjaar, de dag: the context-value name is a closed set,
-    spelled byte for byte
+    WF-098 FAIL /rules/resolvedDagsoorten/0/voorwaarde/onderdelen/0/links/name:
+    context value 'de dagX' is not one of the two admissible names Rekendatum,
+    Rekenjaar: the context-value name is a closed set, spelled byte for byte
 
 **Why this is an enumeration and not a resolution.** Nothing in the document
 declares a context value: there is no table for the name to resolve against, so
@@ -28,10 +28,11 @@ reached only from the two duration forms (§6.10/§6.11), which this document do
 not carry. So the name has stopped meaning anything and not one consumer
 notices. That is what makes this a wire arm rather than a differential finding.
 
-**The document keeps its three untwisted names on purpose.** Only the first of
-the golden's four `de dag` occurrences is twisted; the other three are
-admissible and the report shows exactly one line, at the twisted position. The
-witness therefore also pins that the check is per-node, not per-document.
+**The document keeps its three untwisted occurrences on purpose.** Only the
+first of the golden's four `de dag` occurrences is twisted; the other three
+are the bound day, a `BoundDay` node since L4, and the report shows exactly one
+line, at the twisted position. The witness therefore also pins that the check
+is per-node, not per-document.
 
 **Reach, measured 2026-09-10.** Every one of the **14** `Constante` nodes the
 four zones plus the parity zone hold was twisted, one at a time, and the check
@@ -42,8 +43,9 @@ every position the corpus carries.
 
 A hand-broken variant of `corpus/golden/jutterswet-schouwrooster/ir.json`: one
 field, `"naam": "de dag"` → `"naam": "de dagX"` at the first of four
-occurrences, a one-line diff; schema-valid, since `naam` is typed
-`["string", "null"]` on the v0 wire.
+occurrences, a one-line diff on the v0 wire; since L4 the twisted node is
+`{"node": "ContextValue", "name": "de dagX", …}`, schema-valid, since the schema
+leaves a context value's `name` a free string for this rule to close.
 
 Falsifiable, arm-exact: replace the `| Constante { naam; _ } -> (…)` branch of
 `walk_expr` in `spec/verifier/lib/checks.ml` with `| Constante _ -> []` and this
@@ -52,3 +54,10 @@ four zones plus the parity zone, exactly two verdicts moved, not one report line
 elsewhere. Dropping only the byte-exactness (relaxing
 `List.mem n [ … ]` to a `norm` comparison) frees the sister and leaves this case
 refused, so the two witnesses fall independently.
+
+Since L4 the node is a `ContextValue` (delta B23), its name is written in
+`name`, and the closed set holds two names, `Rekendatum` and `Rekenjaar`: the
+bound day of a day-kind definition is its own node, `BoundDay`, and a context
+value named `de dag` falls outside the set like any other name (witness
+`wf098-de-dag-als-contextwaarde`). A context value without a name cannot be
+written since L4. `expect.txt` pins the arm.

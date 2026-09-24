@@ -3,9 +3,9 @@ Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a composite position,
 is annotated `Booleaan`. ch. 2.3's additive row derives a number from two
 numbers.
 
-    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: soort mismatch: the PLUS
-    composite is typed boolean, but the type derived from its operands is
-    number
+    WF-091 FAIL /rules/resolvedRegels/0/versions/0/value/type: soort mismatch:
+    the PLUS composite is typed boolean, but the type derived from its operands
+    is number
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (i).** Until L2 the
 annotation was a percentage. Since L3 a percentage is a number with the unit

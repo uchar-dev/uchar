@@ -4,9 +4,9 @@ hops — from its host to a `Baak`, reading `brandend` there — while claiming
 `Sein` as its host, and at a navigating position the anker is the only object
 bound.
 
-    WF-109 FAIL /rules/feitCreaties/0/voorwaarde/eigenaar: the characteristic check
-    is hosted on 'Sein', which no object bound here can be: this position binds
-    the subject 'Kustvak'
+    WF-109 FAIL /rules/feitCreaties/0/versions/0/condition/eigenaar: the
+    characteristic check is hosted on 'Sein', which no object bound here can be:
+    this position binds the subject 'Kustvak'
 
 Built from a Jutterswet model whose fact creation runs `Kustvak` → `Post` →
 `Sein` beside a to-one `vakbebakening` relation, and whose guard the RegelSpraak

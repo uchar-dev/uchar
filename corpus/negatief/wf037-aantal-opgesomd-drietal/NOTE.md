@@ -4,10 +4,10 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3) in the count's ARITY clause,
 at THREE operands. Sibling of `wf037-aantal-opgesomd`: same shape, one
 post more.
 
-    WF-037 FAIL /rules/resolvedRegels/0/waarde: a count folds INSTANCES and has
-    no LISTED form, and this node carries 3 operands: the source language
-    spells a count over a subject expression alone (ch. 4.3), so there is
-    no articulated operand list to admit — the only reading an operand
+    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: a count folds
+    INSTANCES and has no LISTED form, and this node carries 3 operands: the
+    source language spells a count over a subject expression alone (ch. 4.3), so
+    there is no articulated operand list to admit — the only reading an operand
     list leaves a count is the number of FILLED operands, and that meaning
     belongs to the filled count over its set source, never to this kind
 
@@ -42,3 +42,9 @@ Rood-eerst: pre-refusal verifier (binary md5
 the single rejection above. Falsifiable, arm-exact: the shared mutant of
 `wf037-aantal-opgesomd` turns this document clean too, and moves nothing
 outside the three siblings over 715 documents.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

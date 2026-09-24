@@ -1,0 +1,1 @@
+literal value is a text value but its type is a Number

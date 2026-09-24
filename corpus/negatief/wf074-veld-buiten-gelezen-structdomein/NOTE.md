@@ -3,8 +3,8 @@ Violates WF-074 (`spec/IR-SPEC.md` ch. 4.9): a `FieldAccess` reads the field
 `dossier`. `bedrag` is a field of the second declared struct domain
 `logboek`, not of `dossier`; the base is typed by the attribute it reads.
 
-    WF-074 FAIL /rules/resolvedRegels/5/waarde: 'bedrag' is not a declared
-    field of struct 'dossier'
+    WF-074 FAIL /rules/resolvedRegels/5/versions/0/value: 'bedrag' is not a
+    declared field of struct 'dossier'
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-074 (D17).** Until
 L2 this document was `wf090-attribuutref`, a witness of WF-090 on the

@@ -2,8 +2,8 @@ Violates WF-036 (`spec/IR-SPEC.md` ch. 4.6): an ordering comparison between
 a number and a text — `aantal aangemelde vondsten` (a number)
 `GROTER_OF_GELIJK` the parameter `vondstdrempel`, declared `Tekst`.
 
-    WF-036 FAIL /rules/resolvedRegels/0/voorwaarde/rechts: ordering operand is
-    text
+    WF-036 FAIL /rules/resolvedRegels/0/versions/0/condition/rechts: ordering
+    operand is text
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (i).** Until L2 the
 parameter was declared numeric and only its reference's own `type`

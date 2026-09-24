@@ -1,9 +1,9 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2) whose
 proportional weight names an attribute *no declaration carries*.
 
-    WF-034 FAIL /rules/verdelingen/0/ratoAttribuut: 'bestaatniet' is not a declared
-    attribute of the target type 'Berger': the allocation's ratoAttribuut
-    resolves against no declaration
+    WF-034 FAIL /rules/verdelingen/0/versions/0/ratioAttribute: 'bestaatniet' is
+    not a declared attribute of the target type 'Berger': the allocation's
+    ratioAttribute resolves against no declaration
 
 The clause: every filled attribute name on the allocation's six name fields
 resolves against the declaration scope of **its own side**, the side both
@@ -62,3 +62,10 @@ an allocation is not an expression — and this case and its five
 `-onbekend-` allocation siblings, those six and nothing else, turn clean.
 Measured over all four zones: 486 documents compared, 7 reports change, 6
 verdicts.
+
+Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
+version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
+`targetType`, `targetAttribute`, `method`, `ratioAttribute`,
+`maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
+`connectingRole`); the report cites the version and names the L4 field.
+`expect.txt` pins the arm.

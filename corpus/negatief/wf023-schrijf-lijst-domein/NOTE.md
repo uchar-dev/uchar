@@ -6,8 +6,9 @@ whose elements are `Construct`s of `oordeel` (`Goedgekeurd(10.00)`,
 passes because the value is internally consistent. The second rule is the
 faithful `MapList`/`Fold` reader of `wf089-attribuutref-lijst-sum`.
 
-    WF-023 FAIL /rules/resolvedRegels/0: a value of the sum-type domain
-    'oordeel' is assigned to a target of the sum-type domain 'beschikking'
+    WF-023 FAIL /rules/resolvedRegels/0/versions/0: a value of the sum-type
+    domain 'oordeel' is assigned to a target of the sum-type domain
+    'beschikking'
 
 Why it has to exist: the family clause sees list = list and the domain
 lives one level down; `keuzetype_domain` looks through the element (the

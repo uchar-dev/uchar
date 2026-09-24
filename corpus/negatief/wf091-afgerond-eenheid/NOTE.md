@@ -4,9 +4,9 @@ annotated `t`. A rounding changes the precision and **nothing else** (ch.
 2.4, ch. 2.10: it carries its basis's unit), so the derived unit is the
 base's.
 
-    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: the rounding is
-    typed 't' of system 'Gewicht' (factor 1000 to 'kg'), but the type derived
-    from its base and its decimal count is 'kg' of system 'Gewicht'
+    WF-091 FAIL /rules/resolvedRegels/0/versions/0/value/type: unit mismatch:
+    the rounding is typed 't' of system 'Gewicht' (factor 1000 to 'kg'), but the
+    type derived from its base and its decimal count is 'kg' of system 'Gewicht'
     (factor 1 to 'kg')
 
 Why it has to exist. A composite type is not a copy of one declaration

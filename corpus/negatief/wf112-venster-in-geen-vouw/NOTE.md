@@ -3,8 +3,8 @@
 Violates WF-112 (`spec/IR-SPEC.md` ch. 4.6) in its FOLD arm: the time
 window is the `toets` of a `Kwantorvouw` whose quantifier is `GEEN`.
 
-    WF-112 FAIL /rules/resolvedRegels/2/voorwaarde: a time window under GEEN or
-    a counting quantifier: …
+    WF-112 FAIL /rules/resolvedRegels/2/versions/0/condition: a time window
+    under GEEN or a counting quantifier: …
 
 Derived from `corpus/golden/jutterswet-schouwploeg/ir.json`. The rule
 *bevoegd bij diploma* has quantifier `GEEN` and the bare window

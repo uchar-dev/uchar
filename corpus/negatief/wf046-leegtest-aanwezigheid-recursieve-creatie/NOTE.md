@@ -10,7 +10,9 @@ true only when merk is present. The rule "merk van een wachter" writes merk
 as the rang of the successor, a plain read with no leeg/gevuld test. The only
 leeg/gevuld test on the cycle is therefore one that holds on presence.
 
-    WF-046 FAIL /rules/objectCreaties/0: negative dependency edge on a cycle: werf de opvolger reads what merk van een wachter produces while merk van een wachter is reachable from it (no strata exist)
+    WF-046 FAIL /rules/objectCreaties/0/versions/0: negative dependency edge on
+    a cycle: werf de opvolger reads what merk van een wachter produces while
+    merk van een wachter is reachable from it (no strata exist)
 
 This document is not order-dependent. Its one fixpoint mints nothing: merk is
 leeg, so the creation does not fire, so there is no successor, so merk stays

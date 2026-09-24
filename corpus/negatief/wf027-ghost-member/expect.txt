@@ -1,0 +1,1 @@
+'spook' is not a declared attribute of 'Jutter'

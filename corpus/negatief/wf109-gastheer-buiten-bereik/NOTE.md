@@ -3,9 +3,9 @@ check's host**: the check is hosted on `Jutter` while the only object the
 position binds is the subject, a `Vondst`. The host names the object the check
 lives on, and here it names none.
 
-    WF-109 FAIL /rules/resolvedRegels/0/voorwaarde/eigenaar: the characteristic
-    check is hosted on 'Jutter', which no object bound here can be: this position
-    binds the subject 'Vondst'
+    WF-109 FAIL /rules/resolvedRegels/0/versions/0/condition/eigenaar: the
+    characteristic check is hosted on 'Jutter', which no object bound here can
+    be: this position binds the subject 'Vondst'
 
 Broken from `corpus/golden/jutterswet-keurhouder` by moving one field and
 adding one declaration: the first rule's `eigenaar` from `Vondst` to `Jutter`,

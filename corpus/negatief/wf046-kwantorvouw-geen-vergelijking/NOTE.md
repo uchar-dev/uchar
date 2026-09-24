@@ -13,7 +13,9 @@ the fold holds; the minted successor has a rang of at least 2, so it
 falsifies the fold. The creation reads its own product twice: the
 `opvolging` range and the successor's rang in the matrix.
 
-    WF-046 FAIL /rules/objectCreaties/0: negative dependency edge on a cycle: werf de opvolger reads what werf de opvolger produces while werf de opvolger is reachable from it (no strata exist)
+    WF-046 FAIL /rules/objectCreaties/0/versions/0: negative dependency edge on
+    a cycle: werf de opvolger reads what werf de opvolger produces while werf de
+    opvolger is reachable from it (no strata exist)
 
 Measured before the arm (2026-09-23), with one input Wachter W1 of rang 1:
 `verifier: PASS`; the reference interpreter minted W1 to W5; the ASP backend

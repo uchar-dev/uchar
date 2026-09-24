@@ -4,9 +4,9 @@ Violates the chain-aware **WF-034** (`spec/IR-SPEC.md` ch. 2.2/4.6 (p)):
 `bergingsdiepte` is declared on the strict subtype `Wrakrecht` and read
 through a `Strandrecht`-typed role.
 
-    WF-034 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: 'bergingsdiepte'
-    is not a declared attribute of 'Strandrecht': a value fold's source reads
-    an attribute of each contributor
+    WF-034 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: 'bergingsdiepte'
+    is not a declared attribute of 'Strandrecht': a value fold's source reads an
+    attribute of each contributor
 
 The rule's text is unchanged; what subtyping adds is the reachability. Member
 resolution walks the chain UPWARD ONLY, because not every instance of the

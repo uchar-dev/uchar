@@ -1,0 +1,1 @@
+pro-rata base 'borgtarief' is not a temporal attribute

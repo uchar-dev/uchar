@@ -6,11 +6,11 @@ half: a set source reads each member of the `elementObjecttype`, so its
 instead, and the attribute it spells is declared there and nowhere near the
 members being folded.
 
-    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: fold-source
+    WF-083 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: fold-source
     objecttype 'Jutter' is not the fold's anchor 'Vondst' (a set source reads
-    each member of the elementObjecttype): the executors resolve 'kistgeld'
-    against the anchor, never against this field, so the two spellings name
-    different declarations
+    each member of the elementType): the executors resolve 'kistgeld' against
+    the anchor, never against this field, so the two spellings name different
+    declarations
 
 The document. A Jutter-subject `TOTAAL` over the Jutter's finds —
 `elementObjecttype: "Vondst"`, `bronRol` bound to the role `vondst` (which
@@ -57,3 +57,9 @@ lost its own `type` and set reading (B11, B13); it is the set source because
 the fold carries a range (D8 (i)), so its anchor is the element type, and
 its `objecttype` still names the fold subject. The rule still fires on the
 same arm, and `expect.txt` pins it (U1).
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

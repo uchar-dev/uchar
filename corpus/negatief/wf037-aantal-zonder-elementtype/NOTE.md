@@ -8,11 +8,11 @@ element-type arm states. This is the arity-1 spelling with an ordinary own
 read: an `AANTAL` with no `elementObjecttype` and ONE argument that is no
 fold source.
 
-    WF-037 FAIL /rules/resolvedRegels/0/waarde: the count is an INSTANCE fold and
-    MUST carry an element type: without one its argument is no fold source
-    at all — and with no argument there is none — so the count has no
-    contributors to count, only its operand, whatever that operand holds
-    (ch. 4.3)
+    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: the count is an
+    INSTANCE fold and MUST carry an element type: without one its argument is no
+    fold source at all — and with no argument there is none — so the count has
+    no contributors to count, only its operand, whatever that operand holds (ch.
+    4.3)
 
 The document. A `Jutter` with two weighed posts of her own (`gewogen
 vangst`, `gewogen bijvangst`, kg with two decimals) and a count-typed
@@ -61,3 +61,9 @@ removes the union exit instead: five goldens turn red
 (`jutterswet-keurunie`, `-uniekwantor`, `-uniestratum`,
 `-unievoorwaarde`, `-vondstunie`), so the exit is load-bearing and
 witnessed by the green corpus.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

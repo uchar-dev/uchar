@@ -3,8 +3,8 @@ that names no source attribute. The amount an allocation distributes lives in
 `bronAttribuut` on the source type; with the field empty there is no
 declaration to read it from.
 
-    WF-034 FAIL /rules/verdelingen/0/bronAttribuut: allocation without a source
-    attribute: it resolves against no declaration
+    WF-034 FAIL /rules/verdelingen/0/versions/0/sourceAttribute: allocation
+    without a source attribute: it resolves against no declaration
 
 Why this needs an arm of its own, away from the expression walk: an
 allocation is **not an expression**, so `walk_expr` never reaches it, and its
@@ -29,7 +29,7 @@ already called well-formed.
 *Measured dracht, stated exactly because it is not zero:* the 153 golden, 22
 rood and 30 parity documents carry no allocation with an empty
 `bronAttribuut`, but **four** negatief cases that predate this card do —
-`wf020-crossform-collision`, `wf024-complex`, `wf025-max-without-ratio` and
+`wf020-crossform-collision`, `wf024-complex` (removed at L4, where `COMPLEX` became a load error), `wf025-max-without-ratio` and
 `wf026-two-allocations-one-target`, each a minimal hand-written document that
 spells only the fields its own rule needs. They were already refused, they
 stay refused, and they still cite the rule their directory name declares;
@@ -54,3 +54,10 @@ Falsifiable, clause-exact: neuter `wf034_verdelingen` and this case and its
 `doelAttribuut` sibling turn clean, the four incidental co-citations above
 lose their WF-034 line while staying refused for their own rule, and nothing
 else over the four zones moves.
+
+Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
+version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
+`targetType`, `targetAttribute`, `method`, `ratioAttribute`,
+`maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
+`connectingRole`); the report cites the version and names the L4 field.
+`expect.txt` pins the arm.

@@ -33,3 +33,7 @@ Measured over all 673 documents of the four zones plus the parity zone:
 **31** `Constante` nodes sit inside a `resolvedDagsoorten` voorwaarde,
 **29** of them `de dag` and the other two the witnesses named above, so the
 arm costs nothing.
+
+Since L4 the session value is a `ContextValue` `Rekendatum` (delta B23), and
+the bound day of the definition is its own node, `BoundDay`, which the rule
+admits; the message says so. `expect.txt` pins the arm.

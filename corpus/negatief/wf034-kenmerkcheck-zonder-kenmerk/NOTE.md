@@ -2,8 +2,8 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **characteristic check**
 (ch. 4.5) that names no characteristic. `kenmerk` is the only field the check
 resolves through, so an empty one resolves against no declaration at all.
 
-    WF-034 FAIL /rules/resolvedRegels/1/voorwaarde: characteristic check without a
-    characteristic name: it resolves against no declaration
+    WF-034 FAIL /rules/resolvedRegels/1/versions/0/condition: characteristic
+    check without a characteristic name: it resolves against no declaration
 
 Why nothing else stood in for it: every arm that reads this node sits behind
 `Some k` — WF-034's own declared-characteristic cross, WF-043's granularity

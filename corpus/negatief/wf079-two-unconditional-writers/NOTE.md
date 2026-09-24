@@ -22,3 +22,7 @@ group by stripped name.
 
 Old verifier: `PASS`. New verifier: `WF-079 FAIL … two unconditional computing
 rules write target (jutter, uitkomst) with no prioritized defaults`.
+
+Since L4 the two writers are two forms of one version each, both tagged
+`presentation: "BEREKENING"` and without `condition` (deltas B19, B20); the
+rule reads "computing" from the tag. `expect.txt` pins the arm.

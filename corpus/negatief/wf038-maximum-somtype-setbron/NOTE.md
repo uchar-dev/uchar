@@ -5,8 +5,8 @@ declared with the sum-type domain `stand`. `SumType` is equality-only by
 the ch. 2.4 orderability paragraph, so the greatest contributor is not
 defined.
 
-    WF-038 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: operand of the
-    MAXIMUM ordering fold is sumtype, must be a number or a date
+    WF-038 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: operand of
+    the MAXIMUM ordering fold is sumtype, must be a number or a date
 
 Why it has to exist beside the other three: the four ordering kinds are
 one family in the rule but not in the executors, and the four cases
@@ -30,3 +30,9 @@ WF-038 ordering-fold clause return `[]` and this case turns clean
 together with `wf038-eerste-somtype-geleed`,
 `wf038-laatste-enum-geleed` and `wf038-minimum-enum-setbron`, while
 `wf038-eerste-gemengde-familie` stays red.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

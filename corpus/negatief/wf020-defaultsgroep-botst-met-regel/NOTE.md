@@ -23,3 +23,7 @@ Falsifiable in one edit: give the group any other name.
 
 Minimal hand-broken variant of `corpus/golden/anchor/jutterswet-uitsluiting`,
 where the rule and the group are two named forms with two names.
+
+Since L4 the colliding name is the `name` of the form (delta B19), written
+once for all its versions, and the rule compares forms: a report on a named
+form cites the form. `expect.txt` pins the arm.

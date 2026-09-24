@@ -1,9 +1,9 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6 (n), its empty half): an **object
 creation** (ch. 5.5) with **no** `subject` at all.
 
-    WF-034 FAIL /rules/objectCreaties/1/subject: object creation without a subject:
-    the population it runs over, and the type its member values evaluate on,
-    resolve against no declaration
+    WF-034 FAIL /rules/objectCreaties/1/versions/0/subject: object creation
+    without a subject: the population it runs over, and the type its member
+    values evaluate on, resolve against no declaration
 
 **The other spelling of the same defect.** The fifth wave closed the FILLED
 half — a subject naming a type no declaration carries — and measured this one
@@ -46,3 +46,8 @@ Falsifiable, arm-exact: delete the `| None ->` branch of
 `wf034_objectcreatie_subject` (`spec/verifier/lib/checks.ml`) and this case,
 alone in all four zones, turns clean — 522 documents compared, one verdict
 moved, no report elsewhere.
+
+Since L4 an object creation is an `ObjectCreation` with its versions (delta
+B19); the defect sits on the `ObjectCreationVersion`, whose fields are
+`createdType`, `subject`, `initialisations` (each a `Toekenning`) and
+`connectingRole`. `expect.txt` pins the arm.

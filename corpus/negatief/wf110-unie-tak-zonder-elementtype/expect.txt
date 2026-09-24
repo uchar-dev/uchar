@@ -1,0 +1,1 @@
+an instance-set union's selection MUST name the population it ranges over (ch. 4.3)

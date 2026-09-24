@@ -1,0 +1,424 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Bergingsploeg",
+        "animate": true,
+        "plural": "Bergingsploegen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "meldingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opleverdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bergingsbestek",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "springtijdagen",
+                "canonical": "springtijdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uiterste bergingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vroegste meldingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bergingsspanne",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "springtijdagen",
+                "canonical": "springtijdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bergingsafstand",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "springtijdagen",
+                "canonical": "springtijdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [
+      {
+        "node": "DayKind",
+        "name": "springtijdag",
+        "plural": "springtijdagen"
+      }
+    ]
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "Rule",
+        "name": "uiterste bergingsdatum van een bergingsploeg",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "uiterste bergingsdatum",
+              "objecttype": "Bergingsploeg",
+              "bron": "De uiterste bergingsdatum van een Bergingsploeg"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "meldingsdatum",
+                "objecttype": "Bergingsploeg",
+                "bron": "zijn meldingsdatum"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "bergingsbestek",
+                "objecttype": "Bergingsploeg",
+                "bron": "zijn bergingsbestek"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "zijn meldingsdatum plus zijn bergingsbestek"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vroegste meldingsdatum van een bergingsploeg",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vroegste meldingsdatum",
+              "objecttype": "Bergingsploeg",
+              "bron": "De vroegste meldingsdatum van een Bergingsploeg"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "MIN",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "meldingsdatum",
+                "objecttype": "Bergingsploeg",
+                "bron": "zijn meldingsdatum"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "bergingsbestek",
+                "objecttype": "Bergingsploeg",
+                "bron": "zijn bergingsbestek"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "zijn meldingsdatum min zijn bergingsbestek"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bergingsspanne van een bergingsploeg",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bergingsspanne",
+              "objecttype": "Bergingsploeg",
+              "bron": "De bergingsspanne van een Bergingsploeg"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSDUUR",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "meldingsdatum",
+                  "objecttype": "Bergingsploeg",
+                  "bron": "zijn meldingsdatum"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "opleverdatum",
+                  "objecttype": "Bergingsploeg",
+                  "bron": "zijn opleverdatum"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "springtijdagen",
+                  "canonical": "springtijdagen",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "de tijdsduur van zijn meldingsdatum tot zijn opleverdatum in hele springtijdagen"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bergingsafstand van een bergingsploeg",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bergingsafstand",
+              "objecttype": "Bergingsploeg",
+              "bron": "De bergingsafstand van een Bergingsploeg"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "ABSOLUTE_TIJDSDUUR",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "opleverdatum",
+                  "objecttype": "Bergingsploeg",
+                  "bron": "zijn opleverdatum"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "meldingsdatum",
+                  "objecttype": "Bergingsploeg",
+                  "bron": "zijn meldingsdatum"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "springtijdagen",
+                  "canonical": "springtijdagen",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "de absolute tijdsduur van zijn opleverdatum tot zijn meldingsdatum in hele springtijdagen"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      }
+    ],
+    "resolvedDagsoorten": [
+      {
+        "node": "ResolvedDagsoort",
+        "naam": "springtijdag",
+        "voorwaarde": {
+          "node": "Samengesteld",
+          "kwantor": "TEN_MINSTE",
+          "drempel": 1,
+          "onderdelen": [
+            {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "BuiltinCall",
+                "kind": "DAG_UIT",
+                "arguments": [
+                  {
+                    "node": "ContextValue",
+                    "name": "de dag",
+                    "type": {
+                      "node": "Date",
+                      "precision": "day"
+                    },
+                    "bron": "de dag"
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
+                },
+                "bron": "de dag uit de dag"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "1"
+              },
+              "periode": null,
+              "bron": "de dag uit de dag gelijk is aan 1"
+            },
+            {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "BuiltinCall",
+                "kind": "DAG_UIT",
+                "arguments": [
+                  {
+                    "node": "BoundDay",
+                    "type": {
+                      "node": "Date",
+                      "precision": "day"
+                    },
+                    "bron": "de dag"
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
+                },
+                "bron": "de dag uit de dag"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "15"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "15"
+              },
+              "periode": null,
+              "bron": "de dag uit de dag gelijk is aan 15"
+            }
+          ],
+          "bron": "er aan ten minste 1 van de volgende voorwaarden wordt voldaan: - de dag uit de dag gelijk is aan 1 - de dag uit de dag gelijk is aan 15."
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
+}

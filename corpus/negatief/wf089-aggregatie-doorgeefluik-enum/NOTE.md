@@ -8,9 +8,9 @@ contributor no comparison happens at all and the alien label `Noord`
 arrives in `Berging.vaarwater`, whose truthful `Match` reader has no arm
 for it.
 
-    WF-089 FAIL /rules/resolvedRegels/0/waarde/type: the EERSTE aggregation is
-    typed with keuzetype domain 'Vaarwater', but operand 0 names domain
-    'Kust'
+    WF-089 FAIL /rules/resolvedRegels/0/versions/0/value/type: the EERSTE
+    aggregation is typed with keuzetype domain 'Vaarwater', but operand 0 names
+    domain 'Kust'
 
 Why it has to exist: the reference arms of WF-089 bind an
 `AttribuutRef`/`DimensieCel`/`ParameterRef`/`BinderRef` to the
@@ -27,7 +27,7 @@ faithful twin (everything `Vaarwater`) replays `oracle: PASS`, so the
 shape itself is legitimate; only the claim is false. The sibling shape
 in which the fold IS the `Match` scrutinee — no attribute write at all,
 so WF-023 never participates — fires the same arm at
-`/rules/resolvedRegels/0/waarde/scrutinee/type`.
+`/rules/resolvedRegels/0/versions/0/value/scrutinee/type`.
 
 Falsifiable: make the passthrough cross in the verifier's `Functie` arm
 return `[]` and the WF-089 line disappears here, on

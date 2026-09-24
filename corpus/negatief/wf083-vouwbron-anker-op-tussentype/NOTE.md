@@ -4,11 +4,11 @@ Violates **WF-083 (c)** (`spec/IR-SPEC.md` ch. 4.3) at the position WF-102
 created: the fold source's `objecttype` names an INTERMEDIATE type of the
 range instead of the fold's anchor.
 
-    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: fold-source
-    objecttype 'Boot' is not the fold's anchor 'Vondst' (a set source reads
-    each member of the elementObjecttype): the executors resolve 'gewicht'
-    against the anchor, never against this field, so the two spellings name
-    different declarations
+    WF-083 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: fold-source
+    objecttype 'Boot' is not the fold's anchor 'Vondst' (a set source reads each
+    member of the elementType): the executors resolve 'gewicht' against the
+    anchor, never against this field, so the two spellings name different
+    declarations
 
 Before the path there were two kinds of type in this position — the element
 type and the fold subject — and (c) crossed against whichever the shape
@@ -32,3 +32,9 @@ lost its own `type` and set reading (B11, B13); it is the set source because
 the fold carries a range (D8 (i)), so its anchor is the element type, and
 its `objecttype` still names the intermediate type of the path. The rule
 still fires on the same arm, and `expect.txt` pins it (U1).
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

@@ -13,8 +13,12 @@ and the `opvolging` link; the rule reads both under GEVULD; the merk the rule
 writes is what the creation tests under LEEG. Both tests carry
 `negatie: false`, so this is the witness for that polarity.
 
-    WF-046 FAIL /rules/objectCreaties/0: negative dependency edge on a cycle: werf de opvolger reads what merk van een wachter produces while merk van een wachter is reachable from it (no strata exist)
-    WF-046 FAIL /rules/resolvedRegels/0: negative dependency edge on a cycle: merk van een wachter reads what werf de opvolger produces while werf de opvolger is reachable from it (no strata exist)
+    WF-046 FAIL /rules/objectCreaties/0/versions/0: negative dependency edge on
+    a cycle: werf de opvolger reads what merk van een wachter produces while
+    merk van een wachter is reachable from it (no strata exist)
+    WF-046 FAIL /rules/resolvedRegels/0/versions/0: negative dependency edge on
+    a cycle: merk van een wachter reads what werf de opvolger produces while
+    werf de opvolger is reachable from it (no strata exist)
 
 WF-045 holds, because the cycle passes through the recursive creation, and the
 creation is conditional (WF-033), so the case isolates WF-046.

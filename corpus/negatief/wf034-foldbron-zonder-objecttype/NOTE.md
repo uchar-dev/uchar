@@ -3,8 +3,9 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **fold-source**
 the attribute's value lives on (ch. 4.1a), so a source without one resolves
 against no declaration at all.
 
-    WF-034 FAIL /rules/resolvedRegels/1/waarde/argumenten/0: attribute reference
-    'gewicht' without an object type: it resolves against no declaration
+    WF-034 FAIL /rules/resolvedRegels/1/versions/0/value/arguments/0: attribute
+    reference 'gewicht' without an object type: it resolves against no
+    declaration
 
 Why it has to exist *separately* from the sibling case
 (`wf034-attribuutref-zonder-objecttype`, the same empty field in a plain
@@ -93,3 +94,9 @@ migration's translation (`spec/proposals/v1-migratie/m2.py`): the fold
 source lost its own `type` (B13), and with it the WF-091 line its unit lie
 drew beside this one; the source still names no object type. The rule still
 fires on the same arm, and `expect.txt` pins it (U1).
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

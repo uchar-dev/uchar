@@ -4,9 +4,9 @@ Violates WF-110 (`spec/IR-SPEC.md` ch. 4.3), the instance-set union — the
 §5.7 concatenation of subject expressions, landed 2026-09-20 as the source
 of an instance count. Clause (d): the selections range over ONE population.
 
-    WF-110 FAIL /rules/resolvedRegels/0/waarde/argumenten/0/branches/1/elementType:
-    the selections of an instance-set union range over ONE population:
-    selection 0 names 'Vondst' and this one names 'Kavel' (ch. 4.3)
+    WF-110 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0/branches/1/elementType:
+    the selections of an instance-set union range over ONE population: selection
+    0 names 'Vondst' and this one names 'Kavel' (ch. 4.3)
 
 The document. The union of "aangemelde vondsten van de Jutter" (element
 type `Vondst`, relation `vondstaanmelding`) and "duinkavels van de Jutter"
@@ -55,3 +55,9 @@ construction, exactly as it exempts a Lambda) is unreachable without one.
 Arm-exact: the (d) arm compares each selection against selection 0 and
 reports at the selection that differs, so the equal-population union — the
 form the goldens carry — is untouched by construction.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

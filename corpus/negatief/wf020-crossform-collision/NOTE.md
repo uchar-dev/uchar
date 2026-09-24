@@ -16,3 +16,7 @@ model gains the fact type `strandgoedverdeling` (a `verdeler` and an
 type and binds the `ontvanger` role. Nothing of the name collision moved;
 the WF-034 lines beside it are the allocation's other empty fields, as
 before.
+
+Since L4 the colliding name is the `name` of the form (delta B19), written
+once for all its versions, and the rule compares forms: a report on a named
+form cites the form. `expect.txt` pins the arm.

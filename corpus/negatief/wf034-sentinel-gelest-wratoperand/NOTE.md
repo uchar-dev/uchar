@@ -11,8 +11,8 @@ The document. A `MAXIMUM` with two arguments and a vestigial
 argument of an aggregation (D9); here it is the second of two operands, and
 nothing reads a relation from it.
 
-    WF-034 FAIL /rules/resolvedRegels/0/waarde/argumenten/1: 'vondsten' is
-    neither an attribute nor a characteristic of 'Jutter'
+    WF-034 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/1: 'vondsten'
+    is neither an attribute nor a characteristic of 'Jutter'
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m), armwissel.** Until L2
 the operand carried the unknown-type sentinel on its own `type` — v0's

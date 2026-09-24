@@ -4,10 +4,10 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in the filled count's
 ARITY arm: `AANTAL_GEVULDE` takes exactly one argument, its set source, and
 this node carries two.
 
-    WF-037 FAIL /rules/resolvedRegels/0/waarde: the filled count takes exactly
-    ONE argument, its set source, and this node carries 2: there is no
-    listed form of this kind — the source language spells it nowhere, so
-    there is no articulated operand list to admit (ch. 4.3)
+    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: the filled count takes
+    exactly ONE argument, its set source, and this node carries 2: there is no
+    listed form of this kind — the source language spells it nowhere, so there
+    is no articulated operand list to admit (ch. 4.3)
 
 **The arm is new of DIRECTION and that is why it needs a witness.** WF-037's
 other arity clause says a value fold MUST carry two or more operands — the
@@ -40,3 +40,9 @@ rather than smoothed — it does not turn clean: with the first arm of the
 three-arm chain gone it falls to the element-type arm, which is also true of
 it, so the mutant moves its SENTENCE rather than its verdict. The arm is
 measured by the sentence it owns; no other document moves a line.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

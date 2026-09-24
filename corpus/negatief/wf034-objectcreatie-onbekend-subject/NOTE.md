@@ -2,8 +2,8 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **object creation** (ch. 5.5)
 whose `subject` — the object type the creation runs over — names a type *no
 declaration carries*.
 
-    WF-034 FAIL /rules/objectCreaties/1/subject: object creation's subject type
-    'Bestaatniet' is not declared: the creation resolves against no
+    WF-034 FAIL /rules/objectCreaties/1/versions/0/subject: object creation's
+    subject type 'Bestaatniet' is not declared: the creation resolves against no
     declaration
 
 **What the field is.** `subject` names the population the creation iterates:
@@ -63,3 +63,8 @@ A hand-broken variant of `corpus/golden/anchor/jutterswet-penninguitgifte/ir.jso
 Falsifiable, clause-exact: make `wf034_objectcreatie_subject`
 (`spec/verifier/lib/checks.ml`) inert and this case, alone in all four zones,
 turns clean — 503 documents compared, one verdict moved, no report elsewhere.
+
+Since L4 an object creation is an `ObjectCreation` with its versions (delta
+B19); the defect sits on the `ObjectCreationVersion`, whose fields are
+`createdType`, `subject`, `initialisations` (each a `Toekenning`) and
+`connectingRole`. `expect.txt` pins the arm.

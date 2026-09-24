@@ -6,8 +6,8 @@ rule is about: before 2026-09-10 that was enough to make the document clean,
 because the declared-characteristic cross was keyed on the subject and nothing
 looked at the field.
 
-    WF-100 FAIL /rules/resolvedRegels/0/voorwaarde/eigenaar: 'gekeurd' is not a
-    declared characteristic of 'Jutter'
+    WF-100 FAIL /rules/resolvedRegels/0/versions/0/condition/eigenaar: 'gekeurd'
+    is not a declared characteristic of 'Jutter'
 
 Broken from `corpus/golden/jutterswet-keurhouder` by moving one field: the
 first rule's `eigenaar` from `Vondst` to `Jutter`. Everything else — the two

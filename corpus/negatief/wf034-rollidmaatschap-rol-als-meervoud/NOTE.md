@@ -7,9 +7,9 @@ fact type `wachtindeling` and writes `role: "wachtjutters"` — the declared
 PLURAL of the other role, `wachtjutter`. No role of `wachtindeling` is named
 that, so the check resolves against no declaration.
 
-    WF-034 FAIL /rules/resolvedRegels/0/voorwaarde/role: 'wachtjutters' is not
-    a declared role of fact type 'wachtindeling' (a role check names the role
-    by its declared name)
+    WF-034 FAIL /rules/resolvedRegels/0/versions/0/condition/role: 'wachtjutters'
+    is not a declared role of fact type 'wachtindeling' (a role check names the
+    role by its declared name)
 
 Why this spelling. `role` is the role the SUBJECT plays, by its declared name;
 a plural is presentation and names no role here, as in a role binding. The

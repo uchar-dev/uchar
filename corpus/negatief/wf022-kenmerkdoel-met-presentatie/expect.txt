@@ -1,0 +1,1 @@
+a version with a presentation or with initialisation true writes an attribute, so its target MUST name one

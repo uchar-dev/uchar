@@ -6,9 +6,9 @@ declares its own `type` to be `logboek`. The target attribute agrees with
 the fold node, so the write half is clean and the only defect is the
 claim.
 
-    WF-090 FAIL /rules/resolvedRegels/0/waarde/type: the EERSTE aggregation is
-    typed with struct domain 'logboek', but operand 0 names struct domain
-    'dossier'
+    WF-090 FAIL /rules/resolvedRegels/0/versions/0/value/type: the EERSTE
+    aggregation is typed with struct domain 'logboek', but operand 0 names
+    struct domain 'dossier'
 
 Why it has to exist beside `wf090-foldbron`: without the aggregation
 position the fold is a laundering step — its value comes from a `dossier`

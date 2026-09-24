@@ -5,10 +5,10 @@ Violates WF-063 (`spec/IR-SPEC.md` ch. 4.7), the sum-type twin of
 constructors `Goedgekeurd`, `Verworpen` and `Uitgesteld` of the domain
 `oordeel`.
 
-    WF-063 FAIL /rules/resolvedRegels/0/waarde: arm 'Goedgekeurd' is not a
-    declared constructor of the sum type
-    WF-063 FAIL /rules/resolvedRegels/0/waarde: arm 'Verworpen' is not a
-    declared constructor of the sum type
+    WF-063 FAIL /rules/resolvedRegels/0/versions/0/value: arm 'Goedgekeurd' is
+    not a declared constructor of the sum type
+    WF-063 FAIL /rules/resolvedRegels/0/versions/0/value: arm 'Verworpen' is not
+    a declared constructor of the sum type
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-063 (D17).** Until
 L2 this document was `wf089-attribuutref-sum`, a witness of WF-089 on the

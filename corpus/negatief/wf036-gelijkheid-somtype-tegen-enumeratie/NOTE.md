@@ -5,8 +5,8 @@ an ENUMERATION of a domain of the same name. The two variants of the
 keuzetype family are two families: `domeinen` is one namespace, and one name
 declares one variant.
 
-    WF-036 FAIL /rules/resolvedRegels/0/voorwaarde: equality across families:
-    sumtype vs enumeration
+    WF-036 FAIL /rules/resolvedRegels/0/versions/0/condition: equality across
+    families: sumtype vs enumeration
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-036 (D17).** Until
 L2 this document was `wf089-enum-over-som`, a witness of WF-089 on the

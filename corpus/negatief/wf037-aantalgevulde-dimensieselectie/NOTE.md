@@ -4,8 +4,8 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in its
 `dimensionSelection` clause — "sum/min/max only". An `AANTAL_GEVULDE`
 carries one.
 
-    WF-037 FAIL /rules/resolvedRegels/0/waarde: dimension selection on a kind
-    other than sum/min/max
+    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: dimension selection on
+    a kind other than sum/min/max
 
 **Postponed, not rejected** — and the distinction is normative. The
 dimension fold is itself a dialect form, and a combination of two dialect
@@ -46,3 +46,9 @@ kind-general facet arm of WF-037 carries. Later in the same round WF-093's
 message became the sentence the executors share, which names no kind, so
 no check reads the list any more: measured again, the mutant moves no
 report of the 718.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

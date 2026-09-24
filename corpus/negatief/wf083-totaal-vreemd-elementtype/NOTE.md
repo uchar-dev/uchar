@@ -6,10 +6,10 @@ type of the subject's own read**. A `TOTAAL` without a range (no `bronRol`, no
 type, and its `elementObjecttype` must name that type (equality in the WF-001
 form). Here it names another declared type.
 
-    WF-083 FAIL /rules/resolvedRegels/2/waarde/elementObjecttype: the
-    elementObjecttype 'Vondst' of a TOTAAL without a range is not the fold
-    subject 'Jutter': without a range the fold is the subject's own read, so
-    its elementObjecttype must name the subject type
+    WF-083 FAIL /rules/resolvedRegels/2/versions/0/value/elementType: the
+    elementType 'Vondst' of a TOTAAL without a range is not the fold subject
+    'Jutter': without a range the fold is the subject's own read, so its
+    elementType must name the subject type
 
 The document is `corpus/golden/jutterswet-tempototaal` with one change: the
 third rule, "het bewaargeld van een Jutter is het totaal van zijn
@@ -36,3 +36,9 @@ turns clean; no other report over golden, rood, negatief and the parity zone
 changes (measured: the arm fires on this document alone).
 
 `expect.txt` pins the arm.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

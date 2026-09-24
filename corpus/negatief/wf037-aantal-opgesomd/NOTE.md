@@ -6,10 +6,10 @@ wire. This is the form the decision was taken about: an `AANTAL` with no
 `elementObjecttype`, no `bronRol`, and two ordinary reads as its operand
 list.
 
-    WF-037 FAIL /rules/resolvedRegels/0/waarde: a count folds INSTANCES and has
-    no LISTED form, and this node carries 2 operands: the source language
-    spells a count over a subject expression alone (ch. 4.3), so there is
-    no articulated operand list to admit — the only reading an operand
+    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: a count folds
+    INSTANCES and has no LISTED form, and this node carries 2 operands: the
+    source language spells a count over a subject expression alone (ch. 4.3), so
+    there is no articulated operand list to admit — the only reading an operand
     list leaves a count is the number of FILLED operands, and that meaning
     belongs to the filled count over its set source, never to this kind
 
@@ -74,3 +74,9 @@ mutant's reports are byte-identical to the pre-refusal verifier's
 everywhere. The one-argument count is untouched by construction: the arm
 reads `arity >= 2`, and all 109 one-argument counts in those zones keep
 their reports.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

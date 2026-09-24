@@ -1,8 +1,8 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2) that
 names no target object type.
 
-    WF-034 FAIL /rules/verdelingen/0/doelType: allocation without a target object
-    type: it resolves against no declaration
+    WF-034 FAIL /rules/verdelingen/0/versions/0/targetType: allocation without a
+    target object type: it resolves against no declaration
 
 The empty-reference class of the earlier waves, one field further along, and
 the other half of the pair its sibling NOTE
@@ -36,7 +36,7 @@ which has no scope to resolve in without it. An *undeclared* type is another
 rule's business: WF-047, against the recipient role the allocation carries.
 
 *Measured breadth of the shape itself:* three pre-existing allocation negatiefs
-(`wf020-crossform-collision`, `wf024-complex`, `wf025-max-without-ratio`) are
+(`wf020-crossform-collision`, `wf024-complex` (removed at L4, where `COMPLEX` became a load error), `wf025-max-without-ratio`) are
 minimal fragments that carry no types at all; each gains a truthful incidental
 line here and keeps its verdict and the rule its directory declares.
 (`wf026-two-allocations-one-target` is the fourth of that family and gains two
@@ -55,3 +55,10 @@ rejected. Measured: 486 documents compared, 4 reports change, 1 verdict.
 Dropping the whole clause instead frees this case and
 `wf034-verdeling-zonder-brontype`, those two and nothing else: 6 reports
 change, 2 verdicts.
+
+Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
+version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
+`targetType`, `targetAttribute`, `method`, `ratioAttribute`,
+`maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
+`connectingRole`); the report cites the version and names the L4 field.
+`expect.txt` pins the arm.

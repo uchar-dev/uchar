@@ -5,10 +5,10 @@ subject, and no attribute of the element type. Such a source hands the fold
 the linked instances; the filled count reads a value on each contributor and
 tests it for presence, and an instance has no value to test.
 
-    WF-093 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: value aggregation
-    over "vondsten", which is no attribute of "Vondst": a value fold reads an
-    attribute per contributor, and a role name is a count source only a count
-    folds
+    WF-093 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: value
+    aggregation over "vondsten", which is no attribute of "Vondst": a value fold
+    reads an attribute per contributor, and a role name is a count source only a
+    count folds
 
 The message is the sentence `ref`, the ASP backend and the Drools loader
 share, taken over by the verifier in the L2 fix round; until then the
@@ -27,3 +27,9 @@ the element type. The document is the migration's translation
 (`spec/proposals/v1-migratie/m2.py`), which also wrote the range the schema
 demands; measured without the re-keying the verifier would have fallen back
 on WF-034's name resolution. `expect.txt` pins the arm (U1).
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

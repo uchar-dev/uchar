@@ -12,7 +12,9 @@ creation writes that relation through its back-link and gives the new Post
 nummer 1. The Wachter without posten satisfies the ALLE fold vacuously, and
 the Post it mints falsifies it.
 
-    WF-046 FAIL /rules/objectCreaties/0: negative dependency edge on a cycle: richt een post in reads what richt een post in produces while richt een post in is reachable from it (no strata exist)
+    WF-046 FAIL /rules/objectCreaties/0/versions/0: negative dependency edge on
+    a cycle: richt een post in reads what richt een post in produces while richt
+    een post in is reachable from it (no strata exist)
 
 Under ALLE the matrix is monotone and reads positively, so the refusal comes
 from the range: the fold reads the relation the creation writes, and more

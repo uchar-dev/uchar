@@ -6,7 +6,7 @@ SUBJECT, so its `objecttype` must name the subject. Here it names another
 declared type, and the annotation and the declaration the executors actually
 consult come apart.
 
-    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: fold-source
+    WF-083 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: fold-source
     objecttype 'Jutter' is not the fold's anchor 'Vondst' (a fold without a
     range reads the subject's own attribute): the executors resolve
     'bewaarvergoeding per maand' against the anchor, never against this field,
@@ -64,3 +64,9 @@ lost its own `type` (B13); a `TOTAAL` without a range reads the subject's
 own attribute (D8 (iv)), so its anchor is the fold subject, and its
 `objecttype` still names another type. The rule still fires on the same arm,
 and `expect.txt` pins it (U1).
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

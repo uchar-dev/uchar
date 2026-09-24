@@ -1,1 +1,0 @@
-a fold-source role binding on a node that is not an instance fold over a relation

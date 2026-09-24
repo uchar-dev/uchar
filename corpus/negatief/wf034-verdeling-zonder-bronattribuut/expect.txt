@@ -1,0 +1,1 @@
+allocation without a source attribute: it resolves against no declaration

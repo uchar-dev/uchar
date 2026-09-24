@@ -4,9 +4,9 @@ Violates WF-110 (`spec/IR-SPEC.md` ch. 4.3), the instance-set union — the
 §5.7 concatenation of subject expressions, landed 2026-09-20 as the source
 of an instance count. Clause (e): every selection names the population it ranges over.
 
-    WF-110 FAIL /rules/resolvedRegels/0/waarde/argumenten/0/branches/1/elementType:
-    an instance-set union's selection MUST name the population it ranges
-    over (ch. 4.3)
+    WF-110 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0/branches/1/elementType:
+    an instance-set union's selection MUST name the population it ranges over
+    (ch. 4.3)
 
 The document. Selection 1 carries `"elementType": null` beside a resolving
 `sourceRole`. The relation alone is not a selection: it gives the REACH, and
@@ -48,3 +48,9 @@ Arm-exact: a selection whose `elementType` is spelled but UNDECLARED draws
 the neighbouring WF-034 arm as well (`instance-set selection element type
 'Wrak' is not declared`, measured), so a MISSING name and an UNKNOWN name
 never share a sentence.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

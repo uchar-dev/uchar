@@ -1,0 +1,1 @@
+characteristic target's value must be the boolean constant true

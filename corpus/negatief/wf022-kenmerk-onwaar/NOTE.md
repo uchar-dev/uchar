@@ -9,7 +9,8 @@ The document is the one proposed in
 one rule whose condition is `nieuw recht ontstaan`. The verifier rejects it
 on this clause and on nothing else:
 
-    WF-022 FAIL /rules/resolvedRegels/0/waarde: characteristic target's value must be the boolean constant true
+    WF-022 FAIL /rules/resolvedRegels/0/versions/0/value: characteristic
+    target's value must be the boolean constant true
 
 The older negatief `wf022-target-unresolvable` violates the first clause
 only (the target does not resolve), so until this case nothing failed when
@@ -31,3 +32,7 @@ One document, three answers and a refusal. On this wire a negative decision
 on a characteristic exists only inside a defaults group, where it keeps the
 group from attributing the characteristic; a flat rule with `onwaar` would
 be a write, and WF-022 refuses it.
+
+Since L4 the value is the typed literal `{"boolean": false}` (delta B22), and
+the value clause for a characteristic target reads `{"boolean": true}`; the
+report cites the version's `value`. `expect.txt` pins the arm.

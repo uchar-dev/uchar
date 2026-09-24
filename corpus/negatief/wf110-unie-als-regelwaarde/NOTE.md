@@ -4,8 +4,8 @@ Violates WF-110 (`spec/IR-SPEC.md` ch. 4.3), the instance-set union — the
 §5.7 concatenation of subject expressions, landed 2026-09-20 as the source
 of an instance count. Clause (a), at the sharpest position: the whole rule value.
 
-    WF-110 FAIL /rules/resolvedRegels/0/waarde: an instance-set union stands
-    where nothing consumes it: the union of subject expressions denotes a
+    WF-110 FAIL /rules/resolvedRegels/0/versions/0/value: an instance-set union
+    stands where nothing consumes it: the union of subject expressions denotes a
     set of INSTANCES, and the one node that folds instances is the instance
     count — so this node is admissible as the SINGLE argument of an AANTAL
     aggregation and at no other position (ch. 4.3)
@@ -45,3 +45,9 @@ rule (WF-034's type prologue exempts the union, which carries no `type` by
 construction, exactly as it exempts a Lambda) is unreachable without one.
 Arm-exact: the rule-value position never sets the admissibility flag, so
 this witness falls on the default and the count's own argument does not.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

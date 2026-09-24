@@ -2,9 +2,9 @@ Violates WF-109 (`spec/IR-SPEC.md` ch. 4.6 (q2)) on its **two-satisfying-objects
 flank**, in the shape the rule names explicitly and had no witness for until
 now: a **common supertype**.
 
-    WF-109 FAIL /rules/feitCreaties/0/voorwaarde/eigenaar: the characteristic check
-    is hosted on 'Baken', which the anker 'Kustvak' and the doel 'Sein' both
-    are: the host names one object and this names two
+    WF-109 FAIL /rules/feitCreaties/0/versions/0/condition/eigenaar: the
+    characteristic check is hosted on 'Baken', which the anchor 'Kustvak' and
+    the target 'Sein' both are: the host names one object and this names two
 
 `Kustvak` and `Sein` are both declared subtypes of `Baken`, and `gehesen` is
 declared on `Baken` alone — so WF-100 is satisfied (the host declares the

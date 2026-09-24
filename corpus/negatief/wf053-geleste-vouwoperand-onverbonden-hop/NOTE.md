@@ -5,9 +5,9 @@ bindings is the subject's own read, so its `objecttype` is the subject type;
 `Baken` names a type only a navigation reaches, and no fact type relates
 `Vondst` to `Baken` at all.
 
-    WF-053 FAIL /rules/resolvedRegels/0/waarde/argumenten/1: an attribute
-    reference without navigation bindings is the subject's own read, so its
-    objecttype is the subject type 'Vondst' — 'Baken' names another type,
+    WF-053 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/1: an
+    attribute reference without navigation bindings is the subject's own read,
+    so its objecttype is the subject type 'Vondst' — 'Baken' names another type,
     which only a navigation reaches
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (i).** Until L2 the read

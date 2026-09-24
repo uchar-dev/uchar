@@ -5,9 +5,9 @@ attribute it claims to produce. The derived type of an additive node is a
 number (ch. 2.3 / ch. 2.6), which names no keuzetype domain, so the rule
 fires exactly as it does when only the declaration names one.
 
-    WF-089 FAIL /rules/resolvedRegels/0/waarde/type: the PLUS composite is typed
-    with keuzetype domain 'Vaarwater', but the type derived from its
-    operands is number and names no keuzetype domain
+    WF-089 FAIL /rules/resolvedRegels/0/versions/0/value/type: the PLUS
+    composite is typed with keuzetype domain 'Vaarwater', but the type derived
+    from its operands is number and names no keuzetype domain
 
 Why it has to exist. WF-091's DERIVED arms (2026-09-04, ch. 4.1) carry the
 same facet order and the same number-follows-the-facet rule as the

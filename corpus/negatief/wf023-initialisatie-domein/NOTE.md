@@ -4,8 +4,8 @@ in the third **rule kind**: an `INITIALISATIE` rule writes the `Literal`
 A second rule reads `vaarwater` faithfully through a `Match`. The
 document is `wf023-schrijf-enum-domein` with the rule kind swapped.
 
-    WF-023 FAIL /rules/resolvedRegels/0: a value of the enumeration domain
-    'Kust' is assigned to a target of the enumeration domain 'Vaarwater'
+    WF-023 FAIL /rules/resolvedRegels/0/versions/0: a value of the enumeration
+    domain 'Kust' is assigned to a target of the enumeration domain 'Vaarwater'
 
 Why it has to exist: write position 1 admits `GELIJKSTELLING`,
 `BEREKENING` and `INITIALISATIE` (`KENMERKTOEKENNING` is WF-022's, whose
@@ -18,3 +18,6 @@ the pre-existing enum fence).
 Falsifiable: drop `Initialisatie` from the rule-kind set of write
 position 1 in `wf023` and this case alone turns clean, while every
 `GELIJKSTELLING`/`BEREKENING` write case stays red.
+
+Since L4 the initialisation is a version with `initialisation: true` and no
+`presentation` (delta B20). `expect.txt` pins the arm.

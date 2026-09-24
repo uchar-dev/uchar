@@ -20,11 +20,15 @@ covers `corpus/golden/` only); they must stay *loadable* — a violation
 is a semantic defect in a structurally well-formed document, not a
 syntax error.
 
-Paths in the notes are JSON pointers into the M1 document, the spelling the
-verifier reports since 2026-09-23 (`/model/objectTypes/<i>/...`,
-`/rules/resolvedRegels/<i>/...`). The citations were respelled when the
-verifier's paths moved, quotes of measurements taken on a document's v0 form
-included: the position cited is the same, only its spelling is the M1 one.
+Paths in the notes are JSON pointers into the document, the spelling the
+verifier reports (`/model/objectTypes/<i>/...`; since L4 a version of a named
+form is `/rules/resolvedRegels/<f>/versions/<v>/...`, with the L4 field names
+below it). The citations were respelled when the verifier's paths moved,
+quotes of measurements taken on a document's v0 form included: the position
+cited is the same, only its spelling is the current one. At L4 every citation
+was taken again from the verifier's own output on the witness; the quotes that
+a note marks as measured on a wire form that has since left (until L2) keep
+the spelling of that time.
 
 ## Vervallen bij de v1-migratie
 
@@ -505,3 +509,185 @@ none. The negatief zone went from 402 to 407 documents, and
 | `wf009-dubbele-afkorting` | WF-009 | D54 (U8) | toegevoegd | one abbreviation declared twice in one unit system | the new arm: the list form can write a second `t`, which the verifier, `ref` and the ASP backend passed while the Drools loader refused the document; `corpus/golden/jutterswet-vangstklem` with a second `t` that converts to `kg` by 100 |
 | `wf005-parameterfacet-telling-twee` | WF-005 | B18 (U6) | toegevoegd | a parameter's facet with count 2 | the new arm: a parameter's count is 1 while `spec/RUNTIME-SEMANTICS.md` ch. 3.12 leaves multi-period grids open, because no executor evaluates it; `corpus/golden/anchor/jutterswet-penningvintage` with the count set to 2 |
 | `wf017-meervoud-schaduwt-kalenderafkorting` | WF-017 (a) | D55 (U7) | toegevoegd | arm (a): a plural that is a calendar abbreviation (`wk`) | the abbreviation class, whose witness left with `wf017-eenheidsleutel-schaduwt-kalenderafkorting`; `corpus/golden/jutterswet-schouwrooster` with the plural of `stormvloeddag` respelled `wk` |
+
+### L4 — the rule and expression layer (2026-09-24)
+
+L4 (card `20260924-l4-regel-en-expressielaag`,
+`backlog/done/20260924-l4-regel-en-expressielaag.md`; the decision numbers D#
+and U# below are that card's decision list) takes the rule layer and the
+expression layer to their v1 form: the six named forms are
+`{node, name, versions}`, a version carrying its own `validity` and a rule's
+statute annotations sitting on the form (B19); a rule version's kind is its
+`initialisation` flag and its `presentation` tag, and whether it writes an
+attribute or a characteristic is the target's declaration (B20); `Functie` is
+an `Aggregation` or a `BuiltinCall`, each with only its own fields (B21); the
+single-type and the union uniqueness are one `Uniqueness` with a list of
+`sources` (B27); a `Literal` carries a typed value in the variants of the case
+format, a number with a point (B22); and `Constante` is a `ContextValue`, one
+of the two session values, or the `BoundDay` of a day-kind definition (B23).
+Every witness was measured before its stamp: the L3 verifier on the
+document's L3 form against the L4 verifier on its L4 form, the translation of
+`spec/proposals/v1-migratie/m4.py`. Over the 696 documents of the three zones
+the two reports are identical on 388, differ only in their pointers on 274
+(`wf034-typeloos-literal`, rewritten by hand, among them), and differ in their
+message on 29 — the L4 field names in WF-034's allocation messages and in
+WF-083, WF-102 and WF-110, the field name in WF-082, the narrowed grammar of
+WF-081, the two names of WF-098, the bound day in WF-031's session-value
+sentence, and `anchor`/`target` in WF-109 —; on the other five the rule moved,
+and they are the five removed below. A rewritten witness of the card's
+stamp list carries `expect.txt`; so does every witness added here. The arm
+column quotes the pinned fragment, shortened where it is long. Every NOTE
+citation was taken again from the L4 verifier's output. The negatief zone went
+from 407 to 409 documents (five removed, seven added); the floor
+`EXPECTED_MIN_NEGATIEF` did not have to move, and `EXPECTED_MIN_EXPECT` rose
+from 165 to 220 (`scripts/check-verifier.sh`).
+
+| directory | rule | delta | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf024-complex` | WF-024 | B21, D16 | verwijderd-met-reden | an allocation method `COMPLEX` (the rule left with it) | `COMPLEX` is not in the method enum of three: a load error in the schema and in every loader, and WF-024 leaves IR-SPEC and the verifier as a history line; measured, m4.py refuses the document: "at /rules/verdelingen/0/methode: the method "COMPLEX": the L4 method is one of the three real methods, so the v0 placeholder of an unhandled form cannot be written" |
+| `wf037-aantalgevulde-granulariteit` | WF-037 | B21, D35 | verwijderd-met-reden | a granularity facet on a non-bucketing kind, on an aggregation | an `Aggregation` carries no `granularity`: unwritable; the arm keeps its object on the builtin kinds. Measured, m4.py refuses the document: "at /rules/resolvedRegels/0/waarde/granulariteit: an aggregation (AANTAL_GEVULDE) with the bucket "JAAR": the L4 shape writes granularity on a builtin call only" |
+| `wf047-bereik-op-builtin` | WF-047 | B21, D35 | verwijderd-met-reden | a fold-source role binding on a builtin | a `BuiltinCall` carries no `elementType` and no range: unwritable; the arm keeps its object on an aggregation that is no instance fold. Measured, m4.py refuses the document at `…/waarde/elementObjecttype` and `…/waarde/bronRol`: "a builtin call (ABSOLUTE_WAARDE) with elementObjecttype: the L4 shape writes that field on an aggregation only" (and idem `bronRol`) |
+| `wf034-sentinel-builtin-wratoperand` | WF-034 | B21, D35 | verwijderd-met-reden | the member resolution of a builtin operand that carried a range | idem: the `ABSOLUTE_WAARDE` carries `elementObjecttype` and `bronRol`, so the arm switch L2 recorded (D9) loses its carrier; m4.py refuses the document with the two sentences of the row above |
+| `wf030-single-source-union` | WF-030 | B27 | verwijderd-met-reden | a uniqueness union of one source (the arm left with it) | a uniqueness with one source IS the single-type form, so the arm "a uniqueness union carries at least two sources" loses its object; measured, the verifier accepts the translation (`verifier: PASS`). The witness had no `NOTE.md` |
+| `wf034-typeloos-literal` | WF-034 | B22, D36 | herschreven (i) | a value node without a static type (a typeless `Literal`) | m4.py chooses the variant by the type and refuses a typeless literal ("a typeless literal: the L4 shape chooses the value variant by the type, and there is none"); rewritten by hand to `"value": {"number": "2"}` with `"type": null`; `expect.txt` pins the arm. WF-114 stays silent: there is no type to cross the variant against |
+| `wf021-version-overlap` | WF-021 | B19 | herschreven (m) | validity windows of versions 'Kenmerktoekenning jutter penninggerechtigd #1' and … | one `Rule` with two versions whose `validity` windows overlap; the report cites the first version |
+| `wf020-crossform-collision` | WF-020 | B19 | herschreven (m) | collides with 'Kenmerktoekenning jutter penninggerechtigd' in verdelingen | the colliding name is the `name` of the form; the rule compares forms and cites the form |
+| `wf020-defaultsgroep-botst-met-regel` | WF-020 | B19 | herschreven (m) | name 'penninggerechtigd tenzij uitgesloten' collides with 'penninggerechtigd tenzij … | the colliding name is the `name` of the form; the rule compares forms and cites the form |
+| `wf107-naamloze-regel` | WF-107 | B19 | herschreven (m) | form in resolvedRegels carries no name (a named form's identity on this wire IS its name | `Rule.name` `null` resp. blank; the report cites `/name` of the form |
+| `wf107-blanco-regelnaam` | WF-107 | B19 | herschreven (m) | form in resolvedRegels carries a blank name (a named form's identity on this wire IS its … | `Rule.name` `null` resp. blank; the report cites `/name` of the form |
+| `wf082-empty-bron-annotaties` | WF-082 | B19 | herschreven (m) | statuteAnnotations is empty — an annotation-free rule omits the field entirely | `statuteAnnotations` on the form, verbatim (`[]`, `[""]`, a padded string); the message names the L4 field |
+| `wf082-blank-entry` | WF-082 | B19 | herschreven (m) | blank statute annotation — every entry carries text | `statuteAnnotations` on the form, verbatim (`[]`, `[""]`, a padded string); the message names the L4 field |
+| `wf082-padded-entry` | WF-082 | B19 | herschreven (m) | statute annotation carries leading/trailing whitespace — entries are trimmed | `statuteAnnotations` on the form, verbatim (`[]`, `[""]`, a padded string); the message names the L4 field |
+| `wf022-target-unresolvable` | WF-022 | B20 | herschreven (m) | target 'spookkenmerk' is neither an attribute nor a characteristic of 'Jutter' | the `target` of a `RuleVersion` without a `presentation` |
+| `wf022-kenmerk-onwaar` | WF-022 | B20, B22 | herschreven (m) | characteristic target's value must be the boolean constant true | the value `{"boolean": false}` on a characteristic target; the value clause reads `{"boolean": true}` |
+| `wf079-two-unconditional-writers` | WF-079 | B19, B20 | herschreven (m) | two unconditional computing rules write target (jutter, uitkomst) with no prioritized … | two forms with one version each, `presentation: "BEREKENING"`, without `condition` |
+| `wf023-initialisatie-domein` | WF-023 | B20 | herschreven (m) | a value of the enumeration domain 'Kust' is assigned to a target of the enumeration … | `initialisation: true` |
+| `wf028-create-along-final-hop` | WF-028 | B19 (D31) | herschreven (m) | the created relation must differ from the relation of the final hop | `path` is the steps followed by the final hop; the target type is the filler of `targetRole` |
+| `wf034-verdeling-lege-bronattribuut` | WF-034 | B19 (D33) | herschreven (m) | sourceAttribute is present but empty: an attribute name that names nothing resolves … | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf034-verdeling-lege-groepeerattribuut` | WF-034 | B19 (D33) | herschreven (m) | orderingAttribute is present but empty: an attribute name that names nothing resolves … | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf034-verdeling-lege-maximumattribuut` | WF-034 | B19 (D33) | herschreven (m) | maximumAttribute is present but empty: an attribute name that names nothing resolves … | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf034-verdeling-onbekend-bronattribuut` | WF-034 | B19 (D33) | herschreven (m) | 'bestaatniet' is not a declared attribute of the source type 'Berging': the allocation's … | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf034-verdeling-onbekend-doelattribuut` | WF-034 | B19 (D33) | herschreven (m) | 'bestaatniet' is not a declared attribute of the target type 'Berger': the allocation's … | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf034-verdeling-onbekend-groepeerattribuut` | WF-034 | B19 (D33) | herschreven (m) | 'bestaatniet' is not a declared attribute of the target type 'Jutter': the allocation's … | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf034-verdeling-onbekend-maximumattribuut` | WF-034 | B19 (D33) | herschreven (m) | 'bestaatniet' is not a declared attribute of the target type 'Berger': the allocation's … | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf034-verdeling-onbekend-ratoattribuut` | WF-034 | B19 (D33) | herschreven (m) | 'bestaatniet' is not a declared attribute of the target type 'Berger': the allocation's … | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf034-verdeling-onbekend-restantattribuut` | WF-034 | B19 (D33) | herschreven (m) | 'bestaatniet' is not a declared attribute of the source type 'Berging': the allocation's … | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf034-verdeling-zonder-bronattribuut` | WF-034 | B19 (D33) | herschreven (m) | allocation without a source attribute: it resolves against no declaration | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf034-verdeling-zonder-brontype` | WF-034 | B19 (D33) | herschreven (m) | allocation without a source object type: it resolves against no declaration | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf034-verdeling-zonder-doelattribuut` | WF-034 | B19 (D33) | herschreven (m) | allocation without a target attribute: it resolves against no declaration | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf034-verdeling-zonder-doeltype` | WF-034 | B19 (D33) | herschreven (m) | allocation without a target object type: it resolves against no declaration | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf025-max-without-ratio` | WF-025 | B19 (D33) | herschreven (m) | maximum requires a ratio attribute | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf026-two-allocations-one-target` | WF-026 | B19 (D33) | herschreven (m) | two allocations write target (Jutter, aantal aangemelde vondsten) | the `AllocationVersion` field names; the message names `sourceAttribute`, `orderingAttribute`, … where it named the v0 fields |
+| `wf034-objectcreatie-loos-subject` | WF-034 | B19 (D32) | herschreven (m) | object creation without a subject | `ObjectCreationVersion` (`subject`, `initialisations`, `connectingRole`) |
+| `wf034-objectcreatie-onbekend-subject` | WF-034 | B19 (D32) | herschreven (m) | object creation's subject type 'Bestaatniet' is not declared: the creation resolves … | `ObjectCreationVersion` (`subject`, `initialisations`, `connectingRole`) |
+| `wf027-ghost-member` | WF-027 | B19 (D32) | herschreven (m) | 'spook' is not a declared attribute of 'Jutter' | `ObjectCreationVersion` (`subject`, `initialisations`, `connectingRole`) |
+| `wf027-lying-attribuutref-type` | WF-027 | B19 (D32) | herschreven (m) | characteristic initialisation's value must be a boolean-typed expression | `ObjectCreationVersion` (`subject`, `initialisations`, `connectingRole`) |
+| `wf027-nonboolean-characteristic-init` | WF-027 | B19 (D32) | herschreven (m) | characteristic initialisation's value must be a boolean-typed expression | `ObjectCreationVersion` (`subject`, `initialisations`, `connectingRole`) |
+| `wf047-creation-binding-wrong-filler` | WF-047 | B19 (D32) | herschreven (m) | the bound role 'dossierhouder' fills 'Jutter', but the node names 'Dossier' | `ObjectCreationVersion` (`subject`, `initialisations`, `connectingRole`) |
+| `wf029-no-subject` | WF-029 | B19 | herschreven (m) | consistency without a subject type | `ConsistencyVersion.subject: null` |
+| `wf030-arity-mismatch` | WF-030 | B27 | herschreven (m) | union sources disagree on key arity | `sources` with two `Source` nodes whose `keys` differ in length |
+| `wf054-dangling-scope-binding` | WF-054 | B27 | herschreven (m) | role binding names undeclared fact type 'wijkindeling' | the scope binding is the version's `scope`, which the report cites |
+| `wf054-to-many-scope-role` | WF-054 | B27 | herschreven (m) | is to-many — a scope parent is one instance | the scope binding is the version's `scope`, which the report cites |
+| `wf037-aantal-geen-operand` | WF-037 | B21 | herschreven (m) | the count is an INSTANCE fold and MUST carry an element type | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf037-aantal-lijstliteraal` | WF-037 | B21 | herschreven (m) | the count is an INSTANCE fold and MUST carry an element type | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf037-aantal-opgesomd` | WF-037 | B21 | herschreven (m) | a count folds INSTANCES and has no LISTED form, and this node carries 2 operands | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf037-aantal-opgesomd-drietal` | WF-037 | B21 | herschreven (m) | a count folds INSTANCES and has no LISTED form, and this node carries 3 operands | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf037-aantal-opgesomd-element` | WF-037 | B21 | herschreven (m) | a count folds INSTANCES and has no LISTED form, and this node carries 2 operands | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf037-aantal-zonder-elementtype` | WF-037 | B21 | herschreven (m) | the count is an INSTANCE fold and MUST carry an element type | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf037-aantalgevulde-dimensieselectie` | WF-037 | B21 | herschreven (m) | dimension selection on a kind other than sum/min/max | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf037-aantalgevulde-leegwaarde` | WF-037 | B21 | herschreven (m) | empty-value fallback on a non-sum aggregation | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf037-aantalgevulde-niet-setbron` | WF-037 | B21 | herschreven (m) | the filled count's single argument MUST be its set source, an attribute reference read on … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf037-aantalgevulde-tweede-argument` | WF-037 | B21 | herschreven (m) | the filled count takes exactly ONE argument, its set source, and this node carries 2 | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf037-aantalgevulde-zonder-elementtype` | WF-037 | B21 | herschreven (m) | the filled count is an INSTANCE fold and MUST carry an element type | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf037-fallback-on-minimum` | WF-037 | B21 | herschreven (m) | empty-value fallback on a non-sum aggregation | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf038-eerste-gemengde-datumprecisie` | WF-038 | B21 | herschreven (m) | EERSTE orders dates of two precisions (day and millisecond), which share no order | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf038-eerste-gemengde-familie` | WF-038 | B21 | herschreven (m) | EERSTE orders operands of two comparable families, numbers and dates, which share no … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf038-eerste-somtype-geleed` | WF-038 | B21 | herschreven (m) | operand of the EERSTE ordering fold is sumtype, must be a number or a date | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf038-extractor-text` | WF-038 | B21 | herschreven (m) | day-precision extractor operand is text, must be a date | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf038-laatste-enum-geleed` | WF-038 | B21 | herschreven (m) | operand of the LAATSTE ordering fold is enumeration, must be a number or a date | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf038-maximum-somtype-setbron` | WF-038 | B21 | herschreven (m) | operand of the MAXIMUM ordering fold is sumtype, must be a number or a date | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf038-minimum-enum-setbron` | WF-038 | B21 | herschreven (m) | operand of the MINIMUM ordering fold is enumeration, must be a number or a date | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf038-paasdag-text` | WF-038 | B21 | herschreven (m) | eerste-paasdag operand is text, must be a whole unitless number | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf038-tijdsduur-gemengde-precisie` | WF-038 | B21 | herschreven (m) | tijdsduur operands mix date precisions (both must share one precision) | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf038-tijdsduur-zonder-node-type` | WF-038 | B21 | herschreven (m) | tijdsduur without a node type (the counted unit is the node type's unit) | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf038-tijdsduur-zonder-tijdseenheid` | WF-038 | B21 | herschreven (m) | tijdsduur without a recognised time unit on its node type | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf083-totaal-vreemd-elementtype` | WF-083 | B21 | herschreven (m) | of a TOTAAL without a range is not the fold subject | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf083-vouwbron-anker-op-operand` | WF-083 | B21 | herschreven (m) | is not the fold's anchor 'Jutter' (a count source is read on the fold subject) | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf083-vouwbron-anker-op-tussentype` | WF-083 | B21 | herschreven (m) | fold-source objecttype 'Boot' is not the fold's anchor 'Vondst' (a set source reads each … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf083-vouwbron-vreemd-elementtype` | WF-083 | B21 | herschreven (m) | fold-source objecttype 'Jutter' is not the fold's anchor 'Vondst' (a set source reads … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf083-vouwbron-vreemd-objecttype` | WF-083 | B21 | herschreven (m) | fold-source objecttype 'Jutter' is not the fold's anchor 'Vondst' (a fold without a range … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf093-aantalgevulde-wrat` | WF-093 | B21 | herschreven (m) | value aggregation over "vondsten", which is no attribute of "Vondst": a value fold reads … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf093-telbron-onder-som` | WF-093 | B21 | herschreven (m) | value aggregation over "vondsten", which is no attribute of "Vondst": a value fold reads … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf093-telling-over-attribuutbron` | WF-093 | B21 | herschreven (m) | a count folds INSTANCES, so its source is a count source naming the relation's role, … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf093-wratvouw-kale-eerste` | WF-093 | B21 | herschreven (m) | value aggregation over "vondsten", which is no attribute of "Vondst": a value fold reads … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf093-wratvouw-kale-som` | WF-093 | B21 | herschreven (m) | value aggregation over "vondsten", which is no attribute of "Vondst": a value fold reads … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf102-bronpad-een-stap` | WF-102 | B21 | herschreven (m) | a sourcePath carries at least TWO steps, found 1 — the one-step range is spelled … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf102-bronpad-landt-naast-elementtype` | WF-102 | B21 | herschreven (m) | the last step's bound role 'ingepakte kist' fills 'Kist', but the fold's elementType is … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf102-bronpad-leeg` | WF-102 | B21 | herschreven (m) | a sourcePath carries at least TWO steps, found 0 — the one-step range is spelled … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf102-bronpad-onverbonden-stap` | WF-102 | B21 | herschreven (m) | the opposite role 'verpakte vondst' fills 'Vondst', but this step starts at 'Boot' | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf102-bronpad-op-niet-setbron` | WF-102 | B21 | herschreven (m) | a sourcePath is admissible only as the range of a single-argument VALUE fold's set source | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf102-bronpad-start-niet-op-onderwerp` | WF-102 | B21 | herschreven (m) | the opposite role 'bergende boot' fills 'Boot', but this step starts at 'Jutter' (the … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf110-unie-als-regelwaarde` | WF-110 | B21 | herschreven (m) | an instance-set union stands where nothing consumes it | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf110-unie-een-tak` | WF-110 | B21 | herschreven (m) | an instance-set union carries at least TWO selections and this one carries 1 | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf110-unie-naast-vouwbron` | WF-110 | B21 | herschreven (m) | a count over an instance-set union names no source of its own, and this node carries … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf110-unie-onder-een-builtin` | WF-110 | B21 | herschreven (m) | an instance-set union stands where nothing consumes it | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf110-unie-ongelijke-elementtypes` | WF-110 | B21 | herschreven (m) | the selections of an instance-set union range over ONE population | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf110-unie-tak-zonder-elementtype` | WF-110 | B21 | herschreven (m) | an instance-set union's selection MUST name the population it ranges over (ch. 4.3) | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf056-bucket-target-mismatch` | WF-056 | B21 | herschreven (m) | pro-rata bucket granularity differs from the target's declared granularity | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf056-no-gedurende-condition` | WF-056 | B21 | herschreven (m) | tijdsevenredig-deel without a gedurende condition | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf056-nontemporal-kenmerk` | WF-056 | B21 | herschreven (m) | gedurende over 'borgplichtig', which is not a temporal characteristic | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf056-scalar-base` | WF-056 | B21 | herschreven (m) | pro-rata base 'borgtarief' is not a temporal attribute | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf055-composite-comparison-leaf` | WF-055 | B21 | herschreven (m) | a composite gedurende member is an own temporal characteristic check | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf055-composite-nested` | WF-055 | B21 | herschreven (m) | a composite gedurende member is an own temporal characteristic check | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf055-composite-nontemporal-leaf` | WF-055 | B21 | herschreven (m) | gedurende over 'erkend', which is not a temporal characteristic of 'Jutter' | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf055-navigated-clip-condition` | WF-055 | B21 | herschreven (m) | the gedurende condition is an own temporal characteristic check, a per-segment comparison … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf055-nontemporal-clip-kenmerk` | WF-055 | B21 | herschreven (m) | gedurende over 'wachtplichtig', which is not a temporal characteristic of 'Jutter' | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf047-bound-role-fills-source` | WF-047 | B21 | herschreven (m) | the bound role 'berging' fills 'Berging', but the node names 'Berger' | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf047-bronpad-stap-onopgeloste-rol` | WF-047 | B21 | herschreven (m) | role binding names no declared role 'geborgen vondsten' of fact type 'berging' (the … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf047-dangling-role-binding` | WF-047 | B21 | herschreven (m) | role binding names no declared role 'bewaker' of fact type 'bergingsdeelname' (the plural … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf047-reciprocal-wrong-filler` | WF-047 | B21 | herschreven (m) | the bound role 'maat' fills 'Jutter', but the node names 'Vondst' | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf034-foldbron-onbekend-attribuut` | WF-034 | B21 | herschreven (m) | 'bestaatniet' is not a declared attribute of 'Jutter': a value fold's source reads an … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf034-foldbron-zonder-attribuut` | WF-034 | B21 | herschreven (m) | attribute reference on 'Vondst' without an attribute name: it resolves against no … | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf034-foldbron-zonder-objecttype` | WF-034 | B21 | herschreven (m) | attribute reference 'gewicht' without an object type: it resolves against no declaration | `Aggregation`/`BuiltinCall` with their L4 fields; a message that named `elementObjecttype`, `bronRol`, `bronPad` or `argumenten` names the L4 field |
+| `wf081-unit-in-lexeme` | WF-081 | B22 | herschreven (m) | numeric literal lexeme '5 €' is not a number of the case format | `{"number": "5 €"}`; the message states the narrowed grammar (U19) |
+| `wf084-bare-non-iso` | WF-084 | B22 | herschreven (m) | date literal lexeme '31-01-2024' is not the ISO form yyyy-mm-dd (fixed field widths, … | the string in the `date` variant; the report cites `/value` |
+| `wf084-source-snippet` | WF-084 | B22 | herschreven (m) | date literal lexeme 'dd. 31-01-2024' is not the ISO form yyyy-mm-dd (fixed field widths, … | the string in the `date` variant; the report cites `/value` |
+| `wf095-bronsnippet` | WF-095 | B22 | herschreven (m) | millisecond-precision date literal lexeme '15-03-2026 12:00:00.000' is not the canonical … | the string in the `dateTime` variant, each its own spelling fault; the report cites `/value` |
+| `wf095-fractiebreedte` | WF-095 | B22 | herschreven (m) | millisecond-precision date literal lexeme '2026-03-15T12:00:00.1' is not the canonical … | the string in the `dateTime` variant, each its own spelling fault; the report cites `/value` |
+| `wf095-omringende-tekst` | WF-095 | B22 | herschreven (m) | millisecond-precision date literal lexeme 'rommel 2026-03-15T12:00:00 x' is not the … | the string in the `dateTime` variant, each its own spelling fault; the report cites `/value` |
+| `wf095-ontbrekende-seconden` | WF-095 | B22 | herschreven (m) | millisecond-precision date literal lexeme '2026-03-15T12:00' is not the canonical ISO … | the string in the `dateTime` variant, each its own spelling fault; the report cites `/value` |
+| `wf095-spatie-scheider` | WF-095 | B22 | herschreven (m) | millisecond-precision date literal lexeme '2026-03-15 12:00:00' is not the canonical ISO … | the string in the `dateTime` variant, each its own spelling fault; the report cites `/value` |
+| `wf095-zone-suffix` | WF-095 | B22 | herschreven (m) | millisecond-precision date literal lexeme '2026-03-15T12:00:00Z' is not the canonical ISO … | the string in the `dateTime` variant, each its own spelling fault; the report cites `/value` |
+| `wf039-negative-under-nonneg` | WF-039 | B22 | herschreven (m) | negative literal '-3' under a non-negative sign restriction | `{"number": "-3"}` under `NIET_NEGATIEF` |
+| `wf098-onbekende-contextwaarde-naam` | WF-098 | B23 | herschreven (m) | context value 'de dagX' is not one of the two admissible names Rekendatum, Rekenjaar | `ContextValue {name: "de dagX"}`; the closed set holds two names |
+| `wf098-contextwaarde-naam-kapitalisatie` | WF-098 | B23 | herschreven (m) | context value 'rekendatum' is not one of the two admissible names Rekendatum, Rekenjaar | `ContextValue {name: "rekendatum"}`; the closed set holds two names |
+| `wf031-sessiewaarde-in-dagsoort` | WF-031 | B23 | herschreven (m) | day-kind condition reads the session value 'Rekendatum' | a `ContextValue` `Rekendatum` in a day-kind condition; the message admits the bound day (`BoundDay`) |
+
+Mechanical, without an L4 delta on the defect (no row): the 26 witnesses whose
+consistency had `geldigheid: null` and the 11 witnesses with a rule of
+`geldigheid: null` (46 versions), which now write the always-validity
+`{"vanaf": null, "tot": null}`; the 6 witnesses with a decimal-comma literal,
+which now write a point in `value.number` (`wf001-dubbel-eenheidstelsel`,
+`wf009-dubbele-afkorting`, `wf034-eenheid-onbekend-stelsel`,
+`wf045-erfattribuut-spelling-cyclus`, `wf092-canoniek-zonder-factor`,
+`wf092-factor-zonder-canoniek`); `wf036-gelijkheid-enumeratie-tegen-somtype`,
+the one carrier of the `constructor` variant (`{"constructor": "Wad"}`; WF-036
+reads the type, not the value); and every other document whose pointers alone
+moved. The 20 witnesses of WF-045 and WF-046 moved in their pointer only: the
+dependency graph records a form at the pointer of its version.
+
+#### Added at L4 (2026-09-24)
+
+A witness for each arm L4 added or moved onto a new field (`expect.txt` and
+`NOTE.md` in each). Each is arm-exact: with its arm disabled it turns clean
+and no other document of golden, rood and negatief moves (698 compared).
+
+| directory | rule | delta | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf022-doel-attribuut-en-kenmerk` | WF-022 | N3 (U22) | toegevoegd | a target name that is an attribute and a characteristic of the subject type | the new arm: the name decides no member kind; `corpus/golden/anchor/jutterswet-toelagegronden`, the arm's golden, with a rule writing `toelage` and without its defaults groups |
+| `wf022-kenmerkdoel-met-presentatie` | WF-022 | B20 (U11) | toegevoegd | a version with a `presentation` whose target is a characteristic | the new member-kind arm, first direction; `corpus/golden/jutterswet-penningdrempel` with `presentation: "GELIJKSTELLING"` on its characteristic rule |
+| `wf022-attribuutdoel-zonder-presentatie` | WF-022 | B20 (U11) | toegevoegd | a version without `presentation` and `initialisation` whose target is an attribute | the member-kind arm, second direction; `corpus/golden/jutterswet-meldloon` with the `presentation` of its first rule removed |
+| `wf114-literaalvariant-tegen-type` | WF-114 | B22 (U21) | toegevoegd | a `text` variant under a `Number` | the new rule; `corpus/golden/jutterswet-meldloon` with `{"number": "5"}` respelled `{"text": "5"}` |
+| `wf114-datumvariant-tegen-precisie` | WF-114 | B22 (U21) | toegevoegd | a `date` variant under a millisecond-precision `Date` | the new rule, on the one datatype node that names two variants; `corpus/golden/jutterswet-meldstip` with its `dateTime` respelled as the `date` of the same day |
+| `wf098-de-dag-als-contextwaarde` | WF-098 | B23 (U23) | toegevoegd | a `ContextValue` named `de dag` | the closed set holds two names since L4; `corpus/golden/jutterswet-bergingsklok` with its first `BoundDay` replaced by that context value |
+| `wf081-decimale-komma` | WF-081 | B22 (U19) | toegevoegd | a decimal comma in a `number` variant | the narrowed grammar; `corpus/golden/jutterswet-meldloon` with `{"number": "12.50"}` respelled `{"number": "12,50"}` (its `bron` already carries the comma) |

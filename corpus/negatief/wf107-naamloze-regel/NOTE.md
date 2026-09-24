@@ -3,7 +3,7 @@
 Violates **WF-107** (`spec/IR-SPEC.md` ch. 3.1): the single `ResolvedRegel`
 carries `naam: null`. The document says nothing else wrong.
 
-    WF-107 FAIL /rules/resolvedRegels/0/naam: form in resolvedRegels carries no
+    WF-107 FAIL /rules/resolvedRegels/0/name: form in resolvedRegels carries no
     name (a named form's identity on this wire IS its name — ch. 8 groups
     versions by it, the ch. 5.1 dependency graph keys its channel node on it,
     and WF-020 keeps it unique)
@@ -26,3 +26,6 @@ reached at all.
 
 Minimal hand-broken variant of `corpus/golden/jutterswet-penningdrempel`,
 whose rule is named.
+
+Since L4 the name sits on the form as `name` (delta B19), here `null`, and the
+report cites `/name` of the form. `expect.txt` pins the arm.

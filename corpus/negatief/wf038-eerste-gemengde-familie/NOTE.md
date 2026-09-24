@@ -6,8 +6,8 @@ sibling cases carry — but an ordering fold keeps the least
 *contributor*, and a date and a number lie in two comparable families
 that share no ordering between them.
 
-    WF-038 FAIL /rules/resolvedRegels/0/waarde: EERSTE orders operands of two
-    comparable families, numbers and dates, which share no ordering
+    WF-038 FAIL /rules/resolvedRegels/0/versions/0/value: EERSTE orders operands
+    of two comparable families, numbers and dates, which share no ordering
 
 Why it has to exist: the clause admits either family, so the per-operand
 arm alone would let a document mix them and stay clean. It is reported
@@ -35,3 +35,9 @@ ordering-fold clause return `[]` and this case alone turns clean, while
 `wf038-eerste-somtype-geleed`, `wf038-laatste-enum-geleed`,
 `wf038-minimum-enum-setbron` and `wf038-maximum-somtype-setbron` — whose
 defect is the per-operand orderability arm — all stay red.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

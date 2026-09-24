@@ -4,10 +4,10 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in the filled count's
 INSTANCE-FOLD arm: `AANTAL_GEVULDE` is an instance fold and must carry an
 element type, and this node carries none.
 
-    WF-037 FAIL /rules/resolvedRegels/0/waarde: the filled count is an INSTANCE
-    fold and MUST carry an element type: without one its argument is no
-    fold source at all, and the count has no contributors whose values it
-    could test for presence (ch. 4.3)
+    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: the filled count is an
+    INSTANCE fold and MUST carry an element type: without one its argument is no
+    fold source at all, and the count has no contributors whose values it could
+    test for presence (ch. 4.3)
 
 **Why the generic clause could not carry this.** WF-037's existing
 element-type fence is spelled as "a value fold MUST carry ≥ 2 arguments" and
@@ -37,3 +37,9 @@ and it moves by GAINING a second citation — `value fold with fewer than two
 operands`, the sentence that reads the kind's arity law backwards. One
 malformation, one rule: that is what the exclusion buys and what the mutant
 measures.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

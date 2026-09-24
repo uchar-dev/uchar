@@ -1,1 +1,1 @@
-maximumAttribuut is present but empty: an attribute name that names nothing resolves against no declaration
+maximumAttribute is present but empty: an attribute name that names nothing resolves against no declaration

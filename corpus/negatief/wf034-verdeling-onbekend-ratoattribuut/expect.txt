@@ -1,0 +1,1 @@
+'bestaatniet' is not a declared attribute of the target type 'Berger': the allocation's ratioAttribute resolves against no declaration

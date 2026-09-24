@@ -5,7 +5,7 @@ source: the `AANTAL` over the `Vondst`en of the subject `Jutter`, its range
 count source is read on the fold subject: its written role name is the
 subject's relation.
 
-    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: fold-source
+    WF-083 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: fold-source
     objecttype 'Vondst' is not the fold's anchor 'Jutter' (a count source is
     read on the fold subject): the executors resolve 'vondsten' against the
     anchor, never against this field, so the two spellings name different
@@ -22,3 +22,9 @@ anchored on the subject) and `wf083-vouwbron-vreemd-objecttype` (a subject's
 own read anchored elsewhere). `wf096-aantal-setbron-wrat` translated to the
 same shape and was removed as a duplicate of this one. `expect.txt` pins the
 arm (U1).
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

@@ -3,9 +3,9 @@
 Violates **WF-102 (d)** (`spec/IR-SPEC.md` ch. 4.3), the FIRST join: the path
 does not start at the fold subject.
 
-    WF-102 FAIL /rules/resolvedRegels/0/waarde/bronPad/0: the opposite role
-    'bergende boot' fills 'Boot', but this step starts at 'Jutter' (the fold
-    subject) — a bronPad is a connected walk
+    WF-102 FAIL /rules/resolvedRegels/0/versions/0/value/sourcePath/0: the
+    opposite role 'bergende boot' fills 'Boot', but this step starts at 'Jutter'
+    (the fold subject) — a sourcePath is a connected walk
 
 The document drops the golden's first step and keeps the rest: Boot →
 `geborgen vondsten` → `ingepakte kisten`, on a Jutter-subject rule. Every step
@@ -18,3 +18,9 @@ replace. There is deliberately no bindingless fallback to soften it: a type-pair
 derivation (WF-048, retired with the bindingless forms at L2) names a relation
 from a type PAIR, and a path's intermediate types are its
 own claim, not a consequence of its endpoints.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

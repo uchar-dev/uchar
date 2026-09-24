@@ -1,0 +1,1 @@
+operand of the LAATSTE ordering fold is enumeration, must be a number or a date

@@ -1,8 +1,8 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2) that
 names no source object type.
 
-    WF-034 FAIL /rules/verdelingen/0/bronType: allocation without a source object
-    type: it resolves against no declaration
+    WF-034 FAIL /rules/verdelingen/0/versions/0/sourceType: allocation without a
+    source object type: it resolves against no declaration
 
 The empty-reference class of the earlier waves, one field further along. An
 allocation's `bronType` names the object type it distributes **from**, as
@@ -41,7 +41,7 @@ only its own document — so `doelType` has its own witness,
 `wf034-verdeling-zonder-doeltype`.
 
 *Measured breadth of the shape itself:* four pre-existing allocation negatiefs
-(`wf020-crossform-collision`, `wf024-complex`, `wf025-max-without-ratio`,
+(`wf020-crossform-collision`, `wf024-complex` (removed at L4, where `COMPLEX` became a load error), `wf025-max-without-ratio`,
 `wf026-two-allocations-one-target`) are minimal fragments that carry no source
 type at all (three of them no target type either); each gains a truthful
 incidental line here and keeps its verdict and the rule its directory declares.
@@ -61,3 +61,10 @@ their incidental lines and keep their verdict. Measured: 486 documents
 compared, 6 reports change, 2 verdicts. Arm-exact instead: replace the
 `match r.bron_type with …` arm alone by `[]` and this case, alone in all four
 zones, turns clean — 5 reports change, 1 verdict.
+
+Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
+version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
+`targetType`, `targetAttribute`, `method`, `ratioAttribute`,
+`maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
+`connectingRole`); the report cites the version and names the L4 field.
+`expect.txt` pins the arm.

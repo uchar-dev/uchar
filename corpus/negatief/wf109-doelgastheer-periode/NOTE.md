@@ -3,9 +3,9 @@ the doel is a bound object only for a check that carries no whole-period
 qualifier. This guard carries one ("gedurende het gehele jaar gehesen"), so the
 anker is the only object bound and `Sein` names none.
 
-    WF-109 FAIL /rules/feitCreaties/0/voorwaarde/eigenaar: the characteristic check
-    is hosted on 'Sein', which no object bound here can be: this position binds
-    the subject 'Kustvak'
+    WF-109 FAIL /rules/feitCreaties/0/versions/0/condition/eigenaar: the
+    characteristic check is hosted on 'Sein', which no object bound here can be:
+    this position binds the subject 'Kustvak'
 
 Broken from `corpus/golden/jutterswet-seinhijsing` by two moves: `gehesen` on
 `Sein` becomes time-dependent (`kenmerkGranulariteit: JAAR`) and the guard gains
@@ -41,7 +41,7 @@ and a recipe that claimed three clean exits would be false:
 
 - **drop the qualifier** — `verifier: PASS`. The bare doel host, which is the
   golden's own shape. This is the one direction that clears the document;
-- **host it on `Kustvak`** — `WF-043 FAIL /rules/feitCreaties/0/voorwaarde:
+- **host it on `Kustvak`** — `WF-043 FAIL /rules/feitCreaties/0/versions/0/condition:
   whole-period qualifier on a non-time-dependent characteristic`. The host is
   the DECLARATION key (WF-100, ch. 4.6 (q1)), and `gehesen` is time-dependent on
   `Sein` alone; move the key to `Kustvak` and the qualifier sits on a scalar

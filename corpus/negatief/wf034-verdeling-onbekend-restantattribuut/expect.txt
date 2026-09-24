@@ -1,1 +1,1 @@
-'bestaatniet' is not a declared attribute of the source type 'Berging': the allocation's restantAttribuut resolves against no declaration
+'bestaatniet' is not a declared attribute of the source type 'Berging': the allocation's remainderAttribute resolves against no declaration

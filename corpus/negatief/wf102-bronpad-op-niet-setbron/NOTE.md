@@ -3,9 +3,9 @@
 Violates **WF-102 (c)** (`spec/IR-SPEC.md` ch. 4.3): a `bronPad` on a source
 that is not a value fold's SET source.
 
-    WF-102 FAIL /rules/resolvedRegels/0/waarde/bronPad: a bronPad is
-    admissible only as the range of a single-argument VALUE fold's set source
-    — a count's range is one step, spelled bronRol
+    WF-102 FAIL /rules/resolvedRegels/0/versions/0/value/sourcePath: a
+    sourcePath is admissible only as the range of a single-argument VALUE fold's
+    set source — a count's range is one step, spelled sourceRole
 
 The document turns the golden's minimum fold into a count: an `AANTAL` whose
 source names a ROLE (`geborgen vondst`), anchored on the fold subject as
@@ -32,3 +32,9 @@ the source itself (D9). The clause's wording moved with it: the position it
 admits is the set source of a VALUE fold, since under L2 the range stands on
 every instance fold (D8). `expect.txt` pins the arm (added in the L2 fix
 round; the message changed at L2, so the witness belongs to the stamp list).
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

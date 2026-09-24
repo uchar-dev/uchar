@@ -5,8 +5,8 @@ does not declare. WF-088 is a repeat check and calls a use site naming no
 declared domain "not its business"; WF-003 covers the model layer only;
 WF-039 checks the label against the LOCAL list, which contains `Noord`.
 
-    WF-023 FAIL /rules/resolvedRegels/0: a value of the enumeration domain
-    'Spook' is assigned to a target of the enumeration domain 'Vaarwater'
+    WF-023 FAIL /rules/resolvedRegels/0/versions/0: a value of the enumeration
+    domain 'Spook' is assigned to a target of the enumeration domain 'Vaarwater'
 
 Why it has to exist: this is the "ordinary expression `type` naming a
 ghost domain" flank WF-088's clause records as unenforced — at a WRITE

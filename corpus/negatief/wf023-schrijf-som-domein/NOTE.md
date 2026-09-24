@@ -6,8 +6,9 @@ is declared `SumType` of domain `beschikking`, and the rule writes a
 consistent). A second rule reads `beschikking` faithfully through a
 `Match` whose arms cover `beschikking`.
 
-    WF-023 FAIL /rules/resolvedRegels/0: a value of the sum-type domain
-    'oordeel' is assigned to a target of the sum-type domain 'beschikking'
+    WF-023 FAIL /rules/resolvedRegels/0/versions/0: a value of the sum-type
+    domain 'oordeel' is assigned to a target of the sum-type domain
+    'beschikking'
 
 Why it has to exist: WF-023 compared families only (sumtype = sumtype,
 clean); ref wrote the alien constructor and then faulted `match has no arm

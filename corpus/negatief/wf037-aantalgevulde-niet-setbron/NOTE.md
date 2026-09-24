@@ -5,8 +5,8 @@ literal. The filled count reads a VALUE on each contributor and tests it for
 presence; its source is the set source, an attribute reference read per
 contributor, and a literal is no such read.
 
-    WF-037 FAIL /rules/resolvedRegels/0/waarde: the filled count's single
-    argument MUST be its set source, an attribute reference read on each
+    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: the filled count's
+    single argument MUST be its set source, an attribute reference read on each
     contributor: this kind reads a VALUE per contributor and tests that value
     for presence (ch. 4.3)
 
@@ -22,3 +22,9 @@ that is no attribute reference, and this document pins that. The card
 expected a rewrite without range and without `elementObjecttype`; measured,
 that shape is `wf037-aantalgevulde-zonder-elementtype`'s arm, already
 witnessed, while this arm had none. `expect.txt` pins the arm (U1).
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

@@ -3,10 +3,10 @@ Violates WF-063 (`spec/IR-SPEC.md` ch. 4.7): the `Match` reads the cell
 `seizoen`, domain `Vaarwater`), and its arms are the values of the domain
 `Kust`. A cell read is typed by the dimensioned attribute it reads.
 
-    WF-063 FAIL /rules/resolvedRegels/0/waarde: arm 'Noord' is not a declared
-    enumeration value of the enumeration domain
-    WF-063 FAIL /rules/resolvedRegels/0/waarde: arm 'Zuid' is not a declared
-    enumeration value of the enumeration domain
+    WF-063 FAIL /rules/resolvedRegels/0/versions/0/value: arm 'Noord' is not a
+    declared enumeration value of the enumeration domain
+    WF-063 FAIL /rules/resolvedRegels/0/versions/0/value: arm 'Zuid' is not a
+    declared enumeration value of the enumeration domain
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-063 (D17).** Until
 L2 this document was `wf089-dimensiecel-enum`, a witness of WF-089 on the

@@ -12,3 +12,7 @@ belongs in ISO form; the source snippet belongs in `bron`.
 Minimal own-authored document (Jutterswet vocabulary); the well-formed
 counterpart is the ISO date literal in
 `corpus/golden/jutterswet-vondstverjaring/ir.json`.
+
+Since L4 the literal's value is typed (delta B22): the ill-formed string sits
+in its `date` variant, which the rule reads, and the report cites `/value`.
+`expect.txt` pins the arm.

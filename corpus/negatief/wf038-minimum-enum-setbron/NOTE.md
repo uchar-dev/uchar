@@ -5,8 +5,8 @@ enumeration `Kust`. An ordering fold keeps the least contributor, and
 `Enumeration` is equality-only by the ch. 2.4 orderability paragraph —
 the fold asks for an order the element type does not have.
 
-    WF-038 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: operand of the
-    MINIMUM ordering fold is enumeration, must be a number or a date
+    WF-038 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: operand of
+    the MINIMUM ordering fold is enumeration, must be a number or a date
 
 Why it has to exist: the set-source form spells its contributors as one
 argument — the set source of a fold that carries a range — whose type is
@@ -39,3 +39,9 @@ together with `wf038-laatste-enum-geleed`,
 `wf038-eerste-somtype-geleed` and `wf038-maximum-somtype-setbron`, while
 `wf038-eerste-gemengde-familie` — whose defect is the cross-operand
 family arm — stays red.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

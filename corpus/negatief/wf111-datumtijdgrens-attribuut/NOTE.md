@@ -4,8 +4,8 @@ Violates WF-111's DAY-PRECISION clause (`spec/IR-SPEC.md` ch. 4.6): the
 window's bound is the subject's own scalar attribute, and that attribute is
 a millisecond-precision `Date`.
 
-    WF-111 FAIL /rules/resolvedRegels/0/voorwaarde/vanaf: the vanaf bound of a
-    time window is a millisecond-precision date: …
+    WF-111 FAIL /rules/resolvedRegels/0/versions/0/condition/vanaf: the vanaf
+    bound of a time window is a millisecond-precision date: …
 
 Derived from `corpus/golden/jutterswet-premievenster/ir.json`. Only the
 `bergloon` rule is kept, and its `meldatum` is declared (and annotated) a

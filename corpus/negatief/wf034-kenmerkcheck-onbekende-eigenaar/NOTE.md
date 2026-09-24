@@ -2,9 +2,9 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6 (q)): a **characteristic check**
 whose explicit `eigenaar` — the object type the characteristic is read on —
 names a type *no declaration carries*.
 
-    WF-034 FAIL /rules/resolvedRegels/0/voorwaarde/eigenaar: characteristic check's
-    owner 'Bestaatniet' is not a declared object type: the check resolves
-    against no declaration
+    WF-034 FAIL /rules/resolvedRegels/0/versions/0/condition/eigenaar: characteristic
+    check's owner 'Bestaatniet' is not a declared object type: the check
+    resolves against no declaration
 
 **What the field is.** A characteristic check normally reads a characteristic
 of the enclosing form's subject. `eigenaar` is the escape hatch: it names the

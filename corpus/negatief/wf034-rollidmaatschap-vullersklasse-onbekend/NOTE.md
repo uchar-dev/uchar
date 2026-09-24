@@ -7,9 +7,9 @@ of `factType`. The check "hij een strandjutter heeft" on a `Wachtpost`
 narrows the other end of `wachtindeling` to `counterpartType:
 "Strandwachter"`, and no object type of the document is named that.
 
-    WF-034 FAIL /rules/resolvedRegels/2/voorwaarde/counterpartType: role
-    check's counterpart type 'Strandwachter' is not a declared object type:
-    the check resolves against no declaration
+    WF-034 FAIL /rules/resolvedRegels/2/versions/0/condition/counterpartType: role
+    check's counterpart type 'Strandwachter' is not a declared object type: the
+    check resolves against no declaration
 
 Beside `wf034-rollidmaatschap-vreemde-vullersklasse` (a DECLARED type outside
 the filler's chain), this is the other way the field can fail to resolve: the

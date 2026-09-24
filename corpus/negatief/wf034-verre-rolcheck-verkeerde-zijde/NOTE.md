@@ -5,7 +5,7 @@ right fact type on the wrong side. `wachtjutter` is filled by the `Jutter`;
 the `Wachtpost` fills `toegewezen wachtpost`. The check therefore names a
 link the subject can never be in, and every name in it resolves.
 
-    WF-034 FAIL /rules/resolvedRegels/0/voorwaarde/role: the subject
+    WF-034 FAIL /rules/resolvedRegels/0/versions/0/condition/role: the subject
     'Wachtpost' does not fill the role 'wachtjutter' of fact type
     'wachtindeling', which is filled by 'Jutter': the check names a link the
     subject can never be in

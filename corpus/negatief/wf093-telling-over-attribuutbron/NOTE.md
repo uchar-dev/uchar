@@ -5,8 +5,8 @@ demands a count source (D9): the count ranges over the `Vondst`en that
 themselves; a source that reads a value per contributor hands it something
 it does not consume.
 
-    WF-093 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: the source of
-    this AANTAL aggregation reads 'gewicht', a member of the element type
+    WF-093 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: the source
+    of this AANTAL aggregation reads 'gewicht', a member of the element type
     'Vondst': a count folds INSTANCES, so its source is a count source naming
     the relation's role, never a value read per contributor
 
@@ -18,3 +18,9 @@ itself (D9): a count source names a role of the fold subject and no
 attribute of the element type, and this source names an attribute. The
 document is the migration's translation
 (`spec/proposals/v1-migratie/m2.py`). `expect.txt` pins the arm (U1).
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

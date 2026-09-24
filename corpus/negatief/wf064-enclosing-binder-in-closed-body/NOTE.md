@@ -5,7 +5,7 @@ mandated "Maal in a fold in a Let" composition. A closed function or
 lambda body sees only its own parameters (`acc`, `x`) and whatever it
 binds inside; a `BinderRef` that reaches out to an enclosing binder is
 ill-formed. The verifier reports it at
-`/rules/consistenties/0/assertie/rechts/body/function/body/rechts/rechts`:
+`/rules/consistenties/0/versions/0/assertion/rechts/body/function/body/rechts/rechts`:
 
     binder reference 'f' is bound outside the enclosing closed body — a
     closed function or lambda body reads only its own parameters and

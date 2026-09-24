@@ -2,7 +2,8 @@ Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) on the unit clause, the other
 one-sided direction: the rule `kopie := gewicht` writes `Jutter.gewicht`,
 declared in `kg`, into `Jutter.kopie`, declared unitless.
 
-    WF-023 FAIL /rules/resolvedRegels/0: assignment across incompatible units
+    WF-023 FAIL /rules/resolvedRegels/0/versions/0: assignment across
+    incompatible units
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-023 (D17).** Until
 L2 this document was `wf091-attribuutref-eenheid-ontbreekt`, a witness of

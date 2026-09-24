@@ -2,8 +2,8 @@ Violates WF-035 (`spec/IR-SPEC.md` ch. 4.6): a power whose base operand
 carries a unit — `aantal aangemelde vondsten` of `Jutter` is declared with
 the unit `jr`, and the condition raises it to the power 2.
 
-    WF-035 FAIL /rules/resolvedRegels/0/voorwaarde/links: power operands must
-    be unitless
+    WF-035 FAIL /rules/resolvedRegels/0/versions/0/condition/links: power
+    operands must be unitless
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (i).** Until L2 the base
 operand was a read of a unitless attribute whose own `type` annotation

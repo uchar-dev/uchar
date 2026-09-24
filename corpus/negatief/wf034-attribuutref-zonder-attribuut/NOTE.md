@@ -3,8 +3,9 @@ names no attribute. The pair `objecttype` + `attribuut` is what a reference
 resolves through; with the member name absent it lands on a declared object
 type and reads nothing there.
 
-    WF-034 FAIL /rules/resolvedRegels/0/voorwaarde/links: attribute reference on
-    'Jutter' without an attribute name: it resolves against no declaration
+    WF-034 FAIL /rules/resolvedRegels/0/versions/0/condition/links: attribute
+    reference on 'Jutter' without an attribute name: it resolves against no
+    declaration
 
 Why it has to exist beside `wf034-attribuutref-zonder-objecttype`: it is the
 OTHER half of the same pair, and it silences the same rules from the other

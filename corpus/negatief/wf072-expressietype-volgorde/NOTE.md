@@ -6,7 +6,7 @@ same field names, same datatypes — only the order drifted, and declaration
 order is normative. A consumer that encodes a struct term positionally out
 of the inline list reads the fields crosswise.
 
-    WF-072 FAIL /rules/consistenties/0/assertie/operand/base/type: struct-type
+    WF-072 FAIL /rules/consistenties/0/versions/0/assertion/operand/base/type: struct-type
     use site disagrees with the declaration of domain 'dossier' (same fields,
     datatypes and order required)
 

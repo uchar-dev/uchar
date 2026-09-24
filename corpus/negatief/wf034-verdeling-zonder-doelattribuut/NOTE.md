@@ -3,8 +3,8 @@ that names no target attribute. `doelAttribuut` is where every recipient's
 share is written; with the field empty the write resolves against no
 declaration.
 
-    WF-034 FAIL /rules/verdelingen/0/doelAttribuut: allocation without a target
-    attribute: it resolves against no declaration
+    WF-034 FAIL /rules/verdelingen/0/versions/0/targetAttribute: allocation
+    without a target attribute: it resolves against no declaration
 
 It exists separately from its `bronAttribuut` sibling for the reason the
 fold-source pair established one wave earlier: each half of a resolving pair
@@ -31,7 +31,7 @@ Measured before the closure, on this document against the two cases beside
 *Measured dracht, stated exactly because it is not zero:* the 153 golden, 22
 rood and 30 parity documents carry no allocation with an empty
 `doelAttribuut`; **three** negatief cases that predate this card do —
-`wf020-crossform-collision`, `wf024-complex` and `wf025-max-without-ratio`,
+`wf020-crossform-collision`, `wf024-complex` (removed at L4, where `COMPLEX` became a load error) and `wf025-max-without-ratio`,
 each a minimal hand-written document that spells only the fields its own rule
 needs. They were already refused, they stay refused, they still cite the rule
 their directory name declares, and the added line is true of them. No
@@ -51,3 +51,10 @@ Falsifiable, clause-exact: neuter `wf034_verdelingen` and this case and its
 named above and in the sibling NOTE lose an incidental WF-034 line while
 staying refused for their own rule, and nothing else over the four zones
 moves.
+
+Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
+version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
+`targetType`, `targetAttribute`, `method`, `ratioAttribute`,
+`maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
+`connectingRole`); the report cites the version and names the L4 field.
+`expect.txt` pins the arm.

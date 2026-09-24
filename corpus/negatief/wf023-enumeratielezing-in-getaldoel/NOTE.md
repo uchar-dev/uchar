@@ -3,8 +3,8 @@ writes a read of `Berging.vaarwater`, declared as an enumeration of the
 domain `Vaarwater`, into the numeric attribute `tarief` — the mirror of
 `wf023-defaults-soort` and `wf023-objectcreatie-soort`.
 
-    WF-023 FAIL /rules/resolvedRegels/0: a enumeration value is assigned to a
-    number target
+    WF-023 FAIL /rules/resolvedRegels/0/versions/0: a enumeration value is
+    assigned to a number target
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-023 (D17).** Until
 L2 this document was `wf089-attribuutref-geen-domein`, a witness of WF-089

@@ -3,8 +3,8 @@
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in its `emptyFallback`
 clause — "sum only". An `AANTAL_GEVULDE` carries a `leegwaarde`.
 
-    WF-037 FAIL /rules/resolvedRegels/0/waarde: empty-value fallback on a
-    non-sum aggregation
+    WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: empty-value fallback
+    on a non-sum aggregation
 
 **Nothing was widened to get this, and that is the point.** The fallback
 clause is written positively — it GRANTS the facet to a named kind — so a
@@ -50,3 +50,9 @@ kind-general facet arm of WF-037 carries. Later in the same round WF-093's
 message became the sentence the executors share, which names no kind, so
 no check reads the list any more: measured again, the mutant moves no
 report of the 718.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

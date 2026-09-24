@@ -3,9 +3,9 @@
 Violates **WF-102 (d)** (`spec/IR-SPEC.md` ch. 4.3), the LANDING: the last
 step's bound role does not fill the element type.
 
-    WF-102 FAIL /rules/resolvedRegels/0/waarde/bronPad/2: the last step's bound
-    role 'ingepakte kist' fills 'Kist', but the fold's elementObjecttype is
-    'Vondst' — the path must land on the element type
+    WF-102 FAIL /rules/resolvedRegels/0/versions/0/value/sourcePath/2: the last
+    step's bound role 'ingepakte kist' fills 'Kist', but the fold's elementType
+    is 'Vondst' — the path must land on the element type
 
 The path walks one step too far: Jutter → `gevoerde boten` → `geborgen
 vondsten` → `ingepakte kisten`, while the fold reads `gewicht` on a Vondst.
@@ -17,3 +17,9 @@ element annotation says Vondst throughout.
 
 The sibling of WF-047's filler clause on `bronRol`, stated for the step where
 the range meets the element type.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

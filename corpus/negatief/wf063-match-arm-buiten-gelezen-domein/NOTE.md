@@ -5,10 +5,10 @@ them is a declared value of the domain the scrutinee reads, and the declared
 values go uncovered (the arms are checked against the declaration, never
 against an inline copy).
 
-    WF-063 FAIL /rules/resolvedRegels/0/waarde: arm 'Noord' is not a declared
-    enumeration value of the enumeration domain
-    WF-063 FAIL /rules/resolvedRegels/0/waarde: arm 'Zuid' is not a declared
-    enumeration value of the enumeration domain
+    WF-063 FAIL /rules/resolvedRegels/0/versions/0/value: arm 'Noord' is not a
+    declared enumeration value of the enumeration domain
+    WF-063 FAIL /rules/resolvedRegels/0/versions/0/value: arm 'Zuid' is not a
+    declared enumeration value of the enumeration domain
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-063 (D17).** Until
 L2 this document was `wf089-attribuutref-enum`, a witness of WF-089 on the

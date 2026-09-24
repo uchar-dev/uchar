@@ -1,7 +1,9 @@
 Violates WF-113 (b) (`spec/IR-SPEC.md` ch. 2): an `Onopgelost` marker with a
 `WARNING` beside it that does not contain the marker's `bron` verbatim.
 
-    WF-113 FAIL /rules/resolvedRegels/0/voorwaarde: Onopgelost marker 'zijn vondstdag eerder is dan de verjaringsgrens' is not accounted for: no diagnostic message contains its bron verbatim
+    WF-113 FAIL /rules/resolvedRegels/0/versions/0/condition: Onopgelost marker
+    'zijn vondstdag eerder is dan de verjaringsgrens' is not accounted for: no
+    diagnostic message contains its bron verbatim
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-vondstverjaring/ir.json`:
 the rule's whole condition is replaced by the CONDITION marker

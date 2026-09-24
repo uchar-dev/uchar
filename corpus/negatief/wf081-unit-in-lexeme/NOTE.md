@@ -9,3 +9,7 @@ verification time, ahead of any executor.
 Minimal own-authored document (Jutterswet vocabulary); the well-formed
 counterpart is any golden numeric literal, e.g.
 `corpus/golden/jutterswet-penningdrempel/ir.json`.
+
+Since L4 the literal's value is typed (delta B22): the ill-formed string sits
+in its `number` variant, `{"number": "5 €"}`, which the rule reads, and the
+report cites `/value`. `expect.txt` pins the arm.

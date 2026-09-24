@@ -1,9 +1,9 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2) whose
 remainder endpoint names an attribute *no declaration carries*.
 
-    WF-034 FAIL /rules/verdelingen/0/restantAttribuut: 'bestaatniet' is not a declared
-    attribute of the source type 'Berging': the allocation's restantAttribuut
-    resolves against no declaration
+    WF-034 FAIL /rules/verdelingen/0/versions/0/remainderAttribute: 'bestaatniet'
+    is not a declared attribute of the source type 'Berging': the allocation's
+    remainderAttribute resolves against no declaration
 
 The clause is the one described in full in the sibling NOTE
 (`wf034-verdeling-onbekend-ratoattribuut`): every filled attribute name on the
@@ -52,3 +52,10 @@ r.restant_attribuut`. This case, alone in all four zones, turns clean.
 Measured: 486 documents compared, 1 report changes, 1 verdict. Dropping the
 whole clause instead frees this case and its five `-onbekend-` allocation
 siblings, those six and nothing else: 7 reports change, 6 verdicts.
+
+Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
+version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
+`targetType`, `targetAttribute`, `method`, `ratioAttribute`,
+`maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
+`connectingRole`); the report cites the version and names the L4 field.
+`expect.txt` pins the arm.

@@ -1,0 +1,1 @@
+numeric literal lexeme '5 €' is not a number of the case format

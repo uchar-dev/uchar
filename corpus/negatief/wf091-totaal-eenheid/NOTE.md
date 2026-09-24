@@ -4,10 +4,10 @@ annotated `EUR/jr`. §4.20 makes the total INTEGRATE a rate over time, so
 the result drops the `/tijdseenheid` and keeps the numerator: the
 derivation is `EUR`, and repeating the rate is the lie.
 
-    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: the TOTAAL
-    aggregation is typed 'EUR' of system 'Munt' (factor 1 to 'EUR') per 'jr'
-    of system 'Tijd' (factor 1 to 'jr'), but the type derived from its first
-    operand is 'EUR' of system 'Munt' (factor 1 to 'EUR')
+    WF-091 FAIL /rules/resolvedRegels/0/versions/0/value/type: unit mismatch:
+    the TOTAAL aggregation is typed 'EUR' of system 'Munt' (factor 1 to 'EUR')
+    per 'jr' of system 'Tijd' (factor 1 to 'jr'), but the type derived from its
+    first operand is 'EUR' of system 'Munt' (factor 1 to 'EUR')
 
 Why it has to exist. A composite type is not a copy of one declaration
 but a **derivation** over its operands, so until this card nothing crossed

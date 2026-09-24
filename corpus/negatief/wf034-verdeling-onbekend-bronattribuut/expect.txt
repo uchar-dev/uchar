@@ -1,1 +1,1 @@
-'bestaatniet' is not a declared attribute of the source type 'Berging': the allocation's bronAttribuut resolves against no declaration
+'bestaatniet' is not a declared attribute of the source type 'Berging': the allocation's sourceAttribute resolves against no declaration

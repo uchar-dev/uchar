@@ -2,9 +2,9 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2)
 whose source attribute is *present but blank*. The field is there, it is a
 string, and it names nothing.
 
-    WF-034 FAIL /rules/verdelingen/0/bronAttribuut: bronAttribuut is present but
-    empty: an attribute name that names nothing resolves against no
-    declaration
+    WF-034 FAIL /rules/verdelingen/0/versions/0/sourceAttribute: sourceAttribute
+    is present but empty: an attribute name that names nothing resolves against
+    no declaration
 
 **Why a second clause on the same six fields.** The sibling witnesses
 (`wf034-verdeling-zonder-bronattribuut`, `-zonder-doelattribuut`) close the
@@ -70,3 +70,10 @@ Falsifiable, clause-exact: drop `wf034_verdeling_namen` from the verifier's
 check list and this case and its two `-lege-` siblings — those three and
 nothing else — turn clean. Measured over all four zones: 473 documents
 compared, 3 changed.
+
+Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
+version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
+`targetType`, `targetAttribute`, `method`, `ratioAttribute`,
+`maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
+`connectingRole`); the report cites the version and names the L4 field.
+`expect.txt` pins the arm.

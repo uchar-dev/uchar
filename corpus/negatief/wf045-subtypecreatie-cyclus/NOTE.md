@@ -5,9 +5,9 @@ ch. 6.2): the object creation iterates the `Strandrecht` population and
 creates a `Wrakrecht`, which IS a `Strandrecht` — so every pass hands the
 next pass more subjects and the creation feeds itself.
 
-    WF-045 FAIL /rules/objectCreaties/0: dependency cycle through no recursive
-    creation: boek een wrakrecht bij elk strandrecht -> boek een wrakrecht
-    bij elk strandrecht
+    WF-045 FAIL /rules/objectCreaties/0/versions/0: dependency cycle through no
+    recursive creation: boek een wrakrecht bij elk strandrecht -> boek een
+    wrakrecht bij elk strandrecht
 
 The cycle runs through the SUPERTYPE's population node, which is why it needs
 the chain-closed keying to be seen at all. Measured before it (2026-09-12) on

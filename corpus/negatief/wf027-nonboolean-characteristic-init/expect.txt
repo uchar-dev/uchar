@@ -1,0 +1,1 @@
+characteristic initialisation's value must be a boolean-typed expression

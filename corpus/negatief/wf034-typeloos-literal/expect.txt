@@ -1,0 +1,1 @@
+value node without a static type

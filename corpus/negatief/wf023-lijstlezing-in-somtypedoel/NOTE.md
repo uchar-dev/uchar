@@ -5,8 +5,8 @@ writes a read of `Jutter.aanspraken`, declared as a list of the sum type
 `wf023-schrijf-lijst-geen-domein-waarde` already pins; D17 rewrites this
 witness on the rule its translation falls on all the same.
 
-    WF-023 FAIL /rules/resolvedRegels/0: a list value is assigned to a sumtype
-    target
+    WF-023 FAIL /rules/resolvedRegels/0/versions/0: a list value is assigned to
+    a sumtype target
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven op WF-023 (D17).** Until
 L2 this document was `wf091-attribuutref-reststructuur`, a witness of WF-091

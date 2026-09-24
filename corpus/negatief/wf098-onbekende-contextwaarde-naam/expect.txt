@@ -1,1 +1,1 @@
-context value 'de dagX' is not one of the three admissible names Rekendatum, Rekenjaar, de dag
+context value 'de dagX' is not one of the two admissible names Rekendatum, Rekenjaar

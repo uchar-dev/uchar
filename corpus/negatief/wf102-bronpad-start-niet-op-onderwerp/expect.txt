@@ -1,1 +1,1 @@
-the opposite role 'bergende boot' fills 'Boot', but this step starts at 'Jutter' (the fold subject) — a bronPad is a connected walk
+the opposite role 'bergende boot' fills 'Boot', but this step starts at 'Jutter' (the fold subject) — a sourcePath is a connected walk

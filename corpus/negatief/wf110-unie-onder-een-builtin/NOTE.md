@@ -4,12 +4,11 @@ Violates WF-110 (`spec/IR-SPEC.md` ch. 4.3), the instance-set union — the
 §5.7 concatenation of subject expressions, landed 2026-09-20 as the source
 of an instance count. Clause (a): the union is admissible under the instance count and nowhere else.
 
-    WF-110 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: an instance-set
-    union stands where nothing consumes it: the union of subject
+    WF-110 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/0: an
+    instance-set union stands where nothing consumes it: the union of subject
     expressions denotes a set of INSTANCES, and the one node that folds
-    instances is the instance count — so this node is admissible as the
-    SINGLE argument of an AANTAL aggregation and at no other position
-    (ch. 4.3)
+    instances is the instance count — so this node is admissible as the SINGLE
+    argument of an AANTAL aggregation and at no other position (ch. 4.3)
 
 The document. The two-selection union as the single operand of
 `ABSOLUTE_WAARDE` — a single-argument BUILTIN, so the arity clause of
@@ -55,3 +54,9 @@ Arm-exact: admissibility is carried DOWN one level by an optional argument
 with a false default, so it reaches the argument the count hands over and no
 descendant of it — a union nested inside a selection's filter is at a wrong
 position again and says so.
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

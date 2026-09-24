@@ -1,8 +1,9 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **fold-source**
 `AttributeReference` that names no attribute.
 
-    WF-034 FAIL /rules/resolvedRegels/1/waarde/argumenten/0: attribute reference on
-    'Vondst' without an attribute name: it resolves against no declaration
+    WF-034 FAIL /rules/resolvedRegels/1/versions/0/value/arguments/0: attribute
+    reference on 'Vondst' without an attribute name: it resolves against no
+    declaration
 
 Why it exists separately from `wf034-attribuutref-zonder-attribuut`, which
 carries the same empty field in a plain value position: the fold source
@@ -90,3 +91,9 @@ migration's translation (`spec/proposals/v1-migratie/m2.py`): the fold
 source lost its own `type` (B13), and with it the WF-091 line its unit lie
 drew beside this one; the source still names no attribute. The rule still
 fires on the same arm, and `expect.txt` pins it (U1).
+
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
+with only its own fields — `arguments`, and on an aggregation `elementType`,
+`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+builtin `granularity`; the report cites and names them. `expect.txt` pins the
+arm.

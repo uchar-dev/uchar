@@ -1,0 +1,1 @@
+name 'penninggerechtigd tenzij uitgesloten' collides with 'penninggerechtigd tenzij uitgesloten' in resolvedRegels
