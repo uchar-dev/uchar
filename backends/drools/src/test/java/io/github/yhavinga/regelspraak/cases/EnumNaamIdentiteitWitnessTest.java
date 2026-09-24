@@ -208,8 +208,10 @@ class EnumNaamIdentiteitWitnessTest {
      *  literal typed so read as the text it names: a literal's value is the variant its type names (WF-114). */
     private static void naarTekst(JsonNode n) {
         if (n instanceof ObjectNode o) {
-            if ("Literal".equals(o.path("node").asText()) && o.path("value").has("enumeration"))
-                o.putObject("value").put("text", o.get("value").get("enumeration").asText());
+            if ("Literal".equals(o.path("node").asText()) && o.path("value").has("enumeration")) {
+                String label = o.get("value").get("enumeration").asText();
+                o.putObject("value").put("text", label);
+            }
             var namen = new java.util.ArrayList<String>();
             o.fieldNames().forEachRemaining(namen::add);
             for (String k : namen) {

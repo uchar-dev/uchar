@@ -57,8 +57,9 @@ class DrlEenheidsplekWitnessTest {
     /** The position classes the harness twists, with its per-node-kind restatement exponent. */
     private static final Map<String, Integer> KLASSE = Map.of(
             "AttribuutRef", 1, "ParameterRef", 2, "DimensieCel", 3, "BinderRef", 4,
-            "Binair", 5, "Let", 6, "Functie", 7, "Afgerond", 8, "Begrensd", 9);
-    /** ch. 2.10 clause 2 splits Binair and Functie by OPERATOR: only these branches derive a result unit. */
+            "Binair", 5, "Let", 6, "Aggregation", 7, "BuiltinCall", 7, "Afgerond", 8, "Begrensd", 9);
+    /** ch. 2.10 clause 2 splits Binair and the two function nodes by OPERATOR: only these branches derive a result
+     *  unit. Every kind that derives is an aggregation's, so no BuiltinCall is ever twisted. */
     private static final Set<String> AFGELEIDE_OP = Set.of("PLUS", "MIN", "VERMINDERD_MET", "MAAL");
     private static final Set<String> AFGELEIDE_KIND = Set.of("SOM", "TOTAAL", "MINIMUM", "MAXIMUM", "EERSTE", "LAATSTE");
     /** WF-038: a tijdsduur's unit is the operator's parameter, not a derived result type. */
@@ -110,7 +111,7 @@ class DrlEenheidsplekWitnessTest {
             else if (datumGetypeerd(r) && !datumGetypeerd(l)) duur = l;
         }
         boolean vrijgesteld = vrijgesteldDoorOuder || "Literal".equals(node)
-                || ("Functie".equals(node) && GEEN_FUNCTIE.contains(o.path("kind").asText("")));
+                || ("BuiltinCall".equals(node) && GEEN_FUNCTIE.contains(o.path("kind").asText("")));
         int n = 0;
         if (!vrijgesteld && afgeleid(o) && o.get("type") instanceof ObjectNode t) {
             ObjectNode zusje = zusje(t.get("unit"), KLASSE.get(node));
@@ -129,7 +130,8 @@ class DrlEenheidsplekWitnessTest {
         String node = o.path("node").asText(null);
         if (node == null) return false;              // not an IR node: a declaration map, a bron string, …
         if ("Binair".equals(node)) return AFGELEIDE_OP.contains(o.path("op").asText(""));
-        if ("Functie".equals(node)) return AFGELEIDE_KIND.contains(o.path("kind").asText(""));
+        if ("Aggregation".equals(node) || "BuiltinCall".equals(node))
+            return AFGELEIDE_KIND.contains(o.path("kind").asText(""));
         return KLASSE.containsKey(node);
     }
 

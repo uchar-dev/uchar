@@ -133,10 +133,10 @@ class DatumLexeemWitnessTest {
         assertTrue(Files.exists(golden.resolve("ir.json")), "golden present: " + golden.toAbsolutePath());
         com.fasterxml.jackson.databind.node.ObjectNode doc =
                 (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(golden.resolve("ir.json").toFile());
-        com.fasterxml.jackson.databind.node.ObjectNode tot =
-                (com.fasterxml.jackson.databind.node.ObjectNode) doc.path("rules").path("resolvedRegels").path(1).path("voorwaarde").path("tot");
-        assertEquals("2025-01-01", tot.path("waarde").asText(), "the bound this pin twists");
-        tot.put("waarde", "2025-01-2026");
+        com.fasterxml.jackson.databind.node.ObjectNode tot = (com.fasterxml.jackson.databind.node.ObjectNode)
+                IrPad.versie(doc, "resolvedRegels", 1, 0).path("condition").path("tot").path("value");
+        assertEquals("2025-01-01", tot.path("date").asText(), "the bound this pin twists");
+        tot.put("date", "2025-01-2026");
         String ir = JSON.writeValueAsString(doc);
         String zaak = Files.readString(golden.resolve("case1-binnen-venster.json"));
         CaseRunner.Excluded ex = assertThrows(CaseRunner.Excluded.class, () -> speel(ir, zaak));

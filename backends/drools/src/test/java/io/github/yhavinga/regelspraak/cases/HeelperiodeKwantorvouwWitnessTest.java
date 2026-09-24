@@ -682,8 +682,8 @@ class HeelperiodeKwantorvouwWitnessTest {
         vloot.set("characteristics", JSON.readTree("""
                 [ { "node": "Characteristic", "name": "zeewaardig", "kind": "BIJVOEGLIJK" },
                   { "node": "Characteristic", "name": "vlaggend", "kind": "BIJVOEGLIJK" } ]"""));
-        ObjectNode regel = (ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0);
-        ObjectNode fold = (ObjectNode) regel.get("voorwaarde");
+        ObjectNode regel = IrPad.versie(doc, "resolvedRegels", 0, 0);
+        ObjectNode fold = (ObjectNode) regel.get("condition");
         if (!heelperiode)   // de niet-temporele route: een kenmerkmatrix zonder heelperiodekwalificatie
             fold.set("toets", JSON.readTree("""
                     { "node": "Kenmerk", "kenmerk": "zeegaand", "negatie": false,
@@ -696,7 +696,7 @@ class HeelperiodeKwantorvouwWitnessTest {
                 { "node": "Kenmerk", "kenmerk": "vlaggend", "negatie": false,
                   "eigenaar": null, "periode": null, "bron": "de Vloot vlaggend is" }"""));
         compound.put("bron", "ten minste één van de volgende voorwaarden");
-        regel.set("voorwaarde", compound);
+        regel.set("condition", compound);
         return doc.toPrettyString();
     }
 
