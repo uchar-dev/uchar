@@ -11509,6 +11509,56 @@ let () =
       ( "WF-028 onbekend feittype", {|"factType": "vakbeseining"|}, {|"factType": "onbekendfeit"|},
         "created fact type 'onbekendfeit' is not declared" ) ]
 
+(* The execution year (ch. 8.2) is admitted and executed by no one: the
+   verifier passes the document, and ref and this backend refuse it by name,
+   in one sentence, never by the fall-through that names no construct. *)
+let () =
+  let ir =
+    {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [
+          { "node": "Attribute", "name": "meldjaar",
+            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" } } ],
+        "characteristics": [] } ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [] },
+  "rules": {
+    "resolvedRegels": [
+      { "node": "Rule", "name": "meldjaar", "versions": [ {
+          "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
+          "target": { "node": "AttribuutRef", "attribuut": "meldjaar", "objecttype": "Vondst",
+            "bron": "Het meldjaar van een Vondst" },
+          "value": { "node": "ContextValue", "name": "Rekenjaar",
+            "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" },
+            "bron": "het Rekenjaar" },
+          "initialisation": false, "presentation": "GELIJKSTELLING" } ] } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "feitCreaties": [], "resolvedStartpunten": [], "regelGroepen": [] },
+  "diagnostics": [] }|}
+  in
+  let case_text =
+    {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15",
+  "input": { "instances": [
+    { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "meldjaar", "value": { "number": "2026" } } ] }|}
+  in
+  let zin = "the Rekenjaar context value is not exercised by any corpus case (ch. 8.2)" in
+  check "Rekenjaar: de verifier laat het document door"
+    (Ir_v0.Checks.all
+       (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string ir))
+    = []);
+  let doc, case = load_pair ~ir ~case_text in
+  (match ref_report doc case with
+  | (_ : string list) -> check "Rekenjaar: ref weigert bij naam (kreeg een wereld)" false
+  | exception Uchar_ref.Value.Fault m -> check ("Rekenjaar: ref weigert bij naam (" ^ m ^ ")") (m = zin));
+  match translate doc case with
+  | (_ : string) -> check "Rekenjaar: clingo weigert bij naam (kreeg een programma)" false
+  | exception Uchar_ref.Value.Fault m -> check ("Rekenjaar: clingo weigert bij naam (" ^ m ^ ")") (m = zin)
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

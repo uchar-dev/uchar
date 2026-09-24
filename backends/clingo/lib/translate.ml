@@ -5040,6 +5040,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       | None ->
           fault
             "the Rekendatum context value needs an evaluation date; the case carries asOfDate null")
+  (* ch. 8.2: the execution year is admitted and executed by no one, so it is
+     refused by name, in ref's sentence, rather than by the fall-through *)
+  | Constante { naam = Some "Rekenjaar"; _ } ->
+      fault "the Rekenjaar context value is not exercised by any corpus case (ch. 8.2)"
   (* a name outside WF-098's closed set, spelled byte for byte (the bound
      day included, which is a BoundDay): refused at load for an executor, so
      only a node built by hand arrives, refused in the loader's own sentence *)
