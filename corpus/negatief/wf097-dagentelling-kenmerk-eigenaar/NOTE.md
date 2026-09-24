@@ -10,8 +10,9 @@ the kind-keyed branch that covers both folds, elsewhere dropping the call
 outright.
 
 A minimal hand-broken variant of
-`corpus/golden/anchor/jutterswet-dagentelling/ir.json`: one field on one node —
-`resolvedRegels[0].waarde.filter.eigenaar` goes from `null` to `"Jutter"` — a DECLARED type, so WF-034's owner arm stays silent.
+`corpus/golden/anchor/jutterswet-dagentelling/ir.json`: one field on one node
+— `resolvedRegels[0].versions[0].value.filter.eigenaar` goes from `null` to
+`"Jutter"` — a DECLARED type, so WF-034's owner arm stays silent.
 
 Before the rule reached this clip the document was verifier-clean and both
 executors replayed every one of the anchor's cases with the untwisted answers.

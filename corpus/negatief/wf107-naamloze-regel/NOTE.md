@@ -1,7 +1,7 @@
 # wf107-naamloze-regel
 
-Violates **WF-107** (`spec/IR-SPEC.md` ch. 3.1): the single `ResolvedRegel`
-carries `naam: null`. The document says nothing else wrong.
+Violates **WF-107** (`spec/IR-SPEC.md` ch. 3.1): the single `Rule` carries
+`name: null`. The document says nothing else wrong.
 
     WF-107 FAIL /rules/resolvedRegels/0/name: form in resolvedRegels carries no
     name (a named form's identity on this wire IS its name — ch. 8 groups

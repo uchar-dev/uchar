@@ -1,6 +1,6 @@
-# Violates WF-082 — empty bronAnnotaties list
+# Violates WF-082 — empty statuteAnnotations list
 
-The rule carries `"bronAnnotaties": []`: the statute-annotation extension
+The rule carries `"statuteAnnotations": []`: the statute-annotation extension
 field written as an EMPTY list. The field is written whole or not at all —
 a rule without annotations omits it entirely, so an empty list is a trace
 of absence and the document is ill-formed. The same rule rejects a blank

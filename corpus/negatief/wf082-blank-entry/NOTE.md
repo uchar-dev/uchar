@@ -1,6 +1,6 @@
-# Violates WF-082 — blank bronAnnotaties entry
+# Violates WF-082 — blank statuteAnnotations entry
 
-The rule carries `"bronAnnotaties": [""]`: a statute-annotation entry
+The rule carries `"statuteAnnotations": [""]`: a statute-annotation entry
 that is the empty string. An annotation entry must be a non-blank
 citation; a blank entry is a trace of a dropped annotation and the
 document is ill-formed. The schema's `minLength: 1` also rejects this

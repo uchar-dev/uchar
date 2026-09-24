@@ -11,7 +11,9 @@ outright.
 
 A minimal hand-broken variant of
 `corpus/golden/anchor/jutterswet-borgdeel/ir.json`: one field on one node —
-`resolvedRegels[0].waarde.filter.eigenaar` goes from `null` to `"Jutter"` — a DECLARED type, so WF-034's owner arm (which only asks whether the name resolves) stays silent.
+`resolvedRegels[0].versions[0].value.filter.eigenaar` goes from `null` to
+`"Jutter"` — a DECLARED type, so WF-034's owner arm (which only asks whether
+the name resolves) stays silent.
 
 Before the rule reached this clip the document was verifier-clean and both
 executors replayed every one of the anchor's cases with the untwisted answers.

@@ -2,10 +2,11 @@ Violates WF-097 (`spec/IR-SPEC.md`): a `gedurende` clip member carries an
 `eigenaar`. The clip reads the subject's own characteristic timeline, so an
 owner names a subject no reader consults.
 
-A minimal hand-broken variant of `corpus/golden/jutterswet-tegenwacht/ir.json`:
-one field on one node — `resolvedRegels[0].waarde.filter.onderdelen[0].eigenaar`
-goes from `null` to `"Jutter"`. The name is a DECLARED object type on purpose,
-so WF-034's owner arm (which only asks whether the name resolves) stays silent
+A minimal hand-broken variant of
+`corpus/golden/jutterswet-tegenwacht/ir.json`: one field on one node —
+`resolvedRegels[0].versions[0].value.filter.onderdelen[0].eigenaar` goes from
+`null` to `"Jutter"`. The name is a DECLARED object type on purpose, so
+WF-034's owner arm (which only asks whether the name resolves) stays silent
 and this document is rejected by WF-097 alone.
 
 The member sits inside the flat `ALLE` composite, so this witness also pins the

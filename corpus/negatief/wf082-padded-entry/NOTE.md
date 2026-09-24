@@ -1,6 +1,6 @@
-# Violates WF-082 — whitespace-padded bronAnnotaties entry
+# Violates WF-082 — whitespace-padded statuteAnnotations entry
 
-The rule carries `"bronAnnotaties": [" art. 3 Jutterswet "]`: a
+The rule carries `"statuteAnnotations": [" art. 3 Jutterswet "]`: a
 statute-annotation entry with leading/trailing whitespace. Entries ride
 the wire trimmed; a padded entry defeats byte-stable citation matching.
 Note the schema does NOT catch this form (`minLength: 1` accepts a

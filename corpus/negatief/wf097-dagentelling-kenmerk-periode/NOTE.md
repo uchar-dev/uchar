@@ -10,9 +10,9 @@ the kind-keyed branch that covers both folds, elsewhere dropping the call
 outright.
 
 A minimal hand-broken variant of
-`corpus/golden/anchor/jutterswet-dagentelling/ir.json`: one field on one node —
-`resolvedRegels[0].waarde.filter.periode` goes from `null` to an affirmative
-`GeheelPeriode`. The characteristic is TIME-DEPENDENT, so WF-043's
+`corpus/golden/anchor/jutterswet-dagentelling/ir.json`: one field on one node
+— `resolvedRegels[0].versions[0].value.filter.periode` goes from `null` to an
+affirmative `GeheelPeriode`. The characteristic is TIME-DEPENDENT, so WF-043's
 non-time-dependent arm cannot fire here — which is exactly why the qualifier
 evaporated in silence at this position.
 

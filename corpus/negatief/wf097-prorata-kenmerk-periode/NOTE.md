@@ -11,8 +11,8 @@ outright.
 
 A minimal hand-broken variant of
 `corpus/golden/anchor/jutterswet-borgdeel/ir.json`: one field on one node —
-`resolvedRegels[0].waarde.filter.periode` goes from `null` to an affirmative
-`GeheelPeriode`. The characteristic is TIME-DEPENDENT, so WF-043's
+`resolvedRegels[0].versions[0].value.filter.periode` goes from `null` to an
+affirmative `GeheelPeriode`. The characteristic is TIME-DEPENDENT, so WF-043's
 non-time-dependent arm cannot fire here — which is exactly why the qualifier
 evaporated in silence at this position.
 

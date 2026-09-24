@@ -1,7 +1,7 @@
 # wf107-blanco-regelnaam
 
-Violates **WF-107** (`spec/IR-SPEC.md` ch. 3.1): the single `ResolvedRegel`
-carries `naam: "   "` — present, and empty once whitespace is collapsed.
+Violates **WF-107** (`spec/IR-SPEC.md` ch. 3.1): the single `Rule` carries
+`name: "   "` — present, and empty once whitespace is collapsed.
 
     WF-107 FAIL /rules/resolvedRegels/0/name: form in resolvedRegels carries a
     blank name (a named form's identity on this wire IS its name — ch. 8 groups
