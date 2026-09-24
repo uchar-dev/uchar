@@ -21,23 +21,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "dossiervoering",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "dossiervoering",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "dossierhouder",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "dossierhouder",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "dossier",
-            "objecttypeNaam": "Dossier",
-            "meervoud": "dossiers",
-            "meervoudig": false
+            "node": "Role",
+            "name": "dossier",
+            "objectType": "Dossier",
+            "plural": "dossiers",
+            "many": false
           }
         ]
       }
@@ -50,9 +49,9 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [
       {
         "node": "ObjectCreation",
         "name": "dossier voor een jutter",
@@ -62,25 +61,23 @@
             "subject": "Jutter",
             "initialisations": [],
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "connectingRole": {
-              "node": "RolBinding",
-              "feittype": "dossiervoering",
-              "rol": "dossierhouder"
+              "node": "RoleBinding",
+              "factType": "dossiervoering",
+              "role": "dossierhouder"
             }
           }
         ]
       }
     ],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

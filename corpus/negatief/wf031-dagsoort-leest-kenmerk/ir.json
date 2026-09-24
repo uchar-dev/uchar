@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -23,7 +23,7 @@
           {
             "node": "Characteristic",
             "name": "penninggerechtigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -42,35 +42,32 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [
+    "rules": [],
+    "dayKindDefinitions": [
       {
-        "node": "ResolvedDagsoort",
-        "naam": "feestdag",
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "penninggerechtigd",
-          "negatie": false,
-          "eigenaar": "Jutter",
-          "periode": null,
+        "node": "DayKindDefinition",
+        "dayKind": "feestdag",
+        "condition": {
+          "node": "CharacteristicCheck",
+          "characteristic": "penninggerechtigd",
+          "negated": false,
+          "host": "Jutter",
           "source": {
             "snippet": "de dag valt op een dag waarop een Jutter penninggerechtigd is"
           }
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

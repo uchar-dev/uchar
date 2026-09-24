@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "jr"
@@ -27,7 +27,7 @@
           {
             "node": "Characteristic",
             "name": "penninggerechtigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -41,7 +41,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       }
     ],
@@ -52,21 +52,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "Kenmerktoekenning jutter penninggerechtigd",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "penninggerechtigd",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "penninggerechtigd",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Een Jutter is penninggerechtigd"
               }
@@ -77,27 +75,27 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "Binair",
-                "op": "TOT_DE_MACHT",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "aantal aangemelde vondsten",
-                  "objecttype": "Jutter",
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "Binary",
+                "op": "power",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "aantal aangemelde vondsten",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn aantal aangemelde vondsten"
                   }
                 },
-                "rechts": {
+                "right": {
                   "node": "Literal",
                   "value": {
                     "number": "2"
@@ -106,7 +104,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "2"
@@ -116,20 +114,19 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "tot de macht 2"
                 }
               },
-              "rechts": {
-                "node": "ParameterRef",
+              "right": {
+                "node": "ParameterReference",
                 "parameter": "vondstdrempel",
                 "source": {
                   "snippet": "de vondstdrempel"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
               }
@@ -139,14 +136,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

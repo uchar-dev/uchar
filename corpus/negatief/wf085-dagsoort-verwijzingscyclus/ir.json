@@ -20,14 +20,14 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [
+    "rules": [],
+    "dayKindDefinitions": [
       {
-        "node": "ResolvedDagsoort",
-        "naam": "vloeddag",
-        "voorwaarde": {
-          "node": "Predicaat",
-          "soort": "DAGSOORT",
+        "node": "DayKindDefinition",
+        "dayKind": "vloeddag",
+        "condition": {
+          "node": "Predicate",
+          "kind": "dayKind",
           "operand": {
             "node": "Literal",
             "value": {
@@ -41,26 +41,23 @@
               "snippet": "die dag"
             }
           },
-          "dagsoort": "ebdag",
-          "negatie": false,
-          "cijfers": 0,
-          "periode": null,
+          "dayKind": "ebdag",
+          "negated": false,
+          "digits": 0,
           "source": {
             "snippet": "die dag is een ebdag"
           }
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       },
       {
-        "node": "ResolvedDagsoort",
-        "naam": "ebdag",
-        "voorwaarde": {
-          "node": "Predicaat",
-          "soort": "DAGSOORT",
+        "node": "DayKindDefinition",
+        "dayKind": "ebdag",
+        "condition": {
+          "node": "Predicate",
+          "kind": "dayKind",
           "operand": {
             "node": "Literal",
             "value": {
@@ -74,28 +71,25 @@
               "snippet": "die dag"
             }
           },
-          "dagsoort": "vloeddag",
-          "negatie": false,
-          "cijfers": 0,
-          "periode": null,
+          "dayKind": "vloeddag",
+          "negated": false,
+          "digits": 0,
           "source": {
             "snippet": "die dag is een vloeddag"
           }
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

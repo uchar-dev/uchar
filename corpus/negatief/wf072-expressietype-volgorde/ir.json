@@ -21,7 +21,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 {
@@ -30,7 +30,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 }
               ]
@@ -55,7 +55,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -64,7 +64,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             }
           ]
@@ -77,11 +77,11 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
       {
         "node": "Consistency",
         "name": "Lees",
@@ -89,15 +89,15 @@
           {
             "subject": "Jutter",
             "assertion": {
-              "node": "Predicaat",
-              "soort": "GEVULD",
+              "node": "Predicate",
+              "kind": "filled",
               "operand": {
                 "node": "FieldAccess",
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "base": {
                   "node": "StructLiteral",
@@ -111,7 +111,7 @@
                           "node": "Number",
                           "whole": true,
                           "decimals": 0,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       },
                       {
@@ -120,7 +120,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       }
                     ]
@@ -137,7 +137,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       }
                     },
@@ -152,7 +152,7 @@
                           "node": "Number",
                           "whole": true,
                           "decimals": 0,
-                          "sign": "NIET_NEGATIEF"
+                          "sign": "nonNegative"
                         }
                       }
                     }
@@ -160,24 +160,20 @@
                 },
                 "field": "waarde"
               },
-              "dagsoort": null,
-              "negatie": false,
-              "cijfers": 0,
-              "periode": null
+              "negated": false,
+              "digits": 0
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
       }
     ],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

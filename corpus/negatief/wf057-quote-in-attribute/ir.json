@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -33,7 +33,7 @@
           {
             "node": "Characteristic",
             "name": "gemeld",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -47,57 +47,53 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "Waardestelling",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "geschatte waarde",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "geschatte waarde",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De geschatte waarde van een Vondst"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "taxatie\"waarde",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "taxatie\"waarde",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "de taxatiewaarde van de Vondst"
               }
             },
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "gemeld",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "gemeld",
+              "negated": false,
               "source": {
                 "snippet": "de Vondst gemeld is"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -20,11 +20,11 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
       {
         "node": "Consistency",
         "name": "Losse lambda",
@@ -32,8 +32,8 @@
           {
             "subject": "Jutter",
             "assertion": {
-              "node": "Predicaat",
-              "soort": "GEVULD",
+              "node": "Predicate",
+              "kind": "filled",
               "operand": {
                 "node": "Lambda",
                 "parameters": [
@@ -43,7 +43,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   }
                 ],
@@ -52,24 +52,20 @@
                   "name": "x"
                 }
               },
-              "dagsoort": null,
-              "negatie": false,
-              "cijfers": 0,
-              "periode": null
+              "negated": false,
+              "digits": 0
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
       }
     ],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

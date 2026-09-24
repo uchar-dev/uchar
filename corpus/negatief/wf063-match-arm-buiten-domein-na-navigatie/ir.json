@@ -12,9 +12,9 @@
             "node": "Attribute",
             "name": "vaarwater",
             "datatype": {
-              "node": "Enumeratie",
-              "domein": "Vaarwater",
-              "waarden": [
+              "node": "Enumeration",
+              "domain": "Vaarwater",
+              "values": [
                 "Wad",
                 "Zeegat",
                 "Ruimzee"
@@ -37,7 +37,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -46,23 +46,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "ligplaats",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "ligplaats",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "werf",
-            "objecttypeNaam": "Werf",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "werf",
+            "objectType": "Werf",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "schuit",
-            "objecttypeNaam": "Schuit",
-            "meervoud": "schuiten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "schuit",
+            "objectType": "Schuit",
+            "plural": "schuiten",
+            "many": true
           }
         ]
       }
@@ -73,8 +72,8 @@
         "node": "Domain",
         "name": "Vaarwater",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "Wad",
             "Zeegat",
             "Ruimzee"
@@ -85,8 +84,8 @@
         "node": "Domain",
         "name": "Kust",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "Noord",
             "Zuid",
             "West"
@@ -100,21 +99,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "premie",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "premie",
-              "objecttype": "Schuit",
+              "node": "AttributeReference",
+              "attribute": "premie",
+              "subjectType": "Schuit",
               "source": {
                 "snippet": "de premie"
               }
@@ -125,20 +122,20 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "scrutinee": {
-                "node": "AttribuutRef",
-                "attribuut": "vaarwater",
-                "objecttype": "Werf",
+                "node": "AttributeReference",
+                "attribute": "vaarwater",
+                "subjectType": "Werf",
                 "source": {
                   "snippet": "de vaarwater"
                 },
-                "navigatieBindingen": [
+                "path": [
                   {
-                    "node": "RolBinding",
-                    "feittype": "ligplaats",
-                    "rol": "werf"
+                    "node": "RoleBinding",
+                    "factType": "ligplaats",
+                    "role": "werf"
                   }
                 ]
               },
@@ -155,7 +152,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "3"
@@ -174,7 +171,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "7"
@@ -193,7 +190,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "12"
@@ -206,19 +203,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

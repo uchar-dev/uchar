@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -33,7 +33,7 @@
             "node": "Number",
             "whole": false,
             "decimals": 2,
-            "sign": "ONBEPAALD"
+            "sign": "unspecified"
           }
         }
       },
@@ -44,7 +44,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       }
     ],
@@ -55,11 +55,11 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
       {
         "node": "Consistency",
         "name": "MaalInFoldInLet",
@@ -67,27 +67,27 @@
           {
             "subject": "Jutter",
             "assertion": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "uitkering",
-                "objecttype": "Jutter"
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "uitkering",
+                "subjectType": "Jutter"
               },
-              "rechts": {
+              "right": {
                 "node": "Let",
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "binder": "f",
                 "source": {
                   "snippet": "f is de factor"
                 },
                 "value": {
-                  "node": "ParameterRef",
+                  "node": "ParameterReference",
                   "parameter": "factor",
                   "source": {
                     "snippet": "de factor"
@@ -99,10 +99,10 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "list": {
-                    "node": "ParameterRef",
+                    "node": "ParameterReference",
                     "parameter": "bedragen",
                     "source": {
                       "snippet": "de bedragen"
@@ -117,7 +117,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         }
                       },
                       {
@@ -126,7 +126,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         }
                       }
                     ],
@@ -134,26 +134,26 @@
                       "snippet": "de vouwstap"
                     },
                     "body": {
-                      "node": "Binair",
-                      "op": "PLUS",
-                      "links": {
+                      "node": "Binary",
+                      "op": "plus",
+                      "left": {
                         "node": "BinderRef",
                         "name": "acc",
                         "source": {
                           "snippet": "de opgetelde waarde"
                         }
                       },
-                      "rechts": {
-                        "node": "Binair",
-                        "op": "MAAL",
-                        "links": {
+                      "right": {
+                        "node": "Binary",
+                        "op": "times",
+                        "left": {
                           "node": "BinderRef",
                           "name": "x",
                           "source": {
                             "snippet": "het bedrag"
                           }
                         },
-                        "rechts": {
+                        "right": {
                           "node": "BinderRef",
                           "name": "f",
                           "source": {
@@ -164,7 +164,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         },
                         "source": {
                           "snippet": "het bedrag maal de factor"
@@ -174,7 +174,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "de opgetelde waarde plus het bedrag maal de factor"
@@ -190,7 +190,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "0"
@@ -200,22 +200,19 @@
                     "snippet": "de gevouwen som"
                   }
                 }
-              },
-              "periode": null
+              }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
       }
     ],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

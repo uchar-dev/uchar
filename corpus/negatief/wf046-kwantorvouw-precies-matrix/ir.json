@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -34,44 +34,42 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "opvolging",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "opvolging",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "voorganger",
-            "objecttypeNaam": "Wachter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "voorganger",
+            "objectType": "Wachter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "opvolger",
-            "objecttypeNaam": "Wachter",
-            "meervoud": "opvolgers",
-            "meervoudig": true
+            "node": "Role",
+            "name": "opvolger",
+            "objectType": "Wachter",
+            "plural": "opvolgers",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "ploeg",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "ploeg",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "ploegleider",
-            "objecttypeNaam": "Wachter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "ploegleider",
+            "objectType": "Wachter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "ploeglid",
-            "objecttypeNaam": "Wachter",
-            "meervoud": "ploegleden",
-            "meervoudig": true
+            "node": "Role",
+            "name": "ploeglid",
+            "objectType": "Wachter",
+            "plural": "ploegleden",
+            "many": true
           }
         ]
       }
@@ -84,33 +82,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "merk van een wachter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "merk",
-              "objecttype": "Wachter",
+              "node": "AttributeReference",
+              "attribute": "merk",
+              "subjectType": "Wachter",
               "source": {
                 "snippet": "Het merk van een Wachter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "opvolgers",
-                  "objecttype": "Wachter",
+                  "node": "AttributeReference",
+                  "attribute": "opvolgers",
+                  "subjectType": "Wachter",
                   "source": {
                     "snippet": "opvolgers van de Wachter"
                   }
@@ -118,28 +114,28 @@
               ],
               "elementType": "Wachter",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "opvolging",
-                "rol": "opvolger"
+                "node": "RoleBinding",
+                "factType": "opvolging",
+                "role": "opvolger"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal opvolgers van de Wachter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
+    "dayKindDefinitions": [],
+    "objectCreations": [
       {
         "node": "ObjectCreation",
         "name": "werf een opvolger",
@@ -149,20 +145,20 @@
             "subject": "Wachter",
             "initialisations": [
               {
-                "node": "Toekenning",
-                "attribuut": "rang",
-                "waarde": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "rang",
-                    "objecttype": "Wachter",
+                "node": "MemberInit",
+                "member": "rang",
+                "value": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "rang",
+                    "subjectType": "Wachter",
                     "source": {
                       "snippet": "de rang van de Wachter"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "1"
@@ -171,7 +167,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "1"
@@ -181,32 +177,32 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "de rang van de Wachter plus 1"
                   }
                 },
-                "kenmerk": false
+                "characteristic": false
               }
             ],
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "KLEINER",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "rang",
-                    "objecttype": "Wachter",
+                  "node": "Comparison",
+                  "op": "less",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "rang",
+                    "subjectType": "Wachter",
                     "source": {
                       "snippet": "de rang van de Wachter"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "5"
@@ -215,34 +211,32 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "5"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "de rang van de Wachter is kleiner dan 5"
                   }
                 },
                 {
-                  "node": "Kwantorvouw",
-                  "kwantor": "PRECIES",
-                  "elementObjecttype": "Wachter",
-                  "filter": null,
-                  "toets": {
-                    "node": "Vergelijking",
-                    "op": "GROTER",
-                    "links": {
-                      "node": "AttribuutRef",
-                      "attribuut": "merk",
-                      "objecttype": "Wachter",
+                  "node": "QuantifierFold",
+                  "quantifier": "exactly",
+                  "elementType": "Wachter",
+                  "test": {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "merk",
+                      "subjectType": "Wachter",
                       "source": {
                         "snippet": "de merk van alle ploegleden van de Wachter"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "0"
@@ -251,13 +245,12 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "0"
                       }
                     },
-                    "periode": null,
                     "source": {
                       "snippet": "het merk is groter dan 0"
                     }
@@ -265,11 +258,11 @@
                   "source": {
                     "snippet": "precies 1 ploeglid van de Wachter heeft een merk groter dan 0"
                   },
-                  "drempel": 1,
-                  "bronRol": {
-                    "node": "RolBinding",
-                    "feittype": "ploeg",
-                    "rol": "ploeglid"
+                  "threshold": 1,
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "ploeg",
+                    "role": "ploeglid"
                   }
                 }
               ],
@@ -278,30 +271,28 @@
               }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "connectingRole": {
-              "node": "RolBinding",
-              "feittype": "opvolging",
-              "rol": "opvolger"
+              "node": "RoleBinding",
+              "factType": "opvolging",
+              "role": "opvolger"
             }
           }
         ]
       }
     ],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [
       {
-        "node": "ResolvedRegelGroep",
-        "naam": "estafette",
-        "recursief": true,
-        "leden": [
+        "node": "RuleGroup",
+        "name": "estafette",
+        "recursive": true,
+        "members": [
           "werf een opvolger"
         ]
       }

@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -31,28 +31,26 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "Berekening vondstjaar",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vondstjaar",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "vondstjaar",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Het vondstjaar van een Vondst"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "MAAND_UIT",
+              "kind": "monthOf",
               "arguments": [
                 {
                   "node": "Literal",
@@ -60,7 +58,7 @@
                     "text": "strandvondst"
                   },
                   "type": {
-                    "node": "Tekst"
+                    "node": "Text"
                   },
                   "source": {
                     "snippet": "'strandvondst'"
@@ -71,26 +69,26 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de maand uit 'strandvondst'"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

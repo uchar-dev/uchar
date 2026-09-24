@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -40,21 +40,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "vondstpremie van een vondst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vondstpremie",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "vondstpremie",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De vondstpremie van een Vondst"
               }
@@ -68,41 +66,40 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "50"
               }
             },
             "condition": {
-              "node": "Periode",
-              "vanaf": {
-                "node": "ParameterRef",
+              "node": "TimeWindow",
+              "from": {
+                "node": "ParameterReference",
                 "parameter": "peildatum",
                 "source": {
                   "snippet": "de peildatum"
                 }
               },
-              "tot": null,
-              "totInclusief": false,
+              "toInclusive": false,
               "source": {
                 "snippet": "vanaf de peildatum"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

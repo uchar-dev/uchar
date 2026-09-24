@@ -20,7 +20,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 {
@@ -29,7 +29,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 }
               ]
@@ -42,7 +42,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -66,7 +66,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 {
@@ -75,7 +75,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 }
               ]
@@ -87,23 +87,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "ligplaats",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "ligplaats",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "berging",
-            "objecttypeNaam": "Berging",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "berging",
+            "objectType": "Berging",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "schuit",
-            "objecttypeNaam": "Schuit",
-            "meervoud": "schuiten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "schuit",
+            "objectType": "Schuit",
+            "plural": "schuiten",
+            "many": true
           }
         ]
       }
@@ -122,7 +121,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -131,7 +130,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             }
           ]
@@ -149,7 +148,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -158,7 +157,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             }
           ]
@@ -171,30 +170,28 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "samenvatting van een berging",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "samenvatting",
-              "objecttype": "Berging"
+              "node": "AttributeReference",
+              "attribute": "samenvatting",
+              "subjectType": "Berging"
             },
             "value": {
               "node": "Aggregation",
-              "kind": "EERSTE",
+              "kind": "first",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "kern",
-                  "objecttype": "Schuit",
+                  "node": "AttributeReference",
+                  "attribute": "kern",
+                  "subjectType": "Schuit",
                   "source": {
                     "snippet": "de kern van alle schuiten van de Berging"
                   }
@@ -202,9 +199,9 @@
               ],
               "elementType": "Schuit",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "ligplaats",
-                "rol": "schuit"
+                "node": "RoleBinding",
+                "factType": "ligplaats",
+                "role": "schuit"
               },
               "type": {
                 "node": "StructType",
@@ -216,7 +213,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -225,7 +222,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   }
                 ]
@@ -235,7 +232,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -245,14 +242,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "tarief",
-              "objecttype": "Berging"
+              "node": "AttributeReference",
+              "attribute": "tarief",
+              "subjectType": "Berging"
             },
             "value": {
               "node": "FieldAccess",
@@ -260,29 +255,29 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "base": {
-                "node": "AttribuutRef",
-                "attribuut": "samenvatting",
-                "objecttype": "Berging"
+                "node": "AttributeReference",
+                "attribute": "samenvatting",
+                "subjectType": "Berging"
               },
               "field": "bedrag"
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

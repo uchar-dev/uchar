@@ -22,15 +22,15 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [
+    "rules": [],
+    "dayKindDefinitions": [
       {
-        "node": "ResolvedDagsoort",
-        "naam": "schouwdag",
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "LATER",
-          "links": {
+        "node": "DayKindDefinition",
+        "dayKind": "schouwdag",
+        "condition": {
+          "node": "Comparison",
+          "op": "later",
+          "left": {
             "node": "BoundDay",
             "type": {
               "node": "Date",
@@ -40,7 +40,7 @@
               "snippet": "de dag"
             }
           },
-          "rechts": {
+          "right": {
             "node": "Literal",
             "value": {
               "date": "2026-02-28"
@@ -53,24 +53,21 @@
               "snippet": "28-02-2026"
             }
           },
-          "periode": null,
           "source": {
             "snippet": "de dag later is dan 28-02-2026"
           }
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       },
       {
-        "node": "ResolvedDagsoort",
-        "naam": "schouwdagen",
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "LATER",
-          "links": {
+        "node": "DayKindDefinition",
+        "dayKind": "schouwdagen",
+        "condition": {
+          "node": "Comparison",
+          "op": "later",
+          "left": {
             "node": "BoundDay",
             "type": {
               "node": "Date",
@@ -80,7 +77,7 @@
               "snippet": "de dag"
             }
           },
-          "rechts": {
+          "right": {
             "node": "Literal",
             "value": {
               "date": "2026-09-30"
@@ -93,25 +90,22 @@
               "snippet": "30-09-2026"
             }
           },
-          "periode": null,
           "source": {
             "snippet": "de dag later is dan 30-09-2026"
           }
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -12,9 +12,9 @@
             "node": "Attribute",
             "name": "staat",
             "datatype": {
-              "node": "Enumeratie",
-              "domein": "keurklasse",
-              "waarden": [
+              "node": "Enumeration",
+              "domain": "keurklasse",
+              "values": [
                 "gaaf",
                 "beschadigd",
                 "wrakhout"
@@ -28,7 +28,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -42,8 +42,8 @@
         "node": "Domain",
         "name": "keurklasse",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "gaaf",
             "beschadigd",
             "wrakhout"
@@ -57,21 +57,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "waarde naar staat",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "waarde",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "waarde",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De waarde van een Vondst"
               }
@@ -82,12 +80,12 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "scrutinee": {
-                "node": "AttribuutRef",
-                "attribuut": "staat",
-                "objecttype": "Vondst",
+                "node": "AttributeReference",
+                "attribute": "staat",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de staat van de Vondst"
                 }
@@ -105,7 +103,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   }
                 },
@@ -121,7 +119,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   }
                 },
@@ -137,26 +135,26 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   }
                 }
               ]
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -23,7 +23,7 @@
           {
             "node": "Characteristic",
             "name": "penninggerechtigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -37,7 +37,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         }
       }
     ],
@@ -57,21 +57,19 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "Kenmerktoekenning jutter penninggerechtigd",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "penninggerechtigd",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "penninggerechtigd",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Een Jutter is penninggerechtigd"
               }
@@ -82,31 +80,30 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aantal aangemelde vondsten",
-                "objecttype": "Jutter",
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aantal aangemelde vondsten",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn aantal aangemelde vondsten"
                 }
               },
-              "rechts": {
-                "node": "ParameterRef",
+              "right": {
+                "node": "ParameterReference",
                 "parameter": "vondstdrempel",
                 "source": {
                   "snippet": "de vondstdrempel"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
               }
@@ -116,14 +113,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [
+    "dayKindDefinitions": [
       {
-        "node": "ResolvedDagsoort",
-        "naam": null,
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "EERDER",
-          "links": {
+        "node": "DayKindDefinition",
+        "dayKind": null,
+        "condition": {
+          "node": "Comparison",
+          "op": "earlier",
+          "left": {
             "node": "Literal",
             "value": {
               "date": "2026-03-01"
@@ -136,7 +133,7 @@
               "snippet": "2026-03-01"
             }
           },
-          "rechts": {
+          "right": {
             "node": "Literal",
             "value": {
               "date": "2026-10-01"
@@ -149,23 +146,20 @@
               "snippet": "2026-10-01"
             }
           },
-          "periode": null,
           "source": {
             "snippet": "in het schouwseizoen"
           }
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       },
       {
-        "node": "ResolvedDagsoort",
-        "naam": "hoogschouwdag",
-        "voorwaarde": {
-          "node": "Predicaat",
-          "soort": "DAGSOORT",
+        "node": "DayKindDefinition",
+        "dayKind": "hoogschouwdag",
+        "condition": {
+          "node": "Predicate",
+          "kind": "dayKind",
           "operand": {
             "node": "Literal",
             "value": {
@@ -179,28 +173,25 @@
               "snippet": "die dag"
             }
           },
-          "dagsoort": "schouwdag",
-          "negatie": false,
-          "cijfers": 0,
-          "periode": null,
+          "dayKind": "schouwdag",
+          "negated": false,
+          "digits": 0,
           "source": {
             "snippet": "die dag is een schouwdag"
           }
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

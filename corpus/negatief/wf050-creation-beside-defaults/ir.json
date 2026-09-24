@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -43,12 +43,12 @@
           {
             "node": "Characteristic",
             "name": "erkend",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "kandidaat",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -70,9 +70,9 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [
       {
         "node": "ObjectCreation",
         "name": "maak jutter aan",
@@ -82,9 +82,9 @@
             "subject": "Strandvondst",
             "initialisations": [
               {
-                "node": "Toekenning",
-                "attribuut": "waardering",
-                "waarde": {
+                "node": "MemberInit",
+                "member": "waardering",
+                "value": {
                   "node": "Literal",
                   "value": {
                     "number": "10"
@@ -93,55 +93,49 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "10"
                   }
                 },
-                "kenmerk": false
+                "characteristic": false
               }
             ],
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
       }
     ],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "waardering van een vondst",
-        "onderwerp": "Jutter",
-        "kenmerk": null,
-        "attribuut": "waardering",
+        "name": "waardering van een vondst",
+        "subject": "Jutter",
+        "attribute": "waardering",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "erkend",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "erkend",
+              "negated": false,
               "source": {
                 "snippet": "hij erkend is"
               }
             },
-            "consequentie": {
-              "node": "AttribuutRef",
-              "attribuut": "basisbedrag",
-              "objecttype": "Jutter",
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "basisbedrag",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "zijn basisbedrag"
               }
@@ -152,21 +146,18 @@
           },
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "kandidaat",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "kandidaat",
+              "negated": false,
               "source": {
                 "snippet": "hij kandidaat is"
               }
             },
-            "consequentie": {
-              "node": "AttribuutRef",
-              "attribuut": "kandidaatbedrag",
-              "objecttype": "Jutter",
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "kandidaatbedrag",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "zijn kandidaatbedrag"
               }
@@ -177,9 +168,7 @@
           },
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": null,
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "25"
@@ -188,13 +177,13 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "25"
               }
             },
-            "initialisatie": true,
+            "initialisation": true,
             "source": {
               "snippet": "anders: 25, tenzij al gevuld"
             }
@@ -203,10 +192,8 @@
         "source": {
           "snippet": "waardering: basisbedrag voor erkenden, kandidaatbedrag voor kandidaten, anders 25"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

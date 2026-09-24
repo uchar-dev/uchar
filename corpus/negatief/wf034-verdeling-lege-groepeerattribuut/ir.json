@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -54,7 +54,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -63,23 +63,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "sluitdienst",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "sluitdienst",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "sluitkas",
-            "objecttypeNaam": "Sluitkas",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "sluitkas",
+            "objectType": "Sluitkas",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "sluitjutter",
-            "objecttypeNaam": "Jutter",
-            "meervoud": "sluitjutters",
-            "meervoudig": true
+            "node": "Role",
+            "name": "sluitjutter",
+            "objectType": "Jutter",
+            "plural": "sluitjutters",
+            "many": true
           }
         ]
       }
@@ -92,10 +91,10 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [
       {
         "node": "Allocation",
         "name": "verdeel de sluitpremie van een sluitkas",
@@ -105,30 +104,28 @@
             "sourceAttribute": "sluitpremie",
             "targetType": "Jutter",
             "targetAttribute": "sluitdeel",
-            "method": "OP_VOLGORDE",
+            "method": "ordered",
             "roundingDecimals": 0,
             "remainderAttribute": "sluitrest",
             "orderingAttribute": "",
             "descending": true,
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "connectingRole": {
-              "node": "RolBinding",
-              "feittype": "sluitdienst",
-              "rol": "sluitjutter"
+              "node": "RoleBinding",
+              "factType": "sluitdienst",
+              "role": "sluitjutter"
             }
           }
         ]
       }
     ],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

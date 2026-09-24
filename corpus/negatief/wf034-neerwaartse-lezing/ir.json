@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -54,7 +54,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -63,23 +63,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "strandrechtregistratie",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "strandrechtregistratie",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "registrerende kustgemeente",
-            "objecttypeNaam": "Kustgemeente",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "registrerende kustgemeente",
+            "objectType": "Kustgemeente",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "geregistreerd strandrecht",
-            "objecttypeNaam": "Strandrecht",
-            "meervoud": "geregistreerde strandrechten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "geregistreerd strandrecht",
+            "objectType": "Strandrecht",
+            "plural": "geregistreerde strandrechten",
+            "many": true
           }
         ]
       }
@@ -92,33 +91,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "dieptetotaal van een kustgemeente",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "dieptetotaal",
-              "objecttype": "Kustgemeente",
+              "node": "AttributeReference",
+              "attribute": "dieptetotaal",
+              "subjectType": "Kustgemeente",
               "source": {
                 "snippet": "Het dieptetotaal van een Kustgemeente"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "SOM",
+              "kind": "sum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "bergingsdiepte",
-                  "objecttype": "Strandrecht",
+                  "node": "AttributeReference",
+                  "attribute": "bergingsdiepte",
+                  "subjectType": "Strandrecht",
                   "source": {
                     "snippet": "de bergingsdiepte van alle geregistreerde strandrechten van de Kustgemeente"
                   }
@@ -134,41 +131,41 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0"
                 }
               },
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "strandrechtregistratie",
-                "rol": "geregistreerd strandrecht"
+                "node": "RoleBinding",
+                "factType": "strandrechtregistratie",
+                "role": "geregistreerd strandrecht"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "de som van de bergingsdiepte van alle geregistreerde strandrechten van de Kustgemeente of 0 als die er niet zijn"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

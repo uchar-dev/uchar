@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -23,7 +23,7 @@
           {
             "node": "Characteristic",
             "name": "grondX",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -37,43 +37,38 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "heffing van een jutter",
-        "onderwerp": "Jutter",
-        "kenmerk": null,
-        "attribuut": "heffing",
+        "name": "heffing van een jutter",
+        "subject": "Jutter",
+        "attribute": "heffing",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": null,
             "source": {
               "snippet": "groep-default met lege excepties"
             },
-            "excepties": {
-              "ongeordend": true,
-              "leden": []
+            "exceptions": {
+              "unordered": true,
+              "members": []
             }
           }
         ],
         "source": {
           "snippet": "art. n"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

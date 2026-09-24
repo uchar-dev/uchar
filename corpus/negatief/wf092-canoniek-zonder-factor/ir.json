@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "m",
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "m",
@@ -84,29 +84,27 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "sleeplengte van een sleepbaan",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "sleeplengte",
-              "objecttype": "Sleepbaan",
+              "node": "AttributeReference",
+              "attribute": "sleeplengte",
+              "subjectType": "Sleepbaan",
               "source": {
                 "snippet": "De sleeplengte van een Sleepbaan"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
                 "node": "Literal",
                 "value": {
                   "number": "2.5"
@@ -115,7 +113,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 1,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "km",
@@ -127,10 +125,10 @@
                   "snippet": "2,5 km"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "aanloop",
-                "objecttype": "Sleepbaan",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "aanloop",
+                "subjectType": "Sleepbaan",
                 "source": {
                   "snippet": "de aanloop van de Sleepbaan"
                 }
@@ -139,7 +137,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 1,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "km",
@@ -152,19 +150,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

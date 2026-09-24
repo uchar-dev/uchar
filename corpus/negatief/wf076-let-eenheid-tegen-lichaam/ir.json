@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -88,21 +88,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "kopie van het gewicht",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "kopie",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "kopie",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "de kopie van de Jutter"
               }
@@ -113,7 +111,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF",
+                "sign": "nonNegative",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "t",
@@ -127,9 +125,9 @@
               },
               "binder": "b",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "gewicht",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "het gewicht van de Jutter"
                 }
@@ -146,19 +144,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

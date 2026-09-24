@@ -11,9 +11,9 @@
             "node": "Attribute",
             "name": "vaarwater",
             "datatype": {
-              "node": "Enumeratie",
-              "domein": "Vaarwater",
-              "waarden": [
+              "node": "Enumeration",
+              "domain": "Vaarwater",
+              "values": [
                 "Wad",
                 "Zeegat",
                 "Ruimzee"
@@ -27,7 +27,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -35,7 +35,7 @@
           {
             "node": "Characteristic",
             "name": "uitzonderlijk",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -47,8 +47,8 @@
         "node": "Domain",
         "name": "Vaarwater",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "Wad",
             "Zeegat",
             "Ruimzee"
@@ -59,8 +59,8 @@
         "node": "Domain",
         "name": "Kust",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "Noord",
             "Zuid",
             "West"
@@ -74,21 +74,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "tarief",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "tarief",
-              "objecttype": "Berging",
+              "node": "AttributeReference",
+              "attribute": "tarief",
+              "subjectType": "Berging",
               "source": {
                 "snippet": "de tarief"
               }
@@ -99,12 +97,12 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "scrutinee": {
-                "node": "AttribuutRef",
-                "attribuut": "vaarwater",
-                "objecttype": "Berging",
+                "node": "AttributeReference",
+                "attribute": "vaarwater",
+                "subjectType": "Berging",
                 "source": {
                   "snippet": "de vaarwater"
                 }
@@ -122,7 +120,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "3"
@@ -141,7 +139,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "7"
@@ -160,7 +158,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "12"
@@ -173,40 +171,37 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "vaarwater van een berging",
-        "onderwerp": "Berging",
-        "kenmerk": null,
-        "attribuut": "vaarwater",
+        "name": "vaarwater van een berging",
+        "subject": "Berging",
+        "attribute": "vaarwater",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": null,
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "enumeration": "Wad"
               },
               "type": {
-                "node": "Enumeratie",
-                "domein": "Vaarwater",
-                "waarden": [
+                "node": "Enumeration",
+                "domain": "Vaarwater",
+                "values": [
                   "Wad",
                   "Zeegat",
                   "Ruimzee"
@@ -219,35 +214,32 @@
             "source": {
               "snippet": "anders: Noord"
             },
-            "initialisatie": true,
-            "excepties": {
-              "ongeordend": true,
-              "leden": [
+            "initialisation": true,
+            "exceptions": {
+              "unordered": true,
+              "members": [
                 {
                   "node": "ExceptionGroup",
                   "defaults": [
                     {
                       "node": "Default",
-                      "besluit": null,
-                      "voorwaarde": {
-                        "node": "Kenmerk",
-                        "kenmerk": "uitzonderlijk",
-                        "negatie": false,
-                        "eigenaar": null,
-                        "periode": null,
+                      "justification": {
+                        "node": "CharacteristicCheck",
+                        "characteristic": "uitzonderlijk",
+                        "negated": false,
                         "source": {
                           "snippet": "hij uitzonderlijk is"
                         }
                       },
-                      "consequentie": {
+                      "consequence": {
                         "node": "Literal",
                         "value": {
                           "enumeration": "Noord"
                         },
                         "type": {
-                          "node": "Enumeratie",
-                          "domein": "Kust",
-                          "waarden": [
+                          "node": "Enumeration",
+                          "domain": "Kust",
+                          "values": [
                             "Noord",
                             "Zuid",
                             "West"
@@ -273,10 +265,8 @@
         "source": {
           "snippet": "vaarwater: Noord"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

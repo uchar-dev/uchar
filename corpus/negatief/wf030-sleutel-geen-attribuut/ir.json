@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "POSITIEF"
+              "sign": "positive"
             },
             "plural": "vondstnummers"
           },
@@ -48,11 +48,11 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
       {
         "node": "Consistency",
         "name": "aanmelding niet voor de vondstdag",
@@ -60,33 +60,30 @@
           {
             "subject": "Vondst",
             "assertion": {
-              "node": "Vergelijking",
-              "op": "LATER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aanmelddatum",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "laterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aanmelddatum",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "De aanmelddatum van een Vondst"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "vondstdag",
-                "objecttype": "Vondst",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "vondstdag",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "de vondstdag van de Vondst"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst"
               }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "source": {
               "snippet": "De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst",
@@ -96,7 +93,7 @@
         ]
       }
     ],
-    "uniciteiten": [
+    "uniquenesses": [
       {
         "node": "Uniqueness",
         "name": "eenmalig vondstnummer",
@@ -112,9 +109,7 @@
               }
             ],
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "source": {
               "snippet": "De vondstnummers van alle Vondsten moeten uniek zijn."
@@ -123,9 +118,9 @@
         ]
       }
     ],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -24,44 +24,44 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "opvolging",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "opvolging",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "voorganger",
-            "objecttypeNaam": "Wachter",
-            "meervoud": "voorgangers",
-            "meervoudig": false
+            "node": "Role",
+            "name": "voorganger",
+            "objectType": "Wachter",
+            "plural": "voorgangers",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "opvolger",
-            "objecttypeNaam": "Wachter",
-            "meervoud": "opvolgers",
-            "meervoudig": false
+            "node": "Role",
+            "name": "opvolger",
+            "objectType": "Wachter",
+            "plural": "opvolgers",
+            "many": false
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "erflijn",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "erflijn",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "erflater",
-            "objecttypeNaam": "Wachter",
-            "meervoud": "erflaters",
-            "meervoudig": true
+            "node": "Role",
+            "name": "erflater",
+            "objectType": "Wachter",
+            "plural": "erflaters",
+            "many": true
           },
           {
-            "node": "Rol",
-            "naam": "erfvolger",
-            "objecttypeNaam": "Wachter",
-            "meervoud": "erfvolgers",
-            "meervoudig": true
+            "node": "Role",
+            "name": "erfvolger",
+            "objectType": "Wachter",
+            "plural": "erfvolgers",
+            "many": true
           }
         ]
       }
@@ -74,33 +74,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "erfvolgeraantal van een wachter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "erfvolgeraantal",
-              "objecttype": "Wachter",
+              "node": "AttributeReference",
+              "attribute": "erfvolgeraantal",
+              "subjectType": "Wachter",
               "source": {
                 "snippet": "Het erfvolgeraantal van een Wachter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "erfvolgers",
-                  "objecttype": "Wachter",
+                  "node": "AttributeReference",
+                  "attribute": "erfvolgers",
+                  "subjectType": "Wachter",
                   "source": {
                     "snippet": "alle erfvolgers van de Wachter"
                   }
@@ -108,39 +106,39 @@
               ],
               "elementType": "Wachter",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "erflijn",
-                "rol": "erfvolger"
+                "node": "RoleBinding",
+                "factType": "erflijn",
+                "role": "erfvolger"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het aantal erfvolgers van de Wachter"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [
       {
-        "node": "ResolvedRegelGroep",
-        "naam": "erfestafette",
-        "recursief": true,
-        "leden": [
+        "node": "RuleGroup",
+        "name": "erfestafette",
+        "recursive": true,
+        "members": [
           "erfvolgeraantal van een wachter"
         ]
       }

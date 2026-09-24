@@ -22,7 +22,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -66,7 +66,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -92,7 +92,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -113,21 +113,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "aanspraken",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aanspraken",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "aanspraken",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "de aanspraken"
               }
@@ -140,7 +138,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 }
               },
               "elements": [
@@ -153,7 +151,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   },
                   "source": {
                     "snippet": "10.00"
@@ -168,7 +166,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   },
                   "source": {
                     "snippet": "25.00"
@@ -180,7 +178,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -190,14 +188,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "som",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "som",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "de som"
               }
@@ -208,7 +204,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
                 "node": "MapList",
@@ -218,13 +214,13 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 },
                 "list": {
-                  "node": "AttribuutRef",
-                  "attribuut": "aanspraken",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "aanspraken",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "de aanspraken"
                   }
@@ -244,7 +240,7 @@
                               "node": "Number",
                               "whole": false,
                               "decimals": 2,
-                              "sign": "NIET_NEGATIEF"
+                              "sign": "nonNegative"
                             }
                           },
                           {
@@ -265,7 +261,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "scrutinee": {
                       "node": "BinderRef",
@@ -279,16 +275,16 @@
                         "constructor": "Toegekend",
                         "binder": "bedrag",
                         "body": {
-                          "node": "Binair",
-                          "op": "PLUS",
-                          "links": {
+                          "node": "Binary",
+                          "op": "plus",
+                          "left": {
                             "node": "BinderRef",
                             "name": "bedrag",
                             "source": {
                               "snippet": "bedrag"
                             }
                           },
-                          "rechts": {
+                          "right": {
                             "node": "Literal",
                             "value": {
                               "number": "25.00"
@@ -297,7 +293,7 @@
                               "node": "Number",
                               "whole": false,
                               "decimals": 2,
-                              "sign": "ONBEPAALD"
+                              "sign": "unspecified"
                             },
                             "source": {
                               "snippet": "25.00"
@@ -307,7 +303,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           }
                         }
                       },
@@ -323,7 +319,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           },
                           "source": {
                             "snippet": "0.00"
@@ -342,7 +338,7 @@
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
-                            "sign": "ONBEPAALD"
+                            "sign": "unspecified"
                           },
                           "source": {
                             "snippet": "12.00"
@@ -371,7 +367,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -380,21 +376,21 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   }
                 ],
                 "body": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
                     "node": "BinderRef",
                     "name": "acc",
                     "source": {
                       "snippet": "acc"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "BinderRef",
                     "name": "x",
                     "source": {
@@ -405,7 +401,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 },
                 "source": {
@@ -421,7 +417,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0.00"
@@ -432,19 +428,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -15,11 +15,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
@@ -30,7 +30,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -38,10 +38,10 @@
           {
             "node": "Characteristic",
             "name": "aangesteld",
-            "kind": "BIJVOEGLIJK",
+            "kind": "adjectival",
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           }
@@ -57,33 +57,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "stilwachtsom van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "stilwachtsom",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "stilwachtsom",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De stilwachtsom van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "TOTAAL",
+              "kind": "total",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "wachtvergoeding per maand",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "wachtvergoeding per maand",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn wachtvergoeding per maand"
                   }
@@ -91,11 +89,9 @@
               ],
               "elementType": "Jutter",
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "aangesteld",
-                "negatie": true,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "aangesteld",
+                "negated": true,
                 "source": {
                   "snippet": "gedurende de tijd dat hij niet aangesteld is"
                 }
@@ -104,14 +100,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij niet aangesteld is"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -121,14 +117,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aangesteld",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "aangesteld",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Een Jutter is aangesteld"
               }
@@ -139,24 +133,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "stilwachtsom",
-                "objecttype": "Jutter",
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "stilwachtsom",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn stilwachtsom"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "0"
@@ -165,13 +159,12 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn stilwachtsom groter is dan 0"
               }
@@ -181,14 +174,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

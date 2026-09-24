@@ -12,9 +12,9 @@
             "node": "Attribute",
             "name": "keurstatus",
             "datatype": {
-              "node": "Enumeratie",
-              "domein": "keurstatus",
-              "waarden": [
+              "node": "Enumeration",
+              "domain": "keurstatus",
+              "values": [
                 "Gaaf",
                 "Beschadigd",
                 "Verweerd"
@@ -32,8 +32,8 @@
         "node": "Domain",
         "name": "keurstatus",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "Gaaf",
             "Beschadigd"
           ]
@@ -46,15 +46,15 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

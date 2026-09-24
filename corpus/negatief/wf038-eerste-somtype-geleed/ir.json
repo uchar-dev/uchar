@@ -20,7 +20,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 {
@@ -43,7 +43,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 {
@@ -66,7 +66,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 {
@@ -95,7 +95,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -112,41 +112,39 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "bergstand van een berging",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bergstand",
-              "objecttype": "Berging",
+              "node": "AttributeReference",
+              "attribute": "bergstand",
+              "subjectType": "Berging",
               "source": {
                 "snippet": "de bergstand"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "EERSTE",
+              "kind": "first",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "bakboordstand",
-                  "objecttype": "Berging",
+                  "node": "AttributeReference",
+                  "attribute": "bakboordstand",
+                  "subjectType": "Berging",
                   "source": {
                     "snippet": "zijn bakboordstand"
                   }
                 },
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "stuurboordstand",
-                  "objecttype": "Berging",
+                  "node": "AttributeReference",
+                  "attribute": "stuurboordstand",
+                  "subjectType": "Berging",
                   "source": {
                     "snippet": "zijn stuurboordstand"
                   }
@@ -162,7 +160,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -176,19 +174,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -23,7 +23,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -32,16 +32,16 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "maatschap",
-        "wederkerig": true,
-        "rollen": [
+        "node": "FactType",
+        "name": "maatschap",
+        "reciprocal": true,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "maat",
-            "objecttypeNaam": "Jutter",
-            "meervoud": "maten",
-            "meervoudig": false
+            "node": "Role",
+            "name": "maat",
+            "objectType": "Jutter",
+            "plural": "maten",
+            "many": false
           }
         ]
       }
@@ -54,33 +54,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "telling van een vondst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "telling",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "telling",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De telling van een Vondst"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "maten",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "maten",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "maten van de Vondst"
                   }
@@ -88,34 +86,34 @@
               ],
               "elementType": "Vondst",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "maatschap",
-                "rol": "maat"
+                "node": "RoleBinding",
+                "factType": "maatschap",
+                "role": "maat"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal maten van de Vondst"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

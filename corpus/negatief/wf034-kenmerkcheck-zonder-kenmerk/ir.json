@@ -12,14 +12,14 @@
             "node": "Attribute",
             "name": "keurmerk",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           },
           {
             "node": "Attribute",
             "name": "afslag",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           }
         ],
@@ -27,7 +27,7 @@
           {
             "node": "Characteristic",
             "name": "gekeurd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -41,21 +41,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "keuring naar keurmerk",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "gekeurd",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "gekeurd",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is gekeurd"
               }
@@ -66,36 +64,35 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "keurmerk",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "keurmerk",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "het keurmerk van de Vondst"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "text": "merk \"AA\""
                 },
                 "type": {
-                  "node": "Tekst"
+                  "node": "Text"
                 },
                 "source": {
                   "snippet": "'merk \"AA\"'"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "haar keurmerk gelijk is aan 'merk \"AA\"'"
               }
@@ -110,14 +107,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "afslag",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "afslag",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De afslag van een Vondst"
               }
@@ -128,36 +123,34 @@
                 "text": "veiling \"Zee\""
               },
               "type": {
-                "node": "Tekst"
+                "node": "Text"
               },
               "source": {
                 "snippet": "'veiling \"Zee\"'"
               }
             },
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": null,
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": null,
+              "negated": false,
               "source": {
                 "snippet": "de Vondst is gekeurd"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

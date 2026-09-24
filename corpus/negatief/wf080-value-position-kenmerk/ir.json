@@ -12,7 +12,7 @@
             "node": "Attribute",
             "name": "markering",
             "datatype": {
-              "node": "Booleaan"
+              "node": "Boolean"
             }
           }
         ],
@@ -20,7 +20,7 @@
           {
             "node": "Characteristic",
             "name": "penninggerechtigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -34,47 +34,45 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "markering van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "markering",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "markering",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "de markering van de Jutter"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "penninggerechtigd",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "penninggerechtigd",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "de penninggerechtigd van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

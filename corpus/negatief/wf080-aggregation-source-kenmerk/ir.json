@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -34,7 +34,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -42,30 +42,29 @@
           {
             "node": "Characteristic",
             "name": "uitgereikt",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "penningbezit",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "penningbezit",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "houder",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "houder",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "penning",
-            "objecttypeNaam": "Penning",
-            "meervoud": "penningen",
-            "meervoudig": true
+            "node": "Role",
+            "name": "penning",
+            "objectType": "Penning",
+            "plural": "penningen",
+            "many": true
           }
         ]
       }
@@ -78,33 +77,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "penningtotaal van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "penningtotaal",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "penningtotaal",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het penningtotaal van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "SOM",
+              "kind": "sum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "uitgereikt",
-                  "objecttype": "Penning",
+                  "node": "AttributeReference",
+                  "attribute": "uitgereikt",
+                  "subjectType": "Penning",
                   "source": {
                     "snippet": "het uitgereikt van alle penningen van de Jutter"
                   }
@@ -120,41 +117,41 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0"
                 }
               },
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "penningbezit",
-                "rol": "penning"
+                "node": "RoleBinding",
+                "factType": "penningbezit",
+                "role": "penning"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de som van het uitgereikt van alle penningen van de Jutter of 0 als die er niet zijn"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

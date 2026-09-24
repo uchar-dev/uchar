@@ -21,7 +21,7 @@
           {
             "node": "Characteristic",
             "name": "verjaard",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -35,21 +35,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "Kenmerktoekenning verjaard",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "verjaard",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "verjaard",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is verjaard"
               }
@@ -60,24 +58,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "EERDER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vondstdag",
-                "objecttype": "Vondst",
+              "node": "Comparison",
+              "op": "earlier",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstdag",
+                "subjectType": "Vondst",
                 "source": {
                   "snippet": "zijn vondstdag"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "date": "2024-01-31"
@@ -90,7 +88,6 @@
                   "snippet": "31-01-2024"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn vondstdag eerder is dan 31-01-2024"
               }
@@ -100,19 +97,19 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": [
     {
       "node": "Diagnostic",
-      "severity": "INFO",
+      "severity": "info",
       "message": "regel 'Kenmerktoekenning verjaard' gelezen",
       "line": 5
     }

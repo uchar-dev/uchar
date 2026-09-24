@@ -12,27 +12,27 @@
           {
             "node": "Characteristic",
             "name": "vergunning geweigerd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "weigering herroepen",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "herroeping vervallen",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "uitgesloten",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "penninggerechtigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -46,56 +46,50 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "uitsluiting van het penningrecht",
-        "onderwerp": "Jutter",
-        "kenmerk": "uitgesloten",
+        "name": "uitsluiting van het penningrecht",
+        "subject": "Jutter",
+        "characteristic": "uitgesloten",
         "defaults": [
           {
             "node": "Default",
-            "besluit": true,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+            "decision": true,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "vergunning geweigerd",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "vergunning geweigerd",
+                  "negated": false,
                   "source": {
                     "snippet": "zijn raapvergunning is geweigerd"
                   }
                 },
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "weigering herroepen",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "weigering herroepen",
+                  "negated": false,
                   "source": {
                     "snippet": "de weigering is herroepen"
                   }
                 },
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "herroeping vervallen",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "herroeping vervallen",
+                  "negated": false,
                   "source": {
                     "snippet": "de herroeping is vervallen"
                   }
@@ -111,28 +105,24 @@
           },
           {
             "node": "Default",
-            "besluit": false,
-            "voorwaarde": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+            "decision": false,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "vergunning geweigerd",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "vergunning geweigerd",
+                  "negated": false,
                   "source": {
                     "snippet": "zijn raapvergunning is geweigerd"
                   }
                 },
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "weigering herroepen",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
+                  "node": "CharacteristicCheck",
+                  "characteristic": "weigering herroepen",
+                  "negated": false,
                   "source": {
                     "snippet": "de weigering is herroepen"
                   }
@@ -148,13 +138,11 @@
           },
           {
             "node": "Default",
-            "besluit": true,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "uitgesloten",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "decision": true,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "uitgesloten",
+              "negated": false,
               "source": {
                 "snippet": "hij uitgesloten is"
               }
@@ -167,10 +155,8 @@
         "source": {
           "snippet": "art. 4"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

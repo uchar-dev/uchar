@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -64,7 +64,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -83,23 +83,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "bewaring",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "bewaring",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "bewarende jutter",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "bewarende jutter",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "vondst",
-            "objecttypeNaam": "Vondst",
-            "meervoud": "vondsten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
           }
         ]
       }
@@ -134,64 +133,62 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "sluitsom van een vondst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "sluitsom",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "sluitsom",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De sluitsom van een Vondst"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "LAATSTE",
+              "kind": "last",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "meldloon",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "meldloon",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "haar meldloon"
                   }
                 },
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "ijkloon",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "ijkloon",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "het ijkloon van de bewarende jutter"
                   },
-                  "navigatieBindingen": [
+                  "path": [
                     {
-                      "node": "RolBinding",
-                      "feittype": "bewaring",
-                      "rol": "bewarende jutter"
+                      "node": "RoleBinding",
+                      "factType": "bewaring",
+                      "role": "bewarende jutter"
                     }
                   ]
                 }
               ],
               "elementType": "Vondst",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "bewaring",
-                "rol": "bewarende jutter"
+                "node": "RoleBinding",
+                "factType": "bewaring",
+                "role": "bewarende jutter"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "EUR",
@@ -208,19 +205,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

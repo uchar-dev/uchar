@@ -20,7 +20,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -28,7 +28,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "NIET_NEGATIEF"
+          "sign": "nonNegative"
         },
         "body": {
           "node": "Invoke",
@@ -36,7 +36,7 @@
             "node": "Number",
             "whole": true,
             "decimals": 0,
-            "sign": "NIET_NEGATIEF"
+            "sign": "nonNegative"
           },
           "function": "oneven",
           "arguments": [
@@ -57,7 +57,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -65,7 +65,7 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "NIET_NEGATIEF"
+          "sign": "nonNegative"
         },
         "body": {
           "node": "Invoke",
@@ -73,7 +73,7 @@
             "node": "Number",
             "whole": true,
             "decimals": 0,
-            "sign": "NIET_NEGATIEF"
+            "sign": "nonNegative"
           },
           "function": "even",
           "arguments": [
@@ -87,15 +87,15 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

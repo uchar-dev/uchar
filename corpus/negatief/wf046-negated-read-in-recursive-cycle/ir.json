@@ -14,7 +14,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -22,7 +22,7 @@
           {
             "node": "Characteristic",
             "name": "volwassen",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -36,21 +36,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "persoon volwassen",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "volwassen",
-              "objecttype": "Persoon",
+              "node": "AttributeReference",
+              "attribute": "volwassen",
+              "subjectType": "Persoon",
               "source": {
                 "snippet": "Een Persoon is volwassen"
               }
@@ -61,24 +59,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "leeftijd",
-                "objecttype": "Persoon",
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "leeftijd",
+                "subjectType": "Persoon",
                 "source": {
                   "snippet": "zijn leeftijd"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "18"
@@ -87,13 +85,12 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "18"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn leeftijd groter of gelijk is aan 18"
               }
@@ -103,8 +100,8 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
+    "dayKindDefinitions": [],
+    "objectCreations": [
       {
         "node": "ObjectCreation",
         "name": "maak kind",
@@ -114,20 +111,20 @@
             "subject": "Persoon",
             "initialisations": [
               {
-                "node": "Toekenning",
-                "attribuut": "leeftijd",
-                "waarde": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "leeftijd",
-                    "objecttype": "Persoon",
+                "node": "MemberInit",
+                "member": "leeftijd",
+                "value": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "leeftijd",
+                    "subjectType": "Persoon",
                     "source": {
                       "snippet": "zijn leeftijd"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "1"
@@ -136,7 +133,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "1"
@@ -146,45 +143,42 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "zijn leeftijd plus 1"
                   }
                 },
-                "kenmerk": false
+                "characteristic": false
               }
             ],
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "volwassen",
-              "negatie": true,
-              "eigenaar": "Persoon",
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "volwassen",
+              "negated": true,
+              "host": "Persoon",
               "source": {
                 "snippet": "hij niet volwassen is"
               }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
       }
     ],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [
       {
-        "node": "ResolvedRegelGroep",
-        "naam": "groei",
-        "recursief": true,
-        "leden": [
+        "node": "RuleGroup",
+        "name": "groei",
+        "recursive": true,
+        "members": [
           "maak kind"
         ],
         "source": {

@@ -11,9 +11,9 @@
             "node": "Attribute",
             "name": "vaarwater",
             "datatype": {
-              "node": "Enumeratie",
-              "domein": "Vaarwater",
-              "waarden": [
+              "node": "Enumeration",
+              "domain": "Vaarwater",
+              "values": [
                 "Wad",
                 "Zeegat",
                 "Ruimzee"
@@ -27,7 +27,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -54,23 +54,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "bergingsbezit",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "bergingsbezit",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "houder",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "houder",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "berging",
-            "objecttypeNaam": "Berging",
-            "meervoud": "bergingen",
-            "meervoudig": true
+            "node": "Role",
+            "name": "berging",
+            "objectType": "Berging",
+            "plural": "bergingen",
+            "many": true
           }
         ]
       }
@@ -81,8 +80,8 @@
         "node": "Domain",
         "name": "Vaarwater",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "Wad",
             "Zeegat",
             "Ruimzee"
@@ -93,8 +92,8 @@
         "node": "Domain",
         "name": "Kust",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "Noord",
             "Zuid",
             "West"
@@ -108,21 +107,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "tarief",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "tarief",
-              "objecttype": "Berging",
+              "node": "AttributeReference",
+              "attribute": "tarief",
+              "subjectType": "Berging",
               "source": {
                 "snippet": "de tarief"
               }
@@ -133,12 +130,12 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "scrutinee": {
-                "node": "AttribuutRef",
-                "attribuut": "vaarwater",
-                "objecttype": "Berging",
+                "node": "AttributeReference",
+                "attribute": "vaarwater",
+                "subjectType": "Berging",
                 "source": {
                   "snippet": "de vaarwater"
                 }
@@ -156,7 +153,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "3"
@@ -175,7 +172,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "7"
@@ -194,7 +191,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "12"
@@ -207,13 +204,13 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
+    "dayKindDefinitions": [],
+    "objectCreations": [
       {
         "node": "ObjectCreation",
         "name": "berging voor een jutter",
@@ -223,9 +220,9 @@
             "subject": "Jutter",
             "initialisations": [
               {
-                "node": "Toekenning",
-                "attribuut": "vaarwater",
-                "waarde": {
+                "node": "MemberInit",
+                "member": "vaarwater",
+                "value": {
                   "node": "Literal",
                   "value": {
                     "number": "4"
@@ -234,30 +231,28 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "4"
                   }
                 },
-                "kenmerk": false
+                "characteristic": false
               }
             ],
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
       }
     ],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

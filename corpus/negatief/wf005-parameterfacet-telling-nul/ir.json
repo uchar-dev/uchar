@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -31,11 +31,11 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         },
         "timeline": {
           "node": "TimelineFacet",
-          "granularity": "JAAR",
+          "granularity": "year",
           "count": 0
         }
       }
@@ -47,37 +47,35 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "huidig penningbedrag",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "huidig penningbedrag",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "huidig penningbedrag",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het huidig penningbedrag van een Jutter"
               }
             },
             "value": {
               "node": "TemporalRead",
-              "basis": {
-                "node": "ParameterRef",
+              "base": {
+                "node": "ParameterReference",
                 "parameter": "penningbedrag",
                 "source": {
                   "snippet": "het penningbedrag"
                 }
               },
-              "datum": {
+              "date": {
                 "node": "ContextValue",
-                "name": "Rekendatum",
+                "name": "evaluationDate",
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -90,26 +88,26 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "het penningbedrag op de rekendatum"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

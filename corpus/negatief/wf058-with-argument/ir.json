@@ -15,11 +15,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
@@ -30,11 +30,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "JAAR",
+              "granularity": "year",
               "count": 1
             }
           }
@@ -43,10 +43,10 @@
           {
             "node": "Characteristic",
             "name": "borgplichtig",
-            "kind": "BIJVOEGLIJK",
+            "kind": "adjectival",
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           }
@@ -62,61 +62,57 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "borgdagen van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "borgdagen",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "borgdagen",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De borgdagen van een Jutter"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "AANTAL_DAGEN_IN",
+              "kind": "dayCount",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "jaardagen",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "jaardagen",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn jaardagen"
                   }
                 }
               ],
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "borgplichtig",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "borgplichtig",
+                "negated": false,
                 "source": {
                   "snippet": "gedurende de tijd dat hij borgplichtig is"
                 }
               },
-              "granularity": "MAAND",
+              "granularity": "month",
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal dagen in de maand dat hij borgplichtig is"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -126,57 +122,53 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "jaardagen",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "jaardagen",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De jaardagen van een Jutter"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "AANTAL_DAGEN_IN",
+              "kind": "dayCount",
               "arguments": [],
               "filter": {
-                "node": "Kenmerk",
-                "kenmerk": "borgplichtig",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
+                "node": "CharacteristicCheck",
+                "characteristic": "borgplichtig",
+                "negated": false,
                 "source": {
                   "snippet": "gedurende de tijd dat hij borgplichtig is"
                 }
               },
-              "granularity": "JAAR",
+              "granularity": "year",
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal dagen in de jaar dat hij borgplichtig is"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

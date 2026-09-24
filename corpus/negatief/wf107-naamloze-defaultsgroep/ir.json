@@ -12,22 +12,22 @@
           {
             "node": "Characteristic",
             "name": "nx",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "ny",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "nz",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "vrijgesteld",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -41,31 +41,29 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": null,
-        "onderwerp": "Jutter",
-        "kenmerk": "vrijgesteld",
+        "name": null,
+        "subject": "Jutter",
+        "characteristic": "vrijgesteld",
         "defaults": [
           {
             "node": "Default",
-            "besluit": true,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "nx",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "decision": true,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "nx",
+              "negated": false,
               "source": {
                 "snippet": "hij nx heeft"
               }
@@ -73,21 +71,19 @@
             "source": {
               "snippet": "nx: vrijgesteld, tenzij een uitzondering geldt"
             },
-            "excepties": {
-              "ongeordend": true,
-              "leden": [
+            "exceptions": {
+              "unordered": true,
+              "members": [
                 {
                   "node": "ExceptionGroup",
                   "defaults": [
                     {
                       "node": "Default",
-                      "besluit": false,
-                      "voorwaarde": {
-                        "node": "Kenmerk",
-                        "kenmerk": "ny",
-                        "negatie": false,
-                        "eigenaar": null,
-                        "periode": null,
+                      "decision": false,
+                      "justification": {
+                        "node": "CharacteristicCheck",
+                        "characteristic": "ny",
+                        "negated": false,
                         "source": {
                           "snippet": "hij ny heeft"
                         }
@@ -106,13 +102,11 @@
                   "defaults": [
                     {
                       "node": "Default",
-                      "besluit": true,
-                      "voorwaarde": {
-                        "node": "Kenmerk",
-                        "kenmerk": "nz",
-                        "negatie": false,
-                        "eigenaar": null,
-                        "periode": null,
+                      "decision": true,
+                      "justification": {
+                        "node": "CharacteristicCheck",
+                        "characteristic": "nz",
+                        "negated": false,
                         "source": {
                           "snippet": "hij nz heeft"
                         }
@@ -133,10 +127,8 @@
         "source": {
           "snippet": "art. 7: de vrijstelling met een geneste uitzondering"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

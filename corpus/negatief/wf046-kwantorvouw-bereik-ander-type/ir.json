@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -34,7 +34,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -43,23 +43,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "bemanning",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "bemanning",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "bemanner",
-            "objecttypeNaam": "Wachter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "bemanner",
+            "objectType": "Wachter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "post",
-            "objecttypeNaam": "Post",
-            "meervoud": "posten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "post",
+            "objectType": "Post",
+            "plural": "posten",
+            "many": true
           }
         ]
       }
@@ -72,9 +71,9 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [
       {
         "node": "ObjectCreation",
         "name": "richt een post in",
@@ -84,9 +83,9 @@
             "subject": "Wachter",
             "initialisations": [
               {
-                "node": "Toekenning",
-                "attribuut": "nummer",
-                "waarde": {
+                "node": "MemberInit",
+                "member": "nummer",
+                "value": {
                   "node": "Literal",
                   "value": {
                     "number": "1"
@@ -95,32 +94,32 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "1"
                   }
                 },
-                "kenmerk": false
+                "characteristic": false
               }
             ],
             "condition": {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
                 {
-                  "node": "Vergelijking",
-                  "op": "KLEINER",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "rang",
-                    "objecttype": "Wachter",
+                  "node": "Comparison",
+                  "op": "less",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "rang",
+                    "subjectType": "Wachter",
                     "source": {
                       "snippet": "de rang van de Wachter"
                     }
                   },
-                  "rechts": {
+                  "right": {
                     "node": "Literal",
                     "value": {
                       "number": "5"
@@ -129,34 +128,32 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "5"
                     }
                   },
-                  "periode": null,
                   "source": {
                     "snippet": "de rang van de Wachter is kleiner dan 5"
                   }
                 },
                 {
-                  "node": "Kwantorvouw",
-                  "kwantor": "ALLE",
-                  "elementObjecttype": "Post",
-                  "filter": null,
-                  "toets": {
-                    "node": "Vergelijking",
-                    "op": "GROTER",
-                    "links": {
-                      "node": "AttribuutRef",
-                      "attribuut": "nummer",
-                      "objecttype": "Post",
+                  "node": "QuantifierFold",
+                  "quantifier": "all",
+                  "elementType": "Post",
+                  "test": {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "nummer",
+                      "subjectType": "Post",
                       "source": {
                         "snippet": "de nummer van alle posten van de Wachter"
                       }
                     },
-                    "rechts": {
+                    "right": {
                       "node": "Literal",
                       "value": {
                         "number": "5"
@@ -165,13 +162,12 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "ONBEPAALD"
+                        "sign": "unspecified"
                       },
                       "source": {
                         "snippet": "5"
                       }
                     },
-                    "periode": null,
                     "source": {
                       "snippet": "het nummer is groter dan 5"
                     }
@@ -179,10 +175,10 @@
                   "source": {
                     "snippet": "alle posten van de Wachter hebben een nummer groter dan 5"
                   },
-                  "bronRol": {
-                    "node": "RolBinding",
-                    "feittype": "bemanning",
-                    "rol": "post"
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "bemanning",
+                    "role": "post"
                   }
                 }
               ],
@@ -191,30 +187,28 @@
               }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "connectingRole": {
-              "node": "RolBinding",
-              "feittype": "bemanning",
-              "rol": "post"
+              "node": "RoleBinding",
+              "factType": "bemanning",
+              "role": "post"
             }
           }
         ]
       }
     ],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [
       {
-        "node": "ResolvedRegelGroep",
-        "naam": "estafette",
-        "recursief": true,
-        "leden": [
+        "node": "RuleGroup",
+        "name": "estafette",
+        "recursive": true,
+        "members": [
           "richt een post in"
         ]
       }

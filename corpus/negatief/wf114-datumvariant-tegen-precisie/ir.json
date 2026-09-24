@@ -21,12 +21,12 @@
           {
             "node": "Characteristic",
             "name": "tijdig",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "verlaat",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -40,21 +40,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "Kenmerktoekenning tijdig",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "tijdig",
-              "objecttype": "Aanmelding",
+              "node": "AttributeReference",
+              "attribute": "tijdig",
+              "subjectType": "Aanmelding",
               "source": {
                 "snippet": "Een Aanmelding is tijdig"
               }
@@ -65,24 +63,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "EERDER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "meldstip",
-                "objecttype": "Aanmelding",
+              "node": "Comparison",
+              "op": "earlier",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldstip",
+                "subjectType": "Aanmelding",
                 "source": {
                   "snippet": "haar meldstip"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "date": "2026-03-15"
@@ -95,7 +93,6 @@
                   "snippet": "15-03-2026 12:00:00.000"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "haar meldstip eerder is dan 15-03-2026 12:00:00.000"
               }
@@ -110,14 +107,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "verlaat",
-              "objecttype": "Aanmelding",
+              "node": "AttributeReference",
+              "attribute": "verlaat",
+              "subjectType": "Aanmelding",
               "source": {
                 "snippet": "Een Aanmelding is verlaat"
               }
@@ -128,24 +123,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "LATER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "meldstip",
-                "objecttype": "Aanmelding",
+              "node": "Comparison",
+              "op": "later",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldstip",
+                "subjectType": "Aanmelding",
                 "source": {
                   "snippet": "haar meldstip"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "dateTime": "2026-03-15T12:00:00.000"
@@ -158,7 +153,6 @@
                   "snippet": "15-03-2026 12:00:00.000"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "haar meldstip later is dan 15-03-2026 12:00:00.000"
               }
@@ -168,14 +162,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

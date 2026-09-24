@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -34,7 +34,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -44,7 +44,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -54,7 +54,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -63,44 +63,42 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "bergingsdeelname",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "bergingsdeelname",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "berging",
-            "objecttypeNaam": "Berging",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "berging",
+            "objectType": "Berging",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "berger",
-            "objecttypeNaam": "Berger",
-            "meervoud": "bergers",
-            "meervoudig": true
+            "node": "Role",
+            "name": "berger",
+            "objectType": "Berger",
+            "plural": "bergers",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "bergingstoezicht",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "bergingstoezicht",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "toezichthouder",
-            "objecttypeNaam": "Berger",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "toezichthouder",
+            "objectType": "Berger",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "bewaakte berging",
-            "objecttypeNaam": "Berging",
-            "meervoud": "bewaakte bergingen",
-            "meervoudig": true
+            "node": "Role",
+            "name": "bewaakte berging",
+            "objectType": "Berging",
+            "plural": "bewaakte bergingen",
+            "many": true
           }
         ]
       }
@@ -113,13 +111,13 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [
       {
         "node": "FactCreation",
         "name": "leg toezicht vast",
@@ -131,22 +129,20 @@
             "anchor": "Berger",
             "path": [
               {
-                "node": "RolBinding",
-                "feittype": "bergingstoezicht",
-                "rol": "bewaakte berging"
+                "node": "RoleBinding",
+                "factType": "bergingstoezicht",
+                "role": "bewaakte berging"
               }
             ],
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
       }
     ],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

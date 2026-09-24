@@ -12,14 +12,14 @@
             "node": "Attribute",
             "name": "afslag",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           },
           {
             "node": "Attribute",
             "name": "keurstatus",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           }
         ],
@@ -27,7 +27,7 @@
           {
             "node": "Characteristic",
             "name": "gekeurd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       },
@@ -41,7 +41,7 @@
           {
             "node": "Characteristic",
             "name": "penninggerechtigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -55,21 +55,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "afslag van een gekeurde vondst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "afslag",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "afslag",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De afslag van een Vondst"
               }
@@ -80,24 +78,23 @@
                 "text": "zeeveiling"
               },
               "type": {
-                "node": "Tekst"
+                "node": "Text"
               },
               "source": {
                 "snippet": "'zeeveiling'"
               }
             },
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "gekeurd",
-              "negatie": false,
-              "eigenaar": "Jutter",
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "gekeurd",
+              "negated": false,
+              "host": "Jutter",
               "source": {
                 "snippet": "de Vondst gekeurd is"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -107,14 +104,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "keurstatus",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "keurstatus",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De keurstatus van een Vondst"
               }
@@ -125,36 +120,35 @@
                 "text": "onbekeurd"
               },
               "type": {
-                "node": "Tekst"
+                "node": "Text"
               },
               "source": {
                 "snippet": "'onbekeurd'"
               }
             },
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "gekeurd",
-              "negatie": true,
-              "eigenaar": "Vondst",
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "gekeurd",
+              "negated": true,
+              "host": "Vondst",
               "source": {
                 "snippet": "de Vondst niet gekeurd is"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

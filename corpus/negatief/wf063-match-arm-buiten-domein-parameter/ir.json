@@ -14,7 +14,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -27,9 +27,9 @@
         "node": "Parameter",
         "name": "standaardvaarwater",
         "datatype": {
-          "node": "Enumeratie",
-          "domein": "Vaarwater",
-          "waarden": [
+          "node": "Enumeration",
+          "domain": "Vaarwater",
+          "values": [
             "Wad",
             "Zeegat",
             "Ruimzee"
@@ -42,8 +42,8 @@
         "node": "Domain",
         "name": "Vaarwater",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "Wad",
             "Zeegat",
             "Ruimzee"
@@ -54,8 +54,8 @@
         "node": "Domain",
         "name": "Kust",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "Noord",
             "Zuid",
             "West"
@@ -69,21 +69,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "tarief",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "tarief",
-              "objecttype": "Berging",
+              "node": "AttributeReference",
+              "attribute": "tarief",
+              "subjectType": "Berging",
               "source": {
                 "snippet": "de tarief"
               }
@@ -94,10 +92,10 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "scrutinee": {
-                "node": "ParameterRef",
+                "node": "ParameterReference",
                 "parameter": "standaardvaarwater",
                 "source": {
                   "snippet": "de standaardvaarwater"
@@ -116,7 +114,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "3"
@@ -135,7 +133,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "7"
@@ -154,7 +152,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     },
                     "source": {
                       "snippet": "12"
@@ -167,19 +165,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -23,7 +23,7 @@
           {
             "node": "Characteristic",
             "name": "grondX",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -37,59 +37,53 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "heffing van een jutter",
-        "onderwerp": "Jutter",
-        "kenmerk": null,
-        "attribuut": "heffing",
+        "name": "heffing van een jutter",
+        "subject": "Jutter",
+        "attribute": "heffing",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": null,
             "source": {
               "snippet": "groep-default"
             },
-            "excepties": {
-              "ongeordend": true,
-              "leden": [
+            "exceptions": {
+              "unordered": true,
+              "members": [
                 {
                   "node": "ExceptionGroup",
                   "defaults": [
                     {
                       "node": "Default",
-                      "besluit": null,
-                      "voorwaarde": {
-                        "node": "Predicaat",
-                        "soort": "GEVULD",
+                      "justification": {
+                        "node": "Predicate",
+                        "kind": "filled",
                         "operand": {
-                          "node": "AttribuutRef",
-                          "attribuut": "heffing",
-                          "objecttype": "Jutter",
+                          "node": "AttributeReference",
+                          "attribute": "heffing",
+                          "subjectType": "Jutter",
                           "source": {
                             "snippet": "zijn heffing"
                           }
                         },
-                        "dagsoort": null,
-                        "negatie": false,
-                        "cijfers": 0,
-                        "periode": null,
+                        "negated": false,
+                        "digits": 0,
                         "source": {
                           "snippet": "zijn heffing is gevuld"
                         }
                       },
-                      "consequentie": {
+                      "consequence": {
                         "node": "Literal",
                         "value": {
                           "number": "10.00"
@@ -98,7 +92,7 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         },
                         "source": {
                           "snippet": "10.00"
@@ -120,10 +114,8 @@
         "source": {
           "snippet": "art. n"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

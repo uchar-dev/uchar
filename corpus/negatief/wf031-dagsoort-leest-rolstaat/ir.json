@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -23,30 +23,29 @@
           {
             "node": "Characteristic",
             "name": "penninggerechtigd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "wachtindeling",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "wachtindeling",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "wachtjutter",
-            "objecttypeNaam": "Jutter",
-            "meervoud": "wachtjutters",
-            "meervoudig": true
+            "node": "Role",
+            "name": "wachtjutter",
+            "objectType": "Jutter",
+            "plural": "wachtjutters",
+            "many": true
           },
           {
-            "node": "Rol",
-            "naam": "toegewezen wachtpost",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "toegewezen wachtpost",
+            "objectType": "Jutter",
+            "many": false
           }
         ]
       }
@@ -64,12 +63,12 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [
+    "rules": [],
+    "dayKindDefinitions": [
       {
-        "node": "ResolvedDagsoort",
-        "naam": "feestdag",
-        "voorwaarde": {
+        "node": "DayKindDefinition",
+        "dayKind": "feestdag",
+        "condition": {
           "node": "RoleMembership",
           "factType": "wachtindeling",
           "role": "wachtjutter",
@@ -78,20 +77,18 @@
             "snippet": "de dag valt op een dag waarop hij een wachtjutter is"
           }
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

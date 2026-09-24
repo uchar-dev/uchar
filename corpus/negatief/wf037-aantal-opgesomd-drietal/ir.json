@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -75,7 +75,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -112,49 +112,47 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "aantal gewogen posten",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aantal gewogen posten",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "aantal gewogen posten",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het aantal gewogen posten van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewogen vangst",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "gewogen vangst",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "het gewogen vangst van de Jutter"
                   }
                 },
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewogen bijvangst",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "gewogen bijvangst",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "het gewogen bijvangst van de Jutter"
                   }
                 },
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "gewogen wrakhout",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "gewogen wrakhout",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "het gewogen wrakhout van de Jutter"
                   }
@@ -164,26 +162,26 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal van het gewogen vangst van de Jutter en het gewogen bijvangst van de Jutter en het gewogen wrakhout van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

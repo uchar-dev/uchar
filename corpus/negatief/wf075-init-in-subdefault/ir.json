@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -23,7 +23,7 @@
           {
             "node": "Characteristic",
             "name": "grondX",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -37,37 +37,33 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": [],
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "naam": "heffing van een jutter",
-        "onderwerp": "Jutter",
-        "kenmerk": null,
-        "attribuut": "heffing",
+        "name": "heffing van een jutter",
+        "subject": "Jutter",
+        "attribute": "heffing",
         "defaults": [
           {
             "node": "Default",
-            "besluit": null,
-            "voorwaarde": {
-              "node": "Kenmerk",
-              "kenmerk": "grondX",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "grondX",
+              "negated": false,
               "source": {
                 "snippet": "hij grondX heeft"
               }
             },
-            "consequentie": {
+            "consequence": {
               "node": "Literal",
               "value": {
                 "number": "40.00"
@@ -76,7 +72,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "40.00"
@@ -85,17 +81,15 @@
             "source": {
               "snippet": "grondX: 40.00, met excepties"
             },
-            "excepties": {
-              "ongeordend": true,
-              "leden": [
+            "exceptions": {
+              "unordered": true,
+              "members": [
                 {
                   "node": "ExceptionGroup",
                   "defaults": [
                     {
                       "node": "Default",
-                      "besluit": null,
-                      "voorwaarde": null,
-                      "consequentie": {
+                      "consequence": {
                         "node": "Literal",
                         "value": {
                           "number": "25.00"
@@ -104,13 +98,13 @@
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
-                          "sign": "ONBEPAALD"
+                          "sign": "unspecified"
                         },
                         "source": {
                           "snippet": "25.00"
                         }
                       },
-                      "initialisatie": true,
+                      "initialisation": true,
                       "source": {
                         "snippet": "sub-init: 25.00 (onwelgevormd)"
                       }
@@ -127,10 +121,8 @@
         "source": {
           "snippet": "art. n"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ]

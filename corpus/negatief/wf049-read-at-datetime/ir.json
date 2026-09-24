@@ -23,11 +23,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "JAAR",
+              "granularity": "year",
               "count": 1
             }
           },
@@ -38,7 +38,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -48,7 +48,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -72,11 +72,11 @@
           "node": "Number",
           "whole": true,
           "decimals": 0,
-          "sign": "ONBEPAALD"
+          "sign": "unspecified"
         },
         "timeline": {
           "node": "TimelineFacet",
-          "granularity": "JAAR",
+          "granularity": "year",
           "count": 1
         }
       }
@@ -88,39 +88,37 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "quotum bij aanmelding",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "quotum bij aanmelding",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "quotum bij aanmelding",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het quotum bij aanmelding van een Jutter"
               }
             },
             "value": {
               "node": "TemporalRead",
-              "basis": {
-                "node": "AttribuutRef",
-                "attribuut": "jaarquotum",
-                "objecttype": "Jutter",
+              "base": {
+                "node": "AttributeReference",
+                "attribute": "jaarquotum",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn jaarquotum"
                 }
               },
-              "datum": {
-                "node": "AttribuutRef",
-                "attribuut": "aanmeldmoment",
-                "objecttype": "Jutter",
+              "date": {
+                "node": "AttributeReference",
+                "attribute": "aanmeldmoment",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn aanmeldmoment"
                 }
@@ -129,26 +127,26 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "zijn jaarquotum op zijn aanmelddatum"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

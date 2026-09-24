@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -64,7 +64,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -85,7 +85,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -105,7 +105,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -124,23 +124,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "bergingsdeelname",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "bergingsdeelname",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "berging",
-            "objecttypeNaam": "Berging",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "berging",
+            "objectType": "Berging",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "berger",
-            "objecttypeNaam": "Berger",
-            "meervoud": "bergers",
-            "meervoudig": true
+            "node": "Role",
+            "name": "berger",
+            "objectType": "Berger",
+            "plural": "bergers",
+            "many": true
           }
         ]
       }
@@ -209,10 +208,10 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [
       {
         "node": "Allocation",
         "name": "verdeel de opbrengst van een berging",
@@ -222,31 +221,29 @@
             "sourceAttribute": "opbrengst",
             "targetType": "Berger",
             "targetAttribute": "bergingsaandeel",
-            "method": "NAAR_RATO",
+            "method": "proportional",
             "ratioAttribute": "geborgen gewicht",
             "maximumAttribute": "bestaatniet",
             "roundingDecimals": 0,
             "remainderAttribute": "onverdeelde rest",
             "descending": false,
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "connectingRole": {
-              "node": "RolBinding",
-              "feittype": "bergingsdeelname",
-              "rol": "berger"
+              "node": "RoleBinding",
+              "factType": "bergingsdeelname",
+              "role": "berger"
             }
           }
         ]
       }
     ],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

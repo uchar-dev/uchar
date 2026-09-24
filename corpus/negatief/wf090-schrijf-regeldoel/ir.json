@@ -21,7 +21,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 {
@@ -30,7 +30,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 }
               ]
@@ -51,7 +51,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -60,7 +60,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   }
                 ]
@@ -74,7 +74,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -84,7 +84,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -94,7 +94,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -110,7 +110,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 {
@@ -119,7 +119,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 }
               ]
@@ -130,12 +130,12 @@
           {
             "node": "Characteristic",
             "name": "dubbel",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "afwijkend",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -149,7 +149,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "NIET_NEGATIEF"
+          "sign": "nonNegative"
         }
       }
     ],
@@ -166,7 +166,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -175,7 +175,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             }
           ]
@@ -193,7 +193,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             {
@@ -202,7 +202,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             }
           ]
@@ -215,66 +215,62 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "premie van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "premie",
-              "objecttype": "Jutter"
+              "node": "AttributeReference",
+              "attribute": "premie",
+              "subjectType": "Jutter"
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
                 "node": "FieldAccess",
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "base": {
-                  "node": "AttribuutRef",
-                  "attribuut": "dossier",
-                  "objecttype": "Jutter"
+                  "node": "AttributeReference",
+                  "attribute": "dossier",
+                  "subjectType": "Jutter"
                 },
                 "field": "waarde"
               },
-              "rechts": {
-                "node": "ParameterRef",
+              "right": {
+                "node": "ParameterReference",
                 "parameter": "opslag"
               },
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               }
             },
             "condition": {
-              "node": "Predicaat",
-              "soort": "GEVULD",
+              "node": "Predicate",
+              "kind": "filled",
               "operand": {
-                "node": "AttribuutRef",
-                "attribuut": "dossier",
-                "objecttype": "Jutter"
+                "node": "AttributeReference",
+                "attribute": "dossier",
+                "subjectType": "Jutter"
               },
-              "dagsoort": null,
-              "negatie": false,
-              "cijfers": 0,
-              "periode": null
+              "negated": false,
+              "digits": 0
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -284,14 +280,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "totaalwaarde",
-              "objecttype": "Jutter"
+              "node": "AttributeReference",
+              "attribute": "totaalwaarde",
+              "subjectType": "Jutter"
             },
             "value": {
               "node": "Fold",
@@ -299,7 +293,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "list": {
                 "node": "MapList",
@@ -309,13 +303,13 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "nonNegative"
                   }
                 },
                 "list": {
-                  "node": "AttribuutRef",
-                  "attribuut": "dossiers",
-                  "objecttype": "Jutter"
+                  "node": "AttributeReference",
+                  "attribute": "dossiers",
+                  "subjectType": "Jutter"
                 },
                 "function": {
                   "node": "Lambda",
@@ -332,7 +326,7 @@
                               "node": "Number",
                               "whole": false,
                               "decimals": 2,
-                              "sign": "NIET_NEGATIEF"
+                              "sign": "nonNegative"
                             }
                           },
                           {
@@ -341,7 +335,7 @@
                               "node": "Number",
                               "whole": true,
                               "decimals": 0,
-                              "sign": "NIET_NEGATIEF"
+                              "sign": "nonNegative"
                             }
                           }
                         ]
@@ -354,7 +348,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     },
                     "base": {
                       "node": "BinderRef",
@@ -373,7 +367,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "ONBEPAALD"
+                      "sign": "unspecified"
                     }
                   },
                   {
@@ -382,18 +376,18 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   }
                 ],
                 "body": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
                     "node": "BinderRef",
                     "name": "acc"
                   },
-                  "rechts": {
+                  "right": {
                     "node": "BinderRef",
                     "name": "x"
                   },
@@ -401,7 +395,7 @@
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   }
                 }
               },
@@ -414,12 +408,12 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 }
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -429,14 +423,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "samenvatting",
-              "objecttype": "Jutter"
+              "node": "AttributeReference",
+              "attribute": "samenvatting",
+              "subjectType": "Jutter"
             },
             "value": {
               "node": "StructLiteral",
@@ -450,7 +442,7 @@
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   },
                   {
@@ -459,7 +451,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     }
                   }
                 ]
@@ -468,9 +460,9 @@
                 {
                   "name": "bedrag",
                   "value": {
-                    "node": "AttribuutRef",
-                    "attribuut": "premie",
-                    "objecttype": "Jutter"
+                    "node": "AttributeReference",
+                    "attribute": "premie",
+                    "subjectType": "Jutter"
                   }
                 },
                 {
@@ -484,7 +476,7 @@
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
-                      "sign": "NIET_NEGATIEF"
+                      "sign": "nonNegative"
                     },
                     "source": {
                       "snippet": "2"
@@ -494,7 +486,7 @@
               ]
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -504,14 +496,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "dubbel",
-              "objecttype": "Jutter"
+              "node": "AttributeReference",
+              "attribute": "dubbel",
+              "subjectType": "Jutter"
             },
             "value": {
               "node": "Literal",
@@ -519,18 +509,18 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "dossier",
-                "objecttype": "Jutter"
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "dossier",
+                "subjectType": "Jutter"
               },
-              "rechts": {
+              "right": {
                 "node": "StructLiteral",
                 "type": {
                   "node": "StructType",
@@ -542,7 +532,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     },
                     {
@@ -551,7 +541,7 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     }
                   ]
@@ -568,7 +558,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     }
                   },
@@ -583,13 +573,12 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     }
                   }
                 ]
-              },
-              "periode": null
+              }
             },
             "initialisation": false
           }
@@ -601,14 +590,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "afwijkend",
-              "objecttype": "Jutter"
+              "node": "AttributeReference",
+              "attribute": "afwijkend",
+              "subjectType": "Jutter"
             },
             "value": {
               "node": "Literal",
@@ -616,18 +603,18 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "ONGELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "dossier",
-                "objecttype": "Jutter"
+              "node": "Comparison",
+              "op": "notEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "dossier",
+                "subjectType": "Jutter"
               },
-              "rechts": {
+              "right": {
                 "node": "StructLiteral",
                 "type": {
                   "node": "StructType",
@@ -639,7 +626,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     },
                     {
@@ -648,7 +635,7 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     }
                   ]
@@ -665,7 +652,7 @@
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     }
                   },
@@ -680,13 +667,12 @@
                         "node": "Number",
                         "whole": true,
                         "decimals": 0,
-                        "sign": "NIET_NEGATIEF"
+                        "sign": "nonNegative"
                       }
                     }
                   }
                 ]
-              },
-              "periode": null
+              }
             },
             "initialisation": false
           }
@@ -698,14 +684,12 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "waardekopie",
-              "objecttype": "Jutter"
+              "node": "AttributeReference",
+              "attribute": "waardekopie",
+              "subjectType": "Jutter"
             },
             "value": {
               "node": "FieldAccess",
@@ -713,29 +697,29 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "base": {
-                "node": "AttribuutRef",
-                "attribuut": "samenvatting",
-                "objecttype": "Jutter"
+                "node": "AttributeReference",
+                "attribute": "samenvatting",
+                "subjectType": "Jutter"
               },
               "field": "waarde"
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

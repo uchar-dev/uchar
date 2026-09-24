@@ -21,7 +21,7 @@
           {
             "node": "Characteristic",
             "name": "verjaard",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -35,21 +35,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "Kenmerktoekenning verjaard",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "verjaard",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "verjaard",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is verjaard"
               }
@@ -60,24 +58,24 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "EERDER",
-              "links": {
-                "node": "Onopgelost",
+              "node": "Comparison",
+              "op": "earlier",
+              "left": {
+                "node": "Unresolved",
                 "type": {
                   "node": "Date",
                   "precision": "day"
                 }
               },
-              "rechts": {
-                "node": "Onopgelost",
+              "right": {
+                "node": "Unresolved",
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -86,7 +84,6 @@
                   "snippet": "de verjaringsgrens"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn vondstdag eerder is dan de verjaringsgrens"
               }
@@ -96,19 +93,19 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": [
     {
       "node": "Diagnostic",
-      "severity": "WARNING",
+      "severity": "warning",
       "message": "onopgelost: 'de verjaringsgrens' is geen attribuut, parameter of datum \u2014 'de verjaringsgrens' blijft als marker op de wire staan",
       "line": 8
     }

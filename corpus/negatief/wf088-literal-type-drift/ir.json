@@ -12,9 +12,9 @@
             "node": "Attribute",
             "name": "keurstatus",
             "datatype": {
-              "node": "Enumeratie",
-              "domein": "keurstatus",
-              "waarden": [
+              "node": "Enumeration",
+              "domain": "keurstatus",
+              "values": [
                 "Gaaf",
                 "Beschadigd"
               ]
@@ -31,8 +31,8 @@
         "node": "Domain",
         "name": "keurstatus",
         "datatype": {
-          "node": "Enumeratie",
-          "waarden": [
+          "node": "Enumeration",
+          "values": [
             "Gaaf",
             "Beschadigd"
           ]
@@ -45,11 +45,11 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
       {
         "node": "Consistency",
         "name": "Keurcontrole",
@@ -57,43 +57,40 @@
           {
             "subject": "Vondst",
             "assertion": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "keurstatus",
-                "objecttype": "Vondst"
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "keurstatus",
+                "subjectType": "Vondst"
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "enumeration": "Verweerd"
                 },
                 "type": {
-                  "node": "Enumeratie",
-                  "domein": "keurstatus",
-                  "waarden": [
+                  "node": "Enumeration",
+                  "domain": "keurstatus",
+                  "values": [
                     "Gaaf",
                     "Beschadigd",
                     "Verweerd"
                   ]
                 }
-              },
-              "periode": null
+              }
             },
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
       }
     ],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

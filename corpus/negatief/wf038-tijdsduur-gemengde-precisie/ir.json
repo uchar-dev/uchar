@@ -31,7 +31,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "jr"
@@ -51,41 +51,39 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "Berekening jutleeftijd",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "jutleeftijd",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "jutleeftijd",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De jutleeftijd van een Jutter"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "TIJDSDUUR",
+              "kind": "duration",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "geboortedatum",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "geboortedatum",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn geboortedatum"
                   }
                 },
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "stempelmoment",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "stempelmoment",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn stempelmoment"
                   }
@@ -95,7 +93,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "jr"
@@ -106,19 +104,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

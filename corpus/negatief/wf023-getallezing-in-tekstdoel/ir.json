@@ -15,14 +15,14 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
             "node": "Attribute",
             "name": "etiket",
             "datatype": {
-              "node": "Tekst"
+              "node": "Text"
             }
           }
         ],
@@ -38,47 +38,45 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "etiket van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "etiket",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "etiket",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "het etiket van de Jutter"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "gewicht",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "gewicht",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "het gewicht van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

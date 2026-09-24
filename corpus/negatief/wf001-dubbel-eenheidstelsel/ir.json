@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -75,7 +75,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -152,31 +152,29 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "ondergewicht van een vangst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "ondergewicht",
-              "objecttype": "Vangst",
+              "node": "AttributeReference",
+              "attribute": "ondergewicht",
+              "subjectType": "Vangst",
               "source": {
                 "snippet": "Het ondergewicht van een Vangst"
               }
             },
             "value": {
-              "node": "Begrensd",
-              "basis": {
-                "node": "AttribuutRef",
-                "attribuut": "ruwgewicht",
-                "objecttype": "Vangst",
+              "node": "Clamp",
+              "base": {
+                "node": "AttributeReference",
+                "attribute": "ruwgewicht",
+                "subjectType": "Vangst",
                 "source": {
                   "snippet": "het ruwgewicht van de Vangst"
                 }
@@ -190,7 +188,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "t",
@@ -206,12 +204,11 @@
                   "snippet": "1 t"
                 }
               },
-              "maximum": null,
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "kg",
@@ -228,7 +225,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -238,29 +235,26 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bovengewicht",
-              "objecttype": "Vangst",
+              "node": "AttributeReference",
+              "attribute": "bovengewicht",
+              "subjectType": "Vangst",
               "source": {
                 "snippet": "Het bovengewicht van een Vangst"
               }
             },
             "value": {
-              "node": "Begrensd",
-              "basis": {
-                "node": "AttribuutRef",
-                "attribuut": "ruwgewicht",
-                "objecttype": "Vangst",
+              "node": "Clamp",
+              "base": {
+                "node": "AttributeReference",
+                "attribute": "ruwgewicht",
+                "subjectType": "Vangst",
                 "source": {
                   "snippet": "het ruwgewicht van de Vangst"
                 }
               },
-              "minimum": null,
               "maximum": {
                 "node": "Literal",
                 "value": {
@@ -270,7 +264,7 @@
                   "node": "Number",
                   "whole": false,
                   "decimals": 1,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "t",
@@ -290,7 +284,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "kg",
@@ -307,7 +301,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -317,24 +311,22 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bandgewicht",
-              "objecttype": "Vangst",
+              "node": "AttributeReference",
+              "attribute": "bandgewicht",
+              "subjectType": "Vangst",
               "source": {
                 "snippet": "Het bandgewicht van een Vangst"
               }
             },
             "value": {
-              "node": "Begrensd",
-              "basis": {
-                "node": "AttribuutRef",
-                "attribuut": "ruwgewicht",
-                "objecttype": "Vangst",
+              "node": "Clamp",
+              "base": {
+                "node": "AttributeReference",
+                "attribute": "ruwgewicht",
+                "subjectType": "Vangst",
                 "source": {
                   "snippet": "het ruwgewicht van de Vangst"
                 }
@@ -348,7 +340,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "t",
@@ -373,7 +365,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "kg",
@@ -393,7 +385,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "kg",
@@ -410,19 +402,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

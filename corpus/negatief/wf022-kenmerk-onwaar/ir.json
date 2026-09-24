@@ -12,12 +12,12 @@
           {
             "node": "Characteristic",
             "name": "herleefd",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           },
           {
             "node": "Characteristic",
             "name": "nieuw recht ontstaan",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -31,21 +31,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "geen herleving",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "herleefd",
-              "objecttype": "Recht",
+              "node": "AttributeReference",
+              "attribute": "herleefd",
+              "subjectType": "Recht",
               "source": {
                 "snippet": "Een Recht is herleefd"
               }
@@ -56,18 +54,16 @@
                 "boolean": false
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "onwaar"
               }
             },
             "condition": {
-              "node": "Kenmerk",
-              "kenmerk": "nieuw recht ontstaan",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
+              "node": "CharacteristicCheck",
+              "characteristic": "nieuw recht ontstaan",
+              "negated": false,
               "source": {
                 "snippet": "hij nieuw recht ontstaan is"
               }
@@ -77,14 +73,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

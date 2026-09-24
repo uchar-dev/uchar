@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "kg",
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "NIET_NEGATIEF",
+              "sign": "nonNegative",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -55,7 +55,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "EUR",
@@ -73,7 +73,7 @@
           {
             "node": "Characteristic",
             "name": "aanvoerplichtig",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
@@ -87,7 +87,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "NIET_NEGATIEF",
+          "sign": "nonNegative",
           "unit": {
             "node": "Unit",
             "abbreviation": "kg",
@@ -107,7 +107,7 @@
           "node": "Number",
           "whole": false,
           "decimals": 2,
-          "sign": "ONBEPAALD",
+          "sign": "unspecified",
           "unit": {
             "node": "Unit",
             "abbreviation": "EUR",
@@ -170,21 +170,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "aanvoerplichtig bij drempel",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aanvoerplichtig",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "aanvoerplichtig",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Een Jutter is aanvoerplichtig"
               }
@@ -195,31 +193,30 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aangevoerd gewicht",
-                "objecttype": null,
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aangevoerd gewicht",
+                "subjectType": null,
                 "source": {
                   "snippet": "zijn aangevoerd gewicht"
                 }
               },
-              "rechts": {
-                "node": "ParameterRef",
+              "right": {
+                "node": "ParameterReference",
                 "parameter": "aanvoerdrempel",
                 "source": {
                   "snippet": "de aanvoerdrempel"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "zijn aangevoerd gewicht groter of gelijk is aan de aanvoerdrempel"
               }
@@ -234,31 +231,29 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aanvoergeld",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "aanvoergeld",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het aanvoergeld van een Jutter"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aanvoerwaarde",
-                "objecttype": "Jutter",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aanvoerwaarde",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn aanvoerwaarde"
                 }
               },
-              "rechts": {
-                "node": "ParameterRef",
+              "right": {
+                "node": "ParameterReference",
                 "parameter": "aanvoertarief",
                 "source": {
                   "snippet": "het aanvoertarief"
@@ -268,7 +263,7 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "EUR",
@@ -285,19 +280,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }
