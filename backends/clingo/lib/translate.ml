@@ -405,7 +405,7 @@ let static_type ctx (e : expr) : datatype option =
   | _ ->
       Eval.static_type
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty }
+          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
         e
 
 (* a binder entry: the binding's (atoms, term, scale) and its static type *)
@@ -1712,10 +1712,16 @@ let new_part ctx (ro : range_order) =
    member at all and answer a silent 0 or leeg, so it is refused by name *)
 let set_source_attribute ctx ~el a =
   if Ir_v0.Checks.find_ci (objecttype ctx el).attributen a = None then
-    fault
-      "value aggregation over %S, which is no attribute of %S: a value fold reads an attribute \
-       per contributor, and a role name is a count source only a count folds (WF-093)"
-      a el;
+    if Ir_v0.Checks.has_kenmerk (objecttype ctx el) a then
+      fault
+        "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
+         ill-formed in an aggregation source position (WF-080)"
+        a el
+    else
+      fault
+        "value aggregation over %S, which is no attribute of %S: a value fold reads an attribute \
+         per contributor, and a role name is a count source only a count folds (WF-093)"
+        a el;
   a
 
 let lexeme_decimals lex =
@@ -3170,19 +3176,29 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* a value position reads a DECLARED attribute; a characteristic or a
          count source's role name has no value term here *)
       if Ir_v0.Checks.find_ci (objecttype ctx ot).attributen a = None then
-        fault "%S is not a declared attribute of %S: a value position reads an attribute (WF-034)"
-          a ot;
+        if Ir_v0.Checks.has_kenmerk (objecttype ctx ot) a then
+          fault
+            "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
+             ill-formed in a value position (WF-080)"
+            a ot
+        else
+          fault "%S is not a declared attribute of %S: a value position reads an attribute (WF-034)"
+            a ot;
       if attr_temporal ctx ~otype:ot ~attr:a then
         fault "temporal attribute %S in a scalar slot is refused (ch. 3.3)" a;
       (match navigatie_bindingen with
       | None ->
-        (* D10: without bindings the read is the subject's own, on the
-           subject type or an ancestor that declares the attribute (ch. 2.2) *)
-        if not (Ir_v0.Checks.subtype_of ctx.doc ~sub:subject_ot ~super:ot) then
+        (* WF-053, IR-SPEC ch. 4.1a, ref's [own_read]: without bindings the
+           read is the subject's own, so it names the subject type itself. A
+           supertype is another type, even where it declares the member (the
+           subject type reaches that through the chain, ch. 2.2), and only a
+           navigation reaches another type *)
+        if norm ot <> norm subject_ot then
           fault
-            "a read of %S on %S without navigation bindings is the subject's own read, but the \
-             subject is %S (WF-053)"
-            a ot subject_ot;
+            "an attribute reference without navigation bindings is the subject's own read, so its \
+             objecttype is the subject type '%s' — '%s' names another type, which only a \
+             navigation reaches (WF-053)"
+            subject_ot ot;
         let v = fresh ctx "A" in
         (* a sum-/struct-typed attribute holds a ground record/constructor term,
            carrying no numeric scale (value_scale 0) — the whole-value read (a
@@ -3200,7 +3216,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            hop roles are the bindings, resolved through ref's resolver. *)
         let env =
           { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-            as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty }
+            as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
         in
         let roles = List.map (Eval.bound_role env) rbs in
         List.iter
@@ -3241,7 +3257,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         element_objecttype = None; bron_rol = None; bron_pad = None; filter = None; _ } ->
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty }
+          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
       in
       if List.length branches < 2 then
         fault "an instance-set union carries at least TWO selections, found %d (WF-110)"
@@ -3343,7 +3359,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          subselection joins per contributor: the filter atoms range over the
          element variable (an unbound filter operand excludes the
          contributor for free). *)
-      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty } in
+      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None } in
       let v = fresh ctx "C" in
       let x = Printf.sprintf "X%s" v in
       let fatoms =
@@ -3462,7 +3478,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          refused a document ref plays (measured 2026-09-23). *)
       let env =
         { Eval.doc = ctx.doc; params = ctx.case.params; param_tls = ctx.case.param_tls;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty }
+          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
       in
       let v = fresh ctx "S" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
@@ -3894,7 +3910,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            set has no defined moment to fold (ch. 3.6); ref refuses the form, so this arm must \
            not answer from the asOfDate buckets"
           a;
-      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty } in
+      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None } in
       let v = fresh ctx "M" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
       let fatoms =
@@ -3961,7 +3977,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            timeline whether it is filled (ch. 3.4c); ref refuses the form on that ground, so this \
            arm must not answer from a bucket it picked itself"
           a;
-      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty } in
+      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None } in
       let v = fresh ctx "F" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
       let fatoms =
@@ -6497,7 +6513,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       let k = req "kenmerk" kenmerk in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty }
+          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
       in
       let hop =
         match navigatie_binding with
@@ -6576,7 +6592,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       let k = req "kenmerk" kenmerk in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty }
+          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
       in
       let role = Eval.bound_role env rb (* D53: the hop is the binding *) in
       if role.rol_meervoudig then
@@ -6902,7 +6918,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
-          locals = Eval.SMap.empty; btypes = Eval.SMap.empty }
+          locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
       in
       let x = fresh ctx "X" in
       let join =
@@ -9000,7 +9016,7 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
   let subject = "S" in
   let term = Printf.sprintf "oc%d(%s)" i subject in
   let env =
-    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty }
+    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
   in
   let pair =
     match oc.oc_verbindende_rol with
@@ -9119,7 +9135,7 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
   if applies ctx fc.fc_geldigheid then begin
   let ftn = fc.fc_feittype in
   let env =
-    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty }
+    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
   in
   let role rname = Eval.bound_role env { rb_feittype = ftn; rb_rol = rname } in
   let anker_rol = role fc.anker_rol in
@@ -9623,7 +9639,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
      edge inside the condition) rides the allocation's name, exactly as
      ref's cond_err does (S13) *)
   ctx.rule_name <- name;
-  let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty } in
+  let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None } in
   let role = role_canonical (Eval.bound_role env v.verbindende_rol) (* required (B12) *) in
   let p = Printf.sprintf "vd%d_" i in
   (* ch. 4.1: the recipient set of one source instance is every DOELTYPE
@@ -10017,7 +10033,7 @@ let translate_uniciteit ctx (u : resolved_uniciteit) =
     | Some rb ->
         let env =
           { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-            as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty }
+            as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
         in
         let role = Eval.bound_role env rb in
         [ Printf.sprintf "rol(S1,%s,P)" (str (role_canonical role));
@@ -10337,7 +10353,7 @@ let translate (doc : document) (case : Case.t) : string =
      program is emitted, mirroring ref/'s evaluation entry *)
   Eval.parameterset_check
     { Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
-      locals = Eval.SMap.empty; btypes = Eval.SMap.empty };
+      locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None };
   emit ctx "%% generated by backends/clingo from uchar-ir-v1 + uchar-case-v0.";
   emit ctx "#defined val/3. #defined heeft/2. #defined rol/3. #defined param/2.";
   emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4. #defined ktl/4.";

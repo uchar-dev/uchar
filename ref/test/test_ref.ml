@@ -665,7 +665,7 @@ let inst label otype attrs : World.instance =
 
 let env_of doc : Eval.env =
   { doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
-    locals = Eval.SMap.empty; btypes = Eval.SMap.empty }
+    locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
 
 (* WV-6.4-a (= the ch. 5.3 pair): producer/consumer across one negative
    edge — {waar, onwaar} at inkomen 50, {onwaar, waar} at 200, never the
@@ -2634,7 +2634,7 @@ let () =
       empty_doc with
       objecttypen =
         [ ot "Jutter" [] []; ot "Boot" [] [];
-          ot "Vondst" [ ("gewicht", Some num2) ] [];
+          ot "Vondst" [ ("gewicht", Some num2) ] [ "gekeurd" ];
           ot "Kist" [ ("inhoudsgewicht", Some num2) ] [] ];
       feittypen =
         [ ft "bemanning"
@@ -2764,7 +2764,13 @@ let () =
      — a count's range is one step, spelled bronRol (WF-102)";
   expect_fault_msg "WV-3.4b-telling-over-een-pad-met-filter-faalt"
     (fun () -> ev w1 "J1" (telling (Some zwaar)))
-    "a count's range is one step, spelled bronRol (WF-102)"
+    "a count's range is one step, spelled bronRol (WF-102)";
+  (* WF-080: a characteristic is no attribute, so a value fold's set source
+     never names one — the verifier's aggregation-source sentence *)
+  expect_fault_msg "WV-3.4b-kenmerk-als-setbron-faalt"
+    (fun () -> ev w1 "J1" (vouw Som "gekeurd" "Vondst" pad2 None))
+    "'gekeurd' is a characteristic of 'Vondst', not an attribute — a characteristic endpoint \
+     is ill-formed in an aggregation source position (WF-080)"
 
 (* WV-3.4b-toone: the ch. 3.4b clause "a step through a to-ONE role is an
    ordinary step". Multiplicity is a declaration fact and does not enter
@@ -6295,6 +6301,44 @@ let () =
       in
       check ("WF-022-kenmerktoekenning-op-attribuut-weigert (got: " ^ m ^ ")") (m = verwacht)
   | _ -> check "WF-022-kenmerktoekenning-op-attribuut-weigert (no fault at all)" false)
+
+(* WV-4.1a-eigen-lezing (WF-053, IR-SPEC ch. 4.1a): an own read names the
+   subject type itself. Jutter ⊑ Persoon inherits leeftijd; written on the
+   subject type the read reaches the inherited member through the chain and
+   answers 40; written on the supertype it names another type, which only a
+   navigation reaches, and ref refuses it in the verifier's sentence.
+   WV-2.10-kenmerk (WF-080): a characteristic is no attribute, so its name
+   has no static type and a value position never reads it *)
+let () =
+  let persoon = ot "Persoon" [ ("leeftijd", Some num0) ] [] in
+  let jutter =
+    let naam, o = ot "Jutter" [ ("tweede leeftijd", Some num0) ] [ "vrijgesteld" ] in
+    (naam, { o with ot_supertype = Some "Persoon" })
+  in
+  let doc waarde : Ir_v0.Ast.document =
+    {
+      empty_doc with
+      objecttypen = [ persoon; jutter ];
+      resolved_regels =
+        [ rr "tweede leeftijd" Berekening (Some (aref "tweede leeftijd" "Jutter")) (Some waarde) None ];
+    }
+  in
+  let run waarde =
+    let w = World.add_instance World.empty (inst "j" "Jutter" [ ("leeftijd", n "40") ]) in
+    World.attr (World.get (Eval.evaluate (env_of (doc waarde)) w) "j") "tweede leeftijd"
+  in
+  expect_num "WV-4.1a-eigen-lezing-op-het-subjecttype" (run (aref "leeftijd" "Jutter")) "40";
+  expect_fault_msg "WV-4.1a-eigen-lezing-op-een-supertype-faalt"
+    (fun () -> run (aref "leeftijd" "Persoon"))
+    "an attribute reference without navigation bindings is the subject's own read, so its \
+     objecttype is the subject type 'Jutter' — 'Persoon' names another type, which only a \
+     navigation reaches (WF-053)";
+  expect_fault_msg "WV-4.1-kenmerk-op-een-waardepositie-faalt"
+    (fun () -> run (aref "vrijgesteld" "Jutter"))
+    "'vrijgesteld' is a characteristic of 'Jutter', not an attribute — a characteristic \
+     endpoint is ill-formed in a value position (WF-080)";
+  check "WV-2.10-kenmerk-heeft-geen-statisch-type"
+    (Eval.static_type (env_of (doc (aref "leeftijd" "Jutter"))) (aref "vrijgesteld" "Jutter") = None)
 
 let () =
   if !failures > 0 then begin

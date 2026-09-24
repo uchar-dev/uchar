@@ -46,6 +46,13 @@ type env = {
          a binder read carries no type on the wire (B13), so its type is
          the one its binding declares — a match arm's payload, a closed
          body's parameter, a Let value's, a list filter's element *)
+  subj : string option;
+      (* the static subject type of the position being evaluated: a rule's
+         target type, the subject of an allocation, creation, consistency or
+         defaults group, the element type inside the filter of a fold, a
+         quantifier fold or a union selection. An own read names exactly
+         this type ([own_read]); None where the position has no subject (a
+         day-kind condition) *)
 }
 
 let req what = function Some x -> x | None -> Value.fault "missing %s in IR node" what
@@ -142,6 +149,23 @@ let objecttype env name =
 (* S ⊑ T. Reflexive, so this is the drop-in for every place that used to
    compare two declared type names for equality. *)
 let isa env sub super = Ir_v0.Checks.subtype_of env.doc ~sub ~super
+
+(* the subject's own read (WF-053, IR-SPEC ch. 4.1a): a reference without
+   navigation bindings names the static subject type of its position — a
+   supertype is another type, even where it declares the member, and only a
+   navigation reaches another type. The verifier's sentence, so all
+   executors refuse with one voice. The instance read must still be of the
+   named type (ch. 2.2); that is the answer. *)
+let own_read env (self : World.instance) otn =
+  (match env.subj with
+  | Some st when norm st <> norm otn ->
+      Value.fault
+        "an attribute reference without navigation bindings is the subject's own read, so its \
+         objecttype is the subject type '%s' — '%s' names another type, which only a \
+         navigation reaches (WF-053)"
+        st otn
+  | _ -> ());
+  isa env self.otype otn
 
 (* An instance of [inst_type] fills a role declaring filler type T iff
    inst_type ⊑ T — the declared filler type is an UPPER bound (ch. 2.6). *)
@@ -625,18 +649,17 @@ let literal_value (waarde : string option) (typ : datatype option) =
 (* the static type of an expression (RUNTIME-SEMANTICS ch. 2.10). A
    reference carries no type on the wire (B13): it takes the type of the
    declaration it names — the attribute's declared datatype on the type it
-   is read on (a characteristic reads as a boolean), the parameter's, the
-   dimension cell's attribute's, the binder's binding. Every other node
-   carries its own annotation. *)
+   is read on, the parameter's, the dimension cell's attribute's, the
+   binder's binding. A characteristic is no attribute and has no value
+   type (WF-080), so its name types to None, as in the verifier. Every
+   other node carries its own annotation. *)
 let rec static_type env (e : expr) : datatype option =
   match e with
   | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } -> (
       match Ir_v0.Checks.effective_ot env.doc ot with
       | None -> None
       | Some o -> (
-          match Ir_v0.Checks.find_ci o.attributen a with
-          | Some dt -> dt
-          | None -> if Ir_v0.Checks.has_kenmerk o a then Some Booleaan else None))
+          match Ir_v0.Checks.find_ci o.attributen a with Some dt -> dt | None -> None))
   | Parameter_ref { parameter = Some p; _ } -> (
       match Ir_v0.Checks.find_ci env.doc.parameters p with
       | Some par -> par.par_datatype
@@ -745,8 +768,14 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
          count source writes — has no value here, and reading it as an
          absent attribute would answer leeg for a form no reader writes *)
       if Ir_v0.Checks.find_ci (objecttype env ot).attributen name = None then
-        Value.fault "%S is not a declared attribute of %S: a value position reads an attribute \
-                     (WF-034)" name ot;
+        if Ir_v0.Checks.has_kenmerk (objecttype env ot) name then
+          Value.fault
+            "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
+             ill-formed in a value position (WF-080)"
+            name ot
+        else
+          Value.fault "%S is not a declared attribute of %S: a value position reads an attribute \
+                       (WF-034)" name ot;
       (* ch. 3.3, mirrored: no point-in-time read exists — a temporal
          attribute in a scalar slot is refused; the only bridges are
          the dedicated collapses (the temporal total handles its own
@@ -762,7 +791,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           (* D10: without bindings the read is the subject's own — which
              includes an INHERITED member, written at the declaring
              supertype and read on a subtype instance (ch. 2.2) *)
-          if not (isa env self.otype ot) then
+          if not (own_read env self ot) then
             Value.fault
               "a read of %S on %S without navigation bindings is the subject's own read, but the \
                subject is %S (WF-053)"
@@ -959,7 +988,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           match basis with
           | Attribuut_ref
               { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
-            when isa env self.otype otn ->
+            when own_read env self otn ->
               if not (Ir_v0.Checks.attr_temporal (objecttype env otn) a) then
                 Value.fault "temporal read of %S, which is not a temporal attribute" a;
               (match World.timeline self a with
@@ -1327,7 +1356,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
   | ( Totaal,
       [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_bindingen = None; _ } ] )
     when bron_rol = None && bron_pad = None
-         && isa env self.otype aot
+         && own_read env self aot
          && Ir_v0.Checks.attr_temporal (objecttype env aot) a -> (
       (* ch. 3.6, the temporal total — the one v0-mirrored bridge from a
          timeline to a scalar. The case carries the asOfDate bucket's
@@ -1377,7 +1406,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                 { op; links = Some (Attribuut_ref
                     { attribuut = Some b; objecttype = Some botn; navigatie_bindingen = None; _ });
                   rechts = Some grens; periode = None; _ }
-              when isa env self.otype botn
+              when own_read env self botn
                    && Ir_v0.Checks.attr_temporal ot_decl b ->
                 (* the compared timeline is evaluated PER SEGMENT against
                    the scalar bound (piecewise-constant, never per day) *)
@@ -1452,7 +1481,9 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
        never the outer fold subject. A contributor whose filter operand
        is leeg simply fails the condition (ch. 1.2d) and drops out. *)
     let keep (i : World.instance) =
-      match filter with None -> true | Some c -> eval_cond env world i ~err c
+      match filter with
+      | None -> true
+      | Some c -> eval_cond { env with subj = element_objecttype } world i ~err c
     in
     (* D8: the single argument of an instance fold that carries a range is
        its SET source. Under AANTAL it names the counted role and the count
@@ -1484,11 +1515,17 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
            source names — would read leeg on every member and answer a silent
            0, so it is refused by name *)
         if Ir_v0.Checks.find_ci el_decl.attributen name = None then
-          Value.fault
-            "value aggregation over %S, which is no attribute of %S: a value fold reads an \
-             attribute per contributor, and a role name is a count source only a count folds \
-             (WF-093)"
-            name el;
+          if Ir_v0.Checks.has_kenmerk el_decl name then
+            Value.fault
+              "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
+               ill-formed in an aggregation source position (WF-080)"
+              name el
+          else
+            Value.fault
+              "value aggregation over %S, which is no attribute of %S: a value fold reads an \
+               attribute per contributor, and a role name is a count source only a count folds \
+               (WF-093)"
+              name el;
         let members =
           filter_in_order keep
             (fold_members ?binding:bron_rol ?path:bron_pad env world self ~element:el)
@@ -1625,7 +1662,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                   let bkeep (i : World.instance) =
                     match b.isb_filter with
                     | None -> true
-                    | Some c -> eval_cond env world i ~err c
+                    | Some c -> eval_cond { env with subj = Some el } world i ~err c
                   in
                   filter_in_order bkeep
                     (fold_members ~binding env world self ~element:el))
@@ -1749,7 +1786,7 @@ and venster_grenzen env world (self : World.instance) ~err vanaf tot =
      | Literal _ -> ()
      | Attribuut_ref
          { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
-       when isa env self.otype otn && not (Ir_v0.Checks.attr_temporal (objecttype env otn) a) ->
+       when own_read env self otn && not (Ir_v0.Checks.attr_temporal (objecttype env otn) a) ->
          ()
      | _ ->
          (* the phase tail is load-bearing, the WF-044 sisters' pattern:
@@ -1812,7 +1849,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let temporal_side = function
         | Attribuut_ref
             { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
-          when isa env self.otype otn && Ir_v0.Checks.attr_temporal (objecttype env otn) a ->
+          when own_read env self otn && Ir_v0.Checks.attr_temporal (objecttype env otn) a ->
             Some a
         | _ -> None
       in
@@ -2116,7 +2153,9 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
         | _, _ -> 0
       in
       let keep (i : World.instance) =
-        match kv_filter with None -> true | Some c -> eval_cond env world i ~err c
+        match kv_filter with
+        | None -> true
+        | Some c -> eval_cond { env with subj = Some el } world i ~err c
       in
       let members =
         filter_in_order keep
@@ -2163,7 +2202,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
             match parts with
             | [] -> verdict hits
             | m :: rest ->
-                let hit = eval_cond env world m ~err toets in
+                let hit = eval_cond { env with subj = Some el } world m ~err toets in
                 read (if hit then hits + 1 else hits) (left - 1) rest)
       in
       read 0 n members
@@ -2231,7 +2270,9 @@ and day_kind_matches env world self ~err (name : string) (day : int) : bool =
   Fun.protect
     ~finally:(fun () -> day_kind_stack := saved)
     (fun () ->
-      let env = { env with locals = SMap.add day_kind_binder (Now (Value.Date day)) env.locals } in
+      let env =
+        { env with locals = SMap.add day_kind_binder (Now (Value.Date day)) env.locals; subj = None }
+      in
       eval_cond env world self ~err c)
 
 (* the day kind a duration UNIT spelling names, or None when the spelling is
@@ -2456,6 +2497,7 @@ let run_rule env world (r : resolved_regel) =
     match r.doel with
     | Some (Attribuut_ref { attribuut; objecttype = Some ot; _ }) ->
         let attr = req "doel.attribuut" attribuut in
+        let env = { env with subj = Some ot } in
         let temporal_target =
           match r.rr_soort with
           | Some Kenmerktoekenning -> false
@@ -2586,6 +2628,7 @@ let run_verdeling env world (v : resolved_verdeling) =
   else begin
     let name = Option.value v.vd_naam ~default:"<verdeling>" in
     let bron_type = req "bronType" v.bron_type in
+    let env = { env with subj = Some bron_type } in
     let doel_type = req "doelType" v.doel_type in
     let bron_attr = req "bronAttribuut" v.bron_attribuut in
     let doel_attr = req "doelAttribuut" v.doel_attribuut in
@@ -2673,6 +2716,9 @@ let run_feit_creatie env world (fc : resolved_feit_creatie) =
   if not (applies env fc.fc_geldigheid) then (world, false)
   else begin
     let name = Option.value fc.fc_naam ~default:"<feitcreatie>" in
+    (* the anker: the one subject the guard can read on (WF-109) — a guard on
+       the doel is a characteristic check and reads no attribute *)
+    let env = { env with subj = fc.anker } in
     let ftn = fc.fc_feittype in
     let role rname = bound_role env { rb_feittype = ftn; rb_rol = rname } in
     let anker_rol = role fc.anker_rol in
@@ -2736,6 +2782,7 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
     let name = Option.value oc.oc_naam ~default:"<objectcreatie>" in
     let nieuw = req "ObjectCreatie.nieuwType" oc.nieuw_type in
     let subject = req "ObjectCreatie.subject" oc.oc_subject in
+    let env = { env with subj = Some subject } in
     let pair =
       (* the explicit back-link binding (extension, IR-SPEC ch. 3.3)
          wins over the type-pair derivation — the only route for a
@@ -2860,6 +2907,7 @@ type chain_result = Decided of defaults_decision | Conflict of string | Undecide
    supertype's stack and the subtype's on one instance. *)
 let run_defaults_group env world ~owner (members : prioritized_defaults list) =
   let l0 = List.hd members in
+  let env = { env with subj = Some l0.pd_onderwerp } in
   let target_name =
     match (l0.pd_kenmerk, l0.pd_attribuut) with
     | Some k, _ -> k
@@ -3027,6 +3075,7 @@ let run_consistentie env world (c : resolved_consistentie) =
   if not (applies env c.cons_geldigheid) then world
   else
     let name = Option.value c.cons_naam ~default:"<consistentie>" in
+    let env = { env with subj = c.cons_subject } in
     let world, _ =
       over_subjects env world ~otype:(req "Consistentie.subject" c.cons_subject) ~rule:name
         (fun w self err ->

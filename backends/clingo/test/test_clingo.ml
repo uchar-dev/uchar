@@ -267,7 +267,7 @@ let () =
       param_tls = case.param_tls;
       as_of = case.as_of;
       locals = Uchar_ref.World.SMap.empty;
-      btypes = Uchar_ref.World.SMap.empty;
+      btypes = Uchar_ref.World.SMap.empty; subj = None;
     }
   in
   let final = Uchar_ref.Eval.evaluate env case.world in
@@ -471,7 +471,7 @@ let () =
   (* and ref pins the value clingo must reproduce: 2 jaar + 3 maand = 27 maand *)
   let env =
     { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
-      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty }
+      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None }
   in
   let final = Uchar_ref.Eval.evaluate env case.world in
   (match Uchar_ref.Case.check case final with
@@ -900,7 +900,7 @@ let derivation_line program attr =
 let ref_report doc (case : Uchar_ref.Case.t) =
   let env =
     { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
-      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty }
+      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None }
   in
   Uchar_ref.Case.check case (Uchar_ref.Eval.evaluate env case.world)
 
@@ -1646,7 +1646,7 @@ let ref_matches ~name ~ir ~case_text =
   let doc, case = load_pair ~ir ~case_text in
   let env =
     { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
-      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty }
+      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None }
   in
   match Uchar_ref.Case.check case (Uchar_ref.Eval.evaluate env case.world) with
   | [] -> check (name ^ ": ref pins the values") true
@@ -4862,7 +4862,7 @@ let both_break ~name ~ir ~case_text ~needle =
   let doc, case = load_pair ~ir ~case_text in
   let env =
     { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
-      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty }
+      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None }
   in
   (match Uchar_ref.Eval.evaluate env case.world with
   | _ -> check (name ^ ": ref breekt af (kreeg een wereld terug)") false
@@ -10549,6 +10549,56 @@ let () =
   in
   pinned_loud ~entry:"L1" ~name:"the day-kind table behind a condition that fails (dk-cond)" ~ir ~case_text
     ~needle:(pf_reason "grensdatum")
+
+(* WF-053's own read names the subject type itself (IR-SPEC ch. 4.1a), in
+   ref's words ([own_read]): a Jutter ⊑ Persoon reads the inherited leeftijd
+   through its own type and answers 40; the same read written on the
+   supertype names another type, which only a navigation reaches. WF-080: a
+   characteristic is no attribute, so no value position reads it — not a
+   rule value, not a value fold's set source *)
+let () =
+  let persoon = pf_ot ~naam:"Persoon" ~meervoud:"Personen" [ ("leeftijd", pf_n2) ] in
+  let jutter =
+    vervang
+      (pf_ot ~kenmerken:[ "vrijgesteld" ] [ ("heffing", pf_n2) ])
+      ~waar:{|"plural": "Jutters",|} ~door:{|"plural": "Jutters", "supertype": "Persoon",|}
+  in
+  let doc waarde = pf_doc ~objecttypen:[ persoon; jutter ] ~regels:[ pf_regel waarde ] () in
+  let case_text =
+    pf_case
+      ~instances:
+        [ {|{ "label": "J1", "objectType": "Jutter", "attributes": { "leeftijd": { "number": "40.00" } },
+              "roles": {}, "characteristics": [] }|} ]
+      [ pf_is "40"; pf_cons ]
+  in
+  both_answer ~name:"WF-053 eigen lezing op het subjecttype, een geerfd lid" ~ir:(doc (pf_a "leeftijd"))
+    ~case_text;
+  faults_with ~name:"WF-053 eigen lezing op een supertype" ~ir:(doc (pf_a ~ot:"Persoon" "leeftijd"))
+    ~case_text
+    ~needle:
+      "so its objecttype is the subject type 'Jutter' — 'Persoon' names another type, which only a \
+       navigation reaches (WF-053)";
+  faults_with ~name:"WF-080 een kenmerk op een waardepositie" ~ir:(doc (pf_a "vrijgesteld")) ~case_text
+    ~needle:
+      "'vrijgesteld' is a characteristic of 'Jutter', not an attribute — a characteristic endpoint \
+       is ill-formed in a value position (WF-080)";
+  faults_with ~name:"WF-080 een kenmerk als setbron van een waardevouw"
+    ~ir:
+      (vervang
+         (vervang bp_doc
+            ~waar:{|"characteristics": []
+      }
+    ],
+    "factTypes"|}
+            ~door:{|"characteristics": [ { "node": "Characteristic", "name": "gekeurd", "kind": "BIJVOEGLIJK" } ]
+      }
+    ],
+    "factTypes"|})
+         ~waar:{|"attribuut": "gewicht",|} ~door:{|"attribuut": "gekeurd",|})
+    ~case_text:bp_case
+    ~needle:
+      "'gekeurd' is a characteristic of 'Vondst', not an attribute — a characteristic endpoint is \
+       ill-formed in an aggregation source position (WF-080)"
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
