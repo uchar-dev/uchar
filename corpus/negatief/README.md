@@ -100,8 +100,8 @@ arm column names that arm in words, or, for a removed witness, the arm that left
 The negatief zone went from 444 to 394 documents at the L2 union (with the U12
 witness `wf034-rollidmaatschap-vreemde-vullersklasse` added beside the stamps),
 and to 400 in the L2 fix round (the restored `wf046-kwantorvouw-bereik-ander-type`
-and the five witnesses of the last table); the floor `EXPECTED_MIN_NEGATIEF` did
-not have to move.
+and the five witnesses the fix round added, listed in the last table beside the
+U12 witness); the floor `EXPECTED_MIN_NEGATIEF` did not have to move.
 
 | directory | rule | delta | stamp | arm | reason |
 | --- | --- | --- | --- | --- | --- |
