@@ -837,7 +837,15 @@ EXPECTED_CHANNEL=(
 # jutterswet-uitsluiting and ww-herleving-inkomen), and it plays the four cases on the first run, PLAYED 4,
 # with ref's and clingo's values. The DRL-text branch refuses it on its defaults sentence (class (A) of
 # DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=186
+# 186 -> 188 (2026-09-24, card l2-referentielaag, builder C2): ambiguous-fold-role-name and
+# near-side-rolcheck-to-many, new — both came from corpus/rood at L2 (builder B), where their L1 fault
+# (a count's range derived from a role name two fact types declare; a near-side role check read as a
+# null-test on a to-many reference) has no spelling on the L2 wire: the count carries its bronRol and
+# the role check is one RoleMembership, an existence question over the relation.
+# Both branches play each golden's one case on the first run, PLAYED 1 each, with ref's and clingo's
+# values. L2 itself moves no golden: measured with this gate's own jar, no pinned golden changed
+# channel and the played set is the 186 of the base plus these two. EXPECTED_DRL_PLAYED moves by two.
+EXPECTED_PLAYED=188
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1070,7 +1078,10 @@ DRL_CHANNEL=(
 # EXPECTED_PLAYED above.
 # 163 -> 164 (2026-09-23, card m1-schema-en-container, builder C): jutterswet-kaletabel, new. This branch
 # plays both cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=164
+# 164 -> 166 (2026-09-24, card l2-referentielaag, builder C2): ambiguous-fold-role-name and
+# near-side-rolcheck-to-many, new. This branch plays both on the first run, PLAYED 1 each. Reason block
+# at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=166
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
