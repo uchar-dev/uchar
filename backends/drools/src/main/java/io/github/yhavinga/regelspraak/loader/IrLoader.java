@@ -328,7 +328,8 @@ public final class IrLoader {
      *  at — made once the whole document is read, and refused as the verifier refuses them, in the words
      *  {@code ref} and the ASP backend fault with where they have them: a role check whose subject does not fill
      *  the role (WF-034, IR-SPEC ch. 4.5 — a link the subject can never be in), a characteristic read at a value
-     *  position (WF-080 — a characteristic carries truth, no value), a value fold's set source that names no
+     *  position (WF-080 — a characteristic carries truth, no value), a read without bindings that names another
+     *  type than its subject (WF-053, IR-SPEC ch. 4.1a), a value fold's set source that names no
      *  member of the element type ({@link #keurWaardevouwbron}), and a TOTAAL without a range over another type
      *  than the subject ({@link #keurEigenTotaal}). The subject of each position is the one the verifier walks it
      *  with: the rule target's type, the element type inside a fold's filter and a quantifier fold, a selection's
@@ -375,6 +376,15 @@ public final class IrLoader {
                     throw new Documentfout(plekken.get(a), "'" + a.attribuut() + "' is a characteristic of '" + ot.naam
                             + "', not an attribute — a characteristic endpoint is ill-formed in a value position"
                             + " (WF-080)");
+                // WF-053, IR-SPEC ch. 4.1a: a read without bindings is the subject's own, so it names the subject
+                // type itself — a supertype is another type, even where it declares the member. Both branches
+                // refused such a read before, with a generic reason; refused here in the sentence ref and the
+                // verifier share. A subject-less position (a day-kind definition) anchors nothing.
+                if (s != null && ot != null && !navigatieBindingen.containsKey(a)
+                        && !Namen.norm(ot.naam).equals(Namen.norm(s.naam)))
+                    throw new Documentfout(plekken.get(a), "an attribute reference without navigation bindings is the"
+                            + " subject's own read, so its objecttype is the subject type '" + s.naam + "' — '"
+                            + ot.naam + "' names another type, which only a navigation reaches (WF-053)");
             }
             case Expr.Functie f -> {
                 boolean setbron = f.elementObjecttype() != null && f.argumenten().size() == 1

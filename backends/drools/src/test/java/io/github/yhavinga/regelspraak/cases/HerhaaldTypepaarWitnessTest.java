@@ -147,14 +147,18 @@ class HerhaaldTypepaarWitnessTest {
                 "wintertal H1=1 — only the gekeurde ligger is linked");
     }
 
-    @Test void feitcreatie_met_doelvergelijking_koppelt_alleen_de_lange_liggers() throws Exception {
-        // (4) the DOEL-comparison guard, the manifest's sibling of the row above: romplengte > 8 selects S1
-        // (12) and rejects S2 (7). Also not frontend-emittable — a comparison naming the doel resolves to an
-        // Onopgelost node with the anker as subject — so the node is authored here and the row pins the
-        // backend's own lowering, in both branches.
-        BeideTakken.groen(creatieVariant(doelVergelijking("romplengte", "8"), true),
-                JSON.readTree(creatieCase("1", "40", null)),
-                "wintertal H1=1 — only the ligger longer than 8");
+    @Test void feitcreatie_met_doelvergelijking_wordt_geweigerd() throws Exception {
+        // (4) the DOEL-comparison guard, the manifest's sibling of the row above. Until L2's advisory round this
+        // row pinned the backend's own lowering in both branches (romplengte > 8 selected S1 and rejected S2).
+        // The guard's one subject is the anker (IR-SPEC ch. 3.4, WF-109): the doel is read in a guard through a
+        // characteristic check only (the row above), and an attribute of the doel read without bindings names
+        // another type than that subject — refused by the verifier and by ref (WF-053), and by this loader now,
+        // in their sentence.
+        JsonNode ir = JSON.readTree(Files.readString(creatieVariant(doelVergelijking("romplengte", "8"), true)));
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+        assertEquals("/rules/feitCreaties/0/voorwaarde/links", e.plek(), e.getMessage());
+        assertTrue(e.getMessage().contains("its objecttype is the subject type 'Haven' — 'Schuit' names another type,"
+                + " which only a navigation reaches (WF-053)"), e.getMessage());
     }
 
     @Test void feitcreatie_binnen_en_voor_het_geldigheidsvenster() throws Exception {

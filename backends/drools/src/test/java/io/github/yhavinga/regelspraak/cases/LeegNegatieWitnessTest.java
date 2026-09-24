@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,18 +54,18 @@ class LeegNegatieWitnessTest {
 
     /** The same document with the navigation's wire binding removed. Since L2 of the v1 wire migration a read
      *  without bindings IS the subject's own (IR-SPEC ch. 4.1a), and this one names Werf under a Schuit subject —
-     *  ill-formed (WF-053) — so neither branch may walk a relation of its own choosing: both refuse the rule. */
-    @Test void de_ongebonden_lezing_van_een_ander_type_weigert_in_beide_takken() throws Exception {
+     *  ill-formed (WF-053) — so no branch walks a relation of its own choosing: the loader refuses the document in
+     *  the sentence ref and the verifier share (until L2's advisory round both branches refused the rule with a
+     *  generic reason). */
+    @Test void de_ongebonden_lezing_van_een_ander_type_weigert_bij_het_laden() throws Exception {
         ObjectNode ir = ir();
         for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
             ((ObjectNode) r.get("voorwaarde").get("operand")).remove("navigatieBindingen");
-        Path p = tijdelijk(ir);
-        JsonNode c = geval();
-        for (boolean viaDrl : new boolean[] { false, true }) {
-            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(p, c, viaDrl),
-                    (viaDrl ? "drl-tekst" : "exec-model") + " walks no relation the wire does not name");
-            assertTrue(e.getMessage().contains("werfpremie van een schuit"), e.getMessage());
-        }
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
+                "no branch walks a relation the wire does not name");
+        assertEquals("/rules/resolvedRegels/2/voorwaarde/operand", e.plek(), e.getMessage());
+        assertTrue(e.getMessage().contains("its objecttype is the subject type 'Schuit' — 'Werf' names another type,"
+                + " which only a navigation reaches (WF-053)"), e.getMessage());
     }
 
     /** CONTROL: the unnegated twin must still answer the plain test — every expectation mirrored. A lowering that
