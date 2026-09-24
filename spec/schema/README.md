@@ -15,8 +15,9 @@ The move to v1 is one break carried out in steps (`../proposals/V1-WIREMIGRATIE.
 (`../CONSTRUCTS.md`), never a silent rewrite. Rationale and method:
 `../IR-SPEC.md`.
 
-The schema carries the **L2 shape**: the container is restructured (L1) and the
-reference layer is reduced to its symbolic form (L2); nothing else.
+The schema carries the **L3 shape**: the container is restructured (L1), the
+reference layer is reduced to its symbolic form (L2), and the type system is in
+its v1 nodes (L3); nothing else.
 
 Shape, in brief:
 
@@ -24,10 +25,9 @@ Shape, in brief:
   "diagnostics": […] }`.
 - `model` is the declaration set (IR-SPEC ch. 2) as lists in declaration
   order: `objectTypes`, `factTypes`, `parameters`, `domains`, `unitSystems`,
-  `dimensions`, `timelines`, `dayKinds`, then `dagsoortPerEenheid` (a map,
-  unchanged from v0) and the optional extension list `functionDefs`. A list
-  entry carries its name on its node; there is no map key, so each name is
-  written once.
+  `dimensions`, `timelines`, `dayKinds`, then the optional extension list
+  `functionDefs`. A list entry carries its name on its node; there is no map
+  key, so each name is written once.
 - `rules` carries the resolved rule lists under their v0 keys and in v0 order
   (`resolvedRegels`, `resolvedDagsoorten`, `objectCreaties`, `verdelingen`,
   `consistenties`, `uniciteiten`, `uniciteitUnies`, `feitCreaties`,
@@ -61,14 +61,19 @@ Shape, in brief:
   An unresolved expression's `type` is optional (absent: unknown), and the
   datatype union has no member for an unknown type (B16). The written ranges
   have their own section below.
-- Every other node — `Parameter`, `Feittype`, `Eenheidstelsel`, `Dimensie`,
-  `Tijdlijn`, the datatype, expression and condition families, every
-  `Resolved*` node — keeps its v0 name, field spellings and enum values until
-  its own landing, less the keys L2 removed; `RoleMembership` is the one node
-  L2 renames (it restructures two). So do the enum values inside the new
-  nodes (`DAG` … `JAAR`, `BIJVOEGLIJK`/`BEZITTELIJK`/`ZELFSTANDIG`).
-- One field of four of those nodes does change at M1: `naam` on `Parameter`,
-  `Eenheidstelsel`, `Feittype` and `Dimensie` is a non-null string. With the
+- The type system is the v1 one (L3): `Number`, `Date`, `Unit`,
+  `UnitSystem`, `Parameter` and `DayKind`, in their own section below.
+- Every other node — `Feittype`, `Dimensie`, `Tijdlijn`, the datatypes L3
+  leaves alone (`Tekst`, `Booleaan`, `Enumeratie`, `SumType`, `ListType`,
+  `StructType`), the expression and condition families, every `Resolved*`
+  node — keeps its v0 name, field spellings and enum values until its own
+  landing, less the keys L2 removed; `RoleMembership` is the one node L2
+  renames (it restructures two). So do the enum values inside the new nodes
+  (`DAG` … `JAAR`, `BIJVOEGLIJK`/`BEZITTELIJK`/`ZELFSTANDIG`, and a
+  `Number`'s `sign`).
+- One field of four model-list declarations changed at M1: the name of a
+  parameter, of a unit system, of a `Feittype` and of a `Dimensie` is a
+  non-null string (on the first two it is spelled `name` since L3). With the
   map key gone it is the declaration's only name (delta B2), so a `null` there
   would be a declaration without a name; the schema no longer admits it, and
   no golden, red or negatief document carried one (measured 2026-09-23). `Tijdlijn`
@@ -81,15 +86,17 @@ Shape, in brief:
 Canonical form. **Key order is the `properties` order of the object's schema
 definition.** The migration scripts write the M1 containers and nodes (the
 root, `model`, `rules`, `ObjectType`, `Attribute`, `Characteristic`,
-`TimelineFacet`, `Domain`) and `RoleMembership` in exactly that order, and
+`TimelineFacet`, `Domain`), `RoleMembership` and the six L3 nodes (`Number`,
+`Date`, `Unit`, `UnitSystem`, `Parameter`, `DayKind`) in exactly that order, and
 every emitter must, so that gate 2's round-trip and the byte-identical
 re-emission gates (9, 10, 11, 14) prove one and the same form. A node carried
 over from v0 keeps the order its producer wrote, less the keys L2 removed; a
 binding L2 derives is appended after the node's last key, where every
 producer already writes it. Measured
-2026-09-23, 23 of the 12768 node objects in `corpus/golden` and `corpus/rood`
-deviate from their definition's `properties` order (kinds `Default`,
-`PrioritizedDefaults`, `Functie`, `Kwantorvouw`, `Let`). Gate 2 does not check
+2026-09-24 on the L3 shape, 23 of the 10802 node objects in `corpus/golden` and
+`corpus/rood` deviate from their definition's `properties` order (kinds
+`Default`, `PrioritizedDefaults`, `Functie`, `Kwantorvouw`, `Let`; none of the
+six L3 nodes). Gate 2 does not check
 key order: its round-trip preserves the order of the document it reads.
 Beyond key order: two-space indentation, empty containers inline, numbers in
 plain (non-exponential) form, non-ASCII and control characters escaped as
@@ -99,7 +106,7 @@ plain (non-exponential) form, non-ASCII and control characters escaped as
 
 In v0 a domain was a map entry whose value was a datatype, and three datatypes
 repeated the map key inside themselves: `Enumeratie.domein`, `SumType.domain`
-and `StructType.domain` (a `Numeriek` domain carried none). In M1 the `Domain`
+and `StructType.domain` (a number domain carried none). In M1 the `Domain`
 wrapper carries the name, and the datatype at that declaration position
 carries no self-name — the principle of delta B2: nowhere on the wire does one
 name have a second spelling. At every reference position (an attribute's, a
@@ -178,6 +185,47 @@ ch. 4.3's own (the `sourceRole` row): a range belongs to a fold with one
 argument that reads linked instances. The precedent for a conditional
 obligation is the `drempel` of `Kwantorvouw` (WF-108 (e)).
 
+## The type system (L3)
+
+L3 moves the datatypes and the units to their v1 nodes and changes no meaning
+(deltas B14, B15, B17 (i) and B18 of `../proposals/V1-WIREMIGRATIE.md`;
+`../CONSTRUCTS.md` rows 26 and 27; the L3 card,
+`../../backlog/done/20260924-l3-typesysteem.md`):
+
+- `Number` (`whole`, `decimals`, `sign`, `unit`?, `presentation`?). `sign` is
+  always written, in its v0 enum spelling until its own landing; a number
+  declared without a sign is `ONBEPAALD`. A percentage is a `Number` whose
+  unit is `%`, or a rate with `%` as its numerator (B14). `presentation:
+  "percentage"` is its presentation tag, written only at a declaration
+  position: the datatype of an attribute, a parameter or a domain and every
+  datatype nested in one (a payload, a list element, a struct field), a
+  function or lambda parameter, a function result. It is never written on a
+  type annotation. The schema admits it on any `Number`, because one datatype
+  union serves both kinds of position; the verifier refuses it on an
+  annotation (WF-007). The tag has no meaning for evaluation.
+- `Date` (`precision`: `day` | `millisecond`, B15). The precision is always
+  written: the two share no order (WF-036).
+- `Unit` (`abbreviation`, `system`?, `canonical`?, `factorToCanonical`?,
+  `denominator`?). No field is ever null. The factor is the exact rational
+  `{"num": n, "den": d}`, two integers of at least 1, without a node
+  discriminator (B17 (i)); that it is in lowest terms is WF-092's, because a
+  schema cannot state a greatest common divisor.
+- A unit's further spellings (`spellings`, at least one when present) belong
+  to its declaration. `UnitSystem.units` holds `DeclaredUnit`: the node
+  `Unit` with that one field after the others, its other field schemas taken
+  from `Unit` by JSON pointer. Every other position holds `Unit`, which has no
+  such field. This follows the precedent of the characteristic's facet below:
+  a spelling written on an occurrence would otherwise be accepted and dropped.
+- `UnitSystem` (`name`, `units`): each unit once, in declaration order, with
+  its spellings on the unit itself.
+- `Parameter` (`name`, `datatype`, `timeline`?). Its facet is
+  `ParameterTimelineFacet`, the attribute's `TimelineFacet` without
+  `timelineName`, because no parameter records a timeline name (B18). The
+  `datatype` is required and non-null (IR-SPEC ch. 2.10).
+- `DayKind` (`name`, `plural`?): `model.dayKinds` is a list of these nodes. A
+  day kind's name and plural are every spelling it has on the wire; there is
+  no registry of spellings beside the day kinds (IR-SPEC ch. 2.9).
+
 ## `uchar-ir-v1.schema.json`
 
 JSON Schema (draft 2020-12) for the format. It is strict: every object sets
@@ -236,6 +284,21 @@ L1 input, and so does every L1 value the L2 shape cannot carry. One line on
 stderr per migrated document counts what was derived and removed; a document
 already in the L2 shape is left untouched.
 
+`../proposals/v1-migratie/m3.py` converts an L2 document to the L3 shape, with
+the same interface and the same serialiser. It rewrites the type system
+mechanically: the tag only where a percentage stood at a declaration, an
+absent unit of a percentage as the built-in `%`, a factor written as a whole
+number verbatim over 1 and any other factor as the rational with the smallest
+denominator (at most 10^6) whose double is exactly the factor's, a unit
+system's map keys and aliases as the spellings of their unit, a day kind's
+registered spellings as its plural. It refuses, with the file name and a JSON
+pointer into the L2 input, every L2 value the L3 shape cannot carry: a factor
+that is not positive or has no such rational, a third spelling of a day kind,
+a registry entry that names no declared day kind, a null in a unit system's
+maps, an alias of a unit the system does not declare, a percentage whose unit
+is not `%`. One line on stderr per migrated document counts what was
+rewritten; a document already in the L3 shape is left untouched.
+
 ## Gate: `../../scripts/check-ir-schema.sh`
 
 The repo's second CI gate. It performs three checks, and two self-tests:
@@ -244,12 +307,15 @@ The repo's second CI gate. It performs three checks, and two self-tests:
    - **Self-tests** — what the schema refuses by itself has no corpus witness
      (golden and rood must validate, negatief is not validated here), so it is
      held against the schema directly, in both polarities: the date patterns
-     against a lexeme table, and the positions the M1 and L2 shapes close
-     against one small valid document per shape with one mutation per row.
-     The rows that must pass pin the three admissions above, the two
+     against a lexeme table, and the positions the M1, L2 and L3 shapes
+     close against one small valid document per shape with one mutation per
+     row. The rows that must pass pin the three admissions above, the two
      narrowings of the written ranges, a `RoleMembership` carrying
-     `counterpartType`, and an `Onopgelost` without `type` (the unknown type
-     since L2).
+     `counterpartType`, an `Onopgelost` without `type` (the unknown type
+     since L2), and in the L3 shape the presentation tag on a type annotation
+     and a factor not in lowest terms (both refused by the verifier), a
+     percentage without the tag, a declared unit without spellings, the bare
+     unit, and a parameter without a facet and a day kind without a plural.
 2. **Validation** — every `corpus/golden/**/ir.json` validates against the
    schema. The file count is reported; an empty corpus passes and says so.
 3. **Round-trip** — each such file is parsed (preserving the original number
