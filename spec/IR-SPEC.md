@@ -1200,7 +1200,7 @@ A **Unit**:
 | `canonical` | string? | the system unit this reduces to, by its `abbreviation`; absent for opaque products and bare units |
 | `factorToCanonical` | `{num, den}`? | how many canonical units equal one of this unit: an exact rational, two integers of at least 1 in lowest terms (WF-092) |
 | `denominator` | Unit? | present for rate units (`€/jr`, `%/jaar`) |
-| `spellings` | list of string? | the further spellings that resolve to this unit (word and plural aliases): on its declaration in `units` only, at least one when present, never the `abbreviation` itself |
+| `spellings` | list of string? | the further spellings that resolve to this unit (word and plural aliases): on its declaration in `units` only, at least one when present; the migration and the emitters write none equal to the `abbreviation` |
 
 v0 name: `Eenheid`/`Eenheidstelsel`. **Landed L3 (2026-09-24).** No field is
 ever `null`: absent is the one spelling of a field not given. The unit system
