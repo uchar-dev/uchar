@@ -239,7 +239,8 @@ let objecttype (key, (o : objecttype)) : json =
                   | Some (Some soort) -> soort
                   | Some None | None -> Zelfstandig
                 in
-                node "Characteristic" [ ("name", s k); ("kind", enum Spelling.characteristic_kind kind) ])
+                node "Characteristic"
+                  [ ("name", s k); ("kind", enum Spelling.characteristic_kind kind) ])
               kenmerken)) ])
 
 let rol (r : rol) : json =
@@ -274,7 +275,8 @@ let rule (r : resolved_regel) : json =
   | _ -> ());
   let initialisation, presentation =
     match r.rr_soort with
-    | Some ((Gelijkstelling | Berekening) as k) -> (false, [ ("presentation", enum Spelling.presentation k) ])
+    | Some ((Gelijkstelling | Berekening) as k) ->
+        (false, [ ("presentation", enum Spelling.presentation k) ])
     | Some Initialisatie -> (true, [])
     | Some Kenmerktoekenning -> (false, [])
     | None -> failwith "Emit: a rule version without its kind"
