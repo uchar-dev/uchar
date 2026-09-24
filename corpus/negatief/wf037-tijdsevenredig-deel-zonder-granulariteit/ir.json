@@ -1,0 +1,125 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Bakenmeester",
+        "animate": true,
+        "plural": "Bakenmeesters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "onderhoudstarief",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "JAAR",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "onderhoudsbijdrage",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "MAAND",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "dienstdoend",
+            "kind": "BIJVOEGLIJK",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "MAAND",
+              "count": 1
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "Rule",
+        "name": "onderhoudsbijdrage van een bakenmeester",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "onderhoudsbijdrage",
+              "objecttype": "Bakenmeester",
+              "bron": "De onderhoudsbijdrage van een Bakenmeester"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSEVENREDIG_DEEL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "onderhoudstarief",
+                  "objecttype": "Bakenmeester",
+                  "bron": "zijn onderhoudstarief"
+                }
+              ],
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "dienstdoend",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "gedurende de tijd dat hij dienstdoend is"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het tijdsevenredig deel per maand van zijn onderhoudstarief gedurende de tijd dat hij dienstdoend is"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
+}

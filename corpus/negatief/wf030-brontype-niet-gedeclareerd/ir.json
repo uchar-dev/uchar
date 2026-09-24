@@ -1,0 +1,121 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstnummer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "POSITIEF"
+            },
+            "plural": "vondstnummers"
+          },
+          {
+            "node": "Attribute",
+            "name": "vondstdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aanmelddatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [
+      {
+        "node": "Consistency",
+        "name": "aanmelding niet voor de vondstdag",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "Vergelijking",
+              "op": "LATER_OF_GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aanmelddatum",
+                "objecttype": "Vondst",
+                "bron": "De aanmelddatum van een Vondst"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "vondstdag",
+                "objecttype": "Vondst",
+                "bron": "de vondstdag van de Vondst"
+              },
+              "periode": null,
+              "bron": "De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst",
+            "line": 12
+          }
+        ]
+      }
+    ],
+    "uniciteiten": [
+      {
+        "node": "Uniqueness",
+        "name": "eenmalig vondstnummer",
+        "versions": [
+          {
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Vondsten",
+                "keys": [
+                  "vondstnummer"
+                ]
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "De vondstnummers van alle Vondsten moeten uniek zijn."
+          }
+        ]
+      }
+    ],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
+}

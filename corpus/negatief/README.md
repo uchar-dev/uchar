@@ -538,15 +538,16 @@ and they are the five removed below. A rewritten witness of the card's
 stamp list carries `expect.txt`; so does every witness added here. The arm
 column quotes the pinned fragment, shortened where it is long. Every NOTE
 citation was taken again from the L4 verifier's output. The negatief zone went
-from 407 to 409 documents (five removed, seven added); the floor
-`EXPECTED_MIN_NEGATIEF` did not have to move, and `EXPECTED_MIN_EXPECT` rose
-from 165 to 220 (`scripts/check-verifier.sh`).
+from 407 to 414 documents (five removed, twelve added: seven with the landing,
+five in its fix round); the floor `EXPECTED_MIN_NEGATIEF` did not have to
+move, and `EXPECTED_MIN_EXPECT` rose from 165 to 220 with the landing and to
+225 in its fix round (`scripts/check-verifier.sh`).
 
 | directory | rule | delta | stamp | arm | reason |
 | --- | --- | --- | --- | --- | --- |
 | `wf024-complex` | WF-024 | B21, D16 | verwijderd-met-reden | an allocation method `COMPLEX` (the rule left with it) | `COMPLEX` is not in the method enum of three: a load error in the schema and in every loader, and WF-024 leaves IR-SPEC and the verifier as a history line; measured, m4.py refuses the document: "at /rules/verdelingen/0/methode: the method "COMPLEX": the L4 method is one of the three real methods, so the v0 placeholder of an unhandled form cannot be written" |
-| `wf037-aantalgevulde-granulariteit` | WF-037 | B21, D35 | verwijderd-met-reden | a granularity facet on a non-bucketing kind, on an aggregation | an `Aggregation` carries no `granularity`: unwritable; the arm keeps its object on the builtin kinds. Measured, m4.py refuses the document: "at /rules/resolvedRegels/0/waarde/granulariteit: an aggregation (AANTAL_GEVULDE) with the bucket "JAAR": the L4 shape writes granularity on a builtin call only" |
-| `wf047-bereik-op-builtin` | WF-047 | B21, D35 | verwijderd-met-reden | a fold-source role binding on a builtin | a `BuiltinCall` carries no `elementType` and no range: unwritable; the arm keeps its object on an aggregation that is no instance fold. Measured, m4.py refuses the document at `…/waarde/elementObjecttype` and `…/waarde/bronRol`: "a builtin call (ABSOLUTE_WAARDE) with elementObjecttype: the L4 shape writes that field on an aggregation only" (and idem `bronRol`) |
+| `wf037-aantalgevulde-granulariteit` | WF-037 | B21, D35 | verwijderd-met-reden | a granularity facet on a non-bucketing kind, on an aggregation | an `Aggregation` carries no `granularity`: unwritable; the arm keeps its object on the builtin kinds, where the fix round added its witness `wf037-granulariteit-op-jaar-uit` (below). Measured, m4.py refuses the document: "at /rules/resolvedRegels/0/waarde/granulariteit: an aggregation (AANTAL_GEVULDE) with the bucket "JAAR": the L4 shape writes granularity on a builtin call only" |
+| `wf047-bereik-op-builtin` | WF-047 | B21, D35 | verwijderd-met-reden | a fold-source role binding on a builtin | a `BuiltinCall` carries no `elementType` and no range: unwritable; the arm keeps its object on an aggregation that is no instance fold, where the fix round added its witness `wf047-bereik-op-opgesomde-vouw` (below). Measured, m4.py refuses the document at `…/waarde/elementObjecttype` and `…/waarde/bronRol`: "a builtin call (ABSOLUTE_WAARDE) with elementObjecttype: the L4 shape writes that field on an aggregation only" (and idem `bronRol`) |
 | `wf034-sentinel-builtin-wratoperand` | WF-034 | B21, D35 | verwijderd-met-reden | the member resolution of a builtin operand that carried a range | idem: the `ABSOLUTE_WAARDE` carries `elementObjecttype` and `bronRol`, so the arm switch L2 recorded (D9) loses its carrier; m4.py refuses the document with the two sentences of the row above |
 | `wf030-single-source-union` | WF-030 | B27 | verwijderd-met-reden | a uniqueness union of one source (the arm left with it) | a uniqueness with one source IS the single-type form, so the arm "a uniqueness union carries at least two sources" loses its object; measured, the verifier accepts the translation (`verifier: PASS`). The witness had no `NOTE.md` |
 | `wf034-typeloos-literal` | WF-034 | B22, D36 | herschreven (i) | a value node without a static type (a typeless `Literal`) | m4.py chooses the variant by the type and refuses a typeless literal ("a typeless literal: the L4 shape chooses the value variant by the type, and there is none"); rewritten by hand to `"value": {"number": "2"}` with `"type": null`; `expect.txt` pins the arm. WF-114 stays silent: there is no type to cross the variant against |
@@ -691,3 +692,21 @@ and no other document of golden, rood and negatief moves (698 compared).
 | `wf114-datumvariant-tegen-precisie` | WF-114 | B22 (U21) | toegevoegd | a `date` variant under a millisecond-precision `Date` | the new rule, on the one datatype node that names two variants; `corpus/golden/jutterswet-meldstip` with its `dateTime` respelled as the `date` of the same day |
 | `wf098-de-dag-als-contextwaarde` | WF-098 | B23 (U23) | toegevoegd | a `ContextValue` named `de dag` | the closed set holds two names since L4; `corpus/golden/jutterswet-bergingsklok` with its first `BoundDay` replaced by that context value |
 | `wf081-decimale-komma` | WF-081 | B22 (U19) | toegevoegd | a decimal comma in a `number` variant | the narrowed grammar; `corpus/golden/jutterswet-meldloon` with `{"number": "12.50"}` respelled `{"number": "12,50"}` (its `bron` already carries the comma) |
+
+#### Added in the L4 fix round (2026-09-24)
+
+The lens of the landing found five arms the L4 wire still reaches without a
+witness: two lost theirs with the removals above, and three never had one (no
+`wf030-*` directory in the repository's history pinned the two WF-030 arms,
+and no corpus file ever carried the sentence of the bucketing arm). One
+witness each, with `expect.txt` and `NOTE.md`. Each is arm-exact: with its arm
+emptied it turns clean and no other document of golden, rood and negatief
+moves (703 compared).
+
+| directory | rule | delta | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf037-granulariteit-op-jaar-uit` | WF-037 | B21 | toegevoegd | granularity facet on a non-bucketing kind | the arm lost its witness with `wf037-aantalgevulde-granulariteit`; `corpus/golden/jutterswet-paasvondst` with `"granularity": "JAAR"` on its `JAAR_UIT` call |
+| `wf037-tijdsevenredig-deel-zonder-granulariteit` | WF-037 | B21 | toegevoegd | bucketing builtin without a granularity | the arm had no witness; `corpus/golden/jutterswet-bakenmeester` with the `granularity` of its `TIJDSEVENREDIG_DEEL` removed |
+| `wf047-bereik-op-opgesomde-vouw` | WF-047 | B21 | toegevoegd | a fold-source role binding on a node that is not an instance fold over a relation | the arm lost its witness with `wf047-bereik-op-builtin`; `corpus/golden/jutterswet-sluitsom` with a `sourceRole` on its listed `LAATSTE` (the relation its second operand navigates) |
+| `wf030-brontype-niet-gedeclareerd` | WF-030 | B27 | toegevoegd | source type 'Vondsten' is not declared | the arm had no witness; `corpus/golden/jutterswet-vondstnummer` with the source's `objectType` spelled as the declared plural |
+| `wf030-sleutel-geen-attribuut` | WF-030 | B27 | toegevoegd | key 'vondstnummers' is not a declared attribute of 'Vondst' | the arm had no witness; `corpus/golden/jutterswet-vondstnummer` with the source's key spelled as the attribute's declared plural |

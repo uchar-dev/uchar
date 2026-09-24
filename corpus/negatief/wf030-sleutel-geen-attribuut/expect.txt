@@ -1,0 +1,1 @@
+key 'vondstnummers' is not a declared attribute of 'Vondst'
