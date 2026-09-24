@@ -1012,7 +1012,7 @@ let walk_order ~(value : string -> expr -> bool) (visit : expr -> unit) =
         x init
     | Map_list { list; _ } | Filter_list { list; _ } | List_length { list; _ } -> x list
     | Lambda _ | Parameter_ref _ | Literal _ | Attribuut_ref _ | Variabele_ref _ | Constante _
-    | Binder_ref _ | Expr_onopgelost _ | Instance_set_union _ ->
+    | Bound_day _ | Binder_ref _ | Expr_onopgelost _ | Instance_set_union _ ->
         ());
     visit e
   and cond (c : conditie) =
@@ -1381,8 +1381,8 @@ let expr_reaches ctx (hit : expr -> bool) (e : expr) : bool =
     | Map_list { list; functie; _ } -> x list || fn functie
     | Filter_list { list; condition; _ } -> x list || co condition
     | List_length { list; _ } -> x list
-    | Parameter_ref _ | Literal _ | Attribuut_ref _ | Variabele_ref _ | Constante _ | Binder_ref _
-    | Expr_onopgelost _ | Instance_set_union _ ->
+    | Parameter_ref _ | Literal _ | Attribuut_ref _ | Variabele_ref _ | Constante _ | Bound_day _
+    | Binder_ref _ | Expr_onopgelost _ | Instance_set_union _ ->
         false
   and fn = function Fn_lambda { body; _ } -> x body | Fn_name n -> named n
   and named n =
@@ -1732,9 +1732,7 @@ let set_source_attribute ctx ~subject_ot ~el a =
   a
 
 let lexeme_decimals lex =
-  match String.index_opt lex '.' with
-  | Some i -> String.length lex - i - 1
-  | None -> ( match String.index_opt lex ',' with Some i -> String.length lex - i - 1 | None -> 0)
+  match String.index_opt lex '.' with Some i -> String.length lex - i - 1 | None -> 0
 
 (* the year-bucket whole-units factor of the temporal total: for a
    year-granular attribute over the calendar-year bucket the factor is
@@ -2056,7 +2054,8 @@ let numeric_ok ctx e =
    inverts (a division), a runtime exponent makes the result scale
    exponent-dependent — each faults with its reason *)
 let const_pow_exponent = function
-  | Literal { waarde = Some w; _ } -> (
+  | Literal { variant; _ } -> (
+      let w = Ir_v0.Loader.literal_lexeme variant in
       let q = Value.q_of_lexeme w in
       if not (Z.equal (Q.den q) Z.one) then
         fault
@@ -2401,8 +2400,8 @@ let symbolic_literal_term (typ : datatype) lex =
    scalar datatypes. *)
 let symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
   match e with
-  | Literal { waarde; typ = Some ((Tekst | Booleaan | Enumeratie _) as t); _ } ->
-      ([], symbolic_literal_term t (req "Literal.waarde" waarde))
+  | Literal { variant; typ = Some ((Tekst | Booleaan | Enumeratie _) as t); _ } ->
+      ([], symbolic_literal_term t (Ir_v0.Loader.literal_lexeme variant))
   | Attribuut_ref
       { attribuut = Some a; objecttype = Some ot; navigatie_bindingen = None; _ }
     when norm ot = norm subject_ot && attr_symbolic_datatype ctx ~otype:ot ~attr:a <> None ->
@@ -3145,8 +3144,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Some pushed -> expr_term ctx ~subject ~subject_ot pushed
   | None ->
   match e with
-  | Literal { waarde; typ; _ } -> (
-      let lex = req "Literal.waarde" waarde in
+  | Literal { variant; typ; _ } -> (
+      let lex = Ir_v0.Loader.literal_lexeme variant in
       match typ with
       | Some (Numeriek _ | Percentage _) | None ->
           let d = lexeme_decimals lex in
@@ -3508,8 +3507,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             (* zero by VALUE, not by lexeme: a 2-decimal fold writes its
                fallback as "0.00", which is the same empty-set answer as
                "0" and the same bare #sum encoding *)
-            | Some (Literal { waarde = Some w; _ })
-              when Q.equal (Uchar_ref.Value.q_of_lexeme w) Q.zero ->
+            | Some (Literal { variant; _ })
+              when Q.equal
+                     (Uchar_ref.Value.q_of_lexeme (Ir_v0.Loader.literal_lexeme variant))
+                     Q.zero ->
                 true
             | Some _ -> fault "som fallback other than 0 is not translated yet"
             | None -> false)
@@ -5018,23 +5019,24 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let after_lo = match lo with Some (t, s) -> mx bh (scale_to t s) | None -> bh in
       let clamped = match hi with Some (t, s) -> mn after_lo (scale_to t s) | None -> after_lo in
       (b_atoms, clamped, m)
-  | Constante { naam = Some n; _ } when Ir_v0.Checks.norm n = Ir_v0.Checks.norm "de dag" ->
-      (* ch. 3.7/3.8: the BOUND DAY of a day-kind definition — not a session
-         value (that is Rekendatum, below) but the day the defining predicate
-         is being applied to. It never reaches an ASP term: the day-kind
-         predicate is evaluated at translation time (the extension table),
-         so the only way here is a `de dag` OUTSIDE a day-kind voorwaarde,
-         which denotes nothing. *)
+  | Bound_day _ ->
+      (* ch. 3.7/3.8: the BOUND DAY of a day-kind definition (BoundDay) — not
+         a session value (that is Rekendatum, below) but the day the defining
+         predicate is being applied to. It never reaches an ASP term: the
+         day-kind predicate is evaluated at translation time (the extension
+         table), so the only way here is a bound day OUTSIDE a day-kind
+         voorwaarde, which denotes nothing. *)
       fault
-        "the 'de dag' context value is the bound day of a day-kind definition (ch. 3.7); \
-         outside a day-kind evaluation it denotes nothing"
+        "a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind \
+         evaluation it denotes nothing"
   | Constante { naam = Some n; _ } when Ir_v0.Checks.norm n = Ir_v0.Checks.norm "Rekendatum" -> (
-      (* ch. 8.2: the execution-date constant is a program constant — the
-         session's one evaluation date as a civil day number *)
+      (* ch. 8.2: the execution-date context value is a program constant —
+         the session's one evaluation date as a civil day number *)
       match ctx.case.as_of with
       | Some d -> ([], string_of_int (day_of_lexeme d), 1)
       | None ->
-          fault "the Rekendatum constant needs an evaluation date; the case carries asOfDate null")
+          fault
+            "the Rekendatum context value needs an evaluation date; the case carries asOfDate null")
   | Construct { typ; constructor_; argument = (None | Some (Literal _)) as argument; _ } ->
       (* ch. 9.1: a constructor value is a ground term when its payload is
          ground — a nullary tag, or a literal payload scaled to the DECLARED
@@ -5317,7 +5319,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
    exactly the day-precision date rule. *)
 and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string =
   match e with
-  | Literal { waarde; typ = Some Datum_tijd; _ } ->
+  | Literal { variant; typ = Some Datum_tijd; _ } ->
       (* WF-095 (ch. 4.1): the lexeme reads through the SHARED datum-tijd
          reader — one grammar, one instant, no second opinion — and the
          instant enters as the GROUND pair term dt(D, MS), the very split
@@ -5327,7 +5329,7 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
          wraps at 32 bits, silently), and two instants 27.7 days apart then
          compare BACKWARDS. The pair keeps both components inside the range,
          so no fence is needed here at all. *)
-      let d, msod = split_datetime (ms_of_lexeme (req "Literal.waarde" waarde)) in
+      let d, msod = split_datetime (ms_of_lexeme (Ir_v0.Loader.literal_lexeme variant)) in
       ([], string_of_int d, string_of_int msod)
   | Attribuut_ref
       { attribuut = Some a; objecttype = Some ot; navigatie_bindingen = None; _ }
@@ -5884,14 +5886,14 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
     | l -> fault "%s takes one argument in a day-kind voorwaarde, got %d" what (List.length l)
   in
   match e with
-  | Constante { naam = Some n; _ } when norm n = norm "de dag" -> Value.Date day
+  | Bound_day _ -> Value.Date day
   | Constante { naam = Some n; _ } ->
       fault
-        "day-kind condition reads the session value %S — the one context value a day-kind \
-         voorwaarde admits is 'de dag' (WF-031)"
+        "day-kind condition reads the session value %S — a day-kind voorwaarde admits the bound \
+         day (BoundDay) and no context value (WF-031)"
         n
-  | Literal { waarde; typ; _ } -> (
-      let lex = req "Literal.waarde" waarde in
+  | Literal { variant; typ; _ } -> (
+      let lex = Ir_v0.Loader.literal_lexeme variant in
       match typ with
       | Some Datum_in_dagen -> Value.date_of_iso lex
       | Some (Numeriek _ | Percentage _) | None ->
@@ -6019,7 +6021,7 @@ and dk_cond ctx ~stack ~day (c : conditie) : bool =
          (2026-09-19, the narrow route) *)
       (match operand with
       | None -> ()
-      | Some (Constante { naam = Some n; _ }) when norm n = norm "de dag" -> ()
+      | Some (Bound_day _) -> ()
       | Some _ ->
           fault
             "a nested day-kind test on a date other than the bound day is a recognised, \
@@ -6065,8 +6067,9 @@ and dk_seen_days ctx : int list =
   let rec ex (e : expr) =
     let opt = function Some x -> ex x | None -> () in
     match e with
-    | Literal { waarde = Some lex; typ = Some Datum_in_dagen; _ } -> add_v (Value.date_of_iso lex)
-    | Literal { waarde = Some lex; typ = Some Datum_tijd; _ } -> add_v (Value.datetime_of_lexeme lex)
+    | Literal { variant = Lv_date lex; typ = Some Datum_in_dagen; _ } -> add_v (Value.date_of_iso lex)
+    | Literal { variant = Lv_date_time lex; typ = Some Datum_tijd; _ } ->
+        add_v (Value.datetime_of_lexeme lex)
     | Binair { links; rechts; _ } -> opt links; opt rechts
     | Afgerond { basis; _ } -> opt basis
     | Begrensd { basis; minimum; maximum; _ } -> opt basis; opt minimum; opt maximum
@@ -7323,11 +7326,11 @@ and construct_ground_term ctx typ constructor_ argument =
   | None, None -> f
   | None, Some _ -> fault "nullary constructor %S built with an argument (WF-062)" constructor_
   | Some _, None -> fault "unary constructor %S built without an argument (WF-062)" constructor_
-  | Some d, Some (Literal { waarde = Some lex; _ }) ->
+  | Some d, Some (Literal { variant; _ }) ->
       ignore ctx;
       Printf.sprintf "%s(%d)" f
         (scaled_of_value ~decimals:(decimals_of_datatype (Some d))
-           (Value.Num (Value.q_of_lexeme lex, Value.Unitless)))
+           (Value.Num (Value.q_of_lexeme (Ir_v0.Loader.literal_lexeme variant), Value.Unitless)))
   | Some _, Some _ ->
       fault
         "a Construct payload other than a literal is not a ground term (a payload that must be \
@@ -7858,8 +7861,8 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
              WF-ill-formed)"
             naam
       | None -> fault "unbound binder %S in a closed body (WF-064 should preclude this)" naam)
-  | Literal { waarde; typ; _ } -> (
-      let lex = req "Literal.waarde" waarde in
+  | Literal { variant; typ; _ } -> (
+      let lex = Ir_v0.Loader.literal_lexeme variant in
       match typ with
       | Some (Numeriek _ | Percentage _) | None ->
           let d = lexeme_decimals lex in
@@ -8814,7 +8817,7 @@ let translate_regel ctx (r : resolved_regel) =
               if kenmerk_temporal ctx ~otype:ot ~kenmerk:a then
                 fault "temporal characteristic %S: temporal writes are not implemented" a;
               (match r.waarde with
-              | Some (Literal { waarde = Some "waar"; _ }) -> ()
+              | Some (Literal { variant = Lv_boolean true; _ }) -> ()
               | _ -> fault "characteristic attribution with a non-waar value");
               head_body ctx (Printf.sprintf "heeft(%s,%s)" subject (str a)) (base :: cond)
           | Some (Berekening | Gelijkstelling) when attr_sum_typed ctx ~otype:ot ~attr:a ->
@@ -9105,9 +9108,9 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
       let m = req "Toekenning.attribuut" t.toe_attribuut in
       if t.toe_kenmerk then (
         match t.toe_waarde with
-        | Some (Literal { waarde = Some "waar"; _ }) ->
+        | Some (Literal { variant = Lv_boolean true; _ }) ->
             head_body ctx (Printf.sprintf "heeft(%s,%s)" term (str m)) body
-        | Some (Literal { waarde = Some "onwaar"; _ }) -> ()
+        | Some (Literal { variant = Lv_boolean false; _ }) -> ()
         | Some e ->
             (* WF-027 relaxation (besluit 1): a boolean-typed EXPRESSION guards
                the deposit — evaluated on the creation SUBJECT (the same

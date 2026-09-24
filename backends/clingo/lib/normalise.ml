@@ -200,7 +200,7 @@ let decimals_of_lexeme lex =
    fence tests record equality, not mere convertibility. *)
 let restate_lit ~tu ~to_finest (e : expr) : expr =
   match e with
-  | Literal ({ waarde = Some lex; typ = Some (Numeriek n); _ } as lit)
+  | Literal ({ variant = Lv_number lex; typ = Some (Numeriek n); _ } as lit)
     when (match n.eenheid with Some u -> u.noemer = None && restates_into tu u | None -> false) ->
       let u = Option.get n.eenheid in
       let r = to_finest u in
@@ -212,6 +212,7 @@ let restate_lit ~tu ~to_finest (e : expr) : expr =
         Literal
           { lit with
             waarde = Some lex';
+            variant = Lv_number lex';
             typ =
               Some
                 (Numeriek
