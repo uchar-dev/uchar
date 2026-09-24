@@ -7,9 +7,9 @@
 #      polarities, with no corpus document involved — without it, deleting a
 #      pattern is a silent green (measured 2026-09-11). A clamp fails when a
 #      pattern appears at a position the table does not carry;
-#  1c. the positions the M1, L2 and L3 shapes close by schema alone are held the
-#      same way: one small valid document per shape, one mutation per row, in both
-#      polarities;
+#  1c. the positions the M1, L2, L3 and L4 shapes close by schema alone are held
+#      the same way: one small valid document per shape, one mutation per row, in
+#      both polarities;
 #   2. every corpus/golden/**/ir.json validates against it;
 #   3. every such file round-trips: parsed with raw number lexemes preserved and
 #      re-emitted canonically, the output is byte-identical to the input (this is
@@ -75,16 +75,24 @@ except Exception as exc:  # pragma: no cover
 # re.search, whose `$` also matches before a final newline, so it admitted a
 # validity bound "2026-01-01\n" that only WF-101 in the verifier then refused
 # (measured 2026-09-23, the gate-4 twin of this fix). This validator takes a
-# FULL match instead. For the pattern this schema carries (the date pattern
-# at both bounds, anchored at both ends, digits written [0-9]) a full match
-# and ECMA-262's search agree: measured 2026-09-23 against node, together with
-# the case schema's patterns, on 1437 lexeme-pattern pairs, no difference.
-# That is a property of the pattern, not of full matching: `^a$\n?` on "a\n",
-# `^\d+$` on "\u0663" and `^\w+$` on "\u00e9" match fully in Python and fail
-# in ECMA-262. The self-test below runs the same validator as the corpus
-# check; its trailing-newline row fails the day the pattern is matched
-# Python's way again, and it carries no non-ASCII digit, so it would not see
-# the pattern changed from [0-9] to \d.
+# FULL match instead. For the patterns this schema carries a full match and
+# ECMA-262's search agree. The date pattern at both validity bounds is
+# anchored at both ends with digits written [0-9]: measured 2026-09-23
+# against node, together with the case schema's patterns, on 1437
+# lexeme-pattern pairs, no difference. Since L4 a literal's number, date and
+# dateTime values carry the case schema's own three patterns, and a form name
+# carries a negative lookahead written with [\s\S] and closed on (?![\s\S])
+# instead of `$`, because inside a lookahead Python's `$` also matches before
+# a final newline: measured 2026-09-24 against node, with and without the u
+# flag, on 787 lexeme-pattern pairs (the tables below, every literal lexeme
+# of the three kinds and every form name of the four zones and the parity
+# zone), no difference. That is a property of the patterns, not of full
+# matching: `^a$\n?` on "a\n", `^\d+$` on "\u0663" and `^\w+$` on "\u00e9"
+# match fully in Python and fail in ECMA-262. The self-test below runs the
+# same validator as the corpus check; its trailing-newline rows fail the day
+# a pattern is matched Python's way again, and it carries no non-ASCII digit
+# except in one form-name row, so it would not see a date or number pattern
+# changed from [0-9] to \d.
 def ecma_pattern(validator, pattern, instance, schema):
     if validator.is_type(instance, "string") and re.fullmatch(pattern, instance) is None:
         yield ValidationError("%r does not match %r" % (instance, pattern))
@@ -117,13 +125,20 @@ validator = IrValidator(schema)
 # corpus/negatief is never validated here at all. So the witness is held HERE, against the schema
 # itself, with no corpus document involved — the mechanism decided on the geldigheidsgrens card.
 #
-# SCOPE is this schema's WHOLE pattern surface, which is these two positions and nothing else. The
-# clamp below fails when a pattern turns up at a position the table does not carry, so a new pattern
-# arrives with its own rows or not at all. The ten patterns of uchar-case-v0 stood in exactly the
-# same position; since 2026-09-23 gate 4 holds them against a table of its own, on this model.
+# SCOPE is this schema's WHOLE pattern surface, which is these six positions and nothing else: the
+# two validity bounds, and since L4 the three patterned variants of a literal's value (taken from the
+# case schema) and the form name. The clamp below fails when a pattern turns up at a position the
+# table does not carry, so a new pattern arrives with its own rows or not at all. The ten patterns
+# of uchar-case-v0 stood in exactly the same position; since 2026-09-23 gate 4 holds them against a
+# table of its own, on this model.
+BOUND, NUMBER, DATE, DATETIME, FORMNAME = "bound", "number", "date", "dateTime", "formName"
 PATTERN_POSITIONS = {
-    "/$defs/Geldigheid/properties/vanaf",
-    "/$defs/Geldigheid/properties/tot",
+    "/$defs/Geldigheid/properties/vanaf": BOUND,
+    "/$defs/Geldigheid/properties/tot": BOUND,
+    "/$defs/LiteralValue/oneOf/0/properties/number": NUMBER,
+    "/$defs/LiteralValue/oneOf/3/properties/date": DATE,
+    "/$defs/LiteralValue/oneOf/4/properties/dateTime": DATETIME,
+    "/$defs/formName": FORMNAME,
 }
 
 # (lexeme, must the schema accept it, why this row is here)
@@ -150,6 +165,85 @@ BOUND_LEXEMES = [
     ("",                    False, "the empty string"),
 ]
 
+# (lexeme, must the schema accept it, why this row is here), per kind; the value patterns of a
+# literal are the case schema's (gate 4 holds the same three there), so its rows are carried over,
+# with the spellings the verifier's lexeme rules have negatief witnesses for beside them
+LEXEMES = {
+    NUMBER: [
+        ("5",      True,  "an integer"),
+        ("-12.50", True,  "a negative decimal"),
+        ("3/4",    True,  "a rational"),
+        ("12,50",  False, "a decimal comma: the literal writes a point, and the comma stays in 'bron' "
+                          "(B22)"),
+        ("5 \u20ac", False, "a unit in the lexeme: the unit is the literal's type (the WF-081 family)"),
+        ("5\n",    False, "a trailing newline"),
+        ("1,000",  False, "a grouping comma"),
+        (".5",     False, "a bare leading point"),
+        ("5.",     False, "a point without a fraction"),
+        ("1E3",    False, "an exponent"),
+        ("+5",     False, "a plus sign"),
+        ("1/0",    False, "a zero denominator"),
+        ("3/04",   False, "a denominator with a leading zero"),
+        ("1.5/2",  False, "a decimal numerator"),
+        ("",       False, "the empty string"),
+    ],
+    DATE: [
+        ("2026-06-01",          True,  "the strict lexeme itself"),
+        ("2026-02-30",          True,  "THE LAYER BOUNDARY, pinned deliberately: a pattern cannot check a "
+                                       "calendar, so this one is admitted here and refused by WF-084 in the "
+                                       "verifier"),
+        ("31-01-2024",          False, "day-first, the source snippet's order (the WF-084 family)"),
+        ("dd. 31-01-2024",      False, "the source snippet itself"),
+        ("2026-06-01\n",        False, "a trailing newline"),
+        ("2026-06-01 ",         False, "a trailing space"),
+        ("2026-6-1",            False, "variable field widths"),
+        ("+012026-06-01",       False, "a sign-prefixed extended year"),
+        ("2026-06-01T00:00:00", False, "a dateTime where a day is called for"),
+        ("",                    False, "the empty string"),
+    ],
+    DATETIME: [
+        ("2026-03-15T12:00:00",          True,  "the canonical lexeme without a fraction"),
+        ("2026-03-15T12:00:00.250",      True,  "a fraction of exactly three digits"),
+        ("2026-03-15T24:00:00",          True,  "THE LAYER BOUNDARY: the pattern checks field widths, "
+                                                "not the clock, so hour 24 is admitted here and refused "
+                                                "by WF-095 in the verifier"),
+        ("2026-03-15T12:00",             False, "no seconds field (the WF-095 family)"),
+        ("2026-03-15 12:00:00",          False, "a space where 'T' belongs"),
+        ("2026-03-15T12:00:00.1",        False, "a fraction of one digit"),
+        ("2026-03-15T12:00:00Z",         False, "a zone suffix"),
+        ("15-03-2026 12:00:00.000",      False, "the day-first source snippet"),
+        ("rommel 2026-03-15T12:00:00 x", False, "surrounding text"),
+        ("2026-03-15T12:00:00\n",        False, "a trailing newline"),
+    ],
+    FORMNAME: [
+        (None,                             True,  "a nameless form: WF-107's, with its own witness"),
+        ("",                               True,  "a blank name: WF-107's, with its own witness"),
+        ("jutheffing naar jaartarief",     True,  "a plain name"),
+        ("jutheffing naar jaartarief #2",  False, "the spelling of the second version of a form with "
+                                                  "several: on the v0 wire and in the readers' "
+                                                  "in-memory records, so a form named so would read as "
+                                                  "a version of another (B19)"),
+        ("x #1",                           False, "the first version's spelling"),
+        ("x #10",                          False, "any number of digits"),
+        ("x #0",                           False, "no version is numbered 0, but the spelling is still "
+                                                  "a version's"),
+        (" #1",                            False, "a name that is nothing but the suffix"),
+        ("x#2",                            True,  "no space before '#': not the version spelling"),
+        ("x # 2",                          True,  "a space after '#'"),
+        ("x #2 ",                          True,  "a trailing space: the suffix does not end the name"),
+        ("x #2a",                          True,  "a letter after the digits"),
+        ("x #",                            True,  "no digits"),
+        ("regel #1 van 2",                 True,  "the suffix inside the name"),
+        ("x #2\n",                         True,  "a trailing newline: the suffix does not end the name. "
+                                                  "Python's `$` would match before that newline, "
+                                                  "ECMA-262's does not; this row fails the day the "
+                                                  "lookahead is closed on `$`"),
+        ("x #\u0663",                      True,  "a non-ASCII digit: the in-memory spelling is written "
+                                                  "with ASCII digits, so this is not a version's; the "
+                                                  "row fails the day [0-9] becomes \\d"),
+    ],
+}
+
 _positions = []
 
 
@@ -165,9 +259,9 @@ def _scan(node, path):
 
 
 _scan(schema, "")
-if set(_positions) != PATTERN_POSITIONS:
-    stray = sorted(set(_positions) - PATTERN_POSITIONS)
-    gone = sorted(PATTERN_POSITIONS - set(_positions))
+if set(_positions) != set(PATTERN_POSITIONS):
+    stray = sorted(set(_positions) - set(PATTERN_POSITIONS))
+    gone = sorted(set(PATTERN_POSITIONS) - set(_positions))
     sys.stderr.write("FAIL: the schema's pattern surface moved and the self-test did not follow.\n")
     for p in stray:
         sys.stderr.write("  pattern with no self-test row: %s\n" % p)
@@ -188,10 +282,25 @@ for field in ("vanaf", "tot"):
                 "FAIL: pattern self-test, Geldigheid.%s = %r: schema %s it, expected %s\n  %s\n"
                 % (field, lexeme, "accepts" if got_ok else "refuses",
                    "accept" if want_ok else "refuse", why))
+n_selftest = 2 * len(BOUND_LEXEMES)
+# every other position: its own subschema, reached by $ref from a root that carries the schema's
+# $defs (which assert nothing about a string instance), probed with the bare lexeme
+for pos, kind in sorted(PATTERN_POSITIONS.items()):
+    if kind == BOUND:
+        continue
+    probe_v = IrValidator({"$defs": schema["$defs"], "$ref": "#" + pos})
+    for lexeme, want_ok, why in LEXEMES[kind]:
+        n_selftest += 1
+        got_ok = not list(probe_v.iter_errors(lexeme))
+        if got_ok != want_ok:
+            selftest_bad += 1
+            sys.stderr.write(
+                "FAIL: pattern self-test, %s = %r: schema %s it, expected %s\n  %s\n"
+                % (pos, lexeme, "accepts" if got_ok else "refuses",
+                   "accept" if want_ok else "refuse", why))
 if selftest_bad:
     sys.stderr.write("check-ir-schema: FAIL (%d pattern self-test row(s) bad)\n" % selftest_bad)
     sys.exit(1)
-n_selftest = 2 * len(BOUND_LEXEMES)
 
 # --- check 1c: the M1 shape self-test (card M1, 2026-09-23) -------------------------------------
 # M1 closes a set of positions by SCHEMA alone: the v0 root keys and format name, the two refused
@@ -205,8 +314,9 @@ n_selftest = 2 * len(BOUND_LEXEMES)
 # a verifier rule with its own negatief witness, the schema admits the value so that the witness
 # stays a document the schema admits.
 def _m1_base():
-    # written in the L3 shape since L3 (the number node, the parameter and the day kinds): the
-    # rows below pin what M1 closed, and the schema they run against is the L3 one
+    # written in the L4 shape (since L3 the number node, the parameter and the day kinds; since L4
+    # the rules container without uniciteitUnies, taken from the schema): the rows below pin what M1
+    # closed, and the schema they run against is the L4 one
     num = {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD"}
     return {
         "format": "uchar-ir-v1",
@@ -316,23 +426,36 @@ M1_SHAPE_ROWS = [
 # Same mechanism as the M1 rows: one small valid L2 document — the M1 base plus a fact type and
 # one node of every class L2 reshapes — and one mutation per row. The rows that must PASS pin the
 # deliberate admissions: the bindingless TOTAAL (the subject's own read, held by the verifier) and
-# the listed fold, whose elementObjecttype does not make it a ranged fold. In the reasons, a
+# the listed fold, whose element type does not make it a ranged fold. In the reasons, a
 # B-number is a delta of spec/proposals/V1-WIREMIGRATIE.md, and a D- or U-number a decision listed
-# in the L2 card (backlog/done/20260923-l2-referentielaag.md).
+# in the L2 card (backlog/done/20260923-l2-referentielaag.md). Since L4 the base is written in the
+# L4 shape (a rule, allocation, uniqueness and fact creation are forms with versions, a fold is an
+# Aggregation, a fact creation's steps are its path), and each row names the position it mutates
+# by its L4 name: the closure it pins is L2's, at the place the L4 shape keeps it.
+_ALWAYS = {"node": "Geldigheid", "vanaf": None, "tot": None}
+
+
 def _l2_base():
     d = _m1_base()
     num = {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD"}
     rb = lambda rol: {"node": "RolBinding", "feittype": "vondstregistratie", "rol": rol}
     ref = lambda attr, ot: {"node": "AttribuutRef", "attribuut": attr, "objecttype": ot,
                             "bron": None}
-    fold = lambda kind, args, el: {
-        "node": "Functie", "kind": kind, "argumenten": args, "elementObjecttype": el,
-        "leegwaarde": None, "filter": None, "dimensieSelectie": None, "type": dict(num),
-        "bron": None, "granulariteit": None}
-    rule = lambda naam, waarde, voorwaarde: {
-        "node": "ResolvedRegel", "naam": naam, "soort": "BEREKENING",
-        "doel": ref("vondstwaarde", "Jutter"), "waarde": waarde, "voorwaarde": voorwaarde,
-        "geldigheid": None}
+    def fold(kind, args, el, rng=None):
+        f = {"node": "Aggregation", "kind": kind, "arguments": args}
+        if el is not None:
+            f["elementType"] = el
+        if rng is not None:
+            f["sourceRole"] = rng
+        f.update(type=dict(num), bron=None)
+        return f
+
+    def rule(name, value, condition):
+        version = {"validity": dict(_ALWAYS), "target": ref("vondstwaarde", "Jutter"), "value": value}
+        if condition is not None:
+            version["condition"] = condition
+        version.update(initialisation=False, presentation="BEREKENING")
+        return {"node": "Rule", "name": name, "versions": [version]}
     d["model"]["objectTypes"].append({
         "node": "ObjectType", "name": "Vondst", "animate": False, "plural": "Vondsten",
         "attributes": [{"node": "Attribute", "name": "gewicht", "datatype": dict(num)}],
@@ -347,8 +470,7 @@ def _l2_base():
                     "meervoud": "vinders", "meervoudig": False},
                    {"node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
                     "meervoud": "vondsten", "meervoudig": True}]})
-    som = fold("SOM", [ref("gewicht", "Vondst")], "Vondst")
-    som["bronRol"] = rb("vondst")
+    som = fold("SOM", [ref("gewicht", "Vondst")], "Vondst", rb("vondst"))
     count = fold("AANTAL", [{"node": "InstanceSetUnion", "bron": None, "branches": [{
         "node": "InstanceSetBranch", "elementType": "Vondst", "sourceRole": rb("vondst"),
         "filter": None, "bron": None}]}], None)
@@ -375,47 +497,59 @@ def _l2_base():
         rule("vondstvariabele", {"node": "VariabeleRef", "naam": "w", "bron": None}, None),
     ]
     d["rules"]["verdelingen"] = [{
-        "node": "ResolvedVerdeling", "naam": "vondstverdeling", "bronType": "Jutter",
-        "bronAttribuut": "vondstwaarde", "doelType": "Vondst", "doelAttribuut": "gewicht",
-        "methode": "GELIJKE_DELEN", "ratoAttribuut": None, "maximumAttribuut": None,
-        "afrondingDecimalen": None, "restantAttribuut": None, "groepeerAttribuut": None,
-        "afnemend": False, "voorwaarde": None, "geldigheid": None,
-        "verbindendeRol": rb("vondst")}]
+        "node": "Allocation", "name": "vondstverdeling", "versions": [{
+            "sourceType": "Jutter", "sourceAttribute": "vondstwaarde", "targetType": "Vondst",
+            "targetAttribute": "gewicht", "method": "GELIJKE_DELEN", "descending": False,
+            "validity": dict(_ALWAYS), "connectingRole": rb("vondst")}]}]
     d["rules"]["uniciteiten"] = [{
-        "node": "ResolvedUniciteit", "naam": "uniek gewicht", "subject": "Vondst",
-        "sleutels": ["gewicht"], "bron": None, "geldigheid": None, "scopeRol": rb("vinder")}]
+        "node": "Uniqueness", "name": "uniek gewicht", "versions": [{
+            "sources": [{"node": "Source", "objectType": "Vondst", "keys": ["gewicht"]}],
+            "scope": rb("vinder"), "validity": dict(_ALWAYS), "bron": None}]}]
     d["rules"]["feitCreaties"] = [{
-        "node": "ResolvedFeitCreatie", "naam": "registratie", "anker": "Jutter", "doel": "Vondst",
-        "tussenstappen": [{"node": "Tussenstap", "rolBinding": rb("vondst")}],
-        "voorwaarde": None, "geldigheid": None, "feittype": "vondstregistratie",
-        "ankerRol": "vinder", "doelRol": "vondst", "joinRol": rb("vondst")}]
+        "node": "FactCreation", "name": "registratie", "versions": [{
+            "factType": "vondstregistratie", "anchorRole": "vinder", "targetRole": "vondst",
+            "anchor": "Jutter", "path": [rb("vondst"), rb("vondst")],
+            "validity": dict(_ALWAYS)}]}]
     return d
 
 
 def _rule(d, i):
-    return d["rules"]["resolvedRegels"][i]
+    # the one version of the i-th rule: every position these rows mutate is a version's
+    return d["rules"]["resolvedRegels"][i]["versions"][0]
 
 
 def _som(d):
-    return _rule(d, 0)["waarde"]
+    return _rule(d, 0)["value"]
 
 
 def _part(d, i):
-    return _rule(d, 0)["voorwaarde"]["onderdelen"][i]
+    return _rule(d, 0)["condition"]["onderdelen"][i]
+
+
+def _alloc(d):
+    return d["rules"]["verdelingen"][0]["versions"][0]
+
+
+def _uniq(d):
+    return d["rules"]["uniciteiten"][0]["versions"][0]
+
+
+def _fc(d):
+    return d["rules"]["feitCreaties"][0]["versions"][0]
 
 
 def _listed(d):
-    # the listed value fold: two operands and an elementObjecttype, as the producer writes it
-    _rule(d, 2)["waarde"] = {
-        "node": "Functie", "kind": "EERSTE", "elementObjecttype": "Jutter",
-        "argumenten": [{"node": "AttribuutRef", "attribuut": "vondstwaarde",
-                        "objecttype": "Jutter", "bron": None}, _rule(d, 2)["waarde"]],
-        "leegwaarde": None, "filter": None, "dimensieSelectie": None, "type": None, "bron": None,
-        "granulariteit": None}
+    # the listed value fold: two operands and an element type, as the producer writes it
+    _rule(d, 2)["value"] = {
+        "node": "Aggregation", "kind": "EERSTE",
+        "arguments": [{"node": "AttribuutRef", "attribuut": "vondstwaarde",
+                       "objecttype": "Jutter", "bron": None}, _rule(d, 2)["value"]],
+        "elementType": "Jutter", "type": None, "bron": None}
 
 
 def _both(d, kind):
-    _som(d).update(kind=kind, bronPad=[dict(_som(d)["bronRol"]), dict(_som(d)["bronRol"])])
+    _som(d).update(kind=kind, sourcePath=[dict(_som(d)["sourceRole"]),
+                                          dict(_som(d)["sourceRole"])])
 
 
 _NUM = {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD"}
@@ -442,47 +576,47 @@ L2_SHAPE_ROWS = [
     ("RoleMembership carries backref", lambda d: _part(d, 0).update(backref="vinder"), False,
      "B9: the far-side check's back-reference did not move onto the merged node"),
     ("the L1 near-side role check where the role check stands",
-     lambda d: _rule(d, 0)["voorwaarde"]["onderdelen"].__setitem__(0, {
+     lambda d: _rule(d, 0)["condition"]["onderdelen"].__setitem__(0, {
          "node": "Rollidmaatschap", "rol": "vinder", "anderTeFiller": "Vondst",
          "negatie": False, "bron": None}), False,
      "B9: RoleMembership is the one role-check node, in both directions"),
     ("the L1 far-side role check where the role check stands",
-     lambda d: _rule(d, 0)["voorwaarde"]["onderdelen"].__setitem__(0, {
+     lambda d: _rule(d, 0)["condition"]["onderdelen"].__setitem__(0, {
          "node": "VerreRollidmaatschap", "filler": "Vondst", "backref": "vinder",
          "negatie": False, "bron": None}), False,
      "B9: RoleMembership is the one role-check node, in both directions"),
-    ("AttribuutRef carries set", lambda d: _rule(d, 0)["doel"].update(set=False), False,
+    ("AttribuutRef carries set", lambda d: _rule(d, 0)["target"].update(set=False), False,
      "B11, D8: the set reading is the argument of a ranged fold, not a field"),
     ("AttribuutRef carries navigatieRol",
-     lambda d: _rule(d, 0)["doel"].update(navigatieRol="vinder"), False,
+     lambda d: _rule(d, 0)["target"].update(navigatieRol="vinder"), False,
      "B11: a navigation is its role bindings; a written name beside them could drift"),
     ("AttribuutRef carries navigatiePad",
-     lambda d: _rule(d, 0)["doel"].update(navigatiePad=["vinder"]), False,
+     lambda d: _rule(d, 0)["target"].update(navigatiePad=["vinder"]), False,
      "B11: a navigation is its role bindings; a written path beside them could drift"),
     ("AttribuutRef carries onderwerpBron",
-     lambda d: _rule(d, 0)["doel"].update(onderwerpBron="Jutter"), False,
+     lambda d: _rule(d, 0)["target"].update(onderwerpBron="Jutter"), False,
      "B11: the context fixes the subject; the written subject spelling left the wire"),
-    ("AttribuutRef carries type", lambda d: _rule(d, 0)["doel"].update(type=dict(_NUM)), False,
+    ("AttribuutRef carries type", lambda d: _rule(d, 0)["target"].update(type=dict(_NUM)), False,
      "B13: the declaration is the one source of a reference's type"),
-    ("ParameterRef carries type", lambda d: _rule(d, 2)["waarde"].update(type=dict(_NUM)), False,
+    ("ParameterRef carries type", lambda d: _rule(d, 2)["value"].update(type=dict(_NUM)), False,
      "B13: the declaration is the one source of a reference's type"),
-    ("DimensieCel carries type", lambda d: _rule(d, 4)["waarde"].update(type=dict(_NUM)), False,
+    ("DimensieCel carries type", lambda d: _rule(d, 4)["value"].update(type=dict(_NUM)), False,
      "B13: the declaration is the one source of a reference's type"),
     ("BinderRef carries type",
-     lambda d: _rule(d, 5)["waarde"]["body"].update(type=dict(_NUM)), False,
+     lambda d: _rule(d, 5)["value"]["body"].update(type=dict(_NUM)), False,
      "B13: a binder's type is its Let's, written once"),
-    ("VariabeleRef carries type", lambda d: _rule(d, 6)["waarde"].update(type=dict(_NUM)),
+    ("VariabeleRef carries type", lambda d: _rule(d, 6)["value"].update(type=dict(_NUM)),
      False, "B13, D13: the variable reference loses its type with the other four classes"),
-    ("Functie SOM with an elementObjecttype and no range", lambda d: _som(d).pop("bronRol"),
+    ("Aggregation SOM with an elementType and no range", lambda d: _som(d).pop("sourceRole"),
      False, "U2, D7: an instance fold's range is written, never derived"),
-    ("Functie TOTAAL with an elementObjecttype and no range",
-     lambda d: _som(d).update(kind="TOTAAL") or _som(d).pop("bronRol"), True,
+    ("Aggregation TOTAAL with an elementType and no range",
+     lambda d: _som(d).update(kind="TOTAAL") or _som(d).pop("sourceRole"), True,
      "U2, D8 (iv): the bindingless TOTAAL is the subject's own read (the verifier holds it)"),
-    ("Functie SOM with both bronRol and bronPad", lambda d: _both(d, "SOM"), False,
+    ("Aggregation SOM with both sourceRole and sourcePath", lambda d: _both(d, "SOM"), False,
      "U2: one range, one spelling"),
-    ("Functie TOTAAL with both bronRol and bronPad", lambda d: _both(d, "TOTAAL"), False,
+    ("Aggregation TOTAAL with both sourceRole and sourcePath", lambda d: _both(d, "TOTAAL"), False,
      "U2: never both, under TOTAAL too"),
-    ("Functie EERSTE over two listed operands with an elementObjecttype and no range",
+    ("Aggregation EERSTE over two listed operands with an elementType and no range",
      _listed, True,
      "U2 is scoped to one argument: a listed value fold reads its operands and has no range"),
     ("Kwantorvouw without a range", lambda d: _part(d, 1).pop("bronRol"), False,
@@ -491,47 +625,48 @@ L2_SHAPE_ROWS = [
      lambda d: _part(d, 1).update(bronPad=[dict(_part(d, 1)["bronRol"]),
                                            dict(_part(d, 1)["bronRol"])]), False,
      "U2: one range, one spelling"),
-    ("ResolvedVerdeling without verbindendeRol",
-     lambda d: d["rules"]["verdelingen"][0].pop("verbindendeRol"), False,
+    ("AllocationVersion without connectingRole",
+     lambda d: _alloc(d).pop("connectingRole"), False,
      "U2, D7: the allocation's relation is written, never derived"),
     ("InstanceSetBranch.sourceRole = null",
-     lambda d: _rule(d, 1)["waarde"]["argumenten"][0]["branches"][0].update(sourceRole=None),
+     lambda d: _rule(d, 1)["value"]["arguments"][0]["branches"][0].update(sourceRole=None),
      False, "U2: the selection's relation is required and non-null"),
     ("InstanceSetBranch without sourceRole",
-     lambda d: _rule(d, 1)["waarde"]["argumenten"][0]["branches"][0].pop("sourceRole"), False,
+     lambda d: _rule(d, 1)["value"]["arguments"][0]["branches"][0].pop("sourceRole"), False,
      "U2: the selection's relation is written, never derived"),
-    ("ResolvedFeitCreatie carries zetVeld",
-     lambda d: d["rules"]["feitCreaties"][0].update(zetVeld="vondst"), False,
+    ("FactCreationVersion carries zetVeld",
+     lambda d: _fc(d).update(zetVeld="vondst"), False,
      "B7: a fact creation carries its symbolic fields alone"),
-    ("ResolvedFeitCreatie carries joinVeld",
-     lambda d: d["rules"]["feitCreaties"][0].update(joinVeld="vinder"), False,
+    ("FactCreationVersion carries joinVeld",
+     lambda d: _fc(d).update(joinVeld="vinder"), False,
      "B7: a fact creation carries its symbolic fields alone"),
-    ("ResolvedFeitCreatie without joinRol",
-     lambda d: d["rules"]["feitCreaties"][0].pop("joinRol"), False,
+    ("FactCreationVersion without path, which carries the joining hop",
+     lambda d: _fc(d).pop("path"), False,
      "B7, D5 (c): the symbolic block is the whole creation"),
-    ("ResolvedFeitCreatie without feittype",
-     lambda d: d["rules"]["feitCreaties"][0].pop("feittype"), False,
+    ("FactCreationVersion without factType",
+     lambda d: _fc(d).pop("factType"), False,
      "B7, D5 (c): the symbolic block is the whole creation"),
-    ("ResolvedFeitCreatie without ankerRol",
-     lambda d: d["rules"]["feitCreaties"][0].pop("ankerRol"), False,
+    ("FactCreationVersion without anchorRole",
+     lambda d: _fc(d).pop("anchorRole"), False,
      "B7, D5 (c): the symbolic block is the whole creation"),
-    ("ResolvedFeitCreatie without doelRol",
-     lambda d: d["rules"]["feitCreaties"][0].pop("doelRol"), False,
+    ("FactCreationVersion without targetRole",
+     lambda d: _fc(d).pop("targetRole"), False,
      "B7, D5 (c): the symbolic block is the whole creation"),
-    ("Tussenstap without rolBinding",
-     lambda d: d["rules"]["feitCreaties"][0]["tussenstappen"][0].pop("rolBinding"), False,
+    ("the L2 step node where a path step stands",
+     lambda d: _fc(d)["path"].__setitem__(0, {"node": "Tussenstap",
+                                              "rolBinding": _fc(d)["path"][0]}), False,
      "B7, D12: a creation step is its binding"),
-    ("Tussenstap carries type",
-     lambda d: d["rules"]["feitCreaties"][0]["tussenstappen"][0].update(type="Vondst"), False,
+    ("a path step carries type",
+     lambda d: _fc(d)["path"][0].update(type="Vondst"), False,
      "B7, D12: a creation step is its binding; the bean fields left the step"),
-    ("Tussenstap carries veld",
-     lambda d: d["rules"]["feitCreaties"][0]["tussenstappen"][0].update(veld="vondst"), False,
+    ("a path step carries veld",
+     lambda d: _fc(d)["path"][0].update(veld="vondst"), False,
      "B7, D12: a creation step is its binding; the bean fields left the step"),
-    ("Tussenstap carries viaOuderVeld",
-     lambda d: d["rules"]["feitCreaties"][0]["tussenstappen"][0].update(viaOuderVeld=False),
+    ("a path step carries viaOuderVeld",
+     lambda d: _fc(d)["path"][0].update(viaOuderVeld=False),
      False, "B7, D12: a creation step is its binding; the bean fields left the step"),
-    ("ResolvedUniciteit carries scopeVeld",
-     lambda d: d["rules"]["uniciteiten"][0].update(scopeVeld="vinder"), False,
+    ("UniquenessVersion carries scopeVeld",
+     lambda d: _uniq(d).update(scopeVeld="vinder"), False,
      "B8: scopeRol alone is the scoping"),
     ("Kenmerk carries navigatie", lambda d: _part(d, 1)["toets"].update(navigatie="vondst"), False,
      "D53: the hop is navigatieBinding alone"),
@@ -539,11 +674,11 @@ L2_SHAPE_ROWS = [
      lambda d: d["model"]["parameters"][0].update(datatype={"node": "Onbekend", "reden": None}),
      False, "B16, D15: Onbekend is no datatype"),
     ("Onbekend as Onopgelost.type",
-     lambda d: _rule(d, 3)["waarde"].update(type={"node": "Onbekend", "reden": None}), False,
+     lambda d: _rule(d, 3)["value"].update(type={"node": "Onbekend", "reden": None}), False,
      "B16, D14, U10: absent is the one spelling of an unknown type; Onbekend is no datatype"),
-    ("Onopgelost without type", lambda d: _rule(d, 3)["waarde"].pop("type"), True,
+    ("Onopgelost without type", lambda d: _rule(d, 3)["value"].pop("type"), True,
      "D14: absent is the one spelling of an unknown type"),
-    ("Onopgelost with type = null", lambda d: _rule(d, 3)["waarde"].update(type=None), False,
+    ("Onopgelost with type = null", lambda d: _rule(d, 3)["value"].update(type=None), False,
      "D14, U10: absent, never null"),
 ]
 
@@ -559,7 +694,8 @@ L2_SHAPE_ROWS = [
 # a type annotation and a factor not in lowest terms, both refused by the verifier (WF-007,
 # WF-092) with a negatief witness of their own, because one datatype union serves declarations and
 # annotations alike and a schema cannot state a greatest common divisor. In the reasons, a
-# B-number is a delta of spec/proposals/V1-WIREMIGRATIE.md.
+# B-number is a delta of spec/proposals/V1-WIREMIGRATIE.md. Since L4 the rule the base adds is a
+# Rule with one version and its literal a typed value, as the L4 schema writes them.
 def _l3_base():
     d = _l2_base()
     m = d["model"]
@@ -592,15 +728,15 @@ def _l3_base():
                      "unit": dict(eur)},
         "timeline": {"node": "TimelineFacet", "granularity": "JAAR", "count": 1}})
     m["dayKinds"] = [{"node": "DayKind", "name": "schouwdag", "plural": "schouwdagen"}]
-    d["rules"]["resolvedRegels"].append({
-        "node": "ResolvedRegel", "naam": "vindersdeel", "soort": "BEREKENING",
-        "doel": {"node": "AttribuutRef", "attribuut": "vindersdeel", "objecttype": "Jutter",
-                 "bron": None},
-        "waarde": {"node": "Literal", "waarde": "5",
-                   "type": {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD",
-                            "unit": dict(pct)},
+    d["rules"]["resolvedRegels"].append({"node": "Rule", "name": "vindersdeel", "versions": [{
+        "validity": dict(_ALWAYS),
+        "target": {"node": "AttribuutRef", "attribuut": "vindersdeel", "objecttype": "Jutter",
                    "bron": None},
-        "voorwaarde": None, "geldigheid": None})
+        "value": {"node": "Literal", "value": {"number": "5"},
+                  "type": {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD",
+                           "unit": dict(pct)},
+                  "bron": None},
+        "initialisation": False, "presentation": "BEREKENING"}]})
     return d
 
 
@@ -636,7 +772,7 @@ def _factor(d):
 
 def _lit(d):
     # a Literal whose type annotation is a Number with the unit '%'
-    return d["rules"]["resolvedRegels"][-1]["waarde"]
+    return d["rules"]["resolvedRegels"][-1]["versions"][0]["value"]
 
 
 def _param(d):
@@ -784,9 +920,552 @@ L3_SHAPE_ROWS = [
      "a parameter has a datatype (IR-SPEC ch. 2.10)"),
 ]
 
+
+# --- check 1c, the L4 rows (card L4, 2026-09-24) -------------------------------------------------
+# L4 moves the rule layer and the expression layer to their v1 forms and closes by schema what they
+# no longer carry: the v0 rule-form nodes and their fields, the rule kind as a field, the
+# placeholder allocation method, the fact creation's target type and step node, the union list and
+# its source node, the overloaded function node, the context-value grab-bag, and a literal's
+# lexeme. It closes as well what the new forms cannot carry: an empty list of versions, sources,
+# keys or path steps, a scoped union, the presentation tag beside the initialisation flag, a form
+# name spelled as a version, a fold field on a builtin call or a bucket on an aggregation, a kind of
+# the other node, a literal value that is not exactly one variant, and a context value without a
+# name or type. Same mechanism as the M1, L2 and L3 rows: one small valid L4 document — the L3 base
+# plus a form of every named kind with its versions, an aggregation and a builtin call with their
+# optional fields, a literal of every variant, a context value and a bound day, in canonical key
+# order — and one mutation per row. The rows that must PASS pin the deliberate admissions, each a
+# verifier rule with a negatief witness of its own: a nameless or blank form (WF-107), a null
+# reference name (WF-029, WF-034), an empty allocation attribute (WF-034), a padded statute
+# annotation (WF-082), a builtin call without a type (WF-038), a typeless literal (WF-034), a value
+# variant its literal's type does not name (WF-114), and a context value named outside the closed
+# set (WF-098); the other accepted rows pin the absences that have a meaning of their own. In the
+# reasons, a B-number is a delta of spec/proposals/V1-WIREMIGRATIE.md.
+def _l4_base():
+    d = _l3_base()
+    m, r = d["model"], d["rules"]
+    num = {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD"}
+    euro = {"node": "Number", "whole": False, "decimals": 2, "sign": "NIET_NEGATIEF"}
+    rb = lambda rol: {"node": "RolBinding", "feittype": "vondstregistratie", "rol": rol}
+    ref = lambda attr, ot: {"node": "AttribuutRef", "attribuut": attr, "objecttype": ot,
+                            "bron": None}
+    lit = lambda value, typ: {"node": "Literal", "value": value, "type": typ, "bron": None}
+    kenmerk = lambda naam: {"node": "Kenmerk", "kenmerk": naam, "negatie": False, "eigenaar": None,
+                            "periode": None, "bron": None}
+    soort = {"node": "Enumeratie", "domein": "Vondstsoort", "waarden": ["hout", "touw"]}
+    plaats = [{"name": "Wad", "payload": None}, {"name": "Strand", "payload": None}]
+
+    def version(target, value, condition=None, initialisation=False, presentation=None,
+                validity=None):
+        v = {"validity": validity or dict(_ALWAYS), "target": target, "value": value}
+        if condition is not None:
+            v["condition"] = condition
+        v["initialisation"] = initialisation
+        if presentation is not None:
+            v["presentation"] = presentation
+        return v
+
+    def rule(name, *versions):
+        return {"node": "Rule", "name": name, "versions": list(versions)}
+
+    m["domains"].append({"node": "Domain", "name": "Vindplaats",
+                         "datatype": {"node": "SumType", "constructors": plaats}})
+    _ot(d)["attributes"] += [
+        {"node": "Attribute", "name": "bijnaam", "datatype": {"node": "Tekst"}},
+        {"node": "Attribute", "name": "vondstsoort", "datatype": dict(soort)},
+        {"node": "Attribute", "name": "vindplaats",
+         "datatype": {"node": "SumType", "domain": "Vindplaats", "constructors": plaats}}]
+    r["resolvedRegels"] += [
+        # two versions under one name, with adjacent windows and one list of annotations
+        dict(rule("jaartarief",
+                  version(ref("vondsttarief", "Jutter"), lit({"number": "12.50"}, dict(euro)),
+                          presentation="BEREKENING",
+                          validity={"node": "Geldigheid", "vanaf": "2025-01-01",
+                                    "tot": "2025-12-31"}),
+                  version(ref("vondsttarief", "Jutter"), lit({"number": "3/4"}, dict(euro)),
+                          condition=kenmerk("aangemeld"), presentation="GELIJKSTELLING",
+                          validity={"node": "Geldigheid", "vanaf": "2026-01-01", "tot": None})),
+             statuteAnnotations=["art. 3 Jutterswet"]),
+        # a characteristic write carries neither the flag nor the tag; an initialisation the flag
+        rule("aanmelding", version(ref("aangemeld", "Jutter"),
+                                   lit({"boolean": True}, {"node": "Booleaan"}))),
+        rule("beginwaarde", version(ref("vondstwaarde", "Jutter"), lit({"number": "0"}, dict(num)),
+                                    initialisation=True)),
+        rule("bijnaam", version(ref("bijnaam", "Jutter"), lit({"text": "de jutter"}, {"node": "Tekst"}),
+                                presentation="GELIJKSTELLING")),
+        rule("aanmelddatum", version(ref("aangemeldOp", "Jutter"),
+                                     lit({"date": "2026-01-01"}, {"node": "Date", "precision": "day"}),
+                                     presentation="GELIJKSTELLING")),
+        rule("meldtijdstip", version(ref("gemeldOp", "Jutter"),
+                                     lit({"dateTime": "2026-03-15T12:00:00.250"},
+                                         {"node": "Date", "precision": "millisecond"}),
+                                     presentation="GELIJKSTELLING")),
+        rule("vondstsoort", version(ref("vondstsoort", "Jutter"),
+                                    lit({"enumeration": "hout"}, dict(soort)),
+                                    presentation="GELIJKSTELLING")),
+        rule("vindplaats", version(ref("vindplaats", "Jutter"),
+                                   lit({"constructor": "Wad"},
+                                       {"node": "SumType", "domain": "Vindplaats",
+                                        "constructors": plaats}),
+                                   presentation="GELIJKSTELLING")),
+        # an aggregation with every field a fold carries, over a two-step range
+        rule("vondstsom", version(ref("vondstwaarde", "Jutter"), {
+            "node": "Aggregation", "kind": "SOM", "arguments": [ref("gewicht", "Vondst")],
+            "elementType": "Vondst", "filter": kenmerk("aangespoeld"),
+            "emptyFallback": lit({"number": "0"}, dict(num)),
+            "sourcePath": [rb("vondst"), rb("vondst")], "type": dict(num), "bron": None},
+            presentation="BEREKENING")),
+        # a dimension fold: no element type, so no range
+        rule("vakkensom", version(ref("vondstwaarde", "Jutter"), {
+            "node": "Aggregation", "kind": "SOM", "arguments": [ref("vondstwaarde", "Jutter")],
+            "dimensionSelection": {"node": "DimensieSelectie", "dimensie": "kustvak",
+                                   "labels": ["noord", "zuid"], "bron": None},
+            "type": dict(num), "bron": None}, presentation="BEREKENING")),
+        # a builtin call with its bucket and its gedurende condition, and one over a session value
+        rule("tariefdeel", version(ref("vondsttarief", "Jutter"), {
+            "node": "BuiltinCall", "kind": "TIJDSEVENREDIG_DEEL",
+            "arguments": [ref("vondsttarief", "Jutter")], "filter": kenmerk("aangemeld"),
+            "granularity": "MAAND", "type": dict(euro), "bron": None}, presentation="BEREKENING")),
+        rule("rekendag", version(ref("vondstwaarde", "Jutter"), {
+            "node": "BuiltinCall", "kind": "DAG_UIT", "arguments": [
+                {"node": "ContextValue", "name": "Rekendatum",
+                 "type": {"node": "Date", "precision": "day"}, "bron": None}],
+            "type": dict(num), "bron": None}, presentation="BEREKENING")),
+    ]
+    r["resolvedDagsoorten"] = [{
+        "node": "ResolvedDagsoort", "naam": "schouwdag",
+        "voorwaarde": {"node": "Vergelijking", "op": "GELIJK", "links": {
+            "node": "BuiltinCall", "kind": "DAG_UIT", "arguments": [
+                {"node": "BoundDay", "type": {"node": "Date", "precision": "day"},
+                 "bron": "de dag"}],
+            "type": dict(num), "bron": None},
+            "rechts": lit({"number": "1"}, dict(num)), "periode": None, "bron": None},
+        "geldigheid": None}]
+    r["objectCreaties"] = [{"node": "ObjectCreation", "name": "muntregistratie", "versions": [{
+        "createdType": "Muntvondst", "subject": "Jutter", "initialisations": [
+            {"node": "Toekenning", "attribuut": "gewicht", "waarde": lit({"number": "1"}, dict(num)),
+             "kenmerk": False},
+            {"node": "Toekenning", "attribuut": "aangespoeld",
+             "waarde": lit({"boolean": True}, {"node": "Booleaan"}), "kenmerk": True}],
+        "condition": kenmerk("aangemeld"), "validity": dict(_ALWAYS),
+        "connectingRole": rb("vondst")}]}]
+    # every optional field of an allocation at once: which method admits which is WF-025's
+    r["verdelingen"].append({"node": "Allocation", "name": "vondstverdeling naar rato",
+                             "versions": [{
+        "sourceType": "Jutter", "sourceAttribute": "vondstwaarde", "targetType": "Vondst",
+        "targetAttribute": "gewicht", "method": "NAAR_RATO", "ratioAttribute": "gewicht",
+        "maximumAttribute": "gewicht", "roundingDecimals": 2, "remainderAttribute": "vondstwaarde",
+        "orderingAttribute": "gewicht", "descending": True, "condition": kenmerk("aangemeld"),
+        "validity": dict(_ALWAYS), "connectingRole": rb("vondst")}]})
+    r["consistenties"] = [{"node": "Consistency", "name": "gewicht positief", "versions": [{
+        "subject": "Vondst",
+        "assertion": {"node": "Vergelijking", "op": "GROTER", "links": ref("gewicht", "Vondst"),
+                      "rechts": lit({"number": "0"}, dict(num)), "periode": None, "bron": None},
+        "validity": dict(_ALWAYS), "bron": "Het gewicht van een vondst is groter dan 0.",
+        "line": 12}]}]
+    r["uniciteiten"].append({"node": "Uniqueness", "name": "unieke registratie", "versions": [{
+        "sources": [{"node": "Source", "objectType": "Jutter", "keys": ["vondstwaarde"]},
+                    {"node": "Source", "objectType": "Vondst", "keys": ["gewicht"]}],
+        "validity": dict(_ALWAYS), "bron": None}]})
+    return d
+
+
+def _form(d, lst, name):
+    return next(f for f in d["rules"][lst] if f["name"] == name)
+
+
+def _ver(d, lst, name, i=0):
+    return _form(d, lst, name)["versions"][i]
+
+
+def _rv(d, name, i=0):
+    return _ver(d, "resolvedRegels", name, i)
+
+
+def _val(d, name):
+    return _rv(d, name)["value"]
+
+
+# the one form of each named kind the rows mutate, and its first version
+_FORMS = [("Rule", "resolvedRegels", "jaartarief"),
+          ("Allocation", "verdelingen", "vondstverdeling naar rato"),
+          ("ObjectCreation", "objectCreaties", "muntregistratie"),
+          ("FactCreation", "feitCreaties", "registratie"),
+          ("Consistency", "consistenties", "gewicht positief"),
+          ("Uniqueness", "uniciteiten", "unieke registratie")]
+
+
+def _set(getter, key, value):
+    return lambda d: getter(d).update({key: value})
+
+
+def _pop(getter, key):
+    return lambda d: getter(d).pop(key)
+
+
+def _v0_keys(where, getter, keys, why):
+    # one row per v0 key the L4 node or version record no longer carries
+    return [("%s carries the v0 key %s" % (where, k), _set(getter, k, None), False, why)
+            for k in keys]
+
+
+_SOM = lambda d: _val(d, "vondstsom")
+_DAG_UIT = lambda d: _val(d, "rekendag")
+_CTX = lambda d: _val(d, "rekendag")["arguments"][0]
+_BOUND = lambda d: d["rules"]["resolvedDagsoorten"][0]["voorwaarde"]["links"]["arguments"][0]
+_DEEL = lambda d: _val(d, "tariefdeel")
+_NUMLIT = lambda d: _val(d, "beginwaarde")
+_ALLOC = lambda d: _ver(d, "verdelingen", "vondstverdeling naar rato")
+_OC = lambda d: _ver(d, "objectCreaties", "muntregistratie")
+_FC = lambda d: _ver(d, "feitCreaties", "registratie")
+_CONS = lambda d: _ver(d, "consistenties", "gewicht positief")
+_UNION = lambda d: _ver(d, "uniciteiten", "unieke registratie")
+_SINGLE = lambda d: _ver(d, "uniciteiten", "uniek gewicht")
+
+
+def _v0_rule(d):
+    v = _rv(d, "beginwaarde")
+    d["rules"]["resolvedRegels"][0] = {
+        "node": "ResolvedRegel", "naam": "beginwaarde", "soort": "INITIALISATIE",
+        "doel": v["target"], "waarde": v["value"], "voorwaarde": None, "geldigheid": None}
+
+
+L4_SHAPE_ROWS = [
+    ("the L4 base document", lambda d: None, True,
+     "the L4 shape itself: the six named forms with their versions, a two-version rule with its "
+     "statute annotations, an aggregation and a builtin call with their optional fields, a literal "
+     "of every variant, a context value and a bound day, in canonical key order"),
+    # --- the container and the v0 nodes -----------------------------------------------------------
+    ("rules carries uniciteitUnies", lambda d: d["rules"].update(uniciteitUnies=[]), False,
+     "B27: one list of uniqueness forms; the v0 union list left the wire, as a key and as an empty "
+     "list"),
+    ("the v0 rule node where a Rule stands", _v0_rule, False,
+     "B19, B20: a rule is {node, name, versions}, and its kind is no field"),
+    ("the v0 allocation node where an Allocation stands",
+     lambda d: d["rules"]["verdelingen"].__setitem__(0, {
+         "node": "ResolvedVerdeling", "naam": "vondstverdeling", "bronType": "Jutter",
+         "bronAttribuut": "vondstwaarde", "doelType": "Vondst", "doelAttribuut": "gewicht",
+         "methode": "GELIJKE_DELEN", "ratoAttribuut": None, "maximumAttribuut": None,
+         "afrondingDecimalen": None, "restantAttribuut": None, "groepeerAttribuut": None,
+         "afnemend": False, "voorwaarde": None, "geldigheid": None,
+         "verbindendeRol": _ALLOC(d)["connectingRole"]}), False,
+     "B19: an allocation is {node, name, versions}"),
+    ("the v0 object-creation node where an ObjectCreation stands",
+     lambda d: d["rules"]["objectCreaties"].__setitem__(0, {
+         "node": "ResolvedObjectCreatie", "naam": "muntregistratie", "nieuwType": "Muntvondst",
+         "subject": "Jutter", "toekenningen": [], "voorwaarde": None, "geldigheid": None}), False,
+     "B19: an object creation is {node, name, versions}"),
+    ("the v0 fact-creation node where a FactCreation stands",
+     lambda d: d["rules"]["feitCreaties"].__setitem__(0, {
+         "node": "ResolvedFeitCreatie", "naam": "registratie", "anker": "Jutter", "doel": "Vondst",
+         "tussenstappen": [], "voorwaarde": None, "geldigheid": None,
+         "feittype": "vondstregistratie", "ankerRol": "vinder", "doelRol": "vondst",
+         "joinRol": _FC(d)["path"][-1]}), False,
+     "B19: a fact creation is {node, name, versions}"),
+    ("the v0 consistency node where a Consistency stands",
+     lambda d: d["rules"]["consistenties"].__setitem__(0, {
+         "node": "ResolvedConsistentie", "naam": "gewicht positief", "subject": "Vondst",
+         "assertie": _CONS(d)["assertion"], "bron": None, "line": 12, "geldigheid": None}), False,
+     "B19: a consistency is {node, name, versions}"),
+    ("the v0 single uniqueness node where a Uniqueness stands",
+     lambda d: d["rules"]["uniciteiten"].__setitem__(0, {
+         "node": "ResolvedUniciteit", "naam": "uniek gewicht", "subject": "Vondst",
+         "sleutels": ["gewicht"], "bron": None, "geldigheid": None}), False,
+     "B19, B27: a uniqueness is {node, name, versions}, its sources named"),
+    ("the v0 union node where a Uniqueness stands",
+     lambda d: d["rules"]["uniciteiten"].__setitem__(1, {
+         "node": "ResolvedUniciteitUnie", "naam": "unieke registratie", "bronnen": [],
+         "bron": None, "geldigheid": None}), False,
+     "B27: the union is the uniqueness with two or more sources"),
+    ("the v0 union source node where a Source stands",
+     lambda d: _UNION(d)["sources"].__setitem__(0, {"node": "Bron", "type": "Jutter",
+                                                    "sleutels": ["vondstwaarde"]}), False,
+     "B27: a source is {node: Source, objectType, keys}"),
+    ("the v0 function node where an aggregation stands",
+     lambda d: _rv(d, "vondstsom").update(value={
+         "node": "Functie", "kind": "SOM", "argumenten": [], "elementObjecttype": None,
+         "leegwaarde": None, "filter": None, "dimensieSelectie": None, "type": None,
+         "bron": None, "granulariteit": None}), False,
+     "B21: an aggregation and a builtin call are two nodes"),
+    ("the v0 function node where a builtin call stands",
+     lambda d: _rv(d, "rekendag").update(value={
+         "node": "Functie", "kind": "DAG_UIT", "argumenten": [], "elementObjecttype": None,
+         "leegwaarde": None, "filter": None, "dimensieSelectie": None, "type": None,
+         "bron": None, "granulariteit": None}), False,
+     "B21: an aggregation and a builtin call are two nodes"),
+    ("the v0 constant node where a context value stands",
+     lambda d: _DAG_UIT(d)["arguments"].__setitem__(0, {
+         "node": "Constante", "naam": "Rekendatum", "type": {"node": "Date", "precision": "day"},
+         "bron": None}), False,
+     "B23: a session value is a ContextValue"),
+    ("the v0 constant node where the bound day stands",
+     lambda d: d["rules"]["resolvedDagsoorten"][0]["voorwaarde"]["links"]["arguments"].__setitem__(
+         0, {"node": "Constante", "naam": "de dag", "type": {"node": "Date", "precision": "day"},
+             "bron": "de dag"}), False,
+     "B23: the bound day of a day-kind definition is a BoundDay"),
+    # --- the named forms and their versions -------------------------------------------------------
+] + [
+    ("%s without versions" % node, _pop(lambda d, l=lst, n=name: _form(d, l, n), "versions"), False,
+     "B19: a form carries its versions (IR-SPEC ch. 3, Versioning)")
+    for node, lst, name in _FORMS
+] + [
+    ("%s with versions = []" % node, _set(lambda d, l=lst, n=name: _form(d, l, n), "versions", []),
+     False, "B19: a form has at least one version (IR-SPEC ch. 3: versions >= 1)")
+    for node, lst, name in _FORMS
+] + [
+    ("%sVersion carries node" % node,
+     _set(lambda d, l=lst, n=name: _ver(d, l, n), "node", node + "Version"), False,
+     "B19: a version record is part of its form and carries no discriminator")
+    for node, lst, name in _FORMS
+] + [
+    ("%s named 'x #2'" % node, _set(lambda d, l=lst, n=name: _form(d, l, n), "name", "x #2"),
+     False, "B19: that is the spelling of the second version of a form with several, on the v0 "
+     "wire and in the readers' in-memory records")
+    for node, lst, name in _FORMS
+] + [
+    ("Rule.name = null", _set(lambda d: _form(d, "resolvedRegels", "jaartarief"), "name", None),
+     True, "a nameless form is WF-107's, a verifier rule with its own witness"),
+    ("Rule.name = ''", _set(lambda d: _form(d, "resolvedRegels", "jaartarief"), "name", ""),
+     True, "a blank name is WF-107's, a verifier rule with its own witness"),
+    ("Rule without name", _pop(lambda d: _form(d, "resolvedRegels", "jaartarief"), "name"),
+     False, "the name is always written; a form without one writes null"),
+    ("Rule without statuteAnnotations",
+     _pop(lambda d: _form(d, "resolvedRegels", "jaartarief"), "statuteAnnotations"), True,
+     "absent is the one spelling of a rule without annotations"),
+    ("Rule.statuteAnnotations = []",
+     _set(lambda d: _form(d, "resolvedRegels", "jaartarief"), "statuteAnnotations", []), False,
+     "absent is the one spelling of no annotation (IR-SPEC ch. 3.1)"),
+    ("Rule.statuteAnnotations = ['']",
+     _set(lambda d: _form(d, "resolvedRegels", "jaartarief"), "statuteAnnotations", [""]), False,
+     "an annotation is a non-empty string"),
+    ("Rule.statuteAnnotations with a padded entry",
+     _set(lambda d: _form(d, "resolvedRegels", "jaartarief"), "statuteAnnotations",
+          [" art. 3 Jutterswet "]), True,
+     "the trimming is WF-082's, a verifier rule with its own witness"),
+    ("a RuleVersion carries statuteAnnotations",
+     _set(lambda d: _rv(d, "jaartarief"), "statuteAnnotations", ["art. 3 Jutterswet"]), False,
+     "B19: the annotations are the form's, one list for all its versions"),
+] + _v0_keys("Rule", lambda d: _form(d, "resolvedRegels", "jaartarief"),
+             ["naam", "soort", "bronAnnotaties"],
+             "B19: a rule carries name, versions and statuteAnnotations") + [
+    # --- the rule version -------------------------------------------------------------------------
+    ("RuleVersion without initialisation", _pop(lambda d: _rv(d, "jaartarief"), "initialisation"),
+     False, "B20: the initialisation flag is always written"),
+    ("RuleVersion.initialisation = null",
+     _set(lambda d: _rv(d, "jaartarief"), "initialisation", None), False,
+     "B20: the flag is a boolean"),
+    ("RuleVersion.validity = null", _set(lambda d: _rv(d, "jaartarief"), "validity", None), False,
+     "every version writes its validity; always is a Geldigheid with both bounds null"),
+    ("RuleVersion without validity", _pop(lambda d: _rv(d, "jaartarief"), "validity"), False,
+     "every version writes its validity (IR-SPEC ch. 3.10)"),
+    ("RuleVersion.presentation = 'KENMERKTOEKENNING'",
+     _set(lambda d: _rv(d, "jaartarief"), "presentation", "KENMERKTOEKENNING"), False,
+     "B20: the tag has the two values of a computing version; a characteristic write is a "
+     "version without it"),
+    ("RuleVersion.presentation = 'INITIALISATIE'",
+     _set(lambda d: _rv(d, "jaartarief"), "presentation", "INITIALISATIE"), False,
+     "B20: the initialisation is the flag, not a tag"),
+    ("RuleVersion.presentation = null",
+     _set(lambda d: _rv(d, "jaartarief"), "presentation", None), False,
+     "absent is the one spelling of no tag"),
+    ("RuleVersion with initialisation true and a presentation",
+     _set(lambda d: _rv(d, "jaartarief"), "initialisation", True), False,
+     "the initialisation flag and the presentation tag never stand together: an initialisation "
+     "has no surface form of its own"),
+    ("RuleVersion with initialisation true and no presentation",
+     lambda d: _rv(d, "jaartarief").update(initialisation=True) or
+     _rv(d, "jaartarief").pop("presentation"), True, "the initialisation"),
+    ("RuleVersion with initialisation false and no presentation",
+     _pop(lambda d: _rv(d, "jaartarief"), "presentation"), True,
+     "a characteristic write; that its target names one is WF-022's"),
+    ("RuleVersion without condition", _pop(lambda d: _rv(d, "jaartarief", 1), "condition"), True,
+     "absent is unconditional"),
+    ("RuleVersion.condition = null", _set(lambda d: _rv(d, "jaartarief", 1), "condition", None),
+     False, "absent is the one spelling of unconditional"),
+    ("RuleVersion.target = null", _set(lambda d: _rv(d, "jaartarief"), "target", None), False,
+     "the target is always written (IR-SPEC ch. 3.1)"),
+    ("RuleVersion whose target is a ParameterRef",
+     _set(lambda d: _rv(d, "jaartarief"), "target",
+          {"node": "ParameterRef", "parameter": "vondsttarief", "bron": None}), False,
+     "the target is an attribute reference and nothing else"),
+    ("RuleVersion.value = null", _set(lambda d: _rv(d, "jaartarief"), "value", None), False,
+     "the value is always written (IR-SPEC ch. 3.1)"),
+] + _v0_keys("RuleVersion", lambda d: _rv(d, "jaartarief"),
+             ["naam", "soort", "doel", "waarde", "voorwaarde", "geldigheid"],
+             "B19, B20: a version writes validity, target, value, condition, initialisation and "
+             "presentation") + [
+    # --- allocation, object creation, fact creation, consistency ----------------------------------
+    ("AllocationVersion.method = 'COMPLEX'", _set(_ALLOC, "method", "COMPLEX"), False,
+     "the v0 placeholder of an unhandled form is no method (IR-SPEC ch. 3.2)"),
+    ("AllocationVersion.method = null", _set(_ALLOC, "method", None), False,
+     "the method is always one of the three"),
+    ("AllocationVersion with its optional fields absent",
+     lambda d: [_ALLOC(d).pop(k) for k in ("ratioAttribute", "maximumAttribute",
+                                           "roundingDecimals", "remainderAttribute",
+                                           "orderingAttribute", "condition")], True,
+     "absent is none"),
+    ("AllocationVersion.ratioAttribute = ''", _set(_ALLOC, "ratioAttribute", ""), True,
+     "an empty attribute name is WF-034's, a verifier rule with its own witness"),
+    ("AllocationVersion.sourceType = null", _set(_ALLOC, "sourceType", None), True,
+     "WF-034 holds the presence of the four type and attribute fields"),
+] + [
+    ("AllocationVersion.%s = null" % k, _set(_ALLOC, k, None), False,
+     "absent is the one spelling of none")
+    for k in ("ratioAttribute", "maximumAttribute", "roundingDecimals", "remainderAttribute",
+              "orderingAttribute")
+] + _v0_keys("AllocationVersion", _ALLOC,
+             ["naam", "bronType", "bronAttribuut", "doelType", "doelAttribuut", "methode",
+              "ratoAttribuut", "maximumAttribuut", "afrondingDecimalen", "restantAttribuut",
+              "groepeerAttribuut", "afnemend", "voorwaarde", "geldigheid", "verbindendeRol"],
+             "B19: an allocation version writes the fields of IR-SPEC ch. 3.2") + [
+    ("ObjectCreationVersion without connectingRole", _pop(_OC, "connectingRole"), True,
+     "absent: the back-link is derived (RUNTIME-SEMANTICS ch. 5.5)"),
+    ("ObjectCreationVersion.connectingRole = null", _set(_OC, "connectingRole", None), False,
+     "written whole or not at all"),
+    ("ObjectCreationVersion.subject = null", _set(_OC, "subject", None), True,
+     "WF-034 holds the subject's presence, with its own witness"),
+] + _v0_keys("ObjectCreationVersion", _OC,
+             ["naam", "nieuwType", "toekenningen", "voorwaarde", "geldigheid", "verbindendeRol"],
+             "B19: an object creation version writes the fields of IR-SPEC ch. 3.3") + [
+    ("FactCreationVersion.path = []", _set(_FC, "path", []), False,
+     "a fact creation reaches its target in at least one hop (IR-SPEC ch. 3.4)"),
+    ("FactCreationVersion.anchor = null", _set(_FC, "anchor", None), True,
+     "a reference name of the rule layer stays nullable; that it resolves is WF-028's"),
+] + _v0_keys("FactCreationVersion", _FC,
+             ["naam", "anker", "doel", "tussenstappen", "voorwaarde", "geldigheid", "feittype",
+              "ankerRol", "doelRol", "joinRol"],
+             "B19: a fact creation version writes the fields of IR-SPEC ch. 3.4; the target type "
+             "is the declared filler of targetRole") + [
+    ("ConsistencyVersion.assertion = null", _set(_CONS, "assertion", None), False,
+     "the assertion is always written (IR-SPEC ch. 3.5)"),
+    ("ConsistencyVersion.subject = null", _set(_CONS, "subject", None), True,
+     "WF-029 holds the subject's presence, with its own witness"),
+    ("ConsistencyVersion without line", _pop(_CONS, "line"), False,
+     "the source line is always written"),
+] + _v0_keys("ConsistencyVersion", _CONS, ["naam", "assertie", "geldigheid"],
+             "B19: a consistency version writes subject, assertion, validity, bron and line") + [
+    # --- uniqueness -------------------------------------------------------------------------------
+    ("UniquenessVersion.sources = []", _set(_UNION, "sources", []), False,
+     "B27: a uniqueness has at least one source (IR-SPEC ch. 3.6)"),
+    ("Source.keys = []", lambda d: _UNION(d)["sources"][0].update(keys=[]), False,
+     "a source has at least one key (IR-SPEC ch. 3.6)"),
+    ("a union (two sources) with scope",
+     _set(_UNION, "scope", {"node": "RolBinding", "feittype": "vondstregistratie",
+                            "rol": "vinder"}), False,
+     "a scoped union is an open design question (IR-SPEC ch. 3.6), so the position is closed"),
+    ("a single-source uniqueness without scope", _pop(_SINGLE, "scope"), True,
+     "absent is unscoped"),
+    ("Source.objectType = null", lambda d: _UNION(d)["sources"][0].update(objectType=None), True,
+     "a reference name of the rule layer stays nullable; that it resolves is WF-030's"),
+] + _v0_keys("UniquenessVersion", _SINGLE,
+             ["naam", "subject", "sleutels", "scopeRol", "bronnen", "geldigheid"],
+             "B27: a uniqueness version writes sources, scope, validity and bron") + _v0_keys(
+    "Source", lambda d: _UNION(d)["sources"][0], ["type", "sleutels"],
+    "B27: a source writes objectType and keys") + [
+    # --- aggregation and builtin call -------------------------------------------------------------
+    ("Aggregation carries granularity", _set(_SOM, "granularity", "MAAND"), False,
+     "B21: the bucket is a builtin call's field"),
+    ("Aggregation with kind WORTEL", _set(_SOM, "kind", "WORTEL"), False,
+     "B21: a kind of the other node"),
+    ("BuiltinCall with kind SOM", _set(_DEEL, "kind", "SOM"), False,
+     "B21: a kind of the other node"),
+    ("Aggregation.filter = null", _set(_SOM, "filter", None), False,
+     "absent is the one spelling of no filter"),
+    ("Aggregation.emptyFallback = null", _set(_SOM, "emptyFallback", None), False,
+     "absent is the one spelling of no fallback"),
+    ("Aggregation.elementType = null",
+     lambda d: _val(d, "vakkensom").update(elementType=None), False,
+     "absent is the one spelling of no element type"),
+    ("BuiltinCall.granularity = null", _set(_DEEL, "granularity", None), False,
+     "absent is the one spelling of no bucket"),
+    ("BuiltinCall.granularity = 'DECENNIUM'", _set(_DEEL, "granularity", "DECENNIUM"), False,
+     "the five buckets of the v0 wire, in their v0 spelling"),
+    ("BuiltinCall.type = null", _set(_DEEL, "type", None), True,
+     "a builtin call without a type is WF-038's, a verifier rule with its own witness"),
+] + [
+    ("BuiltinCall carries %s" % k, _set(_DEEL, k, v), False,
+     "B21: %s is an aggregation's field" % k)
+    for k, v in (("elementType", "Jutter"),
+                 ("sourceRole", {"node": "RolBinding", "feittype": "vondstregistratie",
+                                 "rol": "vondst"}),
+                 ("sourcePath", []),
+                 ("emptyFallback", {"node": "Literal", "value": {"number": "0"}, "type": None,
+                                    "bron": None}),
+                 ("dimensionSelection", {"node": "DimensieSelectie", "dimensie": "kustvak",
+                                         "labels": ["noord"], "bron": None}))
+] + _v0_keys("Aggregation", _SOM,
+             ["argumenten", "elementObjecttype", "leegwaarde", "dimensieSelectie", "bronRol",
+              "bronPad", "granulariteit"],
+             "B21: an aggregation writes the fields of IR-SPEC ch. 4.3") + _v0_keys(
+    "BuiltinCall", _DEEL, ["argumenten", "elementObjecttype", "granulariteit"],
+    "B21: a builtin call writes kind, arguments, filter, granularity, type and bron") + [
+    # --- literal ----------------------------------------------------------------------------------
+    ("Literal carries waarde beside value", _set(_NUMLIT, "waarde", "0"), False,
+     "B22: a literal carries a typed value, not a lexeme"),
+    ("Literal with the v0 lexeme and no value",
+     lambda d: _NUMLIT(d).pop("value") and _NUMLIT(d).update(waarde="0"), False,
+     "B22: a literal carries a typed value, not a lexeme"),
+    ("Literal.value = null", _set(_NUMLIT, "value", None), False,
+     "the value is always written: exactly one variant"),
+    ("Literal.value as a string", _set(_NUMLIT, "value", "0"), False,
+     "B22: the value is a variant object"),
+    ("Literal.value.number as a JSON number", _set(_NUMLIT, "value", {"number": 0}), False,
+     "B22: a number is an exact string, never a JSON number that may be rounded"),
+    ("Literal.value with two variants", _set(_NUMLIT, "value", {"number": "0", "text": "0"}),
+     False, "exactly one variant"),
+    ("Literal.value = {}", _set(_NUMLIT, "value", {}), False, "exactly one variant"),
+    ("Literal.value.number = '12,50'", _set(_NUMLIT, "value", {"number": "12,50"}), False,
+     "B22: a decimal point; the source's comma stays in bron"),
+    ("Literal.value.number = '5 \u20ac'", _set(_NUMLIT, "value", {"number": "5 \u20ac"}), False,
+     "the unit is the literal's type, never part of its value"),
+    ("Literal.value.date = '31-01-2024'",
+     lambda d: _val(d, "aanmelddatum").update(value={"date": "31-01-2024"}), False,
+     "the ISO date; the source spelling stays in bron"),
+    ("Literal.value.dateTime = '2026-03-15T12:00'",
+     lambda d: _val(d, "meldtijdstip").update(value={"dateTime": "2026-03-15T12:00"}), False,
+     "the seconds field is always written"),
+    ("Literal.value = {'boolean': 'waar'}",
+     lambda d: _val(d, "aanmelding").update(value={"boolean": "waar"}), False,
+     "a boolean is a JSON boolean; the v0 lexeme is gone"),
+    ("Literal.value constructor with a payload",
+     lambda d: _val(d, "vindplaats").update(value={"constructor": "Wad",
+                                                   "payload": {"number": "1"}}), False,
+     "a literal names a constructor and applies none"),
+    ("Literal.value = {'list': []}", _set(_NUMLIT, "value", {"list": []}), False,
+     "no literal carries a list: the case format's list variant is not a literal's"),
+    ("Literal.value = {'enumeration': ''}",
+     lambda d: _val(d, "vondstsoort").update(value={"enumeration": ""}), False,
+     "a label is a non-empty string"),
+    ("Literal.value = {'text': ''}", lambda d: _val(d, "bijnaam").update(value={"text": ""}),
+     True, "the case format's text variant admits the empty string, and an empty text is one"),
+    ("Literal.type = null", _set(_NUMLIT, "type", None), True,
+     "a typeless value node is WF-034's, a verifier rule with its own witness"),
+    ("Literal whose variant is not the one its type names",
+     _set(_NUMLIT, "value", {"text": "0"}), True,
+     "variant against type is WF-114's: one datatype union serves every literal, so the schema "
+     "cannot cross the two"),
+    ("Literal with a date variant under a millisecond-precision type",
+     lambda d: _val(d, "meldtijdstip").update(value={"date": "2026-03-15"}), True,
+     "variant against type is WF-114's"),
+    # --- context value and bound day --------------------------------------------------------------
+    ("ContextValue without type", _pop(_CTX, "type"), False, "the type is always written"),
+    ("ContextValue.type = null", _set(_CTX, "type", None), False, "the type is a datatype"),
+    ("ContextValue.name = null", _set(_CTX, "name", None), False,
+     "the name is always a string: a context value without one names nothing"),
+    ("ContextValue without name", _pop(_CTX, "name"), False, "the name is always written"),
+    ("ContextValue named 'de dag'", _set(_CTX, "name", "de dag"), True,
+     "the schema leaves the name free: WF-098 refuses a name outside the closed set, the bound "
+     "day's included, with its own witness"),
+    ("BoundDay carries name", _set(_BOUND, "name", "de dag"), False,
+     "B23: the bound day carries no name"),
+    ("BoundDay without type", _pop(_BOUND, "type"), False, "the type is always written"),
+    ("BoundDay.type = null", _set(_BOUND, "type", None), False, "the type is a datatype"),
+] + _v0_keys("ContextValue", _CTX, ["naam"], "B23: a context value writes name, type and bron") + \
+    _v0_keys("BoundDay", _BOUND, ["naam"], "B23: the bound day writes type and bron")
+
+
 shape_bad = 0
 for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS),
-                   (_l3_base, L3_SHAPE_ROWS)):
+                   (_l3_base, L3_SHAPE_ROWS), (_l4_base, L4_SHAPE_ROWS)):
     for row, mutate, want_ok, why in rows:
         probe = base()
         mutate(probe)
@@ -799,7 +1478,7 @@ for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS),
 if shape_bad:
     sys.stderr.write("check-ir-schema: FAIL (%d shape self-test row(s) bad)\n" % shape_bad)
     sys.exit(1)
-n_shape = len(M1_SHAPE_ROWS) + len(L2_SHAPE_ROWS) + len(L3_SHAPE_ROWS)
+n_shape = len(M1_SHAPE_ROWS) + len(L2_SHAPE_ROWS) + len(L3_SHAPE_ROWS) + len(L4_SHAPE_ROWS)
 
 
 # NOTE: gate 9 (scripts/check-catala.sh) executes the slice of this
