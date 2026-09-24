@@ -314,9 +314,8 @@ public final class FactModelGenerator {
      *
      * <p>The role handed back is the SIBLING's name: the binding names the role the ELEMENT plays, and the
      * sibling — the role the anchor plays — is the reference field ON the element, which is the side the join
-     * reads. It is consulted LAST by every caller, after the written element name and after the by-pair search,
-     * so every join the model already derived stays exactly as it was; it is the only route left for a fold over
-     * a REPEATED type pair (where the by-pair search is ambiguous by construction) or a SELF-TYPED one.
+     * reads. Since L2 the binding is the only range the wire carries, so it is the route for every pair: a unique
+     * one, a REPEATED one (where a search by the type pair is ambiguous by construction) and a SELF-TYPED one.
      *
      * <p>A TO-MANY sibling is the one arm that needed a shared sentence. Its storage is the far end's field
      * (§13.3.9), so the element carries no scalar reference to join on — a resolution success with a cardinality
@@ -344,8 +343,7 @@ public final class FactModelGenerator {
     /**
      * THE navigation walk of an {@code AttribuutRef.navigatieBindingen} / {@code Kenmerk.navigatieBinding}
      * (IR-SPEC ch. 4.1a), resolved from {@code subject} — the one derivation both transpiler branches decide a
-     * bound navigation by (V1-WIREMIGRATIE P1). Until then both branches ignored the bindings and re-derived the
-     * walk from the written {@code navigatieRol}/{@code navigatiePad}, the v0 fields migration step B11 removes.
+     * bound navigation by (V1-WIREMIGRATIE P1); since L2 the bindings are the only navigation the wire carries.
      *
      * <p>Null when the walk does not resolve from {@code subject}: a binding naming no declared role, a hop whose
      * opposite role the type the walk stands on does not fill (ch. 2.6, extensionally), or — with a non-null

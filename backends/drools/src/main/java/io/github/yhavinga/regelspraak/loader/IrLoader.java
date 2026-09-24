@@ -166,9 +166,8 @@ public final class IrLoader {
      *               Wachters, which no by-pair search can disambiguate.</li>
      *           <li>a {@link ResolvedVerdeling} — IR-SPEC ch. 3.2 {@code verbindendeRol}, naming the role the
      *               RECIPIENT plays. It decides the recipient join in both transpiler branches
-     *               (V1-WIREMIGRATIE P3), as {@code run_verdeling} lets it decide in ref; only a bindingless
-     *               verdeling, which WF-048 admits while the type pair is unique, is still derived from the
-     *               pair.</li>
+     *               (V1-WIREMIGRATIE P3), as {@code run_verdeling} lets it decide in ref; since L2 the wire
+     *               requires it.</li>
      *           <li>a {@link Conditie.Rollidmaatschap} — the IR-SPEC ch. 4.5 {@code RoleMembership}, whose binding is its
      *               {@code factType} and the {@code role} the SUBJECT plays. The record is the carrier: its
      *               {@code rol} is that role and its other-end slot holds the {@code counterpartType} narrowing or
@@ -176,7 +175,10 @@ public final class IrLoader {
      *               is the transpilers' storage question.</li>
      *         </ul>
      *         In every case the SIBLING role — the one the anchor (subject) plays — is the bean field on the other
-     *         end. Absent for a node whose wire record carries no binding; the by-pair derivation then stands.
+     *         end. Absent for a node whose wire record carries no binding: an object creation without one (its
+     *         back-link is then derived from the type pair), and a fold that reads no linked instances — the
+     *         subject's own read under TOTAAL, or a fold over listed arguments (a single-argument fold over an
+     *         element type of any other kind without one is refused while loading).
      *  @param lets an INDEX of the {@link Expr.Let} nodes in the document, in parse order — not a channel: the Lets
      *         themselves sit in the expression trees as ordinary union nodes, and every consumer lowers and walks
      *         them there. The index exists for the one consumer that must start a walk at a Let without holding the

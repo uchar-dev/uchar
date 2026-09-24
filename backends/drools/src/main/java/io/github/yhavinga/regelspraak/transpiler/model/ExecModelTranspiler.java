@@ -125,8 +125,8 @@ public final class ExecModelTranspiler {
      *  direct relation instead. Keyed by IDENTITY. Empty by default (every fold then carries the one-step range). */
     private Map<Object, List<RegelSpraakModel.RolBindingRef>> bronPaden = new java.util.IdentityHashMap<>();
     /** IR-SPEC ch. 4.1a: the navigation bindings per AttribuutRef / Kenmerk node ({@code IrLoader.Loaded.navigatieBindingen}),
-     *  by IDENTITY. Where a node carries one it decides the walk ({@link FactModelGenerator#navigatiewandeling}); only a
-     *  bindingless node is resolved from its written navigatieRol/navigatiePad. */
+     *  by IDENTITY. Where a node carries one it decides the walk ({@link FactModelGenerator#navigatiewandeling}); a
+     *  bindingless node is the subject's own read. */
     private Map<Object, List<RegelSpraakModel.RolBindingRef>> navigatieBindingen = new java.util.IdentityHashMap<>();
     /** RUNTIME-SEMANTICS ch. 2.10: the §4 EFFECTIVE-unit derivation — declarations plus the ch. 2.6 join rules.
      *  Every unit restatement below takes its datatypes from here; a bare {@code e.type()} at a restatement site
@@ -1990,7 +1990,7 @@ public final class ExecModelTranspiler {
         return s -> { Object rel = roleGet.apply(s); return rel == null ? null : attrGet.apply(rel); };
     }
 
-    /** The §13.4.1 MULTI-hop to-one chain reader ("de X van de Y van de Z", the ref's navigatiePad): one typed
+    /** The §13.4.1 MULTI-hop to-one chain reader ("de X van de Y van de Z", bindings of more than one hop): one typed
      *  getter per declared role hop, short-circuiting to null (leeg) on ANY intervening null relation — the chain
      *  generalisation of {@link #navReader}'s single-hop root-guard, mirroring DrlTranspiler's KETEN value read.
      *  The pad is re-validated against THIS subject (volgKeten), so a chain resolved against another subject skips.
@@ -2093,7 +2093,7 @@ public final class ExecModelTranspiler {
         return cls != null ? Accessors.getter(cls, prop) : (s -> RegelSpraakRuntime.get(s, prop));
     }
 
-    /** Resolve the to-ONE navigation role of a navigated AttribuutRef (navigatieRol != null), mirroring
+    /** Resolve the to-ONE navigation role of a navigated AttribuutRef (one that carries bindings), mirroring
      *  {@link #navReader}'s GENAVIGEERD case — or null when absent / unresolvable / to-many. The navigated
      *  COMPARISON branches use this (rather than {@link #navReader}) so they can read the RELATION field and,
      *  per §5.5.5, treat a NULL relation as a LEEGWAARDE — the SAME as a present relation with a null ATTRIBUTE
@@ -4417,11 +4417,10 @@ public final class ExecModelTranspiler {
             // §3.6 a bare read of a gedimensioneerd attribuut (its field is a Map<label,value>) is under-specified —
             // a scalar slot needs a pinned label (a DimensieCel) or a dimensie-fold. Skip (DRL markers it likewise).
             if (a.objecttype() != null && !a.objecttype().dimensiesVan(a.attribuut()).isEmpty()) return null;
-            // §13.3.9 a BY-PAIR navigation: when the written noun NAMES the objecttype ("zijn vliegtuig", type
-            // Vliegtuig) the resolver records navigatieRol=null with objecttype != subject — NOT an own read.
-            // Route it through navReader (which resolves the unique by-pair role, null-safe), mirroring
-            // DrlTranspiler.naviRol's by-pair fallback; reading it as get(subject, attr) THREW at fire time
-            // (no such getter on the subject — surfaced by the keten objectcreatie review fixture).
+            // IR-SPEC ch. 4.1a: a read without bindings that names another type than the subject is no own read
+            // (WF-053 makes it ill-formed). navReader refuses it, as DrlTranspiler.naviRol does; reading it as
+            // get(subject, attr) THREW at fire time (no such getter on the subject — surfaced by the keten
+            // objectcreatie review fixture).
             if (valueSubject != null && a.objecttype() != null && a.objecttype() != valueSubject) {
                 java.util.function.Function<Object, Object> reader = navReader(a, valueSubject);
                 if (reader == null) return null;
@@ -8042,7 +8041,7 @@ public final class ExecModelTranspiler {
         }
     }
 
-    /** The to-ONE NAVIGATED AttribuutRefs a value expression READS (a ref with a navigatieRol, or one whose
+    /** The to-ONE NAVIGATED AttribuutRefs a value expression READS (a ref with bindings, or one whose
      *  objecttype differs from {@code subject} — the self-anaphora "van de &lt;rol&gt;" form) — the far-side reads
      *  the freshness watch CANNOT cover: property/class reactivity is per fact TYPE, so a subject pattern never
      *  re-fires on the FAR fact's update. Each is turned into a far-side JOIN pattern (see {@link #navReactiviteit})
