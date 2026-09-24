@@ -4501,10 +4501,10 @@ that can lose its truth, and absence is only one way to lose it. A
 comparison that a growing value falsifies is another, inside a fold's
 monotone part and outside any fold. In the model of the golden
 `jutterswet-opvolgerquorum` (merk the number of a Wachter's successors),
-with its case 4 as input, the document stays verifier-clean when the ALLE
+with its case 4 as input, the document stays verifier-clean when the `all`
 matrix reads "merk kleiner dan 2" or "merk ongelijk aan 2", and the four
 executors split: the reference interpreter and the Drools exec branch
-answer merk(W1) = 2, the ASP backend and the DRL-text branch 1. A TEN_MINSTE
+answer merk(W1) = 2, the ASP backend and the DRL-text branch 1. An `atLeast`
 fold with "merk kleiner dan 2", given a ploeglid under W3 so that W3 mints,
 splits the reference interpreter and both Drools branches (2) from the ASP
 backend (1). Without any fold, "het merk van de ploegleider van de Wachter
@@ -4628,7 +4628,7 @@ many strata as the chain is deep.
   the rule that writes merk = 1 reads the successor's rang under
   "gevuld"), the R3 shape spelled with `negated: true` (both tests "niet
   gevuld"), a presence-true test alone ("het merk is niet leeg") and
-  the test as the matrix of an ALLE fold over the minted successors —
+  the test as the matrix of an `all` fold over the minted successors —
   negatief cases `wf046-leegtest-recursieve-creatie`,
   `wf046-leegtest-negatie-recursieve-creatie`,
   `wf046-leegtest-aanwezigheid-recursieve-creatie` and
@@ -4669,9 +4669,9 @@ many strata as the chain is deep.
   ploegleden hebben een merk groter dan 1", with merk the number of a
   Wachter's successors. W1 (rang 1) with an input opvolger of rang 4
   mints one successor and keeps its verdict as the range grows: merk(W1)
-  = 2. Add a ploeglid W3 without successors and W1's ALLE fails: merk(W1)
+  = 2. Add a ploeglid W3 without successors and W1's `all` fails: merk(W1)
   = 1. Give W3 an input opvolger of rang 4 and W3 mints first, its merk
-  becomes 2, and then W1's ALLE holds and W1 mints: merk(W1) = 2,
+  becomes 2, and then W1's `all` holds and W1 mints: merk(W1) = 2,
   merk(W3) = 2. With no links at all (W1 of rang 1, W2 of rang 4)
   nothing is minted: merk 0 and 0, the counter-witness to reading the
   matrix negatively under every quantifier.
@@ -4714,9 +4714,9 @@ normative:
   a scalar are the dedicated collapses (ch. 3.6, 3.9) and the explicit
   point read (ch. 3.3, `IR-SPEC.md` ch. 4.3a). The evaluation date is
   available to expressions solely as the execution-date context value —
-  a `ContextValue` named `Rekendatum` (the v0 `Constante` until L4; day
-  precision; its sibling
-  `Rekenjaar`, a whole number, is not yet exercised by any corpus case
+  a `ContextValue` named `evaluationDate` (`Rekendatum` until L5, the v0
+  `Constante` until L4; day precision; its sibling
+  `evaluationYear`, a whole number, is not yet exercised by any corpus case
   and every executor refuses it by name with one sentence — the reference
   interpreter and the ASP backend at evaluation, the Drools backend before
   lowering — recorded in `IR-SPEC.md` ch. 4.1).
@@ -4738,7 +4738,7 @@ same calendar day differently in two runs of the same document.
 
 Selecting a parameter's vintage **is not a separate mechanism**: it is
 the ch. 4.3a temporal read of a granular parameter with the evaluation
-date as index — `read(tl_p, Rekendatum)`. The read itself keeps its
+date as index — `read(tl_p, evaluationDate)`. The read itself keeps its
 ch. 3.1 totality (a gap reads to leeg; an empty index reads to leeg);
 everything fail-fast about vintages lives one layer down, in the data
 plane (ch. 8.4), where it is checked **before any rule fires**. This is
@@ -4804,7 +4804,7 @@ is a configuration error, not a data condition.
 
 Document: granular parameter `penningbedrag` (year granularity, whole
 number); rule: *het huidig penningbedrag van een Jutter* = the
-temporal read of `penningbedrag` at `Rekendatum`. Session: evaluation
+temporal read of `penningbedrag` at `evaluationDate`. Session: evaluation
 date 2026-03-15; Parameterset `penningbedrag` = [2025: 4, 2026: 5]
 (year segments).
 
@@ -4842,7 +4842,7 @@ The declared-unordered group and the §9.5 conflict path are the anchor
 7.6.3's outcomes — differing grounds → no write + one channel fact,
 equal grounds → one write and no conflict, input kept standing under a
 conflict, the characteristic conflict — machine-checked through both
-executors; the wire marking is `ongeordend`, IR-SPEC ch. 6.1). The v0
+executors; the wire marking is `unordered`, IR-SPEC ch. 6.1). The v0
 desugaring is ch. 7.7, machine-checked by the
 `jutterswet-waardering-v0vorm` anchor (ref replays the v0 forms
 natively, the ASP backend the desugared defaults — the gate-6
@@ -4850,7 +4850,7 @@ differential witnesses the lowering). Rule-readability of the conflict
 fact is **closed** for v1 (ch. 7.2, decided 2026-08-20); the ch. 7.8
 standing norm executes on scalar targets through both executors
 (temporal targets stay fenced — recorded, scalar-first). Below-root
-exception branching is ch. 7.9 (Phase 5c): the `Default.excepties` wire
+exception branching is ch. 7.9 (Phase 5c): the `Default.exceptions` wire
 form and its well-formedness (WF-050 recursion, WF-051 unchanged,
 WF-075) land with this chapter; the anchors `jutterswet-nestuitzondering`
 and `jutterswet-nestkenmerk` prove both target kinds through the executor
@@ -4972,7 +4972,7 @@ EmptyError/ConflictError shape), mapped onto this IR's own discipline:
   compositions it does not — a Catala frontend must compile
   enclosing-default fallback into defaults structure, never into an
   error bit. That reconciliation is a recorded Phase-5 obligation.
-  Honest inexpressibility stays with `Onopgelost` (WF-044) — a default
+  Honest inexpressibility stays with `Unresolved` (WF-044) — a default
   never masks an Unresolved node (row 7, the OpenFisca lesson).
 - **Over-determination** — two defaults groups of one **declared-unordered
   group** on one target both decide and the decisions differ: the
@@ -5103,7 +5103,7 @@ serve the old forms through the new machinery:
 | v0 form(s) on one (type, attribute) target | Defaults reading |
 |---|---|
 | **exactly one** unconditional, version-free Initialisatie | the ch. 7.3 initialisation default (lowest) |
-| plus at most one version-free computing rule (Gelijkstelling/Berekening) | plus one default above it: justification = its condition (an unconditional rule gets the vacuously true empty-ALLE), consequence = its value |
+| plus at most one version-free computing rule (Gelijkstelling/Berekening) | plus one default above it: justification = its condition (an unconditional rule gets the vacuously true empty `all`), consequence = its value |
 
 The initialisation is what the desugaring exists for — and what keeps
 the two readings extensionally equal on the confluent domain. A **bare
@@ -5221,7 +5221,7 @@ versioned targets (selection is temporal, ch. 7.4 — never defeasible).
 
 ### 7.9 Nested exception groups (design — the Phase-5c gate)
 
-*Status: normative design; the wire form is `Default.excepties` (`IR-SPEC.md`
+*Status: normative design; the wire form is `Default.exceptions` (`IR-SPEC.md`
 ch. 6.1, WF-075), an extension field, never emitter-produced. The worked
 examples below are the anchors `jutterswet-nestuitzondering` (attribute
 target) and `jutterswet-nestkenmerk` (characteristic target).*
@@ -5231,21 +5231,22 @@ is **root-level branching**. What neither expresses is **branching below the
 root** — a chain whose exceptions themselves branch. Phase 5c adds it as
 one concept applied recursively (`PHASE4-DEFAULTS.md` §7 option i,
 ratified 2026-08-22): a default's exception slot may hold **exception
-groups** — `excepties = { ongeordend, leden }`, each member an `ExceptionGroup` (a
-default chain, descending, highest first, inheriting the root target and
-itself nesting via `Default.excepties`). An exception group carries **no
+groups** — `exceptions = { unordered, members }` (v0 `excepties = {
+ongeordend, leden }`), each member an `ExceptionGroup` (a default chain,
+descending, highest first, inheriting the root target and itself nesting
+via `Default.exceptions`). An exception group carries **no
 target of its own**. Two default shapes result:
 
-- a **form-a default** — own justification/consequence (or besluit) **and**
-  `excepties`: the exception groups go first (below), and its own
+- a **form-a default** — own justification/consequence (or decision) **and**
+  `exceptions`: the exception groups go first (below), and its own
   justification/consequence is the **fall-back** when they
   decide nothing;
-- a **group-default** — `excepties` with no own justification/consequence/
-  besluit: a chain position carrying a *multi-member base group* (or a
+- a **group-default** — `exceptions` with no own justification/consequence/
+  decision: a chain position carrying a *multi-member base group* (or a
   further exception group), whose members reconcile as an unordered
   group.
 
-**The recursive reading.** A default carrying `excepties` first **reconciles
+**The recursive reading.** A default carrying `exceptions` first **reconciles
 its exception groups exactly as the root group reconciles** (ch. 7.2): each
 member decides independently (its own highest deciding default,
 recursively), and
@@ -5328,7 +5329,7 @@ default 1 = a group-default carrying the unordered base group
 | `case8-niets` | (none) | **leeg** | consistent — nothing decides; a no-op-survivor (gate 7) |
 
 *Characteristic target* — `jutterswet-nestkenmerk`, `Jutter.vrijgesteld`.
-One defaults group: default 0 = form-a `nx → attribute (besluit true)` with
+One defaults group: default 0 = form-a `nx → attribute (decision true)` with
 unordered exception groups `{ nx ∧ ny → do-not-attribute (false), nx ∧ nz →
 attribute (true) }` — each justification conjoins its carrier's `nx`
 (ch. 7.1).
@@ -5357,7 +5358,7 @@ is the **default-index path**, so the innermost conflict keys at
 
 **Well-formedness and strata.** WF-050 recurses its default-shape checks
 into sub-defaults (content per target kind; a group-default carries
-`excepties` and no own content; a contentless default is WF-075's
+`exceptions` and no own content; a contentless default is WF-075's
 concern). WF-051 needs
 **no change**: `dep_forms` folds **every descendant read** (justifications
 and consequences, recursively through sub-defaults) into the root group's
@@ -5392,7 +5393,7 @@ and no well-formedness rule demanding a boundary declaration):
 
 1. the subtype's own exceptions, in their declared order;
 2. the inherited exceptions, in their inherited order — an inherited
-   **group-default** (ch. 7.9: `excepties`, no own consequence) is not a
+   **group-default** (ch. 7.9: `exceptions`, no own consequence) is not a
    base and rides at the bottom of this block;
 3. the **base** — the subtype's own base if it has one, which *replaces*
    the inherited base, otherwise the inherited base;
@@ -5472,7 +5473,7 @@ any other base. Two shapes, both `spec/proposals/SUBTYPING.md` §4.1:
   the owner's own base then replaces.
 
 The rule's own condition becomes the default's justification, and an
-unconditional rule gets the vacuously true empty-ALLE — the same shape the
+unconditional rule gets the vacuously true empty `all` — the same shape the
 ch. 7.7 desugaring uses, so the two readings are one form rather than two.
 
 A rule folded into a stack **must not also fire as a rule**: it is the base,
@@ -6137,12 +6138,12 @@ not expressible). A `FieldAccess` on a leeg base likewise propagates
 (reading a field of an absent record is leeg).
 
 Worked (the anchor's `premie` := `dossier.waarde + opslag` **guarded by
-`GEVULD(dossier)`**, `waardekopie` := `dossier.waarde` — a bare
+`filled(dossier)`**, `waardekopie` := `dossier.waarde` — a bare
 `FieldAccess`, **unguarded** — and `samenvatting` := `{ waarde: premie,
 telling: |dossiers| }`). The guard on `premie` is load-bearing: `+`
 coalesces a leeg operand to 0 (ch. 1.3), so an *unguarded* `premie` would
 write **5.00** at an absent `dossier` (0 + `opslag`), not leeg — the
-`GEVULD(dossier)` condition makes `premie` leeg exactly when the record
+`filled(dossier)` condition makes `premie` leeg exactly when the record
 is absent. `waardekopie` needs no such guard: a bare `FieldAccess` on a
 leeg base propagates leeg (below), with no arithmetic to coalesce.
 
@@ -6159,7 +6160,7 @@ leeg base propagates leeg (below), with no arithmetic to coalesce.
   folds the empty map → **0.00**; `samenvatting` = **`{waarde: 125.50,
   telling: 0}`** (`|[]|` = 0 — a value, not leeg).
 - **case3-afwezig** — `dossier` and `dossiers` both absent. `premie` is
-  **leeg**: its `GEVULD(dossier)` guard is false, so the rule does not
+  **leeg**: its `filled(dossier)` guard is false, so the rule does not
   fire — never the 5.00 an unguarded coalescing `+` would write.
   `waardekopie` reads **leeg** directly (`FieldAccess` on a leeg base
   propagates, no guard needed); `totaalwaarde` reads **leeg** (a leeg
