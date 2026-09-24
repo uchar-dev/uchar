@@ -913,6 +913,51 @@ getuigen met hun arm, de nieuwe getuige, en de telling van de getuigen waarvan a
 naam, pointer of meldingstekst bewoog. De M1–L4-secties blijven geschiedenis; hun pointers
 (`/rules/verdelingen/3` enz.) blijven zoals ze toen waren.
 
+## M7 — de nulmeting (ingevuld door de hoofdsessie, 2026-09-25)
+
+**Commitreeks.** Van de claimcommit `1690aa05` tot de M7-unie `14f1bfdb` (U1):
+dertien commits van M7-O (`6dac7367` … `c48b13df` de wire, fase 1; `7b5a993e`
+… `98845f49` de gedeelde lader, `checks.ml`, de clingo-suite en de catala- en
+flogic-emitter, fase 2) en vier van M7-J (de Java-emitter en frontendtests,
+de Drools-lader en Drools-tests, de getuige `BronrecordWeigeringWitnessTest`),
+gerebaset op M7-O's kop. Geen document en geen lezer draagt nog `bron`.
+
+**Tellingen van `m5.py --stage m7`** (a/g/r/n/t): 6098 strings naar
+`source.snippet` in 639 documenten plus 9 in de twee handgetuigen = 6107 in
+641; 773 + 1 nullen weg = 774 in 103; `line` 17 opgegaan (consistentie 16,
+regelgroep 1) en 49 vervallen (consistentie 27, regelgroep 22); 676
+documenten gemigreerd, 58 zonder `bron`-sleutel ongemoeid; precies twee
+weigeringen, beide op `/rules/resolvedRegels/0/versions/0/condition/links/bron`
+(`wf113-marker-bron-leeg`: met de hand een snippet van alleen witruimte;
+`wf113-marker-bron-null`: met de hand de marker zonder `source`); de toka-dump
+168 snippets en 1 `line`, door de frontend byte-gelijk opnieuw geëmitteerd
+(104888 bytes); `--check` 0 van 736; een tweede `--all` wijzigt niets.
+
+**De veertien gates op de unie** (elk als losse aanroep; L4-stand tussen
+haakjes waar hij anders is): 1 PASS; 2 PASS 289, 77 patroon- en 327 vormrijen
+(311); 3 PASS 289 schoon, 417 negatief, 228 armfragmenten; 4 PASS 667; 5 PASS
+ref-suite 976, 619 replays; 6 PASS clingo-suite 1325 (1284: de M7-laadtabel),
+619; 7 PASS 582 + 37; 8 PASS 48 / 96, Drools-poot 11 / 37; 9 PASS 216 / 12; 10
+PASS JUnit 573 (570) / 73; 11 PASS 45 fragmenten, 29 slices, replay 29/29/29;
+12 PASS played 188, DRL 167, JUnit 756 (748) zonder skips; 13 PASS 40 twists /
+22 goldens, DRL 21; 14 PASS 135 / 2.
+
+**De bytevergelijking** (U2; `/tmp/l5/nulmeting.sh`, vóór op main `1690aa05`,
+ná op `14f1bfdb`, 3308 bestanden elk): ref 619 van 619 byte-gelijk, clingo
+619/619, `ref --noop` 619/619, de replay-API exec-model 242/242 en DRL-tekst
+242/242 (statusregel, waarden en redenen), rood: ref 48/48, clingo 48/48,
+Drools 48/48, toka: ref 29/29, clingo 29/29, Drools 29/29, verifier 726 van
+736. De tien verschillen zijn precies de toegestane: de zes WF-095-getuigen
+(`wf095-bronsnippet`, `-fractiebreedte`, `-omringende-tekst`,
+`-ontbrekende-seconden`, `-spatie-scheider`, `-zone-suffix`: de zin eindigt
+op "belongs in `source`") en de vier WF-113-getuigen
+(`wf113-marker-bron-leeg` en `-bron-null`: "Unresolved marker whose source
+snippet is blank …" en "Unresolved marker without a source …" in plaats van
+"Onopgelost marker whose bron is blank/null …"; `wf113-marker-zonder-verslag`
+en `wf113-verslag-noemt-marker-niet`: "… contains its source snippet
+verbatim"). De aanname "geen uitvoerder leest `bron`" houdt: geen enkele
+uitvoer van ref, clingo, Drools, rood of toka bewoog.
+
 ## Acceptatie
 
 Elke bouwer sluit met de genoemde gates groen op zijn eigen branch; de kaart sluit met alle
