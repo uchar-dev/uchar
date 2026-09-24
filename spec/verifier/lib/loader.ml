@@ -1,11 +1,11 @@
-(* Strict loader for the uchar-ir-v1 wire format in its L4 shape, with the
-   source record of L5.
+(* Strict loader for the uchar-ir-v1 wire format in its L5 shape.
 
    Strict means: every object must carry exactly the keys the format
-   declares (the schema is additionalProperties:false with every property
-   required), every node object must carry the expected "node"
-   discriminator, and every enum value must be a known member. Any
-   deviation raises [Error] with the JSON path — never a silent default.
+   declares (the schema is additionalProperties:false: a required key is
+   present, an optional key is absent or written whole), every node object
+   must carry the expected "node" discriminator, and every enum value must be
+   a known member. Any deviation raises [Error] with the JSON path — never a
+   silent default.
 
    Two deliberate narrowings relative to bare JSON Schema, both fail-fast:
    integer fields accept only canonical integer lexemes (a float-shaped
@@ -15,11 +15,11 @@
    quadratic only on pathologically deep (100k+ nesting) documents.
 
    One M1 rule is enforced here and in the schema alike: a declaration in
-   one of the two model lists whose node otherwise keeps its v0 shape
-   (factTypes, dimensions) carries a string `naam`. There is no map key
-   beside it any more, so that field is the declaration's only name. The
-   other two lists of that rule (parameters, unitSystems) hold nodes L3
-   rewrote, whose `name` is a required string.
+   one of the two model lists whose node is not one of L3's (factTypes,
+   dimensions) carries a string `name`. There is no map key beside it, so
+   that field is the declaration's only name. The other two lists of that
+   rule (parameters, unitSystems) hold nodes L3 rewrote, whose `name` is a
+   required string as well.
 
    The L2 rules enforced here and in the schema alike: every field that
    left the wire with the reference layer is an unknown field, refused by
@@ -27,7 +27,7 @@
    L2 made required is read as required — the creation block, the step
    binding, the allocation's recipient role, a union selection's relation,
    the quantifier fold's range, and the range of a single-argument fold
-   with an elementType under any kind but TOTAAL (B12). A reader
+   with an elementType under any kind but total (B12). A reader
    of this library therefore never meets a bindingless form that it would
    have to derive a binding for.
 
@@ -40,7 +40,7 @@
    the other readers of the wire share: a conversion factor that is not an
    exact rational {num, den} of two integers between 1 and 2^62 - 1, a presentation
    other than "percentage", the presentation on a number whose unit is not
-   '%', and a sign other than ONBEPAALD on a number whose unit is '%'. The
+   '%', and a sign other than unspecified on a number whose unit is '%'. The
    last two follow from the in-memory form ([Ast]): a number whose unit is
    '%' is read as a [Percentage], which carries no sign, and any other
    number as a [Numeriek], which carries no presentation.
@@ -49,7 +49,7 @@
    expression layer): a named form is {node, name, versions} with at least
    one version, and its name never ends in a space, '#' and digits, the
    in-memory spelling of one version ([Ast]); a version record carries no
-   node; a rule version's target is an AttribuutRef, and initialisation
+   node; a rule version's target is an AttributeReference, and initialisation
    true never stands beside a presentation; a uniqueness version has at
    least one source and each source at least one key, and a version with
    two or more sources carries no scope; a fact creation's path has at
@@ -72,8 +72,27 @@
    line?}, optional on every node and read onto the in-memory `bron` fields
    ([source_record]); `bron` and a `line` beside the record are unknown fields,
    and an empty snippet is refused in every stance. The schema requires the
-   record on an Onopgelost marker; the verifier loads a marker without one for
-   WF-113 (b), and every other reader refuses it here ([reader]). *)
+   record on an Unresolved marker; the verifier loads a marker without one for
+   WF-113 (b), and every other reader refuses it here ([reader]).
+
+   The renaming, the second step of L5 (deltas B6 and B10), enforced here and
+   in the schema alike: every node and every key carries its IR-SPEC name,
+   the lists under `rules` included, and every enumeration value its English
+   lowerCamel spelling, read through the one translation table [Spelling].
+   The in-memory records keep their v0 constructors and fields ([Ast]): the
+   wire was renamed, the in-memory model was not. Every v0 node name, v0 key
+   and v0 enumeration value is unknown and refused by name. A field the
+   renaming made optional is absent or written whole, and a null there is
+   refused like any other defect of its type: its absence is what the v0 null
+   was — an open bound of a Validity or a TimeWindow, a Clamp without that
+   bound, a characteristic check on the subject itself (`host`), no
+   whole-period qualifier, no plural, no preposition, no decision or
+   justification on a default, no characteristic on a defaults group, no day
+   kind on a predicate of another kind, no subselection of a quantifier fold.
+   Three values the schema does not admit are a verifier rule's, which names
+   them: the quantifier `the` on a QuantifierFold (WF-108 (a)), and the
+   severities `error` and `info` and a null severity (WF-113 (a)). The
+   verifier loads them; every other reader refuses them here ([reader]). *)
 
 open Ast
 
@@ -162,118 +181,36 @@ let str_opt_list path j =
 
 (* --- enums ------------------------------------------------------------- *)
 
-let enum name table path j =
+(* An enumeration value, read through its family's translation table
+   ([Spelling]): the constructor the wire value spells, or a refusal that
+   names the field and the value. The values the verifier refuses by name
+   ([Spelling.family], [refused]) are read here in both stances; an executor
+   refuses them after the structural load ([executor_refusals]). *)
+let enum (fam : 'a Spelling.family) path j : 'a =
   let s = str path j in
-  match List.assoc_opt s table with
+  match Spelling.decode fam s with
   | Some v -> v
-  | None -> fail path ("unknown " ^ name ^ " value \"" ^ s ^ "\"")
+  | None -> fail path ("unknown " ^ fam.field ^ " value \"" ^ s ^ "\"")
 
-let enum_opt name table path = function
-  | `Null -> None
-  | j -> Some (enum name table path j)
-
-let granulariteit_tbl =
-  [ ("DAG", Dag); ("WEEK", Week); ("MAAND", Maand); ("KWARTAAL", Kwartaal); ("JAAR", Jaar) ]
-
-let granulariteit_opt = enum_opt "Granulariteit" granulariteit_tbl
-let granulariteit = enum "Granulariteit" granulariteit_tbl
+let enum_opt fam path = function `Null -> None | j -> Some (enum fam path j)
 
 (* The symbolic role binding (extension node, IR-SPEC ch. 2.6): both
    fields are plain strings — a binding is written whole or not at all. *)
 let rol_binding path j : rol_binding =
   let kvs = obj path j in
-  expect_node path kvs "RolBinding";
-  check_keys path kvs [ "node"; "feittype"; "rol" ];
+  expect_node path kvs "RoleBinding";
+  check_keys path kvs [ "node"; "factType"; "role" ];
   {
-    rb_feittype = str (path / "feittype") (field path kvs "feittype");
-    rb_rol = str (path / "rol") (field path kvs "rol");
+    rb_feittype = str (path / "factType") (field path kvs "factType");
+    rb_rol = str (path / "role") (field path kvs "role");
   }
 
-let teken =
-  enum "sign"
-    [ ("ONBEPAALD", Onbepaald); ("NEGATIEF", Negatief);
-      ("NIET_NEGATIEF", Niet_negatief); ("POSITIEF", Positief) ]
-
-let precision =
-  enum "precision" [ ("day", Datum_in_dagen); ("millisecond", Datum_tijd) ]
-
-let presentation = enum "presentation" [ ("percentage", ()) ]
-
-let kenmerk_soort =
-  enum "KenmerkSoort"
-    [ ("BIJVOEGLIJK", Bijvoeglijk); ("BEZITTELIJK", Bezittelijk); ("ZELFSTANDIG", Zelfstandig) ]
-
-let afrond_modus =
-  enum "AfrondModus"
-    [ ("NAAR_BENEDEN", Naar_beneden); ("NAAR_BOVEN", Naar_boven);
-      ("REKENKUNDIG", Rekenkundig); ("RICHTING_NUL", Richting_nul);
-      ("WEG_VAN_NUL", Weg_van_nul) ]
-
-let bin_op =
-  enum "BinOp"
-    [ ("PLUS", Plus); ("MIN", Min); ("VERMINDERD_MET", Verminderd_met);
-      ("MAAL", Maal); ("GEDEELD_DOOR", Gedeeld_door);
-      ("GEDEELD_DOOR_ABS", Gedeeld_door_abs); ("TOT_DE_MACHT", Tot_de_macht);
-      ("PERCENTAGE_VAN", Percentage_van) ]
-
-(* The kind decides the node (delta B21): the eight folds are an
-   Aggregation's and the seventeen other kinds a BuiltinCall's, so a kind of
-   the other node is an unknown value of this one. *)
-let aggregation_kind =
-  enum "kind"
-    [ ("SOM", Som); ("TOTAAL", Totaal); ("AANTAL", Aantal);
-      ("MINIMUM", Minimum); ("MAXIMUM", Maximum); ("EERSTE", Eerste);
-      ("LAATSTE", Laatste); ("AANTAL_GEVULDE", Aantal_gevulde) ]
-
-let builtin_kind =
-  enum "kind"
-    [ ("WORTEL", Wortel);
-      ("ABSOLUTE_WAARDE", Absolute_waarde); ("CONCATENATIE", Concatenatie);
-      ("TIJDSDUUR", Tijdsduur); ("ABSOLUTE_TIJDSDUUR", Absolute_tijdsduur);
-      ("EERSTE_PAASDAG", Eerste_paasdag);
-      ("TIJDSEVENREDIG_DEEL", Tijdsevenredig_deel);
-      ("AANTAL_DAGEN_IN", Aantal_dagen_in); ("JAAR_UIT", Jaar_uit);
-      ("MAAND_UIT", Maand_uit); ("DAG_UIT", Dag_uit); ("UUR_UIT", Uur_uit);
-      ("MINUUT_UIT", Minuut_uit); ("SECONDE_UIT", Seconde_uit);
-      ("MILLISECONDE_UIT", Milliseconde_uit); ("DATUM_MET", Datum_met);
-      ("DATUMTIJD_MET", Datumtijd_met) ]
-
-let vergelijk_op =
-  enum "Operator"
-    [ ("KLEINER", Kleiner); ("KLEINER_OF_GELIJK", Kleiner_of_gelijk);
-      ("GROTER", Groter); ("GROTER_OF_GELIJK", Groter_of_gelijk);
-      ("GELIJK", Gelijk); ("ONGELIJK", Ongelijk); ("EERDER", Eerder);
-      ("EERDER_OF_GELIJK", Eerder_of_gelijk); ("LATER", Later);
-      ("LATER_OF_GELIJK", Later_of_gelijk) ]
-
-let predicaat_soort =
-  enum "Predicaatsoort"
-    [ ("LEEG", Leeg); ("GEVULD", Gevuld); ("ELFPROEF", Elfproef);
-      ("NUMERIEK_MET_EXACT", Numeriek_met_exact); ("DAGSOORT", Dagsoort) ]
-
-let kwantor =
-  enum "Kwantor"
-    [ ("DE", De); ("ALLE", Alle); ("GEEN", Geen); ("TEN_MINSTE", Ten_minste);
-      ("TEN_HOOGSTE", Ten_hoogste); ("PRECIES", Precies) ]
-
-let builtin_granularity = enum "granularity" granulariteit_tbl
-
-(* The presentation tag of a computing rule version, in its v0 spelling
-   (IR-SPEC ch. 3.1). The two other v0 kinds are no tag: an initialisation
-   is the version's flag, and a characteristic assignment is a version that
-   carries neither (the kind follows from the member its target names). *)
-let rule_presentation =
-  enum "presentation" [ ("GELIJKSTELLING", Gelijkstelling); ("BEREKENING", Berekening) ]
-
-(* The three real methods (IR-SPEC ch. 3.2). The v0 placeholder of an
-   unhandled form, COMPLEX, is no method: an unknown value, refused like any
-   other, and the in-memory type has no constructor for it. *)
-let methode =
-  enum "method"
-    [ ("GELIJKE_DELEN", Gelijke_delen); ("NAAR_RATO", Naar_rato); ("OP_VOLGORDE", Op_volgorde) ]
-
-let severity_opt =
-  enum_opt "Severity" [ ("ERROR", Sev_error); ("WARNING", Sev_warning); ("INFO", Sev_info) ]
+(* The presentation of a Number (IR-SPEC ch. 2.4): its one value, which no
+   family of the translation table holds because it has no other. *)
+let presentation path j =
+  match str path j with
+  | "percentage" -> ()
+  | s -> fail path ("unknown presentation value \"" ^ s ^ "\"")
 
 (* --- unit and datatype ------------------------------------------------- *)
 
@@ -341,7 +278,7 @@ let rec datatype path j : datatype =
       check_keys path kvs ~ext:[ "unit"; "presentation" ] [ "node"; "whole"; "decimals"; "sign" ];
       let geheel = bool_ (path / "whole") (f "whole")
       and decimalen = int_ (path / "decimals") (f "decimals")
-      and sign = teken (path / "sign") (f "sign")
+      and sign = enum Spelling.sign (path / "sign") (f "sign")
       and unit_ = ext_field path kvs "unit" eenheid
       and tag = ext_field path kvs "presentation" presentation in
       (match unit_ with
@@ -349,24 +286,24 @@ let rec datatype path j : datatype =
            if sign <> Onbepaald then
              fail (path / "sign")
                "a percentage carries no sign restriction: a number whose unit is '%' has the \
-                sign ONBEPAALD";
+                sign unspecified";
            Percentage { geheel; decimalen; eenheid = Some u }
        | _ ->
            if tag <> None then
              fail (path / "presentation")
                "the presentation \"percentage\" on a number whose unit is not '%'";
            Numeriek { geheel; decimalen; teken = Some sign; eenheid = unit_ })
-  | "Tekst" -> check_keys path kvs [ "node" ]; Tekst
-  | "Booleaan" -> check_keys path kvs [ "node" ]; Booleaan
+  | "Text" -> check_keys path kvs [ "node" ]; Tekst
+  | "Boolean" -> check_keys path kvs [ "node" ]; Booleaan
   | "Date" ->
       check_keys path kvs [ "node"; "precision" ];
-      precision (path / "precision") (f "precision")
-  | "Enumeratie" ->
-      check_keys path kvs [ "node"; "domein"; "waarden" ];
+      enum Spelling.precision (path / "precision") (f "precision")
+  | "Enumeration" ->
+      check_keys path kvs [ "node"; "domain"; "values" ];
       Enumeratie
         {
-          domein = str_opt (path / "domein") (f "domein");
-          waarden = str_opt_list (path / "waarden") (f "waarden");
+          domein = str_opt (path / "domain") (f "domain");
+          waarden = str_opt_list (path / "values") (f "values");
         }
   | "SumType" ->
       (* extension node (v1, row 36): domain is a plain string; each
@@ -421,9 +358,9 @@ let domain_datatype name path j : datatype =
   let kvs = obj path j in
   let f key = field path kvs key in
   match node_kind path kvs with
-  | "Enumeratie" ->
-      check_keys path kvs [ "node"; "waarden" ];
-      Enumeratie { domein = Some name; waarden = str_opt_list (path / "waarden") (f "waarden") }
+  | "Enumeration" ->
+      check_keys path kvs [ "node"; "values" ];
+      Enumeratie { domein = Some name; waarden = str_opt_list (path / "values") (f "values") }
   | "SumType" ->
       check_keys path kvs [ "node"; "constructors" ];
       Sum_type
@@ -433,13 +370,16 @@ let domain_datatype name path j : datatype =
       Struct_type { domein = name; velden = struct_fields (path / "fields") (f "fields") }
   | _ -> datatype path j
 
+(* The whole-period qualifier (IR-SPEC ch. 4.5): its granularity, read onto
+   the in-memory flag [gp_jaar] (year true, month false), and its negation. *)
 let geheel_periode path j : geheel_periode =
   let kvs = obj path j in
-  expect_node path kvs "GeheelPeriode";
-  check_keys path kvs [ "node"; "jaar"; "niet" ];
+  expect_node path kvs "WholePeriod";
+  check_keys path kvs [ "node"; "granularity"; "negated" ];
   {
-    gp_jaar = bool_ (path / "jaar") (field path kvs "jaar");
-    gp_niet = bool_ (path / "niet") (field path kvs "niet");
+    gp_jaar =
+      enum Spelling.whole_period_granularity (path / "granularity") (field path kvs "granularity");
+    gp_niet = bool_ (path / "negated") (field path kvs "negated");
   }
 
 (* --- the source record ---------------------------------------------------- *)
@@ -542,24 +482,24 @@ let rec expr path j : expr =
       check_keys path kvs ~ext:[ "source" ] [ "node"; "value"; "type" ];
       let variant = literal_variant (path / "value") (f "value") in
       Literal { variant; typ = typ (); bron = bron () }
-  | "TekstReeks" ->
-      check_keys path kvs ~ext:[ "source" ] [ "node"; "delen"; "type" ];
+  | "TextComposition" ->
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "parts"; "type" ];
       Tekst_reeks
         {
           delen =
             List.mapi
-              (fun i x -> tekst_deel (path / "delen" / string_of_int i) x)
-              (list_ (path / "delen") (f "delen"));
+              (fun i x -> tekst_deel (path / "parts" / string_of_int i) x)
+              (list_ (path / "parts") (f "parts"));
           typ = typ ();
           bron = bron ();
         }
-  | "Binair" ->
-      check_keys path kvs ~ext:[ "source" ] [ "node"; "op"; "links"; "rechts"; "type" ];
+  | "Binary" ->
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "op"; "left"; "right"; "type" ];
       Binair
         {
-          op = bin_op (path / "op") (f "op");
-          links = opt (path / "links") expr (f "links");
-          rechts = opt (path / "rechts") expr (f "rechts");
+          op = enum Spelling.binary_op (path / "op") (f "op");
+          links = opt (path / "left") expr (f "left");
+          rechts = opt (path / "right") expr (f "right");
           typ = typ ();
           bron = bron ();
         }
@@ -570,11 +510,11 @@ let rec expr path j : expr =
         ~ext:[ "elementType"; "filter"; "emptyFallback"; "dimensionSelection"; "sourceRole";
                "sourcePath"; "source" ]
         [ "node"; "kind"; "arguments"; "type" ];
-      let kind = aggregation_kind (path / "kind") (f "kind") in
+      let kind = enum Spelling.aggregation_kind (path / "kind") (f "kind") in
       let argumenten = arguments () in
       let element_objecttype = ext_field path kvs "elementType" str in
       (* the range (B12): one spelling at most, and a single-argument fold
-         with an elementType carries one under every kind but TOTAAL, where
+         with an elementType carries one under every kind but total, where
          its absence is the subject's own read *)
       (match (List.mem_assoc "sourceRole" kvs, List.mem_assoc "sourcePath" kvs) with
       | true, true ->
@@ -584,7 +524,7 @@ let rec expr path j : expr =
         when element_objecttype <> None && List.length argumenten = 1 && kind <> Totaal ->
           fail path
             "a single-argument fold with an elementType carries its range (sourceRole or \
-             sourcePath) under every kind but TOTAAL: the range is written, never derived"
+             sourcePath) under every kind but total: the range is written, never derived"
       | _ -> ());
       Functie
         {
@@ -611,7 +551,7 @@ let rec expr path j : expr =
          and unknown here *)
       check_keys path kvs ~ext:[ "filter"; "granularity"; "source" ]
         [ "node"; "kind"; "arguments"; "type" ];
-      let kind = builtin_kind (path / "kind") (f "kind") in
+      let kind = enum Spelling.builtin_kind (path / "kind") (f "kind") in
       Functie
         {
           kind;
@@ -622,7 +562,7 @@ let rec expr path j : expr =
           dimensie_selectie = None;
           typ = typ ();
           bron = bron ();
-          granulariteit = ext_field path kvs "granularity" builtin_granularity;
+          granulariteit = ext_field path kvs "granularity" (enum Spelling.granularity);
           bron_rol = None;
           bron_pad = None;
         }
@@ -639,60 +579,64 @@ let rec expr path j : expr =
               (list_ (path / "branches") (f "branches"));
           bron = bron ();
         }
-  | "Afgerond" ->
-      check_keys path kvs ~ext:[ "source" ] [ "node"; "basis"; "modus"; "decimalen"; "type" ];
+  | "Rounding" ->
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "base"; "mode"; "decimals"; "type" ];
       Afgerond
         {
-          basis = opt (path / "basis") expr (f "basis");
-          modus = afrond_modus (path / "modus") (f "modus");
-          decimalen = int_ (path / "decimalen") (f "decimalen");
+          basis = opt (path / "base") expr (f "base");
+          modus = enum Spelling.rounding_mode (path / "mode") (f "mode");
+          decimalen = int_ (path / "decimals") (f "decimals");
           typ = typ ();
           bron = bron ();
         }
-  | "Begrensd" ->
-      check_keys path kvs ~ext:[ "source" ] [ "node"; "basis"; "minimum"; "maximum"; "type" ];
+  | "Clamp" ->
+      (* a bound is written whole or not at all: absent is no bound on that
+         side, the v0 null *)
+      check_keys path kvs ~ext:[ "minimum"; "maximum"; "source" ] [ "node"; "base"; "type" ];
       Begrensd
         {
-          basis = opt (path / "basis") expr (f "basis");
-          minimum = opt (path / "minimum") expr (f "minimum");
-          maximum = opt (path / "maximum") expr (f "maximum");
+          basis = opt (path / "base") expr (f "base");
+          minimum = ext_field path kvs "minimum" expr;
+          maximum = ext_field path kvs "maximum" expr;
           typ = typ ();
           bron = bron ();
         }
-  | "AttribuutRef" ->
-      check_keys path kvs ~ext:[ "navigatieBindingen"; "source" ] [ "node"; "attribuut"; "objecttype" ];
+  | "AttributeReference" ->
+      (* the path is written whole or not at all: absent is the subject's own
+         read, and a path without a hop is no navigation *)
+      check_keys path kvs ~ext:[ "path"; "source" ] [ "node"; "attribute"; "subjectType" ];
       Attribuut_ref
         {
-          attribuut = str_opt (path / "attribuut") (f "attribuut");
-          objecttype = str_opt (path / "objecttype") (f "objecttype");
+          attribuut = str_opt (path / "attribute") (f "attribute");
+          objecttype = str_opt (path / "subjectType") (f "subjectType");
           bron = bron ();
           navigatie_bindingen =
-            ext_field path kvs "navigatieBindingen" (fun p j ->
+            ext_field path kvs "path" (fun p j ->
                 match List.mapi (fun i x -> rol_binding (p / string_of_int i) x) (list_ p j) with
-                | [] -> fail p "an empty navigation-binding list is not a navigation"
+                | [] -> fail p "an empty path is not a navigation"
                 | hops -> hops);
         }
-  | "DimensieCel" ->
-      check_keys path kvs ~ext:[ "source" ] [ "node"; "attribuut"; "labels" ];
+  | "DimensionCellRead" ->
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "attribute"; "labels" ];
       Dimensie_cel
         {
-          attribuut = opt (path / "attribuut") expr (f "attribuut");
+          attribuut = opt (path / "attribute") expr (f "attribute");
           labels = str_opt_list (path / "labels") (f "labels");
           bron = bron ();
         }
-  | "ParameterRef" ->
+  | "ParameterReference" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "parameter" ];
       Parameter_ref { parameter = str_opt (path / "parameter") (f "parameter"); bron = bron () }
-  | "VariabeleRef" ->
-      check_keys path kvs ~ext:[ "source" ] [ "node"; "naam" ];
-      Variabele_ref { naam = str_opt (path / "naam") (f "naam"); bron = bron () }
+  | "VariableReference" ->
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "name" ];
+      Variabele_ref { naam = str_opt (path / "name") (f "name"); bron = bron () }
   | "TemporalRead" ->
       (* extension node (v1, row 11): all fields required, none nullable *)
-      check_keys path kvs ~ext:[ "source" ] [ "node"; "basis"; "datum"; "type" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "base"; "date"; "type" ];
       Temporal_read
         {
-          basis = expr (path / "basis") (f "basis");
-          datum = expr (path / "datum") (f "datum");
+          basis = expr (path / "base") (f "base");
+          datum = expr (path / "date") (f "date");
           typ = typ ();
           bron = bron ();
         }
@@ -851,8 +795,8 @@ let rec expr path j : expr =
         }
   | "ContextValue" ->
       (* a session value (delta B23): its name is a string whatever it
-         spells — the closed set is WF-098's, crossed below for an executor
-         ([reader]) — and its datatype is required *)
+         spells, carried verbatim — the closed set is WF-098's, crossed below
+         for an executor ([reader]) — and its datatype is required *)
       check_keys path kvs ~ext:[ "source" ] [ "node"; "name"; "type" ];
       let naam =
         match f "name" with
@@ -872,10 +816,10 @@ let rec expr path j : expr =
           typ = Some (context_type ~refusal:"a BoundDay carries its datatype" path kvs);
           bron = bron ();
         }
-  | "Onopgelost" ->
+  | "Unresolved" ->
       (* the honest-marker node. Its type is written whole or not at all:
-         absent means unknown, and a null is a load error (D14). Its source
-         is optional here: a marker without one is WF-113's, which the verifier
+         absent means unknown, and a null is a load error. Its source is
+         optional here: a marker without one is WF-113's, which the verifier
          loads it for, and an executor refuses it after the structural load
          ([executor_refusals]) *)
       check_keys path kvs ~ext:[ "type"; "source" ] [ "node" ];
@@ -931,20 +875,20 @@ and tekst_deel path j : tekst_deel =
   let kvs = obj path j in
   let f name = field path kvs name in
   match node_kind path kvs with
-  | "Letterlijk" ->
-      check_keys path kvs [ "node"; "tekst" ];
-      Letterlijk { tekst = str_opt (path / "tekst") (f "tekst") }
-  | "Ingevoegd" ->
+  | "LiteralChunk" ->
+      check_keys path kvs [ "node"; "text" ];
+      Letterlijk { tekst = str_opt (path / "text") (f "text") }
+  | "EmbeddedExpression" ->
       check_keys path kvs [ "node"; "expr" ];
       Ingevoegd { expr = opt (path / "expr") expr (f "expr") }
-  | k -> fail (path / "node") ("unknown TekstReeksDeel node \"" ^ k ^ "\"")
+  | k -> fail (path / "node") ("unknown TextCompositionPart node \"" ^ k ^ "\"")
 
 and dimensie_selectie path j : dimensie_selectie =
   let kvs = obj path j in
-  expect_node path kvs "DimensieSelectie";
-  check_keys path kvs ~ext:[ "source" ] [ "node"; "dimensie"; "labels" ];
+  expect_node path kvs "DimensionSelection";
+  check_keys path kvs ~ext:[ "source" ] [ "node"; "dimension"; "labels" ];
   {
-    ds_dimensie = str_opt (path / "dimensie") (field path kvs "dimensie");
+    ds_dimensie = str_opt (path / "dimension") (field path kvs "dimension");
     ds_labels = str_opt_list (path / "labels") (field path kvs "labels");
     ds_bron = source_text path kvs;
   }
@@ -953,42 +897,48 @@ and conditie path j : conditie =
   let kvs = obj path j in
   let f name = field path kvs name in
   let bron () = source_text path kvs in
-  let periode () = opt (path / "periode") geheel_periode (f "periode") in
+  (* the whole-period qualifier is written whole or not at all: absent is
+     none, the v0 null *)
+  let periode () = ext_field path kvs "wholePeriod" geheel_periode in
   match node_kind path kvs with
-  | "Vergelijking" ->
-      check_keys path kvs ~ext:[ "source" ] [ "node"; "op"; "links"; "rechts"; "periode" ];
+  | "Comparison" ->
+      check_keys path kvs ~ext:[ "wholePeriod"; "source" ] [ "node"; "op"; "left"; "right" ];
       Vergelijking
         {
-          op = vergelijk_op (path / "op") (f "op");
-          links = opt (path / "links") expr (f "links");
-          rechts = opt (path / "rechts") expr (f "rechts");
+          op = enum Spelling.comparison_op (path / "op") (f "op");
+          links = opt (path / "left") expr (f "left");
+          rechts = opt (path / "right") expr (f "right");
           periode = periode ();
           bron = bron ();
         }
-  | "Predicaat" ->
-      check_keys path kvs ~ext:[ "source" ]
-        [ "node"; "soort"; "operand"; "dagsoort"; "negatie"; "cijfers"; "periode" ];
+  | "Predicate" ->
+      (* the day kind is written on a predicate of kind dayKind alone: absent
+         elsewhere, the v0 null *)
+      check_keys path kvs ~ext:[ "dayKind"; "wholePeriod"; "source" ]
+        [ "node"; "kind"; "operand"; "negated"; "digits" ];
       Predicaat
         {
-          soort = predicaat_soort (path / "soort") (f "soort");
+          soort = enum Spelling.predicate_kind (path / "kind") (f "kind");
           operand = opt (path / "operand") expr (f "operand");
-          dagsoort = str_opt (path / "dagsoort") (f "dagsoort");
-          negatie = bool_ (path / "negatie") (f "negatie");
-          cijfers = int_ (path / "cijfers") (f "cijfers");
+          dagsoort = ext_field path kvs "dayKind" str;
+          negatie = bool_ (path / "negated") (f "negated");
+          cijfers = int_ (path / "digits") (f "digits");
           periode = periode ();
           bron = bron ();
         }
-  | "Kenmerk" ->
-      check_keys path kvs ~ext:[ "navigatieBinding"; "source" ]
-        [ "node"; "kenmerk"; "negatie"; "eigenaar"; "periode" ];
+  | "CharacteristicCheck" ->
+      (* the host is written whole or not at all: absent is the subject
+         (RUNTIME-SEMANTICS ch. 5.8b), the v0 null *)
+      check_keys path kvs ~ext:[ "host"; "wholePeriod"; "navigation"; "source" ]
+        [ "node"; "characteristic"; "negated" ];
       Kenmerk_check
         {
-          kenmerk = str_opt (path / "kenmerk") (f "kenmerk");
-          negatie = bool_ (path / "negatie") (f "negatie");
-          eigenaar = str_opt (path / "eigenaar") (f "eigenaar");
+          kenmerk = str_opt (path / "characteristic") (f "characteristic");
+          negatie = bool_ (path / "negated") (f "negated");
+          eigenaar = ext_field path kvs "host" str;
           periode = periode ();
           bron = bron ();
-          navigatie_binding = ext_field path kvs "navigatieBinding" rol_binding;
+          navigatie_binding = ext_field path kvs "navigation" rol_binding;
         }
   | "RoleMembership" ->
       check_keys path kvs ~ext:[ "counterpartType"; "source" ] [ "node"; "factType"; "role"; "negated" ];
@@ -996,69 +946,77 @@ and conditie path j : conditie =
         {
           fact_type = str (path / "factType") (f "factType");
           role = str (path / "role") (f "role");
-          (* written only where it narrows the other end (U12): absent is the
+          (* written only where it narrows the other end: absent is the
              declared filler, and a null is a load error *)
           counterpart_type = ext_field path kvs "counterpartType" str;
           negated = bool_ (path / "negated") (f "negated");
           bron = bron ();
         }
-  | "Periode" ->
-      check_keys path kvs ~ext:[ "source" ] [ "node"; "vanaf"; "tot"; "totInclusief" ];
+  | "TimeWindow" ->
+      (* a bound is written whole or not at all: absent is open on that
+         side, the v0 null; a window with neither is WF-042's *)
+      check_keys path kvs ~ext:[ "from"; "to"; "source" ] [ "node"; "toInclusive" ];
       Periode_conditie
         {
-          vanaf = opt (path / "vanaf") expr (f "vanaf");
-          tot = opt (path / "tot") expr (f "tot");
-          tot_inclusief = bool_ (path / "totInclusief") (f "totInclusief");
+          vanaf = ext_field path kvs "from" expr;
+          tot = ext_field path kvs "to" expr;
+          tot_inclusief = bool_ (path / "toInclusive") (f "toInclusive");
           bron = bron ();
         }
-  | "Samengesteld" ->
-      check_keys path kvs ~ext:[ "source" ] [ "node"; "kwantor"; "drempel"; "onderdelen" ];
+  | "Compound" ->
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "quantifier"; "threshold"; "parts" ];
       Samengesteld
         {
-          kwantor = kwantor (path / "kwantor") (f "kwantor");
-          drempel = int_ (path / "drempel") (f "drempel");
+          kwantor = enum Spelling.quantifier (path / "quantifier") (f "quantifier");
+          drempel = int_ (path / "threshold") (f "threshold");
           onderdelen =
             List.mapi
-              (fun i x -> conditie (path / "onderdelen" / string_of_int i) x)
-              (list_ (path / "onderdelen") (f "onderdelen"));
+              (fun i x -> conditie (path / "parts" / string_of_int i) x)
+              (list_ (path / "parts") (f "parts"));
           bron = bron ();
         }
-  | "Kwantorvouw" ->
-      check_keys path kvs ~ext:[ "bronRol"; "bronPad"; "drempel"; "source" ]
-        [ "node"; "kwantor"; "elementObjecttype"; "filter"; "toets" ];
-      (* the range, exactly one spelling (B12, U2): written, never derived *)
-      (match (List.mem_assoc "bronRol" kvs, List.mem_assoc "bronPad" kvs) with
+  | "QuantifierFold" ->
+      check_keys path kvs ~ext:[ "threshold"; "filter"; "sourceRole"; "sourcePath"; "source" ]
+        [ "node"; "quantifier"; "elementType"; "test" ];
+      (* the range, exactly one spelling (B12): written, never derived *)
+      (match (List.mem_assoc "sourceRole" kvs, List.mem_assoc "sourcePath" kvs) with
       | true, true ->
-          fail (path / "bronPad")
-            "bronPad beside bronRol: a quantifier fold carries one range, never two"
+          fail (path / "sourcePath")
+            "sourcePath beside sourceRole: a quantifier fold carries one range, never two"
       | false, false ->
           fail path
-            "a quantifier fold carries its range (bronRol or bronPad): the range is written, \
-             never derived"
+            "a quantifier fold carries its range (sourceRole or sourcePath): the range is \
+             written, never derived"
       | _ -> ());
       Kwantorvouw
         {
-          kv_kwantor = kwantor (path / "kwantor") (f "kwantor");
+          (* `the` is read in both stances and refused by WF-108 (a); an
+             executor refuses it after the structural load *)
+          kv_kwantor = enum Spelling.quantifier (path / "quantifier") (f "quantifier");
           (* optional at the LOADER for the same reason [kv_toets] is: the
              field's PRESENCE is WF-108 (e)'s demand and its value WF-041's,
              so both are citable violations rather than load failures with no
              rule to name *)
-          kv_drempel = ext_field path kvs "drempel" int_;
-          kv_element_objecttype =
-            str_opt (path / "elementObjecttype") (f "elementObjecttype");
-          kv_filter = opt (path / "filter") conditie (f "filter");
-          (* optional at the LOADER, required by WF-108 (d): a missing matrix
+          kv_drempel = ext_field path kvs "threshold" int_;
+          kv_element_objecttype = str_opt (path / "elementType") (f "elementType");
+          (* the subselection is written whole or not at all: absent is none,
+             the v0 null *)
+          kv_filter = ext_field path kvs "filter" conditie;
+          (* nullable at the LOADER, required by WF-108 (d): a missing matrix
              is a citable violation, never a load failure with no rule to name
              — the WF-102 discipline on sourcePath, applied to this node's own
              fields *)
-          kv_toets = opt (path / "toets") conditie (f "toets");
+          kv_toets = opt (path / "test") conditie (f "test");
           kv_bron = bron ();
-          kv_bron_rol = ext_field path kvs "bronRol" rol_binding;
+          kv_bron_rol = ext_field path kvs "sourceRole" rol_binding;
           kv_bron_pad =
-            ext_field path kvs "bronPad" (fun p j ->
+            ext_field path kvs "sourcePath" (fun p j ->
                 List.mapi (fun i x -> rol_binding (p / string_of_int i) x) (list_ p j));
         }
   | "Regelversie" ->
+      (* the one node that keeps its v0 shape: the rule-status check waits
+         for its parity golden (delta B25); only its source text moved into
+         the source record *)
       check_keys path kvs ~ext:[ "source" ] [ "node"; "regel"; "inconsistent" ];
       Regelversie
         {
@@ -1066,12 +1024,12 @@ and conditie path j : conditie =
           inconsistent = bool_ (path / "inconsistent") (f "inconsistent");
           bron = bron ();
         }
-  | "Onopgelost" ->
-      (* as with the expr marker: the emitter names it Onopgelost, and a
-         marker without a source loads for the verifier alone *)
+  | "Unresolved" ->
+      (* as with the expression marker: a marker without a source loads for
+         the verifier alone *)
       check_keys path kvs ~ext:[ "source" ] [ "node" ];
       Conditie_onopgelost { bron = bron () }
-  | k -> fail (path / "node") ("unknown conditie node \"" ^ k ^ "\"")
+  | k -> fail (path / "node") ("unknown condition node \"" ^ k ^ "\"")
 
 (* --- model layer -------------------------------------------------------- *)
 
@@ -1092,7 +1050,7 @@ let timeline_facet ~named path j =
   check_keys path kvs
     ~ext:(if named then [ "timelineName" ] else [])
     [ "node"; "granularity"; "count" ];
-  ( granulariteit (path / "granularity") (field path kvs "granularity"),
+  ( enum Spelling.granularity (path / "granularity") (field path kvs "granularity"),
     int_ (path / "count") (field path kvs "count"),
     ext_field path kvs "timelineName" str )
 
@@ -1126,7 +1084,7 @@ let objecttype path j : string * objecttype =
         expect_node cp ckvs "Characteristic";
         check_keys cp ckvs ~ext:[ "timeline" ] [ "node"; "name"; "kind" ];
         ( str (cp / "name") (field cp ckvs "name"),
-          kenmerk_soort (cp / "kind") (field cp ckvs "kind"),
+          enum Spelling.characteristic_kind (cp / "kind") (field cp ckvs "kind"),
           ext_field cp ckvs "timeline" (timeline_facet ~named:false) ))
       (list_ (path / "characteristics") (f "characteristics"))
   in
@@ -1165,18 +1123,17 @@ let domain path j : string * datatype option =
   let name = str (path / "name") (field path kvs "name") in
   (name, Some (domain_datatype name (path / "datatype") (field path kvs "datatype")))
 
-(* A declaration in a model list whose node otherwise keeps its v0 shape:
-   the list has no map key, so the node's `naam` is the declaration's one
-   name, a non-null string since M1 (loader header). The node decoders keep
-   reading `naam` into the AST's `string option` field, the type every
-   reader of this library uses; a null is refused here, so no reader gets
-   [None] from these two lists. *)
+(* A declaration in a model list whose node is not one of L3's: the list has
+   no map key, so the node's `name` is the declaration's one name, a non-null
+   string since M1 (loader header). The node decoders read `name` into the
+   AST's `string option` field, the type every reader of this library uses; a
+   null is refused here, so no reader gets [None] from these two lists. *)
 let named path (decode : string -> json -> 'a) (naam : 'a -> string option) j : string * 'a =
   let x = decode path j in
   match naam x with
   | Some n -> (n, x)
   | None ->
-      fail (path / "naam")
+      fail (path / "name")
         "a declaration in a model list carries its name on its node, and null is no name"
 
 (* The datatype is required and non-null, so [par_datatype] is always
@@ -1215,63 +1172,64 @@ let dagsoort path j : dagsoort =
   check_keys path kvs ~ext:[ "plural" ] [ "node"; "name" ];
   { dk_naam = str (path / "name") (field path kvs "name"); dk_meervoud = ext_field path kvs "plural" str }
 
+(* A role: its plural is written whole or not at all, absent the v0 null. *)
 let rol path j : rol =
   let kvs = obj path j in
-  expect_node path kvs "Rol";
-  check_keys path kvs [ "node"; "naam"; "objecttypeNaam"; "meervoud"; "meervoudig" ];
+  expect_node path kvs "Role";
+  check_keys path kvs ~ext:[ "plural" ] [ "node"; "name"; "objectType"; "many" ];
   {
-    rol_naam = str_opt (path / "naam") (field path kvs "naam");
-    rol_objecttype_naam = str_opt (path / "objecttypeNaam") (field path kvs "objecttypeNaam");
-    rol_meervoud = str_opt (path / "meervoud") (field path kvs "meervoud");
-    rol_meervoudig = bool_ (path / "meervoudig") (field path kvs "meervoudig");
+    rol_naam = str_opt (path / "name") (field path kvs "name");
+    rol_objecttype_naam = str_opt (path / "objectType") (field path kvs "objectType");
+    rol_meervoud = ext_field path kvs "plural" str;
+    rol_meervoudig = bool_ (path / "many") (field path kvs "many");
   }
 
 let feittype path j : feittype =
   let kvs = obj path j in
-  expect_node path kvs "Feittype";
-  check_keys path kvs [ "node"; "naam"; "wederkerig"; "rollen" ];
+  expect_node path kvs "FactType";
+  check_keys path kvs [ "node"; "name"; "reciprocal"; "roles" ];
   {
-    ft_naam = str_opt (path / "naam") (field path kvs "naam");
-    wederkerig = bool_ (path / "wederkerig") (field path kvs "wederkerig");
+    ft_naam = str_opt (path / "name") (field path kvs "name");
+    wederkerig = bool_ (path / "reciprocal") (field path kvs "reciprocal");
     rollen =
       List.mapi
-        (fun i x -> rol (path / "rollen" / string_of_int i) x)
-        (list_ (path / "rollen") (field path kvs "rollen"));
+        (fun i x -> rol (path / "roles" / string_of_int i) x)
+        (list_ (path / "roles") (field path kvs "roles"));
   }
 
+(* A dimension: its plural and its preposition are written whole or not at
+   all, absent the v0 null. *)
 let dimensie path j : dimensie =
   let kvs = obj path j in
-  expect_node path kvs "Dimensie";
-  check_keys path kvs [ "node"; "naam"; "naamMeervoud"; "voorzetsel"; "waarden" ];
+  expect_node path kvs "Dimension";
+  check_keys path kvs ~ext:[ "plural"; "preposition" ] [ "node"; "name"; "labels" ];
   {
-    dim_naam = str_opt (path / "naam") (field path kvs "naam");
-    dim_naam_meervoud = str_opt (path / "naamMeervoud") (field path kvs "naamMeervoud");
-    voorzetsel = str_opt (path / "voorzetsel") (field path kvs "voorzetsel");
-    dim_waarden = str_opt_list (path / "waarden") (field path kvs "waarden");
+    dim_naam = str_opt (path / "name") (field path kvs "name");
+    dim_naam_meervoud = ext_field path kvs "plural" str;
+    voorzetsel = ext_field path kvs "preposition" str;
+    dim_waarden = str_opt_list (path / "labels") (field path kvs "labels");
   }
 
 let tijdlijn path j : tijdlijn =
   let kvs = obj path j in
-  expect_node path kvs "Tijdlijn";
-  check_keys path kvs [ "node"; "naam"; "variabelStartpunt"; "granulariteit"; "aantal" ];
+  expect_node path kvs "Timeline";
+  check_keys path kvs [ "node"; "name"; "variableStart"; "granularity"; "count" ];
   {
-    tl_naam = str_opt (path / "naam") (field path kvs "naam");
-    variabel_startpunt = bool_ (path / "variabelStartpunt") (field path kvs "variabelStartpunt");
-    tl_granulariteit =
-      granulariteit_opt (path / "granulariteit") (field path kvs "granulariteit");
-    tl_aantal = int_ (path / "aantal") (field path kvs "aantal");
+    tl_naam = str_opt (path / "name") (field path kvs "name");
+    variabel_startpunt = bool_ (path / "variableStart") (field path kvs "variableStart");
+    tl_granulariteit = enum_opt Spelling.granularity (path / "granularity") (field path kvs "granularity");
+    tl_aantal = int_ (path / "count") (field path kvs "count");
   }
 
 (* --- rule layer --------------------------------------------------------- *)
 
+(* A validity: each bound is written whole or not at all, absent the v0
+   null — an open side; a validity with neither bound is always. *)
 let geldigheid path j : geldigheid =
   let kvs = obj path j in
-  expect_node path kvs "Geldigheid";
-  check_keys path kvs [ "node"; "vanaf"; "tot" ];
-  {
-    geld_vanaf = str_opt (path / "vanaf") (field path kvs "vanaf");
-    geld_tot = str_opt (path / "tot") (field path kvs "tot");
-  }
+  expect_node path kvs "Validity";
+  check_keys path kvs ~ext:[ "from"; "to" ] [ "node" ];
+  { geld_vanaf = ext_field path kvs "from" str; geld_tot = ext_field path kvs "to" str }
 
 (* Whether a name ends in a space, '#' and at least one digit: the schema's
    pattern on a form name, which may not end so. *)
@@ -1331,7 +1289,7 @@ let rule_version ~annotations name path j : resolved_regel =
   let f name = field path kvs name in
   let initialisation = bool_ (path / "initialisation") (f "initialisation") in
   let soort =
-    match (initialisation, ext_field path kvs "presentation" rule_presentation) with
+    match (initialisation, ext_field path kvs "presentation" (enum Spelling.presentation)) with
     | true, Some _ ->
         fail (path / "presentation")
           "presentation beside initialisation true: a presentation tags a computing version, never \
@@ -1342,9 +1300,9 @@ let rule_version ~annotations name path j : resolved_regel =
   in
   let target =
     match f "target" with
-    | `Assoc tkvs as t when List.assoc_opt "node" tkvs = Some (`String "AttribuutRef") ->
+    | `Assoc tkvs as t when List.assoc_opt "node" tkvs = Some (`String "AttributeReference") ->
         expr (path / "target") t
-    | _ -> fail (path / "target") "the target of a rule version is an AttribuutRef"
+    | _ -> fail (path / "target") "the target of a rule version is an AttributeReference"
   in
   {
     rr_naam = name;
@@ -1370,23 +1328,23 @@ let rule path j : resolved_regel list =
 
 let resolved_dagsoort path j : resolved_dagsoort =
   let kvs = obj path j in
-  expect_node path kvs "ResolvedDagsoort";
-  check_keys path kvs [ "node"; "naam"; "voorwaarde"; "geldigheid" ];
+  expect_node path kvs "DayKindDefinition";
+  check_keys path kvs [ "node"; "dayKind"; "condition"; "validity" ];
   let f name = field path kvs name in
   {
-    rd_naam = str_opt (path / "naam") (f "naam");
-    rd_voorwaarde = opt (path / "voorwaarde") conditie (f "voorwaarde");
-    rd_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
+    rd_naam = str_opt (path / "dayKind") (f "dayKind");
+    rd_voorwaarde = opt (path / "condition") conditie (f "condition");
+    rd_geldigheid = opt (path / "validity") geldigheid (f "validity");
   }
 
 let toekenning path j : toekenning =
   let kvs = obj path j in
-  expect_node path kvs "Toekenning";
-  check_keys path kvs [ "node"; "attribuut"; "waarde"; "kenmerk" ];
+  expect_node path kvs "MemberInit";
+  check_keys path kvs [ "node"; "member"; "value"; "characteristic" ];
   {
-    toe_attribuut = str_opt (path / "attribuut") (field path kvs "attribuut");
-    toe_waarde = opt (path / "waarde") expr (field path kvs "waarde");
-    toe_kenmerk = bool_ (path / "kenmerk") (field path kvs "kenmerk");
+    toe_attribuut = str_opt (path / "member") (field path kvs "member");
+    toe_waarde = opt (path / "value") expr (field path kvs "value");
+    toe_kenmerk = bool_ (path / "characteristic") (field path kvs "characteristic");
   }
 
 let object_creation path j : resolved_object_creatie list =
@@ -1429,12 +1387,12 @@ let allocation path j : resolved_verdeling list =
         bron_attribuut = str_opt (path / "sourceAttribute") (f "sourceAttribute");
         doel_type = str_opt (path / "targetType") (f "targetType");
         doel_attribuut = str_opt (path / "targetAttribute") (f "targetAttribute");
-        vd_methode = Some (methode (path / "method") (f "method"));
+        vd_methode = Some (enum Spelling.method_ (path / "method") (f "method"));
         rato_attribuut = ext_field path kvs "ratioAttribute" str;
         maximum_attribuut = ext_field path kvs "maximumAttribute" str;
         afronding_decimalen = ext_field path kvs "roundingDecimals" int_;
         restant_attribuut = ext_field path kvs "remainderAttribute" str;
-        (* the sort key of an OP_VOLGORDE allocation (RUNTIME-SEMANTICS
+        (* the sort key of an ordered allocation (RUNTIME-SEMANTICS
            ch. 4.2), the v0 field it was *)
         groepeer_attribuut = ext_field path kvs "orderingAttribute" str;
         afnemend = bool_ (path / "descending") (f "descending");
@@ -1581,34 +1539,37 @@ let fact_creation feittypen path j : resolved_feit_creatie list =
 
 let resolved_startpunt path j : resolved_startpunt =
   let kvs = obj path j in
-  expect_node path kvs "ResolvedStartpunt";
-  check_keys path kvs [ "node"; "tijdlijn"; "objecttype"; "lid" ];
+  expect_node path kvs "StartPointDetermination";
+  check_keys path kvs [ "node"; "timeline"; "objectType"; "member" ];
   {
-    sp_tijdlijn = str_opt (path / "tijdlijn") (field path kvs "tijdlijn");
-    sp_objecttype = str_opt (path / "objecttype") (field path kvs "objecttype");
-    lid = str_opt (path / "lid") (field path kvs "lid");
+    sp_tijdlijn = str_opt (path / "timeline") (field path kvs "timeline");
+    sp_objecttype = str_opt (path / "objectType") (field path kvs "objectType");
+    lid = str_opt (path / "member") (field path kvs "member");
   }
 
 let resolved_regel_groep path j : resolved_regel_groep =
   let kvs = obj path j in
-  expect_node path kvs "ResolvedRegelGroep";
-  check_keys path kvs ~ext:[ "source" ] [ "node"; "naam"; "recursief"; "leden" ];
+  expect_node path kvs "RuleGroup";
+  check_keys path kvs ~ext:[ "source" ] [ "node"; "name"; "recursive"; "members" ];
   let f name = field path kvs name in
   let bron, line = source_with_line path kvs in
   {
-    rgr_naam = str_opt (path / "naam") (f "naam");
-    recursief = bool_ (path / "recursief") (f "recursief");
-    leden = str_opt_list (path / "leden") (f "leden");
+    rgr_naam = str_opt (path / "name") (f "name");
+    recursief = bool_ (path / "recursive") (f "recursive");
+    leden = str_opt_list (path / "members") (f "members");
     rgr_bron = bron;
     rgr_line = line;
   }
 
+(* A diagnostic. Its severity is read in both stances, `error`, `info` and
+   null included, which WF-113 (a) refuses by name; an executor refuses them
+   after the structural load ([executor_refusals]). *)
 let diagnostic path j : diagnostic =
   let kvs = obj path j in
   expect_node path kvs "Diagnostic";
   check_keys path kvs [ "node"; "severity"; "message"; "line" ];
   {
-    diag_severity = severity_opt (path / "severity") (field path kvs "severity");
+    diag_severity = enum_opt Spelling.severity (path / "severity") (field path kvs "severity");
     message = str_opt (path / "message") (field path kvs "message");
     diag_line = int_ (path / "line") (field path kvs "line");
   }
@@ -1616,42 +1577,38 @@ let diagnostic path j : diagnostic =
 (* --- the document ------------------------------------------------------- *)
 
 (* Extension form (Phase 4 first cut): one default of the characteristic
-   defaults. Strict: no nullable children beyond naam/bron/geldigheid. *)
+   defaults. Every field but the node is written whole or not at all: an
+   absent decision or justification is the v0 null, an absent
+   initialisation is false. *)
 let rec default path j : default =
   let kvs = obj path j in
   expect_node path kvs "Default";
-  check_keys path kvs ~ext:[ "consequentie"; "initialisatie"; "excepties"; "source" ]
-    [ "node"; "besluit"; "voorwaarde" ];
-  let bool_opt path = function
-    | `Bool b -> Some b
-    | `Null -> None
-    | j -> fail path ("expected boolean or null, got " ^ Yojson.Safe.to_string j)
-  in
+  check_keys path kvs
+    ~ext:[ "decision"; "justification"; "consequence"; "initialisation"; "exceptions"; "source" ]
+    [ "node" ];
   {
-    default_besluit = bool_opt (path / "besluit") (field path kvs "besluit");
-    default_voorwaarde = opt (path / "voorwaarde") conditie (field path kvs "voorwaarde");
-    default_consequentie = ext_field path kvs "consequentie" expr;
+    default_besluit = ext_field path kvs "decision" bool_;
+    default_voorwaarde = ext_field path kvs "justification" conditie;
+    default_consequentie = ext_field path kvs "consequence" expr;
     default_initialisatie =
-      (match ext_field path kvs "initialisatie" (fun p j -> bool_ p j) with
-      | Some b -> b
-      | None -> false);
-    default_excepties = ext_field path kvs "excepties" exception_groups;
+      (match ext_field path kvs "initialisation" bool_ with Some b -> b | None -> false);
+    default_excepties = ext_field path kvs "exceptions" exception_groups;
     default_bron = source_text path kvs;
   }
 
-(* The nested exception groups riding [excepties] (v1, Phase 5c;
-   RUNTIME-SEMANTICS ch. 7.9). The excepties object carries no node
+(* The nested exception groups riding [exceptions] (v1, Phase 5c;
+   RUNTIME-SEMANTICS ch. 7.9). The exceptions object carries no node
    discriminator (it is the extension field's value); each member is an
    [ExceptionGroup] node. Strict: both keys required. *)
 and exception_groups path j : exception_groups =
   let kvs = obj path j in
-  check_keys path kvs [ "ongeordend"; "leden" ];
+  check_keys path kvs [ "unordered"; "members" ];
   {
-    egs_ongeordend = bool_ (path / "ongeordend") (field path kvs "ongeordend");
+    egs_ongeordend = bool_ (path / "unordered") (field path kvs "unordered");
     egs_leden =
       List.mapi
-        (fun i x -> exception_group (path / "leden" / string_of_int i) x)
-        (list_ (path / "leden") (field path kvs "leden"));
+        (fun i x -> exception_group (path / "members" / string_of_int i) x)
+        (list_ (path / "members") (field path kvs "members"));
   }
 
 and exception_group path j : exception_group =
@@ -1666,31 +1623,31 @@ and exception_group path j : exception_group =
     eg_bron = source_text path kvs;
   }
 
+(* A defaults group: its target, a characteristic or an attribute, and its
+   unordered marking are written whole or not at all — an absent
+   characteristic is the v0 null, an absent marking false. *)
 let prioritized_defaults path j : prioritized_defaults =
   let kvs = obj path j in
   expect_node path kvs "PrioritizedDefaults";
-  check_keys path kvs ~ext:[ "attribuut"; "ongeordend"; "source" ]
-    [ "node"; "naam"; "onderwerp"; "kenmerk"; "defaults"; "geldigheid" ];
+  check_keys path kvs ~ext:[ "characteristic"; "attribute"; "unordered"; "source" ]
+    [ "node"; "name"; "subject"; "defaults"; "validity" ];
   let f name = field path kvs name in
   {
-    pd_naam = str_opt (path / "naam") (f "naam");
-    pd_onderwerp = str (path / "onderwerp") (f "onderwerp");
-    pd_kenmerk = str_opt (path / "kenmerk") (f "kenmerk");
-    pd_attribuut = ext_field path kvs "attribuut" str;
+    pd_naam = str_opt (path / "name") (f "name");
+    pd_onderwerp = str (path / "subject") (f "subject");
+    pd_kenmerk = ext_field path kvs "characteristic" str;
+    pd_attribuut = ext_field path kvs "attribute" str;
     defaults =
       List.mapi
         (fun i x -> default (path / "defaults" / string_of_int i) x)
         (list_ (path / "defaults") (f "defaults"));
-    pd_ongeordend =
-      (match ext_field path kvs "ongeordend" (fun p j -> bool_ p j) with
-      | Some b -> b
-      | None -> false);
+    pd_ongeordend = (match ext_field path kvs "unordered" bool_ with Some b -> b | None -> false);
     pd_bron = source_text path kvs;
-    pd_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
+    pd_geldigheid = opt (path / "validity") geldigheid (f "validity");
   }
 
 (* Extension form (v1, row 10): a named reusable function (IR-SPEC ch. 2.11).
-   Strict: name/parameters/result/body required, bron nullable. *)
+   Strict: name/parameters/result/body required, source optional. *)
 let function_def path j : function_def =
   let kvs = obj path j in
   expect_node path kvs "FunctionDef";
@@ -1743,17 +1700,21 @@ let presentatie_annotaties (j : json) : string list =
    [Checks.date_lexeme_refusal], [Checks.date_time_lexeme_refusal]): an
    executor that met it only at evaluation would refuse the same document in
    another phase and in other words than the verifier and the Drools loader.
-   So is an Onopgelost marker without a source (WF-113 (b)): the verifier
+   So is an Unresolved marker without a source (WF-113 (b)): the verifier
    loads it so that the rule names it, and an executor refuses it in the rule's
    sentence ([Checks.marker_without_source]), since no report can account for
-   a marker that has no text to quote. *)
+   a marker that has no text to quote. And so are the three values the schema
+   does not admit and a verifier rule refuses by name: the quantifier `the` on
+   a QuantifierFold (WF-108 (a), [Checks.quantifier_fold_the_refusal]) and a
+   severity `error`, `info` or null (WF-113 (a), [Checks.severity_refusal]). *)
 type reader = Verifier | Executor
 
 (* The executor's refusals, after the structural load: every Literal,
-   ContextValue and Onopgelost node of the document as written, in document
-   order, a literal's variant crossed against its type before its string is
-   read. A literal without a type is WF-034's typeless value node, with no type
-   to cross its variant against; its string is read all the same. *)
+   ContextValue, Unresolved, QuantifierFold and Diagnostic node of the
+   document as written, in document order, a literal's variant crossed
+   against its type before its string is read. A literal without a type is
+   WF-034's typeless value node, with no type to cross its variant against;
+   its string is read all the same. *)
 let executor_refusals (j : json) =
   let rec walk path = function
     | `Assoc kvs ->
@@ -1778,8 +1739,22 @@ let executor_refusals (j : json) =
             match Checks.context_value_refusal (str (path / "name") (field path kvs "name")) with
             | Some sentence -> fail (path / "name") sentence
             | None -> ())
-        | Some (`String "Onopgelost") ->
+        | Some (`String "Unresolved") ->
             if not (List.mem_assoc "source" kvs) then fail path Checks.marker_without_source
+        | Some (`String "QuantifierFold") -> (
+            match field path kvs "quantifier" with
+            | `String s when Spelling.is_refused Spelling.quantifier s ->
+                fail (path / "quantifier") Checks.quantifier_fold_the_refusal
+            | _ -> ())
+        | Some (`String "Diagnostic") -> (
+            let severity =
+              match field path kvs "severity" with
+              | `String s -> Spelling.decode Spelling.severity s
+              | _ -> None
+            in
+            match Checks.severity_refusal severity with
+            | Some sentence -> fail (path / "severity") sentence
+            | None -> ())
         | _ -> ());
         List.iter (fun (k, x) -> walk (path / k) x) kvs
     | `List xs -> List.iteri (fun i x -> walk (path / string_of_int i) x) xs
@@ -1788,7 +1763,7 @@ let executor_refusals (j : json) =
   walk "" j
 
 (* The M1 root: {format, model, rules, diagnostics}. [model] is the
-   declaration set as lists, [rules] the rule lists under their v0 keys;
+   declaration set as lists, [rules] the rule lists under their L5 keys;
    each carries one optional extension list. Since L4 the six named forms
    are read version by version into the v0-shaped records, and the one wire
    list of uniquenesses into the two in-memory lists. *)
@@ -1807,8 +1782,8 @@ let document ?(reader = Executor) (j : json) : document =
   let rpath = path / "rules" in
   let rules = obj rpath (field path kvs "rules") in
   check_keys rpath rules ~ext:[ "prioritizedDefaults" ]
-    [ "resolvedRegels"; "resolvedDagsoorten"; "objectCreaties"; "verdelingen";
-      "consistenties"; "uniciteiten"; "feitCreaties"; "resolvedStartpunten"; "regelGroepen" ];
+    [ "rules"; "dayKindDefinitions"; "objectCreations"; "allocations"; "consistencies";
+      "uniquenesses"; "factCreations"; "startPointDeterminations"; "ruleGroups" ];
   let arr p kvs name g =
     List.mapi (fun i x -> g (p / name / string_of_int i) x) (list_ (p / name) (field p kvs name))
   in
@@ -1821,7 +1796,7 @@ let document ?(reader = Executor) (j : json) : document =
   let forms name g = List.concat (r name g) in
   (* the fact types first: a fact creation's target type is read from them *)
   let feittypen = m "factTypes" (fun p -> named p feittype (fun (x : feittype) -> x.ft_naam)) in
-  let uniqueness_versions = forms "uniciteiten" uniqueness in
+  let uniqueness_versions = forms "uniquenesses" uniqueness in
   let doc =
     {
       objecttypen = m "objectTypes" objecttype;
@@ -1832,16 +1807,16 @@ let document ?(reader = Executor) (j : json) : document =
       dimensies = m "dimensions" (fun p -> named p dimensie (fun (x : dimensie) -> x.dim_naam));
       tijdlijnen = m "timelines" tijdlijn;
       dagsoorten = m "dayKinds" dagsoort;
-      resolved_regels = forms "resolvedRegels" rule;
-      resolved_dagsoorten = r "resolvedDagsoorten" resolved_dagsoort;
-      object_creaties = forms "objectCreaties" object_creation;
-      verdelingen = forms "verdelingen" allocation;
-      consistenties = forms "consistenties" consistency;
+      resolved_regels = forms "rules" rule;
+      resolved_dagsoorten = r "dayKindDefinitions" resolved_dagsoort;
+      object_creaties = forms "objectCreations" object_creation;
+      verdelingen = forms "allocations" allocation;
+      consistenties = forms "consistencies" consistency;
       uniciteiten = List.filter_map Either.find_left uniqueness_versions;
       uniciteit_unies = List.filter_map Either.find_right uniqueness_versions;
-      feit_creaties = forms "feitCreaties" (fact_creation feittypen);
-      resolved_startpunten = r "resolvedStartpunten" resolved_startpunt;
-      regel_groepen = r "regelGroepen" resolved_regel_groep;
+      feit_creaties = forms "factCreations" (fact_creation feittypen);
+      resolved_startpunten = r "startPointDeterminations" resolved_startpunt;
+      regel_groepen = r "ruleGroups" resolved_regel_groep;
       diagnostics = arr path kvs "diagnostics" diagnostic;
       prioritized_defaults = ext rpath rules "prioritizedDefaults" prioritized_defaults;
       function_defs = ext mpath model "functionDefs" function_def;

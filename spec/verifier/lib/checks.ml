@@ -338,9 +338,9 @@ let lexeme_datum_tijd s =
 (* --- the sentences the executors' loader shares ---------------------- *)
 
 (* WF-114 (IR-SPEC ch. 4.1): the value variant a literal's type names — a
-   Number (a percentage included) names number, a Booleaan boolean, a Tekst
+   Number (a percentage included) names number, a Boolean boolean, a Text
    text, a day-precision Date date, a millisecond-precision Date dateTime,
-   an Enumeratie enumeration, a SumType constructor; a list or struct type
+   an Enumeration enumeration, a SumType constructor; a list or struct type
    names none. [literal_variant_refusal] is the rule's sentence, and the
    loader refuses with the same sentence wherever an executor loads the
    document ([Loader.reader]), so the two cannot drift apart. *)
@@ -370,11 +370,11 @@ let literal_variant_refusal (variant : literal_variant) (typ : datatype) =
     let named =
       match typ with
       | Numeriek _ | Percentage _ -> "a Number"
-      | Booleaan -> "a Booleaan"
-      | Tekst -> "a Tekst"
+      | Booleaan -> "a Boolean"
+      | Tekst -> "a Text"
       | Datum_in_dagen -> "a day-precision Date"
       | Datum_tijd -> "a millisecond-precision Date"
-      | Enumeratie _ -> "an Enumeratie"
+      | Enumeratie _ -> "an Enumeration"
       | Sum_type _ -> "a SumType"
       | List_type _ -> "a ListType"
       | Struct_type _ -> "a StructType"
@@ -390,15 +390,39 @@ let literal_variant_refusal (variant : literal_variant) (typ : datatype) =
    no context value since L4 but a node of its own (BoundDay), so a
    ContextValue naming it falls outside the set like any other name. Shared
    with the loader like the sentence above. *)
-let context_value_names = [ "Rekendatum"; "Rekenjaar" ]
+let context_value_names = Spelling.context_value_names
 
 let context_value_refusal name =
   if List.mem name context_value_names then None
   else
     Some
       ("context value '" ^ name
-     ^ "' is not one of the two admissible names Rekendatum, Rekenjaar: the context-value name \
-        is a closed set, spelled byte for byte")
+     ^ "' is not one of the two admissible names evaluationDate, evaluationYear: the \
+        context-value name is a closed set, spelled byte for byte")
+
+(* WF-108 (a) (IR-SPEC ch. 4.5): the one quantifier a QuantifierFold does not
+   admit. The schema admits `the` on a Compound alone; the verifier loads it
+   on a fold so that the rule names it, and every executor refuses it at load
+   with this sentence ([Loader.reader]). *)
+let quantifier_fold_the_refusal =
+  "quantifier fold with quantifier the: the bare definite is a description of ONE member, not \
+   a quantification over the set — a fold over it has no reading"
+
+(* WF-113 (a) (IR-SPEC ch. 2): the one wire severity. The schema admits
+   warning alone; the verifier loads error, info and a null severity so that
+   the rule names them, and every executor refuses them at load with these
+   sentences ([Loader.reader]). *)
+let severity_refusal : severity option -> string option = function
+  | Some Sev_warning -> None
+  | Some Sev_error ->
+      Some
+        "severity error is not a wire severity: an error means the producer refused to write \
+         the document, so a document that was written carries none"
+  | Some Sev_info ->
+      Some
+        "severity info is not a wire severity: the list is the account of what stayed \
+         unresolved, and info is tooling talk"
+  | None -> Some "diagnostic without a severity: the one wire severity is warning"
 
 (* WF-081, WF-084 and WF-095 (IR-SPEC ch. 4.1): the string of a number, date
    or dateTime variant outside its grammar ([lexeme_bare_number],
@@ -6146,10 +6170,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
          de". *)
       (match k.kv_kwantor with
        | Alle | Geen | Ten_minste | Ten_hoogste | Precies -> []
-       | De ->
-           [ v "WF-108" (sub "kwantor")
-               "quantifier fold with kwantor DE: the bare definite is a description of ONE \
-                member, not a quantification over the set — a fold over it has no reading" ])
+       | De -> [ v "WF-108" (sub "quantifier") quantifier_fold_the_refusal ])
       @ wf112_position at k.kv_kwantor (List.filter_map Fun.id [ k.kv_filter; k.kv_toets ])
       (* (e) the threshold: present EXACTLY under a counting quantifier. A
          counting fold without one names no number to compare the count with;
@@ -8854,19 +8875,9 @@ let wf113 ctx =
   let diags = List.mapi (fun i d -> (Printf.sprintf "/diagnostics/%d" i, d)) ctx.doc.diagnostics in
   List.concat_map
     (fun (at, (d : diagnostic)) ->
-      (match d.diag_severity with
-      | Some Sev_warning -> []
-      | Some Sev_error ->
-          [ v "WF-113" (at ^ "/severity")
-              "severity ERROR is not a wire severity: an ERROR means the producer refused to \
-               write the document, so a document that was written carries none" ]
-      | Some Sev_info ->
-          [ v "WF-113" (at ^ "/severity")
-              "severity INFO is not a wire severity: the list is the account of what stayed \
-               unresolved, and INFO is tooling talk" ]
-      | None ->
-          [ v "WF-113" (at ^ "/severity")
-              "diagnostic without a severity: the one wire severity is WARNING" ])
+      (match severity_refusal d.diag_severity with
+      | None -> []
+      | Some sentence -> [ v "WF-113" (at ^ "/severity") sentence ])
       @ (match d.message with
         | Some m when not (blank m) -> []
         | _ ->
