@@ -30,9 +30,9 @@ type violation = { wf : string; at : string; reason : string }
    parent and renames the model lists that carry no names; [m1_named], in
    [all], needs the document, because it turns a declaration's name into
    its list index and an object type's v0 facet table into the member
-   node. The v0 spelling stays inside this library on purpose: ref's
-   stratum lookup matches its own `/resolvedRegels/%d` against [df_at], the
-   dependency-graph path of a form, which never passes through [v]. *)
+   node. A form of the six named forms records the wire pointer of its
+   version as [df_at] ([dep_forms]), the key ref's stratum lookup asks for;
+   a pointer that already starts at "rules" passes [m1_root] unchanged. *)
 let m1_rule_lists =
   [ "resolvedRegels"; "resolvedDagsoorten"; "objectCreaties"; "verdelingen"; "consistenties";
     "uniciteiten"; "uniciteitUnies"; "feitCreaties"; "resolvedStartpunten"; "regelGroepen";
@@ -6757,6 +6757,11 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
   | Regelversie _ -> acc
   | Conditie_onopgelost _ -> acc
 
+(* A form of the six named forms (IR-SPEC ch. 3, Versioning) is recorded
+   at the wire pointer of its version, which the loader sets
+   (`/rules/<list>/<f>/versions/<v>`): the pointer WF-045 and WF-046 cite,
+   and the key an executor's stratum lookup asks for. A defaults group is
+   recorded at `/prioritizedDefaults/<i>`. *)
 let dep_forms ctx : dep_form list =
   let recursive_members =
     List.concat_map
@@ -6778,9 +6783,9 @@ let dep_forms ctx : dep_form list =
       reads
   in
   let regels =
-    List.mapi
-      (fun i (r : resolved_regel) ->
-        let at = Printf.sprintf "/resolvedRegels/%d" i in
+    List.map
+      (fun (r : resolved_regel) ->
+        let at = r.rr_pointer in
         let name = Option.value r.rr_naam ~default:at in
         match r.doel with
         | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ->
@@ -6800,9 +6805,9 @@ let dep_forms ctx : dep_form list =
     |> List.filter_map (fun x -> x)
   in
   let verdelingen =
-    List.mapi
-      (fun i (v : resolved_verdeling) ->
-        let at = Printf.sprintf "/verdelingen/%d" i in
+    List.map
+      (fun (v : resolved_verdeling) ->
+        let at = v.vd_pointer in
         let name = Option.value v.vd_naam ~default:at in
         let bt = Option.value v.bron_type ~default:"" in
         let dt = Option.value v.doel_type ~default:"" in
@@ -6828,9 +6833,9 @@ let dep_forms ctx : dep_form list =
       ctx.doc.verdelingen
   in
   let consistenties =
-    List.mapi
-      (fun i (c : resolved_consistentie) ->
-        let at = Printf.sprintf "/consistenties/%d" i in
+    List.map
+      (fun (c : resolved_consistentie) ->
+        let at = c.cons_pointer in
         let name = Option.value c.cons_naam ~default:at in
         {
           df_at = at;
@@ -6842,9 +6847,9 @@ let dep_forms ctx : dep_form list =
       ctx.doc.consistenties
   in
   let uniciteiten =
-    List.mapi
-      (fun i (u : resolved_uniciteit) ->
-        let at = Printf.sprintf "/uniciteiten/%d" i in
+    List.map
+      (fun (u : resolved_uniciteit) ->
+        let at = u.uni_pointer in
         let name = Option.value u.uni_naam ~default:at in
         let subj = Option.value u.uni_subject ~default:"" in
         (* a parent-scoped uniqueness reads the scope relation's link set
@@ -6868,9 +6873,9 @@ let dep_forms ctx : dep_form list =
       ctx.doc.uniciteiten
   in
   let uniciteit_unies =
-    List.mapi
-      (fun i (u : resolved_uniciteit_unie) ->
-        let at = Printf.sprintf "/uniciteitUnies/%d" i in
+    List.map
+      (fun (u : resolved_uniciteit_unie) ->
+        let at = u.uu_pointer in
         let name = Option.value u.uu_naam ~default:at in
         {
           df_at = at;
@@ -6891,9 +6896,9 @@ let dep_forms ctx : dep_form list =
       ctx.doc.uniciteit_unies
   in
   let creaties =
-    List.mapi
-      (fun i (o : resolved_object_creatie) ->
-        let at = Printf.sprintf "/objectCreaties/%d" i in
+    List.map
+      (fun (o : resolved_object_creatie) ->
+        let at = o.oc_pointer in
         let name = Option.value o.oc_naam ~default:at in
         let nt = Option.value o.nieuw_type ~default:"" in
         let subject = o.oc_subject in
@@ -6956,9 +6961,9 @@ let dep_forms ctx : dep_form list =
       ctx.doc.object_creaties
   in
   let feit_creaties =
-    List.mapi
-      (fun i (f : resolved_feit_creatie) ->
-        let at = Printf.sprintf "/feitCreaties/%d" i in
+    List.map
+      (fun (f : resolved_feit_creatie) ->
+        let at = f.fc_pointer in
         let name = Option.value f.fc_naam ~default:at in
         (* the creation writes the created relation's link set and reads
            the link set of every hop it traverses (ch. 6.1) — the edge that
