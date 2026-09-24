@@ -31,15 +31,16 @@ target, an allocation target and a defaults target all correctly take,
 because those forms iterate an extension instead of minting one instance —
 and this document turns into
 
-    WF-045 FAIL /rules/resolvedRegels/0: dependency cycle through no recursive
-    creation: bereken de bergingsvergoeding van een wrakrecht -> boek een
-    strandrecht bij elk wrakrecht -> bereken de bergingsvergoeding van een
+    WF-045 FAIL /rules/resolvedRegels/0/versions/0: dependency cycle through no
+    recursive creation: bereken de bergingsvergoeding van een wrakrecht -> boek
+    een strandrecht bij elk wrakrecht -> bereken de bergingsvergoeding van een
     wrakrecht
 
 with the reference interpreter, which shares that graph, refusing to evaluate
 while the ASP backend answers the pinned numbers — one document, a split
 differential square, and no cycle anywhere in the model. Measured
-2026-09-12, both readings, on this file.
+2026-09-12, both readings, on this file; the verifier half re-measured at L4
+(2026-09-24), where the report cites the version of the rule.
 
 **Replayed by all three executors** (gates 5, 6 and 12) on two subjects with
 different grounds. The case pins the derived attribute rather than anything

@@ -24,18 +24,19 @@ document pins that reading with absolute hand-computed values, so the
 scope of WF-083 is not a claim in prose but a case that fails the moment
 the scope is dropped.
 
-Measured on this document, both spellings of the verifier (re-measured at L2,
+Measured on this document, both spellings of the verifier (re-measured at L4,
 2026-09-24; the scope is the `arity = 1` of `source_position` in
 `spec/verifier/lib/checks.ml`):
 
 ```
 scope removed (the whole "a fold source never navigates" family unscoped):
-    WF-053 FAIL /rules/resolvedRegels/0/waarde/argumenten/1: navigation bindings
-                on a fold source are ill-formed (the fold's relation is its
-                range, bronRol or bronPad)
-    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/1: fold-source
-                objecttype 'Jutter' is not the fold's anchor 'Vondst' (a fold
-                without a range reads the subject's own attribute) …
+    WF-053 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/1: navigation
+                bindings on a fold source are ill-formed (the fold's relation
+                is its range, sourceRole or sourcePath)
+    WF-083 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/1:
+                fold-source objecttype 'Jutter' is not the fold's anchor
+                'Vondst' (a fold without a range reads the subject's own
+                attribute) …
 scope in place:  verifier PASS
 ```
 

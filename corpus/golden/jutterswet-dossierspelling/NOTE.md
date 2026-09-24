@@ -10,11 +10,13 @@ field list is repeated exactly — same names, same datatypes, same order
 — so WF-072 is satisfied on its own terms; the only difference is the
 case of the domain NAME, at both halves of the identity rule:
 
-- the READ half, `/rules/resolvedRegels/0/waarde/base/type`: the
-  `AttribuutRef` reading `dossier` is typed `DOSSIER`;
-- the WRITE half, `/rules/resolvedRegels/1/waarde/type`: the `StructLiteral`
-  assigned into `spiegel` is typed `DOSSIER` while the target attribute
-  declares `dossier`.
+- the READ half, until L2: the `AttribuutRef` reading `dossier` was typed
+  `DOSSIER` (the `type` of the reference at `/rules/resolvedRegels/0/waarde/base`
+  on the wire of that time); since L2 a reference carries no type of its own
+  (B13), so this half has no wire position left;
+- the WRITE half, `/rules/resolvedRegels/1/versions/0/value/type`: the
+  `StructLiteral` assigned into `spiegel` is typed `DOSSIER` while the target
+  attribute declares `dossier`.
 
 Why the case exists: WF-090 (struct-domain identity,
 `spec/IR-SPEC.md` ch. 2.4) compares a use site's struct domain against
