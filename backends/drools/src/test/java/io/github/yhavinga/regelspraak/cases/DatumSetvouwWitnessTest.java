@@ -146,7 +146,7 @@ class DatumSetvouwWitnessTest {
      *  the member and the fold all stay `Datum in dagen`. */
     private static ObjectNode metKind(String golden, String kind) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
-        for (JsonNode r : ir.get("rules").get("resolvedRegels")) ((ObjectNode) r.get("waarde")).put("kind", kind);
+        for (JsonNode r : ir.get("rules").get("resolvedRegels")) ((ObjectNode) r.get("versions").get(0).get("value")).put("kind", kind);
         return ir;
     }
 
@@ -158,14 +158,14 @@ class DatumSetvouwWitnessTest {
     private static ObjectNode alsTekst(String golden, String kind) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
         if (kind != null)
-            for (JsonNode r : ir.get("rules").get("resolvedRegels")) ((ObjectNode) r.get("waarde")).put("kind", kind);
+            for (JsonNode r : ir.get("rules").get("resolvedRegels")) ((ObjectNode) r.get("versions").get(0).get("value")).put("kind", kind);
         ObjectNode tekst = JSON.createObjectNode().put("node", "Tekst");
         ObjectNode jutter = IrPad.objectType(ir, "Jutter");
         IrPad.attribute(jutter, "vroegste vondstdag").set("datatype", tekst);
         IrPad.attribute(jutter, "jongste vondstdag").set("datatype", tekst);
         IrPad.attribute(IrPad.objectType(ir, "Vondst"), "vondstdatum").set("datatype", tekst);
         // the reads take their type from the declarations above; only the fold carries an annotation of its own
-        for (JsonNode r : ir.get("rules").get("resolvedRegels")) ((ObjectNode) r.get("waarde")).set("type", tekst);
+        for (JsonNode r : ir.get("rules").get("resolvedRegels")) ((ObjectNode) r.get("versions").get(0).get("value")).set("type", tekst);
         return ir;
     }
 

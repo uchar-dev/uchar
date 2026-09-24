@@ -226,9 +226,7 @@ class VouwMatrixVormWitnessTest {
     private Path diepeSamenstelling() throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SAMENGESTELD.resolve("ir.json")));
         houdRegels(doc, "paraat bij ploegkeur", "redderstal van een reddingspost");
-        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels"))
-            if ("paraat bij ploegkeur".equals(r.path("naam").asText()))
-                ((ObjectNode) r.get("voorwaarde")).set("toets", JSON.readTree(DIEPE_MATRIX));
+        ((ObjectNode) IrPad.versie(doc, "resolvedRegels", "paraat bij ploegkeur").get("condition")).set("toets", JSON.readTree(DIEPE_MATRIX));
         return schrijf(doc, "diep-ir");
     }
 
@@ -240,9 +238,7 @@ class VouwMatrixVormWitnessTest {
                 { "node": "Parameter", "name": "bovengrens",
                   "datatype": { "node": "Number", "whole": true, "decimals": 0,
                                 "sign": "NIET_NEGATIEF" } }"""));
-        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels"))
-            if ("bekwaam bij keurgrens".equals(r.path("naam").asText()))
-                ((ObjectNode) r.get("voorwaarde")).set("toets", JSON.readTree(TWEE_PARAM_MATRIX));
+        ((ObjectNode) IrPad.versie(doc, "resolvedRegels", "bekwaam bij keurgrens").get("condition")).set("toets", JSON.readTree(TWEE_PARAM_MATRIX));
         return schrijf(doc, "twee-param-ir");
     }
 
@@ -254,16 +250,15 @@ class VouwMatrixVormWitnessTest {
         IrPad.addAttribute(IrPad.objectType(doc, "Loods"), "rang", JSON.readTree("{ \"node\": \"Tekst\" }"));
         IrPad.modelLijst(doc, "parameters").add(JSON.readTree("""
                 { "node": "Parameter", "name": "keurrang", "datatype": { "node": "Tekst" } }"""));
-        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels"))
-            if ("bekwaam bij keurgrens".equals(r.path("naam").asText()))
-                ((ObjectNode) r.get("voorwaarde")).set("toets", JSON.readTree(TEKST_PARAM_MATRIX));
+        ((ObjectNode) IrPad.versie(doc, "resolvedRegels", "bekwaam bij keurgrens").get("condition")).set("toets", JSON.readTree(TEKST_PARAM_MATRIX));
         return schrijf(doc, "tekst-param-ir");
     }
 
     private static void houdRegels(ObjectNode doc, String... namen) {
         List<String> keep = List.of(namen);
         com.fasterxml.jackson.databind.node.ArrayNode uit = JSON.createArrayNode();
-        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels")) if (keep.contains(r.path("naam").asText())) uit.add(r);
+        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels")) if (keep.contains(r.path("name").asText())) uit.add(r);
+        if (uit.size() != keep.size()) throw new AssertionError("not every rule of " + keep + " is in the document");
         IrPad.rules(doc).set("resolvedRegels", uit);
     }
 
@@ -282,23 +277,20 @@ class VouwMatrixVormWitnessTest {
                             { "node": "Vergelijking", "op": "GROTER",
                               "links": { "node": "AttribuutRef", "attribuut": "dienstjaren",
                                          "objecttype": "Redder", "bron": "zijn dienstjaren" },
-                              "rechts": { "node": "Literal", "waarde": "9",
-                                          "type": { "node": "Number", "whole": true, "decimals": 0,
+                              "rechts": { "node": "Literal", "value": { "number": "9" }, "type": { "node": "Number", "whole": true, "decimals": 0,
                                                     "sign": "ONBEPAALD" }, "bron": "9" },
                               "periode": null, "bron": "zijn dienstjaren groter zijn dan 9" },
                             { "node": "Vergelijking", "op": "GROTER",
                               "links": { "node": "AttribuutRef", "attribuut": "conditie",
                                          "objecttype": "Redder", "bron": "zijn conditie" },
-                              "rechts": { "node": "Literal", "waarde": "20",
-                                          "type": { "node": "Number", "whole": true, "decimals": 0,
+                              "rechts": { "node": "Literal", "value": { "number": "20" }, "type": { "node": "Number", "whole": true, "decimals": 0,
                                                     "sign": "ONBEPAALD" }, "bron": "20" },
                               "periode": null, "bron": "zijn conditie groter is dan 20" } ],
                           "bron": "hij aan geen van de volgende voorwaarden voldoet" },
                         { "node": "Vergelijking", "op": "GROTER",
                           "links": { "node": "AttribuutRef", "attribuut": "conditie",
                                      "objecttype": "Redder", "bron": "zijn conditie" },
-                          "rechts": { "node": "Literal", "waarde": "7",
-                                      "type": { "node": "Number", "whole": true, "decimals": 0,
+                          "rechts": { "node": "Literal", "value": { "number": "7" }, "type": { "node": "Number", "whole": true, "decimals": 0,
                                                 "sign": "ONBEPAALD" }, "bron": "7" },
                           "periode": null, "bron": "zijn conditie groter is dan 7" } ],
                       "bron": "hij aan alle volgende voorwaarden voldoet" },
@@ -308,8 +300,7 @@ class VouwMatrixVormWitnessTest {
                 { "node": "Vergelijking", "op": "GROTER",
                   "links": { "node": "AttribuutRef", "attribuut": "dienstjaren", "objecttype": "Redder",
                              "bron": "zijn dienstjaren" },
-                  "rechts": { "node": "Literal", "waarde": "2",
-                              "type": { "node": "Number", "whole": true, "decimals": 0,
+                  "rechts": { "node": "Literal", "value": { "number": "2" }, "type": { "node": "Number", "whole": true, "decimals": 0,
                                         "sign": "ONBEPAALD" }, "bron": "2" },
                   "periode": null, "bron": "zijn dienstjaren groter zijn dan 2" } ],
               "bron": "hij aan alle volgende voorwaarden voldoet" }

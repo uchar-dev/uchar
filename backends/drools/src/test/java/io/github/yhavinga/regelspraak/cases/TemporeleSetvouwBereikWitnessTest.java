@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The ch. 4.3 {@code bronRol} witness for the TEMPORAL set fold — §5.8.2/§5.1.4 "de som van &lt;temporeel
+ * The ch. 4.3 {@code sourceRole} witness for the TEMPORAL set fold — §5.8.2/§5.1.4 "de som van &lt;temporeel
  * attribuut&gt; van alle &lt;rol&gt;" written into a TEMPORAL target, which keeps the timeline instead of
  * collapsing it (only the §7.1 "totaal van" collapses to a scalar).
  *
@@ -94,15 +94,15 @@ class TemporeleSetvouwBereikWitnessTest {
         // so the stripped document is ill-formed everywhere and this loader refuses it at the fold, before
         // either branch lowers a thing.
         ObjectNode ir = herhaaldPaar();
-        ((ObjectNode) ir.get("rules").get("resolvedRegels").get(0).get("waarde")).remove("bronRol");
+        ((ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("value")).remove("sourceRole");
         Path p = tijdelijk("setvouw-geen-binding", ir);
         JsonNode c = JSON.readTree(ZAAK);
         for (boolean viaDrl : new boolean[] { false, true }) {
             IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
                     () -> CaseRunner.speelCase(p, c, viaDrl),
                     (viaDrl ? "drl-tekst" : "exec-model") + " never lowers a bindingless temporal set fold");
-            assertTrue(e.plek().equals("/rules/resolvedRegels/0/waarde")
-                    && e.getMessage().contains("missing field 'bronRol'"), e.getMessage());
+            assertTrue(e.plek().equals("/rules/resolvedRegels/0/versions/0/value")
+                    && e.getMessage().contains("carries its range (sourceRole or sourcePath)"), e.getMessage());
         }
     }
 
@@ -119,9 +119,9 @@ class TemporeleSetvouwBereikWitnessTest {
         bewaarlast.put("plural", "bewaarlasten");
         bewaarlast.set("datatype", eur());
         IrPad.attribute(IrPad.objectType(ir, "Vondst"), "bewaartarief").set("datatype", eur());
-        ObjectNode r = (ObjectNode) ir.get("rules").get("resolvedRegels").get(0);
+        ObjectNode r = IrPad.versie(ir, "resolvedRegels", 0, 0);
         // the reads take their type from the declarations above; only the fold carries an annotation of its own
-        ObjectNode w = (ObjectNode) r.get("waarde");
+        ObjectNode w = (ObjectNode) r.get("value");
         w.put("kind", "SOM").put("bron", "de som van het bewaartarief van alle vondsten van de Jutter");
         w.set("type", eur());
         return ir;

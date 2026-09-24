@@ -494,7 +494,7 @@ class CompanionPadWitnessTest {
     private static String attr(String naam) { return attr(naam, pos(2)); }
 
     private static String lit(String waarde, String type) {
-        return "{\"node\":\"Literal\",\"waarde\":\"%s\",\"type\":%s,\"bron\":\"%s\"}".formatted(waarde, type, waarde);
+        return IrPad.literal(waarde, type, waarde);
     }
 
     private static String param(String naam, String type) {
@@ -507,9 +507,8 @@ class CompanionPadWitnessTest {
     }
 
     private static String wortel(String argument, String type) {
-        return ("{\"node\":\"Functie\",\"kind\":\"WORTEL\",\"argumenten\":[%s],\"type\":%s,"
-                + "\"bron\":\"de wortel van\",\"filter\":null,\"leegwaarde\":null,\"elementObjecttype\":null,"
-                + "\"dimensieSelectie\":null,\"granulariteit\":null}").formatted(argument, type);
+        return "{\"node\":\"BuiltinCall\",\"kind\":\"WORTEL\",\"arguments\":[%s],\"type\":%s,\"bron\":\"de wortel van\"}"
+                .formatted(argument, type);
     }
 
     private static String let(String binder, String value, String body, String type) {
@@ -545,9 +544,7 @@ class CompanionPadWitnessTest {
     }
 
     private static String regel(String naam, String soort, String doel, String waarde, String voorwaarde) {
-        return ("{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"%s\",\"doel\":%s,\"waarde\":%s,"
-                + "\"voorwaarde\":%s,\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
-                .formatted(naam, soort, doel, waarde, voorwaarde);
+        return IrPad.regel(naam, soort, doel, waarde, voorwaarde);
     }
 
     /** The one Jutter every model here uses, carrying every attribute any flank reads. */
@@ -570,7 +567,7 @@ class CompanionPadWitnessTest {
                 + "\"timelines\":[],\"dayKinds\":[]},"
                 + "\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
+                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
                 + "\"regelGroepen\":[]%s},\"diagnostics\":[]}")
                 .formatted(ATTRIBUTEN, parameters, String.join(",", regels), prioritizedDefaults);
     }
@@ -712,7 +709,7 @@ class CompanionPadWitnessTest {
     private static String lateProducentModel(boolean tak) {
         String vermistDoel = ("{\"node\":\"AttribuutRef\",\"attribuut\":\"vermist\",\"objecttype\":\"Jutter\","
                 + "\"bron\":\"Een Jutter is vermist\"}");
-        String waar = "{\"node\":\"Literal\",\"waarde\":\"waar\",\"type\":{\"node\":\"Booleaan\"},\"bron\":\"waar\"}";
+        String waar = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Booleaan\"},\"bron\":\"waar\"}";
         String nietVermist = ("{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"negatie\":true,"
                 + "\"eigenaar\":null,\"periode\":null,\"bron\":\"hij niet vermist is\"}");
         String body = tak

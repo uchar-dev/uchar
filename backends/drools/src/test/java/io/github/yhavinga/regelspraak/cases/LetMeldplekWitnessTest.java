@@ -154,7 +154,7 @@ class LetMeldplekWitnessTest {
     private static String attr(String naam) { return attr(naam, pos(2)); }
 
     private static String lit(String waarde, String type) {
-        return "{\"node\":\"Literal\",\"waarde\":\"%s\",\"type\":%s,\"bron\":\"%s\"}".formatted(waarde, type, waarde);
+        return IrPad.literal(waarde, type, waarde);
     }
 
     private static String binair(String op, String links, String rechts, String type) {
@@ -196,11 +196,11 @@ class LetMeldplekWitnessTest {
                 + "\"characteristics\":[]}],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]},"
-                + "\"rules\":{\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"BEREKENING\","
-                + "\"doel\":%s,\"waarde\":%s,\"voorwaarde\":null,"
-                + "\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}],"
+                + "\"rules\":{\"resolvedRegels\":[{\"node\":\"Rule\",\"name\":\"%s\",\"versions\":[{"
+                + "\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null},"
+                + "\"target\":%s,\"value\":%s,\"initialisation\":false,\"presentation\":\"BEREKENING\"}]}],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
+                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
                 + "\"regelGroepen\":[]},\"diagnostics\":[]}")
                 .formatted(pos(2), pos(2), num(2), num(4), NAAM, attr("uit", num(4)), waarde);
     }

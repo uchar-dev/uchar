@@ -166,7 +166,7 @@ class StaandeScalaireNormWitnessTest {
         d.set("voorwaarde", JSON.readTree(
                 "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemeld\",\"negatie\":false,"
                         + "\"eigenaar\":null,\"periode\":null,\"bron\":\"hij gemeld is\"}"));
-        ((ObjectNode) d.get("consequentie")).put("waarde", "12.00");
+        ((ObjectNode) d.get("consequentie")).putObject("value").put("number", "12.00");
         d.put("bron", "gemeld: 12.00");
         d.remove("excepties");   // absent, not null/[] — the only wire shape a childless Default carries
         ArrayNode defaults = JSON.createArrayNode();
@@ -265,7 +265,7 @@ class StaandeScalaireNormWitnessTest {
     private static Path versieSchrijver() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(CORPUS.resolve("anchor")
                 .resolve("jutterswet-waardestelling").resolve("ir.json").toFile());
-        ((ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0)).set("geldigheid", JSON.createObjectNode()
+        IrPad.versie(ir, "resolvedRegels", 0, 0).set("validity", JSON.createObjectNode()
                 .put("node", "Geldigheid").put("vanaf", "2026-01-01").put("tot", "2026-12-31"));
         Path uit = Files.createTempFile("versie-schrijver", ".json");
         uit.toFile().deleteOnExit();
@@ -285,8 +285,8 @@ class StaandeScalaireNormWitnessTest {
 
         ArrayNode regels = IrPad.rulesLijst(ir, "resolvedRegels");
         ObjectNode tweede = regels.get(0).deepCopy();
-        tweede.put("naam", "Waardestelling tweede");
-        ObjectNode bron = (ObjectNode) tweede.get("waarde");
+        tweede.put("name", "Waardestelling tweede");
+        ObjectNode bron = (ObjectNode) tweede.get("versions").get(0).get("value");
         bron.put("attribuut", "tweede taxatie")
                 .put("bron", "de tweede taxatie van de Vondst");
         regels.add(tweede);

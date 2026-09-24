@@ -14,8 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * One v0 {@code Literal} of type {@code Tekst}, one value — in BOTH transpiler branches. IR-SPEC ch. 4.1 puts the
- * parsed string in {@code waarde} (the 2026-09-18 canonicalisation strips only the emitter's outer delimiters;
+ * One {@code Literal} of type {@code Tekst}, one value — in BOTH transpiler branches. IR-SPEC ch. 4.1 puts the
+ * parsed string in its {@code text} value (the 2026-09-18 canonicalisation strips only the emitter's outer delimiters;
  * a hand-authored value may carry any text); the reference interpreter reads it verbatim into its text value and a
  * case input's {@code {"text": …}} carries it verbatim too, so the value a back-end compares (or writes) must be
  * that string and nothing else. Until 2026-09-18 the two branches disagreed: the exec-model branch had a private
@@ -276,18 +276,19 @@ class TekstLexeemWitnessTest {
         return tmp;
     }
 
-    private static ObjectNode regel(ObjectNode ir, int i) { return (ObjectNode) ir.get("rules").get("resolvedRegels").get(i); }
+    /** The one version of the golden's {@code i}-th rule. */
+    private static ObjectNode regel(ObjectNode ir, int i) { return IrPad.versie(ir, "resolvedRegels", i, 0); }
 
     /** The golden's OWN `het keurmerk van de Vondst` reference, so every fixture asks about the same member and the
      *  only thing that varies between them is the literal's lexeme. */
     private static ObjectNode keurmerkRef(ObjectNode ir) {
-        return ((ObjectNode) regel(ir, 0).get("voorwaarde").get("links")).deepCopy();
+        return ((ObjectNode) regel(ir, 0).get("condition").get("links")).deepCopy();
     }
 
     private static ObjectNode tekstLiteraal(String waarde) {
         ObjectNode lit = JSON.createObjectNode();
         lit.put("node", "Literal");
-        lit.put("waarde", waarde);
+        lit.putObject("value").put("text", waarde);
         lit.set("type", JSON.createObjectNode().put("node", "Tekst"));
         lit.put("bron", waarde);
         return lit;
@@ -308,9 +309,9 @@ class TekstLexeemWitnessTest {
      *  {@code gevolg} — the two-rule chain (compare, then write) stays exactly the golden's. */
     private static ObjectNode basis(String op, String literaal, String gevolg) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(KEURMERK)));
-        regel(ir, 0).set("voorwaarde", keurmerkVergelijking(ir, op, literaal));
-        ((ObjectNode) regel(ir, 1).get("waarde")).put("waarde", gevolg);
-        ((ObjectNode) regel(ir, 1).get("waarde")).put("bron", gevolg);
+        regel(ir, 0).set("condition", keurmerkVergelijking(ir, op, literaal));
+        ((ObjectNode) regel(ir, 1).get("value")).putObject("value").put("text", gevolg);
+        ((ObjectNode) regel(ir, 1).get("value")).put("bron", gevolg);
         return ir;
     }
 
@@ -328,7 +329,7 @@ class TekstLexeemWitnessTest {
         ArrayNode onderdelen = sam.putArray("onderdelen");
         for (String l : literalen) onderdelen.add(keurmerkVergelijking(ir, "GELIJK", l));
         sam.put("bron", "aan ten minste een van de volgende voorwaarden wordt voldaan");
-        regel(ir, 0).set("voorwaarde", sam);
+        regel(ir, 0).set("condition", sam);
         return tijdelijk(naam, ir.toString());
     }
 

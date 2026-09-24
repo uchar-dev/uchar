@@ -143,13 +143,11 @@ class EnumNaamIdentiteitWitnessTest {
     @Test void de_uniesleutel_is_een_naam() throws Exception {
         ObjectNode ir = golden();
         IrPad.rules(ir).putArray("consistenties");
-        IrPad.rules(ir).putArray("uniciteiten");
-        IrPad.rules(ir).set("uniciteitUnies", JSON.readTree("""
-                [{"node": "ResolvedUniciteitUnie", "naam": "eenmalig keuroordeel", "bronnen": [
-                   {"node": "Bron", "type": "Vondst", "sleutels": ["staat"]},
-                   {"node": "Bron", "type": "Vondst", "sleutels": ["herkeuring"]}],
-                  "bron": "Vondst verenigd met Vondst moeten uniek zijn.",
-                  "geldigheid": {"node": "Geldigheid", "vanaf": null, "tot": null}}]
+        IrPad.rules(ir).set("uniciteiten", JSON.readTree("""
+                [{ "node": "Uniqueness", "name": "eenmalig keuroordeel", "versions": [ {
+                    "sources": [ { "node": "Source", "objectType": "Vondst", "keys": ["staat"] }, { "node": "Source", "objectType": "Vondst", "keys": ["herkeuring"] } ],
+                    "validity": {"node": "Geldigheid", "vanaf": null, "tot": null},
+                    "bron": "Vondst verenigd met Vondst moeten uniek zijn." } ] }]
                 """));
         Path doc = schrijf(ir, "unie.json");
         BeideTakken.groen(doc, JSON.readTree("""
@@ -206,9 +204,12 @@ class EnumNaamIdentiteitWitnessTest {
         return p;
     }
 
-    /** Every {@code Enumeratie} datatype node under {@code n} replaced by a {@code Tekst} node. */
+    /** Every {@code Enumeratie} datatype node under {@code n} replaced by a {@code Tekst} node, and the value of every
+     *  literal typed so read as the text it names: a literal's value is the variant its type names (WF-114). */
     private static void naarTekst(JsonNode n) {
         if (n instanceof ObjectNode o) {
+            if ("Literal".equals(o.path("node").asText()) && o.path("value").has("enumeration"))
+                o.putObject("value").put("text", o.get("value").get("enumeration").asText());
             var namen = new java.util.ArrayList<String>();
             o.fieldNames().forEachRemaining(namen::add);
             for (String k : namen) {
@@ -224,7 +225,8 @@ class EnumNaamIdentiteitWitnessTest {
 
     private static ObjectNode literal(JsonNode type, String label) {
         ObjectNode l = JSON.createObjectNode();
-        l.put("node", "Literal").put("waarde", label);
+        l.put("node", "Literal").putObject("value").put("Tekst".equals(type.path("node").asText()) ? "text" : "enumeration",
+                label);
         l.set("type", type.deepCopy());
         l.put("bron", "'" + label + "'");
         return l;
@@ -243,27 +245,30 @@ class EnumNaamIdentiteitWitnessTest {
 
     /** "zijn staat", lifted from the golden's own first rule so its shape is the emitter's. */
     private static ObjectNode eigenStaat(ObjectNode ir) {
-        return (ObjectNode) ir.get("rules").get("resolvedRegels").get(0).get("voorwaarde").get("links").deepCopy();
+        return (ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("condition").get("links").deepCopy();
     }
 
     /** A KENMERKTOEKENNING "Een Vondst is {@code kenmerk} indien {@code links op rechts}". */
     private static ObjectNode kenmerkRegel(String naam, String kenmerk, String op,
                                            JsonNode links, JsonNode rechts) throws Exception {
         ObjectNode r = (ObjectNode) JSON.readTree("""
-                {"node": "ResolvedRegel", "soort": "KENMERKTOEKENNING",
-                 "doel": {"node": "AttribuutRef", "objecttype": "Vondst"},
-                 "waarde": {"node": "Literal", "waarde": "waar", "type": {"node": "Booleaan"}, "bron": "waar"},
-                 "geldigheid": {"node": "Geldigheid", "vanaf": null, "tot": null}}
+                {"node": "Rule", "name": "", "versions": [ {
+                 "validity": {"node": "Geldigheid", "vanaf": null, "tot": null},
+                 "target": {"node": "AttribuutRef", "objecttype": "Vondst"},
+                 "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Booleaan"}, "bron": "waar"},
+                 "initialisation": false } ] }
                 """);
-        r.put("naam", naam);
-        ((ObjectNode) r.get("doel")).put("attribuut", kenmerk).put("bron", "Een Vondst is " + kenmerk);
-        ObjectNode v = r.putObject("voorwaarde");
+        r.put("name", naam);
+        ObjectNode versie = (ObjectNode) r.get("versions").get(0);
+        ((ObjectNode) versie.get("target")).put("attribuut", kenmerk).put("bron", "Een Vondst is " + kenmerk);
+        ObjectNode v = JSON.createObjectNode();
         v.put("node", "Vergelijking").put("op", op);
         v.set("links", links);
         v.set("rechts", rechts);
         v.putNull("periode");
         v.put("bron", links.path("bron").asText() + " " + op.toLowerCase() + " " + rechts.path("bron").asText());
-        assertTrue(r.get("doel").has("attribuut"));
+        versie.set("condition", v);
+        assertTrue(versie.get("target").has("attribuut"));
         return r;
     }
 }

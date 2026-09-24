@@ -98,10 +98,8 @@ class VensterAssertieWitnessTest {
 
     private static final String LETTERLIJK = """
             { "node": "Periode",
-              "vanaf": { "node": "Literal", "waarde": "2024-01-01", "type": { "node": "Date", "precision": "day" },
-                         "bron": "2024-01-01" },
-              "tot": { "node": "Literal", "waarde": "2025-01-01", "type": { "node": "Date", "precision": "day" },
-                       "bron": "2025-01-01" },
+              "vanaf": { "node": "Literal", "value": { "date": "2024-01-01" }, "type": { "node": "Date", "precision": "day" }, "bron": "2024-01-01" },
+              "tot": { "node": "Literal", "value": { "date": "2025-01-01" }, "type": { "node": "Date", "precision": "day" }, "bron": "2025-01-01" },
               "totInclusief": false, "bron": "van 1 januari 2024 tot 1 januari 2025" }""";
 
     private static String samen(String kwantor, String... delen) {
@@ -118,14 +116,13 @@ class VensterAssertieWitnessTest {
     private Path document(String assertie) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(PREMIEVENSTER.resolve("ir.json")));
         ArrayNode uit = JSON.createArrayNode();
-        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels"))
-            if ("basispremie van een vondst".equals(r.path("naam").asText())) uit.add(r);
+        uit.add(IrPad.vorm(doc, "resolvedRegels", "basispremie van een vondst"));
         IrPad.rules(doc).set("resolvedRegels", uit);
         ArrayNode cons = JSON.createArrayNode();
-        cons.add(JSON.readTree("{ \"node\": \"ResolvedConsistentie\", \"naam\": \"" + REGEL + "\","
-                + " \"subject\": \"Vondst\", \"assertie\": " + assertie + ","
-                + " \"bron\": \"Een Vondst moet voldoen aan de volgende voorwaarden\", \"line\": 1,"
-                + " \"geldigheid\": { \"node\": \"Geldigheid\", \"vanaf\": null, \"tot\": null } }"));
+        cons.add(JSON.readTree("{ \"node\": \"Consistency\", \"name\": \"" + REGEL + "\", \"versions\": [ {"
+                + " \"subject\": \"Vondst\", \"assertion\": " + assertie + ","
+                + " \"validity\": { \"node\": \"Geldigheid\", \"vanaf\": null, \"tot\": null },"
+                + " \"bron\": \"Een Vondst moet voldoen aan de volgende voorwaarden\", \"line\": 1 } ] }"));
         IrPad.rules(doc).set("consistenties", cons);
         Path p = tmp.resolve("vensterassertie-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());

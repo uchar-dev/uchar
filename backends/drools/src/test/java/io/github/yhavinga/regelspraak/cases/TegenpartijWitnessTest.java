@@ -124,7 +124,7 @@ class TegenpartijWitnessTest {
     }
 
     private static ObjectNode regel(ObjectNode ir, int i) {
-        return (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(i).get("voorwaarde");
+        return (ObjectNode) IrPad.versie(ir, "resolvedRegels", i, 0).get("condition");
     }
 
     private static ObjectNode lees() throws Exception {

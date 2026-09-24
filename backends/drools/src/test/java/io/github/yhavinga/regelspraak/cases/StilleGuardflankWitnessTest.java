@@ -133,9 +133,9 @@ class StilleGuardflankWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(POSTWACHT).resolve("ir.json")));
         ArrayNode houd = JSON.createArrayNode();
         for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
-            if (Set.of("vakseinaantal van een kustvak").contains(r.get("naam").asText())) houd.add(r);
+            if (Set.of("vakseinaantal van een kustvak").contains(r.get("name").asText())) houd.add(r);
         IrPad.rules(ir).set("resolvedRegels", houd);
-        ((ObjectNode) IrPad.rulesLijst(ir, "feitCreaties").get(0)).set("voorwaarde", guard);
+        IrPad.versie(ir, "feitCreaties", 0, 0).set("condition", guard);
         Path tmp = Files.createTempFile("stille-guardflank", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());

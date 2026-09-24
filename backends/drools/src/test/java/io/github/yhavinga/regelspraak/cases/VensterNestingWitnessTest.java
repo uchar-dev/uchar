@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * matrixvorm die deze tak niet IN het elementpatroon kan schrijven (Periode)" although this branch writes
  * windows there; the bound is what it cannot write.
  *
- * <p>The documents are {@code corpus/golden/jutterswet-schouwploeg} with the voorwaarde of "bevoegd bij diploma"
+ * <p>The documents are {@code corpus/golden/jutterswet-schouwploeg} with the condition of "bevoegd bij diploma"
  * replaced; the nested fold adds a {@code Brevet} the Strandwacht holds. The case is the golden's own first
  * case (time-free): the refusals happen when the rule is built, before any case is read.
  */
@@ -112,8 +112,8 @@ class VensterNestingWitnessTest {
 
     private static final String VENSTER = """
             { "node": "Periode",
-              "vanaf": { "node": "Literal", "waarde": "2024-01-01", "type": { "node": "Date", "precision": "day" }, "bron": "2024-01-01" },
-              "tot": { "node": "Literal", "waarde": "2025-01-01", "type": { "node": "Date", "precision": "day" }, "bron": "2025-01-01" },
+              "vanaf": { "node": "Literal", "value": { "date": "2024-01-01" }, "type": { "node": "Date", "precision": "day" }, "bron": "2024-01-01" },
+              "tot": { "node": "Literal", "value": { "date": "2025-01-01" }, "type": { "node": "Date", "precision": "day" }, "bron": "2025-01-01" },
               "totInclusief": false, "bron": "van 1 januari 2024 tot 1 januari 2025" }""";
 
     private static final String BREVET_VENSTER = """
@@ -153,26 +153,23 @@ class VensterNestingWitnessTest {
     }
 
     private static String som(String filter) {
-        return "{ \"node\": \"Functie\", \"kind\": \"SOM\", \"argumenten\": [ { \"node\": \"AttribuutRef\","
+        return "{ \"node\": \"Aggregation\", \"kind\": \"SOM\", \"arguments\": [ { \"node\": \"AttribuutRef\","
                 + " \"attribuut\": \"dienstjaren\", \"objecttype\": \"Strandwacht\","
                 + " \"bron\": \"de dienstjaren van de wachten\" } ],"
-                + " \"elementObjecttype\": \"Strandwacht\", \"leegwaarde\": null, \"filter\": " + filter + ","
-                + " \"dimensieSelectie\": null, \"type\": " + NUM + ", \"bron\": \"de som van de dienstjaren\","
-                + " \"granulariteit\": null, \"bronRol\": " + WACHT + " }";
+                + " \"elementType\": \"Strandwacht\", \"filter\": " + filter + ", \"sourceRole\": " + WACHT + ","
+                + " \"type\": " + NUM + ", \"bron\": \"de som van de dienstjaren\" }";
     }
 
     private static String groter(String links, int n) {
         return "{ \"node\": \"Vergelijking\", \"op\": \"GROTER\", \"links\": " + links + ", \"rechts\": { \"node\":"
-                + " \"Literal\", \"waarde\": \"" + n + "\", \"type\": " + NUM + ", \"bron\": \"" + n + "\" },"
+                + " \"Literal\", \"value\": { \"number\": \"" + n + "\" }, \"type\": " + NUM + ", \"bron\": \"" + n + "\" },"
                 + " \"periode\": null, \"bron\": \"de som groter is dan " + n + "\" }";
     }
 
-    /** The golden's document with the voorwaarde of "bevoegd bij diploma" replaced by {@code voorwaarde}. */
+    /** The golden's document with the condition of "bevoegd bij diploma" replaced by {@code voorwaarde}. */
     private Path document(String voorwaarde) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("ir.json")));
-        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels"))
-            if ("bevoegd bij diploma".equals(r.path("naam").asText()))
-                ((ObjectNode) r).set("voorwaarde", JSON.readTree(voorwaarde));
+        IrPad.versie(doc, "resolvedRegels", "bevoegd bij diploma").set("condition", JSON.readTree(voorwaarde));
         return schrijf(doc);
     }
 

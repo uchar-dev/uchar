@@ -60,10 +60,10 @@ class LeegNegatieWitnessTest {
     @Test void de_ongebonden_lezing_van_een_ander_type_weigert_bij_het_laden() throws Exception {
         ObjectNode ir = ir();
         for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
-            ((ObjectNode) r.get("voorwaarde").get("operand")).remove("navigatieBindingen");
+            ((ObjectNode) r.get("versions").get(0).get("condition").get("operand")).remove("navigatieBindingen");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
                 "no branch walks a relation the wire does not name");
-        assertEquals("/rules/resolvedRegels/2/voorwaarde/operand", e.plek(), e.getMessage());
+        assertEquals("/rules/resolvedRegels/2/versions/0/condition/operand", e.plek(), e.getMessage());
         assertTrue(e.getMessage().contains("its objecttype is the subject type 'Schuit' — 'Werf' names another type,"
                 + " which only a navigation reaches (WF-053)"), e.getMessage());
     }
@@ -73,7 +73,7 @@ class LeegNegatieWitnessTest {
     @Test void de_ongenegeerde_tweeling_speelt_gespiegeld() throws Exception {
         ObjectNode ir = ir();
         for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
-            ((ObjectNode) r.get("voorwaarde")).put("negatie", false);
+            ((ObjectNode) r.get("versions").get(0).get("condition")).put("negatie", false);
         BeideTakken.groen(tijdelijk(ir), gespiegeld(geval()), "leeg / gevuld unnegated");
     }
 
@@ -89,7 +89,7 @@ class LeegNegatieWitnessTest {
         // excluded for THAT, hiding the refusal under test.
         ArrayNode een = JSON.createArrayNode().add(IrPad.rulesLijst(ir, "resolvedRegels").get(0));
         IrPad.rules(ir).set("resolvedRegels", een);
-        ObjectNode vw = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("voorwaarde");
+        ObjectNode vw = (ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("condition");
         vw.putObject("periode").put("node", "GeheelPeriode").put("jaar", true).put("niet", false);
         Path p = tijdelijk(ir);
         // lengte is now month-granular, so the case supplies it as a timeline (a scalar input would be refused
@@ -120,7 +120,7 @@ class LeegNegatieWitnessTest {
                 IrPad.timeline(IrPad.attribute(IrPad.objectType(ir, "Schuit"), "lengte"), "MAAND");
                 IrPad.rules(ir).set("resolvedRegels",
                         JSON.createArrayNode().add(IrPad.rulesLijst(ir, "resolvedRegels").get(0)));
-                ObjectNode vw = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("voorwaarde");
+                ObjectNode vw = (ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("condition");
                 vw.put("soort", soort).put("negatie", false);
                 vw.putObject("periode").put("node", "GeheelPeriode").put("jaar", true).put("niet", niet);
                 Path p = tijdelijk(ir);

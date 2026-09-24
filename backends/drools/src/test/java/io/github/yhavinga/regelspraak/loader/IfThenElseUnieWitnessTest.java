@@ -2,6 +2,7 @@ package io.github.yhavinga.regelspraak.loader;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.github.yhavinga.regelspraak.cases.IrPad;
 import io.github.yhavinga.regelspraak.ir.Conditie;
 import io.github.yhavinga.regelspraak.ir.Expr;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
@@ -111,7 +112,7 @@ class IfThenElseUnieWitnessTest {
     }
 
     private static String lit(String waarde, String type) {
-        return "{\"node\":\"Literal\",\"waarde\":\"%s\",\"type\":%s,\"bron\":\"%s\"}".formatted(waarde, type, waarde);
+        return IrPad.literal(waarde, type, waarde);
     }
 
     private static String binair(String op, String links, String rechts, String type) {
@@ -163,15 +164,12 @@ class IfThenElseUnieWitnessTest {
                 .formatted(num(2), num(2), num(2), num(2));
         String objecttype = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
                 + "\"attributes\":[%s],\"characteristics\":[]}").formatted(attributen);
-        String regel = ("{\"node\":\"ResolvedRegel\",\"naam\":\"uit van een jutter\",\"soort\":\"BEREKENING\","
-                + "\"doel\":%s,\"waarde\":%s,\"voorwaarde\":null,"
-                + "\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
-                .formatted(attr("uit", num(2)), waarde);
+        String regel = IrPad.regel("uit van een jutter", "BEREKENING", attr("uit", num(2)), waarde, "null");
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]},"
                 + "\"rules\":{\"resolvedRegels\":[%s],\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],"
-                + "\"consistenties\":[],\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],"
+                + "\"consistenties\":[],\"uniciteiten\":[],\"feitCreaties\":[],"
                 + "\"resolvedStartpunten\":[],\"regelGroepen\":[]},\"diagnostics\":[]}")
                 .formatted(objecttype, regel);
     }

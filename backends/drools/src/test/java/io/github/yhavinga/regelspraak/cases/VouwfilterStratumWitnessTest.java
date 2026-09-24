@@ -148,31 +148,25 @@ class VouwfilterStratumWitnessTest {
   },
   "rules": {
     "resolvedRegels": [
-      {
-        "node": "ResolvedRegel",
-        "naam": "alarm bij ongemerkte vondsten",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
+      { "node": "Rule", "name": "alarm bij ongemerkte vondsten", "versions": [ {
+          "validity": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        },
+          "target": {
           "node": "AttribuutRef",
           "attribuut": "alarm",
           "objecttype": "Jutter",
           "bron": "Een Jutter is alarm"
         },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
+          "value": { "node": "Literal", "value": { "boolean": true }, "type": {
             "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
+          }, "bron": "waar" },
+          "condition": {
           "node": "Vergelijking",
           "op": "GROTER",
-          "links": {
-            "node": "Functie",
-            "kind": "AANTAL",
-            "argumenten": [
+          "links": { "node": "Aggregation", "kind": "AANTAL", "arguments": [
               {
                 "node": "InstanceSetUnion",
                 "branches": [
@@ -215,59 +209,38 @@ class VouwfilterStratumWitnessTest {
                 ],
                 "bron": "de unie van ongemerkte vondsten"
               }
-            ],
-            "elementObjecttype": null,
-            "leegwaarde": null,
-            "filter": null,
-            "dimensieSelectie": null,
-            "type": {
+            ], "type": {
               "node": "Number",
               "whole": true,
               "decimals": 0,
               "sign": "NIET_NEGATIEF"
-            },
-            "bron": "het aantal ongemerkte vondsten",
-            "granulariteit": null
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
+            }, "bron": "het aantal ongemerkte vondsten" },
+          "rechts": { "node": "Literal", "value": { "number": "0" }, "type": {
               "node": "Number",
               "whole": true,
               "decimals": 0,
               "sign": "ONBEPAALD"
-            },
-            "bron": "0"
-          },
+            }, "bron": "0" },
           "periode": null,
           "bron": "het aantal ongemerkte vondsten groter is dan 0"
         },
-        "geldigheid": {
+          "initialisation": false } ] },
+      { "node": "Rule", "name": "gemerkt bij gewicht", "versions": [ {
+          "validity": {
           "node": "Geldigheid",
           "vanaf": null,
           "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "gemerkt bij gewicht",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
+        },
+          "target": {
           "node": "AttribuutRef",
           "attribuut": "gemerkt",
           "objecttype": "Vondst",
           "bron": "Een Vondst is gemerkt"
         },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
+          "value": { "node": "Literal", "value": { "boolean": true }, "type": {
             "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
+          }, "bron": "waar" },
+          "condition": {
           "node": "Vergelijking",
           "op": "GROTER",
           "links": {
@@ -276,33 +249,22 @@ class VouwfilterStratumWitnessTest {
             "objecttype": "Vondst",
             "bron": "het gewicht van de Vondst"
           },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "5",
-            "type": {
+          "rechts": { "node": "Literal", "value": { "number": "5" }, "type": {
               "node": "Number",
               "whole": true,
               "decimals": 0,
               "sign": "ONBEPAALD"
-            },
-            "bron": "5"
-          },
+            }, "bron": "5" },
           "periode": null,
           "bron": "het gewicht van de Vondst groter is dan 5"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      }
+          "initialisation": false } ] }
     ],
     "resolvedDagsoorten": [],
     "objectCreaties": [],
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []
@@ -409,102 +371,74 @@ class VouwfilterStratumWitnessTest {
   },
   "rules": {
     "resolvedRegels": [
-      {
-        "node": "ResolvedRegel",
-        "naam": "alarm bij ongemerkte vondsten",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
+      { "node": "Rule", "name": "alarm bij ongemerkte vondsten", "versions": [ {
+          "validity": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        },
+          "target": {
           "node": "AttribuutRef",
           "attribuut": "alarm",
           "objecttype": "Jutter",
           "bron": "Een Jutter is alarm"
         },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
+          "value": { "node": "Literal", "value": { "boolean": true }, "type": {
             "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
+          }, "bron": "waar" },
+          "condition": {
           "node": "Vergelijking",
           "op": "GROTER",
-          "links": {
-            "node": "Functie",
-            "kind": "AANTAL",
-            "argumenten": [
+          "links": { "node": "Aggregation", "kind": "AANTAL", "arguments": [
               {
                 "node": "AttribuutRef",
                 "attribuut": "aangemelde vondsten",
                 "objecttype": "Jutter",
                 "bron": "aangemelde vondsten van de Jutter"
               }
-            ],
-            "elementObjecttype": "Vondst",
-            "leegwaarde": null,
-            "filter": {
+            ], "elementType": "Vondst", "filter": {
               "node": "Kenmerk",
               "kenmerk": "gemerkt",
               "negatie": true,
               "eigenaar": null,
               "periode": null,
               "bron": "niet gemerkt zijn"
-            },
-            "dimensieSelectie": null,
-            "type": {
+            }, "sourceRole": {
+              "node": "RolBinding",
+              "feittype": "vondstaanmelding",
+              "rol": "aangemelde vondst"
+            }, "type": {
               "node": "Number",
               "whole": true,
               "decimals": 0,
               "sign": "NIET_NEGATIEF"
-            },
-            "bron": "het aantal ongemerkte aangemelde vondsten",
-            "granulariteit": null,
-            "bronRol": {
-              "node": "RolBinding",
-              "feittype": "vondstaanmelding",
-              "rol": "aangemelde vondst"
-            }
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
+            }, "bron": "het aantal ongemerkte aangemelde vondsten" },
+          "rechts": { "node": "Literal", "value": { "number": "0" }, "type": {
               "node": "Number",
               "whole": true,
               "decimals": 0,
               "sign": "ONBEPAALD"
-            },
-            "bron": "0"
-          },
+            }, "bron": "0" },
           "periode": null,
           "bron": "het aantal ongemerkte vondsten groter is dan 0"
         },
-        "geldigheid": {
+          "initialisation": false } ] },
+      { "node": "Rule", "name": "gemerkt bij gewicht", "versions": [ {
+          "validity": {
           "node": "Geldigheid",
           "vanaf": null,
           "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "gemerkt bij gewicht",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
+        },
+          "target": {
           "node": "AttribuutRef",
           "attribuut": "gemerkt",
           "objecttype": "Vondst",
           "bron": "Een Vondst is gemerkt"
         },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
+          "value": { "node": "Literal", "value": { "boolean": true }, "type": {
             "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
+          }, "bron": "waar" },
+          "condition": {
           "node": "Vergelijking",
           "op": "GROTER",
           "links": {
@@ -513,33 +447,22 @@ class VouwfilterStratumWitnessTest {
             "objecttype": "Vondst",
             "bron": "het gewicht van de Vondst"
           },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "5",
-            "type": {
+          "rechts": { "node": "Literal", "value": { "number": "5" }, "type": {
               "node": "Number",
               "whole": true,
               "decimals": 0,
               "sign": "ONBEPAALD"
-            },
-            "bron": "5"
-          },
+            }, "bron": "5" },
           "periode": null,
           "bron": "het gewicht van de Vondst groter is dan 5"
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      }
+          "initialisation": false } ] }
     ],
     "resolvedDagsoorten": [],
     "objectCreaties": [],
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

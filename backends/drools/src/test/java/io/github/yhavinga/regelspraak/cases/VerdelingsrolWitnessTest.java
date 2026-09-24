@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The verdeling-role witness (V1-WIREMIGRATIE P3): both Drools branches join a §9.7 verdeling's recipients on
- * the relation its wire {@code verbindendeRol} binds (IR-SPEC ch. 3.2), through
+ * the relation its wire {@code connectingRole} binds (IR-SPEC ch. 3.2), through
  * {@link FactModelGenerator#verdelingsjoin}; since L2 of the v1 wire migration the binding is required, and a
  * verdeling without one does not load.
  *
@@ -74,7 +74,7 @@ class VerdelingsrolWitnessTest {
     @Test void de_ontvangers_volgen_de_getwiste_binding() throws Exception {
         // reservedeelname links B1 to J2 alone: B1's 100 goes to J2, and J1 receives nothing (ref: the same cells)
         ObjectNode ir = reserve();
-        verdeling(ir).set("verbindendeRol", binding("reservedeelname", "reserveberger"));
+        verdeling(ir).set("connectingRole", binding("reservedeelname", "reserveberger"));
         BeideTakken.rood(tijdelijk("reserve-twist", ir), reserveCasus(), "verwacht 60, werkelijk leeg",
                 "the recipients must be those of the bound reservedeelname relation");
     }
@@ -83,7 +83,7 @@ class VerdelingsrolWitnessTest {
         // bergingstoezicht binds Berger as toezichthouder; the source side 'bewaakte berging' is to-many, so the
         // relation is stored on Berging and Berger carries no field to join on
         ObjectNode ir = lees(TOEZICHT);
-        verdeling(ir).set("verbindendeRol", binding("bergingstoezicht", "toezichthouder"));
+        verdeling(ir).set("connectingRole", binding("bergingstoezicht", "toezichthouder"));
         BeideTakken.geweigerd(tijdelijk("toezicht-twist", ir), casus(TOEZICHT),
                 "rol 'bewaakte berging' op Berger geen referentieveld", "the join follows the bound relation");
     }
@@ -109,14 +109,14 @@ class VerdelingsrolWitnessTest {
 
     @Test void een_binding_op_de_bronrol_wordt_niet_overschreven_door_het_typenpaar() throws Exception {
         ObjectNode ir = lees(BERGING);
-        verdeling(ir).set("verbindendeRol", binding("bergingsdeelname", "berging"));
+        verdeling(ir).set("connectingRole", binding("bergingsdeelname", "berging"));
         BeideTakken.geweigerd(tijdelijk("bronrol", ir), casus(BERGING),
                 "rol 'berger' op Berger geen referentieveld", "the bound role, not the pair, names the join");
     }
 
     @Test void een_binding_die_niet_oplost_wordt_geweigerd() throws Exception {
         ObjectNode ir = lees(BERGING);
-        verdeling(ir).set("verbindendeRol", binding("bergingsdeelname", "bewaker"));
+        verdeling(ir).set("connectingRole", binding("bergingsdeelname", "bewaker"));
         BeideTakken.geweigerd(tijdelijk("los", ir), casus(BERGING), "verbindende rol onopgelost",
                 "a dangling binding is refused, not replaced by the pair");
     }
@@ -125,10 +125,10 @@ class VerdelingsrolWitnessTest {
         // IR-SPEC ch. 3.2: the recipient join IS the binding, and no reader derives a missing one from the type
         // pair, unique or not — the document is refused at load, by name
         ObjectNode ir = lees(BERGING);
-        verdeling(ir).remove("verbindendeRol");
+        verdeling(ir).remove("connectingRole");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
-        assertEquals("/rules/verdelingen/0", e.plek(), e.getMessage());
-        assertTrue(e.getMessage().contains("missing field 'verbindendeRol'"), e.getMessage());
+        assertEquals("/rules/verdelingen/0/versions/0", e.plek(), e.getMessage());
+        assertTrue(e.getMessage().contains("missing field 'connectingRole'"), e.getMessage());
     }
 
     // ---------------- fixtures ----------------
@@ -137,14 +137,14 @@ class VerdelingsrolWitnessTest {
         ObjectNode ir = lees(MAATSCHAP);
         ObjectNode jutter = IrPad.objectType(ir, "Jutter");
         IrPad.addAttribute(jutter, "maatdeel", IrPad.attribute(jutter, "maatwaarde").get("datatype").deepCopy());
-        ObjectNode v = IrPad.rules(ir).putArray("verdelingen").addObject();
-        v.put("node", "ResolvedVerdeling").put("naam", "verdeel de vondstwaarde over de maat")
-                .put("bronType", "Jutter").put("bronAttribuut", "vondstwaarde")
-                .put("doelType", "Jutter").put("doelAttribuut", "maatdeel").put("methode", "GELIJKE_DELEN")
-                .putNull("ratoAttribuut").putNull("maximumAttribuut").putNull("afrondingDecimalen")
-                .putNull("restantAttribuut").putNull("groepeerAttribuut").put("afnemend", false).putNull("voorwaarde");
-        v.putObject("geldigheid").put("node", "Geldigheid").putNull("vanaf").putNull("tot");
-        v.set("verbindendeRol", binding("maatschap", "maat"));
+        ObjectNode vorm = IrPad.rules(ir).putArray("verdelingen").addObject();
+        vorm.put("node", "Allocation").put("name", "verdeel de vondstwaarde over de maat");
+        ObjectNode v = vorm.putArray("versions").addObject();
+        v.put("sourceType", "Jutter").put("sourceAttribute", "vondstwaarde")
+                .put("targetType", "Jutter").put("targetAttribute", "maatdeel").put("method", "GELIJKE_DELEN")
+                .put("descending", false);
+        v.putObject("validity").put("node", "Geldigheid").putNull("vanaf").putNull("tot");
+        v.set("connectingRole", binding("maatschap", "maat"));
         return ir;
     }
 
@@ -175,8 +175,9 @@ class VerdelingsrolWitnessTest {
         return c;
     }
 
+    /** The one version of the document's one allocation. */
     private static ObjectNode verdeling(ObjectNode ir) {
-        return (ObjectNode) IrPad.rulesLijst(ir, "verdelingen").get(0);
+        return IrPad.versie(ir, "verdelingen", 0, 0);
     }
 
     private static ObjectNode binding(String feittype, String rol) {

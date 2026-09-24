@@ -193,12 +193,13 @@ class DatumLexeemWitnessTest {
         return MODEL_KOP.formatted("{ \"node\": \"Attribute\", \"name\": \"peildag\", \"datatype\": { \"node\": \"Date\", \"precision\": \"day\" } }") + """
                   "timelines": [], "dayKinds": [] },
                 "rules": {
-                  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "Peildag", "soort": "GELIJKSTELLING",
-                    "doel": { "node": "AttribuutRef", "attribuut": "peildag", "objecttype": "Vondst",
+                  "resolvedRegels": [ { "node": "Rule", "name": "Peildag", "versions": [ {
+                      "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
+                      "target": { "node": "AttribuutRef", "attribuut": "peildag", "objecttype": "Vondst",
                       "bron": "De peildag van een Vondst" },
-                    "waarde": { "node": "Literal", "waarde": "%s", "type": { "node": "Date", "precision": "day" }, "bron": "20-01-2024" },
-                    "voorwaarde": null,
-                    "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+                      "value": { "node": "Literal", "value": { "date": "%s" }, "type": { "node": "Date", "precision": "day" }, "bron": "20-01-2024" },
+                      "initialisation": false,
+                      "presentation": "GELIJKSTELLING" } ] } ],
                   "resolvedDagsoorten": [],
                 """.formatted(lexeem) + MODEL_STAART;
     }
@@ -207,21 +208,21 @@ class DatumLexeemWitnessTest {
         return MODEL_KOP.formatted("{ \"node\": \"Attribute\", \"name\": \"vondstdag\", \"datatype\": { \"node\": \"Date\", \"precision\": \"day\" } }") + """
                   "timelines": [], "dayKinds": [ { "node": "DayKind", "name": "peildag" } ] },
                 "rules": {
-                  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "Kenmerktoekenning verjaard",
-                    "soort": "KENMERKTOEKENNING",
-                    "doel": { "node": "AttribuutRef", "attribuut": "verjaard", "objecttype": "Vondst",
+                  "resolvedRegels": [ { "node": "Rule", "name": "Kenmerktoekenning verjaard", "versions": [ {
+                      "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
+                      "target": { "node": "AttribuutRef", "attribuut": "verjaard", "objecttype": "Vondst",
                       "bron": "Een Vondst is verjaard" },
-                    "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" }, "bron": "waar" },
-                    "voorwaarde": { "node": "Predicaat", "soort": "DAGSOORT",
+                      "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "bron": "waar" },
+                      "condition": { "node": "Predicaat", "soort": "DAGSOORT",
                       "operand": { "node": "AttribuutRef", "attribuut": "vondstdag", "objecttype": "Vondst",
                         "bron": "zijn vondstdag" },
                       "dagsoort": "peildag", "negatie": false, "cijfers": 0, "periode": null,
                       "bron": "zijn vondstdag is een peildag" },
-                    "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+                      "initialisation": false } ] } ],
                   "resolvedDagsoorten": [ { "node": "ResolvedDagsoort", "naam": "peildag",
                     "voorwaarde": { "node": "Vergelijking", "op": "GELIJK",
-                      "links": { "node": "Constante", "naam": "de dag", "type": { "node": "Date", "precision": "day" }, "bron": "de dag" },
-                      "rechts": { "node": "Literal", "waarde": "%s", "type": { "node": "Date", "precision": "day" }, "bron": "20-01-2024" },
+                      "links": { "node": "BoundDay", "type": { "node": "Date", "precision": "day" }, "bron": "de dag" },
+                      "rechts": { "node": "Literal", "value": { "date": "%s" }, "type": { "node": "Date", "precision": "day" }, "bron": "20-01-2024" },
                       "periode": null, "bron": "de dag gelijk is aan 20-01-2024" },
                     "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
                 """.formatted(lexeem) + MODEL_STAART;
@@ -238,7 +239,7 @@ class DatumLexeemWitnessTest {
 
     private static final String MODEL_STAART = """
                 "objectCreaties": [], "verdelingen": [], "consistenties": [],
-                "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+                "uniciteiten": [], "feitCreaties": [], "resolvedStartpunten": [],
                 "regelGroepen": [] },
               "diagnostics": [] }
             """;
@@ -280,20 +281,19 @@ class DatumLexeemWitnessTest {
                     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
                     "timelines": [], "dayKinds": [] },
                   "rules": {
-                  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "Kenmerktoekenning verjaard",
-                    "soort": "KENMERKTOEKENNING",
-                    "doel": { "node": "AttribuutRef", "attribuut": "verjaard", "objecttype": "Vondst",
+                  "resolvedRegels": [ { "node": "Rule", "name": "Kenmerktoekenning verjaard", "versions": [ {
+                      "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
+                      "target": { "node": "AttribuutRef", "attribuut": "verjaard", "objecttype": "Vondst",
                       "bron": "Een Vondst is verjaard" },
-                    "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" }, "bron": "waar" },
-                    "voorwaarde": { "node": "Vergelijking", "op": "EERDER",
+                      "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "bron": "waar" },
+                      "condition": { "node": "Vergelijking", "op": "EERDER",
                       "links": { "node": "AttribuutRef", "attribuut": "vondstdag", "objecttype": "Vondst",
                         "bron": "zijn vondstdag" },
-                      "rechts": { "node": "Literal", "waarde": "%s", "type": { "node": "Date", "precision": "day" },
-                        "bron": "31-01-2024" },
+                      "rechts": { "node": "Literal", "value": { "date": "%s" }, "type": { "node": "Date", "precision": "day" }, "bron": "31-01-2024" },
                       "periode": null, "bron": "zijn vondstdag eerder is dan 31-01-2024" },
-                    "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+                      "initialisation": false } ] } ],
                   "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-                  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+                  "uniciteiten": [], "feitCreaties": [], "resolvedStartpunten": [],
                   "regelGroepen": [] },
                   "diagnostics": [] }
                 """.formatted(lexeem);

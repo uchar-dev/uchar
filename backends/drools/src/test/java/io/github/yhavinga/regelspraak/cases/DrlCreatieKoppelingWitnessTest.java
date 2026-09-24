@@ -167,7 +167,7 @@ class DrlCreatieKoppelingWitnessTest {
 
     private static Path metBinding(String golden, String feittype, String rol) throws Exception {
         ObjectNode ir = lees(golden);
-        ((ObjectNode) IrPad.rulesLijst(ir, "objectCreaties").get(0)).set("verbindendeRol", JSON.readTree(
+        IrPad.versie(ir, "objectCreaties", 0, 0).set("connectingRole", JSON.readTree(
                 "{ \"node\": \"RolBinding\", \"feittype\": \"" + feittype + "\", \"rol\": \"" + rol + "\" }"));
         return schrijf(ir, "binding-" + rol);
     }
@@ -197,7 +197,9 @@ class DrlCreatieKoppelingWitnessTest {
     private static ObjectNode zonderNavigerendeRegel(ObjectNode ir) {
         var behouden = JSON.createArrayNode();
         for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
-            if (!"heffing van een jutter".equals(r.path("naam").asText())) behouden.add(r);
+            if (!"heffing van een jutter".equals(r.path("name").asText())) behouden.add(r);
+        if (behouden.size() != IrPad.rulesLijst(ir, "resolvedRegels").size() - 1)
+            throw new AssertionError("'heffing van een jutter' is not in the document");
         IrPad.rules(ir).set("resolvedRegels", behouden);
         return ir;
     }
@@ -205,11 +207,10 @@ class DrlCreatieKoppelingWitnessTest {
     /** The overzee model with the kenmerk toekenning's value replaced by the Numeriek literal 5. */
     private static Path kenmerkGetal() throws Exception {
         ObjectNode ir = lees(OVERZEE);
-        for (JsonNode t : IrPad.rulesLijst(ir, "objectCreaties").get(0).get("toekenningen"))
+        for (JsonNode t : IrPad.versie(ir, "objectCreaties", 0, 0).get("initialisations"))
             if (t.get("kenmerk").asBoolean())
                 ((ObjectNode) t).set("waarde", JSON.readTree("""
-                        { "node": "Literal", "waarde": "5",
-                          "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "bron": "5" }"""));
+                        { "node": "Literal", "value": { "number": "5" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "bron": "5" }"""));
         return schrijf(ir, "kenmerk-getal");
     }
 

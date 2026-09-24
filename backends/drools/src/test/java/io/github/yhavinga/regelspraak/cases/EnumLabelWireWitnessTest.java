@@ -117,8 +117,8 @@ class EnumLabelWireWitnessTest {
                 Files.readString(CORPUS.resolve(VONDSTKLASSE).resolve("ir.json")));
         boolean geraakt = false;
         for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
-            if ("bestemming van drijfgoed".equals(r.path("naam").asText())) {
-                ((ObjectNode) r).putNull("voorwaarde");
+            if ("bestemming van drijfgoed".equals(r.path("name").asText())) {
+                ((ObjectNode) r.get("versions").get(0)).remove("condition");
                 geraakt = true;
             }
         assertTrue(geraakt, "de regel die de literal schrijft hoort in het document te staan");

@@ -87,28 +87,25 @@ class InstantieUniePopulatieWitnessTest {
             + "," + feittype("kaveltoewijzing", "kavelhouder", "duinkavel", "Kavel", "duinkavels")
             + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
             + "\"dayKinds\":[]},"
-            + "\"rules\":{\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"aantal strandvondsten\","
-            + "\"soort\":\"BEREKENING\",\"doel\":{\"node\":\"AttribuutRef\","
+            + "\"rules\":{\"resolvedRegels\":[{\"node\":\"Rule\",\"name\":\"aantal strandvondsten\","
+            + "\"versions\":[{\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null},"
+            + "\"target\":{\"node\":\"AttribuutRef\","
             + "\"attribuut\":\"aantal strandvondsten\",\"objecttype\":\"Jutter\","
             + "\"bron\":\"Het aantal strandvondsten van een Jutter\"},"
-            + "\"waarde\":{\"node\":\"Functie\",\"kind\":\"AANTAL\",\"argumenten\":["
+            + "\"value\":{\"node\":\"Aggregation\",\"kind\":\"AANTAL\",\"arguments\":["
             + "{\"node\":\"InstanceSetUnion\",\"branches\":["
             + tak("Vondst", "vondstaanmelding", "aangemelde vondst") + ","
             + tak("Kavel", "kaveltoewijzing", "duinkavel")
-            + "],\"bron\":\"de unie\"}],\"elementObjecttype\":null,\"leegwaarde\":null,\"filter\":null,"
-            + "\"dimensieSelectie\":null,\"type\":" + HEEL + ",\"bron\":\"het aantal …\","
-            + "\"granulariteit\":null},\"voorwaarde\":null,"
-            + "\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}],"
+            + "],\"bron\":\"de unie\"}],\"type\":" + HEEL + ",\"bron\":\"het aantal …\"},"
+            + "\"initialisation\":false,\"presentation\":\"BEREKENING\"}]}],"
             + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-            + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
+            + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
             + "\"regelGroepen\":[]},\"diagnostics\":[]}");
 
     /** The same model, with the union standing as the rule's WHOLE value — no count above it. */
     private static final String KALE_UNIE_DOC = DOC.replace(
-            "\"waarde\":{\"node\":\"Functie\",\"kind\":\"AANTAL\",\"argumenten\":[", "\"waarde\":")
-            .replace("],\"elementObjecttype\":null,\"leegwaarde\":null,\"filter\":null,"
-                    + "\"dimensieSelectie\":null,\"type\":" + HEEL + ",\"bron\":\"het aantal …\","
-                    + "\"granulariteit\":null}", "");
+            "\"value\":{\"node\":\"Aggregation\",\"kind\":\"AANTAL\",\"arguments\":[", "\"value\":")
+            .replace("],\"type\":" + HEEL + ",\"bron\":\"het aantal …\"}", "");
 
     private static final String GEVAL = """
             { "format": "uchar-case-v0", "asOfDate": null,

@@ -131,9 +131,8 @@ class InstantieUnieWitnessTest {
 
     private static String doc(String unie) {
         String heel = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"NIET_NEGATIEF\"}";
-        String waarde = ("{\"node\":\"Functie\",\"kind\":\"AANTAL\",\"argumenten\":[%s],"
-                + "\"elementObjecttype\":null,\"leegwaarde\":null,\"filter\":null,\"dimensieSelectie\":null,"
-                + "\"type\":%s,\"bron\":\"het aantal …\",\"granulariteit\":null}").formatted(unie, heel);
+        String waarde = "{\"node\":\"Aggregation\",\"kind\":\"AANTAL\",\"arguments\":[%s],\"type\":%s,\"bron\":\"het aantal …\"}"
+                .formatted(unie, heel);
         String doel = "{\"node\":\"AttribuutRef\",\"attribuut\":\"aantal strandvondsten\","
                 + "\"objecttype\":\"Jutter\",\"bron\":\"Het aantal strandvondsten van een Jutter\"}";
         String jutter = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
@@ -155,12 +154,12 @@ class InstantieUnieWitnessTest {
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s,%s],\"factTypes\":[%s,%s],"
                 + "\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
                 + "\"dayKinds\":[]},"
-                + "\"rules\":{\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"aantal strandvondsten\","
-                + "\"soort\":\"BEREKENING\",\"doel\":%s,\"waarde\":%s,\"voorwaarde\":null,"
-                + "\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}],"
+                + "\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
+                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
                 + "\"regelGroepen\":[]},\"diagnostics\":[]}")
-                .formatted(jutter, vondst, ftAan, ftBerg, doel, waarde);
+                .formatted(jutter, vondst, ftAan, ftBerg,
+                        io.github.yhavinga.regelspraak.cases.IrPad.regel("aantal strandvondsten", "BEREKENING", doel,
+                                waarde, "null"));
     }
 }

@@ -20,9 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The creation and scope bindings (IR-SPEC ch. 3.4, 3.6): both Drools branches execute a §13.4.7 fact creation
- * and a parent-scoped uniqueness on the fields DERIVED from the role bindings ({@code feittype}/{@code ankerRol},
- * {@code joinRol}, the hops' {@code rolBinding}, {@code scopeRol}) — since L2 of the v1 wire migration the only
- * thing the wire carries of either construct.
+ * and a parent-scoped uniqueness on the fields DERIVED from the role bindings ({@code factType}/{@code anchorRole},
+ * the hops of the {@code path}, the last of which is the join, and the uniqueness {@code scope}) — since L2 of the
+ * v1 wire migration the only thing the wire carries of either construct.
  *
  * <p>Each position gets two rows. The first puts a storage field back beside the binding, the shape the wire had
  * before L2: there is nothing left to twist, so it is an unknown field, and the loader refuses the document by
@@ -44,13 +44,13 @@ class BonenveldWitnessTest {
     @Test void een_schrijfveld_naast_de_binding_wordt_bij_naam_geweigerd() throws Exception {
         ObjectNode ir = lees(DUBBEL);
         creatie(ir, 0, "winterberging").put("zetVeld", "keurhaven");
-        onbekendVeld(ir, "/rules/feitCreaties/0/zetVeld", "ResolvedFeitCreatie");
+        onbekendVeld(ir, "/rules/feitCreaties/0/versions/0/zetVeld", "FactCreationVersion");
     }
 
     @Test void zetveld_volgt_de_gemaakte_rol() throws Exception {
         ObjectNode ir = lees(DUBBEL);
-        creatie(ir, 0, "winterberging").put("feittype", "keurberging").put("ankerRol", "keurhaven")
-                .put("doelRol", "keurschuit");
+        creatie(ir, 0, "winterberging").put("factType", "keurberging").put("anchorRole", "keurhaven")
+                .put("targetRole", "keurschuit");
         BeideTakken.rood(tijdelijk("zet-binding", ir), casus(DUBBEL, "case1"), "attribuut wintertal: verwacht 2, werkelijk 0",
                 "the creation must write the bound keurberging relation");
     }
@@ -60,12 +60,13 @@ class BonenveldWitnessTest {
     @Test void een_koppelveld_naast_de_binding_wordt_bij_naam_geweigerd() throws Exception {
         ObjectNode ir = lees(DUBBEL);
         creatie(ir, 0, "winterberging").put("joinVeld", "vlaghaven");
-        onbekendVeld(ir, "/rules/feitCreaties/0/joinVeld", "ResolvedFeitCreatie");
+        onbekendVeld(ir, "/rules/feitCreaties/0/versions/0/joinVeld", "FactCreationVersion");
     }
 
     @Test void joinveld_volgt_de_joinbinding() throws Exception {
         ObjectNode ir = lees(DUBBEL);
-        creatie(ir, 0, "winterberging").set("joinRol", binding("vlagvoering", "vlaggenschip"));
+        ArrayNode pad = (ArrayNode) creatie(ir, 0, "winterberging").get("path");
+        pad.set(pad.size() - 1, binding("vlagvoering", "vlaggenschip"));
         BeideTakken.rood(tijdelijk("join-binding", ir), casus(DUBBEL, "case1"), "attribuut wintertal: verwacht 2, werkelijk 1",
                 "the join must read the bound vlagvoering relation");
     }
@@ -78,13 +79,13 @@ class BonenveldWitnessTest {
         for (String veld : new String[] { "veld", "viaOuderVeld", "type" }) {
             ObjectNode ir = lees(POSTWACHT);
             stap(ir).put(veld, veld.equals("viaOuderVeld") ? "true" : "Sein");
-            onbekendVeld(ir, "/rules/feitCreaties/0/tussenstappen/0/" + veld, "Tussenstap");
+            onbekendVeld(ir, "/rules/feitCreaties/0/versions/0/path/0/" + veld, "RolBinding");
         }
     }
 
     @Test void tussenstap_volgt_de_hopbinding() throws Exception {
         ObjectNode ir = postwachtMetReserve();
-        stap(ir).set("rolBinding", binding("reserveligging", "reservepost"));
+        ((ArrayNode) creatie(ir, 0, null).get("path")).set(0, binding("reserveligging", "reservepost"));
         BeideTakken.rood(tijdelijk("hop-binding", ir), casus(POSTWACHT, "case"), "attribuut vakseinaantal: verwacht 2, werkelijk 0",
                 "the hop must walk the bound reserveligging relation");
     }
@@ -115,7 +116,7 @@ class BonenveldWitnessTest {
     @Test void een_scopeveld_naast_de_binding_wordt_bij_naam_geweigerd() throws Exception {
         ObjectNode ir = lees(KUSTREGISTER);
         kaveletiket(ir).put("scopeVeld", "sectiecode");
-        onbekendVeld(ir, "/rules/uniciteiten/" + kaveletiketIndex(ir) + "/scopeVeld", "ResolvedUniciteit");
+        onbekendVeld(ir, "/rules/uniciteiten/" + kaveletiketIndex(ir) + "/versions/0/scopeVeld", "UniquenessVersion");
     }
 
     @Test void scopeveld_volgt_de_scopebinding() throws Exception {
@@ -124,7 +125,7 @@ class BonenveldWitnessTest {
         ObjectNode ir = lees(KUSTREGISTER);
         IrPad.modelLijst(ir, "factTypes").add(feittype("wijkindeling",
                 "wijkgemeente", "Gemeente", false, "wijkkavel", "Kavel", true));
-        kaveletiket(ir).set("scopeRol", binding("wijkindeling", "wijkgemeente"));
+        kaveletiket(ir).set("scope", binding("wijkindeling", "wijkgemeente"));
         BeideTakken.rood(tijdelijk("scope-binding", ir), casus(KUSTREGISTER, "case3"), "werkelijk consistent",
                 "the scope must be the bound wijkindeling relation");
     }
@@ -137,35 +138,35 @@ class BonenveldWitnessTest {
         ObjectNode fc = creatie(ir, 0, null);
         for (String veld : new String[] { "zetVeld", "joinVeld" })
             assertTrue(!fc.has(veld), "no storage field on the creation: " + fc);
-        for (JsonNode t : fc.get("tussenstappen")) {
+        for (JsonNode t : fc.get("path")) {
             java.util.List<String> velden = new java.util.ArrayList<>();
             t.fieldNames().forEachRemaining(velden::add);
-            assertEquals(java.util.List.of("node", "rolBinding"), velden, t.toString());
+            assertEquals(java.util.List.of("node", "feittype", "rol"), velden, t.toString());
         }
         BeideTakken.groen(tijdelijk("bindingen", ir), casus(POSTWACHT, "case"), "plays on the bindings alone");
     }
 
     @Test void een_creatie_zonder_heel_symbolisch_blok_laadt_niet() throws Exception {
         // IR-SPEC ch. 3.4: the symbolic block IS the creation, so a creation missing any part of it — here each of
-        // the four, and the step's binding — is no document; ref and clingo fault on it, and before L2 both branches
+        // the four, and a step's binding — is no document; ref and clingo fault on it, and before L2 both branches
         // refused it as unresolved
-        for (String veld : new String[] { "feittype", "ankerRol", "doelRol", "joinRol" }) {
+        for (String veld : new String[] { "factType", "anchorRole", "targetRole", "path" }) {
             ObjectNode ir = lees(POSTWACHT);
             creatie(ir, 0, null).remove(veld);
             IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
-            assertEquals("/rules/feitCreaties/0", e.plek(), e.getMessage());
+            assertEquals("/rules/feitCreaties/0/versions/0", e.plek(), e.getMessage());
             assertTrue(e.getMessage().contains("missing field '" + veld + "'"), e.getMessage());
         }
         ObjectNode ir = lees(POSTWACHT);
-        stap(ir).remove("rolBinding");
+        stap(ir).remove("feittype");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
-        assertEquals("/rules/feitCreaties/0/tussenstappen/0", e.plek(), e.getMessage());
-        assertTrue(e.getMessage().contains("missing field 'rolBinding'"), e.getMessage());
+        assertEquals("/rules/feitCreaties/0/versions/0/path/0", e.plek(), e.getMessage());
+        assertTrue(e.getMessage().contains("missing field 'feittype'"), e.getMessage());
     }
 
     @Test void een_scopebinding_die_niet_oplost_valt_niet_terug_op_scopeveld() throws Exception {
         ObjectNode ir = lees(KUSTREGISTER);
-        kaveletiket(ir).set("scopeRol", binding("wijkindeling", "gemeente"));
+        kaveletiket(ir).set("scope", binding("wijkindeling", "gemeente"));
         BeideTakken.geweigerd(tijdelijk("scope-los", ir), casus(KUSTREGISTER, "case3"), "scopebinding onopgelost",
                 "a binding naming no declared relation is refused, not read by the written name");
     }
@@ -180,9 +181,10 @@ class BonenveldWitnessTest {
         return ir;
     }
 
+    /** The first hop of the creation's path, a step before the final hop. */
     private static ObjectNode stap(ObjectNode ir) {
-        ObjectNode t = (ObjectNode) creatie(ir, 0, null).get("tussenstappen").get(0);
-        assertTrue(t.get("rolBinding").get("feittype").asText().equals("kustligging"), t.toString());
+        ObjectNode t = (ObjectNode) creatie(ir, 0, null).get("path").get(0);
+        assertTrue(t.get("feittype").asText().equals("kustligging"), t.toString());
         return t;
     }
 
@@ -195,20 +197,20 @@ class BonenveldWitnessTest {
 
     private static int kaveletiketIndex(ObjectNode ir) {
         ArrayNode u = (ArrayNode) ir.get("rules").get("uniciteiten");
-        for (int i = 0; i < u.size(); i++) if (u.get(i).get("naam").asText().equals("eenmalig kaveletiket")) return i;
+        for (int i = 0; i < u.size(); i++) if (u.get(i).get("name").asText().equals("eenmalig kaveletiket")) return i;
         throw new AssertionError("kustregister carries no 'eenmalig kaveletiket'");
     }
 
+    /** The one version of the {@code i}-th fact creation. */
     private static ObjectNode creatie(ObjectNode ir, int i, String feittype) {
-        ObjectNode fc = (ObjectNode) ir.get("rules").get("feitCreaties").get(i);
-        if (feittype != null) assertTrue(fc.get("feittype").asText().equals(feittype), fc.toString());
+        ObjectNode fc = IrPad.versie(ir, "feitCreaties", i, 0);
+        if (feittype != null) assertTrue(fc.get("factType").asText().equals(feittype), fc.toString());
         return fc;
     }
 
+    /** The one version of the uniqueness 'eenmalig kaveletiket'. */
     private static ObjectNode kaveletiket(ObjectNode ir) {
-        for (JsonNode u : ir.get("rules").get("uniciteiten"))
-            if (u.get("naam").asText().equals("eenmalig kaveletiket")) return (ObjectNode) u;
-        throw new AssertionError("kustregister carries no 'eenmalig kaveletiket'");
+        return IrPad.versie(ir, "uniciteiten", "eenmalig kaveletiket");
     }
 
     private static ObjectNode feittype(String naam, String rol1, String ot1, boolean veel1,

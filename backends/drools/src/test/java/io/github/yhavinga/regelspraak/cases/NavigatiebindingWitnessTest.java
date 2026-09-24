@@ -52,7 +52,7 @@ class NavigatiebindingWitnessTest {
     }
 
     @Test void een_geschreven_stap_naast_de_binding_wordt_bij_naam_geweigerd() throws Exception {
-        String plek = "/rules/resolvedRegels/" + VLAGPRIJS + "/waarde/";
+        String plek = "/rules/resolvedRegels/" + VLAGPRIJS + "/versions/0/value/";
         for (String veld : new String[] { "navigatieRol", "navigatiePad", "onderwerpBron", "set", "type" }) {
             ObjectNode ir = lees();
             switch (veld) {
@@ -71,7 +71,7 @@ class NavigatiebindingWitnessTest {
 
     @Test void de_genavigeerde_kenmerkcheck_volgt_de_wire_binding() throws Exception {
         ObjectNode ir = lees();
-        ObjectNode k = regel(ir).putObject("voorwaarde");
+        ObjectNode k = regel(ir).putObject("condition");
         k.put("node", "Kenmerk").put("kenmerk", "veilig").put("negatie", false)
          .putNull("eigenaar").putNull("periode").put("bron", "zijn vlaghaven veilig is");
         k.set("navigatieBinding", binding("vlagvoering", "vlaghaven"));
@@ -81,7 +81,7 @@ class NavigatiebindingWitnessTest {
                 "the check must read veilig on the bound winterhaven");
         k.put("navigatie", "vlaghaven");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
-        assertEquals("/rules/resolvedRegels/" + VLAGPRIJS + "/voorwaarde/navigatie", e.plek(), e.getMessage());
+        assertEquals("/rules/resolvedRegels/" + VLAGPRIJS + "/versions/0/condition/navigatie", e.plek(), e.getMessage());
         assertTrue(e.getMessage().contains("unknown field on Kenmerk"), e.getMessage());
     }
 
@@ -111,10 +111,11 @@ class NavigatiebindingWitnessTest {
         IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "kadegeld",
                 IrPad.attribute(IrPad.objectType(ir, "Haven"), "kadegeld").get("datatype"));
         ObjectNode links = waarde(ir).deepCopy();
-        ObjectNode v = regel(ir).putObject("voorwaarde");
+        ObjectNode v = regel(ir).putObject("condition");
         v.put("node", "Vergelijking").put("op", "GROTER");
         v.set("links", links);
-        ObjectNode dertig = v.putObject("rechts").put("node", "Literal").put("waarde", "30");
+        ObjectNode dertig = v.putObject("rechts").put("node", "Literal");
+        dertig.putObject("value").put("number", "30");
         dertig.set("type", IrPad.attribute(IrPad.objectType(ir, "Haven"), "kadegeld").get("datatype"));
         dertig.put("bron", "30");
         v.putNull("periode").put("bron", "het kadegeld van de vlaghaven van de Schuit groter is dan 30");
@@ -144,7 +145,7 @@ class NavigatiebindingWitnessTest {
         ObjectNode ir = lees();
         waarde(ir).putArray("navigatieBindingen");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
-        assertEquals("/rules/resolvedRegels/" + VLAGPRIJS + "/waarde/navigatieBindingen", e.plek(), e.getMessage());
+        assertEquals("/rules/resolvedRegels/" + VLAGPRIJS + "/versions/0/value/navigatieBindingen", e.plek(), e.getMessage());
     }
 
     @Test void een_misvormde_binding_wordt_bij_het_laden_benoemd() throws Exception {
@@ -152,13 +153,13 @@ class NavigatiebindingWitnessTest {
         ObjectNode ir = lees();
         ((ObjectNode) waarde(ir).get("navigatieBindingen").get(0)).remove("rol");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
-        assertEquals("/rules/resolvedRegels/" + VLAGPRIJS + "/waarde/navigatieBindingen/0", e.plek(), e.getMessage());
+        assertEquals("/rules/resolvedRegels/" + VLAGPRIJS + "/versions/0/value/navigatieBindingen/0", e.plek(), e.getMessage());
         assertTrue(e.getMessage().contains("missing field 'rol'"), e.getMessage());
 
         ObjectNode ir2 = lees();
-        ((ObjectNode) IrPad.rulesLijst(ir2, "resolvedRegels").get(3).get("voorwaarde")).putNull("navigatieBinding");
+        ((ObjectNode) IrPad.versie(ir2, "resolvedRegels", 3, 0).get("condition")).putNull("navigatieBinding");
         IrLoader.Documentfout e2 = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir2));
-        assertEquals("/rules/resolvedRegels/3/voorwaarde/navigatieBinding", e2.plek(), e2.getMessage());
+        assertEquals("/rules/resolvedRegels/3/versions/0/condition/navigatieBinding", e2.plek(), e2.getMessage());
     }
 
     // ---------------- fixtures ----------------
@@ -167,13 +168,14 @@ class NavigatiebindingWitnessTest {
         return (ObjectNode) JSON.readTree(Files.readString(GOLDEN.resolve("ir.json")));
     }
 
+    /** The one version of the rule 'vlagprijs van een schuit'. */
     private static ObjectNode regel(ObjectNode ir) {
-        ObjectNode r = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(VLAGPRIJS);
-        assertTrue(r.get("naam").asText().equals("vlagprijs van een schuit"), r.get("naam").asText());
-        return r;
+        JsonNode r = IrPad.rulesLijst(ir, "resolvedRegels").get(VLAGPRIJS);
+        assertTrue(r.get("name").asText().equals("vlagprijs van een schuit"), r.get("name").asText());
+        return IrPad.versie(ir, "resolvedRegels", VLAGPRIJS, 0);
     }
 
-    private static ObjectNode waarde(ObjectNode ir) { return (ObjectNode) regel(ir).get("waarde"); }
+    private static ObjectNode waarde(ObjectNode ir) { return (ObjectNode) regel(ir).get("value"); }
 
     private static JsonNode casus(int n) throws Exception {
         try (var s = Files.list(GOLDEN)) {

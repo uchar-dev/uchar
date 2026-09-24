@@ -387,9 +387,9 @@ class OpslagrichtingWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(ERFLIJN)));
         IrPad.rules(ir).putArray("feitCreaties");
         IrPad.rules(ir).putArray("regelGroepen");
-        ObjectNode waarde = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("waarde");
-        ((ObjectNode) waarde.get("argumenten").get(0)).put("attribuut", "opvolgers");
-        ((ObjectNode) waarde.get("bronRol")).put("feittype", "opvolging").put("rol", "opvolger");
+        ObjectNode waarde = (ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("value");
+        ((ObjectNode) waarde.get("arguments").get(0)).put("attribuut", "opvolgers");
+        ((ObjectNode) waarde.get("sourceRole")).put("feittype", "opvolging").put("rol", "opvolger");
         return tijdelijk("erflijn-telling-op-opvolgers", ir);
     }
 
@@ -445,7 +445,7 @@ class OpslagrichtingWitnessTest {
         if (stap == 1) IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", numeriek());
         else IrPad.addAttribute(IrPad.objectType(ir, "Werf"), "thuishaven", numeriek());
         houdRegel(ir, "premie van een schuit");
-        ObjectNode keten = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("waarde").get("rechts");
+        ObjectNode keten = (ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("value").get("rechts");
         keten.put("attribuut", "havengeld").put("objecttype", "Haven")
              .put("bron", "het havengeld van de thuishaven van de werf van de Schuit");
         keten.putArray("navigatieBindingen")
@@ -462,19 +462,19 @@ class OpslagrichtingWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(NAVIGATIEPREMIE)));
         IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", numeriek());
         houdRegel(ir, "toeslag van een schuit");
-        ObjectNode regel = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0);
+        ObjectNode regel = IrPad.versie(ir, "resolvedRegels", 0, 0);
         ObjectNode nav = JSON.createObjectNode();
         nav.put("node", "AttribuutRef").put("attribuut", "tarief").put("objecttype", "Werf");
         nav.put("bron", "het tarief van de werf van de Schuit");
         nav.putArray("navigatieBindingen").addObject()
            .put("node", "RolBinding").put("feittype", "ligplaats").put("rol", "werf");
-        ((ObjectNode) regel.get("voorwaarde")).set("links", nav);
-        ((ObjectNode) regel.get("voorwaarde")).put("bron", "het tarief van de werf van de Schuit groter is dan 5");
+        ((ObjectNode) regel.get("condition")).set("links", nav);
+        ((ObjectNode) regel.get("condition")).put("bron", "het tarief van de werf van de Schuit groter is dan 5");
         ObjectNode eigen = JSON.createObjectNode();
         eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit");
         eigen.put("bron", "de lengte van de Schuit");
-        regel.set("waarde", eigen);
-        regel.put("soort", "GELIJKSTELLING");
+        regel.set("value", eigen);
+        regel.put("initialisation", false).put("presentation", "GELIJKSTELLING");
         return tijdelijk("schuit-naamdeling-vergelijking", ir);
     }
 
@@ -486,16 +486,16 @@ class OpslagrichtingWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(NAVIGATIEPREMIE)));
         IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", numeriek());
         houdRegel(ir, "toeslag van een schuit");
-        ObjectNode regel = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0);
+        ObjectNode regel = IrPad.versie(ir, "resolvedRegels", 0, 0);
         ObjectNode check = JSON.createObjectNode();
         check.put("node", "RoleMembership").put("factType", "ligplaats").put("role", "schuit")
              .put("negated", false).put("bron", "de Schuit een schuit is");
-        regel.set("voorwaarde", check);
+        regel.set("condition", check);
         ObjectNode eigen = JSON.createObjectNode();
         eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit");
         eigen.put("bron", "de lengte van de Schuit");
-        regel.set("waarde", eigen);
-        regel.put("soort", "GELIJKSTELLING");
+        regel.set("value", eigen);
+        regel.put("initialisation", false).put("presentation", "GELIJKSTELLING");
         return tijdelijk("schuit-naamdeling-rolcheck", ir);
     }
 
@@ -503,7 +503,7 @@ class OpslagrichtingWitnessTest {
      *  and not on a sibling rule that refuses first. */
     private static void houdRegel(ObjectNode ir, String naam) {
         com.fasterxml.jackson.databind.node.ArrayNode houd = JSON.createArrayNode();
-        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels")) if (naam.equals(r.get("naam").asText())) houd.add(r);
+        houd.add(IrPad.vorm(ir, "resolvedRegels", naam));
         IrPad.rules(ir).set("resolvedRegels", houd);
     }
 

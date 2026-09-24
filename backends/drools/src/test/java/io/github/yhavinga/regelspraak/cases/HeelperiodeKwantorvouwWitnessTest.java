@@ -626,7 +626,7 @@ class HeelperiodeKwantorvouwWitnessTest {
                     "node": "Vergelijking", "op": "GROTER",
                     "links": { "node": "AttribuutRef", "attribuut": "wachtwaarde", "objecttype": "Schuit",
                                "bron": "zijn wachtwaarde" },
-                    "rechts": { "node": "Literal", "waarde": "10", "type": %s, "bron": "10" },
+                    "rechts": { "node": "Literal", "value": { "number": "10" }, "type": %s, "bron": "10" },
                     "periode": { "node": "GeheelPeriode", "jaar": true, "niet": %s },
                     "bron": "zijn wachtwaarde gedurende het gehele jaar groter is dan 10" },
                   %s,
@@ -641,7 +641,7 @@ class HeelperiodeKwantorvouwWitnessTest {
     private static String nietScalaireGrens() throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("ALLE", ZEEGAAND_FILTER, BRONROL)));
         IrPad.addAttribute(IrPad.objectType(doc, "Schuit"), "grenswaarde", JSON.readTree(NUMERIEK));
-        ObjectNode toets = (ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0).get("voorwaarde").get("toets");
+        ObjectNode toets = (ObjectNode) IrPad.versie(doc, "resolvedRegels", 0, 0).get("condition").get("toets");
         toets.set("rechts", JSON.readTree("""
                 { "node": "AttribuutRef", "attribuut": "grenswaarde", "objecttype": "Schuit",
                   "bron": "zijn grenswaarde" }"""));
@@ -710,7 +710,7 @@ class HeelperiodeKwantorvouwWitnessTest {
                     "node": "Vergelijking", "op": "GROTER",
                     "links": { "node": "AttribuutRef", "attribuut": "wachtwaarde", "objecttype": "Schuit",
                                "bron": "zijn wachtwaarde" },
-                    "rechts": { "node": "Literal", "waarde": "10", "type": %s, "bron": "10" },
+                    "rechts": { "node": "Literal", "value": { "number": "10" }, "type": %s, "bron": "10" },
                     "periode": null,
                     "bron": "zijn wachtwaarde groter is dan 10" },
                   %s,
@@ -743,14 +743,15 @@ class HeelperiodeKwantorvouwWitnessTest {
                     "timelines": [], "dayKinds": [] },
                   "rules": {
                     "resolvedRegels": [
-                      { "node": "ResolvedRegel", "naam": "Kenmerktoekenning zeewaardig", "soort": "KENMERKTOEKENNING",
-                        "doel": { "node": "AttribuutRef", "attribuut": "zeewaardig", "objecttype": "Vloot",
+                      { "node": "Rule", "name": "Kenmerktoekenning zeewaardig", "versions": [ {
+                          "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
+                          "target": { "node": "AttribuutRef", "attribuut": "zeewaardig", "objecttype": "Vloot",
                                   "bron": "Een Vloot is zeewaardig" },
-                        "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" }, "bron": "waar" },
-                        "voorwaarde": %s,
-                        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+                          "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "bron": "waar" },
+                          "condition": %s,
+                          "initialisation": false } ] } ],
                     "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-                    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+                    "uniciteiten": [], "feitCreaties": [], "resolvedStartpunten": [],
                     "regelGroepen": [] },
                   "diagnostics": [] }
                 """.formatted(NUMERIEK, vouw);

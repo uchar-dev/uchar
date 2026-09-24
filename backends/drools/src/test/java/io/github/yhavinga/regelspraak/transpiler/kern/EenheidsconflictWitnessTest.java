@@ -334,7 +334,7 @@ class EenheidsconflictWitnessTest {
                     .put("sign", "ONBEPAALD").set("unit", JSON.readTree(VREEMD));
             IrLoader.Documentfout f = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(kopie),
                     naam(ir));
-            assertTrue(f.plek().endsWith("/waarde/rechts/type") && f.getMessage().contains("unknown field"),
+            assertTrue(f.plek().endsWith("/value/rechts/type") && f.getMessage().contains("unknown field"),
                     naam(ir) + ": " + f.getMessage());
         }
         assertTrue(gezien > 0, "geen enkele golden droeg een optelling van twee gedeclareerde lezingen");
@@ -366,7 +366,7 @@ class EenheidsconflictWitnessTest {
         JsonNode kopie = ir.deepCopy();
         JsonNode regel = additieveRegel(kopie);
         if (regel == null) return null;
-        return metNoemer(kopie, declaratieVan(kopie, regel.get("doel")));
+        return metNoemer(kopie, declaratieVan(kopie, regel.get("target")));
     }
 
     /** A copy in which the declaration of a parameter READ IN A COMPARISON against a unit-bearing attribute
@@ -428,7 +428,7 @@ class EenheidsconflictWitnessTest {
     private static JsonNode metVerdraaideAnnotatie(JsonNode ir) throws Exception {
         JsonNode kopie = ir.deepCopy();
         JsonNode regel = additieveRegel(kopie);
-        if (regel == null || !(regel.get("waarde").get("type") instanceof ObjectNode type)) return null;
+        if (regel == null || !(regel.get("value").get("type") instanceof ObjectNode type)) return null;
         type.set("unit", JSON.readTree(VREEMD));
         return kopie;
     }
@@ -440,16 +440,19 @@ class EenheidsconflictWitnessTest {
      */
     private static ObjectNode additieveRechterRef(JsonNode ir) {
         JsonNode regel = additieveRegel(ir);
-        return regel == null ? null : (ObjectNode) regel.get("waarde").get("rechts");
+        return regel == null ? null : (ObjectNode) regel.get("value").get("rechts");
     }
 
-    /** The FIRST rule whose value is an additive join of two attribute reads that BOTH resolve to a unit-bearing
-     *  declaration. Deterministic: rules are visited in document order and the first hit wins. */
+    /** The FIRST rule version whose value is an additive join of two attribute reads that BOTH resolve to a
+     *  unit-bearing declaration. Deterministic: rules and their versions are visited in document order and the
+     *  first hit wins. */
     private static JsonNode additieveRegel(JsonNode ir) {
         JsonNode regels = ir.path("rules").get("resolvedRegels");
         if (regels == null) return null;
-        for (JsonNode r : regels) {
-            JsonNode w = r.get("waarde");
+        List<JsonNode> versies = new ArrayList<>();
+        for (JsonNode vorm : regels) vorm.path("versions").forEach(versies::add);
+        for (JsonNode r : versies) {
+            JsonNode w = r.get("value");
             if (w == null || !"Binair".equals(w.path("node").asText())
                     || !List.of("PLUS", "MIN", "VERMINDERD_MET").contains(w.path("op").asText())) continue;
             if (declaratieVan(ir, w.get("links")) == null || declaratieVan(ir, w.get("rechts")) == null) continue;

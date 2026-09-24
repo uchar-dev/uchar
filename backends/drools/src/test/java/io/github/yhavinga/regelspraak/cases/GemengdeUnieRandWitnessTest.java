@@ -84,9 +84,8 @@ class GemengdeUnieRandWitnessTest {
         // union and two sources that is 2 binders and 4 matches — a count, because the sibling source spells
         // the key as declared and would keep the bare "contains" green on its own.
         String drl = drl(bewerk(NUMMERREGISTER, o -> {
-            ((ObjectNode) o.get("rules").get("uniciteitUnies").get(0).get("bronnen").get(0))
-                    .set("sleutels", JSON.createArrayNode().add("vondstNummer"));
-            ((ArrayNode) o.get("rules").get("uniciteitUnies")).remove(1);
+            IrPad.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("vondstNummer"));
+            ((ArrayNode) o.get("rules").get("uniciteiten")).remove(1);
         }));
         assertEquals(2, tel(drl, "$k0 : vondstnummer != null"),
                 "both source rules bind the declared field: " + drl);

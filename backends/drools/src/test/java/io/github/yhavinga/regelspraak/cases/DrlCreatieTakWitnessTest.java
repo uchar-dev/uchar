@@ -210,14 +210,14 @@ class DrlCreatieTakWitnessTest {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(PENNING)));
         var rules = IrPad.rules(ir);
         for (JsonNode c : IrPad.rulesLijst(ir, "consistenties"))
-            rules.set("resolvedRegels", zonder(rules.get("resolvedRegels"), c.path("naam").asText()));
+            rules.set("resolvedRegels", zonder(rules.get("resolvedRegels"), c.path("name").asText()));
         rules.set("consistenties", JSON.createArrayNode());
         return schrijf(ir, "penning-vorm");
     }
 
     private static com.fasterxml.jackson.databind.node.ArrayNode zonder(JsonNode lijst, String naam) {
         var behouden = JSON.createArrayNode();
-        for (JsonNode n : lijst) if (!naam.equals(n.path("naam").asText())) behouden.add(n);
+        for (JsonNode n : lijst) if (!naam.equals(n.path("name").asText())) behouden.add(n);
         return behouden;
     }
 

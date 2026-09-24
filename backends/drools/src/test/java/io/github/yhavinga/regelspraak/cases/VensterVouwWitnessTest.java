@@ -141,7 +141,7 @@ class VensterVouwWitnessTest {
         for (String ot : new String[] { "Berger", "Bergingsploeg" })
             IrPad.addAttribute(IrPad.objectType(doc, ot), "aanstelling", JSON.readTree(DATUM));
         houdRegel(doc, "premiegerechtigd bij dagvergoeding");
-        ((ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0).get("voorwaarde"))
+        ((ObjectNode) IrPad.versie(doc, "resolvedRegels", 0, 0).get("condition"))
                 .set("filter", JSON.readTree(venster("""
                 { "node": "AttribuutRef", "attribuut": "aanstelling", "objecttype": "Berger",
                   "bron": "de aanstelling van de berger" }""", "null", false, "vanaf de aanstelling van de berger")));
@@ -240,7 +240,7 @@ class VensterVouwWitnessTest {
     private static final String DATUM = "{ \"node\": \"Date\", \"precision\": \"day\" }";
 
     private static String literal(String d) {
-        return "{ \"node\": \"Literal\", \"waarde\": \"" + d + "\", \"type\": " + DATUM + ", \"bron\": \"" + d + "\" }";
+        return "{ \"node\": \"Literal\", \"value\": { \"date\": \"" + d + "\" }, \"type\": " + DATUM + ", \"bron\": \"" + d + "\" }";
     }
 
     private static String venster(String vanaf, String tot, boolean inclusief, String bron) {
@@ -286,7 +286,7 @@ class VensterVouwWitnessTest {
         for (String ot : new String[] { "Strandwacht", "Schouwploeg" })
             IrPad.addAttribute(IrPad.objectType(doc, ot), "aanstelling", JSON.readTree(DATUM));
         houdRegel(doc, "bevoegd bij diploma");
-        ObjectNode kv = (ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0).get("voorwaarde");
+        ObjectNode kv = (ObjectNode) IrPad.versie(doc, "resolvedRegels", 0, 0).get("condition");
         kv.put("kwantor", kwantor);
         if (drempel == null) kv.remove("drempel"); else kv.put("drempel", drempel);
         kv.set("filter", filter == null ? JSON.nullNode() : JSON.readTree(filter));
@@ -298,7 +298,7 @@ class VensterVouwWitnessTest {
 
     private static void houdRegel(ObjectNode doc, String naam) {
         ArrayNode uit = JSON.createArrayNode();
-        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels")) if (naam.equals(r.path("naam").asText())) uit.add(r);
+        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels")) if (naam.equals(r.path("name").asText())) uit.add(r);
         IrPad.rules(doc).set("resolvedRegels", uit);
     }
 
@@ -308,7 +308,7 @@ class VensterVouwWitnessTest {
         for (String ot : new String[] { "Strandwacht", "Schouwploeg" })
             IrPad.addAttribute(IrPad.objectType(doc, ot), "aanstelling", JSON.readTree(DATUM));
         houdRegel(doc, "wachttal van een schouwploeg");
-        ((ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0).get("waarde"))
+        ((ObjectNode) IrPad.versie(doc, "resolvedRegels", 0, 0).get("value"))
                 .set("filter", JSON.readTree(filter));
         Path p = tmp.resolve("venstervouw-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());
@@ -319,7 +319,7 @@ class VensterVouwWitnessTest {
      *  ploeg's wachten carrying {@code filter} is greater than 0". */
     private Path voorwaardeTellingDocument(String filter) throws Exception {
         ObjectNode telDoc = (ObjectNode) JSON.readTree(Files.readString(aggregatieDocument(filter)));
-        JsonNode telling = IrPad.rulesLijst(telDoc, "resolvedRegels").get(0).get("waarde");
+        JsonNode telling = IrPad.versie(telDoc, "resolvedRegels", 0, 0).get("value");
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("ir.json")));
         for (String ot : new String[] { "Strandwacht", "Schouwploeg" })
             IrPad.addAttribute(IrPad.objectType(doc, ot), "aanstelling", JSON.readTree(DATUM));
@@ -327,10 +327,10 @@ class VensterVouwWitnessTest {
         ObjectNode vergelijking = JSON.createObjectNode();
         vergelijking.put("node", "Vergelijking").put("op", "GROTER").set("links", telling);
         vergelijking.set("rechts", JSON.readTree("""
-                { "node": "Literal", "waarde": "0", "type": { "node": "Number", "whole": true, "decimals": 0,
+                { "node": "Literal", "value": { "number": "0" }, "type": { "node": "Number", "whole": true, "decimals": 0,
                   "sign": "ONBEPAALD" }, "bron": "0" }"""));
         vergelijking.putNull("periode").put("bron", "het aantal wachten die vanaf hun aanstelling dienen groter is dan 0");
-        ((ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0)).set("voorwaarde", vergelijking);
+        IrPad.versie(doc, "resolvedRegels", 0, 0).set("condition", vergelijking);
         Path p = tmp.resolve("venstervouw-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());
         return p;

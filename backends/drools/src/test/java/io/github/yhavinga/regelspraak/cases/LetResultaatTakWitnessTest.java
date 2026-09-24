@@ -81,7 +81,7 @@ class LetResultaatTakWitnessTest {
 
     @Test void een_variabele_in_voorwaarde_en_resultaat_komt_in_beide_takken_aan() throws Exception {
         // "de dubbel is het inkomen maal 2" is read by the voorwaarde (dubbel > 10,00 — SUBSTITUTED there,
-        // since no Let can span the wire's separate voorwaarde and waarde fields) AND by the result
+        // since no Let can span the wire's separate condition and value fields) AND by the result
         // (dubbel plus dubbel — a Let with two BinderRefs). ref: aandeel = 160.00 at inkomen 40,00.
         beideSpelen(jutter(GEVULD, waarde("aandeel", "160.00")));
     }
@@ -485,7 +485,7 @@ class LetResultaatTakWitnessTest {
     }
 
     private static String lit(String waarde, int dec, boolean geheel) {
-        return "{\"node\":\"Literal\",\"waarde\":\"%s\",\"type\":%s,\"bron\":\"%s\"}"
+        return "{\"node\":\"Literal\",\"value\":{\"number\":\"%s\"},\"type\":%s,\"bron\":\"%s\"}"
                 .formatted(waarde, num(dec, geheel, ONBEPAALD), waarde);
     }
 
@@ -524,10 +524,12 @@ class LetResultaatTakWitnessTest {
         return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naam, datatype);
     }
 
+    /** A rule of one always-valid computing version; {@code voorwaarde} "null" writes no condition. */
     private static String regel(String naam, String doel, String waarde, String voorwaarde) {
-        return ("{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"BEREKENING\",\"doel\":%s,\"waarde\":%s,"
-                + "\"voorwaarde\":%s,\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
-                .formatted(naam, doel, waarde, voorwaarde);
+        return ("{\"node\":\"Rule\",\"name\":\"%s\",\"versions\":[{\"validity\":{\"node\":\"Geldigheid\","
+                + "\"vanaf\":null,\"tot\":null},\"target\":%s,\"value\":%s%s,\"initialisation\":false,"
+                + "\"presentation\":\"BEREKENING\"}]}")
+                .formatted(naam, doel, waarde, voorwaarde.equals("null") ? "" : ",\"condition\":" + voorwaarde);
     }
 
     // ---------------- the one document (verifier-clean, ref- and clingo-replayed before pinning) ----------
@@ -561,7 +563,7 @@ class LetResultaatTakWitnessTest {
                 + "\"timelines\":[],\"dayKinds\":[]},"
                 + "\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
+                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
                 + "\"regelGroepen\":[]},\"diagnostics\":[]}")
                 .formatted(attribuut("inkomen", num(2, false, NN)), attribuut("dubbelgarde", num(2, false, ONBEPAALD)),
                         regel("dubbelgarde van een jutter", attr("dubbelgarde", 2, false, ONBEPAALD), w, "null"));
@@ -691,7 +693,7 @@ class LetResultaatTakWitnessTest {
                 + "\"timelines\":[],\"dayKinds\":[]},"
                 + "\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
+                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
                 + "\"regelGroepen\":[]},\"diagnostics\":[]}")
                 .formatted(attributen, regels);
     }

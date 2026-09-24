@@ -1,5 +1,7 @@
 package io.github.yhavinga.regelspraak.transpiler;
 
+import io.github.yhavinga.regelspraak.cases.IrPad;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
@@ -151,26 +153,25 @@ class VouwfilterStratumAnalyseTest {
         return samengesteld(buiten, samengesteld(binnen, kenmerkCheck(negatie)));
     }
 
-    private static String telling(String elementType, String filter, String bronRol) {
-        return ("{\"node\":\"Functie\",\"kind\":\"AANTAL\",\"argumenten\":[{\"node\":\"AttribuutRef\","
-                + "\"attribuut\":\"vondsten\",\"objecttype\":\"Jutter\",\"bron\":\"vondsten van de Jutter\"}],"
-                + "\"elementObjecttype\":%s,\"leegwaarde\":null,\"filter\":%s,\"dimensieSelectie\":null,"
-                + "\"type\":%s,\"bron\":\"het aantal …\",\"granulariteit\":null%s}")
-                .formatted(elementType, filter, HEEL, bronRol);
+    /** A count over the Jutter's vondsten; {@code elementType} "null" writes none, and {@code bereik} is the written
+     *  range field with its leading comma, or empty. */
+    private static String telling(String elementType, String filter, String bereik) {
+        return ("{\"node\":\"Aggregation\",\"kind\":\"AANTAL\",\"arguments\":[{\"node\":\"AttribuutRef\","
+                + "\"attribuut\":\"vondsten\",\"objecttype\":\"Jutter\",\"bron\":\"vondsten van de Jutter\"}]"
+                + "%s,\"filter\":%s%s,\"type\":%s,\"bron\":\"het aantal …\"}")
+                .formatted(elementType.equals("null") ? "" : ",\"elementType\":" + elementType, filter, bereik, HEEL);
     }
 
     private static String kenmerkRegel(String naam, String kenmerk, String ot, String voorwaarde) {
-        return ("{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"KENMERKTOEKENNING\","
-                + "\"doel\":{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"%s\","
-                + "\"bron\":\"Een %s is %s\"},"
-                + "\"waarde\":{\"node\":\"Literal\",\"waarde\":\"waar\",\"type\":%s,\"bron\":\"waar\"},"
-                + "\"voorwaarde\":%s,\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
-                .formatted(naam, kenmerk, ot, ot, kenmerk, BOOL, voorwaarde);
+        return IrPad.regel(naam, "KENMERKTOEKENNING",
+                "{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"%s\",\"bron\":\"Een %s is %s\"}"
+                        .formatted(kenmerk, ot, ot, kenmerk),
+                IrPad.literal("waar", BOOL, "waar"), voorwaarde);
     }
 
     private static String groterDanNul(String links) {
         return ("{\"node\":\"Vergelijking\",\"op\":\"GROTER\",\"links\":%s,"
-                + "\"rechts\":{\"node\":\"Literal\",\"waarde\":\"0\",\"type\":%s,\"bron\":\"0\"},"
+                + "\"rechts\":{\"node\":\"Literal\",\"value\":{\"number\":\"0\"},\"type\":%s,\"bron\":\"0\"},"
                 + "\"periode\":null,\"bron\":\"… groter is dan 0\"}").formatted(links, HEEL);
     }
 
@@ -193,7 +194,7 @@ class VouwfilterStratumAnalyseTest {
                 + "\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
                 + "\"dayKinds\":[]},\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
+                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
                 + "\"regelGroepen\":[]},\"diagnostics\":[]}")
                 .formatted(ot, ft, String.join(",", regels));
     }
@@ -201,7 +202,7 @@ class VouwfilterStratumAnalyseTest {
     /** A consumer whose fold filter carries {@code filter} over the element type Vondst, above a plain
      *  producer of {@code gemerkt} on that same type. */
     private static String doc(String filter) {
-        String bronRol = ",\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\","
+        String bronRol = ",\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\","
                 + "\"rol\":\"vondst\"}";
         return model(
                 kenmerkRegel("consument", "druk", "Jutter",
@@ -215,7 +216,7 @@ class VouwfilterStratumAnalyseTest {
      *  so the compound's negation, if it were carried, would have to cross the fold-filter boundary to
      *  reach the characteristic. */
     private static String genesteldDoc(String kwantor) {
-        String bronRol = ",\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\","
+        String bronRol = ",\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\","
                 + "\"rol\":\"vondst\"}";
         String binnen = groterDanNul(telling("\"Vondst\"", kenmerkCheck(false), bronRol));
         return model(

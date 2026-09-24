@@ -156,7 +156,7 @@ class HerhaaldTypepaarWitnessTest {
         // in their sentence.
         JsonNode ir = JSON.readTree(Files.readString(creatieVariant(doelVergelijking("romplengte", "8"), true)));
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
-        assertEquals("/rules/feitCreaties/0/voorwaarde/links", e.plek(), e.getMessage());
+        assertEquals("/rules/feitCreaties/0/versions/0/condition/links", e.plek(), e.getMessage());
         assertTrue(e.getMessage().contains("its objecttype is the subject type 'Haven' — 'Schuit' names another type,"
                 + " which only a navigation reaches (WF-053)"), e.getMessage());
     }
@@ -305,7 +305,7 @@ class HerhaaldTypepaarWitnessTest {
         for (boolean viaDrl : new boolean[] { false, true }) {
             IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
                     () -> CaseRunner.speelCase(somOverLiggers(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")), viaDrl));
-            assertTrue(e.getMessage().contains("missing field 'bronRol'"), e.getMessage());
+            assertTrue(e.getMessage().contains("carries its range (sourceRole or sourcePath)"), e.getMessage());
         }
     }
 
@@ -345,14 +345,13 @@ class HerhaaldTypepaarWitnessTest {
         ObjectNode ir = lees(DUBBELVERBINDING);
         houdCreaties(ir, "winterberging door de haven");
         houdRegels(ir, "wintertal van een haven", "ligprijs van een schuit");
-        ObjectNode fc = (ObjectNode) IrPad.rulesLijst(ir, "feitCreaties").get(0);
-        if (voorwaarde == null) fc.putNull("voorwaarde"); else fc.set("voorwaarde", voorwaarde);
-        if (altijd) fc.set("geldigheid", JSON.createObjectNode()
+        ObjectNode fc = IrPad.versie(ir, "feitCreaties", 0, 0);
+        if (voorwaarde == null) fc.remove("condition"); else fc.set("condition", voorwaarde);
+        if (altijd) fc.set("validity", JSON.createObjectNode()
                 .put("node", "Geldigheid").putNull("vanaf").putNull("tot"));
         // the ligprijs rule carries its own doel-kenmerk gate in the golden; drop it so this row reads the
         // created link for every Schuit and the creation's guard is the only selector.
-        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
-            if ("ligprijs van een schuit".equals(r.get("naam").asText())) ((ObjectNode) r).putNull("voorwaarde");
+        IrPad.versie(ir, "resolvedRegels", "ligprijs van een schuit").remove("condition");
         return tijdelijk("dv-creatie", ir);
     }
 
@@ -361,9 +360,8 @@ class HerhaaldTypepaarWitnessTest {
      *  field name beside it (BonenveldWitnessTest pins the loader's refusal of one). */
     private static Path creatieVerlegd(String feittype, String ankerRol, String doelRol) throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);
-        for (JsonNode f : IrPad.rulesLijst(ir, "feitCreaties"))
-            if ("winterberging door de haven".equals(f.get("naam").asText()))
-                ((ObjectNode) f).put("feittype", feittype).put("ankerRol", ankerRol).put("doelRol", doelRol);
+        IrPad.versie(ir, "feitCreaties", "winterberging door de haven")
+                .put("factType", feittype).put("anchorRole", ankerRol).put("targetRole", doelRol);
         return tijdelijk("dv-creatie-verlegd", ir);
     }
 
@@ -409,17 +407,17 @@ class HerhaaldTypepaarWitnessTest {
     }
 
     /** The counts-only model with the liggertal fold turned into a SOM over the liggers' romplengte — whose
-     *  argument is an ATTRIBUTE name — and its {@code bronRol} REMOVED, so no route to the range remains but
+     *  argument is an ATTRIBUTE name — and its {@code sourceRole} REMOVED, so no route to the range remains but
      *  the by-pair search. (With the binding in place the same fold is lowerable and plays; that is
      *  BronRolVouwWitnessTest's business.) */
     private static Path somOverLiggers() throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);
         IrPad.rules(ir).putArray("feitCreaties");
         houdRegels(ir, "liggertal van een haven");
-        ObjectNode fold = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("waarde");
-        fold.remove("bronRol");
+        ObjectNode fold = (ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("value");
+        fold.remove("sourceRole");
         fold.put("kind", "SOM").put("bron", "de som van de romplengte van alle liggers van de Haven");
-        ObjectNode arg = (ObjectNode) fold.get("argumenten").get(0);
+        ObjectNode arg = (ObjectNode) fold.get("arguments").get(0);
         arg.put("attribuut", "romplengte").put("objecttype", "Schuit")
            .put("bron", "de romplengte van alle liggers van de Haven");
         return tijdelijk("dv-som", ir);
@@ -428,13 +426,14 @@ class HerhaaldTypepaarWitnessTest {
     private static void houdRegels(ObjectNode ir, String... namen) {
         List<String> houd = List.of(namen);
         ArrayNode uit = JSON.createArrayNode();
-        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels")) if (houd.contains(r.get("naam").asText())) uit.add(r);
+        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels")) if (houd.contains(r.get("name").asText())) uit.add(r);
+        if (uit.size() != houd.size()) throw new AssertionError("not every rule of " + houd + " is in the document");
         IrPad.rules(ir).set("resolvedRegels", uit);
     }
 
     private static void houdCreaties(ObjectNode ir, String naam) {
         ArrayNode uit = JSON.createArrayNode();
-        for (JsonNode f : IrPad.rulesLijst(ir, "feitCreaties")) if (naam.equals(f.get("naam").asText())) uit.add(f);
+        uit.add(IrPad.vorm(ir, "feitCreaties", naam));
         IrPad.rules(ir).set("feitCreaties", uit);
     }
 
@@ -459,7 +458,7 @@ class HerhaaldTypepaarWitnessTest {
         links.put("node", "AttribuutRef").put("attribuut", attribuut).put("objecttype", "Schuit");
         links.put("bron", "de " + attribuut + " van de ligger");
         ObjectNode rechts = JSON.createObjectNode();
-        rechts.put("node", "Literal").put("waarde", grens);
+        rechts.put("node", "Literal").putObject("value").put("number", grens);
         rechts.set("type", numeriek());
         rechts.put("bron", grens);
         ObjectNode v = JSON.createObjectNode();

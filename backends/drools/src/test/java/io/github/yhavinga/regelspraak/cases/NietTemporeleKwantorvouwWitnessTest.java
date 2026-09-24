@@ -251,12 +251,12 @@ class NietTemporeleKwantorvouwWitnessTest {
                     { "node": "Rol", "naam": "stuk", "objecttypeNaam": "Uitrusting",
                       "meervoud": "stukken", "meervoudig": true } ] }"""));
         IrPad.rules(doc).set("resolvedRegels", JSON.readTree("""
-                [ { "node": "ResolvedRegel", "naam": "uitgerust bij keuring", "soort": "KENMERKTOEKENNING",
-                    "doel": { "node": "AttribuutRef", "attribuut": "uitgerust", "objecttype": "Schouwploeg",
+                [ { "node": "Rule", "name": "uitgerust bij keuring", "versions": [ {
+                      "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
+                      "target": { "node": "AttribuutRef", "attribuut": "uitgerust", "objecttype": "Schouwploeg",
                               "bron": "Een Schouwploeg is uitgerust" },
-                    "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" },
-                                "bron": "waar" },
-                    "voorwaarde": {
+                      "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "bron": "waar" },
+                      "condition": {
                       "node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Strandwacht",
                       "filter": null,
                       "toets": { "node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Uitrusting",
@@ -268,7 +268,7 @@ class NietTemporeleKwantorvouwWitnessTest {
                                               "rol": "stuk" } },
                       "bron": "alle wachten van de Schouwploeg alle stukken gekeurd hebben",
                       "bronRol": { "node": "RolBinding", "feittype": "schouwindeling", "rol": "wacht" } },
-                    "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ]"""));
+                      "initialisation": false } ] } ]"""));
         Path p = tmp.resolve("genest-ir-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());
         return p;

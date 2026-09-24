@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * RUNTIME-SEMANTICS ch. 3.4b).
  *
  * <p><b>Why the model is authored here instead of read from the corpus.</b> The three corpus goldens that
- * carry a {@code bronPad} pin ONE shape between them — two to-many hops, i.e. a walk that is functional
+ * carry a {@code sourcePath} pin ONE shape between them — two to-many hops, i.e. a walk that is functional
  * from the element in every step — and two of the three are not replayable by this backend at all (their
  * middle relation is many-to-many, so §13.3.9 derives no bean field at either end and the walk refuses by
  * name). Everything this card had to BUILD beyond that one shape therefore has no corpus witness: the
@@ -91,7 +91,7 @@ class BronpadKetenWitnessTest {
      * document and separating them would mean four more models that say the same thing.
      */
     @Test void de_vlakke_unie_over_het_pad_in_beide_takken() throws Exception {
-        BeideTakken.groen(ir(doc()), keten(), "de vlakke unie over het bronPad");
+        BeideTakken.groen(ir(doc()), keten(), "de vlakke unie over het sourcePath");
     }
 
     /**
@@ -113,14 +113,14 @@ class BronpadKetenWitnessTest {
     /**
      * The flank of row 4: the same document with the path REPLACED by the direct registration's one-step
      * binding — the shape every consumer would derive if it dropped the field. It answers 1,00 where the
-     * sentence says 3,00, which is exactly why the loader may not ignore {@code bronPad}. Played against
+     * sentence says 3,00, which is exactly why the loader may not ignore {@code sourcePath}. Played against
      * the UNCHANGED expectations, so a failure here is the whole point.
      */
     @Test void de_directe_relatie_geeft_een_ander_antwoord_dan_het_pad() throws Exception {
-        String metBronRol = doc().replace("\"bronPad\": [ " + PAD_VRACHT + " ]",
-                "\"bronRol\": { \"node\": \"RolBinding\", \"feittype\": \"praamregister\","
+        String metBronRol = doc().replace("\"sourcePath\": [ " + PAD_VRACHT + " ]",
+                "\"sourceRole\": { \"node\": \"RolBinding\", \"feittype\": \"praamregister\","
                         + " \"rol\": \"geregistreerde praam\" }");
-        assertTrue(metBronRol.contains("bronRol"), "de vervanging hoort het pad door de directe binding te ruilen");
+        assertTrue(metBronRol.contains("sourceRole"), "de vervanging hoort het pad door de directe binding te ruilen");
         BeideTakken.rood(ir(metBronRol), keten(), "laagste vracht",
                 "de directe registratie levert 1,00; alleen het pad levert de 3,00 die de zin zegt");
     }
@@ -147,7 +147,8 @@ class BronpadKetenWitnessTest {
 
     /** A path that resolves and joins but lands one type short of the element type. */
     @Test void een_pad_dat_naast_het_elementtype_landt_wordt_geweigerd() throws Exception {
-        String stuk = doc().replace("\"bronPad\": [ " + PAD_VRACHT + " ]", "\"bronPad\": [ " + PAD_STEEN + " ]");
+        String stuk = doc().replace("\"sourcePath\": [ " + PAD_VRACHT + " ]", "\"sourcePath\": [ " + PAD_STEEN + " ]");
+        assertTrue(stuk.contains(PAD_STEEN) && !stuk.equals(doc()), "de vervanging hoort het pad te ruilen");
         BeideTakken.geweigerd(ir(stuk), keten(), "landen",
                 "een pad dat op Ankersteen eindigt is niet het bereik van een Praam-vouw");
     }
@@ -183,18 +184,18 @@ class BronpadKetenWitnessTest {
     private static String regel(String naam, String attribuut, String kind, String element, String arg,
             String leegwaarde, String pad) {
         return """
-                { "node": "ResolvedRegel", "naam": "%s", "soort": "BEREKENING",
-                  "doel": { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Tolhuis",
-                            "bron": "De %s van een Tolhuis" },
-                  "waarde": { "node": "Functie", "kind": "%s",
-                    "argumenten": [ { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s",
-                                      "bron": "de %s van alle %sen" } ],
-                    "elementObjecttype": "%s", "leegwaarde": %s, "filter": null, "dimensieSelectie": null,
-                    "type": %s, "bron": "de vouw over het pad", "granulariteit": null,
-                    "bronPad": [ %s ] },
-                  "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }"""
-                .formatted(naam, attribuut, attribuut, kind, arg, element, arg, element,
-                        element, leegwaarde, NUM2, pad);
+                { "node": "Rule", "name": "%s", "versions": [ {
+                  "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
+                  "target": { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Tolhuis",
+                              "bron": "De %s van een Tolhuis" },
+                  "value": { "node": "Aggregation", "kind": "%s",
+                    "arguments": [ { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s",
+                                     "bron": "de %s van alle %sen" } ],
+                    "elementType": "%s",%s
+                    "sourcePath": [ %s ], "type": %s, "bron": "de vouw over het pad" },
+                  "initialisation": false, "presentation": "BEREKENING" } ] }"""
+                .formatted(naam, attribuut, attribuut, kind, arg, element, arg, element, element,
+                        leegwaarde.equals("null") ? "" : " \"emptyFallback\": " + leegwaarde + ",", pad, NUM2);
     }
 
     private static String objecttype(String naam, String meervoud, String supertype, String attributen) {
@@ -237,7 +238,7 @@ class BronpadKetenWitnessTest {
               "rules": {
                 "resolvedRegels": [ %s ],
                 "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-                "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+                "uniciteiten": [], "feitCreaties": [], "resolvedStartpunten": [],
                 "regelGroepen": [] },
               "diagnostics": [] }"""
             .formatted(
@@ -263,10 +264,10 @@ class BronpadKetenWitnessTest {
                     String.join(", ",
                             regel("laagste vracht", "laagste vracht", "MINIMUM", "Praam", "vracht", "null", PAD_VRACHT),
                             regel("totale vracht", "totale vracht", "SOM", "Praam", "vracht",
-                                    "{ \"node\": \"Literal\", \"waarde\": \"0\", \"type\": { \"node\": \"Number\","
+                                    "{ \"node\": \"Literal\", \"value\": { \"number\": \"0\" }, \"type\": { \"node\": \"Number\","
                                     + " \"whole\": true, \"decimals\": 0, \"sign\": \"ONBEPAALD\" }, \"bron\": \"0\" }", PAD_VRACHT),
                             regel("steenlast", "steenlast", "SOM", "Ankersteen", "steengewicht",
-                                    "{ \"node\": \"Literal\", \"waarde\": \"0\", \"type\": { \"node\": \"Number\","
+                                    "{ \"node\": \"Literal\", \"value\": { \"number\": \"0\" }, \"type\": { \"node\": \"Number\","
                                     + " \"whole\": true, \"decimals\": 0, \"sign\": \"ONBEPAALD\" }, \"bron\": \"0\" }", PAD_STEEN),
                             regel("laagste zegelvracht", "laagste zegelvracht", "MINIMUM", "Zegelpraam", "vracht",
                                     "null", PAD_VRACHT),

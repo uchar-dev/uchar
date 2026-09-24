@@ -106,7 +106,7 @@ class VoorafgerondeFactorWitnessTest {
                 + "\"domains\":[],\"unitSystems\":[{\"node\":\"UnitSystem\",\"name\":\"%s\",\"units\":%s}],"
                 + "\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]},\"rules\":{\"resolvedRegels\":[%s,%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
+                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
                 + "\"regelGroepen\":[]},\"diagnostics\":[]}").formatted(objecttype, stelsel, units,
                 regel(som, optelling), regel(afgerond, afronding));
         Path tmp = Files.createTempFile("voorafgeronde-factor", ".json");
@@ -141,10 +141,8 @@ class VoorafgerondeFactorWitnessTest {
     }
 
     private static String regel(String doel, String waarde) {
-        return ("{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"BEREKENING\",\"doel\":{\"node\":\"AttribuutRef\","
-                + "\"attribuut\":\"%s\",\"objecttype\":\"Jutter\",\"bron\":\"De %s van een Jutter\"},\"waarde\":%s,"
-                + "\"voorwaarde\":null,\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
-                .formatted(doel, doel, doel, waarde);
+        return IrPad.regel(doel, "BEREKENING", ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
+                + "\"bron\":\"De %s van een Jutter\"}").formatted(doel, doel), waarde, "null");
     }
 
     /** One Jutter with the two addends, and the EXACT values of the sum and the rounded sum as expectations. */

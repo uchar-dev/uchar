@@ -58,6 +58,72 @@ public final class IrPad {
         return t;
     }
 
+    /** The version record at {@code versie} of the named form at {@code vorm} in the rules list {@code lijst} (IR-SPEC
+     *  ch. 3, Versioning: a form is its name and its versions, and a version carries no node of its own). */
+    public static ObjectNode versie(JsonNode ir, String lijst, int vorm, int versie) {
+        JsonNode v = rulesLijst(ir, lijst).path(vorm).path("versions").path(versie);
+        if (!v.isObject()) throw new AssertionError("no version " + versie + " of form " + vorm + " in '" + lijst + "'");
+        return (ObjectNode) v;
+    }
+
+    /** The named form called {@code naam} in the rules list {@code lijst}, failing LOUDLY when there is none: a twist
+     *  that silently hit nothing would leave its witness testing the untwisted document. */
+    public static ObjectNode vorm(JsonNode ir, String lijst, String naam) { return lid(rulesLijst(ir, lijst), "name", naam); }
+
+    /** The first version of the named form called {@code naam} in the rules list {@code lijst}. */
+    public static ObjectNode versie(JsonNode ir, String lijst, String naam) {
+        JsonNode v = vorm(ir, lijst, naam).path("versions").path(0);
+        if (!v.isObject()) throw new AssertionError("form '" + naam + "' in '" + lijst + "' has no version");
+        return (ObjectNode) v;
+    }
+
+    /** Source {@code bron} of the one version of the {@code vorm}-th uniqueness (IR-SPEC ch. 3.6: the single-type
+     *  form has one source, the union two or more, and both stand in the one list). */
+    public static ObjectNode bron(JsonNode ir, int vorm, int bron) {
+        JsonNode b = versie(ir, "uniciteiten", vorm, 0).path("sources").path(bron);
+        if (!b.isObject()) throw new AssertionError("no source " + bron + " on uniqueness " + vorm);
+        return (ObjectNode) b;
+    }
+
+    /** A Literal in the wire's shape (IR-SPEC ch. 4.1): its value is the variant its {@code type} names — a boolean
+     *  written from the lexeme waar or onwaar, every other variant its string — chosen as the frontend's emitter
+     *  chooses it, so a builder that writes a lexeme and a type keeps doing only that. */
+    public static String literal(String lexeem, String type, String bron) {
+        String variant = type.contains("\"Booleaan\"") ? "boolean" : type.contains("\"Tekst\"") ? "text"
+                : type.contains("\"millisecond\"") ? "dateTime" : type.contains("\"day\"") ? "date"
+                : type.contains("\"Enumeratie\"") ? "enumeration" : "number";
+        String waarde = !variant.equals("boolean") ? "\"" + lexeem + "\""
+                : switch (lexeem) {
+                    case "waar" -> "true";
+                    case "onwaar" -> "false";
+                    default -> throw new AssertionError("no boolean lexeme: " + lexeem);
+                };
+        return "{\"node\":\"Literal\",\"value\":{\"" + variant + "\":" + waarde + "},\"type\":" + type
+                + ",\"bron\":\"" + bron + "\"}";
+    }
+
+    /** A Rule of one always-valid version in the wire's shape (IR-SPEC ch. 3.1): {@code soort} names the kind the way
+     *  the frontend's records name it and becomes the version's initialisation and presentation, and a
+     *  {@code voorwaarde} of "null" writes no condition. */
+    public static String regel(String naam, String soort, String doel, String waarde, String voorwaarde) {
+        return regel(naam, soort, doel, waarde, voorwaarde,
+                "{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}");
+    }
+
+    /** As {@link #regel(String, String, String, String, String)}, with the version's {@code validity}. */
+    public static String regel(String naam, String soort, String doel, String waarde, String voorwaarde,
+                               String geldigheid) {
+        String soortvelden = switch (soort) {
+            case "GELIJKSTELLING", "BEREKENING" -> "\"initialisation\":false,\"presentation\":\"" + soort + "\"";
+            case "INITIALISATIE" -> "\"initialisation\":true";
+            case "KENMERKTOEKENNING" -> "\"initialisation\":false";
+            default -> throw new AssertionError("no rule kind: " + soort);
+        };
+        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":" + geldigheid
+                + ",\"target\":" + doel + ",\"value\":" + waarde
+                + (voorwaarde.equals("null") ? "" : ",\"condition\":" + voorwaarde) + "," + soortvelden + "}]}";
+    }
+
     public static ObjectNode lid(ArrayNode lijst, String naamVeld, String naam) {
         for (JsonNode n : lijst)
             if (naam.equals(n.path(naamVeld).asText(null))) return (ObjectNode) n;

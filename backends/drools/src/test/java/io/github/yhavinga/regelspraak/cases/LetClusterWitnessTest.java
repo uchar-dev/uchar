@@ -200,8 +200,7 @@ class LetClusterWitnessTest {
     }
 
     private static String lit(String waarde, int dec, boolean geheel) {
-        return "{\"node\":\"Literal\",\"waarde\":\"%s\",\"type\":%s,\"bron\":\"%s\"}"
-                .formatted(waarde, num(dec, geheel, "ONBEPAALD"), waarde);
+        return IrPad.literal(waarde, num(dec, geheel, "ONBEPAALD"), waarde);
     }
     private static String lit(String waarde, int dec) { return lit(waarde, dec, false); }
 
@@ -235,9 +234,7 @@ class LetClusterWitnessTest {
         return regel(naam, "BEREKENING", doel, waarde, "null");
     }
     private static String regel(String naam, String soort, String doel, String waarde, String voorwaarde) {
-        return ("{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"%s\",\"doel\":%s,\"waarde\":%s,"
-                + "\"voorwaarde\":%s,\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
-                .formatted(naam, soort, doel, waarde, voorwaarde);
+        return IrPad.regel(naam, soort, doel, waarde, voorwaarde);
     }
 
     /** A one-objecttype document: the declared attributes and kenmerken, the rules, and an optional defaults
@@ -251,7 +248,7 @@ class LetClusterWitnessTest {
                 + "\"timelines\":[],\"dayKinds\":[]},"
                 + "\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
+                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
                 + "\"regelGroepen\":[]%s},\"diagnostics\":[]}")
                 .formatted(attributen, kenmerken, String.join(",", regels), prioritizedDefaults);
     }
@@ -323,7 +320,7 @@ class LetClusterWitnessTest {
         String inkomen = attr("inkomen", 2, false, "NIET_NEGATIEF");
         String vermistDoel = ("{\"node\":\"AttribuutRef\",\"attribuut\":\"vermist\",\"objecttype\":\"Jutter\","
                 + "\"bron\":\"Een Jutter is vermist\"}");
-        String waar = "{\"node\":\"Literal\",\"waarde\":\"waar\",\"type\":{\"node\":\"Booleaan\"},\"bron\":\"waar\"}";
+        String waar = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Booleaan\"},\"bron\":\"waar\"}";
         String nietVermist = ("{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"negatie\":true,"
                 + "\"eigenaar\":null,\"periode\":null,\"bron\":\"hij niet vermist is\"}");
         String gewogen = let("x", inkomen,

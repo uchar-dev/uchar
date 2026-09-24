@@ -82,10 +82,8 @@ class CreatieguardPositieWitnessTest {
 
     private static final String VENSTER = """
             { "node": "Periode",
-              "vanaf": { "node": "Literal", "waarde": "2024-01-01", "type": { "node": "Date", "precision": "day" },
-                         "bron": "2024-01-01" },
-              "tot": { "node": "Literal", "waarde": "2025-01-01", "type": { "node": "Date", "precision": "day" },
-                       "bron": "2025-01-01" },
+              "vanaf": { "node": "Literal", "value": { "date": "2024-01-01" }, "type": { "node": "Date", "precision": "day" }, "bron": "2024-01-01" },
+              "tot": { "node": "Literal", "value": { "date": "2025-01-01" }, "type": { "node": "Date", "precision": "day" }, "bron": "2025-01-01" },
               "totInclusief": false, "bron": "van 1 januari 2024 tot 1 januari 2025" }""";
 
     private static String samen(String kwantor, String... delen) {
@@ -96,7 +94,7 @@ class CreatieguardPositieWitnessTest {
     /** The golden's document with its creation guard replaced by {@code guard}. */
     private Path document(String guard) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(BAKENSEIN.resolve("ir.json")));
-        ((ObjectNode) IrPad.rulesLijst(doc, "feitCreaties").get(0)).set("voorwaarde", JSON.readTree(guard));
+        IrPad.versie(doc, "feitCreaties", 0, 0).set("condition", JSON.readTree(guard));
         Path p = tmp.resolve("creatieguard-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());
         return p;

@@ -3,6 +3,7 @@ package io.github.yhavinga.regelspraak.cases;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.yhavinga.regelspraak.loader.IrLoader;
 
 import org.junit.jupiter.api.Test;
 
@@ -118,27 +119,23 @@ class TakgelijkheidWitnessTest {
 
     // ---------------- 2. the DRL branch's conditional feitcreatie gate ----------------
 
-    @Test void de_drl_feitcreatie_weigert_een_onopgelost_doel() throws Exception {
-        // `doel` is one of the wire positions the ch. 13.4.7 schema types ["string","null"], and WF-034 does NOT
-        // cover it (until L2 it covered zetVeld, joinVeld and each tussenstap's veld/type — measured then: a null
-        // zetVeld or joinVeld FAILED the verifier, a null anker or doel PASSED; since L2 the schema holds the
-        // symbolic block non-null, and a null anker or doel still passes). So this document is WELL-FORMED, and ref
-        // runs it to a model: the reachable half of the gap. Measured on the pre-port jar:
-        //     verifier: PASS
-        //     ref     : oracle: PASS (10 expectations)   — ref reaches a model; a golden of this shape could exist
-        //     clingo  : TRANSLATION FAULT: missing FeitCreatie.doel
-        //     Drools exec-model : EXCLUDE transpiler SKIP — "feitcreatie (onopgelost)"
-        //     Drools DRL-tekst  : ERROR NullPointerException: Cannot read field "naam" because "doel" is null
-        // The red outcome is NOT a silent pass: it is a NullPointerException that names no construct — the message
-        // says only that "doel" is null — and takes the whole transpile down, where the exec branch refuses that one
-        // construct by name and carries on.
-        Path ir = feitcreatieZonder("doel"), c = ir(POSTWACHT).resolveSibling("case.json");
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
-        assertTrue(e.getMessage().contains("feitcreatie (onopgelost): vakbeseining door het kustvak"), e.getMessage());
-        String drl = drlReden(ir, c);
-        assertTrue(drl.contains("feitcreatie"), drl);
-        assertTrue(drl.contains("onopgelost feitcreatie (onopgelost): vakbeseining door het kustvak"), drl);
+    @Test void een_feitcreatie_zonder_opgeloste_doelsoort_laadt_niet() throws Exception {
+        // Until L4 the target type was a wire position of its own, typed ["string","null"], and a null there was a
+        // well-formed document the exec branch refused by name ("feitcreatie (onopgelost)") while the DRL-text branch
+        // died on a NullPointerException. Since L4 the wire does not write it: the target type is the declared
+        // filler of the target role (IR-SPEC ch. 3.4), so the null has no spelling left, and a target role that names
+        // no role of the created fact type leaves the creation without a target type. Both branches read one loader,
+        // which refuses that document at the role, by name, in the verifier's WF-028 sentence — no branch gets a
+        // record whose target type is empty.
+        ObjectNode doc = goldenIr(POSTWACHT);
+        IrPad.versie(doc, "feitCreaties", 0, 0).put("targetRole", "vlaggenmast");
+        Path ir = model("feitcreatie-zonder-doelsoort", doc), c = ir(POSTWACHT).resolveSibling("case.json");
+        for (boolean viaDrl : new boolean[] { false, true }) {
+            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+                    () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), viaDrl));
+            assertEquals("/rules/feitCreaties/0/versions/0/targetRole", e.plek(), e.getMessage());
+            assertTrue(e.getMessage().contains("'vlaggenmast' is not a role of 'vakbeseining'"), e.getMessage());
+        }
     }
 
     @Test void de_drl_feitcreatie_weigert_een_onopgelost_anker() throws Exception {
@@ -151,7 +148,7 @@ class TakgelijkheidWitnessTest {
         //     clingo  : TRANSLATION FAULT: missing FeitCreatie.anker
         //     Drools exec-model : EXCLUDE transpiler SKIP — "feitcreatie (onopgelost)"
         //     Drools DRL-tekst  : ERROR NullPointerException: Cannot read field "naam" because "anker" is null
-        Path ir = feitcreatieZonder("anker"), c = ir(POSTWACHT).resolveSibling("case.json");
+        Path ir = feitcreatieZonder("anchor"), c = ir(POSTWACHT).resolveSibling("case.json");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
         assertTrue(e.getMessage().contains("feitcreatie (onopgelost): vakbeseining door het kustvak"), e.getMessage());
@@ -173,7 +170,7 @@ class TakgelijkheidWitnessTest {
         // be the DRL branch inventing a limit the wire does not have. That the creation really fires is pinned by
         // the mutation probe below and not by the bare PLAYED — V1.vakseinaantal counts the CREATED vakbeseining
         // relation, so 2 is only reachable through the nameless rule.
-        Path ir = feitcreatieZonder("naam"), c = ir(POSTWACHT).resolveSibling("case.json");
+        Path ir = naamlozeCreatie(), c = ir(POSTWACHT).resolveSibling("case.json");
         assertNull(CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))), "exec speelt de naamloze creatie");
         assertEquals("PLAYED", CaseRunner.viaDrlTekst(ir, List.of(c)).status());
 
@@ -275,11 +272,18 @@ class TakgelijkheidWitnessTest {
                 """;
     }
 
-    /** jutterswet-postwacht with one of the feitcreatie's five wire-nullable positions set to null. */
+    /** jutterswet-postwacht with a wire-nullable position of the feitcreatie's version set to null. */
     private static Path feitcreatieZonder(String positie) throws Exception {
         ObjectNode ir = goldenIr(POSTWACHT);
-        ((ObjectNode) IrPad.rulesLijst(ir, "feitCreaties").get(0)).putNull(positie);
+        IrPad.versie(ir, "feitCreaties", 0, 0).putNull(positie);
         return model("feitcreatie-zonder-" + positie, ir);
+    }
+
+    /** jutterswet-postwacht with the feitcreatie's name set to null (WF-107's position, nullable on the form). */
+    private static Path naamlozeCreatie() throws Exception {
+        ObjectNode ir = goldenIr(POSTWACHT);
+        ((ObjectNode) IrPad.rulesLijst(ir, "feitCreaties").get(0)).putNull("name");
+        return model("feitcreatie-zonder-naam", ir);
     }
 
     /** jutterswet-postwacht carrying the SAME nameless feitcreatie twice — two constructs whose only distinguisher
@@ -287,7 +291,7 @@ class TakgelijkheidWitnessTest {
     private static Path tweeNaamlozeCreaties() throws Exception {
         ObjectNode ir = goldenIr(POSTWACHT);
         ObjectNode fc = (ObjectNode) IrPad.rulesLijst(ir, "feitCreaties").get(0);
-        fc.putNull("naam");
+        fc.putNull("name");
         IrPad.rulesLijst(ir, "feitCreaties").add(fc.deepCopy());
         return model("feitcreatie-twee-naamloos", ir);
     }

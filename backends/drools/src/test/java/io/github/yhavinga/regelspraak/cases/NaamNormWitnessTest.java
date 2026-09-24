@@ -131,8 +131,7 @@ class NaamNormWitnessTest {
         for (String spelling : java.util.List.of(
                 "VONDSTNUMMER", "Vondstnummer", "vondstNummer", "VOndstnummer", "vondstnummeR")) {
             Path ir = bewerk(STRANDREGISTER, o -> {
-                ((ObjectNode) IrPad.rulesLijst(o, "uniciteiten").get(0))
-                        .set("sleutels", JSON.createArrayNode().add(spelling));
+                IrPad.bron(o, 0, 0).set("keys", JSON.createArrayNode().add(spelling));
                 IrPad.rulesLijst(o, "uniciteiten").remove(1);
             });
             assertEquals(Set.of("eenmalig nummer @ S1", "eenmalig nummer @ S2"),
@@ -144,8 +143,7 @@ class NaamNormWitnessTest {
     @Test void een_kastvariant_van_een_uniesleutel_vindt_dezelfde_botsing() throws Exception {
         // the union's own key site resolves through the same contract. ref on this model: PASS (2
         // expectations) — both Strandvondsten flagged within the one source; clingo agrees.
-        Path ir = bewerk(NUMMERREGISTER, o -> ((ObjectNode) IrPad.rulesLijst(o, "uniciteitUnies").get(0)
-                .get("bronnen").get(0)).set("sleutels", JSON.createArrayNode().add("vondstNummer")));
+        Path ir = bewerk(NUMMERREGISTER, o -> IrPad.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("vondstNummer")));
         assertEquals(Set.of("eenmalig vondstnummer @ S1", "eenmalig vondstnummer @ S2"),
                 vlaggen(ir, tweeTijdlijnen()),
                 "a union source's key resolves to its declared spelling before the bean is read");
@@ -156,8 +154,7 @@ class NaamNormWitnessTest {
     @Test void de_drl_tweeling_noemt_het_gedeclareerde_veld() throws Exception {
         // the text route emits a PROPERTY NAME, so the same resolution has to happen there: ident() of the
         // written key would render "vondstNummer", a field the fact class does not carry.
-        Path ir = bewerk(STRANDREGISTER, o -> ((ObjectNode) IrPad.rulesLijst(o, "uniciteiten").get(0))
-                .set("sleutels", JSON.createArrayNode().add("vondstNummer")));
+        Path ir = bewerk(STRANDREGISTER, o -> IrPad.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("vondstNummer")));
         String drl = drl(ir);
         assertTrue(drl.contains("rsOoitBotst(vondstnummer, $k0)"), drl);
         assertFalse(drl.contains("vondstNummer"), "the written spelling must not reach the DRL text: " + drl);
@@ -178,9 +175,9 @@ class NaamNormWitnessTest {
         // most one temporal key component (…)"; the exec model faults on the "eenmalig vondstnummer
         // (Strandvondst 1)" rule. Both source rules of the twin must carry the sentinel.
         Path ir = bewerk(NUMMERREGISTER, o -> {
-            for (JsonNode b : IrPad.rulesLijst(o, "uniciteitUnies").get(0).get("bronnen"))
-                ((ObjectNode) b).set("sleutels", JSON.createArrayNode().add("vondstnummer").add("volgnummer"));
-            IrPad.rulesLijst(o, "uniciteitUnies").remove(1);
+            for (JsonNode b : IrPad.versie(o, "uniciteiten", 0, 0).get("sources"))
+                ((ObjectNode) b).set("keys", JSON.createArrayNode().add("vondstnummer").add("volgnummer"));
+            IrPad.rulesLijst(o, "uniciteiten").remove(1);
         });
         String drl = drl(ir);
         assertEquals(2, tel(drl, ONOPGELOSTE_SLEUTELVORM), "one refusal per source: " + drl);
@@ -239,7 +236,7 @@ class NaamNormWitnessTest {
     private static void enkeleUniciteit(ObjectNode ir, JsonNode sleutels) {
         var lijst = IrPad.rulesLijst(ir, "uniciteiten");
         while (lijst.size() > 1) lijst.remove(1);
-        ((ObjectNode) lijst.get(0)).set("sleutels", sleutels);
+        IrPad.bron(ir, 0, 0).set("keys", sleutels);
     }
 
     /** A corpus {@code ir.json} with one authored edit, written to a temp file. */

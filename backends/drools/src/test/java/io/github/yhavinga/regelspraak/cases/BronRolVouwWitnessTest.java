@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The ch. 4.3 {@code bronRol} witness for a VALUE fold — SOM / MINIMUM / MAXIMUM — over a type pair the
+ * The ch. 4.3 {@code sourceRole} witness for a VALUE fold — SOM / MINIMUM / MAXIMUM — over a type pair the
  * by-pair search cannot resolve.
  *
  * <p>A count names its element role in the sentence ("het aantal liggers van de Haven"), so the emitter's
@@ -107,10 +107,10 @@ class BronRolVouwWitnessTest {
     }
 
     @Test void de_lege_verzameling_leest_de_leegwaarde_in_plaats_van_leeg() throws Exception {
-        // §4.12 "of 0 als die er niet zijn": the empty fold reads the Functie's own leegwaarde. The other
+        // §4.12 "of 0 als die er niet zijn": the empty fold reads the aggregation's own emptyFallback. The other
         // half of the leegwaarde law the three rows above pin on their leeg cells.
         ObjectNode ir = somModel();
-        ((ObjectNode) vouwVan(ir)).set("leegwaarde", literal("0"));
+        ((ObjectNode) vouwVan(ir)).set("emptyFallback", literal("0"));
         ((ObjectNode) vouwVan(ir)).put("bron",
                 "de som van de romplengte van alle liggers van de Haven of 0 als die er niet zijn");
         BeideTakken.groen(tijdelijk("bronrol-leegwaarde", ir), JSON.readTree(zaak("liggertal", "19", "20", "0")),
@@ -126,7 +126,7 @@ class BronRolVouwWitnessTest {
         // say the same on this document ("MISMATCH: H2.liggertal = 19, expected 20"), so the flank is the
         // square's, not this backend's.
         ObjectNode ir = somModel();
-        ((ObjectNode) vouwVan(ir)).set("bronRol", rolBinding("winterberging", "winterschuit"));
+        ((ObjectNode) vouwVan(ir)).set("sourceRole", rolBinding("winterberging", "winterschuit"));
         String verdict = BeideTakken.rood(tijdelijk("bronrol-verwisseld", ir),
                 JSON.readTree(zaak("liggertal", "19", "20", null)),
                 "liggertal", "reading the sister feittype's range must be observable");
@@ -155,13 +155,13 @@ class BronRolVouwWitnessTest {
         // the range is required on this fold (IR-SPEC ch. 4.3), so the document is refused at load, by name,
         // before either branch could guess; the verifier, ref and clingo refuse it too.
         ObjectNode ir = somModel();
-        ((ObjectNode) vouwVan(ir)).remove("bronRol");
+        ((ObjectNode) vouwVan(ir)).remove("sourceRole");
         Path p = tijdelijk("bronrol-geen-binding", ir);
         JsonNode c = JSON.readTree(zaak("liggertal", "19", "20", null));
         for (boolean viaDrl : new boolean[] { false, true }) {
             IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
                     () -> CaseRunner.speelCase(p, c, viaDrl), "a fold without its range is no document");
-            assertTrue(e.getMessage().contains("missing field 'bronRol'"), e.getMessage());
+            assertTrue(e.getMessage().contains("carries its range (sourceRole or sourcePath)"), e.getMessage());
         }
     }
 
@@ -251,8 +251,7 @@ class BronRolVouwWitnessTest {
         IrPad.rules(ir).putArray("feitCreaties");
         String regel = regelVoor(doelAttribuut);
         houdRegels(ir, regel);
-        ObjectNode r = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0);
-        r.set("waarde", fold(kind, meervoud, feittype, rol));
+        IrPad.versie(ir, "resolvedRegels", 0, 0).set("value", fold(kind, meervoud, feittype, rol));
         return tijdelijk("bronrol-" + kind.toLowerCase(), ir);
     }
 
@@ -262,13 +261,13 @@ class BronRolVouwWitnessTest {
         IrPad.rules(ir).putArray("feitCreaties");
         houdRegels(ir, "liggertal van een haven", "wintertal van een haven", "keurtal van een haven");
         for (JsonNode n : IrPad.rulesLijst(ir, "resolvedRegels")) {
-            ObjectNode r = (ObjectNode) n;
-            switch (r.get("naam").asText()) {
+            ObjectNode r = (ObjectNode) n.get("versions").get(0);
+            switch (n.get("name").asText()) {
                 case "liggertal van een haven" ->
-                        r.set("waarde", fold("SOM", "liggers", "thuisligging", "ligger"));
+                        r.set("value", fold("SOM", "liggers", "thuisligging", "ligger"));
                 case "wintertal van een haven" ->
-                        r.set("waarde", fold("MINIMUM", "winterschuiten", "winterberging", "winterschuit"));
-                default -> r.set("waarde", fold("MAXIMUM", "keurschuiten", "keurberging", "keurschuit"));
+                        r.set("value", fold("MINIMUM", "winterschuiten", "winterberging", "winterschuit"));
+                default -> r.set("value", fold("MAXIMUM", "keurschuiten", "keurberging", "keurschuit"));
             }
         }
         return tijdelijk("bronrol-drie", ir);
@@ -279,12 +278,11 @@ class BronRolVouwWitnessTest {
         ObjectNode ir = lees();
         IrPad.rules(ir).putArray("feitCreaties");
         houdRegels(ir, "liggertal van een haven");
-        ((ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0))
-                .set("waarde", fold("SOM", "liggers", "thuisligging", "ligger"));
+        IrPad.versie(ir, "resolvedRegels", 0, 0).set("value", fold("SOM", "liggers", "thuisligging", "ligger"));
         return ir;
     }
 
-    private static JsonNode vouwVan(ObjectNode ir) { return IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("waarde"); }
+    private static JsonNode vouwVan(ObjectNode ir) { return IrPad.versie(ir, "resolvedRegels", 0, 0).get("value"); }
 
     private static String regelVoor(String doelAttribuut) {
         return switch (doelAttribuut) {
@@ -295,18 +293,18 @@ class BronRolVouwWitnessTest {
     }
 
     /** The §5.8 instance fold: {@code kind} of the element's romplengte over the range the wire NAMES —
-     *  {@code elementObjecttype} plus one {@code bronRol}, the ch. 4.3 one-step form. */
+     *  {@code elementType} plus one {@code sourceRole}, the ch. 4.3 one-step form. */
     private static ObjectNode fold(String kind, String meervoud, String feittype, String rol) {
         ObjectNode arg = JSON.createObjectNode();
         arg.put("node", "AttribuutRef").put("attribuut", "romplengte").put("objecttype", "Schuit");
         arg.put("bron", "de romplengte van alle " + meervoud + " van de Haven");
         ObjectNode f = JSON.createObjectNode();
-        f.put("node", "Functie").put("kind", kind);
-        f.putArray("argumenten").add(arg);
-        f.put("elementObjecttype", "Schuit").putNull("leegwaarde").putNull("filter").putNull("dimensieSelectie");
+        f.put("node", "Aggregation").put("kind", kind);
+        f.putArray("arguments").add(arg);
+        f.put("elementType", "Schuit");
+        f.set("sourceRole", rolBinding(feittype, rol));
         f.set("type", numeriek());
-        f.put("bron", zin(kind) + " de romplengte van alle " + meervoud + " van de Haven").putNull("granulariteit");
-        f.set("bronRol", rolBinding(feittype, rol));
+        f.put("bron", zin(kind) + " de romplengte van alle " + meervoud + " van de Haven");
         return f;
     }
 
@@ -323,7 +321,8 @@ class BronRolVouwWitnessTest {
     }
 
     private static ObjectNode literal(String waarde) {
-        ObjectNode l = JSON.createObjectNode().put("node", "Literal").put("waarde", waarde);
+        ObjectNode l = JSON.createObjectNode().put("node", "Literal");
+        l.putObject("value").put("number", waarde);
         l.set("type", numeriek());
         return l.put("bron", waarde);
     }
@@ -336,7 +335,7 @@ class BronRolVouwWitnessTest {
     private static void houdRegels(ObjectNode ir, String... namen) {
         List<String> houd = List.of(namen);
         ArrayNode uit = JSON.createArrayNode();
-        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels")) if (houd.contains(r.get("naam").asText())) uit.add(r);
+        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels")) if (houd.contains(r.get("name").asText())) uit.add(r);
         IrPad.rules(ir).set("resolvedRegels", uit);
     }
 

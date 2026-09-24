@@ -147,7 +147,7 @@ class GastheerObjectWitnessTest {
     /** The same IR with creation {@code nr}'s guard re-hosted on {@code type} — one field, nothing else. */
     private Path metGastheer(String naam, int nr, String type) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(naam).resolve("ir.json")));
-        ((ObjectNode) IrPad.rulesLijst(ir, "feitCreaties").get(nr).get("voorwaarde")).put("eigenaar", type);
+        ((ObjectNode) IrPad.versie(ir, "feitCreaties", nr, 0).get("condition")).put("eigenaar", type);
         return schrijf(ir);
     }
 

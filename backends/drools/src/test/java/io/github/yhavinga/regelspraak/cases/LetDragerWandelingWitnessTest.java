@@ -285,7 +285,7 @@ class LetDragerWandelingWitnessTest {
     }
 
     private static String lit(String waarde, String type) {
-        return "{\"node\":\"Literal\",\"waarde\":\"%s\",\"type\":%s,\"bron\":\"%s\"}".formatted(waarde, type, waarde);
+        return IrPad.literal(waarde, type, waarde);
     }
 
     private static String binair(String op, String links, String rechts, String type) {
@@ -294,9 +294,8 @@ class LetDragerWandelingWitnessTest {
     }
 
     private static String wortel(String argument, String type) {
-        return ("{\"node\":\"Functie\",\"kind\":\"WORTEL\",\"argumenten\":[%s],\"type\":%s,"
-                + "\"bron\":\"de wortel van\",\"filter\":null,\"leegwaarde\":null,\"elementObjecttype\":null,"
-                + "\"dimensieSelectie\":null,\"granulariteit\":null}").formatted(argument, type);
+        return "{\"node\":\"BuiltinCall\",\"kind\":\"WORTEL\",\"arguments\":[%s],\"type\":%s,\"bron\":\"de wortel van\"}"
+                .formatted(argument, type);
     }
 
     private static String let(String binder, String value, String body, String type) {
@@ -333,15 +332,13 @@ class LetDragerWandelingWitnessTest {
     private static final String VERMIST_KENMERK =
             "{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"BIJVOEGLIJK\"}";
     private static final String WAAR =
-            "{\"node\":\"Literal\",\"waarde\":\"waar\",\"type\":" + BOOLEAAN + ",\"bron\":\"waar\"}";
+            "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":" + BOOLEAAN + ",\"bron\":\"waar\"}";
 
     private static String regel(String naam, String doel, String waarde) {
         return regel(naam, "BEREKENING", doel, waarde, "null");
     }
     private static String regel(String naam, String soort, String doel, String waarde, String voorwaarde) {
-        return ("{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"%s\",\"doel\":%s,\"waarde\":%s,"
-                + "\"voorwaarde\":%s,\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
-                .formatted(naam, soort, doel, waarde, voorwaarde);
+        return IrPad.regel(naam, soort, doel, waarde, voorwaarde);
     }
 
     private static String objecttype(String naam, String meervoud, String attributes, String characteristics) {
@@ -366,7 +363,7 @@ class LetDragerWandelingWitnessTest {
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],\"factTypes\":[%s],\"parameters\":[],"
                 + "\"domains\":[],\"unitSystems\":[%s],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]},\"rules\":{"
                 + "\"resolvedRegels\":[%s],\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],"
-                + "\"consistenties\":[],\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],"
+                + "\"consistenties\":[],\"uniciteiten\":[],\"feitCreaties\":[],"
                 + "\"resolvedStartpunten\":[],\"regelGroepen\":[]%s},\"diagnostics\":[]}")
                 .formatted(objecttypen, feittypen, eenheidstelsels, String.join(",", regels),
                         prioritizedDefaults);

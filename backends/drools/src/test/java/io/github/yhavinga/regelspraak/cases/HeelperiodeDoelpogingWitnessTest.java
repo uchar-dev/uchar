@@ -70,7 +70,7 @@ class HeelperiodeDoelpogingWitnessTest {
                   "links": { "node": "AttribuutRef", "attribuut": "seinhoogte", "objecttype": "Sein",
                              "bron": "de seinhoogte van het vlagsein",
                              "navigatieBindingen": [ { "node": "RolBinding", "feittype": "vlagvoering", "rol": "vlagsein" } ] },
-                  "rechts": { "node": "Literal", "waarde": "0", "type": %s, "bron": "0" },
+                  "rechts": { "node": "Literal", "value": { "number": "0" }, "type": %s, "bron": "0" },
                   "periode": { "node": "GeheelPeriode", "jaar": true, "niet": false },
                   "bron": "de seinhoogte van het vlagsein gedurende het gehele jaar groter is dan 0" }
                 """.formatted(getal())));
@@ -116,7 +116,7 @@ class HeelperiodeDoelpogingWitnessTest {
         ObjectNode sein = objecttype(ir, "Sein");
         IrPad.timeline(sein.putArray("characteristics").addObject()
                 .put("node", "Characteristic").put("name", "Gehesen").put("kind", "BIJVOEGLIJK"), "JAAR");
-        ObjectNode k = (ObjectNode) ir.get("rules").get("feitCreaties").get(0).get("voorwaarde");
+        ObjectNode k = (ObjectNode) IrPad.versie(ir, "feitCreaties", 0, 0).get("condition");
         k.put("kenmerk", "Gehesen").putNull("eigenaar");
         BeideTakken.groen(schrijf(ir),
                 geval("\"characteristics\": [], \"characteristicTimelines\": { \"gehesen\": " + HALF + " }, \"attributes\": {}",
@@ -148,7 +148,7 @@ class HeelperiodeDoelpogingWitnessTest {
         // reading would be 1 in both).
         ObjectNode ir = basis();
         IrPad.timeline(IrPad.characteristic(objecttype(ir, "Kustvak"), "gehesen"), "JAAR");
-        ((ObjectNode) ir.get("rules").get("feitCreaties").get(0).get("voorwaarde")).putNull("eigenaar");
+        ((ObjectNode) IrPad.versie(ir, "feitCreaties", 0, 0).get("condition")).putNull("eigenaar");
         Path p = schrijf(ir);
         String s1 = "\"characteristicTimelines\": { \"gehesen\": " + JAAR + " }";
         String s2 = "\"characteristicTimelines\": { \"gehesen\": " + HALF + " }";
@@ -169,7 +169,7 @@ class HeelperiodeDoelpogingWitnessTest {
     }
 
     private static void guard(ObjectNode ir, JsonNode g) {
-        ((ObjectNode) ir.get("rules").get("feitCreaties").get(0)).set("voorwaarde", g);
+        IrPad.versie(ir, "feitCreaties", 0, 0).set("condition", g);
     }
 
     private static ObjectNode getal() {

@@ -77,8 +77,8 @@ class VensterGatepositieWitnessTest {
 
     private static final String VENSTER = """
             { "node": "Periode",
-              "vanaf": { "node": "Literal", "waarde": "2024-01-01", "type": { "node": "Date", "precision": "day" }, "bron": "2024-01-01" },
-              "tot": { "node": "Literal", "waarde": "2025-01-01", "type": { "node": "Date", "precision": "day" }, "bron": "2025-01-01" },
+              "vanaf": { "node": "Literal", "value": { "date": "2024-01-01" }, "type": { "node": "Date", "precision": "day" }, "bron": "2024-01-01" },
+              "tot": { "node": "Literal", "value": { "date": "2025-01-01" }, "type": { "node": "Date", "precision": "day" }, "bron": "2025-01-01" },
               "totInclusief": false, "bron": "van 1 januari 2024 tot 1 januari 2025" }""";
 
     /** A composite over the golden's own gate ({@code {score}} / {@code {guard}}, filled in by the caller) and the window. */
@@ -90,16 +90,16 @@ class VensterGatepositieWitnessTest {
     /** The distribution golden with its gate replaced; a {@code {score}} placeholder is the golden's own gate. */
     private Path verdeling(String gate) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(VERDELING.resolve("ir.json")));
-        ObjectNode v = (ObjectNode) IrPad.rulesLijst(doc, "verdelingen").get(0);
-        v.set("voorwaarde", JSON.readTree(gate.replace("{score}", v.get("voorwaarde").toString())));
+        ObjectNode v = IrPad.versie(doc, "verdelingen", 0, 0);
+        v.set("condition", JSON.readTree(gate.replace("{score}", v.get("condition").toString())));
         return schrijf(doc);
     }
 
     /** The creation golden with its guard replaced; a {@code {guard}} placeholder is the golden's own guard. */
     private Path creatie(String guard) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(CREATIE.resolve("ir.json")));
-        ObjectNode oc = (ObjectNode) IrPad.rulesLijst(doc, "objectCreaties").get(0);
-        oc.set("voorwaarde", JSON.readTree(guard.replace("{guard}", oc.get("voorwaarde").toString())));
+        ObjectNode oc = IrPad.versie(doc, "objectCreaties", 0, 0);
+        oc.set("condition", JSON.readTree(guard.replace("{guard}", oc.get("condition").toString())));
         return schrijf(doc);
     }
 

@@ -160,7 +160,7 @@ class LetBehoefteWitnessTest {
     }
 
     private static String lit(String waarde, String type) {
-        return "{\"node\":\"Literal\",\"waarde\":\"%s\",\"type\":%s,\"bron\":\"%s\"}".formatted(waarde, type, waarde);
+        return IrPad.literal(waarde, type, waarde);
     }
 
     private static String binair(String op, String links, String rechts, String type) {
@@ -190,9 +190,7 @@ class LetBehoefteWitnessTest {
     }
 
     private static String regel(String naam, String doel, String waarde) {
-        return ("{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"BEREKENING\",\"doel\":%s,\"waarde\":%s,"
-                + "\"voorwaarde\":null,\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
-                .formatted(naam, doel, waarde);
+        return IrPad.regel(naam, "BEREKENING", doel, waarde, "null");
     }
 
     /** A one-objecttype document over {@code Jutter}. */
@@ -204,7 +202,7 @@ class LetBehoefteWitnessTest {
                 + "\"timelines\":[],\"dayKinds\":[]},"
                 + "\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
+                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
                 + "\"regelGroepen\":[]},\"diagnostics\":[]}")
                 .formatted(attributen, String.join(",", regels));
     }

@@ -242,7 +242,7 @@ class GenesteLetDuwWitnessTest {
     }
 
     private static String lit(String waarde) {
-        return "{\"node\":\"Literal\",\"waarde\":\"%s\",\"type\":%s,\"bron\":\"%s\"}".formatted(waarde, num(), waarde);
+        return IrPad.literal(waarde, num(), waarde);
     }
 
     private static String binair(String op, String links, String rechts) {
@@ -285,11 +285,11 @@ class GenesteLetDuwWitnessTest {
                 + "\"characteristics\":[]}],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]},"
-                + "\"rules\":{\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"BEREKENING\","
-                + "\"doel\":%s,\"waarde\":%s,\"voorwaarde\":null,"
-                + "\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}],"
+                + "\"rules\":{\"resolvedRegels\":[{\"node\":\"Rule\",\"name\":\"%s\",\"versions\":[{"
+                + "\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null},"
+                + "\"target\":%s,\"value\":%s,\"initialisation\":false,\"presentation\":\"BEREKENING\"}]}],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
+                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
                 + "\"regelGroepen\":[]},\"diagnostics\":[]}")
                 .formatted(pos(), pos(), pos(), num(), NAAM, doel(), waarde);
     }
