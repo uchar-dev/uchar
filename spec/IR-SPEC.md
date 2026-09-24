@@ -2683,9 +2683,9 @@ class), which is a decision of its own.
 
 A formula may be **silent on a facet while speaking on the rest**, so each
 position states which facets it *claims*. A facet it does not claim is not
-crossed, and no comparison stands behind the claimed ones: the refusal
-here is exactly the named facets of the row, and unlike the reference arm
-it had until L2 it is not total by construction. *(History until the L2
+crossed, and no further comparison runs after the claimed ones: the
+refusal here is exactly the named facets of the row, and unlike the
+reference arm the rule had until L2 it is not total by construction. *(History until the L2
 fix round:)* the engine carried a residual backstop behind the named
 facets, and every derived position switched it off, since it would have
 reported the very facet the formula declined to state — and since the
@@ -6157,11 +6157,14 @@ ch. 3.12), and it belongs to whoever measures it.
   carried verbatim.
   *Identity here is and stays case-insensitive*, as in (q) and unlike
   (p) while it stood: this too is name resolution rather than a carried identity, and
-  `corpus/negatief/wf091-attribuutref-eenheid-kast` pins the boundary
-  deliberately — that document carries `stelsel: "GEWICHT"` against a declared
-  `Gewicht` as its witness that name RESOLUTION is case-insensitive while copy
-  FIDELITY is a different question. A byte rule on `stelsel` would make it say
-  something else.
+  `corpus/negatief/wf091-plus-eenheid-kast` pins the boundary deliberately
+  (until L2 `wf091-attribuutref-eenheid-kast` did) — that document carries
+  `stelsel: "GEWICHT"` against a declared `Gewicht` on a derived position's
+  unit: the system resolves case-insensitively, so this arm passes it, and
+  WF-091's unit facet refuses the annotation, whose names are compared byte
+  for byte. It is the witness that name RESOLUTION is case-insensitive
+  while copy FIDELITY is a different question. A byte rule on `stelsel`
+  would make it say something else.
   And the two **empty halves** the fifth wave measured and left without a
   witness, each now its own arm because each is its own question — a name
   that resolves against nothing has a declaration table to be missing from,
