@@ -26,16 +26,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The loader on the type system of the wire (L3 of the v1 wire migration): what it refuses by name, and how it lays the
- * wire back onto the frontend records. Refused: the type-system nodes of the L2 shape and each of their fields, a
- * factor that is not an exact fraction {@code {num, den}} of two integers at least 1, a number without its sign, a
- * percentage with a sign, a presentation tag other than "percentage", on a number that is no percentage or at a type
- * annotation, a date without its precision, a spelling where a unit occurs or an empty list of them, and a parameter
- * without its datatype, with a timeline name or with a timeline count other than 1 — the new sentences in the words of
- * the shared OCaml loader and the verifier. Read: a number with the unit '%' as the record's percentage and any other as its number, a precision as
- * the two date records, a fraction as the record's decimal factor with the fraction itself kept in the unit system (a
- * fraction not in lowest terms too, as the shared loader reads it; WF-092 is the verifier's), a unit's spellings as
- * the system's aliases, a parameter's timeline facet as its granularity.
+ * The loader on the type system of the wire (L3 of the v1 wire migration): what it refuses by name, and how it lays
+ * the wire back onto the frontend records. Refused: the type-system nodes of the L2 shape and each of their fields, a
+ * factor that is not an exact fraction {@code {num, den}} of two integers from 1 to 2^62 - 1, a number without its
+ * sign, a percentage with a sign, a presentation tag other than "percentage", on a number that is no percentage or at
+ * a type annotation, a date without its precision, a spelling where a unit occurs or an empty list of them, and a
+ * parameter without its datatype, with a timeline name or with a timeline count other than 1 — the new sentences in
+ * the words of the shared OCaml loader and the verifier. Read: a number with the unit '%' as the record's percentage
+ * and any other as its number, a precision as the two date records, a fraction as the record's decimal factor with
+ * the fraction itself kept in the unit system (a fraction not in lowest terms too, as the shared loader reads it;
+ * WF-092 is the verifier's), a unit's spellings as the system's aliases, a parameter's timeline facet as its
+ * granularity.
  *
  * <p>Every fixture is a corpus golden with ONE twist in memory; the corpus file is read and never written. Each
  * refusal is an {@link IrLoader.Documentfout} at a JSON pointer, never an {@link IrLoader.Refusal}: every twisted
@@ -137,6 +138,13 @@ class TypesysteemWeigeringWitnessTest {
             IrLoader.Documentfout e = weigert(ir, FACTOR);
             assertTrue(e.getMessage().endsWith(": " + IrLoader.FACTOR_VORM + vorm), vorm + ": " + e.getMessage());
         }
+        // the bound the sentence names is admitted itself: 2^62 - 1 loads, 2^62 (above) does not
+        ObjectNode grens = golden(PENNINGJAAR);
+        ((ObjectNode) grens.at(EENHEID)).set("factorToCanonical",
+                JSON.readTree("{\"num\":4611686018427387903,\"den\":1}"));
+        Eenheid groot = ((Datatype.Numeriek) IrLoader.load(grens).parameters.get("penningbedrag").datatype()).eenheid();
+        assertEquals("4611686018427387903", groot.factorNaarCanoniek().toPlainString());
+
         // not in lowest terms is WF-092 (c), the verifier's: the loader reads the value
         ObjectNode ir = golden(PENNINGJAAR);
         ((ObjectNode) ir.at(EENHEID)).set("factorToCanonical", JSON.readTree("{\"num\":2,\"den\":4}"));

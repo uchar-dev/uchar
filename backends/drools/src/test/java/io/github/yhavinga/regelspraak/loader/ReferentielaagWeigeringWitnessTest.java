@@ -148,7 +148,7 @@ class ReferentielaagWeigeringWitnessTest {
     // ---------------- Onbekend is no datatype ----------------
 
     @Test void onbekend_is_op_geen_enkele_positie_een_datatype() throws Exception {
-        // a declaration (an M1 position, with the pointer of the field that holds it)
+        // a declaration (an M1 position; the refusal stands at the discriminator of the datatype the field holds)
         ObjectNode ir = golden(BAKENMEESTER);
         String attr = "/model/objectTypes/" + index(IrPad.modelLijst(ir, "objectTypes"), "name", "Bakenmeester")
                 + "/attributes/" + index((ArrayNode) IrPad.objectType(ir, "Bakenmeester").get("attributes"), "name",
@@ -388,9 +388,11 @@ class ReferentielaagWeigeringWitnessTest {
         assertTrue(e.getMessage().contains("unknown field on " + knoop), e.getMessage());
     }
 
+    /** The shared loader's refusal of the node at the datatype position {@code plek}: at its discriminator, in its
+     *  sentence. */
     private static void onbekendDatatype(JsonNode ir, String plek) {
-        IrLoader.Documentfout e = weigert(ir, plek);
-        assertTrue(e.getMessage().contains("unknown datatype node \"Onbekend\""), e.getMessage());
+        IrLoader.Documentfout e = weigert(ir, plek + "/node");
+        assertTrue(e.getMessage().endsWith(": unknown datatype node \"Onbekend\""), e.getMessage());
     }
 
     private static ObjectNode golden(String naam) throws Exception {

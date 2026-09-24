@@ -955,10 +955,10 @@ public final class IrLoader {
     static final String SPELLINGEN_LEEG = "a unit's spellings are at least one spelling, or the field is absent";
 
     /** The exact factor (IR-SPEC ch. 2.5): an object of exactly the two integers {@code num} and {@code den}, each at
-     *  least 1 and within the shared loader's native integer range (62 bits). Every other form — a JSON number, a
-     *  string, a missing or unknown key, a value below 1 — is refused in the shared loader's one sentence. That the
-     *  fraction is in lowest terms is the verifier's WF-092, not a load question, so {2, 4} is read as 1/2, as the
-     *  shared loader reads it for {@code ref} and the ASP backend. */
+     *  least 1 and at most 2^62 - 1, the schema's bound and the shared loader's native integer range. Every other form
+     *  — a JSON number, a string, a missing or unknown key, a value below 1 or above the bound — is refused in the
+     *  shared loader's one sentence. That the fraction is in lowest terms is the verifier's WF-092, not a load
+     *  question, so {2, 4} is read as 1/2, as the shared loader reads it for {@code ref} and the ASP backend. */
     private static Eenheidstelsel.Factor factor(JsonNode n, String pad) {
         if (n.isObject() && n.size() == 2 && n.has("num") && n.has("den")) {
             BigInteger num = geheelVanAfEen(n.get("num")), den = geheelVanAfEen(n.get("den"));
@@ -968,8 +968,8 @@ public final class IrLoader {
     }
 
     /** The shared loader's sentence for a factor in any other form than {@code {num, den}}; the value follows. */
-    static final String FACTOR_VORM =
-            "a conversion factor is an exact rational {num, den} whose two integers are at least 1, got ";
+    static final String FACTOR_VORM = "a conversion factor is an exact rational {num, den} whose two integers are at"
+            + " least 1 and at most 4611686018427387903 (2^62 - 1), got ";
 
     private static BigInteger geheelVanAfEen(JsonNode c) {
         if (!c.isIntegralNumber()) return null;
@@ -1047,13 +1047,12 @@ public final class IrLoader {
             case "Tekst" -> new Datatype.Tekst();
             case "Booleaan" -> new Datatype.Booleaan();
             case "Enumeratie" -> new Datatype.Enumeratie(text(n, "domein"), stringList(n.get("waarden")));
-            // IR-SPEC ch. 2.4: the datatype union has no member for an unknown type — a marker leaves its type
-            // out and a derived position the producer could not type is null — so this node is no form at all
-            case "Onbekend" -> throw new Documentfout(pad,
-                    "unknown datatype node \"Onbekend\": uchar-ir-v1 has no datatype for an unknown type");
-            // the four datatype nodes of the L2 shape: no document carries them since L3, in the shared loader's words
-            case "Numeriek", "Percentage", "DatumInDagen", "DatumTijd" -> throw new Documentfout(pad + "/node",
-                    "unknown datatype node \"" + node + "\"");
+            // no form at all, refused at the discriminator in the shared loader's words: Onbekend, because IR-SPEC
+            // ch. 2.4's datatype union has no member for an unknown type (a marker leaves its type out and a derived
+            // position the producer could not type is null), and the four datatype nodes of the L2 shape, which no
+            // document carries since L3
+            case "Onbekend", "Numeriek", "Percentage", "DatumInDagen", "DatumTijd" ->
+                    throw new Documentfout(pad + "/node", "unknown datatype node \"" + node + "\"");
             default -> throw new Refusal("Datatype:" + node, "unknown datatype node");
         };
     }

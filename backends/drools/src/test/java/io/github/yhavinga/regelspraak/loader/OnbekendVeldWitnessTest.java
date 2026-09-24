@@ -144,8 +144,9 @@ class OnbekendVeldWitnessTest {
             JsonNode doc = golden(PENNINGDREMPEL);
             ((ObjectNode) doc.at("/rules/resolvedRegels/0")).set("waarde", JSON.readTree(r.getValue()));
             IrLoader.Documentfout f = weigert(doc, r.getKey());
-            assertEquals(w + "/type", f.plek(), r.getKey() + ": " + f.getMessage());
-            assertTrue(f.getMessage().contains("unknown datatype node \"Onbekend\""),
+            // the shared loader's sentence, at the discriminator
+            assertEquals(w + "/type/node", f.plek(), r.getKey() + ": " + f.getMessage());
+            assertTrue(f.getMessage().endsWith(": unknown datatype node \"Onbekend\""),
                     r.getKey() + ": " + f.getMessage());
         }
     }
