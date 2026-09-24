@@ -1,0 +1,1 @@
+unit mismatch: the PLUS composite is typed 'KG' of system 'GEWICHT' (factor 1 to 'KG'), but the type derived from its operands is 'kg' of system 'Gewicht'
