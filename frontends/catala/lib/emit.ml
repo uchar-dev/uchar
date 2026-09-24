@@ -1,4 +1,4 @@
-(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L3 shape.
+(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L4 shape.
 
    ARCHITECTURE. The plugin builds typed [Ir_v0.Ast] values and hands
    them to exactly one serialiser — this module — so schema conformity is
@@ -61,10 +61,6 @@ let vergelijk_op_s = function
 let kwantor_s = function
   | De -> "DE" | Alle -> "ALLE" | Geen -> "GEEN" | Ten_minste -> "TEN_MINSTE"
   | Ten_hoogste -> "TEN_HOOGSTE" | Precies -> "PRECIES"
-
-let regel_soort_s = function
-  | Gelijkstelling -> "GELIJKSTELLING" | Berekening -> "BEREKENING"
-  | Initialisatie -> "INITIALISATIE" | Kenmerktoekenning -> "KENMERKTOEKENNING"
 
 let afrond_modus_s = function
   | Naar_beneden -> "NAAR_BENEDEN" | Naar_boven -> "NAAR_BOVEN"
@@ -146,12 +142,25 @@ let geheel_periode (g : geheel_periode) : json =
 let rol_binding (rb : rol_binding) : json =
   node "RolBinding" [ ("feittype", s rb.rb_feittype); ("rol", s rb.rb_rol) ]
 
+(* The typed value of a Literal (IR-SPEC ch. 4.1, delta B22): one key, the
+   variant the literal's type names; the in-memory lexeme beside it is not
+   written. *)
+let literal_value (v : literal_variant) : json =
+  match v with
+  | Lv_number x -> `Assoc [ ("number", s x) ]
+  | Lv_boolean x -> `Assoc [ ("boolean", b x) ]
+  | Lv_text x -> `Assoc [ ("text", s x) ]
+  | Lv_date x -> `Assoc [ ("date", s x) ]
+  | Lv_date_time x -> `Assoc [ ("dateTime", s x) ]
+  | Lv_enumeration x -> `Assoc [ ("enumeration", s x) ]
+  | Lv_constructor x -> `Assoc [ ("constructor", s x) ]
+
 let rec expr (e : expr) : json =
   let typ t = ("type", opt annotation t) in
   let bron br = ("bron", so br) in
   match e with
-  | Literal { waarde; typ = t; bron = br } ->
-      node "Literal" [ ("waarde", so waarde); typ t; bron br ]
+  | Literal { variant; typ = t; bron = br; waarde = _ } ->
+      node "Literal" [ ("value", literal_value variant); typ t; bron br ]
   | Binair { op; links; rechts; typ = t; bron = br } ->
       node "Binair"
         [ ("op", s (bin_op_s op)); ("links", opt expr links);
@@ -175,8 +184,28 @@ let rec expr (e : expr) : json =
   | Parameter_ref { parameter; bron = br } ->
       node "ParameterRef" [ ("parameter", so parameter); bron br ]
   | Variabele_ref { naam; bron = br } -> node "VariabeleRef" [ ("naam", so naam); bron br ]
+  (* the two context nodes (IR-SPEC ch. 4.1, delta B23): a session value
+     carries its name and its datatype, the bound day of a day-kind
+     definition its datatype. A name outside the closed set is refused in
+     WF-098's sentence rather than written for the verifier to reject *)
   | Constante { naam; typ = t; bron = br } ->
-      node "Constante" [ ("naam", so naam); typ t; bron br ]
+      let name =
+        match naam with
+        | Some n -> (
+            match Ir_v0.Checks.context_value_refusal n with
+            | None -> n
+            | Some sentence -> failwith ("Emit.expr: " ^ sentence))
+        | None -> failwith "Emit.expr: a ContextValue carries its name as a string"
+      in
+      let t =
+        match t with Some t -> t | None -> failwith "Emit.expr: a ContextValue carries its datatype"
+      in
+      node "ContextValue" [ ("name", s name); ("type", annotation t); bron br ]
+  | Bound_day { typ = t; bron = br } ->
+      let t =
+        match t with Some t -> t | None -> failwith "Emit.expr: a BoundDay carries its datatype"
+      in
+      node "BoundDay" [ ("type", annotation t); bron br ]
   (* The translator builds no marker, and a written one would need a WARNING
      naming its bron in [diagnostics] (WF-113 (b)), which this serialiser
      never writes: it refuses like any node the skeleton never builds. *)
@@ -245,7 +274,7 @@ let rec expr (e : expr) : json =
       failwith
         ("Emit.expr: node not produced by the skeleton: "
         ^ (match other with
-          | Tekst_reeks _ -> "TekstReeks" | Functie _ -> "Functie"
+          | Tekst_reeks _ -> "TekstReeks" | Functie _ -> "Aggregation or BuiltinCall"
           | Afgerond _ -> "Afgerond" | Begrensd _ -> "Begrensd"
           | Dimensie_cel _ -> "DimensieCel" | Temporal_read _ -> "TemporalRead"
           | Lambda _ -> "Lambda (position-restricted; only a Fold/MapList operand)"
@@ -382,19 +411,68 @@ let domain (key, (d : datatype option)) : json =
   in
   node "Domain" [ ("name", s key); ("datatype", body) ]
 
-let resolved_regel (r : resolved_regel) : json =
-  node "ResolvedRegel"
-    [ ("naam", so r.rr_naam);
-      ("soort", opt (fun x -> s (regel_soort_s x)) r.rr_soort);
-      ("doel", opt expr r.doel); ("waarde", opt expr r.waarde);
-      ("voorwaarde", opt conditie r.rr_voorwaarde);
-      ("geldigheid", opt geldigheid r.rr_geldigheid) ]
+(* A version's validity is always written (IR-SPEC ch. 3.10): a record
+   without one is valid always. *)
+let validity (g : geldigheid option) : json =
+  geldigheid (Option.value g ~default:{ geld_vanaf = None; geld_tot = None })
 
-let resolved_consistentie (c : resolved_consistentie) : json =
-  node "ResolvedConsistentie"
-    [ ("naam", so c.cons_naam); ("subject", so c.cons_subject);
-      ("assertie", opt conditie c.assertie); ("bron", so c.cons_bron);
-      ("line", i c.cons_line); ("geldigheid", opt geldigheid c.cons_geldigheid) ]
+(* A named form (IR-SPEC ch. 3, Versioning): {node, name, versions}. The
+   plugin builds every rule, consistency and object creation with one
+   version, so each in-memory record is one form. A record name ending in a
+   space, '#' and digits is the in-memory spelling of one version of a form
+   with several, which the plugin never builds: it refuses rather than
+   writing a name no reader loads. *)
+let form ~what kind (naam : string option) (version : json) : json =
+  (match naam with
+  | Some n when Ir_v0.Loader.versioned_name n ->
+      failwith
+        (Printf.sprintf
+           "Emit: the %s name %S ends in a space, '#' and digits, the in-memory spelling of one \
+            version of a form with several, and the plugin builds no versions"
+           what n)
+  | _ -> ());
+  node kind [ ("name", so naam); ("versions", `List [ version ]) ]
+
+(* A rule version (IR-SPEC ch. 3.1, delta B20): the in-memory kind is read
+   back onto the initialisation flag and the presentation tag, and the target
+   is an attribute reference. *)
+let rule (r : resolved_regel) : json =
+  if r.rr_bron_annotaties <> None then failwith "Emit: the plugin writes no statute annotations";
+  let initialisation, presentation =
+    match r.rr_soort with
+    | Some Gelijkstelling -> (false, [ ("presentation", s "GELIJKSTELLING") ])
+    | Some Berekening -> (false, [ ("presentation", s "BEREKENING") ])
+    | Some Initialisatie -> (true, [])
+    | Some Kenmerktoekenning -> (false, [])
+    | None -> failwith "Emit: a rule version without its kind"
+  in
+  let target =
+    match r.doel with
+    | Some (Attribuut_ref _ as t) -> expr t
+    | _ -> failwith "Emit: the target of a rule version is an AttribuutRef"
+  in
+  let value =
+    match r.waarde with Some v -> expr v | None -> failwith "Emit: a rule version without its value"
+  in
+  let condition = match r.rr_voorwaarde with None -> [] | Some c -> [ ("condition", conditie c) ] in
+  form ~what:"rule" "Rule" r.rr_naam
+    (`Assoc
+      ([ ("validity", validity r.rr_geldigheid); ("target", target); ("value", value) ]
+      @ condition
+      @ [ ("initialisation", b initialisation) ]
+      @ presentation))
+
+let consistency (c : resolved_consistentie) : json =
+  let assertion =
+    match c.assertie with
+    | Some a -> conditie a
+    | None -> failwith "Emit: a consistency version without its assertion"
+  in
+  form ~what:"consistency" "Consistency" c.cons_naam
+    (`Assoc
+      [ ("subject", so c.cons_subject); ("assertion", assertion);
+        ("validity", validity c.cons_geldigheid); ("bron", so c.cons_bron);
+        ("line", i c.cons_line) ])
 
 (* fact type + roles (IR-SPEC ch. 2.6): the connecting relation the plugin
    synthesises to carry a subscope back-link (Phase 5c). Each role names its
@@ -414,22 +492,20 @@ let toekenning (t : toekenning) : json =
     [ ("attribuut", so t.toe_attribuut); ("waarde", opt expr t.toe_waarde);
       ("kenmerk", b t.toe_kenmerk) ]
 
-let resolved_object_creatie (oc : resolved_object_creatie) : json =
-  (* verbindendeRol is an extension field (the loader admits it via [ext]) —
-     the created-side role of the back-link, written whole when present *)
-  let vrb =
-    match oc.oc_verbindende_rol with
-    | None -> []
-    | Some rb -> [ ("verbindendeRol", rol_binding rb) ]
+let object_creation (oc : resolved_object_creatie) : json =
+  (* connectingRole is optional (IR-SPEC ch. 3.3) — the created-side role of
+     the back-link, written whole when present *)
+  let condition = match oc.oc_voorwaarde with None -> [] | Some c -> [ ("condition", conditie c) ] in
+  let connecting =
+    match oc.oc_verbindende_rol with None -> [] | Some rb -> [ ("connectingRole", rol_binding rb) ]
   in
-  `Assoc
-    ([ ("node", `String "ResolvedObjectCreatie");
-       ("naam", so oc.oc_naam); ("nieuwType", so oc.nieuw_type);
-       ("subject", so oc.oc_subject);
-       ("toekenningen", `List (List.map toekenning oc.toekenningen));
-       ("voorwaarde", opt conditie oc.oc_voorwaarde);
-       ("geldigheid", opt geldigheid oc.oc_geldigheid) ]
-    @ vrb)
+  form ~what:"object creation" "ObjectCreation" oc.oc_naam
+    (`Assoc
+      ([ ("createdType", so oc.nieuw_type); ("subject", so oc.oc_subject);
+         ("initialisations", `List (List.map toekenning oc.toekenningen)) ]
+      @ condition
+      @ [ ("validity", validity oc.oc_geldigheid) ]
+      @ connecting))
 
 let rec default (d : default) : json =
   (* [besluit] is a required key (null on an attribute / group default);
@@ -501,7 +577,7 @@ let document (d : document) : json =
   unfilled "resolvedDagsoorten" d.resolved_dagsoorten;
   unfilled "verdelingen" d.verdelingen;
   unfilled "uniciteiten" d.uniciteiten;
-  unfilled "uniciteitUnies" d.uniciteit_unies;
+  unfilled "uniciteiten" d.uniciteit_unies;
   unfilled "feitCreaties" d.feit_creaties;
   unfilled "resolvedStartpunten" d.resolved_startpunten;
   unfilled "regelGroepen" d.regel_groepen;
@@ -530,13 +606,12 @@ let document (d : document) : json =
          @ function_defs));
       ("rules",
        `Assoc
-         [ ("resolvedRegels", `List (List.map resolved_regel d.resolved_regels));
+         [ ("resolvedRegels", `List (List.map rule d.resolved_regels));
            ("resolvedDagsoorten", `List []);
-           ("objectCreaties", `List (List.map resolved_object_creatie d.object_creaties));
+           ("objectCreaties", `List (List.map object_creation d.object_creaties));
            ("verdelingen", `List []);
-           ("consistenties", `List (List.map resolved_consistentie d.consistenties));
+           ("consistenties", `List (List.map consistency d.consistenties));
            ("uniciteiten", `List []);
-           ("uniciteitUnies", `List []);
            ("feitCreaties", `List []);
            ("resolvedStartpunten", `List []);
            ("regelGroepen", `List []);

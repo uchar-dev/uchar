@@ -261,7 +261,7 @@ let ir_typ (e : I.expr) : I.datatype option =
   match e with
   | Literal { typ; _ } | Tekst_reeks { typ; _ } | Binair { typ; _ }
   | Functie { typ; _ } | Afgerond { typ; _ } | Begrensd { typ; _ }
-  | Constante { typ; _ } | Expr_onopgelost { typ; _ }
+  | Constante { typ; _ } | Bound_day { typ; _ } | Expr_onopgelost { typ; _ }
   | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
   | Struct_literal { typ; _ } | Field_access { typ; _ }
   | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
@@ -309,15 +309,20 @@ let rat_str (q : Q.t) : string =
   Printf.sprintf "%s%s.%0*d" (if neg then "-" else "") (Z.to_string (Z.div a scale)) rat_scale
     (Z.to_int (Z.rem a scale))
 
+(* a Literal as the wire carries it (IR-SPEC ch. 4.1): the value variant its
+   type names, beside the lexeme the in-memory node keeps (Ir_v0.Ast) *)
+let literal (variant : I.literal_variant) (typ : I.datatype) ~bron : I.expr =
+  Literal { waarde = Some (Ir_v0.Loader.literal_lexeme variant); variant; typ = Some typ; bron }
+
 let literal_expr (l : lit) : I.expr =
   match l with
   | LBool b ->
       let w = if b then "waar" else "onwaar" in
-      Literal { waarde = Some w; typ = Some Booleaan; bron = Some w }
-  | LInt z -> Literal { waarde = Some (Z.to_string z); typ = Some num_int; bron = Some (Z.to_string z) }
-  | LMoney z -> Literal { waarde = Some (money_str z); typ = Some num_money; bron = Some (money_str z) }
-  | LDate d -> Literal { waarde = Some (date_str d); typ = Some Datum_in_dagen; bron = Some (date_str d) }
-  | LRat q -> Literal { waarde = Some (rat_str q); typ = Some num_rat; bron = Some (rat_str q) }
+      literal (Lv_boolean b) Booleaan ~bron:(Some w)
+  | LInt z -> literal (Lv_number (Z.to_string z)) num_int ~bron:(Some (Z.to_string z))
+  | LMoney z -> literal (Lv_number (money_str z)) num_money ~bron:(Some (money_str z))
+  | LDate d -> literal (Lv_date (date_str d)) Datum_in_dagen ~bron:(Some (date_str d))
+  | LRat q -> literal (Lv_number (rat_str q)) num_rat ~bron:(Some (rat_str q))
   | LDuration _ -> refuse "duration literal: not supported in the 5a skeleton"
   | LUnit -> refuse "unit literal: not a domain value"
 
@@ -660,8 +665,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             Binair
               { op = Min;
                 links =
-                  Some (Literal { waarde = Some (rat_str Q.zero); typ = Some num_rat;
-                                  bron = Some (rat_str Q.zero) });
+                  Some (literal (Lv_number (rat_str Q.zero)) num_rat ~bron:(Some (rat_str Q.zero)));
                 rechts = Some (value_expr ~operand:true ~in_body ~in_let ~env a);
                 typ = Some num_rat; bron = None }
         | (Op.ToRat_int | Op.ToRat_mon), [ a ] ->
@@ -933,7 +937,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         let dt = keuzetype_of enums structs name in
         let cons_name = EnumConstructor.to_string cons in
         (match dt with
-         | I.Enumeratie _ -> Literal { waarde = Some cons_name; typ = Some dt; bron = Some cons_name }
+         | I.Enumeratie _ -> literal (Lv_enumeration cons_name) dt ~bron:(Some cons_name)
          | _ ->
              let sig_ = EnumName.Map.find name enums in
              let payload_ty = EnumConstructor.Map.find cons sig_ in
@@ -1645,13 +1649,17 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     { rr_naam = Some ("berekening " ^ rule_label vname); rr_soort = Some Berekening;
       doel = Some (attr_ref vname dt);
       waarde = Some (value_expr value); rr_voorwaarde = cond; rr_geldigheid = Some geldig;
-      rr_bron_annotaties = None }
+      rr_bron_annotaties = None;
+      (* the wire pointer is the loader's to set on a record it reads; the
+         plugin's records are only ever serialised *)
+      rr_pointer = "" }
   in
   let kenmerktoekenning vname ~voorwaarde : I.resolved_regel =
     { rr_naam = Some ("kenmerktoekenning " ^ rule_label vname); rr_soort = Some Kenmerktoekenning;
       doel = Some (attr_ref vname Booleaan);
-      waarde = Some (Literal { waarde = Some "waar"; typ = Some Booleaan; bron = Some "waar" });
-      rr_voorwaarde = voorwaarde; rr_geldigheid = Some geldig; rr_bron_annotaties = None }
+      waarde = Some (literal (Lv_boolean true) Booleaan ~bron:(Some "waar"));
+      rr_voorwaarde = voorwaarde; rr_geldigheid = Some geldig; rr_bron_annotaties = None;
+      rr_pointer = "" }
   in
   (* dispatch one variable definition *)
   let translate_def v e =
@@ -1858,7 +1866,8 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     let oc : I.resolved_object_creatie =
       { oc_naam = Some ("richt " ^ instance_var ^ " op"); nieuw_type = Some callee_type;
         oc_subject = Some ot_name; toekenningen; oc_voorwaarde = None; oc_geldigheid = Some geldig;
-        oc_verbindende_rol = Some { rb_feittype = feittype; rb_rol = callee_role } }
+        oc_verbindende_rol = Some { rb_feittype = feittype; rb_rol = callee_role };
+        oc_pointer = "" }
     in
     feittypen := ft :: !feittypen;
     creaties := oc :: !creaties
@@ -1883,7 +1892,8 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
           consistenties :=
             { I.cons_naam = Some ("assertie " ^ ot_name ^ " " ^ string_of_int (idx + 1));
               cons_subject = Some ot_name; assertie = Some (cond_expr e);
-              cons_bron = Some "assertion"; cons_line = idx + 1; cons_geldigheid = Some geldig }
+              cons_bron = Some "assertion"; cons_line = idx + 1; cons_geldigheid = Some geldig;
+              cons_pointer = "" }
             :: !consistenties)
     sd.scope_decl_rules;
   ( ot_name, objecttype, List.rev !regels, List.rev !defaults_groups, List.rev !consistenties,
@@ -2195,7 +2205,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
            or non-positive divisor faults there — refuse it here so the fence
            matches clingo (card clingo-bodymult). *)
         (match rechts with
-         | Some (Literal { waarde = Some w; _ })
+         | Some (Literal { variant = Lv_number w; _ })
            when (match float_of_string_opt w with Some f -> f > 0.0 | None -> false) -> ()
          | _ ->
              refuse
@@ -2211,7 +2221,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
            ×, the money×rate cent product and a constant-divisor division, but not this form (card \
            clingo-bodymult) — refused per element"
           cname
-    | Literal _ | Binder_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _
+    | Literal _ | Binder_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Bound_day _
     | Attribuut_ref _ | Expr_onopgelost _ -> ()
     | Functie { argumenten; leegwaarde; filter; _ } ->
         List.iter fence_expr argumenten; Option.iter fence_expr leegwaarde;
