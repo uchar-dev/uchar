@@ -12,11 +12,11 @@ import java.util.List;
 
 /**
  * IR-SPEC ch. 4.3 / WF-102 — the fold source's RANGE as a PATH, resolved against the bean model ONCE for both
- * transpiler branches. It answers a single question: given the fold SUBJECT, the ordered {@code bronPad} steps and
- * the fold's {@code elementObjecttype}, WHICH bean field does each hop read and in WHICH direction — or, when the
+ * transpiler branches. It answers a single question: given the fold SUBJECT, the ordered {@code sourcePath} steps
+ * and the fold's {@code elementType}, WHICH bean field does each hop read and in WHICH direction — or, when the
  * model cannot carry the walk, WHY not, in one sentence both branches print.
  *
- * <p><b>The reading (RUNTIME-SEMANTICS ch. 3.4b).</b> The range is the FLAT UNION of the {@code elementObjecttype}
+ * <p><b>The reading (RUNTIME-SEMANTICS ch. 3.4b).</b> The range is the FLAT UNION of the {@code elementType}
  * instances reachable from the subject along the whole path; an element reachable through more than one
  * intermediate contributes ONCE. The path is a connected walk: each step's OPPOSITE role is filled by the type its
  * predecessor reaches (the first one by the subject), and the last step's bound role lands on the element type.
@@ -53,7 +53,7 @@ public final class Bronpad {
      *
      *  @param stappen       the hops, subject-outward; empty on a refusal.
      *  @param knoopTypen    the object type at every NODE, {@code knoopTypen[0]} the subject and
-     *                       {@code knoopTypen[n]} the fold's elementObjecttype (which may be a strict SUBTYPE of
+     *                       {@code knoopTypen[n]} the fold's elementType (which may be a strict SUBTYPE of
      *                       what the last step's role fills — ch. 2.2's exclusion direction).
      *  @param voorwaarts    how many LEADING steps are forward, i.e. the highest node index still reachable from
      *                       the subject by a pure getter chain.
@@ -99,16 +99,16 @@ public final class Bronpad {
 
     /**
      * Resolve {@code pad} against the model. {@code subject} is the fold subject (node 0) and {@code element} the
-     * fold's declared elementObjecttype (node n). Every failure is a SENTENCE, never a null: a step that names no
+     * fold's declared elementType (node n). Every failure is a SENTENCE, never a null: a step that names no
      * feittype/role, a step that does not join what its predecessor reaches, a landing beside the element type, or
      * a hop the bean model derives no field for.
      */
     public static Plan ontleed(RegelSpraakModel model, Objecttype subject, List<RolBindingRef> pad, Objecttype element) {
         if (model == null || subject == null || element == null)
-            return weiger("bronPad zonder onderwerp of elementtype (WF-102)");
+            return weiger("sourcePath zonder onderwerp of elementtype (WF-102)");
         if (pad == null || pad.size() < 2)
-            return weiger("een bronPad draagt minstens TWEE stappen, gevonden " + (pad == null ? 0 : pad.size())
-                    + " — het eenstapsbereik heet bronRol (WF-102 (b))");
+            return weiger("een sourcePath draagt minstens TWEE stappen, gevonden " + (pad == null ? 0 : pad.size())
+                    + " — het eenstapsbereik heet sourceRole (WF-102 (b))");
         List<Stap> stappen = new ArrayList<>();
         List<Objecttype> knopen = new ArrayList<>();
         knopen.add(subject);
@@ -118,32 +118,32 @@ public final class Bronpad {
             boolean laatste = i == pad.size() - 1;
             Feittype ft = feittypeOpNaam(model, rb == null ? null : rb.feittype());
             if (ft == null)
-                return weiger("bronPad-stap " + i + " noemt het feittype '" + (rb == null ? null : rb.feittype())
+                return weiger("sourcePath-stap " + i + " noemt het feittype '" + (rb == null ? null : rb.feittype())
                         + "', dat dit document niet declareert (WF-047)");
             Rol gebonden = rolOpNaam(ft, rb.rol());
             if (gebonden == null)
-                return weiger("bronPad-stap " + i + " noemt de rol '" + rb.rol() + "', die het feittype '"
+                return weiger("sourcePath-stap " + i + " noemt de rol '" + rb.rol() + "', die het feittype '"
                         + ft.naam + "' niet declareert (WF-047)");
             Rol tegenover = tegenoverliggend(ft, gebonden);
             if (tegenover == null)
-                return weiger("bronPad-stap " + i + " bindt de rol '" + gebonden.naam() + "' van feittype '"
+                return weiger("sourcePath-stap " + i + " bindt de rol '" + gebonden.naam() + "' van feittype '"
                         + ft.naam + "', dat geen tegenoverliggende rol heeft (WF-047)");
             // (d) the walk is CONNECTED: the opposite role must be filled by what the previous step reaches.
             if (!vult(van, tegenover))
-                return weiger("bronPad-stap " + i + ": de tegenoverliggende rol '" + tegenover.naam() + "' vult '"
+                return weiger("sourcePath-stap " + i + ": de tegenoverliggende rol '" + tegenover.naam() + "' vult '"
                         + tegenover.objecttypeNaam() + "', maar deze stap begint bij '" + van.naam + "' ("
                         + (i == 0 ? "het vouwonderwerp" : "het type dat de vorige stap bereikt")
-                        + ") — een bronPad is een verbonden wandeling (WF-102 (d))");
+                        + ") — een sourcePath is een verbonden wandeling (WF-102 (d))");
             Objecttype vuller = model.objecttypeOpNaam(gebonden.objecttypeNaam());
             if (vuller == null)
-                return weiger("bronPad-stap " + i + ": de gebonden rol '" + gebonden.naam() + "' vult '"
+                return weiger("sourcePath-stap " + i + ": de gebonden rol '" + gebonden.naam() + "' vult '"
                         + gebonden.objecttypeNaam() + "', een objecttype dat dit document niet declareert (WF-047)");
-            // (d) the LANDING, two-sided exactly as WF-102 has it: elementObjecttype may be a strict SUBTYPE of
+            // (d) the LANDING, two-sided exactly as WF-102 has it: elementType may be a strict SUBTYPE of
             // what the last step's role fills (ch. 2.2's exclusion direction), and the pattern class is then the
             // narrower one — which is what makes the element the population and the relation merely the reach.
             if (laatste && !verenigbaar(element, vuller))
-                return weiger("bronPad-stap " + i + ": de gebonden rol '" + gebonden.naam() + "' vult '"
-                        + vuller.naam + "', maar het elementObjecttype is '" + element.naam
+                return weiger("sourcePath-stap " + i + ": de gebonden rol '" + gebonden.naam() + "' vult '"
+                        + vuller.naam + "', maar het elementType is '" + element.naam
                         + "' — het pad moet op het elementtype landen (WF-102 (d))");
             Objecttype naar = laatste ? element : vuller;
             // §13.3.9 the storage direction. A to-many bound role keeps its link at the FAR end, named after the
@@ -154,7 +154,7 @@ public final class Bronpad {
             Objecttype drager = naarVeel ? naar : van, doel = naarVeel ? van : naar;
             String rolveld = naarVeel ? tegenover.naam() : gebonden.naam();
             if (!FactModelGenerator.heeftReferentieVeld(model, drager, rolveld, doel))
-                return weiger("bronPad-stap " + i + " (" + van.naam + " -> " + naar.naam + ") heeft geen beanveld — "
+                return weiger("sourcePath-stap " + i + " (" + van.naam + " -> " + naar.naam + ") heeft geen beanveld — "
                         + FactModelGenerator.geenJoinveldReden(model, van, gebonden.naam(), naar)
                         + " (§13.3.9 opslagrichting)");
             stappen.add(new Stap(naarVeel, Namen.ident(rolveld, false)));

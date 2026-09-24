@@ -115,7 +115,7 @@ public final class ExecModelTranspiler {
     private List<PrioritizedDefaults> prioritizedDefaults = List.of();
     /** The wire's symbolic (feittype, rol) bindings per IR node, riding beside the model
      *  ({@code IrLoader.Loaded.rolBindingen}) because the vendored records cannot carry them: an objectcreatie's
-     *  IR-SPEC ch. 3.3 {@code verbindendeRol} and an aggregation Functie's {@code bronRol}. Keyed by IDENTITY (the
+     *  IR-SPEC ch. 3.3 {@code connectingRole} and an aggregation's {@code sourceRole}. Keyed by IDENTITY (the
      *  nodes are records with value equality). Empty by default — every node then uses the by-pair derivation,
      *  which is exactly the pre-2026-08-30 behaviour. */
     private Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen = new java.util.IdentityHashMap<>();
@@ -1300,7 +1300,7 @@ public final class ExecModelTranspiler {
         for (int i : plan.tussenknopen()) {
             Class<?> c = factClass(plan.knoopTypen().get(i));
             if (c == null) {
-                aggregatieReden = "bronPad-tussentype '" + plan.knoopTypen().get(i).naam
+                aggregatieReden = "sourcePath-tussentype '" + plan.knoopTypen().get(i).naam
                         + "' heeft geen factklasse (§13.3.9 opslagrichting)";
                 return null;
             }
@@ -6515,7 +6515,7 @@ public final class ExecModelTranspiler {
         if (vr != null) {
             RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, vr);
             if (paar == null)
-                return skip("objectcreatie (de verbindendeRol-binding '" + vr.feittype() + "." + vr.rol()
+                return skip("objectcreatie (de connectingRole-binding '" + vr.feittype() + "." + vr.rol()
                         + "' wijst geen rolpaar aan): " + oc.naam());
             fwdRol = paar[0].naam(); fwdVeel = paar[0].meervoudig();
             backRol = paar[1].naam(); backVeel = paar[1].meervoudig();
@@ -6571,7 +6571,7 @@ public final class ExecModelTranspiler {
             // derivable only from the creation's symbolic role binding, which this bean model does not carry),
             // and a pair whose BOTH roles are meervoudig resolves fine but derives no field on either side.
             return skip("objectcreatie (" + (vr == null && subject == nieuw
-                    ? "zelfgetypeerd rollenpaar zonder verbindendeRol-binding: uit twee gelijkgetypeerde rollen leidt"
+                    ? "zelfgetypeerd rollenpaar zonder connectingRole-binding: uit twee gelijkgetypeerde rollen leidt"
                       + " de bean geen referentieveld af en de draad wijst geen rol aan"
                     : vr == null && (backRol == null || fwdRol == null)
                     ? "geen uniek verbindend feittype: de terugkoppeling is niet af te leiden en ch. 5.5 gist niet"

@@ -133,7 +133,7 @@ public final class FactModelGenerator {
      * role name that does not resolve UNIQUELY derives nothing and a to-many role derives nothing (its storage is
      * the other end's field). {@code verbindendeRol(ot, ot)} — the BY-PAIR search — is deliberately left as it
      * is: still null, still ambiguous. So these fields exist but nothing reaches them by accident; only a WRITTEN
-     * role name or the creation's symbolic {@code verbindendeRol} wire binding does. Under-implied, never
+     * role name or the creation's symbolic {@code connectingRole} wire binding does. Under-implied, never
      * over-implied — the same law the by-pair comment above states.
      *
      * <p>Alternatives considered and REJECTED:

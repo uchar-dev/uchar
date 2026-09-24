@@ -1458,7 +1458,7 @@ public final class DrlTranspiler {
         if (vr != null) {
             RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, vr);
             if (paar == null) {
-                creatieGeweigerd(oc, "de verbindendeRol-binding '" + vr.feittype() + "." + vr.rol()
+                creatieGeweigerd(oc, "de connectingRole-binding '" + vr.feittype() + "." + vr.rol()
                         + "' wijst geen rolpaar aan");
                 return;
             }
@@ -1491,7 +1491,7 @@ public final class DrlTranspiler {
                     ? "more than one fact type relates \"" + subject.naam + "\" to \"" + nieuw.naam
                       + "\"; the created object's back-link is ambiguous (ch. 5.5)"
                     : (vr == null && subject == nieuw
-                    ? "zelfgetypeerd rollenpaar zonder verbindendeRol-binding: uit twee gelijkgetypeerde rollen leidt"
+                    ? "zelfgetypeerd rollenpaar zonder connectingRole-binding: uit twee gelijkgetypeerde rollen leidt"
                       + " de bean geen referentieveld af en de draad wijst geen rol aan"
                     : vr == null && (backRol == null || fwdRol == null)
                     ? "geen uniek verbindend feittype: de terugkoppeling is niet af te leiden en ch. 5.5 gist niet"
