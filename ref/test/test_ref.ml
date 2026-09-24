@@ -365,6 +365,20 @@ let () =
   check "WV-2.5-100eur/mnd-is-1200eur/jr"
     (Q.equal (restate ~into:eur_per_jr "100" { eur with noemer = Some mnd }) (q "1200"))
 
+(* ...and the factor that is not a whole number, the case the exact rational
+   exists for: an hour declared as {1, 24} of a day. 36 uur restated in dg is
+   3/2 exactly, and 3/2 dg is 36 uur again. The JSON number a v0 wire carried
+   for 1/24 is the double 0.041666666666666664…, not 1/24: taken as the exact
+   value of that double, 36 of them are 1.4999…, and the short decimal reading
+   this interpreter used to attempt finds none and faults. So these three
+   hold only when the factor is read as the rational the wire writes. *)
+let () =
+  let uur = unit_ ~canoniek:"dg" ~factor:(1, 24) "uur" in
+  let restate ~into v from = Arith.restate_into (Value.Unit into) (q v) (Value.Unit from) in
+  check "WV-2.5-factor-uur-dg-1/24" (Q.equal (Arith.conv_factor uur dg) (q "1/24"));
+  check "WV-2.5-36uur-is-3/2dg" (Q.equal (restate ~into:dg "36" uur) (q "3/2"));
+  check "WV-2.5-3/2dg-is-36uur" (Q.equal (restate ~into:uur "3/2" dg) (q "36"))
+
 (* WF-092, the executor's half: the canonical unit and the factor are one
    fact in two fields, and the factor question refuses to guess.
 

@@ -10864,6 +10864,68 @@ let () =
       refused_at_load ~name:("L2-laadtabel: " ^ vorm) ~ir:(vervang base ~waar ~door) ~needle)
     rows
 
+(* THE FACTOR THAT IS NOT A WHOLE NUMBER, end to end. An hour is declared as
+   {1, 24} of a day, and wachttijd (uur) = 1 dg + extra (uur). ref adds in the
+   left unit and restates at the write: 1 dg + 3 uur = 9/8 dg = 27 uur. The
+   normalisation pass restates the literal into the finest unit of the table,
+   and the finest here is uur BECAUSE its factor is the smaller rational: 1 dg
+   is 24 uur exactly, so clingo writes 24 + 3 = 27 too. A double for 1/24
+   (0.041666666666666664…) makes neither step exact — 1 over it is not 24 —
+   so this witness holds only on the rational the wire writes. *)
+let () =
+  let dg = {|{ "node": "Unit", "abbreviation": "dg", "system": "Tijdsduur", "canonical": "dg", "factorToCanonical": { "num": 1, "den": 1 } }|} in
+  let uur = {|{ "node": "Unit", "abbreviation": "uur", "system": "Tijdsduur", "canonical": "dg", "factorToCanonical": { "num": 1, "den": 24 } }|} in
+  let getal unit = Printf.sprintf {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD", "unit": %s }|} unit in
+  let ir =
+    Printf.sprintf
+      {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Wachtpost", "animate": false, "plural": "Wachtposten",
+        "attributes": [
+          { "node": "Attribute", "name": "extra", "datatype": %s },
+          { "node": "Attribute", "name": "wachttijd", "datatype": %s } ],
+        "characteristics": [] } ],
+    "factTypes": [], "parameters": [], "domains": [],
+    "unitSystems": [ { "node": "UnitSystem", "name": "Tijdsduur", "units": [ %s, %s ] } ],
+    "dimensions": [], "timelines": [], "dayKinds": [] },
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "wachttijd van een wachtpost", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "wachttijd", "objecttype": "Wachtpost",
+                  "bron": "De wachttijd van een Wachtpost" },
+        "waarde": { "node": "Binair", "op": "PLUS",
+          "links": { "node": "Literal", "waarde": "1", "type": %s, "bron": "1 dg" },
+          "rechts": { "node": "AttribuutRef", "attribuut": "extra", "objecttype": "Wachtpost",
+                      "bron": "de extra wachttijd van de Wachtpost" },
+          "type": %s, "bron": "1 dg plus de extra wachttijd van de Wachtpost" },
+        "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": [] }|}
+      (getal uur) (getal uur) dg uur (getal dg) (getal dg)
+  in
+  let case_text =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "W1", "objectType": "Wachtpost", "attributes": { "extra": { "number": "3" } },
+        "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "W1", "attribute": "wachttijd", "value": { "number": "27" } },
+    { "kind": "consistent" } ] }|}
+  in
+  both_answer ~name:"de factor {1, 24}: 1 dg + 3 uur = 27 uur, exact in ref en clingo" ~ir ~case_text;
+  (* and the table the pass builds for it: uur is the finest, dg is 24 of it *)
+  let dg_u = eenh ~stelsel:"Tijdsduur" ~canoniek:"dg" "dg" (Some (1, 1)) in
+  let uur_u = eenh ~stelsel:"Tijdsduur" ~canoniek:"dg" "uur" (Some (1, 24)) in
+  match Normalise.finest_of_units ~where:"unit system \"Tijdsduur\"" [ dg_u; uur_u ] with
+  | finest, to_finest ->
+      check "de factor {1, 24}: de fijnste eenheid is uur" (finest.Ir_v0.Ast.afkorting = Some "uur");
+      check "de factor {1, 24}: 1 dg is precies 24 uur" (Q.equal (to_finest dg_u) (Q.of_int 24))
+  | exception Uchar_ref.Value.Fault m -> check ("de factor {1, 24}: onverwachte fout: " ^ m) false
+
 (* THE L3 LOAD TABLE. The type system of the wire in its L3 shape: a number
    with its unit and, at a declaration, the percentage tag; a date with its
    precision; a unit system as a list of units with their spellings; a
