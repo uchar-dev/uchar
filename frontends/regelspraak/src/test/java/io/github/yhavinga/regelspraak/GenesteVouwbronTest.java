@@ -250,14 +250,14 @@ class GenesteVouwbronTest {
     static final String NEST_MELDING =
             "geneste verzamelingsstap in een vouwbron: 'alle geborgen vondsten van alle gevoerde boten van de "
             + "Jutter' stapelt de verzameling 'alle gevoerde boten van de Jutter' onder een tweede verzameling, "
-            + "en een vouwbron draagt precies één relatie (IR-SPEC ch. 4.3: één elementObjecttype plus één "
-            + "bronRol) — de buitenste stap zou spoorloos wegvallen, dus de aggregatie blijft onopgelost "
+            + "en een vouwbron draagt precies één relatie (IR-SPEC ch. 4.3: één elementType plus één "
+            + "sourceRole) — de buitenste stap zou spoorloos wegvallen, dus de aggregatie blijft onopgelost "
             + "(§13.4.17)";
 
     static final String TUSSENSTAP_MELDING =
             "tussenstap in een vouwbron: 'alle vondsten van de boot van de Jutter' bereikt de elementen via "
             + "Boot, maar een vouwbron draagt precies één relatie vanaf het regelonderwerp Jutter (IR-SPEC "
-            + "ch. 4.3: één elementObjecttype plus één bronRol) — de tussenstap zou spoorloos wegvallen, dus "
+            + "ch. 4.3: één elementType plus één sourceRole) — de tussenstap zou spoorloos wegvallen, dus "
             + "de aggregatie blijft onopgelost (§13.4.1/§13.4.17)";
 
     static final String NAAM_MELDING =

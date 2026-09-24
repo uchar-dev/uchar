@@ -746,7 +746,7 @@ final class ExpressieBouwer {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                     "geneste verzamelingsstap in een vouwbron: '" + src(o) + "' stapelt de verzameling '"
                             + src(genest) + "' onder een tweede verzameling, en een vouwbron draagt precies "
-                            + "één relatie (IR-SPEC ch. 4.3: één elementObjecttype plus één bronRol) — de "
+                            + "één relatie (IR-SPEC ch. 4.3: één elementType plus één sourceRole) — de "
                             + "buitenste stap zou spoorloos wegvallen, dus de aggregatie blijft onopgelost "
                             + "(§13.4.17) — '" + bron(f) + "'", f.getStart().getLine()));
             return new Expr.Onopgelost(type, bron(f), null);
@@ -774,7 +774,7 @@ final class ExpressieBouwer {
                     model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                             "rolanker in een vouwbron: '" + src(o) + "' verankert de verzameling op de rol '"
                                     + kandidaat + "', die vanaf " + huidigSubject.naam + " een ANDER exemplaar "
-                                    + "aanwijst — een vouwbron zonder bronPad noemt één relatie vanaf het "
+                                    + "aanwijst — een vouwbron zonder sourcePath noemt één relatie vanaf het "
                                     + "regelonderwerp zelf (IR-SPEC ch. 4.3/WF-102), dus de stap naar dat "
                                     + "exemplaar zou spoorloos wegvallen en de aggregatie blijft onopgelost "
                                     + "(§13.4.1/§13.4.17) — '" + bron(f) + "'", f.getStart().getLine()));
@@ -784,8 +784,8 @@ final class ExpressieBouwer {
                 model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                         "tussenstap in een vouwbron: '" + src(o) + "' bereikt de elementen via " + anker.naam
                                 + ", maar een vouwbron draagt precies één relatie vanaf het regelonderwerp "
-                                + huidigSubject.naam + " (IR-SPEC ch. 4.3: één elementObjecttype plus één "
-                                + "bronRol) — de tussenstap zou spoorloos wegvallen, dus de aggregatie blijft "
+                                + huidigSubject.naam + " (IR-SPEC ch. 4.3: één elementType plus één "
+                                + "sourceRole) — de tussenstap zou spoorloos wegvallen, dus de aggregatie blijft "
                                 + "onopgelost (§13.4.1/§13.4.17) — '" + bron(f) + "'", f.getStart().getLine()));
                 return new Expr.Onopgelost(type, bron(f), null);
             }
@@ -2340,7 +2340,7 @@ final class ExpressieBouwer {
 
     /**
      * §5.8/§13.4.2 the MULTI-STEP fold-source range ("de &lt;attr&gt; van alle X van alle Y van &lt;onderwerp&gt;"),
-     * resolved into the symbolic bindings the uchar wire carries as {@code bronPad} (IR-SPEC ch. 4.3,
+     * resolved into the symbolic bindings the uchar wire carries as {@code sourcePath} (IR-SPEC ch. 4.3,
      * WF-102). The written names are authoritative (§13.4.1: the written role IS the navigation), which is
      * the whole point — the by-PAIR derivation that used to stand in here looks only at TYPES and will bind
      * a coincidental direct subject-to-element relation, folding a different set from the one the sentence
