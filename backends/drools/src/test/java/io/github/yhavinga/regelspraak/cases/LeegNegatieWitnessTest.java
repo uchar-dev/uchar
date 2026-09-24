@@ -64,7 +64,7 @@ class LeegNegatieWitnessTest {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
                 "no branch walks a relation the wire does not name");
         assertEquals("/rules/rules/2/versions/0/condition/operand", e.plek(), e.getMessage());
-        assertTrue(e.getMessage().contains("its objecttype is the subject type 'Schuit' — 'Werf' names another type,"
+        assertTrue(e.getMessage().contains("its subjectType is the subject type 'Schuit' — 'Werf' names another type,"
                 + " which only a navigation reaches (WF-053)"), e.getMessage());
     }
 
@@ -90,7 +90,7 @@ class LeegNegatieWitnessTest {
         ArrayNode een = JSON.createArrayNode().add(IrPad.rulesLijst(ir, "rules").get(0));
         IrPad.rules(ir).set("rules", een);
         ObjectNode vw = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition");
-        vw.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", true).put("negated", false);
+        vw.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", "year").put("negated", false);
         Path p = tijdelijk(ir);
         // lengte is now month-granular, so the case supplies it as a timeline (a scalar input would be refused
         // for that reason first and hide the one under test). Before the fix both branches PLAYED this document
@@ -122,7 +122,7 @@ class LeegNegatieWitnessTest {
                         JSON.createArrayNode().add(IrPad.rulesLijst(ir, "rules").get(0)));
                 ObjectNode vw = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition");
                 vw.put("kind", soort).put("negated", false);
-                vw.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", true).put("negated", niet);
+                vw.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", "year").put("negated", niet);
                 Path p = tijdelijk(ir);
                 ObjectNode c = (ObjectNode) geval();
                 for (JsonNode inst : c.get("input").get("instances"))

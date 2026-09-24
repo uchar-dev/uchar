@@ -104,7 +104,7 @@ class VouwfilterStratumAnalyseTest {
                 "en in het FILTER van de vouw geldt hetzelfde");
     }
 
-    /** <b>The surrounding subject.</b> A fold whose {@code elementObjecttype} is absent handed the filter
+    /** <b>The surrounding subject.</b> A fold whose {@code elementType} is absent handed the filter
      *  walk a null subject, and null means the NAME-WIDE producer match — a fallback
      *  {@link Stratificatie} reserves for an unresolved NAVIGATED read alone. The verifier keeps the
      *  enclosing subject and falls back to the element type only when there IS one
@@ -233,14 +233,14 @@ class VouwfilterStratumAnalyseTest {
         String altijd = "{\"node\":\"RoleMembership\",\"factType\":\"vondstaanmelding\",\"role\":\"vondst\","
                 + "\"negated\":false,\"source\":{\"snippet\":\"een vondst zijn\"}}";
         String drempel = switch (kwantor) {
-            case "atLeast", "atMost", "exactly" -> "\"drempel\":1,";
+            case "atLeast", "atMost", "exactly" -> "\"threshold\":1,";
             default -> "";
         };
         String vouw = ("{\"node\":\"QuantifierFold\",\"quantifier\":\"%s\",%s\"elementType\":\"Vondst\","
-                + "\"filter\":%s,\"test\":%s,\"source\":{\"snippet\":\"alle vondsten … \"},"
+                + "%s\"test\":%s,\"source\":{\"snippet\":\"alle vondsten … \"},"
                 + "\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"vondstaanmelding\","
                 + "\"role\":\"vondst\"}}")
-                .formatted(kwantor, drempel, inToets ? "null" : check, inToets ? check : altijd);
+                .formatted(kwantor, drempel, inToets ? "" : "\"filter\":" + check + ",", inToets ? check : altijd);
         return model(
                 kenmerkRegel("consument", "druk", "Jutter", vouw),
                 kenmerkRegel("producent", "gemerkt", "Vondst",

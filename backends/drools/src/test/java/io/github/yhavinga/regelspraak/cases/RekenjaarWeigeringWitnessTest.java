@@ -23,9 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The context value {@code Rekenjaar}, which {@code spec/IR-SPEC.md} ch. 4.1 keeps in WF-098's closed set as
- * admitted-and-unexecuted: this backend refuses it in both branches, at every position the node can hold, in the
- * reference interpreter's own sentence — and the sibling {@code Rekendatum} still plays.
+ * The context value {@code evaluationYear} (the records' {@code Rekenjaar}), which {@code spec/IR-SPEC.md} ch. 4.1
+ * keeps in WF-098's closed set as admitted-and-unexecuted: this backend refuses it in both branches, at every position
+ * the node can hold, in the reference interpreter's own sentence — and the sibling {@code evaluationDate} still
+ * plays.
  *
  * <p>RED FIRST, measured on the jar of the L4 landing before its fix round, on the documents below, every one of
  * them {@code verifier: PASS}. The three authored rows (the node as a rule value, as the operand of a subtraction,
@@ -53,7 +54,7 @@ class RekenjaarWeigeringWitnessTest {
 
     /** The reference interpreter's sentence, written out here rather than read from the backend's constant, so a
      *  drift of the constant away from {@code ref} fails this witness. */
-    private static final String ZIN = "the Rekenjaar context value is not exercised by any corpus case (ch. 8.2)";
+    private static final String ZIN = "the evaluationYear context value is not exercised by any corpus case (ch. 8.2)";
 
     private static final String GETAL = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
     private static final String DAG = "{\"node\":\"Date\",\"precision\":\"day\"}";
@@ -183,7 +184,7 @@ class RekenjaarWeigeringWitnessTest {
             """.formatted(attribuut, waarde));
     }
 
-    /** The golden with the node at {@code pointer} replaced by Rekenjaar under the replaced node's own type. The node
+    /** The golden with the node at {@code pointer} replaced by evaluationYear under the replaced node's own type. The node
      *  there must be a Literal: a twist that hit anything else would test a document other than the one described. */
     private static Path getwist(String golden, String pointer) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(golden).resolve("ir.json")));

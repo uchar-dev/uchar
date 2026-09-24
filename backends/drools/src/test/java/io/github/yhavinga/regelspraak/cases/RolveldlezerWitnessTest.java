@@ -354,7 +354,7 @@ class RolveldlezerWitnessTest {
         ObjectNode check = JSON.createObjectNode();
         check.put("node", "CharacteristicCheck").put("characteristic", "bedrijvig")
              .put("negated", false);
-        check.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", true).put("negated", false);
+        check.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", "year").put("negated", false);
         check.set("source", IrPad.bronrecord("de werf van de Schuit gedurende het gehele jaar bedrijvig is"));
         check.putObject("navigation").put("node", "RoleBinding").put("factType", "ligplaats").put("role", "werf");
         regel.set("condition", check);

@@ -394,7 +394,7 @@ class EenheidsconflictWitnessTest {
             return;
         }
         if (!x.isObject()) return;
-        if ("Vergelijking".equals(x.path("node").asText())) {
+        if ("Comparison".equals(x.path("node").asText())) {
             JsonNode l = x.get("left"), r = x.get("right");
             String naam = parameterMetEenheid(wortel, l) != null && declaratieVan(wortel, r) != null
                     ? parameterMetEenheid(wortel, l)
@@ -405,9 +405,9 @@ class EenheidsconflictWitnessTest {
         for (var it = x.fields(); it.hasNext(); ) zoekVergelijking(wortel, it.next().getValue(), uit);
     }
 
-    /** The parameter name behind a unit-bearing, denominator-free {@code ParameterRef}; else null. */
+    /** The parameter name behind a unit-bearing, denominator-free {@code ParameterReference}; else null. */
     private static String parameterMetEenheid(JsonNode ir, JsonNode ref) {
-        if (ref == null || !"ParameterRef".equals(ref.path("node").asText())) return null;
+        if (ref == null || !"ParameterReference".equals(ref.path("node").asText())) return null;
         String naam = ref.path("parameter").asText(null);
         if (naam == null) return null;
         JsonNode p = zoekLid(ir.path("model").path("parameters"), "name", naam);
@@ -453,7 +453,7 @@ class EenheidsconflictWitnessTest {
         for (JsonNode vorm : regels) vorm.path("versions").forEach(versies::add);
         for (JsonNode r : versies) {
             JsonNode w = r.get("value");
-            if (w == null || !"Binair".equals(w.path("node").asText())
+            if (w == null || !"Binary".equals(w.path("node").asText())
                     || !List.of("plus", "minus", "reducedBy").contains(w.path("op").asText())) continue;
             if (declaratieVan(ir, w.get("left")) == null || declaratieVan(ir, w.get("right")) == null) continue;
             return r;
@@ -461,9 +461,9 @@ class EenheidsconflictWitnessTest {
         return null;
     }
 
-    /** The DECLARATION an {@code AttribuutRef} reads from, when it carries a unit; else null. */
+    /** The DECLARATION an {@code AttributeReference} reads from, when it carries a unit; else null. */
     private static ObjectNode declaratieVan(JsonNode ir, JsonNode ref) {
-        if (ref == null || !"AttribuutRef".equals(ref.path("node").asText())) return null;
+        if (ref == null || !"AttributeReference".equals(ref.path("node").asText())) return null;
         JsonNode ot = zoekLid(ir.path("model").path("objectTypes"), "name", ref.path("subjectType").asText(""));
         if (ot == null) return null;
         JsonNode lid = zoekLid(ot.path("attributes"), "name", ref.path("attribute").asText(""));

@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * IR-SPEC ch. 4.1a: a read without navigation bindings is the subject's OWN read, so its {@code objecttype} is the
+ * IR-SPEC ch. 4.1a: a read without a path is the subject's OWN read, so its {@code subjectType} is the
  * subject type — equal, not a supertype and not another type (WF-053). A bindingless read of any other type is
  * refused while loading, in the sentence ref and the verifier share; until the advisory round of L2 both transpiler
  * branches refused it with a generic reason, and neither derived a relation for it. A read of an INHERITED
@@ -49,8 +49,8 @@ class EigenLezingWitnessTest {
     private static void weigert(ObjectNode ir, String type) {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir), type);
         assertEquals("/rules/rules/0/versions/0/value", e.plek(), e.getMessage());
-        assertTrue(e.getMessage().contains("an attribute reference without navigation bindings is the subject's own"
-                + " read, so its objecttype is the subject type 'Munt' — '" + type + "' names another type, which only"
+        assertTrue(e.getMessage().contains("an attribute reference without a path is the subject's own"
+                + " read, so its subjectType is the subject type 'Munt' — '" + type + "' names another type, which only"
                 + " a navigation reaches (WF-053)"), e.getMessage());
     }
 

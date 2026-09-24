@@ -166,7 +166,7 @@ class HeelperiodeKwantorvouwWitnessTest {
 
     @Test void een_bronpad_wordt_per_vorm_geweigerd() throws Exception {
         String pad = """
-                "bronPad": [ { "node": "RoleBinding", "factType": "vlootindeling", "role": "schip" },
+                "sourcePath": [ { "node": "RoleBinding", "factType": "vlootindeling", "role": "schip" },
                              { "node": "RoleBinding", "factType": "vlootindeling", "role": "schip" } ]""";
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
                 () -> IrLoader.load(JSON.readTree(ir(vouw("all", "null", pad)))),
@@ -181,17 +181,25 @@ class HeelperiodeKwantorvouwWitnessTest {
      * <b>De grens verschoof op 2026-09-16</b> (kaart tellende-kwantoren) en deze rij verschoof mee. Tot dan
      * waren de drie TELLENDE kwantoren het benoemde uitbreidingspunt en werden zij hier samen met DE
      * geweigerd; zij zijn nu gebouwd, en hun verdicten staan hieronder. Wat op de kwantor-as overblijft is
-     * DE — de bepaalde lidwoordvorm noemt ÉÉN lid — plus elk onbekend token, en die moeten nog steeds bij
-     * naam stuklopen in plaats van stil als forall mee te glijden.
+     * {@code the} — de bepaalde lidwoordvorm noemt ÉÉN lid — plus elk onbekend token, en die moeten nog steeds
+     * bij naam stuklopen in plaats van stil als forall mee te glijden. <b>Sinds L5</b> laat het schema {@code the}
+     * op een QuantifierFold niet toe en weigert de gedeelde lader hem voor een uitvoerder in de zin van WF-108
+     * (a): een documentfout op {@code …/quantifier}, geen vorm die deze backend niet draagt. Een onbekend token
+     * is een onbekende waarde van de familie, in de zin van de gedeelde lader.
      */
     @Test void de_bepaalde_kwantor_wordt_bij_naam_geweigerd() throws Exception {
-        for (String kw : new String[]{"the", "SOMMIGE"}) {
-            IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
-                    () -> IrLoader.load(JSON.readTree(ir(vouw(kw, "null", BRONROL)))),
-                    "kwantor " + kw + " is geen kwantificatie over een verzameling en hoort te worden geweigerd");
-            assertEquals("Kwantorvouw.kwantor", r.form(), "de weigering noemt de vorm (" + kw + ")");
-            assertTrue(r.getMessage().contains("WF-108"),
-                    "de reden verwijst naar de regel: " + r.getMessage());
+        String plek = "/rules/rules/0/versions/0/condition/quantifier";
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+                () -> IrLoader.load(JSON.readTree(ir(vouw("the", "null", BRONROL)))),
+                "kwantor the is geen kwantificatie over een verzameling en hoort te worden geweigerd");
+        assertEquals(plek, e.plek(), e.getMessage());
+        assertTrue(e.getMessage().endsWith(": quantifier fold with quantifier the: the bare definite is a description"
+                + " of ONE member, not a quantification over the set — a fold over it has no reading"), e.getMessage());
+        for (String kw : new String[]{"SOMMIGE", "DE", "ALLE"}) {
+            e = assertThrows(IrLoader.Documentfout.class,
+                    () -> IrLoader.load(JSON.readTree(ir(vouw(kw, "null", BRONROL)))), kw);
+            assertEquals(plek, e.plek(), e.getMessage());
+            assertTrue(e.getMessage().endsWith(": unknown quantifier value \"" + kw + "\""), e.getMessage());
         }
     }
 
@@ -591,7 +599,7 @@ class HeelperiodeKwantorvouwWitnessTest {
     // ================= the authored documents =================
 
     private static final String BRONROL =
-            "\"bronRol\": { \"node\": \"RoleBinding\", \"factType\": \"vlootindeling\", \"role\": \"schip\" }";
+            "\"sourceRole\": { \"node\": \"RoleBinding\", \"factType\": \"vlootindeling\", \"role\": \"schip\" }";
 
     private static final String ZEEGAAND_FILTER = """
             { "node": "CharacteristicCheck", "characteristic": "zeegaand", "negated": false,
@@ -600,14 +608,14 @@ class HeelperiodeKwantorvouwWitnessTest {
     private static final String NUMERIEK =
             "{ \"node\": \"Number\", \"whole\": false, \"decimals\": 2, \"sign\": \"positive\" }";
 
-    /** The ch. 4.5 node: {@code kwantor} over the Schuiten of the Vloot, matrix "wachtwaarde gedurende het
-     *  gehele jaar groter dan 10", with {@code filter} and the range field ({@code bronRol} or {@code bronPad})
-     *  spliced in by the caller. */
+    /** The ch. 4.5 node: {@code quantifier} over the Schuiten of the Vloot, matrix "wachtwaarde gedurende het
+     *  gehele jaar groter dan 10", with {@code filter} (the string "null" writes none) and the range field
+     *  ({@code sourceRole} or {@code sourcePath}) spliced in by the caller. */
     private static String vouw(String kwantor, String filter, String bereik) {
         return vouw(kwantor, filter, bereik, false);
     }
 
-    /** The counting form. {@code drempel} is written EXACTLY under a counting kwantor (WF-108 (e)), so it is
+    /** The counting form. {@code threshold} is written EXACTLY under a counting quantifier (WF-108 (e)), so it is
      *  a slot the ALLE/GEEN builder leaves empty rather than a field always written; a NEGATIVE argument
      *  means "write none", which is how the refusal rows below build an ill-formed node deliberately. */
     private static String telVouw(String kwantor, int drempel, String filter, String bereik) {
@@ -620,8 +628,7 @@ class HeelperiodeKwantorvouwWitnessTest {
 
     private static String vouw(String kwantor, int drempel, String filter, String bereik, boolean niet) {
         return """
-                { "node": "QuantifierFold", "quantifier": "%s"%s, "elementType": "Schuit",
-                  "filter": %s,
+                { "node": "QuantifierFold", "quantifier": "%s"%s, "elementType": "Schuit",%s
                   "test": {
                     "node": "Comparison", "op": "greater",
                     "left": { "node": "AttributeReference", "attribute": "wachtwaarde", "subjectType": "Schuit",
@@ -631,8 +638,8 @@ class HeelperiodeKwantorvouwWitnessTest {
                     "source": { "snippet": "zijn wachtwaarde gedurende het gehele jaar groter is dan 10" } },
                   %s,
                   "source": { "snippet": "de wachtwaarde van %s schepen van de Vloot gedurende het gehele jaar groter is dan 10" } }
-                """.formatted(kwantor, drempel < 0 ? "" : ", \"drempel\": " + drempel,
-                        filter, NUMERIEK, niet, bereik,
+                """.formatted(kwantor, drempel < 0 ? "" : ", \"threshold\": " + drempel,
+                        "null".equals(filter) ? "" : "\n  \"filter\": " + filter + ",", NUMERIEK, niet, bereik,
                         "none".equals(kwantor) ? "geen van de" : "alle");
     }
 

@@ -76,7 +76,8 @@ class KwantorvouwBereikWitnessTest {
             IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
                     () -> CaseRunner.speelCase(p, c, viaDrl),
                     (viaDrl ? "drl-tekst" : "exec-model") + " never lowers a bindingless quantifier fold");
-            assertTrue(e.getMessage().contains("missing field 'bronRol'"), e.getMessage());
+            assertTrue(e.getMessage().contains("a quantifier fold carries its range (sourceRole or sourcePath): the"
+                    + " range is written, never derived"), e.getMessage());
         }
     }
 
@@ -86,7 +87,7 @@ class KwantorvouwBereikWitnessTest {
         BeideTakken.groen(ir, JSON.readTree(Files.readString(zaak)), zaak.getFileName().toString());
     }
 
-    /** Every {@code bronRol} under a rule, at whatever depth — the folds sit inside the rule's conditions. */
+    /** Every {@code sourceRole} under a rule, at whatever depth — the folds sit inside the rule's conditions. */
     private static void stripBronRol(JsonNode n) {
         if (n instanceof ObjectNode o) {
             o.remove("sourceRole");

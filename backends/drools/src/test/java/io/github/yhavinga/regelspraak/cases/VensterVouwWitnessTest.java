@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.github.yhavinga.regelspraak.ir.Spelling;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -186,7 +188,9 @@ class VensterVouwWitnessTest {
     @Test void onder_geen_en_de_tellende_kwantoren_weigeren_beide_takken_het_venster() throws Exception {
         for (String kw : List.of("none", "atLeast", "atMost", "exactly")) {
             Integer drempel = "none".equals(kw) ? null : 1;
-            String vouw = "een kwantorvouw onder " + kw + " over Strandwacht (WF-112)";
+            // the wire spells the quantifier as the table does; the transpiler's sentence names the record's constant
+            String vouw = "een kwantorvouw onder "
+                    + Spelling.QUANTIFIER.waarde("QuantifierFold.quantifier", kw).name() + " over Strandwacht (WF-112)";
             BeideTakken.geweigerd(document(kw, drempel, null, LIT), casus(null, ALLE_PLOEGEN),
                     "periodevenster in de toets van " + vouw + ": de kwantor telt of ontkent het vensterverdict",
                     "het venster in de toets onder " + kw);
@@ -244,8 +248,10 @@ class VensterVouwWitnessTest {
                 + ", \"source\": {\"snippet\": \"" + d + "\"} }";
     }
 
+    /** A time window; a bound given as "null" is open on that side, which the wire writes as an absent field. */
     private static String venster(String vanaf, String tot, boolean inclusief, String bron) {
-        return "{ \"node\": \"TimeWindow\", \"from\": " + vanaf + ", \"to\": " + tot + ", \"toInclusive\": "
+        return "{ \"node\": \"TimeWindow\", " + (vanaf.equals("null") ? "" : "\"from\": " + vanaf + ", ")
+                + (tot.equals("null") ? "" : "\"to\": " + tot + ", ") + "\"toInclusive\": "
                 + inclusief + ", \"source\": {\"snippet\": \"" + bron + "\"} }";
     }
 
@@ -290,7 +296,7 @@ class VensterVouwWitnessTest {
         ObjectNode kv = (ObjectNode) IrPad.versie(doc, "rules", 0, 0).get("condition");
         kv.put("quantifier", kwantor);
         if (drempel == null) kv.remove("threshold"); else kv.put("threshold", drempel);
-        kv.set("filter", filter == null ? JSON.nullNode() : JSON.readTree(filter));
+        if (filter == null) kv.remove("filter"); else kv.set("filter", JSON.readTree(filter));
         kv.set("test", JSON.readTree(toets));
         Path p = tmp.resolve("venstervouw-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());

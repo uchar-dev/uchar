@@ -177,7 +177,7 @@ class EnumNaamIdentiteitWitnessTest {
         naarTekst(IrPad.rulesLijst(ir, "rules"));
         naarTekst(IrPad.rulesLijst(ir, "consistencies"));
         IrPad.model(ir).putArray("domains");
-        assertFalse(ir.toString().contains("Enumeratie"), "de variant hoort geen enumeratie meer te dragen");
+        assertFalse(ir.toString().contains("Enumeration"), "de variant hoort geen enumeratie meer te dragen");
         Path doc = schrijf(ir, "tekst.json");
         BeideTakken.groen(doc, JSON.readTree("""
                 {"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [
@@ -204,7 +204,7 @@ class EnumNaamIdentiteitWitnessTest {
         return p;
     }
 
-    /** Every {@code Enumeratie} datatype node under {@code n} replaced by a {@code Tekst} node, and the value of every
+    /** Every {@code Enumeration} datatype node under {@code n} replaced by a {@code Text} node, and the value of every
      *  literal typed so read as the text it names: a literal's value is the variant its type names (WF-114). */
     private static void naarTekst(JsonNode n) {
         if (n instanceof ObjectNode o) {
@@ -216,7 +216,7 @@ class EnumNaamIdentiteitWitnessTest {
             o.fieldNames().forEachRemaining(namen::add);
             for (String k : namen) {
                 JsonNode v = o.get(k);
-                if (v.isObject() && "Enumeratie".equals(v.path("node").asText()))
+                if (v.isObject() && "Enumeration".equals(v.path("node").asText()))
                     o.putObject(k).put("node", "Text");
                 else naarTekst(v);
             }
@@ -227,7 +227,7 @@ class EnumNaamIdentiteitWitnessTest {
 
     private static ObjectNode literal(JsonNode type, String label) {
         ObjectNode l = JSON.createObjectNode();
-        l.put("node", "Literal").putObject("value").put("Tekst".equals(type.path("node").asText()) ? "text" : "enumeration",
+        l.put("node", "Literal").putObject("value").put("Text".equals(type.path("node").asText()) ? "text" : "enumeration",
                 label);
         l.set("type", type.deepCopy());
         l.set("source", IrPad.bronrecord("'" + label + "'"));

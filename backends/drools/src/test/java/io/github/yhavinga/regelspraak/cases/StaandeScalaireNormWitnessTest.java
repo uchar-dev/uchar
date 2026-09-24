@@ -163,7 +163,7 @@ class StaandeScalaireNormWitnessTest {
         groep.put("attribute", "geschatte waarde");
         groep.set("source", IrPad.bronrecord("witness: gemeld geeft 12.00"));
         ObjectNode d = ((ObjectNode) groep.get("defaults").get(0)).deepCopy();
-        d.set("voorwaarde", JSON.readTree(
+        d.set("justification", JSON.readTree(
                 "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gemeld\",\"negated\":false,"
                         + "\"source\":{\"snippet\":\"hij gemeld is\"}}"));
         ((ObjectNode) d.get("consequence")).putObject("value").put("number", "12.00");

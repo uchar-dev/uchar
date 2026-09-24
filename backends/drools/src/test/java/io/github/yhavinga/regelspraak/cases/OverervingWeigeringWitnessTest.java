@@ -56,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * against the merge base, the exchange is not a relabelling in either direction: the narrowed guard
  * FREES the fixed-startpunt shape (base EXCLUDE, head PLAYED) and CATCHES two the broad one let through
  * silently — a determination on an ancestor (base PLAYED 4, the one non-degenerate hole) and the
- * degenerate {@code granulariteit: null} tijdlijn on which WF-005 demands no granularity facet at all
+ * degenerate {@code granularity: null} tijdlijn on which WF-005 demands no granularity facet at all
  * (base PLAYED 4). M1 made that degenerate shape unwritable — a TimelineFacet requires its granularity — so
  * its witness left this class on 2026-09-23 and stands in {@code loader.LaderWeigeringWitnessTest} as what it
  * pins now, a loader refusal of a grid-less facet. The unknown supertype and the cycle stay a last line

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.github.yhavinga.regelspraak.ir.Spelling;
+
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -92,7 +94,8 @@ class DatumSetvouwWitnessTest {
         for (String kind : new String[] { "sum", "total" }) {
             BeideTakken.geweigerd(tijdelijk("datumsetbron-" + kind, metKind(BEREIK, kind)),
                     zaak(BEREIK, "case1-bereik.json"),
-                    "vouw " + kind + " over de setbron 'vondstdatum' van Vondst: die leden zijn van type "
+                    "vouw " + Spelling.AGGREGATION_KIND.waarde("Aggregation.kind", kind).name()
+                            + " over de setbron 'vondstdatum' van Vondst: die leden zijn van type "
                             + "Datum in dagen en niet getalachtig, terwijl beide takken elke waardevouw in "
                             + "BigDecimal accumuleren. Optellen is rekenkunde en alleen bedragen tellen op",
                     "an additive fold over a date set source refuses by name in both branches");

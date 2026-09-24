@@ -144,7 +144,7 @@ class VensterNestingWitnessTest {
 
     private static String vouw(String kwantor, String elem, String rol, String filter, String toets) {
         return "{ \"node\": \"QuantifierFold\", \"quantifier\": \"" + kwantor + "\", \"elementType\": \"" + elem + "\","
-                + " \"filter\": " + (filter == null ? "null" : filter) + ", \"test\": " + toets + ","
+                + (filter == null ? "" : " \"filter\": " + filter + ",") + " \"test\": " + toets + ","
                 + " \"source\": {\"snippet\": \"de vouw over " + elem + "\"}, \"sourceRole\": " + rol + " }";
     }
 

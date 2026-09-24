@@ -370,14 +370,14 @@ class LetDragerWandelingWitnessTest {
     }
 
     /** A ch. 7 group over {@code Jutter.toeslag}: a justified first default with {@code consequentie}, then an
-     *  unconditional 0. {@code ongeordend} makes a two-member set conflict-capable. */
+     *  unconditional 0. {@code ongeordend} writes the group unordered, which makes a two-member set conflict-capable. */
     private static String defaultsGroep(String consequentie, String nulWaarde, boolean ongeordend) {
         return ("{\"node\":\"PrioritizedDefaults\",\"name\":\"toeslag\",\"subject\":\"Jutter\","
                 + "\"attribute\":\"toeslag\"%s,\"defaults\":["
                 + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}},"
                 + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
                 + "\"source\":{\"snippet\":\"toeslag\"},\"validity\":{\"node\":\"Validity\"}}")
-                .formatted(ongeordend ? ",\"ongeordend\":true" : "",
+                .formatted(ongeordend ? ",\"unordered\":true" : "",
                         verg("greaterOrEqual", attr("Jutter", "kindertal", GEHEEL_POS), lit("2", GEHEEL_POS)),
                         consequentie, ALTIJD, nulWaarde);
     }

@@ -63,7 +63,7 @@ class NavigatiebindingWitnessTest {
             }
             IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir), veld);
             assertEquals(plek + veld, e.plek(), e.getMessage());
-            assertTrue(e.getMessage().contains("unknown field on AttribuutRef"), e.getMessage());
+            assertTrue(e.getMessage().contains("unknown field on AttributeReference"), e.getMessage());
         }
     }
 
@@ -82,7 +82,7 @@ class NavigatiebindingWitnessTest {
         k.put("navigatie", "vlaghaven");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
         assertEquals("/rules/rules/" + VLAGPRIJS + "/versions/0/condition/navigatie", e.plek(), e.getMessage());
-        assertTrue(e.getMessage().contains("unknown field on Kenmerk"), e.getMessage());
+        assertTrue(e.getMessage().contains("unknown field on CharacteristicCheck"), e.getMessage());
     }
 
     // ---------------- no silent fallback ----------------
@@ -154,7 +154,7 @@ class NavigatiebindingWitnessTest {
         ((ObjectNode) waarde(ir).get("path").get(0)).remove("role");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
         assertEquals("/rules/rules/" + VLAGPRIJS + "/versions/0/value/path/0", e.plek(), e.getMessage());
-        assertTrue(e.getMessage().contains("missing field 'rol'"), e.getMessage());
+        assertTrue(e.getMessage().contains("missing field 'role'"), e.getMessage());
 
         ObjectNode ir2 = lees();
         ((ObjectNode) IrPad.versie(ir2, "rules", 3, 0).get("condition")).putNull("navigation");

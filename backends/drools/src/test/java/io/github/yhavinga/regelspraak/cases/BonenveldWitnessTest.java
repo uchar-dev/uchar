@@ -79,7 +79,7 @@ class BonenveldWitnessTest {
         for (String veld : new String[] { "veld", "viaOuderVeld", "type" }) {
             ObjectNode ir = lees(POSTWACHT);
             stap(ir).put(veld, veld.equals("viaOuderVeld") ? "true" : "Sein");
-            onbekendVeld(ir, "/rules/factCreations/0/versions/0/path/0/" + veld, "RolBinding");
+            onbekendVeld(ir, "/rules/factCreations/0/versions/0/path/0/" + veld, "RoleBinding");
         }
     }
 
@@ -141,7 +141,7 @@ class BonenveldWitnessTest {
         for (JsonNode t : fc.get("path")) {
             java.util.List<String> velden = new java.util.ArrayList<>();
             t.fieldNames().forEachRemaining(velden::add);
-            assertEquals(java.util.List.of("node", "feittype", "rol"), velden, t.toString());
+            assertEquals(java.util.List.of("node", "factType", "role"), velden, t.toString());
         }
         BeideTakken.groen(tijdelijk("bindingen", ir), casus(POSTWACHT, "case"), "plays on the bindings alone");
     }
@@ -161,7 +161,7 @@ class BonenveldWitnessTest {
         stap(ir).remove("factType");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
         assertEquals("/rules/factCreations/0/versions/0/path/0", e.plek(), e.getMessage());
-        assertTrue(e.getMessage().contains("missing field 'feittype'"), e.getMessage());
+        assertTrue(e.getMessage().contains("missing field 'factType'"), e.getMessage());
     }
 
     @Test void een_scopebinding_die_niet_oplost_valt_niet_terug_op_scopeveld() throws Exception {
@@ -217,10 +217,13 @@ class BonenveldWitnessTest {
                                        String rol2, String ot2, boolean veel2) {
         ObjectNode ft = JSON.createObjectNode().put("node", "FactType").put("name", naam).put("reciprocal", false);
         ArrayNode rollen = ft.putArray("roles");
-        rollen.addObject().put("node", "Role").put("name", rol1).put("objectType", ot1)
-                .put("plural", veel1 ? rol1 + "en" : null).put("many", veel1);
-        rollen.addObject().put("node", "Role").put("name", rol2).put("objectType", ot2)
-                .put("plural", veel2 ? rol2 + "en" : null).put("many", veel2);
+        // a role without a plural leaves the field out: the wire writes an optional field whole or not at all
+        ObjectNode r1 = rollen.addObject().put("node", "Role").put("name", rol1).put("objectType", ot1);
+        if (veel1) r1.put("plural", rol1 + "en");
+        r1.put("many", veel1);
+        ObjectNode r2 = rollen.addObject().put("node", "Role").put("name", rol2).put("objectType", ot2);
+        if (veel2) r2.put("plural", rol2 + "en");
+        r2.put("many", veel2);
         return ft;
     }
 

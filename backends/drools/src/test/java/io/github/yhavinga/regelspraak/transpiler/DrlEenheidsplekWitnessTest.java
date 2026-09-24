@@ -56,9 +56,9 @@ class DrlEenheidsplekWitnessTest {
 
     /** The position classes the harness twists, with its per-node-kind restatement exponent. */
     private static final Map<String, Integer> KLASSE = Map.of(
-            "AttribuutRef", 1, "ParameterRef", 2, "DimensieCel", 3, "BinderRef", 4,
-            "Binair", 5, "Let", 6, "Aggregation", 7, "BuiltinCall", 7, "Afgerond", 8, "Begrensd", 9);
-    /** ch. 2.10 clause 2 splits Binair and the two function nodes by OPERATOR: only these branches derive a result
+            "AttributeReference", 1, "ParameterReference", 2, "DimensionCellRead", 3, "BinderRef", 4,
+            "Binary", 5, "Let", 6, "Aggregation", 7, "BuiltinCall", 7, "Rounding", 8, "Clamp", 9);
+    /** ch. 2.10 clause 2 splits Binary and the two function nodes by OPERATOR: only these branches derive a result
      *  unit. Every kind that derives is an aggregation's, so no BuiltinCall is ever twisted. */
     private static final Set<String> AFGELEIDE_OP = Set.of("plus", "minus", "reducedBy", "times");
     private static final Set<String> AFGELEIDE_KIND = Set.of("sum", "total", "minimum", "maximum", "first", "last");
@@ -105,7 +105,7 @@ class DrlEenheidsplekWitnessTest {
         String node = o.path("node").asText(null);
         // WF-035: the DURATION operand of a date +/- duration carries the calendar unit ref routes on
         JsonNode duur = null;
-        if ("Binair".equals(node) && Set.of("plus", "minus", "reducedBy").contains(o.path("op").asText(""))) {
+        if ("Binary".equals(node) && Set.of("plus", "minus", "reducedBy").contains(o.path("op").asText(""))) {
             JsonNode l = o.get("left"), r = o.get("right");
             if (datumGetypeerd(l) && !datumGetypeerd(r)) duur = r;
             else if (datumGetypeerd(r) && !datumGetypeerd(l)) duur = l;
@@ -128,8 +128,8 @@ class DrlEenheidsplekWitnessTest {
     /** True iff ch. 2.10 clause 2 DERIVES this position's result unit — the only positions a twist may probe. */
     private static boolean afgeleid(ObjectNode o) {
         String node = o.path("node").asText(null);
-        if (node == null) return false;              // not an IR node: a declaration map, a bron string, …
-        if ("Binair".equals(node)) return AFGELEIDE_OP.contains(o.path("op").asText(""));
+        if (node == null) return false;              // not an IR node: a declaration map, a source record, …
+        if ("Binary".equals(node)) return AFGELEIDE_OP.contains(o.path("op").asText(""));
         if ("Aggregation".equals(node) || "BuiltinCall".equals(node))
             return AFGELEIDE_KIND.contains(o.path("kind").asText(""));
         return KLASSE.containsKey(node);

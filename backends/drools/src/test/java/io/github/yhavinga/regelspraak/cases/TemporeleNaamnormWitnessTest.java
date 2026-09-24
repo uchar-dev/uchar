@@ -76,7 +76,7 @@ class TemporeleNaamnormWitnessTest {
     private static int hoofdletters(JsonNode x, String attr) {
         int n = 0;
         if (x instanceof ObjectNode o) {
-            if ("AttribuutRef".equals(o.path("node").asText()) && attr.equals(o.path("attribute").asText())) {
+            if ("AttributeReference".equals(o.path("node").asText()) && attr.equals(o.path("attribute").asText())) {
                 o.put("attribute", attr.toUpperCase(java.util.Locale.ROOT));
                 n++;
             }
