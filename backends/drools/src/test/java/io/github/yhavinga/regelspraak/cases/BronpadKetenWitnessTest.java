@@ -78,7 +78,7 @@ class BronpadKetenWitnessTest {
             + stap("schutting", "geschutte praam") + ", " + stap("lading", "geladen vat");
 
     private static String stap(String feittype, String rol) {
-        return "{ \"node\": \"RolBinding\", \"feittype\": \"" + feittype + "\", \"rol\": \"" + rol + "\" }";
+        return "{ \"node\": \"RoleBinding\", \"factType\": \"" + feittype + "\", \"role\": \"" + rol + "\" }";
     }
 
     // ---------------- 1-5: the five readings, both branches ----------------
@@ -118,8 +118,8 @@ class BronpadKetenWitnessTest {
      */
     @Test void de_directe_relatie_geeft_een_ander_antwoord_dan_het_pad() throws Exception {
         String metBronRol = doc().replace("\"sourcePath\": [ " + PAD_VRACHT + " ]",
-                "\"sourceRole\": { \"node\": \"RolBinding\", \"feittype\": \"praamregister\","
-                        + " \"rol\": \"geregistreerde praam\" }");
+                "\"sourceRole\": { \"node\": \"RoleBinding\", \"factType\": \"praamregister\","
+                        + " \"role\": \"geregistreerde praam\" }");
         assertTrue(metBronRol.contains("sourceRole"), "de vervanging hoort het pad door de directe binding te ruilen");
         BeideTakken.rood(ir(metBronRol), keten(), "laagste vracht",
                 "de directe registratie levert 1,00; alleen het pad levert de 3,00 die de zin zegt");
@@ -158,8 +158,8 @@ class BronpadKetenWitnessTest {
      *  the SHARED sentence, never a KieBase that dies at first fire. */
     @Test void een_cardinaliteitsstrijdige_stap_wordt_geweigerd() throws Exception {
         String stuk = doc().replace(
-                "{ \"node\": \"Rol\", \"naam\": \"schuttende sluis\", \"objecttypeNaam\": \"Sluis\", \"meervoud\": \"schuttende sluizen\", \"meervoudig\": false }",
-                "{ \"node\": \"Rol\", \"naam\": \"schuttende sluis\", \"objecttypeNaam\": \"Sluis\", \"meervoud\": \"schuttende sluizen\", \"meervoudig\": true }");
+                "{ \"node\": \"Role\", \"name\": \"schuttende sluis\", \"objectType\": \"Sluis\", \"plural\": \"schuttende sluizen\", \"many\": false }",
+                "{ \"node\": \"Role\", \"name\": \"schuttende sluis\", \"objectType\": \"Sluis\", \"plural\": \"schuttende sluizen\", \"many\": true }");
         BeideTakken.geweigerd(ir(stuk), keten(), "opslagrichting",
                 "beide zijden meervoudig: geen van beide beans draagt de relatie");
     }
@@ -177,7 +177,7 @@ class BronpadKetenWitnessTest {
     private static String doc() { return DOCUMENT; }
 
     private static final String NUM2 =
-            "{ \"node\": \"Number\", \"whole\": false, \"decimals\": 2, \"sign\": \"ONBEPAALD\" }";
+            "{ \"node\": \"Number\", \"whole\": false, \"decimals\": 2, \"sign\": \"unspecified\" }";
 
     /** One fold rule: {@code <attribuut>} of a Tolhuis is {@code <kind>} of {@code <arg>} of all
      *  {@code <element>} the path reaches. */
@@ -185,15 +185,15 @@ class BronpadKetenWitnessTest {
             String leegwaarde, String pad) {
         return """
                 { "node": "Rule", "name": "%s", "versions": [ {
-                  "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
-                  "target": { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Tolhuis",
+                  "validity": { "node": "Validity" },
+                  "target": { "node": "AttributeReference", "attribute": "%s", "subjectType": "Tolhuis",
                               "source": { "snippet": "De %s van een Tolhuis" } },
                   "value": { "node": "Aggregation", "kind": "%s",
-                    "arguments": [ { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s",
+                    "arguments": [ { "node": "AttributeReference", "attribute": "%s", "subjectType": "%s",
                                      "source": { "snippet": "de %s van alle %sen" } } ],
                     "elementType": "%s",%s
                     "sourcePath": [ %s ], "type": %s, "source": { "snippet": "de vouw over het pad" } },
-                  "initialisation": false, "presentation": "BEREKENING" } ] }"""
+                  "initialisation": false, "presentation": "calculation" } ] }"""
                 .formatted(naam, attribuut, attribuut, kind, arg, element, arg, element, element,
                         leegwaarde.equals("null") ? "" : " \"emptyFallback\": " + leegwaarde + ",", pad, NUM2);
     }
@@ -213,13 +213,13 @@ class BronpadKetenWitnessTest {
     }
 
     private static String rol(String naam, String otn, String meervoud, boolean meervoudig) {
-        return "{ \"node\": \"Rol\", \"naam\": \"" + naam + "\", \"objecttypeNaam\": \"" + otn
-                + "\", \"meervoud\": \"" + meervoud + "\", \"meervoudig\": " + meervoudig + " }";
+        return "{ \"node\": \"Role\", \"name\": \"" + naam + "\", \"objectType\": \"" + otn
+                + "\", \"plural\": \"" + meervoud + "\", \"many\": " + meervoudig + " }";
     }
 
     private static String feittype(String naam, String a, String b) {
-        return "{ \"node\": \"Feittype\", \"naam\": \"" + naam + "\", \"wederkerig\": false,"
-                + " \"rollen\": [ " + a + ", " + b + " ] }";
+        return "{ \"node\": \"FactType\", \"name\": \"" + naam + "\", \"reciprocal\": false,"
+                + " \"roles\": [ " + a + ", " + b + " ] }";
     }
 
     private static final String DOCUMENT = """
@@ -236,10 +236,10 @@ class BronpadKetenWitnessTest {
                 "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
                 "timelines": [], "dayKinds": [] },
               "rules": {
-                "resolvedRegels": [ %s ],
-                "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-                "uniciteiten": [], "feitCreaties": [], "resolvedStartpunten": [],
-                "regelGroepen": [] },
+                "rules": [ %s ],
+                "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
+                "uniquenesses": [], "factCreations": [], "startPointDeterminations": [],
+                "ruleGroups": [] },
               "diagnostics": [] }"""
             .formatted(
                     objecttype("Tolhuis", "Tolhuizen", null,
@@ -265,10 +265,10 @@ class BronpadKetenWitnessTest {
                             regel("laagste vracht", "laagste vracht", "MINIMUM", "Praam", "vracht", "null", PAD_VRACHT),
                             regel("totale vracht", "totale vracht", "SOM", "Praam", "vracht",
                                     "{ \"node\": \"Literal\", \"value\": { \"number\": \"0\" }, \"type\": { \"node\": \"Number\","
-                                    + " \"whole\": true, \"decimals\": 0, \"sign\": \"ONBEPAALD\" }, \"source\": {\"snippet\": \"0\"} }", PAD_VRACHT),
+                                    + " \"whole\": true, \"decimals\": 0, \"sign\": \"unspecified\" }, \"source\": {\"snippet\": \"0\"} }", PAD_VRACHT),
                             regel("steenlast", "steenlast", "SOM", "Ankersteen", "steengewicht",
                                     "{ \"node\": \"Literal\", \"value\": { \"number\": \"0\" }, \"type\": { \"node\": \"Number\","
-                                    + " \"whole\": true, \"decimals\": 0, \"sign\": \"ONBEPAALD\" }, \"source\": {\"snippet\": \"0\"} }", PAD_STEEN),
+                                    + " \"whole\": true, \"decimals\": 0, \"sign\": \"unspecified\" }, \"source\": {\"snippet\": \"0\"} }", PAD_STEEN),
                             regel("laagste zegelvracht", "laagste zegelvracht", "MINIMUM", "Zegelpraam", "vracht",
                                     "null", PAD_VRACHT),
                             regel("laagste vatinhoud", "laagste vatinhoud", "MINIMUM", "Vat", "inhoud", "null", PAD_VAT)));

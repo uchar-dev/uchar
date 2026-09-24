@@ -238,36 +238,36 @@ class NietTemporeleKwantorvouwWitnessTest {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(GOLDEN.resolve("ir.json")));
         ObjectNode ploeg = IrPad.objectType(doc, "Schouwploeg");
         ploeg.set("characteristics", JSON.readTree(
-                "[ { \"node\": \"Characteristic\", \"name\": \"uitgerust\", \"kind\": \"BIJVOEGLIJK\" } ]"));
+                "[ { \"node\": \"Characteristic\", \"name\": \"uitgerust\", \"kind\": \"adjectival\" } ]"));
         ploeg.set("attributes", JSON.readTree("[]"));
         IrPad.modelLijst(doc, "objectTypes").add(JSON.readTree("""
                 { "node": "ObjectType", "name": "Uitrusting", "animate": false, "plural": "Uitrustingen",
                   "attributes": [],
-                  "characteristics": [ { "node": "Characteristic", "name": "gekeurd", "kind": "BIJVOEGLIJK" } ] }"""));
+                  "characteristics": [ { "node": "Characteristic", "name": "gekeurd", "kind": "adjectival" } ] }"""));
         IrPad.modelLijst(doc, "factTypes").add(JSON.readTree("""
-                { "node": "Feittype", "naam": "wachtuitrusting", "wederkerig": false, "rollen": [
-                    { "node": "Rol", "naam": "drager", "objecttypeNaam": "Strandwacht",
-                      "meervoud": null, "meervoudig": false },
-                    { "node": "Rol", "naam": "stuk", "objecttypeNaam": "Uitrusting",
-                      "meervoud": "stukken", "meervoudig": true } ] }"""));
-        IrPad.rules(doc).set("resolvedRegels", JSON.readTree("""
+                { "node": "FactType", "name": "wachtuitrusting", "reciprocal": false, "roles": [
+                    { "node": "Role", "name": "drager", "objectType": "Strandwacht",
+                      "many": false },
+                    { "node": "Role", "name": "stuk", "objectType": "Uitrusting",
+                      "plural": "stukken", "many": true } ] }"""));
+        IrPad.rules(doc).set("rules", JSON.readTree("""
                 [ { "node": "Rule", "name": "uitgerust bij keuring", "versions": [ {
-                      "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
-                      "target": { "node": "AttribuutRef", "attribuut": "uitgerust", "objecttype": "Schouwploeg",
+                      "validity": { "node": "Validity" },
+                      "target": { "node": "AttributeReference", "attribute": "uitgerust", "subjectType": "Schouwploeg",
                               "source": { "snippet": "Een Schouwploeg is uitgerust" } },
-                      "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "source": { "snippet": "waar" } },
+                      "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Boolean" }, "source": { "snippet": "waar" } },
                       "condition": {
-                      "node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Strandwacht",
-                      "filter": null,
-                      "toets": { "node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Uitrusting",
-                                 "filter": null,
-                                 "toets": { "node": "Kenmerk", "kenmerk": "gekeurd", "negatie": false, "eigenaar": null, "periode": null,
+                      "node": "QuantifierFold", "quantifier": "all", "elementType": "Strandwacht",
+
+                      "test": { "node": "QuantifierFold", "quantifier": "all", "elementType": "Uitrusting",
+
+                                 "test": { "node": "CharacteristicCheck", "characteristic": "gekeurd", "negated": false,
                                             "source": { "snippet": "het stuk gekeurd is" } },
                                  "source": { "snippet": "alle stukken van de Strandwacht gekeurd zijn" },
-                                 "bronRol": { "node": "RolBinding", "feittype": "wachtuitrusting",
-                                              "rol": "stuk" } },
+                                 "sourceRole": { "node": "RoleBinding", "factType": "wachtuitrusting",
+                                              "role": "stuk" } },
                       "source": { "snippet": "alle wachten van de Schouwploeg alle stukken gekeurd hebben" },
-                      "bronRol": { "node": "RolBinding", "feittype": "schouwindeling", "rol": "wacht" } },
+                      "sourceRole": { "node": "RoleBinding", "factType": "schouwindeling", "role": "wacht" } },
                       "initialisation": false } ] } ]"""));
         Path p = tmp.resolve("genest-ir-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());

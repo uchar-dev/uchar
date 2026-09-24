@@ -94,14 +94,14 @@ class TemporeleSetvouwBereikWitnessTest {
         // so the stripped document is ill-formed everywhere and this loader refuses it at the fold, before
         // either branch lowers a thing.
         ObjectNode ir = herhaaldPaar();
-        ((ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("value")).remove("sourceRole");
+        ((ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value")).remove("sourceRole");
         Path p = tijdelijk("setvouw-geen-binding", ir);
         JsonNode c = JSON.readTree(ZAAK);
         for (boolean viaDrl : new boolean[] { false, true }) {
             IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
                     () -> CaseRunner.speelCase(p, c, viaDrl),
                     (viaDrl ? "drl-tekst" : "exec-model") + " never lowers a bindingless temporal set fold");
-            assertTrue(e.plek().equals("/rules/resolvedRegels/0/versions/0/value")
+            assertTrue(e.plek().equals("/rules/rules/0/versions/0/value")
                     && e.getMessage().contains("carries its range (sourceRole or sourcePath)"), e.getMessage());
         }
     }
@@ -119,7 +119,7 @@ class TemporeleSetvouwBereikWitnessTest {
         bewaarlast.put("plural", "bewaarlasten");
         bewaarlast.set("datatype", eur());
         IrPad.attribute(IrPad.objectType(ir, "Vondst"), "bewaartarief").set("datatype", eur());
-        ObjectNode r = IrPad.versie(ir, "resolvedRegels", 0, 0);
+        ObjectNode r = IrPad.versie(ir, "rules", 0, 0);
         // the reads take their type from the declarations above; only the fold carries an annotation of its own
         ObjectNode w = (ObjectNode) r.get("value");
         w.put("kind", "SOM").set("source", IrPad.bronrecord("de som van het bewaartarief van alle vondsten van de Jutter"));

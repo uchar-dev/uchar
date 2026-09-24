@@ -198,8 +198,8 @@ class DrlCreatieTakWitnessTest {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
         IrPad.addAttribute(IrPad.objectType(ir, "Jutter"), "rekenkamer", JSON.readTree("""
                         { "node": "Number", "whole": true, "decimals": 0,
-                          "sign": "ONBEPAALD" }"""));
-        IrPad.rules(ir).set("resolvedRegels", zonder(IrPad.rulesLijst(ir, "resolvedRegels"), "heffing van een jutter"));
+                          "sign": "unspecified" }"""));
+        IrPad.rules(ir).set("rules", zonder(IrPad.rulesLijst(ir, "rules"), "heffing van een jutter"));
         return schrijf(ir, "gelijknamig-lid");
     }
 
@@ -209,9 +209,9 @@ class DrlCreatieTakWitnessTest {
     private static Path penningVorm() throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(PENNING)));
         var rules = IrPad.rules(ir);
-        for (JsonNode c : IrPad.rulesLijst(ir, "consistenties"))
-            rules.set("resolvedRegels", zonder(rules.get("resolvedRegels"), c.path("name").asText()));
-        rules.set("consistenties", JSON.createArrayNode());
+        for (JsonNode c : IrPad.rulesLijst(ir, "consistencies"))
+            rules.set("rules", zonder(rules.get("rules"), c.path("name").asText()));
+        rules.set("consistencies", JSON.createArrayNode());
         return schrijf(ir, "penning-vorm");
     }
 

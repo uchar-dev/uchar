@@ -385,9 +385,9 @@ class OpslagrichtingWitnessTest {
      *  can hold, and the double-to-many one it cannot. An in-memory variant; the corpus ir.json is untouched. */
     private static Path tellingOverOpvolgers() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(ERFLIJN)));
-        IrPad.rules(ir).putArray("feitCreaties");
-        IrPad.rules(ir).putArray("regelGroepen");
-        ObjectNode waarde = (ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("value");
+        IrPad.rules(ir).putArray("factCreations");
+        IrPad.rules(ir).putArray("ruleGroups");
+        ObjectNode waarde = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value");
         ((ObjectNode) waarde.get("arguments").get(0)).put("attribuut", "opvolgers");
         ((ObjectNode) waarde.get("sourceRole")).put("feittype", "opvolging").put("rol", "opvolger");
         return tijdelijk("erflijn-telling-op-opvolgers", ir);
@@ -400,7 +400,7 @@ class OpslagrichtingWitnessTest {
     private static Path naamdelendeWachter(boolean metFold) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(WACHTERSKETEN)));
         IrPad.addAttribute(IrPad.objectType(ir, "Wachter"), "opvolger", numeriek());
-        if (!metFold) IrPad.rules(ir).putArray("resolvedRegels");
+        if (!metFold) IrPad.rules(ir).putArray("rules");
         return tijdelijk("wachter-naamdeling-" + (metFold ? "fold" : "creatie"), ir);
     }
 
@@ -410,8 +410,8 @@ class OpslagrichtingWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(WACHTERSKETEN)));
         IrPad.addAttribute(IrPad.objectType(ir, "Wachter"), "opvolger", numeriek());
         ObjectNode rules = IrPad.rules(ir);
-        rules.putArray("objectCreaties"); rules.putArray("resolvedRegels");
-        rules.putArray("consistenties"); rules.putArray("regelGroepen");
+        rules.putArray("objectCreations"); rules.putArray("rules");
+        rules.putArray("consistencies"); rules.putArray("ruleGroups");
         return tijdelijk("wachter-naamdeling-invoer", ir);
     }
 
@@ -445,7 +445,7 @@ class OpslagrichtingWitnessTest {
         if (stap == 1) IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", numeriek());
         else IrPad.addAttribute(IrPad.objectType(ir, "Werf"), "thuishaven", numeriek());
         houdRegel(ir, "premie van een schuit");
-        ObjectNode keten = (ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("value").get("rechts");
+        ObjectNode keten = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value").get("rechts");
         keten.put("attribuut", "havengeld").put("objecttype", "Haven")
              .set("source", IrPad.bronrecord("het havengeld van de thuishaven van de werf van de Schuit"));
         keten.putArray("navigatieBindingen")
@@ -462,7 +462,7 @@ class OpslagrichtingWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(NAVIGATIEPREMIE)));
         IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", numeriek());
         houdRegel(ir, "toeslag van een schuit");
-        ObjectNode regel = IrPad.versie(ir, "resolvedRegels", 0, 0);
+        ObjectNode regel = IrPad.versie(ir, "rules", 0, 0);
         ObjectNode nav = JSON.createObjectNode();
         nav.put("node", "AttribuutRef").put("attribuut", "tarief").put("objecttype", "Werf");
         nav.set("source", IrPad.bronrecord("het tarief van de werf van de Schuit"));
@@ -486,7 +486,7 @@ class OpslagrichtingWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(NAVIGATIEPREMIE)));
         IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", numeriek());
         houdRegel(ir, "toeslag van een schuit");
-        ObjectNode regel = IrPad.versie(ir, "resolvedRegels", 0, 0);
+        ObjectNode regel = IrPad.versie(ir, "rules", 0, 0);
         ObjectNode check = JSON.createObjectNode();
         check.put("node", "RoleMembership").put("factType", "ligplaats").put("role", "schuit")
              .put("negated", false).set("source", IrPad.bronrecord("de Schuit een schuit is"));
@@ -503,8 +503,8 @@ class OpslagrichtingWitnessTest {
      *  and not on a sibling rule that refuses first. */
     private static void houdRegel(ObjectNode ir, String naam) {
         com.fasterxml.jackson.databind.node.ArrayNode houd = JSON.createArrayNode();
-        houd.add(IrPad.vorm(ir, "resolvedRegels", naam));
-        IrPad.rules(ir).set("resolvedRegels", houd);
+        houd.add(IrPad.vorm(ir, "rules", naam));
+        IrPad.rules(ir).set("rules", houd);
     }
 
     /** One Werf (tarief 312) and one Schuit that fills the DISPLACING attribute (werf 5) and lengte 8, with NO

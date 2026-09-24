@@ -256,7 +256,7 @@ class LetDragerWandelingWitnessTest {
 
     // ---------------- helpers: the wire shapes (IR-SPEC ch. 4.10 and its neighbours) ----------------
 
-    private static final String BOOLEAAN = "{\"node\":\"Booleaan\"}";
+    private static final String BOOLEAAN = "{\"node\":\"Boolean\"}";
 
     private static String num(int dec, boolean geheel, String teken, String eenheid) {
         return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"%s\"%s}"
@@ -273,15 +273,15 @@ class LetDragerWandelingWitnessTest {
     }
 
     private static String attr(String objecttype, String naam, String type) {
-        return "{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"%s\",\"source\":{\"snippet\":\"het %s van de %s\"}}"
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"%s\",\"source\":{\"snippet\":\"het %s van de %s\"}}"
                 .formatted(naam, objecttype, naam, objecttype);
     }
 
     /** A read across a role — the shape whose reactivity {@code navRefs} is responsible for. */
     private static String navAttr(String objecttype, String naam, String type, String feittype, String rol) {
-        return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"%s\","
-                + "\"source\":{\"snippet\":\"het %s van zijn %s\"},\"navigatieBindingen\":[{\"node\":\"RolBinding\",\"feittype\":\"%s\","
-                + "\"rol\":\"%s\"}]}").formatted(naam, objecttype, naam, rol, feittype, rol);
+        return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"%s\","
+                + "\"source\":{\"snippet\":\"het %s van zijn %s\"},\"path\":[{\"node\":\"RoleBinding\",\"factType\":\"%s\","
+                + "\"role\":\"%s\"}]}").formatted(naam, objecttype, naam, rol, feittype, rol);
     }
 
     private static String lit(String waarde, String type) {
@@ -289,12 +289,12 @@ class LetDragerWandelingWitnessTest {
     }
 
     private static String binair(String op, String links, String rechts, String type) {
-        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
+        return "{\"node\":\"Binary\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, type, op.toLowerCase(java.util.Locale.ROOT));
     }
 
     private static String wortel(String argument, String type) {
-        return "{\"node\":\"BuiltinCall\",\"kind\":\"WORTEL\",\"arguments\":[%s],\"type\":%s,\"source\":{\"snippet\":\"de wortel van\"}}"
+        return "{\"node\":\"BuiltinCall\",\"kind\":\"squareRoot\",\"arguments\":[%s],\"type\":%s,\"source\":{\"snippet\":\"de wortel van\"}}"
                 .formatted(argument, type);
     }
 
@@ -314,23 +314,23 @@ class LetDragerWandelingWitnessTest {
     }
 
     private static String verg(String op, String links, String rechts) {
-        return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"source\":{\"snippet\":\"%s\"}}"
+        return "{\"node\":\"Comparison\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, op.toLowerCase(java.util.Locale.ROOT));
     }
 
     private static final String ALTIJD =
-            "{\"node\":\"Samengesteld\",\"kwantor\":\"ALLE\",\"drempel\":0,\"onderdelen\":[],\"source\":{\"snippet\":\"altijd\"}}";
+            "{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,\"parts\":[],\"source\":{\"snippet\":\"altijd\"}}";
 
     /** The §9.2 stratification lever both walk witnesses use: a NEGATED kenmerk read whose kenmerk has a
      *  producer sinks the reading rule's salience below that producer's, so the producer fires LAST. */
     private static final String NIET_VERMIST =
-            "{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"negatie\":true,"
-                    + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"hij niet vermist is\"}}";
+            "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"vermist\",\"negated\":true,"
+                    + "\"source\":{\"snippet\":\"hij niet vermist is\"}}";
     private static final String VERMIST_DOEL =
-            "{\"node\":\"AttribuutRef\",\"attribuut\":\"vermist\",\"objecttype\":\"Jutter\","
+            "{\"node\":\"AttributeReference\",\"attribute\":\"vermist\",\"subjectType\":\"Jutter\","
                     + "\"source\":{\"snippet\":\"Een Jutter is vermist\"}}";
     private static final String VERMIST_KENMERK =
-            "{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"BIJVOEGLIJK\"}";
+            "{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"adjectival\"}";
     private static final String WAAR =
             "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":" + BOOLEAAN + ",\"source\":{\"snippet\":\"waar\"}}";
 
@@ -362,9 +362,9 @@ class LetDragerWandelingWitnessTest {
             String[] regels, String prioritizedDefaults) {
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],\"factTypes\":[%s],\"parameters\":[],"
                 + "\"domains\":[],\"unitSystems\":[%s],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]},\"rules\":{"
-                + "\"resolvedRegels\":[%s],\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],"
-                + "\"consistenties\":[],\"uniciteiten\":[],\"feitCreaties\":[],"
-                + "\"resolvedStartpunten\":[],\"regelGroepen\":[]%s},\"diagnostics\":[]}")
+                + "\"rules\":[%s],\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],"
+                + "\"consistencies\":[],\"uniquenesses\":[],\"factCreations\":[],"
+                + "\"startPointDeterminations\":[],\"ruleGroups\":[]%s},\"diagnostics\":[]}")
                 .formatted(objecttypen, feittypen, eenheidstelsels, String.join(",", regels),
                         prioritizedDefaults);
     }
@@ -372,11 +372,11 @@ class LetDragerWandelingWitnessTest {
     /** A ch. 7 group over {@code Jutter.toeslag}: a justified first default with {@code consequentie}, then an
      *  unconditional 0. {@code ongeordend} makes a two-member set conflict-capable. */
     private static String defaultsGroep(String consequentie, String nulWaarde, boolean ongeordend) {
-        return ("{\"node\":\"PrioritizedDefaults\",\"naam\":\"toeslag\",\"onderwerp\":\"Jutter\",\"kenmerk\":null,"
-                + "\"attribuut\":\"toeslag\"%s,\"defaults\":["
-                + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":%s,\"consequentie\":%s,\"source\":{\"snippet\":\"toeslag\"}},"
-                + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":%s,\"consequentie\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
-                + "\"source\":{\"snippet\":\"toeslag\"},\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
+        return ("{\"node\":\"PrioritizedDefaults\",\"name\":\"toeslag\",\"subject\":\"Jutter\","
+                + "\"attribute\":\"toeslag\"%s,\"defaults\":["
+                + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}},"
+                + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
+                + "\"source\":{\"snippet\":\"toeslag\"},\"validity\":{\"node\":\"Validity\"}}")
                 .formatted(ongeordend ? ",\"ongeordend\":true" : "",
                         verg("GROTER_OF_GELIJK", attr("Jutter", "kindertal", GEHEEL_POS), lit("2", GEHEEL_POS)),
                         consequentie, ALTIJD, nulWaarde);
@@ -413,9 +413,9 @@ class LetDragerWandelingWitnessTest {
     /** A Let over a NAVIGATED read of an attribute whose producer is forced to fire last. */
     private static String verreReactiviteitModel() {
         String ver = navAttr("Jutter", "afgeleid", num(4), "strandmaatschap", "strandmaat");
-        String feittype = "{\"node\":\"Feittype\",\"naam\":\"strandmaatschap\","
-                + "\"wederkerig\":true,\"rollen\":[{\"node\":\"Rol\",\"naam\":\"strandmaat\","
-                + "\"objecttypeNaam\":\"Jutter\",\"meervoud\":\"strandmaten\",\"meervoudig\":false}]}";
+        String feittype = "{\"node\":\"FactType\",\"name\":\"strandmaatschap\","
+                + "\"reciprocal\":true,\"roles\":[{\"node\":\"Role\",\"name\":\"strandmaat\","
+                + "\"objectType\":\"Jutter\",\"plural\":\"strandmaten\",\"many\":false}]}";
         String uit = let("k", ver, binair("MAAL", bref("k", num(4)), lit("2.00", num(2)), num(6)), num(6));
         return doc(objecttype("Jutter", "Jutters",
                         attributen("strandtegoed", pos(2), "afgeleid", num(4), "uit", num(6)),

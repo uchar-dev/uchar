@@ -277,7 +277,7 @@ class TekstLexeemWitnessTest {
     }
 
     /** The one version of the golden's {@code i}-th rule. */
-    private static ObjectNode regel(ObjectNode ir, int i) { return IrPad.versie(ir, "resolvedRegels", i, 0); }
+    private static ObjectNode regel(ObjectNode ir, int i) { return IrPad.versie(ir, "rules", i, 0); }
 
     /** The golden's OWN `het keurmerk van de Vondst` reference, so every fixture asks about the same member and the
      *  only thing that varies between them is the literal's lexeme. */

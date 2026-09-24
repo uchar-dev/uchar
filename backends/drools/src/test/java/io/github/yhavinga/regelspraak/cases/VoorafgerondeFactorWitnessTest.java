@@ -91,10 +91,10 @@ class VoorafgerondeFactorWitnessTest {
         String basisEenheid = eenheid(stelsel, basis, basis, 1);
         String deelEenheid = eenheid(stelsel, deel, basis, noemer);
         String somType = getal(false, 2, basisEenheid);
-        String optelling = ("{\"node\":\"Binair\",\"op\":\"PLUS\",\"links\":%s,\"rechts\":%s,\"type\":%s,"
+        String optelling = ("{\"node\":\"Binary\",\"op\":\"plus\",\"left\":%s,\"right\":%s,\"type\":%s,"
                 + "\"source\":{\"snippet\":\"de %s van de Jutter plus de %s van de Jutter\"}}")
                 .formatted(lezing(links), lezing(rechts), somType, links, rechts);
-        String afronding = ("{\"node\":\"Afgerond\",\"basis\":%s,\"modus\":\"%s\",\"decimalen\":0,\"type\":%s,"
+        String afronding = ("{\"node\":\"Rounding\",\"base\":%s,\"mode\":\"%s\",\"decimals\":0,\"type\":%s,"
                 + "\"source\":{\"snippet\":\"de %s van de Jutter plus de %s van de Jutter %s afgerond op 0 decimalen\"}}")
                 .formatted(optelling, modus, getal(true, 0, basisEenheid), links, rechts, modusbron);
         String objecttype = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
@@ -104,10 +104,10 @@ class VoorafgerondeFactorWitnessTest {
         String units = "[" + gedeclareerd(basisEenheid, basiswoord) + "," + gedeclareerd(deelEenheid, deelwoord) + "]";
         String doc = ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],\"factTypes\":[],\"parameters\":[],"
                 + "\"domains\":[],\"unitSystems\":[{\"node\":\"UnitSystem\",\"name\":\"%s\",\"units\":%s}],"
-                + "\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]},\"rules\":{\"resolvedRegels\":[%s,%s],"
-                + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[]},\"diagnostics\":[]}").formatted(objecttype, stelsel, units,
+                + "\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]},\"rules\":{\"rules\":[%s,%s],"
+                + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
+                + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
+                + "\"ruleGroups\":[]},\"diagnostics\":[]}").formatted(objecttype, stelsel, units,
                 regel(som, optelling), regel(afgerond, afronding));
         Path tmp = Files.createTempFile("voorafgeronde-factor", ".json");
         tmp.toFile().deleteOnExit();
@@ -127,7 +127,7 @@ class VoorafgerondeFactorWitnessTest {
     }
 
     private static String getal(boolean geheel, int decimalen, String eenheid) {
-        return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"ONBEPAALD\",\"unit\":%s}"
+        return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"unspecified\",\"unit\":%s}"
                 .formatted(geheel, decimalen, eenheid);
     }
 
@@ -136,12 +136,12 @@ class VoorafgerondeFactorWitnessTest {
     }
 
     private static String lezing(String attribuut) {
-        return "{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\",\"source\":{\"snippet\":\"de %s van de Jutter\"}}"
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"de %s van de Jutter\"}}"
                 .formatted(attribuut, attribuut);
     }
 
     private static String regel(String doel, String waarde) {
-        return IrPad.regel(doel, "BEREKENING", ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
+        return IrPad.regel(doel, "BEREKENING", ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"De %s van een Jutter\"}}").formatted(doel, doel), waarde, "null");
     }
 

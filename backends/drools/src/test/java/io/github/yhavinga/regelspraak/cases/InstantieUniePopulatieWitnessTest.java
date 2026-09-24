@@ -56,7 +56,7 @@ class InstantieUniePopulatieWitnessTest {
     }
 
     private static final String HEEL =
-            "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"NIET_NEGATIEF\"}";
+            "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}";
 
     private static String objecttype(String naam, String mv) {
         return ("{\"node\":\"ObjectType\",\"name\":\"%s\",\"animate\":false,\"plural\":\"%s\","
@@ -64,16 +64,16 @@ class InstantieUniePopulatieWitnessTest {
     }
 
     private static String feittype(String naam, String eenRol, String veelRol, String veelType, String veelMv) {
-        return ("{\"node\":\"Feittype\",\"naam\":\"%s\",\"wederkerig\":false,\"rollen\":["
-                + "{\"node\":\"Rol\",\"naam\":\"%s\",\"objecttypeNaam\":\"Jutter\",\"meervoud\":null,"
-                + "\"meervoudig\":false},"
-                + "{\"node\":\"Rol\",\"naam\":\"%s\",\"objecttypeNaam\":\"%s\",\"meervoud\":\"%s\","
-                + "\"meervoudig\":true}]}").formatted(naam, eenRol, veelRol, veelType, veelMv);
+        return ("{\"node\":\"FactType\",\"name\":\"%s\",\"reciprocal\":false,\"roles\":["
+                + "{\"node\":\"Role\",\"name\":\"%s\",\"objectType\":\"Jutter\","
+                + "\"many\":false},"
+                + "{\"node\":\"Role\",\"name\":\"%s\",\"objectType\":\"%s\",\"plural\":\"%s\","
+                + "\"many\":true}]}").formatted(naam, eenRol, veelRol, veelType, veelMv);
     }
 
     private static String tak(String elementType, String feittype, String rol) {
         return ("{\"node\":\"InstanceSetBranch\",\"elementType\":\"%s\","
-                + "\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"%s\",\"rol\":\"%s\"},"
+                + "\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"%s\",\"role\":\"%s\"},"
                 + "\"filter\":null,\"source\":{\"snippet\":\"een selectie\"}}").formatted(elementType, feittype, rol);
     }
 
@@ -87,24 +87,24 @@ class InstantieUniePopulatieWitnessTest {
             + "," + feittype("kaveltoewijzing", "kavelhouder", "duinkavel", "Kavel", "duinkavels")
             + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
             + "\"dayKinds\":[]},"
-            + "\"rules\":{\"resolvedRegels\":[{\"node\":\"Rule\",\"name\":\"aantal strandvondsten\","
-            + "\"versions\":[{\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null},"
-            + "\"target\":{\"node\":\"AttribuutRef\","
-            + "\"attribuut\":\"aantal strandvondsten\",\"objecttype\":\"Jutter\","
+            + "\"rules\":{\"rules\":[{\"node\":\"Rule\",\"name\":\"aantal strandvondsten\","
+            + "\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
+            + "\"target\":{\"node\":\"AttributeReference\","
+            + "\"attribute\":\"aantal strandvondsten\",\"subjectType\":\"Jutter\","
             + "\"source\":{\"snippet\":\"Het aantal strandvondsten van een Jutter\"}},"
-            + "\"value\":{\"node\":\"Aggregation\",\"kind\":\"AANTAL\",\"arguments\":["
+            + "\"value\":{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":["
             + "{\"node\":\"InstanceSetUnion\",\"branches\":["
             + tak("Vondst", "vondstaanmelding", "aangemelde vondst") + ","
             + tak("Kavel", "kaveltoewijzing", "duinkavel")
             + "],\"source\":{\"snippet\":\"de unie\"}}],\"type\":" + HEEL + ",\"source\":{\"snippet\":\"het aantal …\"}},"
-            + "\"initialisation\":false,\"presentation\":\"BEREKENING\"}]}],"
-            + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-            + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-            + "\"regelGroepen\":[]},\"diagnostics\":[]}");
+            + "\"initialisation\":false,\"presentation\":\"calculation\"}]}],"
+            + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
+            + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
+            + "\"ruleGroups\":[]},\"diagnostics\":[]}");
 
     /** The same model, with the union standing as the rule's WHOLE value — no count above it. */
     private static final String KALE_UNIE_DOC = DOC.replace(
-            "\"value\":{\"node\":\"Aggregation\",\"kind\":\"AANTAL\",\"arguments\":[", "\"value\":")
+            "\"value\":{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":[", "\"value\":")
             .replace("],\"type\":" + HEEL + ",\"source\":{\"snippet\":\"het aantal …\"}}", "");
 
     private static final String GEVAL = """

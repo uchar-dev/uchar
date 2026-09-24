@@ -97,7 +97,7 @@ class BronPadWeigeringWitnessTest {
                 .put("node", "RolBinding").put("feittype", "bemanning").put("rol", "gevoerde boot");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root),
                 "alleen de bron van een eenargumentsvouw draagt een bereik");
-        assertEquals("/rules/resolvedRegels/0/versions/0/value/sourcePath", e.plek(), e.getMessage());
+        assertEquals("/rules/rules/0/versions/0/value/sourcePath", e.plek(), e.getMessage());
         assertTrue(e.getMessage().contains("a sourcePath is admissible only as the range of a single-argument VALUE"
                 + " fold's set source — a count's range is one step, spelled sourceRole"), e.getMessage());
     }
@@ -106,7 +106,7 @@ class BronPadWeigeringWitnessTest {
      *  document without one (IR-SPEC ch. 4.3): no reader derives it from the type pair. */
     @Test void zonder_het_veld_laadt_de_vouw_niet() throws Exception {
         ObjectNode root = (ObjectNode) anker();
-        for (JsonNode regel : IrPad.rulesLijst(root, "resolvedRegels"))
+        for (JsonNode regel : IrPad.rulesLijst(root, "rules"))
             ((ObjectNode) regel.get("versions").get(0).get("value")).remove("sourcePath");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(root));
         assertTrue(e.getMessage().contains(IrLoader.BEREIK_ONTBREEKT), e.getMessage());
@@ -122,7 +122,7 @@ class BronPadWeigeringWitnessTest {
 
     /** The one fold of the emitted witness that carries the field. */
     private static JsonNode vouw(JsonNode root) {
-        return IrPad.versie(root, "resolvedRegels", 0, 0).get("value");
+        return IrPad.versie(root, "rules", 0, 0).get("value");
     }
 
     private static JsonNode anker() throws Exception {

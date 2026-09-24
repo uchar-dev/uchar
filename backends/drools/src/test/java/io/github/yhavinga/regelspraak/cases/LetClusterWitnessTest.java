@@ -194,7 +194,7 @@ class LetClusterWitnessTest {
     private static String num(int dec) { return num(dec, false, "ONBEPAALD"); }
 
     private static String attr(String naam, int dec, boolean geheel, String teken) {
-        return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
+        return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"het %s van de Jutter\"}}")
                 .formatted(naam, naam);
     }
@@ -205,7 +205,7 @@ class LetClusterWitnessTest {
     private static String lit(String waarde, int dec) { return lit(waarde, dec, false); }
 
     private static String binair(String op, String links, String rechts, int dec) {
-        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
+        return "{\"node\":\"Binary\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, num(dec), op.toLowerCase());
     }
 
@@ -226,7 +226,7 @@ class LetClusterWitnessTest {
     }
 
     private static String verg(String op, String links, String rechts) {
-        return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"source\":{\"snippet\":\"%s\"}}"
+        return "{\"node\":\"Comparison\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, op.toLowerCase());
     }
 
@@ -246,10 +246,10 @@ class LetClusterWitnessTest {
                 + "\"plural\":\"Jutters\",\"attributes\":[%s],\"characteristics\":[%s]}],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]},"
-                + "\"rules\":{\"resolvedRegels\":[%s],"
-                + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[]%s},\"diagnostics\":[]}")
+                + "\"rules\":{\"rules\":[%s],"
+                + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
+                + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
+                + "\"ruleGroups\":[]%s},\"diagnostics\":[]}")
                 .formatted(attributen, kenmerken, String.join(",", regels), prioritizedDefaults);
     }
 
@@ -299,13 +299,13 @@ class LetClusterWitnessTest {
     private static String defaultsModel() {
         String consequentie = let("g", attr("grondslag", 2, false, "NIET_NEGATIEF"),
                 binair("PLUS", bref("g", 2), lit("100.00", 2), 2), 2);
-        String groep = (",\"prioritizedDefaults\":[{\"node\":\"PrioritizedDefaults\",\"naam\":\"toeslag\","
-                + "\"onderwerp\":\"Jutter\",\"kenmerk\":null,\"attribuut\":\"toeslag\",\"defaults\":["
-                + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":%s,\"consequentie\":%s,\"source\":{\"snippet\":\"toeslag\"}},"
-                + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":"
-                + "{\"node\":\"Samengesteld\",\"kwantor\":\"ALLE\",\"drempel\":0,\"onderdelen\":[],\"source\":{\"snippet\":\"altijd\"}},"
-                + "\"consequentie\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
-                + "\"source\":{\"snippet\":\"toeslag\"},\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}]")
+        String groep = (",\"prioritizedDefaults\":[{\"node\":\"PrioritizedDefaults\",\"name\":\"toeslag\","
+                + "\"subject\":\"Jutter\",\"attribute\":\"toeslag\",\"defaults\":["
+                + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}},"
+                + "{\"node\":\"Default\",\"justification\":"
+                + "{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,\"parts\":[],\"source\":{\"snippet\":\"altijd\"}},"
+                + "\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
+                + "\"source\":{\"snippet\":\"toeslag\"},\"validity\":{\"node\":\"Validity\"}}]")
                 .formatted(verg("GROTER_OF_GELIJK", attr("kindertal", 0, true, "NIET_NEGATIEF"), lit("2", 0, true)),
                         consequentie, lit("0.00", 2));
         return model(String.join(",", attribuut("kindertal", num(0, true, "NIET_NEGATIEF")),
@@ -318,16 +318,16 @@ class LetClusterWitnessTest {
      *  descends the Let keeps the consumer reactive on that producer's write. */
     private static String reactiviteitModel() {
         String inkomen = attr("inkomen", 2, false, "NIET_NEGATIEF");
-        String vermistDoel = ("{\"node\":\"AttribuutRef\",\"attribuut\":\"vermist\",\"objecttype\":\"Jutter\","
+        String vermistDoel = ("{\"node\":\"AttributeReference\",\"attribute\":\"vermist\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"Een Jutter is vermist\"}}");
-        String waar = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Booleaan\"},\"source\":{\"snippet\":\"waar\"}}";
-        String nietVermist = ("{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"negatie\":true,"
-                + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"hij niet vermist is\"}}");
+        String waar = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}";
+        String nietVermist = ("{\"node\":\"CharacteristicCheck\",\"characteristic\":\"vermist\",\"negated\":true,"
+                + "\"source\":{\"snippet\":\"hij niet vermist is\"}}");
         String gewogen = let("x", inkomen,
                 binair("MAAL", bref("x", 2), attr("factor", 4, false, "ONBEPAALD"), 6), 6);
         return model(String.join(",", attribuut("inkomen", num(2, false, "NIET_NEGATIEF")),
                         attribuut("factor", num(4)), attribuut("gewogen", num(6))),
-                "{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"BIJVOEGLIJK\"}",
+                "{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"adjectival\"}",
                 new String[]{
                         // never true for the case input — its only job is to BE a producer of `vermist`, which
                         // is what sinks the factor rule's stratum below this consumer's.

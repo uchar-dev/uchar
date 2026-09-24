@@ -236,7 +236,7 @@ class GenesteLetDuwWitnessTest {
     private static String pos() { return num(2, "NIET_NEGATIEF"); }
 
     private static String attr(String naam) {
-        return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
+        return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"zijn %s\"}}")
                 .formatted(naam, naam);
     }
@@ -246,7 +246,7 @@ class GenesteLetDuwWitnessTest {
     }
 
     private static String binair(String op, String links, String rechts) {
-        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
+        return "{\"node\":\"Binary\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, num(), op.toLowerCase(java.util.Locale.ROOT));
     }
 
@@ -267,8 +267,8 @@ class GenesteLetDuwWitnessTest {
 
     /** "&lt;binder&gt; groter dan 10,00" — the ch. 10.2 guard every branch shape below shares. */
     private static String boven(String binder) {
-        return ("{\"node\":\"Vergelijking\",\"op\":\"GROTER\",\"links\":%s,\"rechts\":%s,"
-                + "\"periode\":null,\"source\":{\"snippet\":\"boven de grens\"}}").formatted(bref(binder, pos()), lit("10.00"));
+        return ("{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":%s,\"right\":%s,"
+                + "\"source\":{\"snippet\":\"boven de grens\"}}").formatted(bref(binder, pos()), lit("10.00"));
     }
 
     private static final String NAAM = "uit van een jutter";
@@ -285,17 +285,17 @@ class GenesteLetDuwWitnessTest {
                 + "\"characteristics\":[]}],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]},"
-                + "\"rules\":{\"resolvedRegels\":[{\"node\":\"Rule\",\"name\":\"%s\",\"versions\":[{"
-                + "\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null},"
-                + "\"target\":%s,\"value\":%s,\"initialisation\":false,\"presentation\":\"BEREKENING\"}]}],"
-                + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[]},\"diagnostics\":[]}")
+                + "\"rules\":{\"rules\":[{\"node\":\"Rule\",\"name\":\"%s\",\"versions\":[{"
+                + "\"validity\":{\"node\":\"Validity\"},"
+                + "\"target\":%s,\"value\":%s,\"initialisation\":false,\"presentation\":\"calculation\"}]}],"
+                + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
+                + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
+                + "\"ruleGroups\":[]},\"diagnostics\":[]}")
                 .formatted(pos(), pos(), pos(), num(), NAAM, doel(), waarde);
     }
 
     private static String doel() {
-        return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"uit\",\"objecttype\":\"Jutter\","
+        return ("{\"node\":\"AttributeReference\",\"attribute\":\"uit\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"De uit van een Jutter\"}}");
     }
 

@@ -186,7 +186,7 @@ class DatumTijdLexeemWitnessTest {
             IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
                     () -> { if (viaDrl) drl(ir, zaak); else speel(ir, zaak); },
                     (viaDrl ? "drl-tekst" : "exec-model") + " refuses '" + lexeem + "' at load");
-            assertEquals("/rules/resolvedRegels/0/versions/0/condition/rechts/value", e.plek(), e.getMessage());
+            assertEquals("/rules/rules/0/versions/0/condition/right/value", e.plek(), e.getMessage());
             assertTrue(e.getMessage().endsWith(": millisecond-precision date literal lexeme '" + lexeem + "' is not the"
                     + " canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' never a space, the seconds"
                     + " field written, no zone or offset, a fraction of exactly three digits; the day-first source"
@@ -254,23 +254,23 @@ class DatumTijdLexeemWitnessTest {
                     "plural": "Vondsten",
                     "attributes": [ { "node": "Attribute", "name": "vondstmoment",
                                       "datatype": { "node": "Date", "precision": "millisecond" } } ],
-                    "characteristics": [ { "node": "Characteristic", "name": "verjaard", "kind": "BIJVOEGLIJK" } ] } ],
+                    "characteristics": [ { "node": "Characteristic", "name": "verjaard", "kind": "adjectival" } ] } ],
                   "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
                   "timelines": [], "dayKinds": [] },
-                  "rules": { "resolvedRegels": [ { "node": "Rule", "name": "Kenmerktoekenning verjaard", "versions": [ {
-                      "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
-                      "target": { "node": "AttribuutRef", "attribuut": "verjaard", "objecttype": "Vondst",
+                  "rules": { "rules": [ { "node": "Rule", "name": "Kenmerktoekenning verjaard", "versions": [ {
+                      "validity": { "node": "Validity" },
+                      "target": { "node": "AttributeReference", "attribute": "verjaard", "subjectType": "Vondst",
                       "source": { "snippet": "Een Vondst is verjaard" } },
-                      "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "source": { "snippet": "waar" } },
-                      "condition": { "node": "Vergelijking", "op": "EERDER",
-                      "links": { "node": "AttribuutRef", "attribuut": "vondstmoment", "objecttype": "Vondst",
+                      "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Boolean" }, "source": { "snippet": "waar" } },
+                      "condition": { "node": "Comparison", "op": "earlier",
+                      "left": { "node": "AttributeReference", "attribute": "vondstmoment", "subjectType": "Vondst",
                         "source": { "snippet": "zijn vondstmoment" } },
-                      "rechts": { "node": "Literal", "value": { "dateTime": "%s" }, "type": { "node": "Date", "precision": "millisecond" }, "source": { "snippet": "31-01-2024 12:00:00" } },
-                      "periode": null, "source": { "snippet": "zijn vondstmoment eerder is dan 31-01-2024 12:00:00" } },
+                      "right": { "node": "Literal", "value": { "dateTime": "%s" }, "type": { "node": "Date", "precision": "millisecond" }, "source": { "snippet": "31-01-2024 12:00:00" } },
+                      "source": { "snippet": "zijn vondstmoment eerder is dan 31-01-2024 12:00:00" } },
                       "initialisation": false } ] } ],
-                  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-                  "uniciteiten": [], "feitCreaties": [], "resolvedStartpunten": [],
-                  "regelGroepen": [] },
+                  "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
+                  "uniquenesses": [], "factCreations": [], "startPointDeterminations": [],
+                  "ruleGroups": [] },
                   "diagnostics": [] }
                 """.formatted(lexeem);
     }

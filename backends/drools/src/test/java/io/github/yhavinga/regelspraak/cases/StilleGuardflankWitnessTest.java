@@ -132,10 +132,10 @@ class StilleGuardflankWitnessTest {
     private Path metGuard(ObjectNode guard) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(POSTWACHT).resolve("ir.json")));
         ArrayNode houd = JSON.createArrayNode();
-        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
+        for (JsonNode r : IrPad.rulesLijst(ir, "rules"))
             if (Set.of("vakseinaantal van een kustvak").contains(r.get("name").asText())) houd.add(r);
-        IrPad.rules(ir).set("resolvedRegels", houd);
-        IrPad.versie(ir, "feitCreaties", 0, 0).set("condition", guard);
+        IrPad.rules(ir).set("rules", houd);
+        IrPad.versie(ir, "factCreations", 0, 0).set("condition", guard);
         Path tmp = Files.createTempFile("stille-guardflank", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());

@@ -64,7 +64,7 @@ class TemporeleNaamnormWitnessTest {
         // "is it temporal?" (Namen.bevatNaam) and "at which grain?" (Namen.opNaam). A presence test by norm beside a
         // granularity read by exact spelling hands the lowering a null grain; this row goes red on exactly that split.
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(TEMPOVOUW.resolve("ir.json")));
-        int n = hoofdletters(IrPad.rulesLijst(ir, "resolvedRegels"), "bewaartarief");
+        int n = hoofdletters(IrPad.rulesLijst(ir, "rules"), "bewaartarief");
         assertTrue(n > 0, "the probe must still name the temporal attribute somewhere in a rule, found " + n);
         Path p = Files.createTempFile("tempovouw-hoofdletters", ".json");
         p.toFile().deleteOnExit();

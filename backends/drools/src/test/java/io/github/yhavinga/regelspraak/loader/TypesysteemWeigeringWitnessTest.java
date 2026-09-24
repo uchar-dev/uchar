@@ -64,7 +64,7 @@ class TypesysteemWeigeringWitnessTest {
     private static final String FACTOR = EENHEID + "/factorToCanonical";
     private static final String STELSEL = "/model/unitSystems/0";
     private static final String TARIEF = "/model/objectTypes/0/attributes/0/datatype";
-    private static final String ANNOTATIE = "/rules/resolvedRegels/0/versions/0/value/type";
+    private static final String ANNOTATIE = "/rules/rules/0/versions/0/value/type";
 
     // ---------------- the L2 shape is unknown by name ----------------
 

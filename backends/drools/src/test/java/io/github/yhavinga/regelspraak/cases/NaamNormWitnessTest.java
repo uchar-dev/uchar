@@ -132,7 +132,7 @@ class NaamNormWitnessTest {
                 "VONDSTNUMMER", "Vondstnummer", "vondstNummer", "VOndstnummer", "vondstnummeR")) {
             Path ir = bewerk(STRANDREGISTER, o -> {
                 IrPad.bron(o, 0, 0).set("keys", JSON.createArrayNode().add(spelling));
-                IrPad.rulesLijst(o, "uniciteiten").remove(1);
+                IrPad.rulesLijst(o, "uniquenesses").remove(1);
             });
             assertEquals(Set.of("eenmalig nummer @ S1", "eenmalig nummer @ S2"),
                     vlaggen(ir, tweeTijdlijnen()),
@@ -175,9 +175,9 @@ class NaamNormWitnessTest {
         // most one temporal key component (…)"; the exec model faults on the "eenmalig vondstnummer
         // (Strandvondst 1)" rule. Both source rules of the twin must carry the sentinel.
         Path ir = bewerk(NUMMERREGISTER, o -> {
-            for (JsonNode b : IrPad.versie(o, "uniciteiten", 0, 0).get("sources"))
+            for (JsonNode b : IrPad.versie(o, "uniquenesses", 0, 0).get("sources"))
                 ((ObjectNode) b).set("keys", JSON.createArrayNode().add("vondstnummer").add("volgnummer"));
-            IrPad.rulesLijst(o, "uniciteiten").remove(1);
+            IrPad.rulesLijst(o, "uniquenesses").remove(1);
         });
         String drl = drl(ir);
         assertEquals(2, tel(drl, ONOPGELOSTE_SLEUTELVORM), "one refusal per source: " + drl);
@@ -234,7 +234,7 @@ class NaamNormWitnessTest {
 
     /** Keep only the first uniciteit (the scoped second one plays no part here) and give it {@code sleutels}. */
     private static void enkeleUniciteit(ObjectNode ir, JsonNode sleutels) {
-        var lijst = IrPad.rulesLijst(ir, "uniciteiten");
+        var lijst = IrPad.rulesLijst(ir, "uniquenesses");
         while (lijst.size() > 1) lijst.remove(1);
         IrPad.bron(ir, 0, 0).set("keys", sleutels);
     }

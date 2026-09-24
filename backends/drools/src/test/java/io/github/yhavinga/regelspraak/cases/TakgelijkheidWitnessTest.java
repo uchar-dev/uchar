@@ -128,12 +128,12 @@ class TakgelijkheidWitnessTest {
         // which refuses that document at the role, by name, in the verifier's WF-028 sentence — no branch gets a
         // record whose target type is empty.
         ObjectNode doc = goldenIr(POSTWACHT);
-        IrPad.versie(doc, "feitCreaties", 0, 0).put("targetRole", "vlaggenmast");
+        IrPad.versie(doc, "factCreations", 0, 0).put("targetRole", "vlaggenmast");
         Path ir = model("feitcreatie-zonder-doelsoort", doc), c = ir(POSTWACHT).resolveSibling("case.json");
         for (boolean viaDrl : new boolean[] { false, true }) {
             IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
                     () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), viaDrl));
-            assertEquals("/rules/feitCreaties/0/versions/0/targetRole", e.plek(), e.getMessage());
+            assertEquals("/rules/factCreations/0/versions/0/targetRole", e.plek(), e.getMessage());
             assertTrue(e.getMessage().contains("'vlaggenmast' is not a role of 'vakbeseining'"), e.getMessage());
         }
     }
@@ -275,14 +275,14 @@ class TakgelijkheidWitnessTest {
     /** jutterswet-postwacht with a wire-nullable position of the feitcreatie's version set to null. */
     private static Path feitcreatieZonder(String positie) throws Exception {
         ObjectNode ir = goldenIr(POSTWACHT);
-        IrPad.versie(ir, "feitCreaties", 0, 0).putNull(positie);
+        IrPad.versie(ir, "factCreations", 0, 0).putNull(positie);
         return model("feitcreatie-zonder-" + positie, ir);
     }
 
     /** jutterswet-postwacht with the feitcreatie's name set to null (WF-107's position, nullable on the form). */
     private static Path naamlozeCreatie() throws Exception {
         ObjectNode ir = goldenIr(POSTWACHT);
-        ((ObjectNode) IrPad.rulesLijst(ir, "feitCreaties").get(0)).putNull("name");
+        ((ObjectNode) IrPad.rulesLijst(ir, "factCreations").get(0)).putNull("name");
         return model("feitcreatie-zonder-naam", ir);
     }
 
@@ -290,9 +290,9 @@ class TakgelijkheidWitnessTest {
      *  is their wire position. Verifier-clean. */
     private static Path tweeNaamlozeCreaties() throws Exception {
         ObjectNode ir = goldenIr(POSTWACHT);
-        ObjectNode fc = (ObjectNode) IrPad.rulesLijst(ir, "feitCreaties").get(0);
+        ObjectNode fc = (ObjectNode) IrPad.rulesLijst(ir, "factCreations").get(0);
         fc.putNull("name");
-        IrPad.rulesLijst(ir, "feitCreaties").add(fc.deepCopy());
+        IrPad.rulesLijst(ir, "factCreations").add(fc.deepCopy());
         return model("feitcreatie-twee-naamloos", ir);
     }
 

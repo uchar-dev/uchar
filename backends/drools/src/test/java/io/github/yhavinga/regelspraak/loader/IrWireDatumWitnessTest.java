@@ -92,7 +92,7 @@ class IrWireDatumWitnessTest {
     private static final String VENSTER = "jutterswet-vensterheffing";
     /** The version whose window the twists land on — the refusal must name its place, since a document carries
      *  many windows. */
-    private static final String VENSTERVERSIE = "/rules/resolvedRegels/0/versions/0/validity";
+    private static final String VENSTERVERSIE = "/rules/rules/0/versions/0/validity";
 
     // ---------------- the field classes the pattern refuses ----------------
 
@@ -232,7 +232,7 @@ class IrWireDatumWitnessTest {
         // still names the bound. A version of a named form needs no such fall-back: it is named by its pointer,
         // with or without a name on its form.
         JsonNode root = wire("jutterswet-schouwkalender");
-        JsonNode dagsoort = root.path("rules").path("resolvedDagsoorten").path(0);
+        JsonNode dagsoort = root.path("rules").path("dayKindDefinitions").path(0);
         ((ObjectNode) dagsoort).putNull("naam");
         ((ObjectNode) dagsoort.path("geldigheid")).put("vanaf", "+012026-01-01");
         String melding = weigering(() -> IrLoader.load(root), "+012026-01-01", "a bound on a nameless carrier");
@@ -242,8 +242,8 @@ class IrWireDatumWitnessTest {
                 "and never degrades to the bare field, which locates nothing: " + melding);
 
         JsonNode venster = wire(VENSTER);
-        ((ObjectNode) IrPad.rulesLijst(venster, "resolvedRegels").get(0)).putNull("name");
-        ((ObjectNode) IrPad.versie(venster, "resolvedRegels", 0, 0).get("validity")).put("vanaf", "+012026-01-01");
+        ((ObjectNode) IrPad.rulesLijst(venster, "rules").get(0)).putNull("name");
+        ((ObjectNode) IrPad.versie(venster, "rules", 0, 0).get("validity")).put("vanaf", "+012026-01-01");
         String versie = weigering(() -> IrLoader.load(venster), "+012026-01-01", "a bound on a nameless form");
         assertTrue(versie.contains("'" + VENSTERVERSIE + "/vanaf'"), "the version names its place: " + versie);
     }
@@ -293,7 +293,7 @@ class IrWireDatumWitnessTest {
     /** {@link #VENSTER} with one bound of its first rule version replaced, loaded. */
     private static Geldigheid grensGelezen(String grens, String lexeem) throws Exception {
         JsonNode root = wire(VENSTER);
-        JsonNode g = IrPad.versie(root, "resolvedRegels", 0, 0).path("validity");
+        JsonNode g = IrPad.versie(root, "rules", 0, 0).path("validity");
         assertTrue(g.isObject(), "the twisted rule version carries a Geldigheid node");
         ((ObjectNode) g).put(grens, lexeem);
         return venster(IrLoader.load(root));

@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
+import io.github.yhavinga.regelspraak.ir.Spelling;
+
 /**
  * Navigation into a {@code uchar-ir-v1} document for the witnesses that twist a corpus golden in memory. Since M1
  * a declaration is a list entry that carries its own name instead of a map entry under its name, so every
@@ -27,11 +30,10 @@ public final class IrPad {
 
     public static ObjectNode domain(JsonNode ir, String naam) { return lid(modelLijst(ir, "domains"), "name", naam); }
 
-    /** A declaration of {@code parameters}, {@code factTypes}, {@code unitSystems} or {@code dimensions}: a parameter
-     *  and a unit system are named by {@code name} (L3), a fact type and a dimension, which kept their v0 shape, by
-     *  {@code naam}. */
+    /** A declaration of {@code parameters}, {@code factTypes}, {@code unitSystems} or {@code dimensions}, each named
+     *  by {@code name} (a parameter and a unit system since L3, a fact type and a dimension since L5). */
     public static ObjectNode declaratie(JsonNode ir, String lijst, String naam) {
-        return lid(modelLijst(ir, lijst), lijst.equals("parameters") || lijst.equals("unitSystems") ? "name" : "naam", naam);
+        return lid(modelLijst(ir, lijst), "name", naam);
     }
 
     public static ObjectNode attribute(JsonNode objectType, String naam) { return lid(lijst(objectType, "attributes"), "name", naam); }
@@ -81,7 +83,7 @@ public final class IrPad {
     /** Source {@code bron} of the one version of the {@code vorm}-th uniqueness (IR-SPEC ch. 3.6: the single-type
      *  form has one source, the union two or more, and both stand in the one list). */
     public static ObjectNode bron(JsonNode ir, int vorm, int bron) {
-        JsonNode b = versie(ir, "uniciteiten", vorm, 0).path("sources").path(bron);
+        JsonNode b = versie(ir, "uniquenesses", vorm, 0).path("sources").path(bron);
         if (!b.isObject()) throw new AssertionError("no source " + bron + " on uniqueness " + vorm);
         return (ObjectNode) b;
     }
@@ -90,9 +92,9 @@ public final class IrPad {
      *  written from the lexeme waar or onwaar, every other variant its string — chosen as the frontend's emitter
      *  chooses it, so a builder that writes a lexeme and a type keeps doing only that. */
     public static String literal(String lexeem, String type, String bron) {
-        String variant = type.contains("\"Booleaan\"") ? "boolean" : type.contains("\"Tekst\"") ? "text"
+        String variant = type.contains("\"Boolean\"") ? "boolean" : type.contains("\"Text\"") ? "text"
                 : type.contains("\"millisecond\"") ? "dateTime" : type.contains("\"day\"") ? "date"
-                : type.contains("\"Enumeratie\"") ? "enumeration" : "number";
+                : type.contains("\"Enumeration\"") ? "enumeration" : "number";
         String waarde = !variant.equals("boolean") ? "\"" + lexeem + "\""
                 : switch (lexeem) {
                     case "waar" -> "true";
@@ -110,18 +112,19 @@ public final class IrPad {
     }
 
     /** A Rule of one always-valid version in the wire's shape (IR-SPEC ch. 3.1): {@code soort} names the kind the way
-     *  the frontend's records name it and becomes the version's initialisation and presentation, and a
-     *  {@code voorwaarde} of "null" writes no condition. */
+     *  the frontend's records name it and becomes the version's initialisation and presentation, the latter in its wire
+     *  spelling through the translation table, and a {@code voorwaarde} of "null" writes no condition. */
     public static String regel(String naam, String soort, String doel, String waarde, String voorwaarde) {
         return regel(naam, soort, doel, waarde, voorwaarde,
-                "{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}");
+                "{\"node\":\"Validity\"}");
     }
 
     /** As {@link #regel(String, String, String, String, String)}, with the version's {@code validity}. */
     public static String regel(String naam, String soort, String doel, String waarde, String voorwaarde,
                                String geldigheid) {
         String soortvelden = switch (soort) {
-            case "GELIJKSTELLING", "BEREKENING" -> "\"initialisation\":false,\"presentation\":\"" + soort + "\"";
+            case "GELIJKSTELLING", "BEREKENING" -> "\"initialisation\":false,\"presentation\":\""
+                    + Spelling.PRESENTATION.spelling(ResolvedRegel.Soort.valueOf(soort)) + "\"";
             case "INITIALISATIE" -> "\"initialisation\":true";
             case "KENMERKTOEKENNING" -> "\"initialisation\":false";
             default -> throw new AssertionError("no rule kind: " + soort);

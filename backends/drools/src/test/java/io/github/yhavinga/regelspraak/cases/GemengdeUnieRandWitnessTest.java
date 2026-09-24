@@ -85,7 +85,7 @@ class GemengdeUnieRandWitnessTest {
         // the key as declared and would keep the bare "contains" green on its own.
         String drl = drl(bewerk(NUMMERREGISTER, o -> {
             IrPad.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("vondstNummer"));
-            ((ArrayNode) o.get("rules").get("uniciteiten")).remove(1);
+            ((ArrayNode) o.get("rules").get("uniquenesses")).remove(1);
         }));
         assertEquals(2, tel(drl, "$k0 : vondstnummer != null"),
                 "both source rules bind the declared field: " + drl);

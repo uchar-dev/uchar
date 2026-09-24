@@ -487,7 +487,7 @@ class CompanionPadWitnessTest {
     private static final String GEHEEL_POS = num(0, true, "NIET_NEGATIEF");
 
     private static String attr(String naam, String type) {
-        return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
+        return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"het %s van de Jutter\"}}")
                 .formatted(naam, naam);
     }
@@ -498,16 +498,16 @@ class CompanionPadWitnessTest {
     }
 
     private static String param(String naam, String type) {
-        return "{\"node\":\"ParameterRef\",\"parameter\":\"%s\",\"source\":{\"snippet\":\"de %s\"}}".formatted(naam, naam);
+        return "{\"node\":\"ParameterReference\",\"parameter\":\"%s\",\"source\":{\"snippet\":\"de %s\"}}".formatted(naam, naam);
     }
 
     private static String binair(String op, String links, String rechts, String type) {
-        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
+        return "{\"node\":\"Binary\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, type, op.toLowerCase(java.util.Locale.ROOT));
     }
 
     private static String wortel(String argument, String type) {
-        return "{\"node\":\"BuiltinCall\",\"kind\":\"WORTEL\",\"arguments\":[%s],\"type\":%s,\"source\":{\"snippet\":\"de wortel van\"}}"
+        return "{\"node\":\"BuiltinCall\",\"kind\":\"squareRoot\",\"arguments\":[%s],\"type\":%s,\"source\":{\"snippet\":\"de wortel van\"}}"
                 .formatted(argument, type);
     }
 
@@ -527,17 +527,17 @@ class CompanionPadWitnessTest {
     }
 
     private static String begrensd(String basis, String minimum, String maximum) {
-        return "{\"node\":\"Begrensd\",\"basis\":%s,\"minimum\":%s,\"maximum\":%s,\"type\":%s,\"source\":{\"snippet\":\"begrensd\"}}"
+        return "{\"node\":\"Clamp\",\"base\":%s,\"minimum\":%s,\"maximum\":%s,\"type\":%s,\"source\":{\"snippet\":\"begrensd\"}}"
                 .formatted(basis, minimum, maximum, num(4));
     }
 
     private static String verg(String op, String links, String rechts) {
-        return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"source\":{\"snippet\":\"%s\"}}"
+        return "{\"node\":\"Comparison\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, op.toLowerCase(java.util.Locale.ROOT));
     }
 
     private static final String ALTIJD =
-            "{\"node\":\"Samengesteld\",\"kwantor\":\"ALLE\",\"drempel\":0,\"onderdelen\":[],\"source\":{\"snippet\":\"altijd\"}}";
+            "{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,\"parts\":[],\"source\":{\"snippet\":\"altijd\"}}";
 
     private static String regel(String naam, String doel, String waarde) {
         return regel(naam, "BEREKENING", doel, waarde, "null");
@@ -565,10 +565,10 @@ class CompanionPadWitnessTest {
                 + "\"attributes\":[%s],\"characteristics\":[]}],"
                 + "\"factTypes\":[],\"parameters\":[%s],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]},"
-                + "\"rules\":{\"resolvedRegels\":[%s],"
-                + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[]%s},\"diagnostics\":[]}")
+                + "\"rules\":{\"rules\":[%s],"
+                + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
+                + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
+                + "\"ruleGroups\":[]%s},\"diagnostics\":[]}")
                 .formatted(ATTRIBUTEN, parameters, String.join(",", regels), prioritizedDefaults);
     }
 
@@ -576,7 +576,7 @@ class CompanionPadWitnessTest {
     private static String modelK(String[] regels) {
         return model(regels, "", "")
                 .replace("\"characteristics\":[]",
-                        "\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"BIJVOEGLIJK\"}]");
+                        "\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"adjectival\"}]");
     }
 
     /** "uit van een jutter" over the given value. */
@@ -707,11 +707,11 @@ class CompanionPadWitnessTest {
      *  the negated kenmerk {@code vermist}, whose producer (never true for the case input) exists. The consumer is
      *  the (b) barrier body ("d plus (inkomen ÷ tweede)") or, with {@code tak}, the (c) choice on d. */
     private static String lateProducentModel(boolean tak) {
-        String vermistDoel = ("{\"node\":\"AttribuutRef\",\"attribuut\":\"vermist\",\"objecttype\":\"Jutter\","
+        String vermistDoel = ("{\"node\":\"AttributeReference\",\"attribute\":\"vermist\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"Een Jutter is vermist\"}}");
-        String waar = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Booleaan\"},\"source\":{\"snippet\":\"waar\"}}";
-        String nietVermist = ("{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"negatie\":true,"
-                + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"hij niet vermist is\"}}");
+        String waar = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}";
+        String nietVermist = ("{\"node\":\"CharacteristicCheck\",\"characteristic\":\"vermist\",\"negated\":true,"
+                + "\"source\":{\"snippet\":\"hij niet vermist is\"}}");
         String body = tak
                 ? ite(verg("GROTER", bref("d", pos(2)), lit("1", GEHEEL_POS)), DELING, ZEVEN, num(4))
                 : binair("PLUS", bref("d", pos(2)), DELING, num(4));
@@ -754,11 +754,11 @@ class CompanionPadWitnessTest {
     /** (g) a ch. 7 group over {@code Jutter.toeslag}: a justified first default with the given consequence, then
      *  an unconditional 0. */
     private static String defaultsModel(String consequentie) {
-        String groep = ("{\"node\":\"PrioritizedDefaults\",\"naam\":\"toeslag\",\"onderwerp\":\"Jutter\",\"kenmerk\":null,"
-                + "\"attribuut\":\"toeslag\",\"defaults\":["
-                + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":%s,\"consequentie\":%s,\"source\":{\"snippet\":\"toeslag\"}},"
-                + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":%s,\"consequentie\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
-                + "\"source\":{\"snippet\":\"toeslag\"},\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
+        String groep = ("{\"node\":\"PrioritizedDefaults\",\"name\":\"toeslag\",\"subject\":\"Jutter\","
+                + "\"attribute\":\"toeslag\",\"defaults\":["
+                + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}},"
+                + "{\"node\":\"Default\",\"justification\":%s,\"consequence\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
+                + "\"source\":{\"snippet\":\"toeslag\"},\"validity\":{\"node\":\"Validity\"}}")
                 .formatted(verg("GROTER_OF_GELIJK", attr("kindertal", GEHEEL_POS), lit("2", GEHEEL_POS)),
                         consequentie, ALTIJD, lit("0.0000", num(4)));
         return model(new String[]{}, "", ",\"prioritizedDefaults\":[" + groep + "]");

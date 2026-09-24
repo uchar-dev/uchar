@@ -55,12 +55,12 @@ class RekenjaarWeigeringWitnessTest {
      *  drift of the constant away from {@code ref} fails this witness. */
     private static final String ZIN = "the Rekenjaar context value is not exercised by any corpus case (ch. 8.2)";
 
-    private static final String GETAL = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"ONBEPAALD\"}";
+    private static final String GETAL = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
     private static final String DAG = "{\"node\":\"Date\",\"precision\":\"day\"}";
     private static final String REKENJAAR =
-            "{\"node\":\"ContextValue\",\"name\":\"Rekenjaar\",\"type\":" + GETAL + ",\"source\":{\"snippet\":\"het Rekenjaar\"}}";
+            "{\"node\":\"ContextValue\",\"name\":\"evaluationYear\",\"type\":" + GETAL + ",\"source\":{\"snippet\":\"het Rekenjaar\"}}";
     private static final String REKENDATUM =
-            "{\"node\":\"ContextValue\",\"name\":\"Rekendatum\",\"type\":" + DAG + ",\"source\":{\"snippet\":\"de Rekendatum\"}}";
+            "{\"node\":\"ContextValue\",\"name\":\"evaluationDate\",\"type\":" + DAG + ",\"source\":{\"snippet\":\"de Rekendatum\"}}";
 
     /** One object type and one rule, as the RegelSpraak frontend emits the source of each row. */
     private static final String DOCUMENT = """
@@ -75,8 +75,8 @@ class RekenjaarWeigeringWitnessTest {
               "characteristics": [] } ],
             "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
             "dayKinds": [] },
-          "rules": { "resolvedRegels": [ %3$s ], "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [],
-            "consistenties": [], "uniciteiten": [], "feitCreaties": [], "resolvedStartpunten": [], "regelGroepen": [] },
+          "rules": { "rules": [ %3$s ], "dayKindDefinitions": [], "objectCreations": [], "allocations": [],
+            "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
           "diagnostics": [] }
         """;
 
@@ -103,14 +103,14 @@ class RekenjaarWeigeringWitnessTest {
         // One numeric literal of a playing golden turned into the node, one position per row; each golden PLAYS in
         // both branches untwisted, so the refusal is the twist's and nothing else's.
         String[][] plekken = {
-            { "synth2-budgetgrens-onder", "/rules/consistenties/0/versions/0/assertion/rechts", "the assertion of a consistency" },
-            { "synth2-budgetgrens-onder", "/rules/objectCreaties/0/versions/0/condition/rechts", "the guard of an object creation" },
-            { "synth2-budgetgrens-onder", "/rules/objectCreaties/0/versions/0/initialisations/0/waarde/rechts",
+            { "synth2-budgetgrens-onder", "/rules/consistencies/0/versions/0/assertion/right", "the assertion of a consistency" },
+            { "synth2-budgetgrens-onder", "/rules/objectCreations/0/versions/0/condition/right", "the guard of an object creation" },
+            { "synth2-budgetgrens-onder", "/rules/objectCreations/0/versions/0/initialisations/0/value/right",
               "an initialisation of an object creation" },
-            { "jutterswet-voorwaardedeling", "/rules/verdelingen/0/versions/0/condition/rechts", "the guard of an allocation" },
-            { "jutterswet-dubbelverbinding", "/rules/feitCreaties/1/versions/0/condition/rechts", "the guard of a fact creation" },
-            { "jutterswet-drempelvangst", "/rules/resolvedRegels/0/versions/0/value/filter/rechts", "the filter of a fold" },
-            { "anchor/jutterswet-strandrechtketen", "/rules/prioritizedDefaults/1/defaults/1/consequentie/rechts",
+            { "jutterswet-voorwaardedeling", "/rules/allocations/0/versions/0/condition/right", "the guard of an allocation" },
+            { "jutterswet-dubbelverbinding", "/rules/factCreations/1/versions/0/condition/right", "the guard of a fact creation" },
+            { "jutterswet-drempelvangst", "/rules/rules/0/versions/0/value/filter/right", "the filter of a fold" },
+            { "anchor/jutterswet-strandrechtketen", "/rules/prioritizedDefaults/1/defaults/1/consequence/right",
               "the consequence of a prioritized default" },
         };
         for (String[] p : plekken)
@@ -148,23 +148,23 @@ class RekenjaarWeigeringWitnessTest {
 
     private static String rekenRegel() {
         return IrPad.regel("ouderdom", "BEREKENING", doel("ouderdom"),
-                "{\"node\":\"Binair\",\"op\":\"MIN\",\"links\":" + REKENJAAR + ",\"rechts\":" + lees("vondstjaar")
+                "{\"node\":\"Binary\",\"op\":\"minus\",\"left\":" + REKENJAAR + ",\"right\":" + lees("vondstjaar")
                         + ",\"type\":" + GETAL + ",\"source\":{\"snippet\":\"het Rekenjaar min zijn vondstjaar\"}}", "null");
     }
 
     private static String vergelijkRegel() {
         return IrPad.regel("meldcode", "GELIJKSTELLING", doel("meldcode"), IrPad.literal("1", GETAL, "1"),
-                "{\"node\":\"Vergelijking\",\"op\":\"GROTER\",\"links\":" + REKENJAAR + ",\"rechts\":" + lees("vondstjaar")
-                        + ",\"periode\":null,\"source\":{\"snippet\":\"het Rekenjaar groter is dan zijn vondstjaar\"}}");
+                "{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":" + REKENJAAR + ",\"right\":" + lees("vondstjaar")
+                        + ",\"source\":{\"snippet\":\"het Rekenjaar groter is dan zijn vondstjaar\"}}");
     }
 
     private static String doel(String attribuut) {
-        return "{\"node\":\"AttribuutRef\",\"attribuut\":\"" + attribuut + "\",\"objecttype\":\"Vondst\","
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"Vondst\","
                 + "\"source\":{\"snippet\":\"de " + attribuut + " van een Vondst\"}}";
     }
 
     private static String lees(String attribuut) {
-        return "{\"node\":\"AttribuutRef\",\"attribuut\":\"" + attribuut + "\",\"objecttype\":\"Vondst\","
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"Vondst\","
                 + "\"source\":{\"snippet\":\"zijn " + attribuut + "\"}}";
     }
 

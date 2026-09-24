@@ -116,7 +116,7 @@ class EnumLabelWireWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(
                 Files.readString(CORPUS.resolve(VONDSTKLASSE).resolve("ir.json")));
         boolean geraakt = false;
-        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
+        for (JsonNode r : IrPad.rulesLijst(ir, "rules"))
             if ("bestemming van drijfgoed".equals(r.path("name").asText())) {
                 ((ObjectNode) r.get("versions").get(0)).remove("condition");
                 geraakt = true;

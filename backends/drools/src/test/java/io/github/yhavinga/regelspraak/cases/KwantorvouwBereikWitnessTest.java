@@ -69,7 +69,7 @@ class KwantorvouwBereikWitnessTest {
         // migration the range is required on this node (IR-SPEC ch. 4.5), so the stripped document is no
         // uchar-ir-v1 document at all: the loader refuses it at the fold, before either branch lowers a thing.
         ObjectNode ir = herhaaldPaar();
-        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels")) stripBronRol(r);
+        for (JsonNode r : IrPad.rulesLijst(ir, "rules")) stripBronRol(r);
         Path p = tijdelijk("kwantorvouw-geen-binding", ir);
         JsonNode c = JSON.readTree(Files.readString(zaken().get(1)));
         for (boolean viaDrl : new boolean[] { false, true }) {

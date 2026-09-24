@@ -247,19 +247,19 @@ class BronRolVouwWitnessTest {
     private static Path vouw(String kind, String doelAttribuut, String meervoud, String feittype, String rol)
             throws Exception {
         ObjectNode ir = lees();
-        IrPad.rules(ir).putArray("feitCreaties");
+        IrPad.rules(ir).putArray("factCreations");
         String regel = regelVoor(doelAttribuut);
         houdRegels(ir, regel);
-        IrPad.versie(ir, "resolvedRegels", 0, 0).set("value", fold(kind, meervoud, feittype, rol));
+        IrPad.versie(ir, "rules", 0, 0).set("value", fold(kind, meervoud, feittype, rol));
         return tijdelijk("bronrol-" + kind.toLowerCase(), ir);
     }
 
     /** All three folds in one document, each over its own feittype. */
     private static Path drieVouwen() throws Exception {
         ObjectNode ir = lees();
-        IrPad.rules(ir).putArray("feitCreaties");
+        IrPad.rules(ir).putArray("factCreations");
         houdRegels(ir, "liggertal van een haven", "wintertal van een haven", "keurtal van een haven");
-        for (JsonNode n : IrPad.rulesLijst(ir, "resolvedRegels")) {
+        for (JsonNode n : IrPad.rulesLijst(ir, "rules")) {
             ObjectNode r = (ObjectNode) n.get("versions").get(0);
             switch (n.get("name").asText()) {
                 case "liggertal van een haven" ->
@@ -275,13 +275,13 @@ class BronRolVouwWitnessTest {
     /** The single-SOM model every mutation row starts from. */
     private static ObjectNode somModel() throws Exception {
         ObjectNode ir = lees();
-        IrPad.rules(ir).putArray("feitCreaties");
+        IrPad.rules(ir).putArray("factCreations");
         houdRegels(ir, "liggertal van een haven");
-        IrPad.versie(ir, "resolvedRegels", 0, 0).set("value", fold("SOM", "liggers", "thuisligging", "ligger"));
+        IrPad.versie(ir, "rules", 0, 0).set("value", fold("SOM", "liggers", "thuisligging", "ligger"));
         return ir;
     }
 
-    private static JsonNode vouwVan(ObjectNode ir) { return IrPad.versie(ir, "resolvedRegels", 0, 0).get("value"); }
+    private static JsonNode vouwVan(ObjectNode ir) { return IrPad.versie(ir, "rules", 0, 0).get("value"); }
 
     private static String regelVoor(String doelAttribuut) {
         return switch (doelAttribuut) {
@@ -334,8 +334,8 @@ class BronRolVouwWitnessTest {
     private static void houdRegels(ObjectNode ir, String... namen) {
         List<String> houd = List.of(namen);
         ArrayNode uit = JSON.createArrayNode();
-        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels")) if (houd.contains(r.get("name").asText())) uit.add(r);
-        IrPad.rules(ir).set("resolvedRegels", uit);
+        for (JsonNode r : IrPad.rulesLijst(ir, "rules")) if (houd.contains(r.get("name").asText())) uit.add(r);
+        IrPad.rules(ir).set("rules", uit);
     }
 
     /** The shared world with ONE attribute pinned per haven; a null cell is an {@code attributeEmpty}.

@@ -44,7 +44,7 @@ class BonenveldWitnessTest {
     @Test void een_schrijfveld_naast_de_binding_wordt_bij_naam_geweigerd() throws Exception {
         ObjectNode ir = lees(DUBBEL);
         creatie(ir, 0, "winterberging").put("zetVeld", "keurhaven");
-        onbekendVeld(ir, "/rules/feitCreaties/0/versions/0/zetVeld", "FactCreationVersion");
+        onbekendVeld(ir, "/rules/factCreations/0/versions/0/zetVeld", "FactCreationVersion");
     }
 
     @Test void zetveld_volgt_de_gemaakte_rol() throws Exception {
@@ -60,7 +60,7 @@ class BonenveldWitnessTest {
     @Test void een_koppelveld_naast_de_binding_wordt_bij_naam_geweigerd() throws Exception {
         ObjectNode ir = lees(DUBBEL);
         creatie(ir, 0, "winterberging").put("joinVeld", "vlaghaven");
-        onbekendVeld(ir, "/rules/feitCreaties/0/versions/0/joinVeld", "FactCreationVersion");
+        onbekendVeld(ir, "/rules/factCreations/0/versions/0/joinVeld", "FactCreationVersion");
     }
 
     @Test void joinveld_volgt_de_joinbinding() throws Exception {
@@ -79,7 +79,7 @@ class BonenveldWitnessTest {
         for (String veld : new String[] { "veld", "viaOuderVeld", "type" }) {
             ObjectNode ir = lees(POSTWACHT);
             stap(ir).put(veld, veld.equals("viaOuderVeld") ? "true" : "Sein");
-            onbekendVeld(ir, "/rules/feitCreaties/0/versions/0/path/0/" + veld, "RolBinding");
+            onbekendVeld(ir, "/rules/factCreations/0/versions/0/path/0/" + veld, "RolBinding");
         }
     }
 
@@ -116,7 +116,7 @@ class BonenveldWitnessTest {
     @Test void een_scopeveld_naast_de_binding_wordt_bij_naam_geweigerd() throws Exception {
         ObjectNode ir = lees(KUSTREGISTER);
         kaveletiket(ir).put("scopeVeld", "sectiecode");
-        onbekendVeld(ir, "/rules/uniciteiten/" + kaveletiketIndex(ir) + "/versions/0/scopeVeld", "UniquenessVersion");
+        onbekendVeld(ir, "/rules/uniquenesses/" + kaveletiketIndex(ir) + "/versions/0/scopeVeld", "UniquenessVersion");
     }
 
     @Test void scopeveld_volgt_de_scopebinding() throws Exception {
@@ -154,13 +154,13 @@ class BonenveldWitnessTest {
             ObjectNode ir = lees(POSTWACHT);
             creatie(ir, 0, null).remove(veld);
             IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
-            assertEquals("/rules/feitCreaties/0/versions/0", e.plek(), e.getMessage());
+            assertEquals("/rules/factCreations/0/versions/0", e.plek(), e.getMessage());
             assertTrue(e.getMessage().contains("missing field '" + veld + "'"), e.getMessage());
         }
         ObjectNode ir = lees(POSTWACHT);
         stap(ir).remove("feittype");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
-        assertEquals("/rules/feitCreaties/0/versions/0/path/0", e.plek(), e.getMessage());
+        assertEquals("/rules/factCreations/0/versions/0/path/0", e.plek(), e.getMessage());
         assertTrue(e.getMessage().contains("missing field 'feittype'"), e.getMessage());
     }
 
@@ -196,21 +196,21 @@ class BonenveldWitnessTest {
     }
 
     private static int kaveletiketIndex(ObjectNode ir) {
-        ArrayNode u = (ArrayNode) ir.get("rules").get("uniciteiten");
+        ArrayNode u = (ArrayNode) ir.get("rules").get("uniquenesses");
         for (int i = 0; i < u.size(); i++) if (u.get(i).get("name").asText().equals("eenmalig kaveletiket")) return i;
         throw new AssertionError("kustregister carries no 'eenmalig kaveletiket'");
     }
 
     /** The one version of the {@code i}-th fact creation. */
     private static ObjectNode creatie(ObjectNode ir, int i, String feittype) {
-        ObjectNode fc = IrPad.versie(ir, "feitCreaties", i, 0);
+        ObjectNode fc = IrPad.versie(ir, "factCreations", i, 0);
         if (feittype != null) assertTrue(fc.get("factType").asText().equals(feittype), fc.toString());
         return fc;
     }
 
     /** The one version of the uniqueness 'eenmalig kaveletiket'. */
     private static ObjectNode kaveletiket(ObjectNode ir) {
-        return IrPad.versie(ir, "uniciteiten", "eenmalig kaveletiket");
+        return IrPad.versie(ir, "uniquenesses", "eenmalig kaveletiket");
     }
 
     private static ObjectNode feittype(String naam, String rol1, String ot1, boolean veel1,

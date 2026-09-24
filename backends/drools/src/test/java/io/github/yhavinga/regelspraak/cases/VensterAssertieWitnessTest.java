@@ -84,31 +84,31 @@ class VensterAssertieWitnessTest {
     // ================= the document and the cases =================
 
     private static final String GEVULD = """
-            { "node": "Predicaat", "soort": "GEVULD",
-              "operand": { "node": "AttribuutRef", "attribuut": "meldatum", "objecttype": "Vondst",
+            { "node": "Predicate", "kind": "filled",
+              "operand": { "node": "AttributeReference", "attribute": "meldatum", "subjectType": "Vondst",
                            "source": { "snippet": "de meldatum van de Vondst" } },
-              "dagsoort": null, "negatie": false, "cijfers": 0, "periode": null,
+              "negated": false, "digits": 0,
               "source": { "snippet": "de meldatum van de Vondst gevuld is" } }""";
 
     private static final String MELDATUM = """
-            { "node": "Periode",
-              "vanaf": { "node": "AttribuutRef", "attribuut": "meldatum", "objecttype": "Vondst",
+            { "node": "TimeWindow",
+              "from": { "node": "AttributeReference", "attribute": "meldatum", "subjectType": "Vondst",
                          "source": { "snippet": "de meldatum van de Vondst" } },
-              "tot": null, "totInclusief": false, "source": { "snippet": "vanaf de meldatum van de Vondst" } }""";
+              "toInclusive": false, "source": { "snippet": "vanaf de meldatum van de Vondst" } }""";
 
     private static final String LETTERLIJK = """
-            { "node": "Periode",
-              "vanaf": { "node": "Literal", "value": { "date": "2024-01-01" }, "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "2024-01-01" } },
-              "tot": { "node": "Literal", "value": { "date": "2025-01-01" }, "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "2025-01-01" } },
-              "totInclusief": false, "source": { "snippet": "van 1 januari 2024 tot 1 januari 2025" } }""";
+            { "node": "TimeWindow",
+              "from": { "node": "Literal", "value": { "date": "2024-01-01" }, "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "2024-01-01" } },
+              "to": { "node": "Literal", "value": { "date": "2025-01-01" }, "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "2025-01-01" } },
+              "toInclusive": false, "source": { "snippet": "van 1 januari 2024 tot 1 januari 2025" } }""";
 
     private static String samen(String kwantor, String... delen) {
         return samenMetDrempel(kwantor, 0, delen);
     }
 
     private static String samenMetDrempel(String kwantor, int drempel, String... delen) {
-        return "{ \"node\": \"Samengesteld\", \"kwantor\": \"" + kwantor + "\", \"drempel\": " + drempel
-                + ", \"onderdelen\": [ " + String.join(", ", delen) + " ],"
+        return "{ \"node\": \"Compound\", \"quantifier\": \"" + kwantor + "\", \"threshold\": " + drempel
+                + ", \"parts\": [ " + String.join(", ", delen) + " ],"
                 + " \"source\": {\"snippet\": \"de Vondst aan de volgende voorwaarden voldoet\"} }";
     }
 
@@ -116,14 +116,14 @@ class VensterAssertieWitnessTest {
     private Path document(String assertie) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(PREMIEVENSTER.resolve("ir.json")));
         ArrayNode uit = JSON.createArrayNode();
-        uit.add(IrPad.vorm(doc, "resolvedRegels", "basispremie van een vondst"));
-        IrPad.rules(doc).set("resolvedRegels", uit);
+        uit.add(IrPad.vorm(doc, "rules", "basispremie van een vondst"));
+        IrPad.rules(doc).set("rules", uit);
         ArrayNode cons = JSON.createArrayNode();
         cons.add(JSON.readTree("{ \"node\": \"Consistency\", \"name\": \"" + REGEL + "\", \"versions\": [ {"
                 + " \"subject\": \"Vondst\", \"assertion\": " + assertie + ","
-                + " \"validity\": { \"node\": \"Geldigheid\", \"vanaf\": null, \"tot\": null },"
+                + " \"validity\": { \"node\": \"Validity\" },"
                 + " \"source\": {\"snippet\": \"Een Vondst moet voldoen aan de volgende voorwaarden\", \"line\": 1} } ] }"));
-        IrPad.rules(doc).set("consistenties", cons);
+        IrPad.rules(doc).set("consistencies", cons);
         Path p = tmp.resolve("vensterassertie-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());
         return p;

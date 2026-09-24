@@ -61,11 +61,11 @@ class OnbekendeFunctieKindWitnessTest {
     }
 
     /** The pointer of the kind of the fold this witness re-spells. */
-    private static final String KIND = "/rules/resolvedRegels/0/versions/0/value/kind";
+    private static final String KIND = "/rules/rules/0/versions/0/value/kind";
 
     /** The count of {@code jutterswet-vondsttelling}, the fold this witness re-spells. */
     private static JsonNode vouw(JsonNode root) {
-        return IrPad.versie(root, "resolvedRegels", 0, 0).get("value");
+        return IrPad.versie(root, "rules", 0, 0).get("value");
     }
 
     private static JsonNode golden() throws Exception {

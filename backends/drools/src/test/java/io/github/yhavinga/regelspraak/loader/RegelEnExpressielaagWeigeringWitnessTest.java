@@ -93,28 +93,28 @@ class RegelEnExpressielaagWeigeringWitnessTest {
     /** Jutter.toelage is an attribute and a characteristic; no rule writes it. */
     private static final String TOELAGEGRONDEN = "anchor/jutterswet-toelagegronden";
 
-    private static final String REGEL = "/rules/resolvedRegels/0";
+    private static final String REGEL = "/rules/rules/0";
     private static final String VERSIE = REGEL + "/versions/0";
     private static final String WAARDE = VERSIE + "/value";
-    private static final String BOUNDDAY = "/rules/resolvedDagsoorten/0/voorwaarde/onderdelen/0/links";
+    private static final String BOUNDDAY = "/rules/dayKindDefinitions/0/condition/parts/0/left";
 
-    private static final String NUMBER = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"ONBEPAALD\"}";
+    private static final String NUMBER = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
     private static final String DAG = "{\"node\":\"Date\",\"precision\":\"day\"}";
 
     // ---------------- the L3 shape is unknown by name ----------------
 
     @Test void de_knopen_van_de_l3_vorm_zijn_onbekend() throws Exception {
         String[][] vormen = {
-                { PENNINGDREMPEL, "/rules/resolvedRegels/0", "ResolvedRegel", "Rule" },
-                { BERGING, "/rules/verdelingen/0", "ResolvedVerdeling", "Allocation" },
-                { WACHTERSKETEN, "/rules/objectCreaties/0", "ResolvedObjectCreatie", "ObjectCreation" },
-                { MASTSEIN, "/rules/feitCreaties/0", "ResolvedFeitCreatie", "FactCreation" },
-                { WACHTERSKETEN, "/rules/consistenties/0", "ResolvedConsistentie", "Consistency" },
-                { KUSTREGISTER, "/rules/uniciteiten/0", "ResolvedUniciteit", "Uniqueness" },
-                { KUSTREGISTER, "/rules/uniciteiten/2", "ResolvedUniciteitUnie", "Uniqueness" },
+                { PENNINGDREMPEL, "/rules/rules/0", "ResolvedRegel", "Rule" },
+                { BERGING, "/rules/allocations/0", "ResolvedVerdeling", "Allocation" },
+                { WACHTERSKETEN, "/rules/objectCreations/0", "ResolvedObjectCreatie", "ObjectCreation" },
+                { MASTSEIN, "/rules/factCreations/0", "ResolvedFeitCreatie", "FactCreation" },
+                { WACHTERSKETEN, "/rules/consistencies/0", "ResolvedConsistentie", "Consistency" },
+                { KUSTREGISTER, "/rules/uniquenesses/0", "ResolvedUniciteit", "Uniqueness" },
+                { KUSTREGISTER, "/rules/uniquenesses/2", "ResolvedUniciteitUnie", "Uniqueness" },
                 // a step of the path and a source of a union, the two child nodes the L4 shape replaced
-                { MASTSEIN, "/rules/feitCreaties/0/versions/0/path/0", "Tussenstap", "RolBinding" },
-                { KUSTREGISTER, "/rules/uniciteiten/2/versions/0/sources/0", "Bron", "Source" } };
+                { MASTSEIN, "/rules/factCreations/0/versions/0/path/0", "Tussenstap", "RolBinding" },
+                { KUSTREGISTER, "/rules/uniquenesses/2/versions/0/sources/0", "Bron", "Source" } };
         for (String[] v : vormen) {
             ObjectNode ir = golden(v[0]);
             ((ObjectNode) ir.at(v[1])).put("node", v[2]);
@@ -141,20 +141,20 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         rijen.put(new String[] { PENNINGDREMPEL, REGEL, "Rule" }, List.of("naam", "bronAnnotaties"));
         rijen.put(new String[] { PENNINGDREMPEL, VERSIE, "RuleVersion" },
                 List.of("node", "naam", "soort", "doel", "waarde", "voorwaarde", "geldigheid", "bronAnnotaties"));
-        rijen.put(new String[] { BERGING, "/rules/verdelingen/0/versions/0", "AllocationVersion" },
+        rijen.put(new String[] { BERGING, "/rules/allocations/0/versions/0", "AllocationVersion" },
                 List.of("node", "bronType", "bronAttribuut", "doelType", "doelAttribuut", "methode", "ratoAttribuut",
                         "maximumAttribuut", "afrondingDecimalen", "restantAttribuut", "groepeerAttribuut", "afnemend",
                         "verbindendeRol", "voorwaarde", "geldigheid"));
-        rijen.put(new String[] { WACHTERSKETEN, "/rules/objectCreaties/0/versions/0", "ObjectCreationVersion" },
+        rijen.put(new String[] { WACHTERSKETEN, "/rules/objectCreations/0/versions/0", "ObjectCreationVersion" },
                 List.of("node", "nieuwType", "toekenningen", "verbindendeRol", "voorwaarde", "geldigheid"));
-        rijen.put(new String[] { MASTSEIN, "/rules/feitCreaties/0/versions/0", "FactCreationVersion" },
+        rijen.put(new String[] { MASTSEIN, "/rules/factCreations/0/versions/0", "FactCreationVersion" },
                 List.of("node", "feittype", "ankerRol", "doelRol", "anker", "tussenstappen", "joinRol", "doel",
                         "voorwaarde", "geldigheid"));
-        rijen.put(new String[] { WACHTERSKETEN, "/rules/consistenties/0/versions/0", "ConsistencyVersion" },
+        rijen.put(new String[] { WACHTERSKETEN, "/rules/consistencies/0/versions/0", "ConsistencyVersion" },
                 List.of("node", "assertie", "geldigheid"));
-        rijen.put(new String[] { KUSTREGISTER, "/rules/uniciteiten/0/versions/0", "UniquenessVersion" },
+        rijen.put(new String[] { KUSTREGISTER, "/rules/uniquenesses/0/versions/0", "UniquenessVersion" },
                 List.of("node", "sleutels", "scopeRol", "bronnen", "subject", "geldigheid"));
-        rijen.put(new String[] { KUSTREGISTER, "/rules/uniciteiten/2/versions/0/sources/0", "Source" },
+        rijen.put(new String[] { KUSTREGISTER, "/rules/uniquenesses/2/versions/0/sources/0", "Source" },
                 List.of("type", "sleutels"));
         // the fold's own fields, and the builtin's facet, which it does not carry
         rijen.put(new String[] { BOOTBERGING, WAARDE, "Aggregation" },
@@ -183,8 +183,8 @@ class RegelEnExpressielaagWeigeringWitnessTest {
     @Test void methode_tag_soort_en_granulariteit_zijn_gesloten_verzamelingen() throws Exception {
         for (String methode : List.of("COMPLEX", "naar_rato")) {
             ObjectNode ir = golden(BERGING);
-            ((ObjectNode) ir.at("/rules/verdelingen/0/versions/0")).put("method", methode);
-            assertTrue(weigert(ir, "/rules/verdelingen/0/versions/0/method").getMessage()
+            ((ObjectNode) ir.at("/rules/allocations/0/versions/0")).put("method", methode);
+            assertTrue(weigert(ir, "/rules/allocations/0/versions/0/method").getMessage()
                     .endsWith(": unknown method value \"" + methode + "\""), methode);
         }
         ObjectNode ir = golden(PREMIEVENSTER);
@@ -224,14 +224,14 @@ class RegelEnExpressielaagWeigeringWitnessTest {
      * matches loads, every other is refused at the value.
      */
     @Test void de_variant_is_die_welke_het_type_noemt() throws Exception {
-        String enumeratie = golden(KEURSTAAT).at("/rules/resolvedRegels/3/versions/0/value/type").toString();
+        String enumeratie = golden(KEURSTAAT).at("/rules/rules/3/versions/0/value/type").toString();
         String procent = golden("jutterswet-vondsttarief").at(WAARDE + "/type").toString();
         // type, the phrase the sentence gives it, the variant it names
         String[][] typen = {
                 { NUMBER, "a Number", "number" },
                 { procent, "a Number", "number" },
-                { "{\"node\":\"Booleaan\"}", "a Booleaan", "boolean" },
-                { "{\"node\":\"Tekst\"}", "a Tekst", "text" },
+                { "{\"node\":\"Boolean\"}", "a Booleaan", "boolean" },
+                { "{\"node\":\"Text\"}", "a Tekst", "text" },
                 { DAG, "a day-precision Date", "date" },
                 { "{\"node\":\"Date\",\"precision\":\"millisecond\"}", "a millisecond-precision Date", "dateTime" },
                 { enumeratie, "an Enumeratie", "enumeration" } };
@@ -243,7 +243,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         varianten.put("dateTime", "{\"dateTime\":\"2024-01-31T12:00:00\"}");
         varianten.put("enumeration", "{\"enumeration\":\"gaaf\"}");
         varianten.put("constructor", "{\"constructor\":\"Wad\"}");
-        String w = "/rules/resolvedRegels/3/versions/0/value";
+        String w = "/rules/rules/3/versions/0/value";
         int geladen = 0, geweigerd = 0;
         for (String[] t : typen)
             for (Map.Entry<String, String> v : varianten.entrySet()) {
@@ -400,7 +400,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         ((ObjectNode) ir.at(REGEL)).putArray("versions");
         assertTrue(weigert(ir, REGEL + "/versions").getMessage().endsWith(": a form carries at least one version"));
 
-        String u = "/rules/uniciteiten/2/versions/0";
+        String u = "/rules/uniquenesses/2/versions/0";
         ir = golden(KUSTREGISTER);
         ((ObjectNode) ir.at(u)).putArray("sources");
         assertTrue(weigert(ir, u + "/sources").getMessage()
@@ -409,11 +409,11 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         ((ObjectNode) ir.at(u + "/sources/0")).putArray("keys");
         assertTrue(weigert(ir, u + "/sources/0/keys").getMessage().endsWith(": a source carries at least one key"));
         ir = golden(KUSTREGISTER);
-        ((ObjectNode) ir.at(u)).set("scope", ir.at("/rules/uniciteiten/0/versions/0/scope").deepCopy());
+        ((ObjectNode) ir.at(u)).set("scope", ir.at("/rules/uniquenesses/0/versions/0/scope").deepCopy());
         assertTrue(weigert(ir, u + "/scope").getMessage().endsWith(": a uniqueness version with two or more sources"
                 + " carries no scope: a scoped union is an open design question"));
 
-        String f = "/rules/feitCreaties/0/versions/0";
+        String f = "/rules/factCreations/0/versions/0";
         ir = golden(MASTSEIN);
         ((ObjectNode) ir.at(f)).putArray("path");
         assertTrue(weigert(ir, f + "/path").getMessage().endsWith(": a fact creation's path carries at least one hop"));
@@ -428,8 +428,8 @@ class RegelEnExpressielaagWeigeringWitnessTest {
             assertTrue(weigert(ir, REGEL + "/name").getMessage().endsWith(zin), naam);
         }
         ObjectNode ir = golden(BERGING);
-        ((ObjectNode) ir.at("/rules/verdelingen/0")).put("name", "verdeling #3");
-        assertTrue(weigert(ir, "/rules/verdelingen/0/name").getMessage().endsWith(zin));
+        ((ObjectNode) ir.at("/rules/allocations/0")).put("name", "verdeling #3");
+        assertTrue(weigert(ir, "/rules/allocations/0/name").getMessage().endsWith(zin));
         // only the whole spelling: a '#' elsewhere, or without its space or its digits, names no version
         for (String naam : List.of("basispremie#2", "basispremie #", "basispremie #2 x", "#2 basispremie"))
             assertNotNull(IrLoader.load(naamGezet(naam)), naam);
@@ -439,10 +439,10 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         String zin = "an optional field is written whole or not at all, and null is neither";
         String[][] rijen = { { PREMIEVENSTER, VERSIE, "condition" }, { PREMIEVENSTER, VERSIE, "presentation" },
                 { PREMIEVENSTER, REGEL, "statuteAnnotations" },
-                { BERGING, "/rules/verdelingen/0/versions/0", "ratioAttribute" },
-                { WACHTERSKETEN, "/rules/objectCreaties/0/versions/0", "connectingRole" },
-                { KUSTREGISTER, "/rules/uniciteiten/0/versions/0", "scope" },
-                { BOOTBERGING, "/rules/resolvedRegels/1/versions/0/value", "emptyFallback" },
+                { BERGING, "/rules/allocations/0/versions/0", "ratioAttribute" },
+                { WACHTERSKETEN, "/rules/objectCreations/0/versions/0", "connectingRole" },
+                { KUSTREGISTER, "/rules/uniquenesses/0/versions/0", "scope" },
+                { BOOTBERGING, "/rules/rules/1/versions/0/value", "emptyFallback" },
                 { PACHTVENSTER, WAARDE, "granularity" } };
         for (String[] r : rijen) {
             ObjectNode ir = golden(r[0]);
@@ -454,7 +454,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
     // ---------------- a rule version's target and kind ----------------
 
     @Test void het_doel_is_een_attribuutreferentie() throws Exception {
-        List<String> doelen = List.of("null", "{\"node\":\"ParameterRef\",\"parameter\":\"x\",\"source\":{\"snippet\":\"x\"}}",
+        List<String> doelen = List.of("null", "{\"node\":\"ParameterReference\",\"parameter\":\"x\",\"source\":{\"snippet\":\"x\"}}",
                 "{\"node\":\"Literal\",\"value\":{\"number\":\"1\"},\"type\":" + NUMBER + ",\"source\":{\"snippet\":\"1\"}}");
         for (String doel : doelen) {
             ObjectNode ir = golden(PREMIEVENSTER);
@@ -468,8 +468,8 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         String zin = ": presentation beside initialisation true: a presentation tags a computing version, never an"
                 + " initialisation";
         ObjectNode ir = golden(WAARDERING);
-        ((ObjectNode) ir.at("/rules/resolvedRegels/1/versions/0")).put("presentation", "BEREKENING");
-        assertTrue(weigert(ir, "/rules/resolvedRegels/1/versions/0/presentation").getMessage().endsWith(zin));
+        ((ObjectNode) ir.at("/rules/rules/1/versions/0")).put("presentation", "BEREKENING");
+        assertTrue(weigert(ir, "/rules/rules/1/versions/0/presentation").getMessage().endsWith(zin));
         ir = golden(PREMIEVENSTER);
         ((ObjectNode) ir.at(VERSIE)).put("initialisation", true);
         assertTrue(weigert(ir, VERSIE + "/presentation").getMessage().endsWith(zin));
@@ -508,7 +508,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
             ((ObjectNode) v.get("target")).put("attribuut", "toelage").put("objecttype", "Jutter");
             v.remove("condition");
             if (tag) v.put("presentation", "GELIJKSTELLING");
-            IrPad.rulesLijst(ir, "resolvedRegels").add(regel);
+            IrPad.rulesLijst(ir, "rules").add(regel);
             assertTrue(weigert(ir, VERSIE + "/target").getMessage().endsWith(": target 'toelage' names both an"
                     + " attribute and a characteristic of 'Jutter': which member a rule writes decides its kind, and"
                     + " this name decides nothing"), "tag " + tag);
@@ -518,7 +518,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
     /** WF-028's sentences: the target type of a fact creation is the declared filler of its target role, and a role
      *  that resolves to none leaves the creation without a target. The anchor role is refused in the same words. */
     @Test void een_feitcreatie_zonder_vuller_van_de_doelrol_weigert() throws Exception {
-        String f = "/rules/feitCreaties/0/versions/0";
+        String f = "/rules/factCreations/0/versions/0";
         ObjectNode ir = golden(MASTSEIN);
         ((ObjectNode) ir.at(f)).put("targetRole", "baken");
         assertTrue(weigert(ir, f + "/targetRole").getMessage().endsWith(": 'baken' is not a role of 'vakbeseining'"));
@@ -543,14 +543,14 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         assertEquals(List.of("jutheffing naar jaartarief #1", "jutheffing naar jaartarief #2",
                 "registratiegetal bij aangifte"), namen, "two versions carry the suffix, a form of one its bare name");
         assertEquals(LocalDate.of(2025, 1, 1), m.resolvedRegels.get(0).geldigheid().vanaf());
-        assertEquals(ir.at("/rules/resolvedRegels/0/versions/1/validity/vanaf").asText(),
+        assertEquals(ir.at("/rules/rules/0/versions/1/validity/from").asText(),
                 String.valueOf(m.resolvedRegels.get(1).geldigheid().vanaf()), "each version its own validity");
         assertNull(m.resolvedRegels.get(2).geldigheid().vanaf());
         assertNull(m.resolvedRegels.get(2).geldigheid().tot());
 
         // a nameless form stays nameless on every version, and the form's annotations stand on each
-        ((ObjectNode) ir.at("/rules/resolvedRegels/0")).putNull("name");
-        ((ObjectNode) ir.at("/rules/resolvedRegels/0")).putArray("statuteAnnotations").add("art. 3 Jutterswet");
+        ((ObjectNode) ir.at("/rules/rules/0")).putNull("name");
+        ((ObjectNode) ir.at("/rules/rules/0")).putArray("statuteAnnotations").add("art. 3 Jutterswet");
         m = IrLoader.load(ir);
         assertNull(m.resolvedRegels.get(0).naam());
         assertNull(m.resolvedRegels.get(1).naam());
@@ -560,7 +560,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
 
         ir = golden(HARDHEIDSOVERSCHOT);
         List<String> annotaties = new ArrayList<>();
-        ir.at("/rules/resolvedRegels/1/statuteAnnotations").forEach(a -> annotaties.add(a.asText()));
+        ir.at("/rules/rules/1/statuteAnnotations").forEach(a -> annotaties.add(a.asText()));
         assertEquals(2, annotaties.size());
         assertEquals(annotaties, IrLoader.load(ir).resolvedRegels.get(1).bronAnnotaties());
     }
@@ -591,7 +591,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
                 stappen, "every hop of the path but the last is a step");
         assertEquals(new RolBindingRef("seinvoering", "sein"), fc.joinRol(), "and the last is the join");
         // one hop is a join without steps
-        ArrayNode pad = (ArrayNode) ir.at("/rules/feitCreaties/0/versions/0/path");
+        ArrayNode pad = (ArrayNode) ir.at("/rules/factCreations/0/versions/0/path");
         pad.remove(0);
         pad.remove(0);
         fc = IrLoader.load(ir).feitCreaties.get(0);
@@ -616,10 +616,10 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         assertEquals(List.of(List.of("landcode"), List.of("zeecode")),
                 unie.bronnen().stream().map(ResolvedUniciteitUnie.Bron::sleutels).toList());
         // the order of the one list carries no meaning: the unions first split the same
-        ArrayNode lijst = IrPad.rulesLijst(ir, "uniciteiten");
+        ArrayNode lijst = IrPad.rulesLijst(ir, "uniquenesses");
         ArrayNode omgekeerd = JSON.createArrayNode();
         for (int i = lijst.size() - 1; i >= 0; i--) omgekeerd.add(lijst.get(i));
-        IrPad.rules(ir).set("uniciteiten", omgekeerd);
+        IrPad.rules(ir).set("uniquenesses", omgekeerd);
         m = IrLoader.load(ir);
         assertEquals(List.of("eenmalige sectiecode", "eenmalig kaveletiket"),
                 m.uniciteiten.stream().map(ResolvedUniciteit::naam).toList());
@@ -651,12 +651,12 @@ class RegelEnExpressielaagWeigeringWitnessTest {
                 ((Expr.Literal) IrLoader.load(golden(PENNINGDREMPEL)).resolvedRegels.get(0).waarde()).waarde());
         assertEquals("gaaf", ((Expr.Literal) IrLoader.load(golden(KEURSTAAT)).resolvedRegels.get(3).waarde()).waarde());
         ObjectNode ir = golden(PREMIEVENSTER);
-        zet(ir, WAARDE, "{\"node\":\"Literal\",\"value\":{\"boolean\":false},\"type\":{\"node\":\"Booleaan\"},"
+        zet(ir, WAARDE, "{\"node\":\"Literal\",\"value\":{\"boolean\":false},\"type\":{\"node\":\"Boolean\"},"
                 + "\"source\":{\"snippet\":\"onwaar\"}}");
         assertEquals("onwaar", ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
         // the text variant admits the empty string: its spelling is the case format's
         ir = golden(PREMIEVENSTER);
-        zet(ir, WAARDE, "{\"node\":\"Literal\",\"value\":{\"text\":\"\"},\"type\":{\"node\":\"Tekst\"},\"source\":{\"snippet\":\"''\"}}");
+        zet(ir, WAARDE, "{\"node\":\"Literal\",\"value\":{\"text\":\"\"},\"type\":{\"node\":\"Text\"},\"source\":{\"snippet\":\"''\"}}");
         assertEquals("", ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
     }
 

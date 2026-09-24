@@ -226,7 +226,7 @@ class VouwMatrixVormWitnessTest {
     private Path diepeSamenstelling() throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SAMENGESTELD.resolve("ir.json")));
         houdRegels(doc, "paraat bij ploegkeur", "redderstal van een reddingspost");
-        ((ObjectNode) IrPad.versie(doc, "resolvedRegels", "paraat bij ploegkeur").get("condition")).set("toets", JSON.readTree(DIEPE_MATRIX));
+        ((ObjectNode) IrPad.versie(doc, "rules", "paraat bij ploegkeur").get("condition")).set("toets", JSON.readTree(DIEPE_MATRIX));
         return schrijf(doc, "diep-ir");
     }
 
@@ -237,8 +237,8 @@ class VouwMatrixVormWitnessTest {
         IrPad.modelLijst(doc, "parameters").add(JSON.readTree("""
                 { "node": "Parameter", "name": "bovengrens",
                   "datatype": { "node": "Number", "whole": true, "decimals": 0,
-                                "sign": "NIET_NEGATIEF" } }"""));
-        ((ObjectNode) IrPad.versie(doc, "resolvedRegels", "bekwaam bij keurgrens").get("condition")).set("toets", JSON.readTree(TWEE_PARAM_MATRIX));
+                                "sign": "nonNegative" } }"""));
+        ((ObjectNode) IrPad.versie(doc, "rules", "bekwaam bij keurgrens").get("condition")).set("toets", JSON.readTree(TWEE_PARAM_MATRIX));
         return schrijf(doc, "twee-param-ir");
     }
 
@@ -247,19 +247,19 @@ class VouwMatrixVormWitnessTest {
     private Path tekstParameter() throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(PARAMETER.resolve("ir.json")));
         houdRegels(doc, "bekwaam bij keurgrens", "loodstal van een loodspost");
-        IrPad.addAttribute(IrPad.objectType(doc, "Loods"), "rang", JSON.readTree("{ \"node\": \"Tekst\" }"));
+        IrPad.addAttribute(IrPad.objectType(doc, "Loods"), "rang", JSON.readTree("{ \"node\": \"Text\" }"));
         IrPad.modelLijst(doc, "parameters").add(JSON.readTree("""
-                { "node": "Parameter", "name": "keurrang", "datatype": { "node": "Tekst" } }"""));
-        ((ObjectNode) IrPad.versie(doc, "resolvedRegels", "bekwaam bij keurgrens").get("condition")).set("toets", JSON.readTree(TEKST_PARAM_MATRIX));
+                { "node": "Parameter", "name": "keurrang", "datatype": { "node": "Text" } }"""));
+        ((ObjectNode) IrPad.versie(doc, "rules", "bekwaam bij keurgrens").get("condition")).set("toets", JSON.readTree(TEKST_PARAM_MATRIX));
         return schrijf(doc, "tekst-param-ir");
     }
 
     private static void houdRegels(ObjectNode doc, String... namen) {
         List<String> keep = List.of(namen);
         com.fasterxml.jackson.databind.node.ArrayNode uit = JSON.createArrayNode();
-        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels")) if (keep.contains(r.path("name").asText())) uit.add(r);
+        for (JsonNode r : IrPad.rulesLijst(doc, "rules")) if (keep.contains(r.path("name").asText())) uit.add(r);
         if (uit.size() != keep.size()) throw new AssertionError("not every rule of " + keep + " is in the document");
-        IrPad.rules(doc).set("resolvedRegels", uit);
+        IrPad.rules(doc).set("rules", uit);
     }
 
     private Path schrijf(ObjectNode doc, String naam) throws Exception {
@@ -270,39 +270,39 @@ class VouwMatrixVormWitnessTest {
 
     /** ALLE[ TEN MINSTE 1[ ALLE[ GEEN[ dj &gt; 9, c &gt; 20 ], c &gt; 7 ], gediplomeerd ], dj &gt; 2 ]. */
     private static final String DIEPE_MATRIX = """
-            { "node": "Samengesteld", "kwantor": "ALLE", "drempel": 0, "onderdelen": [
-                { "node": "Samengesteld", "kwantor": "TEN_MINSTE", "drempel": 1, "onderdelen": [
-                    { "node": "Samengesteld", "kwantor": "ALLE", "drempel": 0, "onderdelen": [
-                        { "node": "Samengesteld", "kwantor": "GEEN", "drempel": 0, "onderdelen": [
-                            { "node": "Vergelijking", "op": "GROTER",
-                              "links": { "node": "AttribuutRef", "attribuut": "dienstjaren",
-                                         "objecttype": "Redder", "source": { "snippet": "zijn dienstjaren" } },
-                              "rechts": { "node": "Literal", "value": { "number": "9" }, "type": { "node": "Number", "whole": true, "decimals": 0,
-                                                    "sign": "ONBEPAALD" }, "source": { "snippet": "9" } },
-                              "periode": null, "source": { "snippet": "zijn dienstjaren groter zijn dan 9" } },
-                            { "node": "Vergelijking", "op": "GROTER",
-                              "links": { "node": "AttribuutRef", "attribuut": "conditie",
-                                         "objecttype": "Redder", "source": { "snippet": "zijn conditie" } },
-                              "rechts": { "node": "Literal", "value": { "number": "20" }, "type": { "node": "Number", "whole": true, "decimals": 0,
-                                                    "sign": "ONBEPAALD" }, "source": { "snippet": "20" } },
-                              "periode": null, "source": { "snippet": "zijn conditie groter is dan 20" } } ],
+            { "node": "Compound", "quantifier": "all", "threshold": 0, "parts": [
+                { "node": "Compound", "quantifier": "atLeast", "threshold": 1, "parts": [
+                    { "node": "Compound", "quantifier": "all", "threshold": 0, "parts": [
+                        { "node": "Compound", "quantifier": "none", "threshold": 0, "parts": [
+                            { "node": "Comparison", "op": "greater",
+                              "left": { "node": "AttributeReference", "attribute": "dienstjaren",
+                                         "subjectType": "Redder", "source": { "snippet": "zijn dienstjaren" } },
+                              "right": { "node": "Literal", "value": { "number": "9" }, "type": { "node": "Number", "whole": true, "decimals": 0,
+                                                    "sign": "unspecified" }, "source": { "snippet": "9" } },
+                              "source": { "snippet": "zijn dienstjaren groter zijn dan 9" } },
+                            { "node": "Comparison", "op": "greater",
+                              "left": { "node": "AttributeReference", "attribute": "conditie",
+                                         "subjectType": "Redder", "source": { "snippet": "zijn conditie" } },
+                              "right": { "node": "Literal", "value": { "number": "20" }, "type": { "node": "Number", "whole": true, "decimals": 0,
+                                                    "sign": "unspecified" }, "source": { "snippet": "20" } },
+                              "source": { "snippet": "zijn conditie groter is dan 20" } } ],
                           "source": { "snippet": "hij aan geen van de volgende voorwaarden voldoet" } },
-                        { "node": "Vergelijking", "op": "GROTER",
-                          "links": { "node": "AttribuutRef", "attribuut": "conditie",
-                                     "objecttype": "Redder", "source": { "snippet": "zijn conditie" } },
-                          "rechts": { "node": "Literal", "value": { "number": "7" }, "type": { "node": "Number", "whole": true, "decimals": 0,
-                                                "sign": "ONBEPAALD" }, "source": { "snippet": "7" } },
-                          "periode": null, "source": { "snippet": "zijn conditie groter is dan 7" } } ],
+                        { "node": "Comparison", "op": "greater",
+                          "left": { "node": "AttributeReference", "attribute": "conditie",
+                                     "subjectType": "Redder", "source": { "snippet": "zijn conditie" } },
+                          "right": { "node": "Literal", "value": { "number": "7" }, "type": { "node": "Number", "whole": true, "decimals": 0,
+                                                "sign": "unspecified" }, "source": { "snippet": "7" } },
+                          "source": { "snippet": "zijn conditie groter is dan 7" } } ],
                       "source": { "snippet": "hij aan alle volgende voorwaarden voldoet" } },
-                    { "node": "Kenmerk", "kenmerk": "gediplomeerd", "negatie": false,
-                      "eigenaar": null, "periode": null, "source": { "snippet": "hij gediplomeerd is" } } ],
+                    { "node": "CharacteristicCheck", "characteristic": "gediplomeerd", "negated": false,
+                      "source": { "snippet": "hij gediplomeerd is" } } ],
                   "source": { "snippet": "hij aan ten minste 1 van de volgende voorwaarden voldoet" } },
-                { "node": "Vergelijking", "op": "GROTER",
-                  "links": { "node": "AttribuutRef", "attribuut": "dienstjaren", "objecttype": "Redder",
+                { "node": "Comparison", "op": "greater",
+                  "left": { "node": "AttributeReference", "attribute": "dienstjaren", "subjectType": "Redder",
                              "source": { "snippet": "zijn dienstjaren" } },
-                  "rechts": { "node": "Literal", "value": { "number": "2" }, "type": { "node": "Number", "whole": true, "decimals": 0,
-                                        "sign": "ONBEPAALD" }, "source": { "snippet": "2" } },
-                  "periode": null, "source": { "snippet": "zijn dienstjaren groter zijn dan 2" } } ],
+                  "right": { "node": "Literal", "value": { "number": "2" }, "type": { "node": "Number", "whole": true, "decimals": 0,
+                                        "sign": "unspecified" }, "source": { "snippet": "2" } },
+                  "source": { "snippet": "zijn dienstjaren groter zijn dan 2" } } ],
               "source": { "snippet": "hij aan alle volgende voorwaarden voldoet" } }
             """;
 
@@ -340,30 +340,30 @@ class VouwMatrixVormWitnessTest {
 
     /** ALLE[ ervaring &gt; keurgrens, ervaring &lt; bovengrens ] — one composite, TWO parameters. */
     private static final String TWEE_PARAM_MATRIX = """
-            { "node": "Samengesteld", "kwantor": "ALLE", "drempel": 0, "onderdelen": [
-                { "node": "Vergelijking", "op": "GROTER",
-                  "links": { "node": "AttribuutRef", "attribuut": "ervaring", "objecttype": "Loods",
+            { "node": "Compound", "quantifier": "all", "threshold": 0, "parts": [
+                { "node": "Comparison", "op": "greater",
+                  "left": { "node": "AttributeReference", "attribute": "ervaring", "subjectType": "Loods",
                              "source": { "snippet": "zijn ervaring" } },
-                  "rechts": { "node": "ParameterRef", "parameter": "keurgrens",
+                  "right": { "node": "ParameterReference", "parameter": "keurgrens",
                               "source": { "snippet": "de keurgrens" } },
-                  "periode": null, "source": { "snippet": "zijn ervaring groter is dan de keurgrens" } },
-                { "node": "Vergelijking", "op": "KLEINER",
-                  "links": { "node": "AttribuutRef", "attribuut": "ervaring", "objecttype": "Loods",
+                  "source": { "snippet": "zijn ervaring groter is dan de keurgrens" } },
+                { "node": "Comparison", "op": "less",
+                  "left": { "node": "AttributeReference", "attribute": "ervaring", "subjectType": "Loods",
                              "source": { "snippet": "zijn ervaring" } },
-                  "rechts": { "node": "ParameterRef", "parameter": "bovengrens",
+                  "right": { "node": "ParameterReference", "parameter": "bovengrens",
                               "source": { "snippet": "de bovengrens" } },
-                  "periode": null, "source": { "snippet": "zijn ervaring kleiner is dan de bovengrens" } } ],
+                  "source": { "snippet": "zijn ervaring kleiner is dan de bovengrens" } } ],
               "source": { "snippet": "hij aan alle volgende voorwaarden voldoet" } }
             """;
 
     /** rang == keurrang — a NON-numeric parameter as the bound. */
     private static final String TEKST_PARAM_MATRIX = """
-            { "node": "Vergelijking", "op": "GELIJK",
-              "links": { "node": "AttribuutRef", "attribuut": "rang", "objecttype": "Loods",
+            { "node": "Comparison", "op": "equal",
+              "left": { "node": "AttributeReference", "attribute": "rang", "subjectType": "Loods",
                          "source": { "snippet": "zijn rang" } },
-              "rechts": { "node": "ParameterRef", "parameter": "keurrang",
+              "right": { "node": "ParameterReference", "parameter": "keurrang",
                           "source": { "snippet": "de keurrang" } },
-              "periode": null, "source": { "snippet": "zijn rang gelijk is aan de keurrang" } }
+              "source": { "snippet": "zijn rang gelijk is aan de keurrang" } }
             """;
 
     private static final String TEKST_PARAM_CASE = """

@@ -97,16 +97,16 @@ class EnumNaamIdentiteitWitnessTest {
         for (String k : List.of("kavelgaaf", "kavelongaaf", "normconform"))
             kenmerken.addObject().put("node", "Characteristic").put("name", k).put("kind", "BIJVOEGLIJK");
         IrPad.modelLijst(ir, "factTypes").add(JSON.readTree("""
-                {"node": "Feittype", "naam": "kavelindeling", "wederkerig": false, "rollen": [
-                  {"node": "Rol", "naam": "kavel", "objecttypeNaam": "Kavel", "meervoud": null, "meervoudig": false},
-                  {"node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst", "meervoud": "vondsten", "meervoudig": true}]}
+                {"node": "FactType", "name": "kavelindeling", "reciprocal": false, "roles": [
+                  {"node": "Role", "name": "kavel", "objectType": "Kavel", "many": false},
+                  {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true}]}
                 """));
         ObjectNode param = IrPad.modelLijst(ir, "parameters").addObject();
         param.put("node", "Parameter").put("name", "keurnorm");
         param.set("datatype", keurtype.deepCopy());
 
         ObjectNode staat = eigenStaat(ir);   // before the rules below replace the golden's own
-        ArrayNode resolved = IrPad.rules(ir).putArray("resolvedRegels");
+        ArrayNode resolved = IrPad.rules(ir).putArray("rules");
         resolved.add(kenmerkRegel("keur van de kavel", "kavelgaaf", "GELIJK",
                 navigeerdeKeur(keurtype), literal(keurtype, "gaaf")));
         resolved.add(kenmerkRegel("ongave kavel", "kavelongaaf", "ONGELIJK",
@@ -115,8 +115,8 @@ class EnumNaamIdentiteitWitnessTest {
         normRef.put("node", "ParameterRef").put("parameter", "keurnorm").set("source", IrPad.bronrecord("de keurnorm"));
         resolved.add(kenmerkRegel("keurnorm gehaald", "normconform", "GELIJK",
                 staat, normRef));
-        IrPad.rules(ir).putArray("consistenties");
-        IrPad.rules(ir).putArray("uniciteiten");
+        IrPad.rules(ir).putArray("consistencies");
+        IrPad.rules(ir).putArray("uniquenesses");
 
         Path doc = schrijf(ir, "genavigeerd-en-parameter.json");
         JsonNode c = JSON.readTree("""
@@ -142,11 +142,11 @@ class EnumNaamIdentiteitWitnessTest {
      */
     @Test void de_uniesleutel_is_een_naam() throws Exception {
         ObjectNode ir = golden();
-        IrPad.rules(ir).putArray("consistenties");
-        IrPad.rules(ir).set("uniciteiten", JSON.readTree("""
+        IrPad.rules(ir).putArray("consistencies");
+        IrPad.rules(ir).set("uniquenesses", JSON.readTree("""
                 [{ "node": "Uniqueness", "name": "eenmalig keuroordeel", "versions": [ {
                     "sources": [ { "node": "Source", "objectType": "Vondst", "keys": ["staat"] }, { "node": "Source", "objectType": "Vondst", "keys": ["herkeuring"] } ],
-                    "validity": {"node": "Geldigheid", "vanaf": null, "tot": null},
+                    "validity": {"node": "Validity"},
                     "source": { "snippet": "Vondst verenigd met Vondst moeten uniek zijn." } } ] }]
                 """));
         Path doc = schrijf(ir, "unie.json");
@@ -174,8 +174,8 @@ class EnumNaamIdentiteitWitnessTest {
     @Test void een_tekstvergelijking_blijft_exact() throws Exception {
         ObjectNode ir = golden();
         naarTekst(IrPad.modelLijst(ir, "objectTypes"));
-        naarTekst(IrPad.rulesLijst(ir, "resolvedRegels"));
-        naarTekst(IrPad.rulesLijst(ir, "consistenties"));
+        naarTekst(IrPad.rulesLijst(ir, "rules"));
+        naarTekst(IrPad.rulesLijst(ir, "consistencies"));
         IrPad.model(ir).putArray("domains");
         assertFalse(ir.toString().contains("Enumeratie"), "de variant hoort geen enumeratie meer te dragen");
         Path doc = schrijf(ir, "tekst.json");
@@ -247,7 +247,7 @@ class EnumNaamIdentiteitWitnessTest {
 
     /** "zijn staat", lifted from the golden's own first rule so its shape is the emitter's. */
     private static ObjectNode eigenStaat(ObjectNode ir) {
-        return (ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("condition").get("links").deepCopy();
+        return (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition").get("links").deepCopy();
     }
 
     /** A KENMERKTOEKENNING "Een Vondst is {@code kenmerk} indien {@code links op rechts}". */
@@ -255,9 +255,9 @@ class EnumNaamIdentiteitWitnessTest {
                                            JsonNode links, JsonNode rechts) throws Exception {
         ObjectNode r = (ObjectNode) JSON.readTree("""
                 {"node": "Rule", "name": "", "versions": [ {
-                 "validity": {"node": "Geldigheid", "vanaf": null, "tot": null},
-                 "target": {"node": "AttribuutRef", "objecttype": "Vondst"},
-                 "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Booleaan"}, "source": { "snippet": "waar" }},
+                 "validity": {"node": "Validity"},
+                 "target": {"node": "AttributeReference", "subjectType": "Vondst"},
+                 "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}, "source": { "snippet": "waar" }},
                  "initialisation": false } ] }
                 """);
         r.put("name", naam);

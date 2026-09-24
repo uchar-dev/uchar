@@ -164,8 +164,8 @@ class StaandeScalaireNormWitnessTest {
         groep.set("source", IrPad.bronrecord("witness: gemeld geeft 12.00"));
         ObjectNode d = ((ObjectNode) groep.get("defaults").get(0)).deepCopy();
         d.set("voorwaarde", JSON.readTree(
-                "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemeld\",\"negatie\":false,"
-                        + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"hij gemeld is\"}}"));
+                "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gemeld\",\"negated\":false,"
+                        + "\"source\":{\"snippet\":\"hij gemeld is\"}}"));
         ((ObjectNode) d.get("consequentie")).putObject("value").put("number", "12.00");
         d.set("source", IrPad.bronrecord("gemeld: 12.00"));
         d.remove("excepties");   // absent, not null/[] — the only wire shape a childless Default carries
@@ -265,7 +265,7 @@ class StaandeScalaireNormWitnessTest {
     private static Path versieSchrijver() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(CORPUS.resolve("anchor")
                 .resolve("jutterswet-waardestelling").resolve("ir.json").toFile());
-        IrPad.versie(ir, "resolvedRegels", 0, 0).set("validity", JSON.createObjectNode()
+        IrPad.versie(ir, "rules", 0, 0).set("validity", JSON.createObjectNode()
                 .put("node", "Geldigheid").put("vanaf", "2026-01-01").put("tot", "2026-12-31"));
         Path uit = Files.createTempFile("versie-schrijver", ".json");
         uit.toFile().deleteOnExit();
@@ -283,7 +283,7 @@ class StaandeScalaireNormWitnessTest {
         getal.put("node", "Number").put("whole", false).put("decimals", 2).put("sign", "ONBEPAALD");
         IrPad.addAttribute(IrPad.objectType(ir, "Vondst"), "tweede taxatie", getal);
 
-        ArrayNode regels = IrPad.rulesLijst(ir, "resolvedRegels");
+        ArrayNode regels = IrPad.rulesLijst(ir, "rules");
         ObjectNode tweede = regels.get(0).deepCopy();
         tweede.put("name", "Waardestelling tweede");
         ObjectNode bron = (ObjectNode) tweede.get("versions").get(0).get("value");

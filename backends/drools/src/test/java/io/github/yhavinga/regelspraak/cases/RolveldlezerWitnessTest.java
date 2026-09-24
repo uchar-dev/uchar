@@ -280,9 +280,9 @@ class RolveldlezerWitnessTest {
     /** Reduce a model to the named rules in the resolved list. */
     private static void houdRegels(ObjectNode ir, Set<String> namen) {
         ArrayNode houd = JSON.createArrayNode();
-        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
+        for (JsonNode r : IrPad.rulesLijst(ir, "rules"))
             if (namen.contains(r.path("name").asText())) houd.add(r);
-        IrPad.rules(ir).set("resolvedRegels", houd);
+        IrPad.rules(ir).set("rules", houd);
     }
 
     private static Path tijdelijk(String naam, String inhoud) throws Exception {
@@ -317,7 +317,7 @@ class RolveldlezerWitnessTest {
                 ((ObjectNode) r).put("meervoudig", true);
                 ((ObjectNode) r).put("meervoud", "werven");
             }
-        ObjectNode vorm = IrPad.rules(ir).putArray("resolvedRegels").addObject();
+        ObjectNode vorm = IrPad.rules(ir).putArray("rules").addObject();
         vorm.put("node", "Rule").put("name", "wachtgeld van een werf");
         ObjectNode regel = vorm.putArray("versions").addObject();
         regel.putObject("validity").put("node", "Geldigheid").putNull("vanaf").putNull("tot");
@@ -345,7 +345,7 @@ class RolveldlezerWitnessTest {
         IrPad.timeline(bedrijvig, "MAAND");
         IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", numeriek());
         houdRegels(ir, Set.of("toeslag van een schuit"));
-        ObjectNode regel = IrPad.versie(ir, "resolvedRegels", 0, 0);
+        ObjectNode regel = IrPad.versie(ir, "rules", 0, 0);
         regel.put("initialisation", false).put("presentation", "GELIJKSTELLING");
         ObjectNode eigen = JSON.createObjectNode();
         eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit")
@@ -392,7 +392,7 @@ class RolveldlezerWitnessTest {
                 rol.put("meervoudig", false); rol.putNull("meervoud");
             }
         }
-        ObjectNode regel = IrPad.versie(ir, "resolvedRegels", 0, 0);
+        ObjectNode regel = IrPad.versie(ir, "rules", 0, 0);
         // the target's datatype is bewaarlast's declaration above; only the fold carries an annotation of its own
         ObjectNode fold = (ObjectNode) regel.get("value");
         fold.put("kind", "SOM").set("source", IrPad.bronrecord("de som van het bewaartarief van alle vondsten van de Jutter"));
@@ -454,7 +454,7 @@ class RolveldlezerWitnessTest {
         ObjectNode ir = goldenIr(POSTWACHT);
         IrPad.addAttribute(IrPad.objectType(ir, objecttype), lid, numeriek());
         houdRegels(ir, Set.of("vakbeseining door het kustvak"));
-        IrPad.rules(ir).putArray("uniciteiten");
+        IrPad.rules(ir).putArray("uniquenesses");
         return model("feitcreatie-" + lid, ir);
     }
 
@@ -509,8 +509,8 @@ class RolveldlezerWitnessTest {
             if ("penning".equals(r.get("naam").asText())) ((ObjectNode) r).put("meervoudig", false);
         IrPad.addAttribute(IrPad.objectType(ir, "Jutter"), "penning", numeriek());
         ObjectNode rules = IrPad.rules(ir);
-        rules.putArray("objectCreaties"); rules.putArray("resolvedRegels"); rules.putArray("regelGroepen");
-        rules.putArray("uniciteiten");
+        rules.putArray("objectCreations"); rules.putArray("rules"); rules.putArray("ruleGroups");
+        rules.putArray("uniquenesses");
         ObjectNode arg = JSON.createObjectNode();
         // the count source: its written name is the element role's declared plural, read at the fold subject
         arg.put("node", "AttribuutRef").put("attribuut", "penningen").put("objecttype", "Jutter")
@@ -532,7 +532,7 @@ class RolveldlezerWitnessTest {
         assertie.set("rechts", rechts);
         assertie.putNull("periode")
                 .set("source", IrPad.bronrecord("het aantal penningen van de Jutter is groter of gelijk aan 1"));
-        ObjectNode vorm = rules.putArray("consistenties").addObject();
+        ObjectNode vorm = rules.putArray("consistencies").addObject();
         vorm.put("node", "Consistency").put("name", "penningtelcontrole");
         ObjectNode con = vorm.putArray("versions").addObject();
         con.put("subject", "Jutter");

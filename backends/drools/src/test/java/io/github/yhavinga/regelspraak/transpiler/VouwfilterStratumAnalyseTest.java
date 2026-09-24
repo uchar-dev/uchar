@@ -129,16 +129,16 @@ class VouwfilterStratumAnalyseTest {
     }
 
     private static final String HEEL =
-            "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"NIET_NEGATIEF\"}";
-    private static final String BOOL = "{\"node\":\"Booleaan\"}";
+            "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}";
+    private static final String BOOL = "{\"node\":\"Boolean\"}";
 
     private static String kenmerkCheck(boolean negatie) {
-        return ("{\"node\":\"Kenmerk\",\"kenmerk\":\"gemerkt\",\"negatie\":%s,"
-                + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"gemerkt zijn\"}}").formatted(negatie);
+        return ("{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gemerkt\",\"negated\":%s,"
+                + "\"source\":{\"snippet\":\"gemerkt zijn\"}}").formatted(negatie);
     }
 
     private static String samengesteld(String kwantor, String... delen) {
-        return ("{\"node\":\"Samengesteld\",\"kwantor\":\"%s\",\"drempel\":1,\"onderdelen\":[%s],"
+        return ("{\"node\":\"Compound\",\"quantifier\":\"%s\",\"threshold\":1,\"parts\":[%s],"
                 + "\"source\":{\"snippet\":\"de samengestelde deelselectie\"}}")
                 .formatted(kwantor, String.join(",", delen));
     }
@@ -156,74 +156,74 @@ class VouwfilterStratumAnalyseTest {
     /** A count over the Jutter's vondsten; {@code elementType} "null" writes none, and {@code bereik} is the written
      *  range field with its leading comma, or empty. */
     private static String telling(String elementType, String filter, String bereik) {
-        return ("{\"node\":\"Aggregation\",\"kind\":\"AANTAL\",\"arguments\":[{\"node\":\"AttribuutRef\","
-                + "\"attribuut\":\"vondsten\",\"objecttype\":\"Jutter\",\"source\":{\"snippet\":\"vondsten van de Jutter\"}}]"
+        return ("{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":[{\"node\":\"AttributeReference\","
+                + "\"attribute\":\"vondsten\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"vondsten van de Jutter\"}}]"
                 + "%s,\"filter\":%s%s,\"type\":%s,\"source\":{\"snippet\":\"het aantal …\"}}")
                 .formatted(elementType.equals("null") ? "" : ",\"elementType\":" + elementType, filter, bereik, HEEL);
     }
 
     private static String kenmerkRegel(String naam, String kenmerk, String ot, String voorwaarde) {
         return IrPad.regel(naam, "KENMERKTOEKENNING",
-                "{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"%s\",\"source\":{\"snippet\":\"Een %s is %s\"}}"
+                "{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"%s\",\"source\":{\"snippet\":\"Een %s is %s\"}}"
                         .formatted(kenmerk, ot, ot, kenmerk),
                 IrPad.literal("waar", BOOL, "waar"), voorwaarde);
     }
 
     private static String groterDanNul(String links) {
-        return ("{\"node\":\"Vergelijking\",\"op\":\"GROTER\",\"links\":%s,"
-                + "\"rechts\":{\"node\":\"Literal\",\"value\":{\"number\":\"0\"},\"type\":%s,\"source\":{\"snippet\":\"0\"}},"
-                + "\"periode\":null,\"source\":{\"snippet\":\"… groter is dan 0\"}}").formatted(links, HEEL);
+        return ("{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":%s,"
+                + "\"right\":{\"node\":\"Literal\",\"value\":{\"number\":\"0\"},\"type\":%s,\"source\":{\"snippet\":\"0\"}},"
+                + "\"source\":{\"snippet\":\"… groter is dan 0\"}}").formatted(links, HEEL);
     }
 
     /** Jutter + Vondst, one relation, and the rules handed in. */
     private static String model(String... regels) {
         String ot = "{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
                 + "\"attributes\":[],"
-                + "\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"druk\",\"kind\":\"BIJVOEGLIJK\"},"
-                + "{\"node\":\"Characteristic\",\"name\":\"gemerkt\",\"kind\":\"BIJVOEGLIJK\"}]},"
+                + "\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"druk\",\"kind\":\"adjectival\"},"
+                + "{\"node\":\"Characteristic\",\"name\":\"gemerkt\",\"kind\":\"adjectival\"}]},"
                 + "{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,\"plural\":\"Vondsten\","
                 + "\"attributes\":[],"
-                + "\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"gemerkt\",\"kind\":\"BIJVOEGLIJK\"},"
-                + "{\"node\":\"Characteristic\",\"name\":\"kaal\",\"kind\":\"BIJVOEGLIJK\"}]}";
-        String ft = "{\"node\":\"Feittype\",\"naam\":\"vondstaanmelding\","
-                + "\"wederkerig\":false,\"rollen\":[{\"node\":\"Rol\",\"naam\":\"aanmelder\","
-                + "\"objecttypeNaam\":\"Jutter\",\"meervoud\":null,\"meervoudig\":false},"
-                + "{\"node\":\"Rol\",\"naam\":\"vondst\",\"objecttypeNaam\":\"Vondst\","
-                + "\"meervoud\":\"vondsten\",\"meervoudig\":true}]}";
+                + "\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"gemerkt\",\"kind\":\"adjectival\"},"
+                + "{\"node\":\"Characteristic\",\"name\":\"kaal\",\"kind\":\"adjectival\"}]}";
+        String ft = "{\"node\":\"FactType\",\"name\":\"vondstaanmelding\","
+                + "\"reciprocal\":false,\"roles\":[{\"node\":\"Role\",\"name\":\"aanmelder\","
+                + "\"objectType\":\"Jutter\",\"many\":false},"
+                + "{\"node\":\"Role\",\"name\":\"vondst\",\"objectType\":\"Vondst\","
+                + "\"plural\":\"vondsten\",\"many\":true}]}";
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],\"factTypes\":[%s],"
                 + "\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
-                + "\"dayKinds\":[]},\"rules\":{\"resolvedRegels\":[%s],"
-                + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[]},\"diagnostics\":[]}")
+                + "\"dayKinds\":[]},\"rules\":{\"rules\":[%s],"
+                + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
+                + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
+                + "\"ruleGroups\":[]},\"diagnostics\":[]}")
                 .formatted(ot, ft, String.join(",", regels));
     }
 
     /** A consumer whose fold filter carries {@code filter} over the element type Vondst, above a plain
      *  producer of {@code gemerkt} on that same type. */
     private static String doc(String filter) {
-        String bronRol = ",\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\","
-                + "\"rol\":\"vondst\"}";
+        String bronRol = ",\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"vondstaanmelding\","
+                + "\"role\":\"vondst\"}";
         return model(
                 kenmerkRegel("consument", "druk", "Jutter",
                         groterDanNul(telling("\"Vondst\"", filter, bronRol))),
                 kenmerkRegel("producent", "gemerkt", "Vondst",
-                        "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"negatie\":false,"
-                                + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"kaal zijn\"}}"));
+                        "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"kaal\",\"negated\":false,"
+                                + "\"source\":{\"snippet\":\"kaal zijn\"}}"));
     }
 
     /** A consumer whose voorwaarde is {@code kwantor}(⟨the COUNT whose filter checks gemerkt⟩ > 0) —
      *  so the compound's negation, if it were carried, would have to cross the fold-filter boundary to
      *  reach the characteristic. */
     private static String genesteldDoc(String kwantor) {
-        String bronRol = ",\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\","
-                + "\"rol\":\"vondst\"}";
+        String bronRol = ",\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"vondstaanmelding\","
+                + "\"role\":\"vondst\"}";
         String binnen = groterDanNul(telling("\"Vondst\"", kenmerkCheck(false), bronRol));
         return model(
                 kenmerkRegel("consument", "druk", "Jutter", samengesteld(kwantor, binnen)),
                 kenmerkRegel("producent", "gemerkt", "Vondst",
-                        "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"negatie\":false,"
-                                + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"kaal zijn\"}}"));
+                        "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"kaal\",\"negated\":false,"
+                                + "\"source\":{\"snippet\":\"kaal zijn\"}}"));
     }
 
     /** A consumer whose voorwaarde IS a quantifier fold over Vondst, carrying one POSITIVE gemerkt
@@ -236,16 +236,16 @@ class VouwfilterStratumAnalyseTest {
             case "TEN_MINSTE", "TEN_HOOGSTE", "PRECIES" -> "\"drempel\":1,";
             default -> "";
         };
-        String vouw = ("{\"node\":\"Kwantorvouw\",\"kwantor\":\"%s\",%s\"elementObjecttype\":\"Vondst\","
-                + "\"filter\":%s,\"toets\":%s,\"source\":{\"snippet\":\"alle vondsten … \"},"
-                + "\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\","
-                + "\"rol\":\"vondst\"}}")
+        String vouw = ("{\"node\":\"QuantifierFold\",\"quantifier\":\"%s\",%s\"elementType\":\"Vondst\","
+                + "\"filter\":%s,\"test\":%s,\"source\":{\"snippet\":\"alle vondsten … \"},"
+                + "\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"vondstaanmelding\","
+                + "\"role\":\"vondst\"}}")
                 .formatted(kwantor, drempel, inToets ? "null" : check, inToets ? check : altijd);
         return model(
                 kenmerkRegel("consument", "druk", "Jutter", vouw),
                 kenmerkRegel("producent", "gemerkt", "Vondst",
-                        "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"negatie\":false,"
-                                + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"kaal zijn\"}}"));
+                        "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"kaal\",\"negated\":false,"
+                                + "\"source\":{\"snippet\":\"kaal zijn\"}}"));
     }
 
     /** The subject-loss document: the consumer's fold carries NO element type, so its filter is read at the
@@ -253,10 +253,10 @@ class VouwfilterStratumAnalyseTest {
      *  same-named characteristic produced one band deep. With the name-wide fallback the consumer sinks to
      *  −2 through a homonym on a type it never walks. */
     private static String homoniemDoc() {
-        String nietGemerkt = "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemerkt\","
-                + "\"negatie\":true,\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"niet gemerkt zijn\"}}";
-        String nietKaal = "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"negatie\":true,"
-                + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"niet kaal zijn\"}}";
+        String nietGemerkt = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gemerkt\","
+                + "\"negated\":true,\"source\":{\"snippet\":\"niet gemerkt zijn\"}}";
+        String nietKaal = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"kaal\",\"negated\":true,"
+                + "\"source\":{\"snippet\":\"niet kaal zijn\"}}";
         return model(
                 kenmerkRegel("consument", "druk", "Jutter",
                         groterDanNul(telling("null", nietGemerkt, ""))),

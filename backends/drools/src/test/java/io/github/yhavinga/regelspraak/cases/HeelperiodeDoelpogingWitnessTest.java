@@ -61,17 +61,17 @@ class HeelperiodeDoelpogingWitnessTest {
         IrPad.timeline(IrPad.addAttribute(sein, "seinhoogte", getal()), "MAAND");
         IrPad.addAttribute(objecttype(ir, "Kustvak"), "vlagsein", getal());
         IrPad.modelLijst(ir, "factTypes").add(JSON.readTree("""
-                { "node": "Feittype", "naam": "vlagvoering", "wederkerig": false, "rollen": [
-                  { "node": "Rol", "naam": "vlagvak", "objecttypeNaam": "Kustvak", "meervoud": null, "meervoudig": false },
-                  { "node": "Rol", "naam": "vlagsein", "objecttypeNaam": "Sein", "meervoud": null, "meervoudig": false } ] }
+                { "node": "FactType", "name": "vlagvoering", "reciprocal": false, "roles": [
+                  { "node": "Role", "name": "vlagvak", "objectType": "Kustvak", "many": false },
+                  { "node": "Role", "name": "vlagsein", "objectType": "Sein", "many": false } ] }
                 """));
         guard(ir, JSON.readTree("""
-                { "node": "Vergelijking", "op": "GROTER",
-                  "links": { "node": "AttribuutRef", "attribuut": "seinhoogte", "objecttype": "Sein",
+                { "node": "Comparison", "op": "greater",
+                  "left": { "node": "AttributeReference", "attribute": "seinhoogte", "subjectType": "Sein",
                              "source": { "snippet": "de seinhoogte van het vlagsein" },
-                             "navigatieBindingen": [ { "node": "RolBinding", "feittype": "vlagvoering", "rol": "vlagsein" } ] },
-                  "rechts": { "node": "Literal", "value": { "number": "0" }, "type": %s, "source": { "snippet": "0" } },
-                  "periode": { "node": "GeheelPeriode", "jaar": true, "niet": false },
+                             "path": [ { "node": "RoleBinding", "factType": "vlagvoering", "role": "vlagsein" } ] },
+                  "right": { "node": "Literal", "value": { "number": "0" }, "type": %s, "source": { "snippet": "0" } },
+                  "wholePeriod": { "node": "WholePeriod", "granularity": "year", "negated": false },
                   "source": { "snippet": "de seinhoogte van het vlagsein gedurende het gehele jaar groter is dan 0" } }
                 """.formatted(getal())));
         String s1 = "\"attributes\": { \"seinhoogte\": { \"timeline\": " + metWaarde(JAAR) + " } }";
@@ -116,7 +116,7 @@ class HeelperiodeDoelpogingWitnessTest {
         ObjectNode sein = objecttype(ir, "Sein");
         IrPad.timeline(sein.putArray("characteristics").addObject()
                 .put("node", "Characteristic").put("name", "Gehesen").put("kind", "BIJVOEGLIJK"), "JAAR");
-        ObjectNode k = (ObjectNode) IrPad.versie(ir, "feitCreaties", 0, 0).get("condition");
+        ObjectNode k = (ObjectNode) IrPad.versie(ir, "factCreations", 0, 0).get("condition");
         k.put("kenmerk", "Gehesen").putNull("eigenaar");
         BeideTakken.groen(schrijf(ir),
                 geval("\"characteristics\": [], \"characteristicTimelines\": { \"gehesen\": " + HALF + " }, \"attributes\": {}",
@@ -148,7 +148,7 @@ class HeelperiodeDoelpogingWitnessTest {
         // reading would be 1 in both).
         ObjectNode ir = basis();
         IrPad.timeline(IrPad.characteristic(objecttype(ir, "Kustvak"), "gehesen"), "JAAR");
-        ((ObjectNode) IrPad.versie(ir, "feitCreaties", 0, 0).get("condition")).putNull("eigenaar");
+        ((ObjectNode) IrPad.versie(ir, "factCreations", 0, 0).get("condition")).putNull("eigenaar");
         Path p = schrijf(ir);
         String s1 = "\"characteristicTimelines\": { \"gehesen\": " + JAAR + " }";
         String s2 = "\"characteristicTimelines\": { \"gehesen\": " + HALF + " }";
@@ -169,7 +169,7 @@ class HeelperiodeDoelpogingWitnessTest {
     }
 
     private static void guard(ObjectNode ir, JsonNode g) {
-        IrPad.versie(ir, "feitCreaties", 0, 0).set("condition", g);
+        IrPad.versie(ir, "factCreations", 0, 0).set("condition", g);
     }
 
     private static ObjectNode getal() {

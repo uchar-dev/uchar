@@ -334,7 +334,7 @@ class EenheidsconflictWitnessTest {
                     .put("sign", "ONBEPAALD").set("unit", JSON.readTree(VREEMD));
             IrLoader.Documentfout f = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(kopie),
                     naam(ir));
-            assertTrue(f.plek().endsWith("/value/rechts/type") && f.getMessage().contains("unknown field"),
+            assertTrue(f.plek().endsWith("/value/right/type") && f.getMessage().contains("unknown field"),
                     naam(ir) + ": " + f.getMessage());
         }
         assertTrue(gezien > 0, "geen enkele golden droeg een optelling van twee gedeclareerde lezingen");
@@ -447,7 +447,7 @@ class EenheidsconflictWitnessTest {
      *  unit-bearing declaration. Deterministic: rules and their versions are visited in document order and the
      *  first hit wins. */
     private static JsonNode additieveRegel(JsonNode ir) {
-        JsonNode regels = ir.path("rules").get("resolvedRegels");
+        JsonNode regels = ir.path("rules").get("rules");
         if (regels == null) return null;
         List<JsonNode> versies = new ArrayList<>();
         for (JsonNode vorm : regels) vorm.path("versions").forEach(versies::add);

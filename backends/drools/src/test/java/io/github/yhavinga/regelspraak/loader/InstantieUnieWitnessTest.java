@@ -111,7 +111,7 @@ class InstantieUnieWitnessTest {
 
     private static String tak(String elementType, String feittype, String rol, String filter) {
         String bronrol = feittype == null ? "null"
-                : "{\"node\":\"RolBinding\",\"feittype\":\"%s\",\"rol\":\"%s\"}".formatted(feittype, rol);
+                : "{\"node\":\"RoleBinding\",\"factType\":\"%s\",\"role\":\"%s\"}".formatted(feittype, rol);
         return ("{\"node\":\"InstanceSetBranch\",\"elementType\":%s,\"sourceRole\":%s,\"filter\":%s,"
                 + "\"source\":{\"snippet\":\"een selectie\"}}").formatted(elementType, bronrol, filter);
     }
@@ -119,10 +119,10 @@ class InstantieUnieWitnessTest {
     private static final String TAK_AANGEMELD = tak("\"Vondst\"", "vondstaanmelding", "aangemelde vondst", "null");
     private static final String TAK_GEBORGEN = tak("\"Vondst\"", "vondstberging", "geborgen vondst", "null");
     private static final String TAK_ONOPGELOST = tak("\"Vondst\"", "vondstaanmelding", "aangemelde vondst",
-            "{\"node\":\"Onopgelost\",\"source\":{\"snippet\":\"die onleesbaar zijn\"}}");
+            "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"die onleesbaar zijn\"}}");
     private static final String TAK_GEMERKT = tak("\"Vondst\"", "vondstaanmelding", "aangemelde vondst",
-            "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemerkt\",\"negatie\":false,"
-                    + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"gemerkt zijn\"}}");
+            "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gemerkt\",\"negated\":false,"
+                    + "\"source\":{\"snippet\":\"gemerkt zijn\"}}");
 
     private static String unie(String... takken) {
         return "{\"node\":\"InstanceSetUnion\",\"branches\":[%s],\"source\":{\"snippet\":\"de unie\"}}"
@@ -130,34 +130,34 @@ class InstantieUnieWitnessTest {
     }
 
     private static String doc(String unie) {
-        String heel = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"NIET_NEGATIEF\"}";
-        String waarde = "{\"node\":\"Aggregation\",\"kind\":\"AANTAL\",\"arguments\":[%s],\"type\":%s,\"source\":{\"snippet\":\"het aantal …\"}}"
+        String heel = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}";
+        String waarde = "{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":[%s],\"type\":%s,\"source\":{\"snippet\":\"het aantal …\"}}"
                 .formatted(unie, heel);
-        String doel = "{\"node\":\"AttribuutRef\",\"attribuut\":\"aantal strandvondsten\","
-                + "\"objecttype\":\"Jutter\",\"source\":{\"snippet\":\"Het aantal strandvondsten van een Jutter\"}}";
+        String doel = "{\"node\":\"AttributeReference\",\"attribute\":\"aantal strandvondsten\","
+                + "\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"Het aantal strandvondsten van een Jutter\"}}";
         String jutter = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
                 + "\"attributes\":[{\"node\":\"Attribute\",\"name\":\"aantal strandvondsten\",\"datatype\":%s}],"
                 + "\"characteristics\":[]}").formatted(heel);
         String vondst = "{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,\"plural\":\"Vondsten\","
                 + "\"attributes\":[],"
-                + "\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"gemerkt\",\"kind\":\"BIJVOEGLIJK\"}]}";
-        String ftAan = "{\"node\":\"Feittype\",\"naam\":\"vondstaanmelding\","
-                + "\"wederkerig\":false,\"rollen\":[{\"node\":\"Rol\",\"naam\":\"aanmelder\","
-                + "\"objecttypeNaam\":\"Jutter\",\"meervoud\":null,\"meervoudig\":false},"
-                + "{\"node\":\"Rol\",\"naam\":\"aangemelde vondst\",\"objecttypeNaam\":\"Vondst\","
-                + "\"meervoud\":\"aangemelde vondsten\",\"meervoudig\":true}]}";
-        String ftBerg = "{\"node\":\"Feittype\",\"naam\":\"vondstberging\","
-                + "\"wederkerig\":false,\"rollen\":[{\"node\":\"Rol\",\"naam\":\"berger\","
-                + "\"objecttypeNaam\":\"Jutter\",\"meervoud\":null,\"meervoudig\":false},"
-                + "{\"node\":\"Rol\",\"naam\":\"geborgen vondst\",\"objecttypeNaam\":\"Vondst\","
-                + "\"meervoud\":\"geborgen vondsten\",\"meervoudig\":true}]}";
+                + "\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"gemerkt\",\"kind\":\"adjectival\"}]}";
+        String ftAan = "{\"node\":\"FactType\",\"name\":\"vondstaanmelding\","
+                + "\"reciprocal\":false,\"roles\":[{\"node\":\"Role\",\"name\":\"aanmelder\","
+                + "\"objectType\":\"Jutter\",\"many\":false},"
+                + "{\"node\":\"Role\",\"name\":\"aangemelde vondst\",\"objectType\":\"Vondst\","
+                + "\"plural\":\"aangemelde vondsten\",\"many\":true}]}";
+        String ftBerg = "{\"node\":\"FactType\",\"name\":\"vondstberging\","
+                + "\"reciprocal\":false,\"roles\":[{\"node\":\"Role\",\"name\":\"berger\","
+                + "\"objectType\":\"Jutter\",\"many\":false},"
+                + "{\"node\":\"Role\",\"name\":\"geborgen vondst\",\"objectType\":\"Vondst\","
+                + "\"plural\":\"geborgen vondsten\",\"many\":true}]}";
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s,%s],\"factTypes\":[%s,%s],"
                 + "\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
                 + "\"dayKinds\":[]},"
-                + "\"rules\":{\"resolvedRegels\":[%s],"
-                + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[]},\"diagnostics\":[]}")
+                + "\"rules\":{\"rules\":[%s],"
+                + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
+                + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
+                + "\"ruleGroups\":[]},\"diagnostics\":[]}")
                 .formatted(jutter, vondst, ftAan, ftBerg,
                         io.github.yhavinga.regelspraak.cases.IrPad.regel("aantal strandvondsten", "BEREKENING", doel,
                                 waarde, "null"));

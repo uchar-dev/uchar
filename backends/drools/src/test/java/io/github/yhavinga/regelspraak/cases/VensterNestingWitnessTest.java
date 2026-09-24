@@ -106,46 +106,46 @@ class VensterNestingWitnessTest {
 
     private static final String DATUM = "{ \"node\": \"Date\", \"precision\": \"day\" }";
     private static final String NUM = "{ \"node\": \"Number\", \"whole\": true, \"decimals\": 0,"
-            + " \"sign\": \"ONBEPAALD\" }";
-    private static final String WACHT = "{ \"node\": \"RolBinding\", \"feittype\": \"schouwindeling\", \"rol\": \"wacht\" }";
-    private static final String BREVET = "{ \"node\": \"RolBinding\", \"feittype\": \"brevethouding\", \"rol\": \"brevet\" }";
+            + " \"sign\": \"unspecified\" }";
+    private static final String WACHT = "{ \"node\": \"RoleBinding\", \"factType\": \"schouwindeling\", \"role\": \"wacht\" }";
+    private static final String BREVET = "{ \"node\": \"RoleBinding\", \"factType\": \"brevethouding\", \"role\": \"brevet\" }";
 
     private static final String VENSTER = """
-            { "node": "Periode",
-              "vanaf": { "node": "Literal", "value": { "date": "2024-01-01" }, "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "2024-01-01" } },
-              "tot": { "node": "Literal", "value": { "date": "2025-01-01" }, "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "2025-01-01" } },
-              "totInclusief": false, "source": { "snippet": "van 1 januari 2024 tot 1 januari 2025" } }""";
+            { "node": "TimeWindow",
+              "from": { "node": "Literal", "value": { "date": "2024-01-01" }, "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "2024-01-01" } },
+              "to": { "node": "Literal", "value": { "date": "2025-01-01" }, "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "2025-01-01" } },
+              "toInclusive": false, "source": { "snippet": "van 1 januari 2024 tot 1 januari 2025" } }""";
 
     private static final String BREVET_VENSTER = """
-            { "node": "Periode",
-              "vanaf": { "node": "AttribuutRef", "attribuut": "afgifte", "objecttype": "Brevet",
+            { "node": "TimeWindow",
+              "from": { "node": "AttributeReference", "attribute": "afgifte", "subjectType": "Brevet",
                          "source": { "snippet": "de afgifte" } },
-              "tot": null, "totInclusief": false, "source": { "snippet": "vanaf de afgifte" } }""";
+              "toInclusive": false, "source": { "snippet": "vanaf de afgifte" } }""";
 
     private static final String PARAMETERVENSTER = """
-            { "node": "Periode",
-              "vanaf": { "node": "ParameterRef", "parameter": "peildatum", "source": { "snippet": "de peildatum" } },
-              "tot": null, "totInclusief": false, "source": { "snippet": "vanaf de peildatum" } }""";
+            { "node": "TimeWindow",
+              "from": { "node": "ParameterReference", "parameter": "peildatum", "source": { "snippet": "de peildatum" } },
+              "toInclusive": false, "source": { "snippet": "vanaf de peildatum" } }""";
 
     private static final String ERVAREN = """
-            { "node": "Kenmerk", "kenmerk": "ervaren", "negatie": false, "eigenaar": null,
-              "periode": null, "source": { "snippet": "hij ervaren is" } }""";
+            { "node": "CharacteristicCheck", "characteristic": "ervaren", "negated": false,
+              "source": { "snippet": "hij ervaren is" } }""";
     private static final String NIET_ERVAREN = """
-            { "node": "Kenmerk", "kenmerk": "ervaren", "negatie": true, "eigenaar": null,
-              "periode": null, "source": { "snippet": "hij niet ervaren is" } }""";
+            { "node": "CharacteristicCheck", "characteristic": "ervaren", "negated": true,
+              "source": { "snippet": "hij niet ervaren is" } }""";
     private static final String GEDIPLOMEERD = """
-            { "node": "Kenmerk", "kenmerk": "gediplomeerd", "negatie": false, "eigenaar": null,
-              "periode": null, "source": { "snippet": "hij gediplomeerd is" } }""";
+            { "node": "CharacteristicCheck", "characteristic": "gediplomeerd", "negated": false,
+              "source": { "snippet": "hij gediplomeerd is" } }""";
 
     private static String samen(String kwantor, String... delen) {
-        return "{ \"node\": \"Samengesteld\", \"kwantor\": \"" + kwantor + "\", \"drempel\": 0, \"onderdelen\": [ "
+        return "{ \"node\": \"Compound\", \"quantifier\": \"" + kwantor + "\", \"threshold\": 0, \"parts\": [ "
                 + String.join(", ", delen) + " ], \"source\": {\"snippet\": \"de volgende voorwaarden\"} }";
     }
 
     private static String vouw(String kwantor, String elem, String rol, String filter, String toets) {
-        return "{ \"node\": \"Kwantorvouw\", \"kwantor\": \"" + kwantor + "\", \"elementObjecttype\": \"" + elem + "\","
-                + " \"filter\": " + (filter == null ? "null" : filter) + ", \"toets\": " + toets + ","
-                + " \"source\": {\"snippet\": \"de vouw over " + elem + "\"}, \"bronRol\": " + rol + " }";
+        return "{ \"node\": \"QuantifierFold\", \"quantifier\": \"" + kwantor + "\", \"elementType\": \"" + elem + "\","
+                + " \"filter\": " + (filter == null ? "null" : filter) + ", \"test\": " + toets + ","
+                + " \"source\": {\"snippet\": \"de vouw over " + elem + "\"}, \"sourceRole\": " + rol + " }";
     }
 
     private static String geenVouw(String toets) {
@@ -153,23 +153,23 @@ class VensterNestingWitnessTest {
     }
 
     private static String som(String filter) {
-        return "{ \"node\": \"Aggregation\", \"kind\": \"SOM\", \"arguments\": [ { \"node\": \"AttribuutRef\","
-                + " \"attribuut\": \"dienstjaren\", \"objecttype\": \"Strandwacht\","
+        return "{ \"node\": \"Aggregation\", \"kind\": \"sum\", \"arguments\": [ { \"node\": \"AttributeReference\","
+                + " \"attribute\": \"dienstjaren\", \"subjectType\": \"Strandwacht\","
                 + " \"source\": {\"snippet\": \"de dienstjaren van de wachten\"} } ],"
                 + " \"elementType\": \"Strandwacht\", \"filter\": " + filter + ", \"sourceRole\": " + WACHT + ","
                 + " \"type\": " + NUM + ", \"source\": {\"snippet\": \"de som van de dienstjaren\"} }";
     }
 
     private static String groter(String links, int n) {
-        return "{ \"node\": \"Vergelijking\", \"op\": \"GROTER\", \"links\": " + links + ", \"rechts\": { \"node\":"
+        return "{ \"node\": \"Comparison\", \"op\": \"greater\", \"left\": " + links + ", \"right\": { \"node\":"
                 + " \"Literal\", \"value\": { \"number\": \"" + n + "\" }, \"type\": " + NUM + ", \"source\": {\"snippet\": \""
-                + n + "\"} }, \"periode\": null, \"source\": {\"snippet\": \"de som groter is dan " + n + "\"} }";
+                + n + "\"} }, \"source\": {\"snippet\": \"de som groter is dan " + n + "\"} }";
     }
 
     /** The golden's document with the condition of "bevoegd bij diploma" replaced by {@code voorwaarde}. */
     private Path document(String voorwaarde) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("ir.json")));
-        IrPad.versie(doc, "resolvedRegels", "bevoegd bij diploma").set("condition", JSON.readTree(voorwaarde));
+        IrPad.versie(doc, "rules", "bevoegd bij diploma").set("condition", JSON.readTree(voorwaarde));
         return schrijf(doc);
     }
 
@@ -183,9 +183,9 @@ class VensterNestingWitnessTest {
         brevet.set("characteristics", JSON.createArrayNode());
         IrPad.modelLijst(doc, "objectTypes").add(brevet);
         IrPad.modelLijst(doc, "factTypes").add(JSON.readTree("""
-                { "node": "Feittype", "naam": "brevethouding", "wederkerig": false, "rollen": [
-                    { "node": "Rol", "naam": "houder", "objecttypeNaam": "Strandwacht", "meervoud": null, "meervoudig": false },
-                    { "node": "Rol", "naam": "brevet", "objecttypeNaam": "Brevet", "meervoud": "brevetten", "meervoudig": true } ] }"""));
+                { "node": "FactType", "name": "brevethouding", "reciprocal": false, "roles": [
+                    { "node": "Role", "name": "houder", "objectType": "Strandwacht", "many": false },
+                    { "node": "Role", "name": "brevet", "objectType": "Brevet", "plural": "brevetten", "many": true } ] }"""));
         return schrijf(doc);
     }
 

@@ -48,7 +48,7 @@ class EigenLezingWitnessTest {
     /** The load refusal, for either branch: nothing is lowered from a document that names another type there. */
     private static void weigert(ObjectNode ir, String type) {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir), type);
-        assertEquals("/rules/resolvedRegels/0/versions/0/value", e.plek(), e.getMessage());
+        assertEquals("/rules/rules/0/versions/0/value", e.plek(), e.getMessage());
         assertTrue(e.getMessage().contains("an attribute reference without navigation bindings is the subject's own"
                 + " read, so its objecttype is the subject type 'Munt' — '" + type + "' names another type, which only"
                 + " a navigation reaches (WF-053)"), e.getMessage());
@@ -74,7 +74,7 @@ class EigenLezingWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(GOLDEN.resolve("ir.json")));
         JsonNode gewicht = IrPad.attribute(IrPad.objectType(ir, "Vondst"), "gewicht").get("datatype");
         IrPad.addAttribute(IrPad.objectType(ir, "Munt"), "muntwaarde", gewicht.deepCopy());
-        ObjectNode vorm = IrPad.rules(ir).putArray("resolvedRegels").addObject();
+        ObjectNode vorm = IrPad.rules(ir).putArray("rules").addObject();
         vorm.put("node", "Rule").put("name", "muntwaarde");
         ObjectNode regel = vorm.putArray("versions").addObject();
         regel.putObject("validity").put("node", "Geldigheid").putNull("vanaf").putNull("tot");

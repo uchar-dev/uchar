@@ -97,8 +97,8 @@ class OverervingWeigeringWitnessTest {
         // was a refusal in all three executors; it is lowered now, and this is the Drools half of the
         // witness (ref's is WV-7.10-f, and no corpus golden carries the swap).
         ObjectNode ir = goldenIr(WRAKBASIS);
-        ((ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0)).put("name", "uitkering van een strandrecht (kaal)");
-        ObjectNode regel = IrPad.versie(ir, "resolvedRegels", 0, 0);
+        ((ObjectNode) IrPad.rulesLijst(ir, "rules").get(0)).put("name", "uitkering van een strandrecht (kaal)");
+        ObjectNode regel = IrPad.versie(ir, "rules", 0, 0);
         ((ObjectNode) regel.get("target")).put("objecttype", "Strandrecht");
         ((ObjectNode) regel.get("value").get("links")).put("objecttype", "Strandrecht");
         ObjectNode pd = (ObjectNode) IrPad.rulesLijst(ir, "prioritizedDefaults").get(0);
@@ -185,7 +185,7 @@ class OverervingWeigeringWitnessTest {
         // executors, and an ACTIVE windowed rule answered from the inherited base instead of its own
         // value. Versioned rules are a live corpus form, so this is not a hypothetical.
         ObjectNode ir = goldenIr(WRAKBASIS);
-        ObjectNode geldigheid = (ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("validity");
+        ObjectNode geldigheid = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("validity");
         geldigheid.put("vanaf", "2020-01-01");
 
         Path irPad = model("overerving-venster", ir);
@@ -383,7 +383,7 @@ class OverervingWeigeringWitnessTest {
     }
 
     private static void startpuntOp(ObjectNode ir, String objecttype) {
-        IrPad.rulesLijst(ir, "resolvedStartpunten").add(JSON.createObjectNode()
+        IrPad.rulesLijst(ir, "startPointDeterminations").add(JSON.createObjectNode()
                 .put("node", "ResolvedStartpunt").put("tijdlijn", "boekjaar")
                 .put("objecttype", objecttype).put("lid", "meetdatum"));
     }

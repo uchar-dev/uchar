@@ -66,11 +66,11 @@ class BronrecordWeigeringWitnessTest {
     /** Three defaults groups, none of which carries a source record. */
     private static final String WACHTGELD = "jutterswet-wachtgeld";
 
-    private static final String VERSIE = "/rules/resolvedRegels/0/versions/0";
+    private static final String VERSIE = "/rules/rules/0/versions/0";
     private static final String WAARDE = VERSIE + "/value";
     private static final String VOORWAARDE = VERSIE + "/condition";
-    private static final String CONSISTENTIE = "/rules/consistenties/0/versions/0";
-    private static final String GROEP = "/rules/regelGroepen/0";
+    private static final String CONSISTENTIE = "/rules/consistencies/0/versions/0";
+    private static final String GROEP = "/rules/ruleGroups/0";
 
     // ---------------- every node kind reads its record ----------------
 
@@ -113,18 +113,18 @@ class BronrecordWeigeringWitnessTest {
     @Test void de_knoopsoorten_zonder_golden_lezen_hun_record_ook() throws Exception {
         String w = WAARDE, v = VOORWAARDE, bronrecord = "\"source\":{\"snippet\":\"x\",\"file\":\"jutterswet.rgs\"}";
         Map<String, String[]> rijen = new java.util.LinkedHashMap<>();
-        rijen.put("TekstReeks", new String[] { w, "{\"node\":\"TekstReeks\",\"delen\":[],\"type\":{\"node\":\"Tekst\"},"
+        rijen.put("TekstReeks", new String[] { w, "{\"node\":\"TextComposition\",\"parts\":[],\"type\":{\"node\":\"Text\"},"
                 + bronrecord + "}", w });
-        rijen.put("VariabeleRef", new String[] { w, "{\"node\":\"VariabeleRef\",\"naam\":\"x\"," + bronrecord + "}", w });
-        rijen.put("DimensieSelectie", new String[] { w, "{\"node\":\"Aggregation\",\"kind\":\"SOM\",\"arguments\":[],"
-                + "\"dimensionSelection\":{\"node\":\"DimensieSelectie\",\"dimensie\":\"d\",\"labels\":[]," + bronrecord
+        rijen.put("VariabeleRef", new String[] { w, "{\"node\":\"VariableReference\",\"name\":\"x\"," + bronrecord + "}", w });
+        rijen.put("DimensieSelectie", new String[] { w, "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[],"
+                + "\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"d\",\"labels\":[]," + bronrecord
                 + "},\"type\":null,\"source\":{\"snippet\":\"x\"}}", w + "/dimensionSelection" });
-        rijen.put("ContextValue", new String[] { w, "{\"node\":\"ContextValue\",\"name\":\"Rekendatum\",\"type\":"
+        rijen.put("ContextValue", new String[] { w, "{\"node\":\"ContextValue\",\"name\":\"evaluationDate\",\"type\":"
                 + "{\"node\":\"Date\",\"precision\":\"day\"}," + bronrecord + "}", w });
-        rijen.put("Onopgelost (expressie)", new String[] { w, "{\"node\":\"Onopgelost\"," + bronrecord + "}", w });
+        rijen.put("Onopgelost (expressie)", new String[] { w, "{\"node\":\"Unresolved\"," + bronrecord + "}", w });
         rijen.put("Regelversie", new String[] { v, "{\"node\":\"Regelversie\",\"regel\":\"x\",\"inconsistent\":false,"
                 + bronrecord + "}", v });
-        rijen.put("Onopgelost (conditie)", new String[] { v, "{\"node\":\"Onopgelost\"," + bronrecord + "}", v });
+        rijen.put("Onopgelost (conditie)", new String[] { v, "{\"node\":\"Unresolved\"," + bronrecord + "}", v });
         for (Map.Entry<String, String[]> r : rijen.entrySet()) {
             ObjectNode ir = golden(PENNINGDREMPEL);
             zet(ir, r.getValue()[0], r.getValue()[1]);
@@ -190,10 +190,10 @@ class BronrecordWeigeringWitnessTest {
      *  verifier's to refuse (its blank arm), since the schema admits it. */
     @Test void een_marker_zonder_bronrecord_weigert_in_de_zin_van_wf113() throws Exception {
         String[][] markers = {
-                { PREMIEVENSTER, WAARDE, "{\"node\":\"Onopgelost\"}" },
-                { PREMIEVENSTER, WAARDE, "{\"node\":\"Onopgelost\",\"type\":{\"node\":\"Number\",\"whole\":true,"
-                        + "\"decimals\":0,\"sign\":\"ONBEPAALD\"}}" },
-                { PENNINGDREMPEL, VOORWAARDE, "{\"node\":\"Onopgelost\"}" } };
+                { PREMIEVENSTER, WAARDE, "{\"node\":\"Unresolved\"}" },
+                { PREMIEVENSTER, WAARDE, "{\"node\":\"Unresolved\",\"type\":{\"node\":\"Number\",\"whole\":true,"
+                        + "\"decimals\":0,\"sign\":\"unspecified\"}}" },
+                { PENNINGDREMPEL, VOORWAARDE, "{\"node\":\"Unresolved\"}" } };
         for (String[] m : markers) {
             ObjectNode ir = golden(m[0]);
             zet(ir, m[1], m[2]);
@@ -214,7 +214,7 @@ class BronrecordWeigeringWitnessTest {
         assertEquals("a source line is at least 1", IrLoader.BRONREGEL_ONDER_1);
         // the marker reads the snippet as any other node does
         ObjectNode ir = golden(PENNINGDREMPEL);
-        zet(ir, VOORWAARDE, "{\"node\":\"Onopgelost\",\"source\":{\"snippet\":\"de onbekende vondstwaarde\"}}");
+        zet(ir, VOORWAARDE, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"de onbekende vondstwaarde\"}}");
         Conditie.Onopgelost o = assertInstanceOf(Conditie.Onopgelost.class,
                 IrLoader.load(ir).resolvedRegels.get(0).voorwaarde());
         assertEquals("de onbekende vondstwaarde", o.bron().snippet());

@@ -479,7 +479,7 @@ class LetResultaatTakWitnessTest {
     }
 
     private static String attr(String naam, int dec, boolean geheel, String teken) {
-        return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
+        return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"het %s van de Jutter\"}}")
                 .formatted(naam, naam);
     }
@@ -490,7 +490,7 @@ class LetResultaatTakWitnessTest {
     }
 
     private static String binair(String op, String links, String rechts) {
-        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
+        return "{\"node\":\"Binary\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, num(2, false, ONBEPAALD), op.toLowerCase());
     }
 
@@ -516,7 +516,7 @@ class LetResultaatTakWitnessTest {
     }
 
     private static String verg(String op, String links, String rechts) {
-        return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"source\":{\"snippet\":\"%s\"}}"
+        return "{\"node\":\"Comparison\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, op.toLowerCase());
     }
 
@@ -526,9 +526,9 @@ class LetResultaatTakWitnessTest {
 
     /** A rule of one always-valid computing version; {@code voorwaarde} "null" writes no condition. */
     private static String regel(String naam, String doel, String waarde, String voorwaarde) {
-        return ("{\"node\":\"Rule\",\"name\":\"%s\",\"versions\":[{\"validity\":{\"node\":\"Geldigheid\","
-                + "\"vanaf\":null,\"tot\":null},\"target\":%s,\"value\":%s%s,\"initialisation\":false,"
-                + "\"presentation\":\"BEREKENING\"}]}")
+        return ("{\"node\":\"Rule\",\"name\":\"%s\",\"versions\":[{\"validity\":{\"node\":\"Validity\""
+                + "},\"target\":%s,\"value\":%s%s,\"initialisation\":false,"
+                + "\"presentation\":\"calculation\"}]}")
                 .formatted(naam, doel, waarde, voorwaarde.equals("null") ? "" : ",\"condition\":" + voorwaarde);
     }
 
@@ -561,10 +561,10 @@ class LetResultaatTakWitnessTest {
                 + "\"attributes\":[%s,%s],\"characteristics\":[]}],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]},"
-                + "\"rules\":{\"resolvedRegels\":[%s],"
-                + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[]},\"diagnostics\":[]}")
+                + "\"rules\":{\"rules\":[%s],"
+                + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
+                + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
+                + "\"ruleGroups\":[]},\"diagnostics\":[]}")
                 .formatted(attribuut("inkomen", num(2, false, NN)), attribuut("dubbelgarde", num(2, false, ONBEPAALD)),
                         regel("dubbelgarde van een jutter", attr("dubbelgarde", 2, false, ONBEPAALD), w, "null"));
     }
@@ -691,10 +691,10 @@ class LetResultaatTakWitnessTest {
                 + "\"attributes\":[%s],\"characteristics\":[]}],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]},"
-                + "\"rules\":{\"resolvedRegels\":[%s],"
-                + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
-                + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[]},\"diagnostics\":[]}")
+                + "\"rules\":{\"rules\":[%s],"
+                + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
+                + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
+                + "\"ruleGroups\":[]},\"diagnostics\":[]}")
                 .formatted(attributen, regels);
     }
 }

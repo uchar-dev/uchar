@@ -127,7 +127,7 @@ class VerdelingsrolWitnessTest {
         ObjectNode ir = lees(BERGING);
         verdeling(ir).remove("connectingRole");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
-        assertEquals("/rules/verdelingen/0/versions/0", e.plek(), e.getMessage());
+        assertEquals("/rules/allocations/0/versions/0", e.plek(), e.getMessage());
         assertTrue(e.getMessage().contains("missing field 'connectingRole'"), e.getMessage());
     }
 
@@ -137,7 +137,7 @@ class VerdelingsrolWitnessTest {
         ObjectNode ir = lees(MAATSCHAP);
         ObjectNode jutter = IrPad.objectType(ir, "Jutter");
         IrPad.addAttribute(jutter, "maatdeel", IrPad.attribute(jutter, "maatwaarde").get("datatype").deepCopy());
-        ObjectNode vorm = IrPad.rules(ir).putArray("verdelingen").addObject();
+        ObjectNode vorm = IrPad.rules(ir).putArray("allocations").addObject();
         vorm.put("node", "Allocation").put("name", "verdeel de vondstwaarde over de maat");
         ObjectNode v = vorm.putArray("versions").addObject();
         v.put("sourceType", "Jutter").put("sourceAttribute", "vondstwaarde")
@@ -177,7 +177,7 @@ class VerdelingsrolWitnessTest {
 
     /** The one version of the document's one allocation. */
     private static ObjectNode verdeling(ObjectNode ir) {
-        return IrPad.versie(ir, "verdelingen", 0, 0);
+        return IrPad.versie(ir, "allocations", 0, 0);
     }
 
     private static ObjectNode binding(String feittype, String rol) {

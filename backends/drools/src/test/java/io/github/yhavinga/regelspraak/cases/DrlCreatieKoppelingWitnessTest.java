@@ -157,18 +157,18 @@ class DrlCreatieKoppelingWitnessTest {
     private static Path herhaaldPaar() throws Exception {
         ObjectNode ir = lees(REKENKAMER);
         IrPad.modelLijst(ir, "factTypes").add(JSON.readTree("""
-                { "node": "Feittype", "naam": "reservetaxatie", "wederkerig": false, "rollen": [
-                    { "node": "Rol", "naam": "reserveopdrachtgever", "objecttypeNaam": "Jutter",
-                      "meervoud": null, "meervoudig": false },
-                    { "node": "Rol", "naam": "reserverekenkamer", "objecttypeNaam": "Rekenkamer",
-                      "meervoud": null, "meervoudig": false } ] }"""));
+                { "node": "FactType", "name": "reservetaxatie", "reciprocal": false, "roles": [
+                    { "node": "Role", "name": "reserveopdrachtgever", "objectType": "Jutter",
+                      "many": false },
+                    { "node": "Role", "name": "reserverekenkamer", "objectType": "Rekenkamer",
+                      "many": false } ] }"""));
         return schrijf(ir, "herhaald-paar");
     }
 
     private static Path metBinding(String golden, String feittype, String rol) throws Exception {
         ObjectNode ir = lees(golden);
-        IrPad.versie(ir, "objectCreaties", 0, 0).set("connectingRole", JSON.readTree(
-                "{ \"node\": \"RolBinding\", \"feittype\": \"" + feittype + "\", \"rol\": \"" + rol + "\" }"));
+        IrPad.versie(ir, "objectCreations", 0, 0).set("connectingRole", JSON.readTree(
+                "{ \"node\": \"RoleBinding\", \"factType\": \"" + feittype + "\", \"role\": \"" + rol + "\" }"));
         return schrijf(ir, "binding-" + rol);
     }
 
@@ -177,7 +177,7 @@ class DrlCreatieKoppelingWitnessTest {
     private static Path gelijknamigLid(String objecttype, String rol) throws Exception {
         ObjectNode ir = zonderNavigerendeRegel(lees(REKENKAMER));
         IrPad.addAttribute(IrPad.objectType(ir, objecttype), rol, JSON.readTree("""
-                { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }"""));
+                { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }"""));
         return schrijf(ir, "lid-" + rol);
     }
 
@@ -196,21 +196,21 @@ class DrlCreatieKoppelingWitnessTest {
 
     private static ObjectNode zonderNavigerendeRegel(ObjectNode ir) {
         var behouden = JSON.createArrayNode();
-        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
+        for (JsonNode r : IrPad.rulesLijst(ir, "rules"))
             if (!"heffing van een jutter".equals(r.path("name").asText())) behouden.add(r);
-        if (behouden.size() != IrPad.rulesLijst(ir, "resolvedRegels").size() - 1)
+        if (behouden.size() != IrPad.rulesLijst(ir, "rules").size() - 1)
             throw new AssertionError("'heffing van een jutter' is not in the document");
-        IrPad.rules(ir).set("resolvedRegels", behouden);
+        IrPad.rules(ir).set("rules", behouden);
         return ir;
     }
 
     /** The overzee model with the kenmerk toekenning's value replaced by the Numeriek literal 5. */
     private static Path kenmerkGetal() throws Exception {
         ObjectNode ir = lees(OVERZEE);
-        for (JsonNode t : IrPad.versie(ir, "objectCreaties", 0, 0).get("initialisations"))
+        for (JsonNode t : IrPad.versie(ir, "objectCreations", 0, 0).get("initialisations"))
             if (t.get("kenmerk").asBoolean())
                 ((ObjectNode) t).set("waarde", JSON.readTree("""
-                        { "node": "Literal", "value": { "number": "5" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "source": { "snippet": "5" } }"""));
+                        { "node": "Literal", "value": { "number": "5" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }, "source": { "snippet": "5" } }"""));
         return schrijf(ir, "kenmerk-getal");
     }
 

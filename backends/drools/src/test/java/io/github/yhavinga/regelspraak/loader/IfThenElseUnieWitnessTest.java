@@ -101,12 +101,12 @@ class IfThenElseUnieWitnessTest {
     // ---------------- the wire shapes ----------------
 
     private static String num(int dec) {
-        return "{\"node\":\"Number\",\"whole\":false,\"decimals\":%d,\"sign\":\"ONBEPAALD\"}"
+        return "{\"node\":\"Number\",\"whole\":false,\"decimals\":%d,\"sign\":\"unspecified\"}"
                 .formatted(dec);
     }
 
     private static String attr(String naam, String type) {
-        return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
+        return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"het %s van de Jutter\"}}")
                 .formatted(naam, naam);
     }
@@ -116,12 +116,12 @@ class IfThenElseUnieWitnessTest {
     }
 
     private static String binair(String op, String links, String rechts, String type) {
-        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
+        return "{\"node\":\"Binary\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, type, op.toLowerCase(Locale.ROOT));
     }
 
     private static String verg(String op, String links, String rechts) {
-        return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"source\":{\"snippet\":\"%s\"}}"
+        return "{\"node\":\"Comparison\",\"op\":\"%s\",\"left\":%s,\"right\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, op.toLowerCase(Locale.ROOT));
     }
 
@@ -168,9 +168,9 @@ class IfThenElseUnieWitnessTest {
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]},"
-                + "\"rules\":{\"resolvedRegels\":[%s],\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],"
-                + "\"consistenties\":[],\"uniciteiten\":[],\"feitCreaties\":[],"
-                + "\"resolvedStartpunten\":[],\"regelGroepen\":[]},\"diagnostics\":[]}")
+                + "\"rules\":{\"rules\":[%s],\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],"
+                + "\"consistencies\":[],\"uniquenesses\":[],\"factCreations\":[],"
+                + "\"startPointDeterminations\":[],\"ruleGroups\":[]},\"diagnostics\":[]}")
                 .formatted(objecttype, regel);
     }
 }
