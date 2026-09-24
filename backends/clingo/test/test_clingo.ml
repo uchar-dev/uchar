@@ -10600,6 +10600,182 @@ let () =
       "'gekeurd' is a characteristic of 'Vondst', not an attribute — a characteristic endpoint is \
        ill-formed in an aggregation source position (WF-080)"
 
+(* THE L2 LOAD REFUSALS, one row per form: every field that left the wire
+   with the reference layer, the two role-check nodes and the Onbekend
+   datatype that left with it, the explicit nulls the wire does not carry,
+   and the bindings L2 made required. ref, clingo and the verifier read the
+   wire through one loader, so this one table witnesses the refusal for all
+   three. Each row twists a document that loads into exactly one such form
+   and pins the loader's sentence; each base document is first held
+   loading, so a row's refusal is its twist's. The range rows of a fold
+   stand with their chapters (ch3.4b, ch3.9a, WF-110 above); the quantifier
+   fold's missing range is the one added here. *)
+let () =
+  let loads name ir =
+    let irf = write_temp ".ir.json" ir in
+    let outcome =
+      match Ir_v0.Loader.load_file irf with
+      | (_ : Ir_v0.Ast.document) -> None
+      | exception Ir_v0.Loader.Error (path, m) -> Some (path ^ ": " ^ m)
+    in
+    Sys.remove irf;
+    match outcome with
+    | None -> check (name ^ " loads") true
+    | Some e -> check (name ^ " loads, but was refused (" ^ e ^ ")") false
+  in
+  let rb f r = Printf.sprintf {|{ "node": "RolBinding", "feittype": "%s", "rol": "%s" }|} f r in
+  let varref = {|{ "node": "VariabeleRef", "naam": "x", "bron": "x" }|} in
+  let cel =
+    Printf.sprintf {|{ "node": "DimensieCel", "attribuut": %s, "labels": [ "a" ], "bron": "de cel" }|}
+      (pf_a "restpost")
+  in
+  let onopgelost = {|{ "node": "Onopgelost", "bron": "onopgelost" }|} in
+  let rol =
+    {|{ "node": "RoleMembership", "factType": "vangst", "role": "vanger", "negated": false, "bron": "rolcheck" }|}
+  in
+  let kenmerk =
+    {|{ "node": "Kenmerk", "kenmerk": "vrijgesteld", "negatie": false, "eigenaar": null, "periode": null, "bron": "hij vrijgesteld is" }|}
+  in
+  let stap = Printf.sprintf {|{ "node": "Tussenstap", "rolBinding": %s }|} (rb "vangst" "vangst") in
+  let feit =
+    Printf.sprintf
+      {|{ "node": "ResolvedFeitCreatie", "naam": "feit", "anker": "Jutter", "doel": "Jutter",
+          "tussenstappen": [ %s ], "voorwaarde": null, "geldigheid": null,
+          "feittype": "vangst", "ankerRol": "vanger", "doelRol": "vangst", "joinRol": %s }|}
+      stap (rb "vangst" "vanger")
+  in
+  let creatie =
+    Printf.sprintf
+      {|{ "node": "ResolvedObjectCreatie", "naam": "maak", "nieuwType": "Jutter", "subject": "Jutter",
+          "toekenningen": [], "voorwaarde": null, "geldigheid": null, "verbindendeRol": %s }|}
+      (rb "vangst" "vanger")
+  in
+  let verdeling =
+    Printf.sprintf
+      {|{ "node": "ResolvedVerdeling", "naam": "verdeel", "bronType": "Jutter", "bronAttribuut": "inkomen",
+          "doelType": "Jutter", "doelAttribuut": "heffing", "methode": "GELIJKE_DELEN",
+          "ratoAttribuut": null, "maximumAttribuut": null, "afrondingDecimalen": null,
+          "restantAttribuut": null, "groepeerAttribuut": null,
+          "afnemend": false, "voorwaarde": null, "geldigheid": null, "verbindendeRol": %s }|}
+      (rb "vangst" "vanger")
+  in
+  let lees =
+    pf_doc ~parameters:[ pf_decl "p" ] ~feitcreaties:[ feit ] ~creaties:[ creatie ]
+      ~verdelingen:[ verdeling ]
+      ~regels:
+        [ pf_regel ~voorwaarde:(pf_comp "ALLE" [ rol; kenmerk ])
+            (pf_let "k" (pf_p "p")
+               (pf_bin "PLUS"
+                  (pf_bin "PLUS" (pf_b "k") (pf_a "inkomen"))
+                  (pf_bin "PLUS" (pf_bin "PLUS" varref cel) onopgelost))) ]
+      ()
+    |> vervang ~waar:{|"uniciteiten": []|}
+         ~door:
+           {|"uniciteiten": [ { "node": "ResolvedUniciteit", "naam": "uniek", "subject": "Jutter",
+               "sleutels": [ "inkomen" ], "bron": "uniek", "geldigheid": null } ]|}
+  in
+  let unie = unie_doc ~takken:(tak_aangemeld ^ ", " ^ tak_geborgen) in
+  let kwantor = kv_doc () in
+  loads "L2-laadtabel: het leesdocument" lees;
+  loads "L2-laadtabel: het uniedocument" unie;
+  loads "L2-laadtabel: het kwantordocument" kwantor;
+  let ar = {|"attribuut": "inkomen", "objecttype": "Jutter",|} in
+  let erbij waar extra = (waar, waar ^ " " ^ extra) in
+  let onbekend = {|{ "node": "Onbekend", "reden": "niet opgelost" }|} in
+  let bron_aangemeld =
+    {|"sourceRole": { "node": "RolBinding", "feittype": "vondstaanmelding", "rol": "aangemelde vondst" },|}
+  in
+  let rows =
+    [ ("AttribuutRef.set", lees, erbij ar {|"set": false,|}, "unknown field 'set'");
+      ("AttribuutRef.navigatieRol", lees, erbij ar {|"navigatieRol": null,|}, "unknown field 'navigatieRol'");
+      ("AttribuutRef.navigatiePad", lees, erbij ar {|"navigatiePad": [],|}, "unknown field 'navigatiePad'");
+      ("AttribuutRef.onderwerpBron", lees, erbij ar {|"onderwerpBron": "zijn",|}, "unknown field 'onderwerpBron'");
+      ("AttribuutRef.type", lees, erbij ar ({|"type": |} ^ pf_n2 ^ ","), "unknown field 'type'");
+      ( "ParameterRef.type", lees,
+        erbij {|{ "node": "ParameterRef", "parameter": "p",|} ({|"type": |} ^ pf_n2 ^ ","),
+        "unknown field 'type'" );
+      ( "DimensieCel.type", lees,
+        erbij {|{ "node": "DimensieCel",|} ({|"type": |} ^ pf_n2 ^ ","), "unknown field 'type'" );
+      ( "BinderRef.type", lees,
+        erbij {|{ "node": "BinderRef", "name": "k",|} ({|"type": |} ^ pf_n2 ^ ","), "unknown field 'type'" );
+      ( "VariabeleRef.type", lees,
+        erbij {|{ "node": "VariabeleRef", "naam": "x",|} ({|"type": |} ^ pf_n2 ^ ","),
+        "unknown field 'type'" );
+      ( "Onbekend als declaratie", lees, (pf_n2, onbekend), {|unknown datatype node "Onbekend"|} );
+      ( "Onbekend als Onopgelost.type", lees,
+        erbij {|{ "node": "Onopgelost",|} ({|"type": |} ^ onbekend ^ ","),
+        {|unknown datatype node "Onbekend"|} );
+      ("Onopgelost.type null", lees, erbij {|{ "node": "Onopgelost",|} {|"type": null,|}, "expected object, got null");
+      ( "Kenmerk.navigatie", lees,
+        erbij {|{ "node": "Kenmerk", "kenmerk": "vrijgesteld",|} {|"navigatie": null,|},
+        "unknown field 'navigatie'" );
+      ( "RoleMembership.anderTeFiller", lees,
+        erbij {|{ "node": "RoleMembership", "factType": "vangst",|} {|"anderTeFiller": "Jutter",|},
+        "unknown field 'anderTeFiller'" );
+      ( "RoleMembership.filler", lees,
+        erbij {|{ "node": "RoleMembership", "factType": "vangst",|} {|"filler": "Jutter",|},
+        "unknown field 'filler'" );
+      ( "RoleMembership.backref", lees,
+        erbij {|{ "node": "RoleMembership", "factType": "vangst",|} {|"backref": "vanger",|},
+        "unknown field 'backref'" );
+      ( "RoleMembership.counterpartType null", lees,
+        erbij {|{ "node": "RoleMembership", "factType": "vangst",|} {|"counterpartType": null,|},
+        "expected string, got null" );
+      ( "Rollidmaatschap als knoop", lees,
+        ({|{ "node": "RoleMembership",|}, {|{ "node": "Rollidmaatschap",|}),
+        {|unknown conditie node "Rollidmaatschap"|} );
+      ( "VerreRollidmaatschap als knoop", lees,
+        ({|{ "node": "RoleMembership",|}, {|{ "node": "VerreRollidmaatschap",|}),
+        {|unknown conditie node "VerreRollidmaatschap"|} );
+      ( "ResolvedFeitCreatie.zetVeld", lees,
+        erbij {|{ "node": "ResolvedFeitCreatie", "naam": "feit",|} {|"zetVeld": null,|},
+        "unknown field 'zetVeld'" );
+      ( "ResolvedFeitCreatie.joinVeld", lees,
+        erbij {|{ "node": "ResolvedFeitCreatie", "naam": "feit",|} {|"joinVeld": null,|},
+        "unknown field 'joinVeld'" );
+      ( "ResolvedFeitCreatie zonder feittype", lees,
+        ({|"feittype": "vangst", "ankerRol": "vanger",|}, {|"ankerRol": "vanger",|}),
+        "missing field 'feittype'" );
+      ( "ResolvedFeitCreatie zonder ankerRol", lees, ({|"ankerRol": "vanger", |}, ""),
+        "missing field 'ankerRol'" );
+      ( "ResolvedFeitCreatie zonder doelRol", lees, ({|"doelRol": "vangst", |}, ""),
+        "missing field 'doelRol'" );
+      ( "ResolvedFeitCreatie zonder joinRol", lees,
+        ({|, "joinRol": |} ^ rb "vangst" "vanger", ""), "missing field 'joinRol'" );
+      ("Tussenstap.type", lees, erbij {|{ "node": "Tussenstap",|} {|"type": "Jutter",|}, "unknown field 'type'");
+      ("Tussenstap.veld", lees, erbij {|{ "node": "Tussenstap",|} {|"veld": "vangst",|}, "unknown field 'veld'");
+      ( "Tussenstap.viaOuderVeld", lees, erbij {|{ "node": "Tussenstap",|} {|"viaOuderVeld": false,|},
+        "unknown field 'viaOuderVeld'" );
+      ( "Tussenstap zonder rolBinding", lees,
+        (Printf.sprintf {|{ "node": "Tussenstap", "rolBinding": %s }|} (rb "vangst" "vangst"),
+         {|{ "node": "Tussenstap" }|}),
+        "missing field 'rolBinding'" );
+      ( "ResolvedUniciteit.scopeVeld", lees,
+        erbij {|{ "node": "ResolvedUniciteit", "naam": "uniek",|} {|"scopeVeld": null,|},
+        "unknown field 'scopeVeld'" );
+      ( "ResolvedObjectCreatie.verbindendeRol null", lees,
+        ({|"toekenningen": [], "voorwaarde": null, "geldigheid": null, "verbindendeRol": |}
+         ^ rb "vangst" "vanger",
+         {|"toekenningen": [], "voorwaarde": null, "geldigheid": null, "verbindendeRol": null|}),
+        "expected object, got null" );
+      ( "ResolvedVerdeling zonder verbindendeRol", lees,
+        ({|"afnemend": false, "voorwaarde": null, "geldigheid": null, "verbindendeRol": |}
+         ^ rb "vangst" "vanger",
+         {|"afnemend": false, "voorwaarde": null, "geldigheid": null|}),
+        "missing field 'verbindendeRol'" );
+      ( "InstanceSetBranch.sourceRole null", unie, (bron_aangemeld, {|"sourceRole": null,|}),
+        "expected object, got null" );
+      ("InstanceSetBranch zonder sourceRole", unie, (bron_aangemeld, ""), "missing field 'sourceRole'");
+      ( "Kwantorvouw zonder bereik", kwantor,
+        ({|, "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|}, ""),
+        "a quantifier fold carries its range (bronRol or bronPad): the range is written, never derived"
+      ) ]
+  in
+  List.iter
+    (fun (vorm, base, (waar, door), needle) ->
+      refused_at_load ~name:("L2-laadtabel: " ^ vorm) ~ir:(vervang base ~waar ~door) ~needle)
+    rows
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
