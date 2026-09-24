@@ -611,6 +611,17 @@ let () =
   expect_fault "verify-lexeme-zero-den" (fun () -> Value.q_of_lexeme "1/0");
   expect_fault "verify-lexeme-empty" (fun () -> Value.q_of_lexeme "");
   expect_fault "verify-lexeme-junk" (fun () -> Value.q_of_lexeme "abc");
+  (* one number grammar since the L4 landing (WF-081): the case format's, so
+     a decimal comma, a bare leading point and a denominator with a leading
+     0 are malformed, never read as the number they resemble *)
+  expect_fault_msg "verify-lexeme-komma" (fun () -> Value.q_of_lexeme "12,50")
+    {|malformed number lexeme "12,50"|};
+  expect_fault_msg "verify-lexeme-kale-punt" (fun () -> Value.q_of_lexeme ".5")
+    {|malformed number lexeme ".5"|};
+  expect_fault_msg "verify-lexeme-negatieve-kale-punt" (fun () -> Value.q_of_lexeme "-.5")
+    {|malformed number lexeme "-.5"|};
+  expect_fault_msg "verify-lexeme-noemer-voorloopnul" (fun () -> Value.q_of_lexeme "3/04")
+    {|malformed number lexeme "3/04"|};
   check "verify-lexeme-neg-dec" (Q.equal (Value.q_of_lexeme "-0.5") (q "-1/2"));
   (* a unit factor reads as the exact rational the wire writes, never
      through a double: {1, 100} is 1/100 exactly and {1000, 1} is 1000 *)
@@ -2232,8 +2243,8 @@ let () =
   check "WV-3.8-weken" (plus Tu_week "2024-01-31" "2" = d "2024-02-14");
   check "WV-3.8-dagen" (plus Tu_dag "2024-12-30" "3" = d "2025-01-02");
   (* a fractional count truncates toward zero before the calendar step *)
-  check "WV-3.8-frac-plus" (plus Tu_maand "2024-01-31" "1,9" = d "2024-02-29");
-  check "WV-3.8-frac-min" (min_ Tu_maand "2024-01-31" "1,9" = d "2023-12-31");
+  check "WV-3.8-frac-plus" (plus Tu_maand "2024-01-31" "1.9" = d "2024-02-29");
+  check "WV-3.8-frac-min" (min_ Tu_maand "2024-01-31" "1.9" = d "2023-12-31");
   (* min: the date left, the duration subtracted *)
   check "WV-3.8-min-week" (min_ Tu_week "2024-01-31" "1" = d "2024-01-24");
   (* empty rules (ch. 1.2): leeg date propagates; leeg duration counts 0;
@@ -2307,7 +2318,7 @@ let () =
   (* a negative count flips the direction, a fractional one truncates
      toward zero before the walk (the calendar-unit rule, unchanged) *)
   check "WV-3.8-dk-stap-negatief" (plus "2024-12-27" "-1" = d "2024-12-26");
-  check "WV-3.8-dk-stap-breuk" (plus "2024-12-20" "2,9" = d "2024-12-26");
+  check "WV-3.8-dk-stap-breuk" (plus "2024-12-20" "2.9" = d "2024-12-26");
   (* the REACH fence: a day kind no calendar day satisfies FAULTS, never an
      endless walk. What the fence bounds is the GAP, and the two kinds it
      must NOT refuse are pinned beside it — the century-skipped leap day
@@ -2499,7 +2510,7 @@ let () =
   expect_leeg "WV-3.8-paasdag-leeg" (Arith.eerste_paasdag leeg);
   (* a non-whole or unit-carrying year faults (never a silent truncation);
      a non-date extractor operand faults *)
-  expect_fault "WV-3.8-paasdag-frac" (fun () -> Arith.eerste_paasdag (n "2024,5"));
+  expect_fault "WV-3.8-paasdag-frac" (fun () -> Arith.eerste_paasdag (n "2024.5"));
   expect_fault "WV-3.8-paasdag-eenheid" (fun () -> Arith.eerste_paasdag (nu jr "2024"));
   expect_fault "WV-3.8-maand-uit-tekst" (fun () -> Arith.maand_uit (Value.Text "x"))
 
@@ -2524,7 +2535,7 @@ let () =
   check "WV-3.8-dt-weken" (plus Tu_week "2024-02-28T23:30:00" "2" = dt "2024-03-13T23:30:00");
   (* the fractional count truncates toward zero before the step, as at day
      precision; the pre-epoch split keeps the time-of-day non-negative *)
-  check "WV-3.8-dt-frac" (plus Tu_uur "2024-02-28T23:30:00" "1,9" = dt "2024-02-29T00:30:00");
+  check "WV-3.8-dt-frac" (plus Tu_uur "2024-02-28T23:30:00" "1.9" = dt "2024-02-29T00:30:00");
   check "WV-3.8-dt-pre-epoch"
     (plus Tu_dag "1969-12-31T23:30:00" "1" = dt "1970-01-01T23:30:00");
   (* the borrow corner: the time of day counts back before the whole-unit
@@ -5989,9 +6000,10 @@ let () =
        "V1.meldstip %S is not the uchar-case-v0 dateTime lexeme yyyy-mm-ddThh:mm:ss[.fff] (malformed \
         dateTime %S (hour 24 is out of range))"
        "2026-03-10T24:00:00" "2026-03-10T24:00:00");
-  (* number: the case wire's own grammar, not the IR literal's. "1,000" read
-     as 1 (WF-081's decimal comma) and ".5" as 0.5, both silently; "1/0" and
-     "abc" escaped the loader as evaluation faults *)
+  (* number: the case wire's own grammar, which the IR literal's number
+     variant shares since the L4 landing. Before 2026-09-23 "1,000" read as
+     1 (WF-081's decimal comma of the day) and ".5" as 0.5, both silently;
+     "1/0" and "abc" escaped the loader as evaluation faults *)
   let g at lex =
     Printf.sprintf
       "%s %S is not the uchar-case-v0 number lexeme [-]digits[.digits] or [-]digits/digits, the \
@@ -6498,6 +6510,32 @@ let () =
     "the elementObjecttype 'Persoon' of a TOTAAL without a range is not the fold subject \
      'Jutter': without a range the fold is the subject's own read, so its elementObjecttype must \
      name the subject type (WF-083)"
+
+(* WV-4.1-literaal (IR-SPEC ch. 4.1): a literal is read from its value
+   variant under its type. A variant the type does not name is refused in
+   the loader's sentence (WF-114), never read as the type's value — a node
+   only a hand builds, since an executor's loader refuses it at load. A
+   number variant is read through the one number grammar, so a decimal comma
+   is malformed rather than read as the number it resembles. *)
+let () =
+  let doc waarde : Ir_v0.Ast.document =
+    { empty_doc with
+      objecttypen = [ ot "Jutter" [ ("aantal", Some num0) ] [] ];
+      resolved_regels = [ rr "aantal" Berekening (Some (aref "aantal" "Jutter")) (Some waarde) None ] }
+  in
+  let run waarde =
+    Eval.evaluate (env_of (doc waarde)) (World.add_instance World.empty (inst "J1" "Jutter" []))
+  in
+  expect_fault_msg "WV-4.1-literaalvariant-tegen-type-faalt"
+    (fun () ->
+      run (Literal { waarde = Some "5"; variant = Lv_text "5"; typ = Some num0; bron = None }))
+    "literal value is a text value but its type is a Number: the variant is the one the type names";
+  expect_fault_msg "WV-4.1-getal-met-komma-faalt"
+    (fun () -> run (litv "12,5" num0))
+    {|malformed number lexeme "12,5"|};
+  expect_num "WV-4.1-getal-met-punt"
+    (World.attr (World.get (run (litv "12" num0)) "J1") "aantal")
+    "12"
 
 let () =
   if !failures > 0 then begin

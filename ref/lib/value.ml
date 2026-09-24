@@ -190,12 +190,17 @@ let datetime_of_lexeme s =
 
 (* --- number lexemes ---------------------------------------------------- *)
 
-(* Exact decimal ("12.34", comma tolerated) or rational ("a/b") lexeme to a
-   rational; the wire and the case format never carry floats. Validation is
-   strict: Q.of_string alone would let "" become 0 and "1/0" become +inf
-   silently — both fault here instead. *)
+(* Exact decimal ("12.34") or rational ("a/b") lexeme to a rational; the
+   wire and the case format never carry floats. One grammar for both: the
+   `number` pattern of uchar-case-v0, which a literal's number variant carries
+   since the L4 landing (WF-081) — digits with an optional point and digits
+   on both sides of it, or two digit strings around a '/' whose denominator
+   does not start with 0, each with an optional leading '-'. A decimal comma,
+   a bare leading or trailing point and a denominator such as "04" are
+   therefore malformed here, and never read as the number a reader might
+   guess. Validation is strict: Q.of_string alone would let "" become 0 and
+   "1/0" become +inf silently — both fault here instead. *)
 let q_of_lexeme s =
-  let s = String.map (fun c -> if c = ',' then '.' else c) s in
   let digits d = d <> "" && String.for_all (fun c -> c >= '0' && c <= '9') d in
   let split_sign d =
     if String.length d > 0 && d.[0] = '-' then (true, String.sub d 1 (String.length d - 1))
@@ -210,6 +215,7 @@ let q_of_lexeme s =
       else
         let d = Z.of_string den in
         if Z.equal d Z.zero then fault "zero denominator in number lexeme %S" s
+        else if den.[0] = '0' then fault "malformed number lexeme %S" s
         else
           let n = Z.of_string num_body in
           Q.make (if neg then Z.neg n else n) d
@@ -226,7 +232,7 @@ let q_of_lexeme s =
           let frac = String.sub s (i + 1) (String.length s - i - 1) in
           let neg, whole_body = split_sign whole in
           let body = whole_body ^ frac in
-          if (not (digits frac)) || not (digits body) then fault "malformed number lexeme %S" s
+          if not (digits whole_body && digits frac) then fault "malformed number lexeme %S" s
           else
             let num = Z.of_string body in
             let num = if neg then Z.neg num else num in

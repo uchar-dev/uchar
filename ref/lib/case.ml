@@ -146,16 +146,18 @@ let datetime_at ~at s =
 (* The `number` lexeme of uchar-case-v0 is the case schema's pattern,
    -?[0-9]+(\.[0-9]+)? or -?[0-9]+/[1-9][0-9]*, and this fence matches it
    whole: no character before or after it gets through, a final newline
-   included, which a validator reading `$` the Python way admits. That is
-   narrower than the IR literal grammar [Value.q_of_lexeme] reads (WF-081
-   admits the Dutch decimal comma and a bare leading '.'). Read through
-   q_of_lexeme alone, a case carrying "1,000" loaded as 1 where the Drools
-   case reader refuses it, and ".5" loaded as 0.5, both without a word; gate
-   4's schema was the only reason neither showed. The fence is held here, as
-   the date and dateTime fences are held by their readers, so a case that
-   reaches the loader another way is refused instead of read by the other
-   wire's grammar. Every lexeme it admits, q_of_lexeme reads without a
-   fault: the zero denominator is outside the fence. *)
+   included, which a validator reading `$` the Python way admits. Until the
+   L4 landing that was narrower than the IR literal grammar [Value.q_of_lexeme]
+   read (WF-081 admitted the Dutch decimal comma and a bare leading '.'), and
+   read through q_of_lexeme alone a case carrying "1,000" loaded as 1 where
+   the Drools case reader refuses it, and ".5" loaded as 0.5, both without a
+   word; gate 4's schema was the only reason neither showed. Since L4 the
+   literal's number variant carries this same pattern and q_of_lexeme reads
+   exactly it, so the two wires have one grammar. The fence stays here, as
+   the date and dateTime fences are held by their readers, because it names
+   the case position and the case format in its refusal. Every lexeme it
+   admits, q_of_lexeme reads without a fault: the zero denominator is outside
+   the fence. *)
 let number_at ~at s =
   let digits d = d <> "" && String.for_all (fun c -> c >= '0' && c <= '9') d in
   let body = if String.length s > 0 && s.[0] = '-' then String.sub s 1 (String.length s - 1) else s in
