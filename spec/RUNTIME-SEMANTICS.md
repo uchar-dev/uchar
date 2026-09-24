@@ -3449,8 +3449,10 @@ directions is not the same as inventing one.
 ### 5.8 The navigated read
 
 An attribute reference whose endpoint is off-subject (IR-SPEC ch. 4.1a,
-WF-053) reads through the role links, one to-one hop per step. The
-rules, mirrored from the pinned runtime's null-safe navigation readers:
+WF-053) reads through the role links, one to-one hop per step, each hop
+named by its role binding (`navigatieBindingen`; since L2 the only
+spelling of a hop, B11). The rules, mirrored from the pinned runtime's
+null-safe navigation readers:
 
 1. **Absent is leeg, at every hop.** A subject without a link over the
    hop's role reads the whole operand as **leeg** — never a fault, never
@@ -3472,19 +3474,25 @@ rules, mirrored from the pinned runtime's null-safe navigation readers:
    relation as a leegwaarde. In the ASP reading the hop is a positive
    body literal and only the characteristic sits under negation-as-
    failure — the same asymmetry, for free.
-4. **The self-reference navigates zero hops — unconditionally.** A
-   single bindingless written step that denotes the subject by a role
-   the subject itself fills (IR-SPEC ch. 4.1a: zero far hits AND the
-   self-denotation test, far-role resolution always first) reads the
-   subject's OWN attribute — the walk is empty. No link is consulted,
-   so the read succeeds on an instance with no relation instances at
-   all: there is no leeg-on-absent-link here, because there is no hop
-   to be absent. A name that does resolve as a far role — the
-   reciprocal partner case — stays a real one-hop read with rule 1's
-   leeg-on-absent behaviour. The navigated characteristic check is NOT
-   in this rule's scope: a self-denoting name there is refused loudly
-   by both executors (ch. 4.1a scopes the zero-hop form to the
-   attribute read).
+4. **A read without navigation bindings is the subject's own read —
+   unconditionally.** An attribute reference that carries no
+   `navigatieBindingen` reads the subject's OWN attribute, and its
+   `objecttype` is the subject type itself — equality, not ⊑ (IR-SPEC
+   ch. 4.1a, WF-053): the verifier refuses any other type there, a
+   supertype included, and so do `ref` and the ASP backend, by name. No
+   link is consulted, so the read succeeds on an instance with no
+   relation instances at all: there is no leeg-on-absent-link here,
+   because there is no hop to be absent. A written form that names the
+   subject by a role the subject itself fills ("het strandtegoed van de
+   aanmelder", said of the aanmelder) is such an own read on the wire; a
+   reciprocal partner ("zijn strandmaat") is a real one-hop read with a
+   binding and rule 1's leeg-on-absent behaviour. *History until L2:*
+   the self-reference was a single bindingless written step that the
+   readers resolved to zero hops (the far-role resolution first, then a
+   self-denotation test on the written name); the written step and the
+   test left the wire with B11, and the frontend writes the own read. The
+   navigated characteristic check was outside that rule, and a
+   self-denoting name there was refused by both executors.
 
 Worked example (the `jutterswet-kustwacht` anchor, case 2, verbatim in
 gates 5–6): W1 mans post P1 in kustvak V1 (verraderlijk, gevarenklasse
@@ -3501,112 +3509,145 @@ case 1, verbatim in gates 5–6 and in `ref/test/test_ref.ml`): Jutters
 fill the role aanmelder in feittype vondstaanmelding, and the role
 strandmaat in the reciprocal feittype strandmaatschap. J1
 (strandtegoed 10) is strandmaat of J2 (25); J3 (7) carries no links at
-all. "het strandtegoed van de aanmelder plus 2" is the zero-hop
-self-reference: meldkrediet J1 = 12, J2 = 27, **J3 = 9** — J3 has no
-links and still reads its own attribute (the unconditional own-read).
-"het strandtegoed van zijn strandmaat" resolves as a far role
-(reciprocal — order first): maatdeling J1 = 25 and J2 = 10, never a
+all. "het strandtegoed van de aanmelder plus 2" is on the wire the
+subject's own read, a reference without navigation bindings: meldkrediet
+J1 = 12, J2 = 27, **J3 = 9** — J3 has no links and still reads its own
+attribute (the unconditional own read). "het strandtegoed van zijn
+strandmaat" is the one hop its binding names over the reciprocal role
+(`strandmaatschap`/`strandmaat`): maatdeling J1 = 25 and J2 = 10, never a
 self-read; J3's maatdeling is **leeg** (rule 1, absent link) — the
-contrast that separates the real hop from the empty walk. A same-typed
-reference naming a role the subject does NOT fill ("het strandtegoed
-van de vondst" on a Jutter) stays a loud fault, never an own-read
-(the WF-053 narrowing; negatief `wf053-zelfverwijzing-vreemde-rol`).
+contrast that separates the real hop from the empty walk. A binding over
+the to-many role `vondst` of vondstaanmelding, read from a Jutter, faults
+in this scalar slot (rule 2; WV-5.8-4-vreemde-rol) and is never read as an
+own read. *History until L2:* that last form was the written "het
+strandtegoed van de vondst", a same-typed reference naming a role the
+subject does not fill, refused by WF-053's self-denotation narrowing (the
+negatief `wf053-zelfverwijzing-vreemde-rol`, removed at L2 with the
+written step).
 
-### 5.8a The near-side rolcheck
+### 5.8a The role check
 
-A **rolcheck** ("hij is een wachtjutter", §8.1.7 — the IR's `Rollidmaatschap`)
-tests whether the subject **fills** a role. In the reference-field fact
-model the subject fills the role iff its reference to the **other end** of
-that fact type is set, so v0 lowers the check to a **null-test on that
-reference** (DrlTranspiler §8.1.7). The written role name is presentation;
-the reference tested is the **connecting role** from the subject's type to
-the other-end type the IR carries (`anderTeFiller`) — the same by-pair
-derivation `ref/` shares with the ASP backend and the allocation recipients
-(ch. 4.1, `Eval.connecting_role`). The rules:
+A **role check** ("hij is een wachtjutter", "hij heeft een wachtjutter",
+§8.1.7) is the IR's `RoleMembership {factType, role, counterpartType?,
+negated}` (`IR-SPEC.md` ch. 4.5). It holds iff a link of the fact type
+`factType` exists in which the **subject** fills the role `role` and, where
+`counterpartType` is written, the filler of the fact type's OTHER role in
+that link is an instance of `counterpartType`. With `negated` it holds iff
+no such link exists. A reciprocal fact type has one role, which is its own
+other end. The rules:
 
-1. **Present reference fills; absent does not.** A subject holding a link
-   over the connecting role fills the role; a subject with no such link does
-   not. The empty operand is the absent reference — there is no fault here,
-   only false.
-2. **The "is geen" negation is the inverse null-test — it flips.** Unlike
-   the navigated *characteristic* check of ch. 5.8 rule 3 (asymmetric:
-   onwaar for the positive and the negated form on an absent link, because
-   the negation sits behind a hop), the rolcheck's negation tests the
-   reference **itself**, so an absent reference makes "is geen &lt;rol&gt;"
-   **waar**. "hij is geen wachtjutter" holds exactly for a jutter with no
-   post. In the ASP reading the positive form is a bare `rol/3` join (an
-   absent link never binds, so the gated rule does not fire); the negation
-   is a helper deriving the link's presence, negated-as-failure, with the
-   subject kept bound by the rule's `is_a` base — the inverse null-test, for
-   free.
-3. **To-many connecting reference is refused, loudly.** The near-side
-   null-test needs a **to-one** reference. When the connecting role is
-   to-many, v0 cannot lower it to a scalar null-test and **markers** it (the
-   far-side "heeft een &lt;rol&gt;" is the distinct `VerreRollidmaatschap`
-   exists-join, not this near-side form); both executors refuse it (ch. 5.5)
-   rather than silently deciding a first-filler existence test.
-
-Worked example (the `jutterswet-wachtindeling` golden, verbatim in gates
-5–6 and in `ref/test/test_ref.ml`): feittype wachtindeling relates the
-to-many role wachtjutter (Jutter) to the to-one role toegewezen wachtpost
-(Wachtpost). "Een Jutter is wachtdoend indien hij een wachtjutter is"
-(positive) and "Een Jutter is vrijgesteld indien hij geen wachtjutter is"
-(negation) pin every corner. With J1 assigned to post W1 and J2 assigned to
-no post: J1 fills the role (its toegewezen-wachtpost reference is set), so
-J1 **is wachtdoend** and **is not vrijgesteld**; J2's reference is absent,
-so J2 **is not wachtdoend** and **is vrijgesteld**. The reference and the ASP
-run agree on all four (link × {positive, negation}).
-
-**The far side: "heeft een &lt;rol&gt;"** (the IR's
-`VerreRollidmaatschap`) is the same §8.1.7 sentence read from the other
-end. There the subject does **not** fill the named role — it is the
-relation's other end — so the question is not a null-test on a reference
-it holds but an **existence** question over the relation: does any object
-of the named filler stand in that relation to this subject. The node
-carries no written role name at all; `filler` names the type at the far
-end and `backref` the role the **subject** itself fills, and the two must
-meet on one declared fact type (`IR-SPEC.md` ch. 4.6 (t)) or every
-reader faults. The rules:
-
-1. **Existence, never a count and never a pick.** One filler and ten
-   fillers give the same verdict, and no reader ever selects among them.
-2. **The FILLER is a class test, and it is extensional.** The objects the
-   relation reaches count only where their own type is a subtype-or-equal
-   of the named filler (ch. 2.2). `filler` is therefore read twice — once
-   to resolve the pair, once to narrow what the relation reached — and a
-   reader that performs only the first answers a **different sentence**:
-   the role's whole population instead of the named one. The two coincide
-   exactly where the filler IS the role's declared type, which is why a
-   witness needs a strict subtype to tell them apart.
+1. **Existence, never a count and never a pick.** One link and ten links
+   give the same verdict, and no reader selects among them. The
+   multiplicity of either role is no condition of the reading: a check
+   whose other role is to-many answers exactly as one whose other role is
+   to-one. An executor whose fact model cannot store a direction refuses
+   the form with its reason (ch. 5.5); it never reads a spuriously empty
+   side and calls that an answer.
+2. **The counterpart is a class test, and it is extensional.** A linked
+   instance counts only where its own type is ⊑ `counterpartType`
+   (ch. 2.2), so an instance of a subtype counts and an instance of the
+   supertype alone does not. Where the field is absent the counterpart is
+   the other role's declared filler, which every linked instance already
+   is, and the test is empty. The field is written only where it narrows,
+   to a strict subtype of that filler; written equal to the filler it is
+   well-formed and changes nothing. A reader that resolves the pair and
+   skips the class test answers a **different sentence** — the role's
+   whole population instead of the named class — and the two coincide
+   exactly where the class IS the declared filler, which is why a witness
+   needs a strict subtype to tell them apart.
 3. **It reads the RELATION, not a direction.** By ch. 5.7a a supplied
-   link establishes the relation itself and both roles read it, so the
-   join may be taken from either side and gives the same answer. A
+   link establishes the relation itself and both roles read it, so a case
+   may spell a link from either end and the verdict is the same. The
+   reference interpreter reads the subject's links over the other role
+   (the leg the loader materialises from either spelling), and the ASP
+   backend joins `rol/3` from the subject over that role; a
    reference-field executor asks the mirror-image question — does some
-   filler of that class hold a stored reference back at this subject —
-   because that is the side its fact model stores; it is the same
+   instance of the class hold a stored reference back at this subject —
+   because that is the side its fact model stores. It is the same
    relation and the same class test.
-4. **"heeft geen" is the plain complement.** Nothing sits behind a hop
-   here, so a relation with no filler **of that class** makes the negated
-   form **waar** — the same flip the near-side negation has, and not the
-   asymmetry of the navigated characteristic check (ch. 5.8 rule 3). Both
-   forms read the same narrowed set, so they cannot disagree about which
-   objects count.
-5. **Arity is not a condition of this reading.** The form is written
-   where the named role is to-many from the subject, and a bean-model
-   executor needs the `backref` role to be to-one to hold a field for it,
-   but neither property changes the verdict. An executor whose model
-   cannot store the direction refuses the form with its reason (ch. 5.5),
-   it never reads a spuriously empty side and calls that an answer.
+4. **The negation is the plain complement.** Nothing sits behind a hop
+   here, so an absent link makes the negated form **waar**: "hij is geen
+   wachtjutter" holds exactly for a Jutter in no link of the fact type,
+   and "hij heeft geen strandjutter" for a post with no linked instance of
+   that class. That differs from the navigated characteristic check of
+   ch. 5.8 rule 3, where the negation sits behind a hop and an absent
+   link fails the positive and the negated form alike. Both forms read
+   the same narrowed set, so they cannot disagree about which instances
+   count. In the ASP reading the positive form is a `rol/3` join over the
+   other role (an absent link never binds, so the gated rule does not
+   fire), and the negation a per-subject helper deriving the link's
+   presence, read under negation-as-failure with the subject kept bound by
+   the helper's `isa` base (`ASP-TRANSLATION.md` S7).
+5. **What is refused.** The check crosses its declarations before it
+   reads anything (`IR-SPEC.md` ch. 4.6 (o), the role arm of WF-034):
+   `factType` is a declared fact type; `role` is one of its roles by
+   DECLARED NAME — a plural is presentation and names no role here; the
+   subject fills `role`, its type ⊑ the role's declared filler — a role of
+   the right fact type on the wrong side names a link the subject can
+   never be in, and the check would ask for nothing; and a written
+   `counterpartType` is a declared object type ⊑ the other role's
+   declared filler. The verifier refuses a document that breaks any of
+   these. The reference interpreter and the ASP backend refuse the same
+   shapes by name when they evaluate the check, so a document that evades
+   the verifier does not answer a silent false.
 
-Worked example (the `jutterswet-postbezetting` golden, verbatim in gates
-5–6 and in `ref/test/test_ref.ml`): the same feittype wachtindeling, with
-the Wachtpost as subject, and a **Strandjutter** declared under the
-Jutter. Four rules, two far-side checks each with its negation, differing
-only in filler: "Een Wachtpost is bemand indien hij een wachtjutter
-heeft" / "is onbemand indien hij geen wachtjutter heeft" (filler Jutter),
-and "is strandbemand indien hij een strandjutter heeft" / "is strandvrij
-indien hij geen strandjutter heeft" (filler Strandjutter). All four carry
-back-reference toegewezen wachtpost.
+*History until L2.* v0 carried the sentence as two nodes. The **near-side**
+`Rollidmaatschap` ("hij is een wachtjutter") was lowered to a **null-test**
+on the subject's reference to the other end: the connecting role from the
+subject's type to the other-end type the node carried (`anderTeFiller`),
+derived from the type pair as for the allocation recipients (ch. 4.1). A
+present reference filled the role, an absent one did not, and the "is
+geen" negation was the inverse null-test. Where that connecting reference
+was **to-many**, v0 could not lower it to a scalar null-test and made a
+marker, and both executors refused the check. The **far-side**
+`VerreRollidmaatschap` ("hij heeft een wachtjutter") was already the
+existence question of rules 1–4, with the class test on its `filler` and
+the subject's role in its `backref`, and it was admitted at top level
+only. L2 (B9 of `spec/proposals/V1-WIREMIGRATIE.md`; `spec/CONSTRUCTS.md`
+row 5) merged the two into `RoleMembership`, which names the relation and
+the subject's role instead of deriving them and carries the far side's
+narrowing as `counterpartType`. Two meanings changed with it: the to-many
+near-side check answers with existence where it faulted
+(`corpus/golden/near-side-rolcheck-to-many`, a red case until L2), and the
+top-level restriction is gone.
+
+Worked example — the near side (the `jutterswet-wachtindeling` golden,
+verbatim in gates 5–6 and as WV-5.8a in `ref/test/test_ref.ml`): feittype
+wachtindeling relates the to-many role wachtjutter (Jutter) to the to-one
+role toegewezen wachtpost (Wachtpost). "Een Jutter is wachtdoend indien hij
+een wachtjutter is" and "Een Jutter is vrijgesteld indien hij geen
+wachtjutter is" are `RoleMembership {factType: wachtindeling, role:
+wachtjutter}`, positive and negated. With J1 assigned to post W1 and J2
+assigned to no post: a link of wachtindeling holds J1 in wachtjutter, so J1
+**is wachtdoend** and **is not vrijgesteld**; no link holds J2, so J2 **is
+not wachtdoend** and **is vrijgesteld**. The reference interpreter and the
+ASP backend agree on all four (link × {positive, negation}). The `ref/`
+suite also declares the other role to-many: J1's check still holds and
+J2's does not (WV-5.8a-naar-veel-*).
+
+Worked example — a to-many other role (the `near-side-rolcheck-to-many`
+golden, verbatim in gates 5, 6 and 12): "Een Wachtpost is bemand indien hij
+een toegewezen wachtpost is" makes the Wachtpost the subject and names the
+role the post fills, `RoleMembership {factType: wachtindeling, role:
+toegewezen wachtpost}`; the other role, wachtjutter, is to-many. J1 and J2
+are both assigned post W1, and W2 is assigned to no one. Two links hold W1
+in toegewezen wachtpost, so W1 **is bemand**; no link holds W2, so W2 **is
+not bemand**. Two links read exactly as one does (rule 1). Until L2 this
+was the shape v0 could not lower — the post's reference to the other end
+is the to-many wachtjutter — and it is the same node as the far-side check
+"hij heeft een wachtjutter" below: the two sentences name one link.
+
+Worked example — the far side and the class test (the
+`jutterswet-postbezetting` golden, verbatim in gates 5–6 and as WV-5.8a-ver
+in `ref/test/test_ref.ml`): the same feittype wachtindeling, with the
+Wachtpost as subject, and a **Strandjutter** declared under the Jutter.
+Four rules, two checks each with its negation, all naming `role`
+toegewezen wachtpost, the role the post fills: "Een Wachtpost is bemand
+indien hij een wachtjutter heeft" / "is onbemand indien hij geen
+wachtjutter heeft" carry no `counterpartType` (the other role's declared
+filler, Jutter), and "is strandbemand indien hij een strandjutter heeft" /
+"is strandvrij indien hij geen strandjutter heeft" carry `counterpartType:
+Strandjutter`.
 
 | case | input | W1 | W2 |
 |---|---|---|---|
@@ -3614,15 +3655,19 @@ back-reference toegewezen wachtpost.
 | 2 | W1 holds wachtjutters J1 (Jutter) and J2 (Strandjutter); J3 assigned to no post; W2 empty | bemand, strandbemand | onbemand, strandvrij |
 | 3 | J1 (Jutter) assigned to W1, S1 (Strandjutter) assigned to W2 | bemand, strandvrij | bemand, **strandbemand** |
 
-Each row carries one of rules 1–4. Case 1's W1 verdict rides on a link no
+Each row carries one of rules 1–4. Case 1's W1 verdict depends on a link no
 case line names for W1 at all — the case spells only J1's leg (rule 3) —
 and its *strandvrij* is rule 2: the relation is there and the class is
-not. Case 2's two fillers give exactly one filler's verdict (rule 1),
-J3 in no relation leaves W2 alone, and the Strandjutter satisfies the
-Jutter filler as well as its own (rule 2, extensionally). Case 3 is where
-the two readings come apart inside one world: both posts are **bemand**
-and only W2 is **strandbemand**, so a reader that skipped the class test
-answers case 3 wrong on W1 while answering `bemand` right everywhere.
+not. Case 2's two fillers give exactly one filler's verdict (rule 1), J3
+in no relation leaves W2 alone, and the Strandjutter satisfies the Jutter
+filler as well as its own (rule 2, extensionally). Case 3 is where the two
+readings come apart inside one world: both posts are **bemand** and only
+W2 is **strandbemand**, so a reader that skipped the class test answers
+case 3 wrong on W1 while answering `bemand` right everywhere. Rule 5 in
+the `ref/` suite: a check naming the role of the other side (wachtjutter,
+said of a Wachtpost) and a counterpart outside the other role's filler
+(Wachtpost) both fault (WV-5.8a-ver-verkeerde-zijde,
+WV-5.8a-ver-vreemde-tegenpartij).
 
 ### 5.8b The characteristic check's owner: the host
 
