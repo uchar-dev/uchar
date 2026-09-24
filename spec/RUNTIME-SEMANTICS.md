@@ -2407,8 +2407,9 @@ PRECIES n      =  count = n
 
 `reach ∩ population` and `filter` are **ch. 3.4a's**, unchanged and
 shared: the range (`sourceRole`, or the multi-step `sourcePath` of
-ch. 3.4b, or the derived connecting role when neither is written) says
-which instances the quantifier reaches; `elementType` says which it
+ch. 3.4b — since L2 exactly one of the two, B12; until L2 the derived
+connecting role when neither was written) says which instances the
+quantifier reaches; `elementType` says which it
 ranges over, extensionally (`IR-SPEC.md` ch. 2.2) — every instance whose
 type is ⊑ it; and the die/dat `filter` drops contributors, evaluated per
 contributor with the element as subject. There is one definition of
