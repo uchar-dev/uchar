@@ -1,4 +1,4 @@
-(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L3 shape.
+(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L4 shape.
 
    The lowering builds typed [Ir_v0.Ast] values and hands them to exactly
    one serialiser — this module — so schema conformity is structural
@@ -52,11 +52,8 @@ let kwantor_s = function
   | De -> "DE" | Alle -> "ALLE" | Geen -> "GEEN" | Ten_minste -> "TEN_MINSTE"
   | Ten_hoogste -> "TEN_HOOGSTE" | Precies -> "PRECIES"
 
-let regel_soort_s = function
-  | Gelijkstelling -> "GELIJKSTELLING" | Berekening -> "BEREKENING"
-  | Initialisatie -> "INITIALISATIE" | Kenmerktoekenning -> "KENMERKTOEKENNING"
-
-let functie_kind_s = function
+(* the slice's two folds, both an Aggregation on the wire (delta B21) *)
+let aggregation_kind_s = function
   | Som -> "SOM" | Aantal -> "AANTAL"
   | _ -> failwith "Emit: aggregation kind not produced by the F-logic slice"
 
@@ -78,12 +75,21 @@ let datatype (d : datatype) : json =
 let rol_binding (rb : rol_binding) : json =
   node "RolBinding" [ ("feittype", s rb.rb_feittype); ("rol", s rb.rb_rol) ]
 
+(* The typed value of a Literal (IR-SPEC ch. 4.1, delta B22): one key, the
+   variant the literal's type names. The slice writes numbers and the
+   boolean of a characteristic head only. *)
+let literal_value (v : literal_variant) : json =
+  match v with
+  | Lv_number x -> `Assoc [ ("number", s x) ]
+  | Lv_boolean x -> `Assoc [ ("boolean", b x) ]
+  | _ -> failwith "Emit: literal value not produced by the F-logic slice"
+
 let rec expr (e : expr) : json =
   let typ t = ("type", opt datatype t) in
   let bron br = ("bron", so br) in
   match e with
-  | Literal { waarde; typ = t; bron = br } ->
-      node "Literal" [ ("waarde", so waarde); typ t; bron br ]
+  | Literal { variant; typ = t; bron = br; waarde = _ } ->
+      node "Literal" [ ("value", literal_value variant); typ t; bron br ]
   | Binair { op; links; rechts; typ = t; bron = br } ->
       node "Binair"
         [ ("op", s (bin_op_s op)); ("links", opt expr links);
@@ -105,13 +111,13 @@ let rec expr (e : expr) : json =
         | Some rb -> rb
         | None -> failwith "Emit: an instance fold without its role binding"
       in
-      node "Functie"
-        [ ("kind", s (functie_kind_s kind));
-          ("argumenten", `List (List.map expr argumenten));
-          ("elementObjecttype", so element_objecttype);
-          ("leegwaarde", opt expr leegwaarde);
-          ("filter", `Null); ("dimensieSelectie", `Null); typ t; bron br;
-          ("granulariteit", `Null); ("bronRol", rol_binding rb) ]
+      (* an absent optional field is left out (IR-SPEC ch. 4.3) *)
+      node "Aggregation"
+        ([ ("kind", s (aggregation_kind_s kind));
+           ("arguments", `List (List.map expr argumenten)) ]
+        @ (match element_objecttype with None -> [] | Some el -> [ ("elementType", s el) ])
+        @ (match leegwaarde with None -> [] | Some f -> [ ("emptyFallback", expr f) ])
+        @ [ ("sourceRole", rol_binding rb); typ t; bron br ])
   | _ -> failwith "Emit: expression node not produced by the F-logic slice"
 
 let rec conditie (c : conditie) : json =
@@ -244,15 +250,54 @@ let feittype (ft : feittype) : json =
     [ ("naam", so ft.ft_naam); ("wederkerig", b ft.wederkerig);
       ("rollen", `List (List.map rol ft.rollen)) ]
 
-let resolved_regel (r : resolved_regel) : json =
+(* A rule (IR-SPEC ch. 3, Versioning; ch. 3.1): {node, name, versions}. The
+   slice builds every rule with one version, so each in-memory record is one
+   form; a record name ending in a space, '#' and digits is the in-memory
+   spelling of one version of a form with several, which the slice never
+   builds, and it refuses rather than writing a name no reader loads. The
+   version's kind is read back onto the initialisation flag and the
+   presentation tag, its validity is always written, and its target is an
+   attribute reference. *)
+let rule (r : resolved_regel) : json =
   if r.rr_bron_annotaties <> None then
     failwith "Emit: the slice writes no statute annotations";
-  node "ResolvedRegel"
-    [ ("naam", so r.rr_naam);
-      ("soort", opt (fun x -> s (regel_soort_s x)) r.rr_soort);
-      ("doel", opt expr r.doel); ("waarde", opt expr r.waarde);
-      ("voorwaarde", opt conditie r.rr_voorwaarde);
-      ("geldigheid", opt geldigheid r.rr_geldigheid) ]
+  (match r.rr_naam with
+  | Some n when Ir_v0.Loader.versioned_name n ->
+      failwith
+        (Printf.sprintf
+           "Emit: the rule name %S ends in a space, '#' and digits, the in-memory spelling of one \
+            version of a form with several, and the slice builds no versions"
+           n)
+  | _ -> ());
+  let initialisation, presentation =
+    match r.rr_soort with
+    | Some Gelijkstelling -> (false, [ ("presentation", s "GELIJKSTELLING") ])
+    | Some Berekening -> (false, [ ("presentation", s "BEREKENING") ])
+    | Some Initialisatie -> (true, [])
+    | Some Kenmerktoekenning -> (false, [])
+    | None -> failwith "Emit: a rule version without its kind"
+  in
+  let target =
+    match r.doel with
+    | Some (Attribuut_ref _ as t) -> expr t
+    | _ -> failwith "Emit: the target of a rule version is an AttribuutRef"
+  in
+  let value =
+    match r.waarde with Some v -> expr v | None -> failwith "Emit: a rule version without its value"
+  in
+  let condition = match r.rr_voorwaarde with None -> [] | Some c -> [ ("condition", conditie c) ] in
+  let validity =
+    geldigheid (Option.value r.rr_geldigheid ~default:{ geld_vanaf = None; geld_tot = None })
+  in
+  node "Rule"
+    [ ("name", so r.rr_naam);
+      ("versions",
+       `List
+         [ `Assoc
+             ([ ("validity", validity); ("target", target); ("value", value) ]
+             @ condition
+             @ [ ("initialisation", b initialisation) ]
+             @ presentation) ]) ]
 
 let default (d : default) : json =
   if d.default_initialisatie || d.default_excepties <> None then
@@ -299,7 +344,7 @@ let document (d : document) : json =
   unfilled "verdelingen" d.verdelingen;
   unfilled "consistenties" d.consistenties;
   unfilled "uniciteiten" d.uniciteiten;
-  unfilled "uniciteitUnies" d.uniciteit_unies;
+  unfilled "uniciteiten" d.uniciteit_unies;
   unfilled "feitCreaties" d.feit_creaties;
   unfilled "resolvedStartpunten" d.resolved_startpunten;
   unfilled "regelGroepen" d.regel_groepen;
@@ -324,13 +369,12 @@ let document (d : document) : json =
            ("dayKinds", `List []) ]);
       ("rules",
        `Assoc
-         [ ("resolvedRegels", `List (List.map resolved_regel d.resolved_regels));
+         [ ("resolvedRegels", `List (List.map rule d.resolved_regels));
            ("resolvedDagsoorten", `List []);
            ("objectCreaties", `List []);
            ("verdelingen", `List []);
            ("consistenties", `List []);
            ("uniciteiten", `List []);
-           ("uniciteitUnies", `List []);
            ("feitCreaties", `List []);
            ("resolvedStartpunten", `List []);
            ("regelGroepen", `List []);

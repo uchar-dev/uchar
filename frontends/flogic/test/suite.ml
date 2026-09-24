@@ -176,30 +176,40 @@ let () =
   "model": { "objectTypes": [], "factTypes": [], "parameters": [%s], "domains": [%s],
     "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [] },
   "rules": { "resolvedRegels": [%s], "resolvedDagsoorten": [], "objectCreaties": [],
-    "verdelingen": [], "consistenties": [], "uniciteiten": [], "uniciteitUnies": [],
+    "verdelingen": [], "consistenties": [], "uniciteiten": [],
     "feitCreaties": [], "resolvedStartpunten": [], "regelGroepen": [] },
   "diagnostics": [%s] }|}
       parameters domains regels diagnostics
   in
+  (* one rule version with an attribute target, whose value and condition
+     each test fills: the wire carries no rule without a kind, a target or a
+     value since the L4 landing *)
   let regel ~waarde ~voorwaarde =
     Printf.sprintf
-      {|{ "node": "ResolvedRegel", "naam": "r", "soort": null, "doel": null,
-  "waarde": %s, "voorwaarde": %s, "geldigheid": null }|}
-      waarde voorwaarde
+      {|{ "node": "Rule", "name": "r", "versions": [ {
+  "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
+  "target": { "node": "AttribuutRef", "attribuut": "a", "objecttype": "T", "bron": "de a" },
+  "value": %s,%s "initialisation": false, "presentation": "BEREKENING" } ] }|}
+      waarde
+      (match voorwaarde with None -> "" | Some c -> Printf.sprintf {| "condition": %s,|} c)
+  in
+  let getal =
+    {|{ "node": "Literal", "value": { "number": "1" },
+  "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "bron": "1" }|}
   in
   let emit_refusals =
     [ ("an expression Onopgelost",
        m1_doc
          ~regels:
-           (regel ~voorwaarde:"null"
+           (regel ~voorwaarde:None
               ~waarde:{|{ "node": "Onopgelost", "bron": "de onbekende waarde" }|})
          (),
        "expression node not produced by the F-logic slice");
       ("a condition Onopgelost",
        m1_doc
          ~regels:
-           (regel ~waarde:"null"
-              ~voorwaarde:{|{ "node": "Onopgelost", "bron": "de onbekende voorwaarde" }|})
+           (regel ~waarde:getal
+              ~voorwaarde:(Some {|{ "node": "Onopgelost", "bron": "de onbekende voorwaarde" }|}))
          (),
        "condition shape not produced by the F-logic slice");
       ("a filled diagnostics list",
