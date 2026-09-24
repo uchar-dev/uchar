@@ -39,7 +39,7 @@ A hand-broken variant of `corpus/golden/jutterswet-aanvoergeld/ir.json`:
 one field emptied, a one-line diff since L2 (until L2 also one unit
 abbreviation and factor changed on the reference's own type); the shape
 is schema-valid — `AttribuutRef.objecttype` is `["string","null"]` on the
-v0 wire, like nearly every reference field — which is precisely why the
+wire, like nearly every reference field — which is precisely why the
 verifier, not the schema, is the fence.
 
 Falsifiable, clause-exact: restore the `| None -> []` arm of

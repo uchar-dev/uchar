@@ -40,12 +40,15 @@ read twice, but they are two `match` arms, and deleting either on its own moves
 only its own document — so `targetType` has its own witness,
 `wf034-verdeling-zonder-doeltype`.
 
-*Measured breadth of the shape itself:* four pre-existing allocation negatiefs
-(`wf020-crossform-collision`, `wf024-complex` (removed at L4, where `COMPLEX` became a load error), `wf025-max-without-ratio`,
-`wf026-two-allocations-one-target`) are minimal fragments that carry no source
-type at all (three of them no target type either); each gains a truthful
-incidental line here and keeps its verdict and the rule its directory declares.
-No golden and no rood document carries the shape. Over all 486 documents of
+*Measured breadth of the shape itself:* at this card four pre-existing
+allocation negatiefs (`wf020-crossform-collision`, `wf024-complex`,
+`wf025-max-without-ratio`, `wf026-two-allocations-one-target`) were minimal
+fragments that carried no source type at all (three of them no target type
+either); each gained a truthful incidental line here and kept its verdict and
+the rule its directory declares. Measured on the L4 wire: `wf024-complex` was
+removed at L4 (where `COMPLEX` became a load error), and since L2 the other
+three name `Jutter` as source type, so this arm's line now stands on this
+witness alone. No golden and no rood document carries the shape. Over all 486 documents of
 golden + rood + negatief + parity this arm changes exactly one verdict — this
 one; its `doelType` twin changes exactly one too, its own.
 

@@ -51,7 +51,7 @@ Over-rejection is therefore impossible by measurement.
 A hand-broken variant of `corpus/golden/jutterswet-vondsttelling/ir.json` (one
 field emptied, one unit abbreviation and factor changed — a three-line diff);
 the shape is schema-valid — `AttribuutRef.attribuut` is `["string","null"]` on
-the v0 wire — which is precisely why the verifier, not the schema, is the
+the wire — which is precisely why the verifier, not the schema, is the
 fence.
 
 Falsifiable, clause-exact: remove the `attribuut = None` arm from the

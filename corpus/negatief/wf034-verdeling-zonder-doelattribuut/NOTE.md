@@ -37,10 +37,11 @@ needs. They were already refused, they stay refused, they still cite the rule
 their directory name declares, and the added line is true of them. No
 document in any zone changes verdict.
 
-*What this arm does NOT close* is recorded in the sibling NOTE
-(`wf034-verdeling-zonder-bronattribuut`): a name that resolves against no
-declaration, and the two `bronType`/`doelType` fields, are equally emptyable
-and equally clean, and stay **open**.
+*What this arm did NOT close* is recorded in the sibling NOTE
+(`wf034-verdeling-zonder-bronattribuut`): a name that resolved against no
+declaration, and the two `bronType`/`doelType` fields, were equally emptyable
+and equally clean at the time. Later arms of WF-034 closed both; the sibling
+NOTE names them and their witnesses.
 
 A hand-broken variant of `corpus/golden/jutterswet-gelijkdeling/ir.json` —
 one field emptied, a one-field diff; schema-valid, since the version's

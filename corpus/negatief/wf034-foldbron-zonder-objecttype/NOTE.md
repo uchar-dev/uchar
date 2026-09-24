@@ -52,7 +52,7 @@ after, and gate 3 stays at 174 golden clean.
 
 A hand-broken variant of `corpus/golden/jutterswet-vondsttelling/ir.json`
 (one field emptied, one unit abbreviation and factor changed); the shape is
-schema-valid — `AttribuutRef.objecttype` is `["string","null"]` on the v0
+schema-valid — `AttribuutRef.objecttype` is `["string","null"]` on the
 wire, like nearly every reference field — which is precisely why the
 verifier, not the schema, is the fence.
 

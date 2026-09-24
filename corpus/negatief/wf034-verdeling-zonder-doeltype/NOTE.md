@@ -35,14 +35,20 @@ dependency graph's read and write edges, and the name-resolution arm beside it,
 which has no scope to resolve in without it. An *undeclared* type is another
 rule's business: WF-047, against the recipient role the allocation carries.
 
-*Measured breadth of the shape itself:* three pre-existing allocation negatiefs
-(`wf020-crossform-collision`, `wf024-complex` (removed at L4, where `COMPLEX` became a load error), `wf025-max-without-ratio`) are
-minimal fragments that carry no types at all; each gains a truthful incidental
-line here and keeps its verdict and the rule its directory declares.
-(`wf026-two-allocations-one-target` is the fourth of that family and gains two
-incidental lines as well, but both come from the sibling arm: its two
-allocations name a declared `doelType` and no `bronType` at all.) No golden and
-no rood document carries the shape.
+*Measured breadth of the shape itself:* at this card three pre-existing
+allocation negatiefs (`wf020-crossform-collision`, `wf024-complex`,
+`wf025-max-without-ratio`) were minimal fragments that carried no types at
+all; each gained a truthful incidental line here and kept its verdict and the
+rule its directory declares. `wf026-two-allocations-one-target` was the fourth
+of that family and gained two incidental lines as well, both from the sibling
+arm: its two allocations named a declared `doelType` and no `bronType`.
+Measured on the L4 wire: `wf024-complex` was removed at L4 (where `COMPLEX`
+became a load error); since L2 `wf020-crossform-collision` and
+`wf025-max-without-ratio` name `Jutter` as source type and still no target
+type, so each carries this arm's line and none of the sibling's; and
+`wf026-two-allocations-one-target` names `Jutter` as source type too, so it
+carries no line of either type arm — its two incidental WF-034 lines are its
+missing source attribute. No golden and no rood document carries the shape.
 
 A hand-broken variant of `corpus/golden/jutterswet-berging/ir.json` — one
 field nulled, a one-line diff; schema-valid, since the version's

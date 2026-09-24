@@ -36,14 +36,18 @@ stay refused, and they still cite the rule their directory name declares;
 what changes is that the report now names this defect too, which is true of
 them. No document in any zone changes verdict.
 
-*What this arm does NOT close,* measured the same day and written down so the
-silence is not read as coverage: an allocation endpoint that names an
-attribute **no declaration carries** is still verifier-clean
-(`bronAttribuut: "bestaatniet"` passes, while `ref` faults and clingo reports
-`unknown attribute`), and so are empty `bronType` and `doelType` fields
-(`ref` and clingo both fault with `missing bronType`). Those are name
+*What this arm did NOT close,* measured the same day and written down so the
+silence was not read as coverage: an allocation endpoint that named an
+attribute **no declaration carries** was still verifier-clean
+(`bronAttribuut: "bestaatniet"` passed, while `ref` faulted and clingo reported
+`unknown attribute`), and so were empty `bronType` and `doelType` fields
+(`ref` and clingo both faulted with `missing bronType`). Those were name
 resolution against the object-type table — a wider movement than this card's
-empty-field class — and they stay **open**.
+empty-field class. Later arms of WF-034 closed both: the name resolution in
+`wf034_verdeling_naamresolutie` (the six `wf034-verdeling-onbekend-*`
+witnesses) and the empty types in `wf034_verdeling_typen`
+(`wf034-verdeling-zonder-brontype`, `-zonder-doeltype`). Measured on the L4
+wire, the verifier refuses all eight under WF-034.
 
 A hand-broken variant of `corpus/golden/jutterswet-gelijkdeling/ir.json` —
 one field emptied, a one-field diff. The shape is schema-valid: the

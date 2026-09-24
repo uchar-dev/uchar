@@ -69,7 +69,7 @@ moves no other verdict and no other report.
 
 A hand-broken variant of `corpus/golden/anchor/jutterswet-waardestelling/ir.json`
 — one field filled, a one-line diff; schema-valid, since `Kenmerk.eigenaar` is
-`["string","null"]` on the v0 wire.
+`["string","null"]` on the wire.
 
 Falsifiable, arm-exact: make the `eigenaar` arm of the `Kenmerk_check` branch
 of `walk_cond` (`spec/verifier/lib/checks.ml`) inert and this case, alone in

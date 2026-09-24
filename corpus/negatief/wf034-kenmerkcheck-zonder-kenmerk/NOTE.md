@@ -38,7 +38,7 @@ unchanged by this clause.
 
 A hand-broken variant of `corpus/golden/jutterswet-keurmerk/ir.json` — one
 field emptied, a one-field diff. The shape is schema-valid: `Kenmerk.kenmerk`
-is `["string","null"]` on the v0 wire, like nearly every reference field,
+is `["string","null"]` on the wire, like nearly every reference field,
 which is precisely why the verifier, not the schema, is the fence.
 
 Falsifiable, clause-exact: remove the `kenmerk = None` arm from `walk_cond`'s

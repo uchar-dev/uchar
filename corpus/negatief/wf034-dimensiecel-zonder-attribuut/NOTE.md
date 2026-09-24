@@ -77,7 +77,7 @@ this clause and neither does after; no document in any zone changes verdict.
 
 A hand-broken variant of `corpus/golden/jutterswet-seizoenvondst/ir.json` —
 one field emptied, a one-field diff. The shape is schema-valid:
-`DimensieCel.attribuut` is `anyOf [expression, null]` on the v0 wire, which
+`DimensieCel.attribuut` is `anyOf [expression, null]` on the wire, which
 is precisely why the verifier, not the schema, is the fence.
 
 Falsifiable, clause-exact: remove the `attribuut = None` arm from
