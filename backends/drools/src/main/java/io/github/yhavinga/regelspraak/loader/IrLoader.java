@@ -225,8 +225,8 @@ public final class IrLoader {
 
     /** The IR-SPEC ch. 4.5 other-end narrowing of a loaded {@code RoleMembership}: the type the filler of the other
      *  role must belong to, or null when the check does not narrow it (the role's declared filler). The loader
-     *  keeps it in the record slot the near-side check always used for the other end (D6), and this is the one
-     *  place that knows so. */
+     *  keeps it in the record slot the near-side check always used for the other end (the vendored record keeps its
+     *  v0 components), and this is the one place that knows so. */
     public static Objecttype tegenpartij(Conditie.Rollidmaatschap r) {
         return r.anderTeFiller();
     }

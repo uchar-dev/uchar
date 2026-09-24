@@ -169,9 +169,9 @@ public final class DrlTranspiler {
     /** See the constructor parameter of the same name ({@code IrLoader.Loaded.rolBindingen}). Empty by default. */
     private java.util.Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen = java.util.Map.of();
 
-    /** IR-SPEC ch. 4.3 / D8 (i): a fold whose single argument is read through a range — a one-step {@code bronRol} or
-     *  a {@code bronPad} — ranges over linked instances, and that argument is the SET source; without one the
-     *  argument is the subject's own attribute. */
+    /** IR-SPEC ch. 4.3, the set source: a fold whose single argument is read through a range — a one-step
+     *  {@code bronRol} or a {@code bronPad} — ranges over linked instances, and that argument is the SET source;
+     *  without one the argument is the subject's own attribute. */
     private boolean heeftBereik(Expr.Functie f) {
         return rolBindingen.containsKey(f) || bronPaden.containsKey(f);
     }
@@ -1597,17 +1597,19 @@ public final class DrlTranspiler {
     }
 
     /** §13.4.7 feitcreatie -> a rule that, for each anker and each doel ALREADY related to it by the
-     *  existing rolC relation ({@code joinVeld}), creates the NEW relation by setting {@code zetVeld}
-     *  on the doel. A relation instance is a reference field in this fact model (§9.4), so creating one
+     *  existing rolC relation (the join field, {@code Creatievelden.koppelveld}), creates the NEW relation by
+     *  setting the written field ({@code Creatievelden.schrijfveld}) on the doel. Both come from the creation's
+     *  role bindings. A relation instance is a reference field in this fact model (§9.4), so creating one
      *  is a {@code modify}-set; {@code no-loop} keeps the modify from re-triggering the rule, and setting
      *  the field to the same value is idempotent across other rules' fire cycles. */
     private void feitCreatie(io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc, int nr) {
         Acc acc = new Acc();
         Objecttype anker = fc.anker(), doel = fc.doel();
-        // §13.4.7 `naam` is the FIFTH wire-nullable position of this construct — ["string","null"] AND required,
-        // like the four below — and NO well-formedness rule covers it: WF-034 gates zetVeld, joinVeld and the
-        // tussenstappen, and WF-094 clause (d) gated the five KEYED tables (until M1, which made them lists whose
-        // naam the schema holds non-null), while feitCreaties is a LIST.
+        // §13.4.7 `naam` is a wire-nullable position of this construct — ["string","null"] AND required, like anker
+        // and doel below — and NO well-formedness rule covers it: the schema holds the symbolic block non-null and
+        // WF-034 crosses it against the declarations (until L2 WF-034 gated the bean-field names zetVeld, joinVeld
+        // and the steps' fields, which left the wire then), and WF-094 clause (d) gated the five KEYED tables
+        // (until M1, which made them lists whose naam the schema holds non-null), while feitCreaties is a LIST.
         // Measured 2026-09-11 on jutterswet-postwacht with naam null: verifier PASS, ref PASS (10 expectations),
         // clingo PASS (10), exec PLAYED — it hands the null straight to the rule header and the creation still
         // fires (the case OBSERVES it: V1.vakseinaantal counts the created relation, 2, and a 2->99 probe fails
@@ -1634,7 +1636,7 @@ public final class DrlTranspiler {
             return;
         }
         // §13.3.9 STORAGE DIRECTION, at all THREE positions this construct touches a role field (2026-09-11): each
-        // hop's join, the doel's join onto the last hop, and the zetVeld the modify WRITES. Measured on
+        // hop's join, the doel's join onto the last hop, and the field the modify WRITES. Measured on
         // verifier-clean, ref-clean models, this branch sank the whole package with a bare compiler error at each —
         // "Unable to Analyse Expression $doel.setSeinvak( $subject )" for the write,
         // "Unable to Analyse Expression this == $subject.gemeenteVanInschrijving" for a hop — naming neither the

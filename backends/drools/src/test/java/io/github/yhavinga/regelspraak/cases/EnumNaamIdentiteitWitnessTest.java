@@ -42,7 +42,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * On the two in-memory documents below, which clingo refuses at translation (a navigated or parameter
  * enumeration operand, an enumeration union key) and ref plays: both branches FAILED every name-identity
  * expectation (the navigated row was an exec-model FAIL too once the rule was written with a
- * {@code navigatieRol}; the binding form of that rule is not carried by the exec-model arm at all).
+ * {@code navigatieRol}, the written step of the time; since L2 the row is written with its binding, which both
+ * branches read).
  *
  * <p><b>Why a class beside the golden.</b> Gate 12 replays the golden and pins its channel, but only as a
  * count; clingo's refusals keep the navigated, parameter and union arms out of the corpus entirely. These rows

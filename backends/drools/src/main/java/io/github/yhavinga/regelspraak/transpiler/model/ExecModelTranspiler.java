@@ -2122,8 +2122,8 @@ public final class ExecModelTranspiler {
         return navigatieBindingen.containsKey(a) && navigatieBindingen.get(a).size() > 1;
     }
 
-    /** IR-SPEC ch. 4.3 / D8 (i): a fold whose single argument is read through a range — a one-step {@code bronRol}
-     *  or a {@code bronPad} — ranges over linked instances, and that argument is the SET source. */
+    /** IR-SPEC ch. 4.3, the set source: a fold whose single argument is read through a range — a one-step
+     *  {@code bronRol} or a {@code bronPad} — ranges over linked instances, and that argument is the SET source. */
     private boolean heeftBereik(Expr.Functie f) {
         return rolBindingen.containsKey(f) || bronPaden.containsKey(f);
     }
@@ -6733,15 +6733,16 @@ public final class ExecModelTranspiler {
     }
 
     /** §13.4.7 feitcreatie: for each {@code anker} and each {@code doel} ALREADY related to it (the §9.4 path: the
-     *  optional multi-hop {@code tussenstappen} then the final {@code joinVeld}), CREATE the new relation by setting
-     *  {@code zetVeld} on the doel -> {@code modify($doel){ set zetVeld($subject) }}, NO_LOOP. The voorwaarde gates the
+     *  optional multi-hop {@code tussenstappen} then the final join field), CREATE the new relation by setting the
+     *  written field on the doel -> {@code modify($doel){ set <field>($subject) }}, NO_LOOP. Both fields come from
+     *  the creation's role bindings ({@code FactModelGenerator.creatievelden}). The voorwaarde gates the
      *  anker (its pattern) or the doel (its pattern); a guard lowerable to NEITHER is REFUSED by name, never lowered
      *  to a silent never-fire. Mirrors DrlTranspiler.feitCreatie. null -> skip (unresolved). */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Rule feitCreatie(io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc) {
         Objecttype anker = fc.anker(), doel = fc.doel();
-        // The bean fields come from the role bindings, never from the wire's zetVeld/joinVeld/tussenstappen
-        // (V1-WIREMIGRATIE P2): those go at B7, and ref executes the bindings alone.
+        // The bean fields come from the role bindings (V1-WIREMIGRATIE P2); since L2 the wire carries nothing else,
+        // and ref executes the bindings alone.
         FactModelGenerator.Creatievelden velden = FactModelGenerator.creatievelden(model, fc);
         if (anker == null || doel == null || velden == null)
             return skip("feitcreatie (onopgelost): " + fc.naam());
@@ -6801,16 +6802,16 @@ public final class ExecModelTranspiler {
 
         // §9.4 multi-hop: bind each intermediate object, joining to the previous; $prev starts at the anker.
         // §13.3.9 STORAGE DIRECTION, at all THREE positions this construct touches a role field (2026-09-11): each
-        // hop's join, the doel's join onto the last hop, and the zetVeld the consequence WRITES. The objectcreatie
+        // hop's join, the doel's join onto the last hop, and the field the consequence WRITES. The objectcreatie
         // arm has asked this since 2026-08-30; the feitcreatie asked nothing, and each position was measured on a
         // verifier-clean, ref-clean model:
-        //     zetVeld displaced by a declared member -> ERROR ConsequenceException: ClassCastException: Cannot cast
-        //         …facts.Kustvak to java.math.BigDecimal      (DRL branch: "Unable to Analyse Expression
-        //         $doel.setSeinvak( $subject )")
+        //     the written field displaced by a declared member -> ERROR ConsequenceException:
+        //         ClassCastException: Cannot cast …facts.Kustvak to java.math.BigDecimal
+        //         (DRL branch: "Unable to Analyse Expression $doel.setSeinvak( $subject )")
         //     a hop whose field the parent's bean does not carry -> ERROR ConstraintEvaluationException at first
         //         fire  (DRL branch: "Unable to Analyse Expression this == $subject.gemeenteVanInschrijving")
-        //     joinVeld displaced -> the join never matches, so the creation makes nothing; ref makes nothing there
-        //         either, because the only routes that could establish the relation it reads (the case input, a
+        //     the join field displaced -> the join never matches, so the creation makes nothing; ref makes nothing
+        //         there either, because the only routes that could establish the relation it reads (the case input, a
         //         sibling creation) are themselves refused. Gated with the other two all the same: it is the same
         //         field, the same question, and the UNDERIVED half of it is the crashing one.
         List<RuleItemBuilder<?>> items = new ArrayList<>();
@@ -6838,15 +6839,15 @@ public final class ExecModelTranspiler {
             vorigeType = stap.bereikt();
         }
 
-        String joinVeld = velden.koppelveld(), zetVeld = velden.schrijfveld();
-        if (!heeftReferentieVeld(doel, joinVeld, vorigeType))
-            return skip("feitcreatie (" + geenReferentieveldReden(doel, joinVeld, vorigeType) + "): " + fc.naam());
-        if (!heeftReferentieVeld(doel, zetVeld, anker))
-            return skip("feitcreatie (" + geenReferentieveldReden(doel, zetVeld, anker) + "): " + fc.naam());
+        String koppelveld = velden.koppelveld(), schrijfveld = velden.schrijfveld();
+        if (!heeftReferentieVeld(doel, koppelveld, vorigeType))
+            return skip("feitcreatie (" + geenReferentieveldReden(doel, koppelveld, vorigeType) + "): " + fc.naam());
+        if (!heeftReferentieVeld(doel, schrijfveld, anker))
+            return skip("feitcreatie (" + geenReferentieveldReden(doel, schrijfveld, anker) + "): " + fc.naam());
         Variable doelVar = DSL.declarationOf(doelClass, "$doel");
         Variable laatste = vorige;
         PatternDSL.PatternDef doelPat = PatternDSL.pattern(doelVar).expr(nextId("djoin"), (Variable) laatste,
-                (Predicate2) (d, p) -> RegelSpraakRuntime.get(d, joinVeld) == p);
+                (Predicate2) (d, p) -> RegelSpraakRuntime.get(d, koppelveld) == p);
         if (doelGuard != null) doelPat = doelPat.expr(nextId("dg"), (Predicate1) doelGuard);
         items.add(doelPat);
 
@@ -6854,7 +6855,7 @@ public final class ExecModelTranspiler {
         // and idempotent (anti-loop): re-setting an already-established ref must not re-propagate $doel through a
         // co-resident black-box rule over the same type.
         Block3<org.drools.model.Drools, Object, Object> body = (drools, subj, d) ->
-            werkBijReflectief(drools, d, zetVeld, subj);
+            werkBijReflectief(drools, d, schrijfveld, subj);
         items.add(DSL.on(sVar, (Variable) doelVar).execute(body));
         return PatternDSL.rule(kop(fc.naam())).attribute(Rule.Attribute.NO_LOOP, true).build(items.toArray(new RuleItemBuilder[0]));
     }

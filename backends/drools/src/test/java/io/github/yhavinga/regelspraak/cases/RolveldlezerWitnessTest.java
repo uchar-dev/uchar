@@ -109,14 +109,14 @@ class RolveldlezerWitnessTest {
         assertTrue(drlReden(ir, c).contains(zin), drlReden(ir, c));
     }
 
-    // The §8.2 whole-period fold over a NAVIGATED SET (geheelPeriodeAlle) gets no gate and no witness, and the reason
-    // is measured rather than assumed: every arm of it enters on a `set` reading, and WF-096 (2026-09-09) admits a
-    // set reading ONLY as the source of a single-argument instance fold. Built anyway and pushed through
-    // (2026-09-11, before M1; the verifier path reads /rules/resolvedRegels/0/voorwaarde/links since):
+    // The §8.2 whole-period fold over a NAVIGATED SET (geheelPeriodeAlle) got no gate and no witness, and the reason
+    // was measured rather than assumed: every arm of it entered on a `set` reading, and WF-096 (2026-09-09) admitted
+    // a set reading ONLY as the source of a single-argument instance fold. Built anyway and pushed through
+    // (2026-09-11, before M1; the verifier path read /rules/resolvedRegels/0/voorwaarde/links since):
     //     verifier: WF-096 FAIL /resolvedRegels/0/voorwaarde/links: set reading at an ordinary read position
     //     ref     : EVALUATION FAULT: whole-period comparison is ch. 3 scope
-    // The document a gate would protect is not well-formed, so the gate could carry no witness — the one thing this
-    // repo does not admit. Both branches carry that sentence at the join instead.
+    // The document a gate would protect was not well-formed, so the gate could carry no witness. Since L2 the arm
+    // is gone with the set flag: a read over a to-many step is WF-053's, and neither branch lowers one.
 
     // ---------------- 3. the §8.2 navigated characteristic timeline ----------------
 
@@ -168,9 +168,10 @@ class RolveldlezerWitnessTest {
     // ---------------- 5. the §13.4.7 feitcreatie's three field positions ----------------
 
     @Test void de_feitcreatie_weigert_de_naamdelende_schrijfrol() throws Exception {
-        // zetVeld is WRITTEN in the consequence: modify($doel){ set<zetVeld>($subject) }. A declared member of that
-        // name makes the field a BigDecimal and the write a cast fault — the objectcreatie arm's exact failure, on
-        // the arm that was never gated. Measured on the pre-gate jar, on a verifier-clean AND ref-clean model:
+        // The written field is WRITTEN in the consequence: modify($doel){ set<field>($subject) }. A declared member
+        // of that name makes the field a BigDecimal and the write a cast fault — the objectcreatie arm's exact
+        // failure, on the arm that was never gated. Measured on the pre-gate jar, on a verifier-clean AND ref-clean
+        // model:
         //     verifier: PASS   ref: oracle: PASS (2 expectations)   clingo: clingo: PASS (2 expectations)
         //     Drools exec-model : ERROR ConsequenceException … ClassCastException: Cannot cast …facts.Kustvak to
         //                         java.math.BigDecimal   (rule "vakbeseining door het kustvak")

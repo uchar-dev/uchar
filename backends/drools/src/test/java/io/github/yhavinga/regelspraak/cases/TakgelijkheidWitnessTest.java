@@ -30,7 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>No corpus form reaches either place with a missing field or a null position — measured, not assumed: the whole
  * golden set with case files (168) through the DRL branch gives ZERO bare {@code EXCLUDE drl compile} outcomes, and
- * the four feitcreaties in {@code corpus/golden} carry no null anker, doel, zetVeld or joinVeld. So every model
+ * the four feitcreaties in {@code corpus/golden} carried no null anker, doel, zetVeld or joinVeld (the last two left
+ * the wire at L2, with the rest of the bean-field names). So every model
  * below is SYNTHETIC, built in memory from a golden's {@code ir.json} off the wire; the corpus files are read and
  * never written. Each was pushed through the verifier, {@code ref/} and the clingo backend, and the measurements
  * are recorded at the test that pins them.
@@ -118,10 +119,11 @@ class TakgelijkheidWitnessTest {
     // ---------------- 2. the DRL branch's conditional feitcreatie gate ----------------
 
     @Test void de_drl_feitcreatie_weigert_een_onopgelost_doel() throws Exception {
-        // `doel` is one of four wire positions the ch. 13.4.7 schema types ["string","null"], and WF-034 does NOT
-        // cover it (it covers zetVeld, joinVeld and each tussenstap's veld/type — measured: a null zetVeld or
-        // joinVeld FAILS the verifier, a null anker or doel PASSES). So this document is WELL-FORMED, and ref runs
-        // it to a model: the reachable half of the gap. Measured on the pre-port jar:
+        // `doel` is one of the wire positions the ch. 13.4.7 schema types ["string","null"], and WF-034 does NOT
+        // cover it (until L2 it covered zetVeld, joinVeld and each tussenstap's veld/type — measured then: a null
+        // zetVeld or joinVeld FAILED the verifier, a null anker or doel PASSED; since L2 the schema holds the
+        // symbolic block non-null, and a null anker or doel still passes). So this document is WELL-FORMED, and ref
+        // runs it to a model: the reachable half of the gap. Measured on the pre-port jar:
         //     verifier: PASS
         //     ref     : oracle: PASS (10 expectations)   — ref reaches a model; a golden of this shape could exist
         //     clingo  : TRANSLATION FAULT: missing FeitCreatie.doel
@@ -158,9 +160,9 @@ class TakgelijkheidWitnessTest {
     }
 
     @Test void de_drl_feitcreatie_speelt_een_naamloze_creatie() throws Exception {
-        // `naam` is the FIFTH wire-nullable position of this construct, and the only one of the five that no
-        // well-formedness rule covers at all: WF-034 gates zetVeld, joinVeld and the tussenstappen, and WF-094
-        // clause (d) gates the five KEYED tables while feitCreaties is a LIST. So a nameless creation is a fully
+        // `naam` is a wire-nullable position of this construct that no well-formedness rule covers at all: WF-034
+        // gated zetVeld, joinVeld and the tussenstappen until L2 and crosses the symbolic block since, and WF-094
+        // clause (d) gated the five KEYED tables while feitCreaties is a LIST. So a nameless creation is a fully
         // well-formed document that every other executor runs. Measured on the pre-fix jar:
         //     verifier: PASS
         //     ref     : oracle: PASS (10 expectations)

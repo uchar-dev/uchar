@@ -226,8 +226,8 @@ class HerhaaldTypepaarWitnessTest {
         // a field only one reader reaches would still satisfy one of the two.
         // MUTATION FLANK: a creation that set the role of ANOTHER feittype over the same pair moves both
         // readings at once, and the flank names it. Until P2 (2026-09-22) the flank twisted zetVeld; since then
-        // the written field is derived from the creation's binding, so the flank twists the BINDING — a zetVeld
-        // twist alone now changes nothing, which BonenveldWitnessTest pins.
+        // the written field is derived from the creation's binding, so the flank twists the BINDING. Since L2 the
+        // wire has no zetVeld to twist: BonenveldWitnessTest pins that the loader refuses one.
         BeideTakken.groen(ir(DUBBELVERBINDING), JSON.readTree(golden("case1-binnen-venster.json")),
                 "both readings of the created link agree with ref and clingo");
         String verdict = BeideTakken.rood(creatieVerlegd("keurberging", "keurhaven", "keurschuit"), JSON.readTree(golden("case1-binnen-venster.json")),
@@ -353,8 +353,8 @@ class HerhaaldTypepaarWitnessTest {
     }
 
     /** The golden with the creation bound to ANOTHER feittype over the same pair — the mutation the both-sides
-     *  row must catch. Since P2 the written field follows from that binding; twisting {@code zetVeld} alone
-     *  changes nothing (BonenveldWitnessTest). */
+     *  row must catch. Since P2 the written field follows from that binding, and since L2 the wire carries no
+     *  field name beside it (BonenveldWitnessTest pins the loader's refusal of one). */
     private static Path creatieVerlegd(String feittype, String ankerRol, String doelRol) throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);
         for (JsonNode f : IrPad.rulesLijst(ir, "feitCreaties"))

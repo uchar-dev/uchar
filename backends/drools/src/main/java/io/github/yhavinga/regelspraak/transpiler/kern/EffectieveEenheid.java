@@ -21,10 +21,11 @@ import java.util.Objects;
  * annotation. The named positions where that annotation IS the source, and is returned unchanged, are
  * listed below; they are exactly ch. 2.10's, and they are a scope boundary rather than an escape hatch.
  *
- * <p><b>Why.</b> A v0 IR node repeats its type on the wire at positions where that type is a COPY of a
- * declaration (an {@code AttribuutRef}, a {@code ParameterRef}, a {@code DimensieCel} read, a binder read)
- * or a DERIVATION over its operands (an arithmetic node, a Let, a value aggregation). WF-091 makes the
- * copy mechanically true for the reference positions; nothing crosses the derived ones. A consumer that
+ * <p><b>Why.</b> A v0 IR node repeated its type on the wire at positions where that type is a COPY of a
+ * declaration (an {@code AttribuutRef}, a {@code ParameterRef}, a {@code DimensieCel} read, a binder read), and
+ * still does at positions where it is a DERIVATION over its operands (an arithmetic node, a Let, a value
+ * aggregation). Since L2 of the v1 wire migration the reference positions carry no type at all — theirs is the
+ * declaration's ({@link #typeVan}) — and nothing crosses the derived ones mechanically. A consumer that
  * reads the repetition instead of the source therefore answers a different number than {@code ref} and the
  * ASP translator do on the same document — measured before this class existed: a unit lie on a value
  * aggregation's own result type turned 3,75 into 3.750,00 in this backend while ref and clingo stayed put.
@@ -52,7 +53,8 @@ import java.util.Objects;
  *
  * <p><b>Scope.</b> This derives the UNIT only. The soort and the precision of an annotation are equally
  * repetitions, but this backend reads neither for its §4 restatements: it reads {@code isNumeriek}/
- * {@code isDatum} as ROUTING predicates (a soort lie is a different document, crossed by WF-078/WF-091)
+ * {@code isDatum} as ROUTING predicates (a soort lie is a different document, crossed by WF-091; on a binder
+ * read by WF-078 until L2, when the reference annotations left the wire)
  * and it never reads {@code Datatype.decimalen} at all — only {@code Afgerond.decimalen}, a node field.
  * Grafting the derived unit onto the node's own annotation therefore changes exactly what is read and
  * nothing else.
