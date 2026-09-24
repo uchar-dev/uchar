@@ -6518,7 +6518,9 @@ let () =
    the loader's sentence (WF-114), never read as the type's value — a node
    only a hand builds, since an executor's loader refuses it at load. A
    number variant is read through the one number grammar, so a decimal comma
-   is malformed rather than read as the number it resembles. *)
+   is malformed rather than read as the number it resembles — on a node
+   built by hand as well, since the loader refuses such a number too, in
+   WF-081's sentence. *)
 let () =
   let doc waarde : Ir_v0.Ast.document =
     { empty_doc with

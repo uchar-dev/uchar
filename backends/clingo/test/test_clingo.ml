@@ -11141,8 +11141,10 @@ let () =
    as a form name, a value that is not one variant, a field on the node it
    does not belong to, an enum value outside its set. ref, clingo and the
    verifier read the wire through one loader, so this one table witnesses the
-   refusal for all three; the last rows are the two defects an executor
-   refuses at load and the verifier loads for its own rule (Loader.reader).
+   refusal for all three; the last rows are the three defects an executor
+   refuses at load and the verifier loads for its own rule (Loader.reader):
+   a variant its type does not name, a context value outside the closed set
+   and a number outside the case format's grammar.
    The base document is first held loading, with every L4 form in it; each
    row twists exactly one form and pins the loader's sentence. *)
 let () =
@@ -11294,6 +11296,11 @@ let () =
   let som = {|{ "node": "Aggregation", "kind": "SOM", "arguments": [|} in
   let absoluut = {|{ "node": "BuiltinCall", "kind": "ABSOLUTE_WAARDE", "arguments": [|} in
   let tien = {|"value": { "number": "10" }|} in
+  (* four spellings outside the case format's number grammar (WF-081) *)
+  let getallen =
+    [ ("een getal met een komma", "12,50"); ("een getal zonder leidend cijfer", ".5");
+      ("een noemer met een voorloopnul", "25/04"); ("een eenheid in het getal", "12.50 €") ]
+  in
   let variant =
     {|a literal value is exactly one variant: {"number": string}, {"boolean": true or false}, {"text": string}, {"date": string}, {"dateTime": string}, {"enumeration": string} or {"constructor": string}, without a payload|}
   in
@@ -11434,7 +11441,8 @@ let () =
       ("BoundDay.name", ({|{ "node": "BoundDay",|}, {|{ "node": "BoundDay", "name": "de dag",|}), "unknown field 'name'");
       ("BoundDay.type null", ({|{ "node": "BoundDay", "type": { "node": "Date", "precision": "day" }|}, {|{ "node": "BoundDay", "type": null|}),
         "a BoundDay carries its datatype");
-      (* what an executor refuses at load and the verifier loads for its rule *)
+      (* what an executor refuses at load and the verifier loads for its rule;
+         the numbers follow below the list *)
       ( "een variant die het type niet noemt", (tien, {|"value": { "text": "10" }|}),
         "literal value is a text value but its type is a Number: the variant is the one the type names" );
       ( "een datum bij een Booleaan", ({|"value": { "boolean": true }|}, {|"value": { "date": "2026-01-01" }|}),
@@ -11443,11 +11451,38 @@ let () =
         "context value 'de dag' is not one of the two admissible names Rekendatum, Rekenjaar: the context-value name is a closed set, spelled byte for byte" );
       ( "een contextwaarde buiten de gesloten verzameling", ({|"name": "Rekendatum"|}, {|"name": "rekendatum"|}),
         "context value 'rekendatum' is not one of the two admissible names Rekendatum, Rekenjaar: the context-value name is a closed set, spelled byte for byte" ) ]
+    @ List.map
+        (fun (vorm, w) ->
+          ( vorm, (tien, Printf.sprintf {|"value": { "number": "%s" }|} w),
+            "numeric literal lexeme '" ^ w
+            ^ "' is not a number of the case format (an optional '-', digits, an optional '.' and digits, or a rational a/b whose denominator has no leading zero — ch. 4.1)" ))
+        getallen
+    @ [ ( "een getal buiten de grammatica zonder type",
+          (tien ^ {|, "type": |} ^ getal, {|"value": { "number": "1,0" }, "type": null|}),
+          "numeric literal lexeme '1,0' is not a number of the case format" ) ]
   in
   List.iter
     (fun (vorm, (waar, door), needle) ->
       refused_at_load ~name:("L4-laadtabel: " ^ vorm) ~ir:(vervang base ~waar ~door) ~needle)
-    rows
+    rows;
+  (* the executor's refusal of a number outside the grammar IS the
+     verifier's WF-081 finding on the same document: one pointer and one
+     sentence, which the loader and the verifier's arm each spell *)
+  List.iter
+    (fun (vorm, w) ->
+      let j = Yojson.Safe.from_string (vervang base ~waar:tien ~door:(Printf.sprintf {|"value": { "number": "%s" }|} w)) in
+      let bevinding =
+        List.filter
+          (fun (x : Ir_v0.Checks.violation) -> x.wf = "WF-081")
+          (Ir_v0.Checks.all (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier j))
+      in
+      let naam = "L4-laadtabel: " ^ vorm ^ " is de WF-081-bevinding van de verifier" in
+      match Ir_v0.Loader.document j with
+      | (_ : Ir_v0.Ast.document) -> check (naam ^ " (het document laadt)") false
+      | exception Ir_v0.Loader.Error (at, m) ->
+          check (naam ^ " (" ^ at ^ ": " ^ m ^ ")")
+            (bevinding = [ { Ir_v0.Checks.wf = "WF-081"; at; reason = m } ]))
+    getallen
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

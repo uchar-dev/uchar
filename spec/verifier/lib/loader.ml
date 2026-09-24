@@ -62,9 +62,10 @@
    rule's (WF-081, WF-084, WF-095). Two other defects are a verifier rule's
    and not the schema's, which cannot cross them: a value variant that is
    not the one the literal's type names (WF-114) and a context-value name
-   outside the closed set (WF-098). The verifier loads both so the rule can
-   cite them; every other reader refuses them here, in the rule's own
-   sentence ([reader]). *)
+   outside the closed set (WF-098). The verifier loads all of these so the
+   rule can cite them; every other reader refuses the last two here, and a
+   number outside the case format's grammar (WF-081) as well, in the rule's
+   own sentence ([reader]). *)
 
 open Ast
 
@@ -1679,25 +1680,47 @@ let presentatie_annotaties (j : json) : string list =
    frontend — is an [Executor] and refuses both at load, in the rule's own
    sentence without its number ([Checks.literal_variant_refusal],
    [Checks.context_value_refusal]): no evaluator reads {"text": "5"} under
-   a Number as a number, or a session value that does not exist. *)
+   a Number as a number, or a session value that does not exist. A number
+   variant outside the case format's number grammar (WF-081) is refused the
+   same way ([number_lexeme_refusal]): the Drools loader refuses it at load,
+   and an executor that met it only at evaluation would refuse the same
+   document in another phase and in other words. *)
 type reader = Verifier | Executor
 
+(* WF-081's sentence without its number, read with the verifier's grammar
+   ([Checks.lexeme_bare_number]); the verifier's arm spells the same
+   sentence, and the executors' suites hold the two equal. *)
+let number_lexeme_refusal w =
+  if Checks.lexeme_bare_number w then None
+  else
+    Some
+      ("numeric literal lexeme '" ^ w
+     ^ "' is not a number of the case format (an optional '-', digits, an optional '.' and \
+        digits, or a rational a/b whose denominator has no leading zero — ch. 4.1)")
+
 (* The executor's refusals, after the structural load: every Literal and
-   ContextValue node of the document as written, in document order. A
+   ContextValue node of the document as written, in document order, a
+   literal's variant crossed against its type before its number is read. A
    literal without a type is WF-034's typeless value node, with no type to
-   cross its variant against. *)
+   cross its variant against; a number it carries is read all the same. *)
 let executor_refusals (j : json) =
   let rec walk path = function
     | `Assoc kvs ->
         (match List.assoc_opt "node" kvs with
         | Some (`String "Literal") -> (
-            match opt (path / "type") datatype (field path kvs "type") with
+            let variant = literal_variant (path / "value") (field path kvs "value") in
+            (match opt (path / "type") datatype (field path kvs "type") with
             | None -> ()
             | Some typ -> (
-                let variant = literal_variant (path / "value") (field path kvs "value") in
                 match Checks.literal_variant_refusal variant typ with
                 | Some sentence -> fail (path / "value") sentence
-                | None -> ()))
+                | None -> ()));
+            match variant with
+            | Lv_number w -> (
+                match number_lexeme_refusal w with
+                | Some sentence -> fail (path / "value") sentence
+                | None -> ())
+            | _ -> ())
         | Some (`String "ContextValue") -> (
             match Checks.context_value_refusal (str (path / "name") (field path kvs "name")) with
             | Some sentence -> fail (path / "name") sentence
