@@ -1351,7 +1351,7 @@ public final class IrLoader {
             List<RolBindingRef> pad = rolBindingLijst(n, p, "sourcePath");
             if (pad.size() < 2)
                 throw new Refusal("Aggregation.sourcePath", "a sourcePath carries at least TWO steps, found "
-                        + pad.size() + " — the one-step range is spelled sourceRole (WF-102 (b))");
+                        + pad.size() + " — the one-step range is spelled sourceRole");
             if (!isLedenVouwbron(n)) throw new Documentfout(p + "/sourcePath", BRONPAD_C);
             bronPaden.put(f, List.copyOf(pad));
         }
@@ -1432,8 +1432,9 @@ public final class IrLoader {
             if (weigering != null) throw new Documentfout(p + "/value", weigering);
         }
         if (variant.equals("number") && lexeem.contains(","))
-            throw new Documentfout(p + "/value", "numeric literal lexeme '" + lexeem + "' is not a bare number (sign,"
-                    + " digits, optional fraction — ch. 4.1)");
+            throw new Documentfout(p + "/value", "numeric literal lexeme '" + lexeem + "' is not a number of the case"
+                    + " format (an optional '-', digits, an optional '.' and digits, or a rational a/b whose denominator"
+                    + " has no leading zero — ch. 4.1)");
         return new Expr.Literal(lexeem, type, bron(n));
     }
 
@@ -1502,7 +1503,7 @@ public final class IrLoader {
     /** WF-102 (c), the one sentence for both halves of the position: a path ranges a value fold's set source and
      *  nothing else. */
     private static final String BRONPAD_C = "a sourcePath is admissible only as the range of a single-argument VALUE"
-            + " fold's set source — a count's range is one step, spelled sourceRole (WF-102 (c))";
+            + " fold's set source — a count's range is one step, spelled sourceRole";
 
     /** WF-102 (c): is this {@code Aggregation} node a single-argument instance fold — the one position a range
      *  stands at? Asked of the RAW node: a declared {@code elementType} plus exactly one argument that is a read
@@ -1579,7 +1580,7 @@ public final class IrLoader {
         if (Namen.norm(el.naam).equals(Namen.norm(s.naam))) return;
         throw new Documentfout(plekken.get(f) + "/elementType", "the elementType '" + el.naam
                 + "' of a TOTAAL without a range is not the fold subject '" + s.naam + "': without a range the fold is"
-                + " the subject's own read, so its elementType must name the subject type (WF-083 (c))");
+                + " the subject's own read, so its elementType must name the subject type");
     }
 
     /** The fold kinds that read a VALUE per contributor (IR-SPEC ch. 4.3) — every aggregation kind but
@@ -1942,7 +1943,7 @@ public final class IrLoader {
         if (!t.isObject() || !"AttribuutRef".equals(text(t, "node")))
             throw new Documentfout(pad + "/target", DOEL_ATTRIBUUTREF);
         Expr.AttribuutRef doel = (Expr.AttribuutRef) expr(t);
-        keurLedensoort(doel, soort, pad + "/target");
+        keurLedensoort(doel, text(t, "objecttype"), soort, pad + "/target");
         ResolvedRegel r = new ResolvedRegel(versie.naam(), soort, doel, expr(knoop(n, pad, "value")),
                 conditie(knoopVeld(n, "condition")), validity(n, pad), annotaties);
         // WF-022's value clause: a characteristic attribution writes the boolean constant true. Neither branch
@@ -1966,9 +1967,10 @@ public final class IrLoader {
             + " a computing version, never an initialisation";
     static final String DOEL_ATTRIBUUTREF = "the target of a rule version is an AttribuutRef";
 
-    /** WF-022, the member-kind arm and the name that is both (IR-SPEC ch. 3.1): the verifier's sentences. A target
-     *  whose type or member does not resolve is left to the rule that reports it. */
-    private void keurLedensoort(Expr.AttribuutRef doel, ResolvedRegel.Soort soort, String plek) {
+    /** WF-022, the member-kind arm and the name that is both (IR-SPEC ch. 3.1): the verifier's sentences, which
+     *  name the member and the type as the target writes them. A target whose type or member does not resolve is
+     *  left to the rule that reports it. */
+    private void keurLedensoort(Expr.AttribuutRef doel, String typeNaam, ResolvedRegel.Soort soort, String plek) {
         Objecttype ot = doel.objecttype();
         String naam = doel.attribuut();
         if (ot == null || naam == null) return;
@@ -1977,16 +1979,22 @@ public final class IrLoader {
             for (String a : t.attributen.keySet()) attribuut |= Namen.norm(a).equals(Namen.norm(naam));
             for (String k : t.kenmerken) kenmerk |= Namen.norm(k).equals(Namen.norm(naam));
         }
-        if (attribuut && kenmerk) throw new Documentfout(plek, doelTweeledig(naam, ot.naam));
-        if (soort == ResolvedRegel.Soort.KENMERKTOEKENNING && attribuut) throw new Documentfout(plek, KENMERKDOEL);
-        if (soort != ResolvedRegel.Soort.KENMERKTOEKENNING && kenmerk) throw new Documentfout(plek, ATTRIBUUTDOEL);
+        if (attribuut && kenmerk) throw new Documentfout(plek, doelTweeledig(naam, typeNaam));
+        if (soort == ResolvedRegel.Soort.KENMERKTOEKENNING && attribuut)
+            throw new Documentfout(plek, kenmerkdoel(naam, typeNaam));
+        if (soort != ResolvedRegel.Soort.KENMERKTOEKENNING && kenmerk)
+            throw new Documentfout(plek, attribuutdoel(naam, typeNaam));
     }
 
     /** WF-022's two member-kind sentences and the one for a name that is both. */
-    static final String KENMERKDOEL = "a version without presentation and without initialisation attributes a"
-            + " characteristic, so its target MUST name one";
-    static final String ATTRIBUUTDOEL = "a version with presentation or with initialisation true writes an attribute,"
-            + " so its target MUST name one";
+    static String kenmerkdoel(String naam, String type) {
+        return "a version without a presentation and without initialisation attributes a characteristic, so its"
+                + " target MUST name one, and '" + naam + "' is an attribute of '" + type + "'";
+    }
+    static String attribuutdoel(String naam, String type) {
+        return "a version with a presentation or with initialisation true writes an attribute, so its target MUST"
+                + " name one, and '" + naam + "' is a characteristic of '" + type + "'";
+    }
     static String doelTweeledig(String naam, String type) {
         return "target '" + naam + "' names both an attribute and a characteristic of '" + type + "': which member a"
                 + " rule writes decides its kind, and this name decides nothing";

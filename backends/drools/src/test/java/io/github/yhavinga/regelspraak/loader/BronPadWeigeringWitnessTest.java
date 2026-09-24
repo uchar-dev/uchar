@@ -76,12 +76,14 @@ class BronPadWeigeringWitnessTest {
     @Test void een_te_kort_bronpad_wordt_geweigerd() throws Exception {
         ObjectNode leeg = (ObjectNode) anker();
         ((ObjectNode) vouw(leeg)).putArray("sourcePath");
-        assertTrue(weigering(leeg).contains("WF-102 (b)"), "een gesteld bereik dat niets bereikt");
+        assertTrue(weigering(leeg).contains("a sourcePath carries at least TWO steps, found 0 — the one-step range is"
+                + " spelled sourceRole"), "een gesteld bereik dat niets bereikt");
 
         ObjectNode een = (ObjectNode) anker();
         ArrayNode pad = (ArrayNode) vouw(een).get("sourcePath");
         pad.remove(1);
-        assertTrue(weigering(een).contains("WF-102 (b)"), "één stap is de sourceRole-spelling");
+        assertTrue(weigering(een).contains("a sourcePath carries at least TWO steps, found 1 — the one-step range is"
+                + " spelled sourceRole"), "één stap is de sourceRole-spelling");
     }
 
     /** (c) the position: the single source of an instance fold, exactly where sourceRole stands. A source that
@@ -97,7 +99,7 @@ class BronPadWeigeringWitnessTest {
                 "alleen de bron van een eenargumentsvouw draagt een bereik");
         assertEquals("/rules/resolvedRegels/0/versions/0/value/sourcePath", e.plek(), e.getMessage());
         assertTrue(e.getMessage().contains("a sourcePath is admissible only as the range of a single-argument VALUE"
-                + " fold's set source — a count's range is one step, spelled sourceRole (WF-102 (c))"), e.getMessage());
+                + " fold's set source — a count's range is one step, spelled sourceRole"), e.getMessage());
     }
 
     /** Without the field the fold has no range at all, and a MINIMUM over one source with an element type is no

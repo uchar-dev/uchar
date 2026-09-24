@@ -281,7 +281,7 @@ class ReferentielaagWeigeringWitnessTest {
         IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/2/versions/0/value/elementType");
         assertTrue(e.getMessage().contains("the elementType 'Vondst' of a TOTAAL without a range is not the fold"
                 + " subject 'Jutter': without a range the fold is the subject's own read, so its elementType must"
-                + " name the subject type (WF-083 (c))"), e.getMessage());
+                + " name the subject type"), e.getMessage());
     }
 
     @Test void een_kenmerk_als_bron_van_een_waardevouw_weigert() throws Exception {
@@ -303,14 +303,14 @@ class ReferentielaagWeigeringWitnessTest {
         bron(ir, 0).put("attribuut", "geborgen vondsten").put("objecttype", "Jutter");
         IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/0/versions/0/value/sourcePath");
         assertTrue(e.getMessage().contains("a sourcePath is admissible only as the range of a single-argument VALUE"
-                + " fold's set source — a count's range is one step, spelled sourceRole (WF-102 (c))"), e.getMessage());
+                + " fold's set source — a count's range is one step, spelled sourceRole"), e.getMessage());
 
         // ...whatever the source reads: with a null name the source check has nothing to judge, and until the
         // advisory round the count then passed and was counted along the path (the lens measured "verwacht 2,
         // werkelijk 3" on the exec branch)
         bron(ir, 0).putNull("attribuut");
         e = weigert(ir, "/rules/resolvedRegels/0/versions/0/value/sourcePath");
-        assertTrue(e.getMessage().contains("(WF-102 (c))"), e.getMessage());
+        assertTrue(e.getMessage().contains("a count's range is one step, spelled sourceRole"), e.getMessage());
     }
 
     // ---------------- a characteristic at a value position (WF-080) ----------------
