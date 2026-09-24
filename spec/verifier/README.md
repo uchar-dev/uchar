@@ -2,7 +2,7 @@
 
 Machine enforcement of the well-formedness rules (`WF-###`) of
 `spec/IR-SPEC.md`, over IR documents in the `uchar-ir-v1` wire format, in
-its L3 shape (`spec/schema/uchar-ir-v1.schema.json`).
+its L5 shape (`spec/schema/uchar-ir-v1.schema.json`).
 
 The project is an OCaml dune build in two parts:
 
@@ -20,13 +20,17 @@ The project is an OCaml dune build in two parts:
   its v0 constructors as well: the loader reads a `Number` whose unit is `%`
   as a percentage, any other `Number` as a plain number, and a `Date` by its
   precision, so every reader keeps its typing families; a unit's factor is
-  an exact rational in memory too. The library is still named
+  an exact rational in memory too. Since L5 the wire spells every node,
+  key and enumeration value with its IR-SPEC name while the AST keeps its
+  v0 constructors and fields: the loader reads the one onto the other, the
+  enumeration values through one translation table (`spelling.ml`), which
+  the two OCaml emitters use to write them. The library is still named
   `uchar-ir-v0`; renaming it is a change to every reader.
 - `bin/` — the `verifier` executable: `verifier <ir.json>` exits 0 when
   the document is well-formed, non-zero with one `WF-### FAIL <path>:
   <reason>` line per violation otherwise. `<path>` is a JSON pointer into
   the document (`/model/objectTypes/0/attributes/1/timeline/count`,
-  `/rules/resolvedRegels/2/voorwaarde`), as a load error's is; below a
+  `/rules/rules/2/versions/0/condition`), as a load error's is; below a
   node a check may add a segment of its own reading, such as a struct
   field by its name.
 
