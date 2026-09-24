@@ -1117,86 +1117,87 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Kenmerktoekenning persoon minderjarig",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "minderjarig",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "Een Natuurlijk persoon is minderjarig"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "KLEINER",
-          "links": {
-            "node": "Functie",
-            "kind": "TIJDSDUUR",
-            "argumenten": [
-              {
-                "node": "AttribuutRef",
-                "attribuut": "geboortedatum",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn geboortedatum"
-              },
-              {
-                "node": "AttribuutRef",
-                "attribuut": "vluchtdatum",
-                "objecttype": "Vlucht",
-                "bron": "de vluchtdatum van zijn reis",
-                "navigatieBindingen": [
-                  {
-                    "node": "RolBinding",
-                    "feittype": "Vlucht van natuurlijke personen",
-                    "rol": "reis"
-                  }
-                ]
-              }
-            ],
-            "elementObjecttype": null,
-            "leegwaarde": null,
-            "filter": null,
-            "dimensieSelectie": null,
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "jr",
-                "system": "Tijd",
-                "canonical": "mnd",
-                "factorToCanonical": {
-                  "num": 12,
-                  "den": 1
-                }
-              }
+        "node": "Rule",
+        "name": "Kenmerktoekenning persoon minderjarig",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren",
-            "granulariteit": null
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "volwassenleeftijd",
-            "bron": "de volwassenleeftijd"
-          },
-          "periode": null,
-          "bron": "X kleiner is dan de volwassenleeftijd"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "minderjarig",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "Een Natuurlijk persoon is minderjarig"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "KLEINER",
+              "links": {
+                "node": "BuiltinCall",
+                "kind": "TIJDSDUUR",
+                "arguments": [
+                  {
+                    "node": "AttribuutRef",
+                    "attribuut": "geboortedatum",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn geboortedatum"
+                  },
+                  {
+                    "node": "AttribuutRef",
+                    "attribuut": "vluchtdatum",
+                    "objecttype": "Vlucht",
+                    "bron": "de vluchtdatum van zijn reis",
+                    "navigatieBindingen": [
+                      {
+                        "node": "RolBinding",
+                        "feittype": "Vlucht van natuurlijke personen",
+                        "rol": "reis"
+                      }
+                    ]
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "jr",
+                    "system": "Tijd",
+                    "canonical": "mnd",
+                    "factorToCanonical": {
+                      "num": 12,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren"
+              },
+              "rechts": {
+                "node": "ParameterRef",
+                "parameter": "volwassenleeftijd",
+                "bron": "de volwassenleeftijd"
+              },
+              "periode": null,
+              "bron": "X kleiner is dan de volwassenleeftijd"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1204,7 +1205,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -1117,60 +1117,60 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Leeftijd oudste passagier",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "leeftijd van de oudste passagier",
-          "objecttype": "Vlucht",
-          "bron": "De leeftijd van de oudste passagier van een reis"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MAXIMUM",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "Leeftijd oudste passagier",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "leeftijd",
-              "objecttype": "Natuurlijk persoon",
-              "bron": "de leeftijden van alle passagiers van de reis"
-            }
-          ],
-          "elementObjecttype": "Natuurlijk persoon",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "jr",
-              "system": "Tijd",
-              "canonical": "mnd",
-              "factorToCanonical": {
-                "num": 12,
-                "den": 1
-              }
-            }
-          },
-          "bron": "de maximale waarde van de leeftijden van alle passagiers van de reis",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "Vlucht van natuurlijke personen",
-            "rol": "passagier"
+              "attribuut": "leeftijd van de oudste passagier",
+              "objecttype": "Vlucht",
+              "bron": "De leeftijd van de oudste passagier van een reis"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "MAXIMUM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "leeftijd",
+                  "objecttype": "Natuurlijk persoon",
+                  "bron": "de leeftijden van alle passagiers van de reis"
+                }
+              ],
+              "elementType": "Natuurlijk persoon",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "Vlucht van natuurlijke personen",
+                "rol": "passagier"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "jr",
+                  "system": "Tijd",
+                  "canonical": "mnd",
+                  "factorToCanonical": {
+                    "num": 12,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "de maximale waarde van de leeftijden van alle passagiers van de reis"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1178,7 +1178,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

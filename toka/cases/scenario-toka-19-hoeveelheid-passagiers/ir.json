@@ -1117,50 +1117,50 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Hoeveelheid passagiers van een reis",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "hoeveelheid passagiers",
-          "objecttype": "Vlucht",
-          "bron": "De hoeveelheid passagiers van een reis"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "Hoeveelheid passagiers van een reis",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "passagier",
+              "attribuut": "hoeveelheid passagiers",
               "objecttype": "Vlucht",
-              "bron": "passagiers van de reis"
-            }
-          ],
-          "elementObjecttype": "Natuurlijk persoon",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal passagiers van de reis",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "Vlucht van natuurlijke personen",
-            "rol": "passagier"
+              "bron": "De hoeveelheid passagiers van een reis"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "passagier",
+                  "objecttype": "Vlucht",
+                  "bron": "passagiers van de reis"
+                }
+              ],
+              "elementType": "Natuurlijk persoon",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "Vlucht van natuurlijke personen",
+                "rol": "passagier"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal passagiers van de reis"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1168,7 +1168,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -1117,105 +1117,111 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Recht op Duurzaamheidskorting alternatief",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "recht op duurzaamheidskorting",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "Een passagier heeft recht op duurzaamheidskorting"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Kenmerk",
-              "kenmerk": "duurzaam",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "zijn reis is duurzaam",
-              "navigatieBinding": {
-                "node": "RolBinding",
-                "feittype": "Vlucht van natuurlijke personen",
-                "rol": "reis"
-              }
+        "node": "Rule",
+        "name": "Recht op Duurzaamheidskorting alternatief",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "afstand tot bestemming",
-                "objecttype": "Vlucht",
-                "bron": "de afstand tot bestemming in kilometers van zijn reis",
-                "navigatieBindingen": [
-                  {
-                    "node": "RolBinding",
-                    "feittype": "Vlucht van natuurlijke personen",
-                    "rol": "reis"
-                  }
-                ]
-              },
-              "rechts": {
-                "node": "ParameterRef",
-                "parameter": "duurzaamheidskorting minimale afstand",
-                "bron": "de duurzaamheidskorting minimale afstand"
-              },
-              "periode": null,
-              "bron": "de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "recht op duurzaamheidskorting",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "Een passagier heeft recht op duurzaamheidskorting"
             },
-            {
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
               "node": "Samengesteld",
-              "kwantor": "GEEN",
+              "kwantor": "ALLE",
               "drempel": 0,
               "onderdelen": [
                 {
                   "node": "Kenmerk",
-                  "kenmerk": "passagier jonger dan 18 jaar",
+                  "kenmerk": "duurzaam",
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "hij is een passagier jonger dan 18 jaar"
+                  "bron": "zijn reis is duurzaam",
+                  "navigatieBinding": {
+                    "node": "RolBinding",
+                    "feittype": "Vlucht van natuurlijke personen",
+                    "rol": "reis"
+                  }
                 },
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "passagier van 18 tot en met 24 jaar",
-                  "negatie": false,
-                  "eigenaar": null,
+                  "node": "Vergelijking",
+                  "op": "GROTER_OF_GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "afstand tot bestemming",
+                    "objecttype": "Vlucht",
+                    "bron": "de afstand tot bestemming in kilometers van zijn reis",
+                    "navigatieBindingen": [
+                      {
+                        "node": "RolBinding",
+                        "feittype": "Vlucht van natuurlijke personen",
+                        "rol": "reis"
+                      }
+                    ]
+                  },
+                  "rechts": {
+                    "node": "ParameterRef",
+                    "parameter": "duurzaamheidskorting minimale afstand",
+                    "bron": "de duurzaamheidskorting minimale afstand"
+                  },
                   "periode": null,
-                  "bron": "hij is een passagier van 18 tot en met 24 jaar"
+                  "bron": "de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand"
                 },
                 {
-                  "node": "Kenmerk",
-                  "kenmerk": "passagier van 25 tot en met 64 jaar",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
-                  "bron": "hij is een passagier van 25 tot en met 64 jaar"
+                  "node": "Samengesteld",
+                  "kwantor": "GEEN",
+                  "drempel": 0,
+                  "onderdelen": [
+                    {
+                      "node": "Kenmerk",
+                      "kenmerk": "passagier jonger dan 18 jaar",
+                      "negatie": false,
+                      "eigenaar": null,
+                      "periode": null,
+                      "bron": "hij is een passagier jonger dan 18 jaar"
+                    },
+                    {
+                      "node": "Kenmerk",
+                      "kenmerk": "passagier van 18 tot en met 24 jaar",
+                      "negatie": false,
+                      "eigenaar": null,
+                      "periode": null,
+                      "bron": "hij is een passagier van 18 tot en met 24 jaar"
+                    },
+                    {
+                      "node": "Kenmerk",
+                      "kenmerk": "passagier van 25 tot en met 64 jaar",
+                      "negatie": false,
+                      "eigenaar": null,
+                      "periode": null,
+                      "bron": "hij is een passagier van 25 tot en met 64 jaar"
+                    }
+                  ],
+                  "bron": "hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
                 }
               ],
-              "bron": "hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
-            }
-          ],
-          "bron": "hij aan alle volgende voorwaarden voldoet: - zijn reis is duurzaam - de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand - hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "hij aan alle volgende voorwaarden voldoet: - zijn reis is duurzaam - de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand - hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1223,7 +1229,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

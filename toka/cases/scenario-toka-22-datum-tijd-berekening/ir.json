@@ -1117,49 +1117,49 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Datum-tijd voor het berekenen van de belasting op basis van afstand",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "datum-tijd voor het berekenen van de belasting op basis van afstand",
-          "objecttype": "Vlucht",
-          "bron": "De datum-tijd voor het berekenen van de belasting op basis van afstand van een vlucht"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "EERSTE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "verwachte datum-tijd van vertrek",
-              "objecttype": "Vlucht",
-              "bron": "de verwachte datum-tijd van vertrek van de vlucht"
+        "node": "Rule",
+        "name": "Datum-tijd voor het berekenen van de belasting op basis van afstand",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "daadwerkelijke datum-tijd van vertrek",
+              "attribuut": "datum-tijd voor het berekenen van de belasting op basis van afstand",
               "objecttype": "Vlucht",
-              "bron": "de daadwerkelijke datum-tijd van vertrek van de vlucht"
-            }
-          ],
-          "elementObjecttype": "Vlucht",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Date",
-            "precision": "millisecond"
-          },
-          "bron": "de eerste van de verwachte datum-tijd van vertrek van de vlucht en de daadwerkelijke datum-tijd van vertrek van de vlucht",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De datum-tijd voor het berekenen van de belasting op basis van afstand van een vlucht"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "EERSTE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "verwachte datum-tijd van vertrek",
+                  "objecttype": "Vlucht",
+                  "bron": "de verwachte datum-tijd van vertrek van de vlucht"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "daadwerkelijke datum-tijd van vertrek",
+                  "objecttype": "Vlucht",
+                  "bron": "de daadwerkelijke datum-tijd van vertrek van de vlucht"
+                }
+              ],
+              "elementType": "Vlucht",
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "bron": "de eerste van de verwachte datum-tijd van vertrek van de vlucht en de daadwerkelijke datum-tijd van vertrek van de vlucht"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1167,7 +1167,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

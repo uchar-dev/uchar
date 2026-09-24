@@ -1117,349 +1117,394 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Woonregio factor 1",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "woonregio factor",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "de woonregio factor van een Natuurlijk persoon"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "1",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "1"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 1,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Friesland",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Friesland\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Friesland\""
+        "node": "Rule",
+        "name": "Woonregio factor 1",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Groningen",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Groningen\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Groningen\""
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "woonregio factor",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "de woonregio factor van een Natuurlijk persoon"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "1"
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Drenthe",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Drenthe\""
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Drenthe\""
+              "bron": "1"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Zeeland",
-                "type": {
-                  "node": "Tekst"
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 1,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Friesland"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Friesland\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Friesland\""
                 },
-                "bron": "\"Zeeland\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Zeeland\""
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Groningen"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Groningen\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Groningen\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Drenthe"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Drenthe\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Drenthe\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Zeeland"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Zeeland\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Zeeland\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Limburg"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Limburg\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Limburg\""
+                }
+              ],
+              "bron": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Friesland\" \u2022 zijn woonprovincie gelijk is aan \"Groningen\" \u2022 zijn woonprovincie gelijk is aan \"Drenthe\" \u2022 zijn woonprovincie gelijk is aan \"Zeeland\" \u2022 zijn woonprovincie gelijk is aan \"Limburg\"."
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Limburg",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Limburg\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Limburg\""
-            }
-          ],
-          "bron": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Friesland\" \u2022 zijn woonprovincie gelijk is aan \"Groningen\" \u2022 zijn woonprovincie gelijk is aan \"Drenthe\" \u2022 zijn woonprovincie gelijk is aan \"Zeeland\" \u2022 zijn woonprovincie gelijk is aan \"Limburg\"."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Woonregio factor 2",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "woonregio factor",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "de woonregio factor van een Natuurlijk persoon"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "2",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "2"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 1,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Noord-Brabant",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Noord-Brabant\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Noord-Brabant\""
+        "node": "Rule",
+        "name": "Woonregio factor 2",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Gelderland",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Gelderland\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Gelderland\""
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "woonregio factor",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "de woonregio factor van een Natuurlijk persoon"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "2"
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Overijssel",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Overijssel\""
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Overijssel\""
+              "bron": "2"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Flevoland",
-                "type": {
-                  "node": "Tekst"
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 1,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Noord-Brabant"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Noord-Brabant\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Noord-Brabant\""
                 },
-                "bron": "\"Flevoland\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Flevoland\""
-            }
-          ],
-          "bron": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Noord-Brabant\" \u2022 zijn woonprovincie gelijk is aan \"Gelderland\" \u2022 zijn woonprovincie gelijk is aan \"Overijssel\" \u2022 zijn woonprovincie gelijk is aan \"Flevoland\"."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Gelderland"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Gelderland\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Gelderland\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Overijssel"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Overijssel\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Overijssel\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Flevoland"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Flevoland\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Flevoland\""
+                }
+              ],
+              "bron": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Noord-Brabant\" \u2022 zijn woonprovincie gelijk is aan \"Gelderland\" \u2022 zijn woonprovincie gelijk is aan \"Overijssel\" \u2022 zijn woonprovincie gelijk is aan \"Flevoland\"."
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Woonregio factor 3",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "woonregio factor",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "de woonregio factor van een Natuurlijk persoon"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "3",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "3"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 1,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Noord-Holland",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Noord-Holland\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Noord-Holland\""
+        "node": "Rule",
+        "name": "Woonregio factor 3",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Zuid-Holland",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Zuid-Holland\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Zuid-Holland\""
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "woonregio factor",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "de woonregio factor van een Natuurlijk persoon"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "3"
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Utrecht",
-                "type": {
-                  "node": "Tekst"
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "3"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 1,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Noord-Holland"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Noord-Holland\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Noord-Holland\""
                 },
-                "bron": "\"Utrecht\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Utrecht\""
-            }
-          ],
-          "bron": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Noord-Holland\" \u2022 zijn woonprovincie gelijk is aan \"Zuid-Holland\" \u2022 zijn woonprovincie gelijk is aan \"Utrecht\"."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Zuid-Holland"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Zuid-Holland\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Zuid-Holland\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Utrecht"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Utrecht\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Utrecht\""
+                }
+              ],
+              "bron": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Noord-Holland\" \u2022 zijn woonprovincie gelijk is aan \"Zuid-Holland\" \u2022 zijn woonprovincie gelijk is aan \"Utrecht\"."
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1467,7 +1512,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

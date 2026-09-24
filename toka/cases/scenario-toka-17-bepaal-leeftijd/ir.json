@@ -1117,68 +1117,67 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bepaal leeftijd",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "leeftijd",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "De leeftijd van een Natuurlijk persoon"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSDUUR",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "geboortedatum",
-              "objecttype": "Natuurlijk persoon",
-              "bron": "zijn geboortedatum"
+        "node": "Rule",
+        "name": "bepaal leeftijd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vluchtdatum",
-              "objecttype": "Vlucht",
-              "bron": "de vluchtdatum van zijn reis",
-              "navigatieBindingen": [
+              "attribuut": "leeftijd",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "De leeftijd van een Natuurlijk persoon"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSDUUR",
+              "arguments": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "Vlucht van natuurlijke personen",
-                  "rol": "reis"
+                  "node": "AttribuutRef",
+                  "attribuut": "geboortedatum",
+                  "objecttype": "Natuurlijk persoon",
+                  "bron": "zijn geboortedatum"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vluchtdatum",
+                  "objecttype": "Vlucht",
+                  "bron": "de vluchtdatum van zijn reis",
+                  "navigatieBindingen": [
+                    {
+                      "node": "RolBinding",
+                      "feittype": "Vlucht van natuurlijke personen",
+                      "rol": "reis"
+                    }
+                  ]
                 }
-              ]
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "jr",
-              "system": "Tijd",
-              "canonical": "mnd",
-              "factorToCanonical": {
-                "num": 12,
-                "den": 1
-              }
-            }
-          },
-          "bron": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "jr",
+                  "system": "Tijd",
+                  "canonical": "mnd",
+                  "factorToCanonical": {
+                    "num": 12,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1186,7 +1185,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -1117,42 +1117,46 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Verwachte datum-tijd van aankomst van een Vlucht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "verwachte datum-tijd van aankomst",
-          "objecttype": "Vlucht",
-          "bron": "De verwachte datum-tijd van aankomst van een vlucht"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "verwachte Datum-tijd van vertrek",
-            "objecttype": "Vlucht",
-            "bron": "de verwachte Datum-tijd van vertrek van de Vlucht"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "verwachte duur",
-            "objecttype": "Vlucht",
-            "bron": "de verwachte duur van de vlucht"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "millisecond"
-          },
-          "bron": "de verwachte Datum-tijd van vertrek van de Vlucht plus de verwachte duur van de vlucht"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "Verwachte datum-tijd van aankomst van een Vlucht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "verwachte datum-tijd van aankomst",
+              "objecttype": "Vlucht",
+              "bron": "De verwachte datum-tijd van aankomst van een vlucht"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "verwachte Datum-tijd van vertrek",
+                "objecttype": "Vlucht",
+                "bron": "de verwachte Datum-tijd van vertrek van de Vlucht"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "verwachte duur",
+                "objecttype": "Vlucht",
+                "bron": "de verwachte duur van de vlucht"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "bron": "de verwachte Datum-tijd van vertrek van de Vlucht plus de verwachte duur van de vlucht"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1160,7 +1164,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

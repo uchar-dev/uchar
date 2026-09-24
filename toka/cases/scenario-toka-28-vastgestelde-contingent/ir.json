@@ -1119,74 +1119,72 @@
     "resolvedDagsoorten": [],
     "objectCreaties": [
       {
-        "node": "ResolvedObjectCreatie",
-        "naam": "vastgestelde contingent treinmiles",
-        "nieuwType": "Contingent treinmiles",
-        "subject": "Vlucht",
-        "toekenningen": [
+        "node": "ObjectCreation",
+        "name": "vastgestelde contingent treinmiles",
+        "versions": [
           {
-            "node": "Toekenning",
-            "attribuut": "aantal treinmiles op basis van aantal passagiers",
-            "waarde": {
-              "node": "Binair",
-              "op": "MAAL",
-              "links": {
-                "node": "Functie",
-                "kind": "AANTAL",
-                "argumenten": [
-                  {
-                    "node": "AttribuutRef",
-                    "attribuut": "passagier",
-                    "objecttype": "Vlucht",
-                    "bron": "passagiers van de Vlucht"
-                  }
-                ],
-                "elementObjecttype": "Natuurlijk persoon",
-                "leegwaarde": null,
-                "filter": null,
-                "dimensieSelectie": null,
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
+            "createdType": "Contingent treinmiles",
+            "subject": "Vlucht",
+            "initialisations": [
+              {
+                "node": "Toekenning",
+                "attribuut": "aantal treinmiles op basis van aantal passagiers",
+                "waarde": {
+                  "node": "Binair",
+                  "op": "MAAL",
+                  "links": {
+                    "node": "Aggregation",
+                    "kind": "AANTAL",
+                    "arguments": [
+                      {
+                        "node": "AttribuutRef",
+                        "attribuut": "passagier",
+                        "objecttype": "Vlucht",
+                        "bron": "passagiers van de Vlucht"
+                      }
+                    ],
+                    "elementType": "Natuurlijk persoon",
+                    "sourceRole": {
+                      "node": "RolBinding",
+                      "feittype": "Vlucht van natuurlijke personen",
+                      "rol": "passagier"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    },
+                    "bron": "het aantal passagiers van de Vlucht"
+                  },
+                  "rechts": {
+                    "node": "ParameterRef",
+                    "parameter": "aantal treinmiles per passagier voor contingent",
+                    "bron": "het aantal treinmiles per passagier voor contingent"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "het aantal passagiers van de Vlucht maal het aantal treinmiles per passagier voor contingent"
                 },
-                "bron": "het aantal passagiers van de Vlucht",
-                "granulariteit": null,
-                "bronRol": {
-                  "node": "RolBinding",
-                  "feittype": "Vlucht van natuurlijke personen",
-                  "rol": "passagier"
-                }
-              },
-              "rechts": {
-                "node": "ParameterRef",
-                "parameter": "aantal treinmiles per passagier voor contingent",
-                "bron": "het aantal treinmiles per passagier voor contingent"
-              },
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "het aantal passagiers van de Vlucht maal het aantal treinmiles per passagier voor contingent"
-            },
-            "kenmerk": false
+                "kenmerk": false
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            }
           }
-        ],
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

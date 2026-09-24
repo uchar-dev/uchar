@@ -1120,35 +1120,37 @@
     "objectCreaties": [],
     "verdelingen": [
       {
-        "node": "ResolvedVerdeling",
-        "naam": "Verdeling treinmiles op basis van leeftijd, woonregio factor, met maximum waarde en afronding",
-        "bronType": "Contingent treinmiles",
-        "bronAttribuut": "totaal aantal treinmiles",
-        "doelType": "Natuurlijk persoon",
-        "doelAttribuut": "treinmiles",
-        "methode": "OP_VOLGORDE",
-        "ratoAttribuut": "woonregio factor",
-        "maximumAttribuut": "maximaal aantal te ontvangen treinmiles",
-        "afrondingDecimalen": 0,
-        "restantAttribuut": "restant na verdeling",
-        "groepeerAttribuut": "leeftijd",
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "verdeling contingent treinmiles over passagiers",
-          "rol": "passagier met recht op treinmiles"
-        }
+        "node": "Allocation",
+        "name": "Verdeling treinmiles op basis van leeftijd, woonregio factor, met maximum waarde en afronding",
+        "versions": [
+          {
+            "sourceType": "Contingent treinmiles",
+            "sourceAttribute": "totaal aantal treinmiles",
+            "targetType": "Natuurlijk persoon",
+            "targetAttribute": "treinmiles",
+            "method": "OP_VOLGORDE",
+            "ratioAttribute": "woonregio factor",
+            "maximumAttribute": "maximaal aantal te ontvangen treinmiles",
+            "roundingDecimals": 0,
+            "remainderAttribute": "restant na verdeling",
+            "orderingAttribute": "leeftijd",
+            "descending": false,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "verdeling contingent treinmiles over passagiers",
+              "rol": "passagier met recht op treinmiles"
+            }
+          }
+        ]
       }
     ],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

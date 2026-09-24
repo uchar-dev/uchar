@@ -1117,159 +1117,156 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Hoogseizoen",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "in het hoogseizoen",
-          "objecttype": "Vlucht",
-          "bron": "Een Vlucht is in het hoogseizoen"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 1,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "Functie",
-                "kind": "MAAND_UIT",
-                "argumenten": [
-                  {
-                    "node": "AttribuutRef",
-                    "attribuut": "vluchtdatum",
-                    "objecttype": "Vlucht",
-                    "bron": "de vluchtdatum van de Vlucht"
-                  }
-                ],
-                "elementObjecttype": null,
-                "leegwaarde": null,
-                "filter": null,
-                "dimensieSelectie": null,
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
-                },
-                "bron": "de maand uit (de vluchtdatum van de Vlucht)",
-                "granulariteit": null
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "6",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "6"
-              },
-              "periode": null,
-              "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6"
+        "node": "Rule",
+        "name": "Hoogseizoen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "Functie",
-                "kind": "MAAND_UIT",
-                "argumenten": [
-                  {
-                    "node": "AttribuutRef",
-                    "attribuut": "vluchtdatum",
-                    "objecttype": "Vlucht",
-                    "bron": "de vluchtdatum van de Vlucht"
-                  }
-                ],
-                "elementObjecttype": null,
-                "leegwaarde": null,
-                "filter": null,
-                "dimensieSelectie": null,
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
-                },
-                "bron": "de maand uit (de vluchtdatum van de Vlucht)",
-                "granulariteit": null
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "7",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "7"
-              },
-              "periode": null,
-              "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "in het hoogseizoen",
+              "objecttype": "Vlucht",
+              "bron": "Een Vlucht is in het hoogseizoen"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "Functie",
-                "kind": "MAAND_UIT",
-                "argumenten": [
-                  {
-                    "node": "AttribuutRef",
-                    "attribuut": "vluchtdatum",
-                    "objecttype": "Vlucht",
-                    "bron": "de vluchtdatum van de Vlucht"
-                  }
-                ],
-                "elementObjecttype": null,
-                "leegwaarde": null,
-                "filter": null,
-                "dimensieSelectie": null,
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
-                },
-                "bron": "de maand uit (de vluchtdatum van de Vlucht)",
-                "granulariteit": null
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "8",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "8"
+              "type": {
+                "node": "Booleaan"
               },
-              "periode": null,
-              "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8"
-            }
-          ],
-          "bron": "er aan ten minste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 1,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "BuiltinCall",
+                    "kind": "MAAND_UIT",
+                    "arguments": [
+                      {
+                        "node": "AttribuutRef",
+                        "attribuut": "vluchtdatum",
+                        "objecttype": "Vlucht",
+                        "bron": "de vluchtdatum van de Vlucht"
+                      }
+                    ],
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    },
+                    "bron": "de maand uit (de vluchtdatum van de Vlucht)"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "6"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "6"
+                  },
+                  "periode": null,
+                  "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "BuiltinCall",
+                    "kind": "MAAND_UIT",
+                    "arguments": [
+                      {
+                        "node": "AttribuutRef",
+                        "attribuut": "vluchtdatum",
+                        "objecttype": "Vlucht",
+                        "bron": "de vluchtdatum van de Vlucht"
+                      }
+                    ],
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    },
+                    "bron": "de maand uit (de vluchtdatum van de Vlucht)"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "7"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "7"
+                  },
+                  "periode": null,
+                  "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "BuiltinCall",
+                    "kind": "MAAND_UIT",
+                    "arguments": [
+                      {
+                        "node": "AttribuutRef",
+                        "attribuut": "vluchtdatum",
+                        "objecttype": "Vlucht",
+                        "bron": "de vluchtdatum van de Vlucht"
+                      }
+                    ],
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    },
+                    "bron": "de maand uit (de vluchtdatum van de Vlucht)"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "8"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "8"
+                  },
+                  "periode": null,
+                  "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8"
+                }
+              ],
+              "bron": "er aan ten minste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8."
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1277,7 +1274,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

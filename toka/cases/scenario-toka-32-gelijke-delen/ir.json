@@ -1120,35 +1120,32 @@
     "objectCreaties": [],
     "verdelingen": [
       {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeling treinmiles in gelijke delen",
-        "bronType": "Contingent treinmiles",
-        "bronAttribuut": "totaal aantal treinmiles",
-        "doelType": "Natuurlijk persoon",
-        "doelAttribuut": "treinmiles",
-        "methode": "GELIJKE_DELEN",
-        "ratoAttribuut": null,
-        "maximumAttribuut": null,
-        "afrondingDecimalen": null,
-        "restantAttribuut": null,
-        "groepeerAttribuut": null,
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "verdeling contingent treinmiles over passagiers",
-          "rol": "passagier met recht op treinmiles"
-        }
+        "node": "Allocation",
+        "name": "verdeling treinmiles in gelijke delen",
+        "versions": [
+          {
+            "sourceType": "Contingent treinmiles",
+            "sourceAttribute": "totaal aantal treinmiles",
+            "targetType": "Natuurlijk persoon",
+            "targetAttribute": "treinmiles",
+            "method": "GELIJKE_DELEN",
+            "descending": false,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "verdeling contingent treinmiles over passagiers",
+              "rol": "passagier met recht op treinmiles"
+            }
+          }
+        ]
       }
     ],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

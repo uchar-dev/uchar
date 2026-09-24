@@ -1117,48 +1117,56 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "belaste reis",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "belaste reis",
-          "objecttype": "Vlucht",
-          "bron": "Een Vlucht is een belaste reis"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "bereikbaar per trein",
-            "objecttype": "Vlucht",
-            "bron": "bereikbaar per trein van de vlucht"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "waar",
-            "type": {
-              "node": "Booleaan"
+        "node": "Rule",
+        "name": "belaste reis",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "waar"
-          },
-          "periode": null,
-          "bron": "bereikbaar per trein van de vlucht gelijk is aan waar"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "belaste reis",
+              "objecttype": "Vlucht",
+              "bron": "Een Vlucht is een belaste reis"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "bereikbaar per trein",
+                "objecttype": "Vlucht",
+                "bron": "bereikbaar per trein van de vlucht"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "boolean": true
+                },
+                "type": {
+                  "node": "Booleaan"
+                },
+                "bron": "waar"
+              },
+              "periode": null,
+              "bron": "bereikbaar per trein van de vlucht gelijk is aan waar"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1166,7 +1174,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

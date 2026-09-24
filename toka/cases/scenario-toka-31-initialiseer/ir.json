@@ -1117,26 +1117,29 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Initialiseer te betalen belasting op initiele belasting",
-        "soort": "INITIALISATIE",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "te betalen belasting",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "De te betalen belasting van een passagier"
-        },
-        "waarde": {
-          "node": "ParameterRef",
-          "parameter": "initiele belasting",
-          "bron": "de initiele belasting"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "Initialiseer te betalen belasting op initiele belasting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "te betalen belasting",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "De te betalen belasting van een passagier"
+            },
+            "value": {
+              "node": "ParameterRef",
+              "parameter": "initiele belasting",
+              "bron": "de initiele belasting"
+            },
+            "initialisation": true
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1144,7 +1147,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -1121,38 +1121,41 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Controleer of vlucht geen rondvlucht is",
-        "subject": "Vlucht",
-        "assertie": {
-          "node": "Vergelijking",
-          "op": "ONGELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "luchthaven van vertrek",
-            "objecttype": "Vlucht",
-            "bron": "De luchthaven van vertrek van een vlucht"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "luchthaven van bestemming",
-            "objecttype": "Vlucht",
-            "bron": "de luchthaven van bestemming van de vlucht"
-          },
-          "periode": null,
-          "bron": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht"
-        },
-        "bron": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht",
-        "line": 151,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Consistency",
+        "name": "Controleer of vlucht geen rondvlucht is",
+        "versions": [
+          {
+            "subject": "Vlucht",
+            "assertion": {
+              "node": "Vergelijking",
+              "op": "ONGELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "luchthaven van vertrek",
+                "objecttype": "Vlucht",
+                "bron": "De luchthaven van vertrek van een vlucht"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "luchthaven van bestemming",
+                "objecttype": "Vlucht",
+                "bron": "de luchthaven van bestemming van de vlucht"
+              },
+              "periode": null,
+              "bron": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht",
+            "line": 151
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

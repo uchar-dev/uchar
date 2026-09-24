@@ -1125,41 +1125,45 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Startpunt variabele periode op datum van vertrek min reserveringstermijn",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "startpunt variabele periode van 3 maanden",
-          "objecttype": "Vlucht",
-          "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "MIN",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "datum van vertrek",
-            "objecttype": "Vlucht",
-            "bron": "de datum van vertrek van de reis"
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "STANDAARDTERMIJN VOOR RESERVERING",
-            "bron": "de STANDAARDTERMIJN VOOR RESERVERING"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "Startpunt variabele periode op datum van vertrek min reserveringstermijn",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "startpunt variabele periode van 3 maanden",
+              "objecttype": "Vlucht",
+              "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "MIN",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "datum van vertrek",
+                "objecttype": "Vlucht",
+                "bron": "de datum van vertrek van de reis"
+              },
+              "rechts": {
+                "node": "ParameterRef",
+                "parameter": "STANDAARDTERMIJN VOOR RESERVERING",
+                "bron": "de STANDAARDTERMIJN VOOR RESERVERING"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1167,7 +1171,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [
       {

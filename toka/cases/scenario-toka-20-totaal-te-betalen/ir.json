@@ -1117,50 +1117,50 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Totaal te betalen belasting",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "totaal te betalen belasting",
-          "objecttype": "Vlucht",
-          "bron": "De totaal te betalen belasting van een reis"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "SOM",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "Totaal te betalen belasting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "te betalen belasting",
-              "objecttype": "Natuurlijk persoon",
-              "bron": "de te betalen belasting van alle passagiers van de reis"
-            }
-          ],
-          "elementObjecttype": "Natuurlijk persoon",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de som van de te betalen belasting van alle passagiers van de reis",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "Vlucht van natuurlijke personen",
-            "rol": "passagier"
+              "attribuut": "totaal te betalen belasting",
+              "objecttype": "Vlucht",
+              "bron": "De totaal te betalen belasting van een reis"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "SOM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "te betalen belasting",
+                  "objecttype": "Natuurlijk persoon",
+                  "bron": "de te betalen belasting van alle passagiers van de reis"
+                }
+              ],
+              "elementType": "Natuurlijk persoon",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "Vlucht van natuurlijke personen",
+                "rol": "passagier"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de som van de te betalen belasting van alle passagiers van de reis"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1168,7 +1168,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []
