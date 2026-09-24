@@ -443,12 +443,17 @@ class RegelEnExpressielaagWeigeringWitnessTest {
     }
 
     /** WF-028's sentences: the target type of a fact creation is the declared filler of its target role, and a role
-     *  that resolves to none leaves the creation without a target. */
+     *  that resolves to none leaves the creation without a target. The anchor role is refused in the same words. */
     @Test void een_feitcreatie_zonder_vuller_van_de_doelrol_weigert() throws Exception {
         String f = "/rules/feitCreaties/0/versions/0";
         ObjectNode ir = golden(MASTSEIN);
         ((ObjectNode) ir.at(f)).put("targetRole", "baken");
         assertTrue(weigert(ir, f + "/targetRole").getMessage().endsWith(": 'baken' is not a role of 'vakbeseining'"));
+        // before the fix round of the L4 landing this loaded, and both branches then refused the creation as
+        // unresolved ("feitcreatie (onopgelost)"), a sentence that names neither the field nor the relation
+        ir = golden(MASTSEIN);
+        ((ObjectNode) ir.at(f)).put("anchorRole", "baken");
+        assertTrue(weigert(ir, f + "/anchorRole").getMessage().endsWith(": 'baken' is not a role of 'vakbeseining'"));
         ir = golden(MASTSEIN);
         ((ObjectNode) ir.at(f)).put("factType", "bakenbeseining");
         assertTrue(weigert(ir, f + "/factType").getMessage()

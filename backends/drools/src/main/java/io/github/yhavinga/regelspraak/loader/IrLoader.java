@@ -2128,7 +2128,9 @@ public final class IrLoader {
      * ({@code FactModelGenerator.creatievelden}). Every hop of the path but the last is a step, the last is the join.
      * The target type is not written: it is the declared filler of the target role in the created fact type, found
      * as the verifier finds it, and where that does not resolve the version is refused in the verifier's WF-028
-     * words — a record without a target type would join to nothing.
+     * words — a record without a target type would join to nothing. The anchor role is resolved the same way and
+     * refused in the same words: the record keeps it by name, and a name that is no role of the created relation
+     * reached both branches as a creation they could only call unresolved.
      */
     private void factCreation(String pad, JsonNode n) {
         for (Versie v : vorm(n, pad, "FactCreation", List.of())) {
@@ -2141,10 +2143,11 @@ public final class IrLoader {
             List<ResolvedFeitCreatie.Tussenstap> ts = new ArrayList<>();
             for (RolBindingRef rb : hops.subList(0, hops.size() - 1))
                 ts.add(new ResolvedFeitCreatie.Tussenstap(null, null, false, rb));
-            String feittype = tekst(k, p, "factType"), doelRol = tekst(k, p, "targetRole");
+            String feittype = tekst(k, p, "factType"), ankerRol = tekst(k, p, "anchorRole"),
+                    doelRol = tekst(k, p, "targetRole");
             m.feitCreaties.add(new ResolvedFeitCreatie(v.naam(), ot(tekstOfNull(k, p, "anchor")),
-                    doelsoort(p, feittype, doelRol), null, null, ts, conditie(knoopVeld(k, "condition")),
-                    validity(k, p), feittype, tekst(k, p, "anchorRole"), doelRol, hops.get(hops.size() - 1)));
+                    doelsoort(p, feittype, ankerRol, doelRol), null, null, ts, conditie(knoopVeld(k, "condition")),
+                    validity(k, p), feittype, ankerRol, doelRol, hops.get(hops.size() - 1)));
         }
     }
 
@@ -2152,26 +2155,35 @@ public final class IrLoader {
     static final String PAD_LEEG = "a fact creation's path carries at least one hop";
 
     /** The target type of a fact creation: the declared filler of the target role in the created fact type, under
-     *  the verifier's name identity. What does not resolve is refused, in WF-028's sentences. */
-    private Objecttype doelsoort(String p, String feittype, String rol) {
+     *  the verifier's name identity. What does not resolve is refused, in WF-028's sentences, the anchor role first
+     *  as the verifier reports it. */
+    private Objecttype doelsoort(String p, String feittype, String ankerRol, String doelRol) {
         Feittype ft = feittypeOpNaam(feittype);
         if (ft == null)
             throw new Documentfout(p + "/factType", "created fact type '" + feittype + "' is not declared");
         if (ft.rollen.size() != 2)
             throw new Documentfout(p + "/factType", "created fact type '" + feittype + "' does not have exactly two"
                     + " roles");
+        rolVan(p + "/anchorRole", ft, feittype, ankerRol);
+        RegelSpraakModel.Rol doel = rolVan(p + "/targetRole", ft, feittype, doelRol);
+        Objecttype vuller = ot(doel.objecttypeNaam());
+        if (vuller == null)
+            throw new Documentfout(p + "/targetRole", "the role '" + doelRol + "' of '" + feittype + "' is filled by '"
+                    + doel.objecttypeNaam() + "', which is no declared object type: a fact creation's target"
+                    + " type is the filler of its target role");
+        return vuller;
+    }
+
+    /** The role {@code rol} of the created fact type {@code ft} under the verifier's name identity, or WF-028's
+     *  refusal at {@code pad}. */
+    private static RegelSpraakModel.Rol rolVan(String pad, Feittype ft, String feittype, String rol) {
         List<RegelSpraakModel.Rol> rollen = ft.rollen.stream()
                 .filter(r -> r.naam() != null && Namen.norm(r.naam()).equals(Namen.norm(rol))).toList();
         if (rollen.isEmpty())
-            throw new Documentfout(p + "/targetRole", "'" + rol + "' is not a role of '" + feittype + "'");
+            throw new Documentfout(pad, "'" + rol + "' is not a role of '" + feittype + "'");
         if (rollen.size() > 1)
-            throw new Documentfout(p + "/targetRole", "role '" + rol + "' is ambiguous within '" + feittype + "'");
-        Objecttype vuller = ot(rollen.get(0).objecttypeNaam());
-        if (vuller == null)
-            throw new Documentfout(p + "/targetRole", "the role '" + rol + "' of '" + feittype + "' is filled by '"
-                    + rollen.get(0).objecttypeNaam() + "', which is no declared object type: a fact creation's target"
-                    + " type is the filler of its target role");
-        return vuller;
+            throw new Documentfout(pad, "role '" + rol + "' is ambiguous within '" + feittype + "'");
+        return rollen.get(0);
     }
 
     /** The RolBinding field {@code veld} of the object at {@code pad}: absent or null is null (the caller decides
