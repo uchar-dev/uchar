@@ -1,0 +1,13 @@
+Objecttype het Wrakstuk (mv: Wrakstukken)
+    is overbelast kenmerk (bijvoeglijk);
+    is bergergunstig kenmerk (bijvoeglijk);
+    het bergloonpercentage Percentage (geheel getal);
+    het havengeldpercentage Percentage (geheel getal);
+
+Regel overbelast bij gezamenlijke afdracht
+    geldig altijd
+        Een Wrakstuk is overbelast indien het bergloonpercentage van het Wrakstuk plus het havengeldpercentage van het Wrakstuk groter is dan 50%.
+
+Regel bergergunstig bij afdrachtverschil
+    geldig altijd
+        Een Wrakstuk is bergergunstig indien het bergloonpercentage van het Wrakstuk min het havengeldpercentage van het Wrakstuk groter is dan 20%.

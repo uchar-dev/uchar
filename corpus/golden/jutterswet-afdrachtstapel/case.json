@@ -1,0 +1,110 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wrakstuk",
+        "attributes": {
+          "bergloonpercentage": {
+            "number": "40"
+          },
+          "havengeldpercentage": {
+            "number": "15"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Wrakstuk",
+        "attributes": {
+          "bergloonpercentage": {
+            "number": "10"
+          },
+          "havengeldpercentage": {
+            "number": "45"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W3",
+        "objectType": "Wrakstuk",
+        "attributes": {
+          "bergloonpercentage": {
+            "number": "30"
+          },
+          "havengeldpercentage": {
+            "number": "5"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W4",
+        "objectType": "Wrakstuk",
+        "attributes": {
+          "bergloonpercentage": {
+            "number": "35"
+          },
+          "havengeldpercentage": {
+            "number": "15"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "W1",
+      "characteristic": "overbelast"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W1",
+      "characteristic": "bergergunstig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W2",
+      "characteristic": "overbelast"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "W2",
+      "characteristic": "bergergunstig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "W3",
+      "characteristic": "overbelast"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W3",
+      "characteristic": "bergergunstig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "W4",
+      "characteristic": "overbelast"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "W4",
+      "characteristic": "bergergunstig"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

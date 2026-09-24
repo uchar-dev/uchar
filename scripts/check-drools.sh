@@ -224,6 +224,7 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-toelagegronden|EXCLUDE|transpiler SKIP: the kenmerk target shares its name with an attribute — the bean carries one field per name (v0 bean-model limit, not a defaults divergence)"
   "anchor/jutterswet-vindersloon|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
   "anchor/jutterswet-vondstdossier|EXCLUDE|loader Refusal: Datatype:StructType"
+  "jutterswet-afdrachtstapel|EXCLUDE|transpiler SKIP: regel 'overbelast bij gezamenlijke afdracht' — voorwaarde buiten Phase-B scope. The exec-model branch's numeric comparison arms admit an operand typed as a NUMBER only (getalachtigVergelijkbaar, and the literal arm's isNumeriek), and both sides here are percentages: the sum or difference of two percentage attributes, which the loader reads as a percentage since L3, compared with a percentage literal. The literal alone already kept the arms shut on the L2 base (the L3 lens measured the same EXCLUDE there on a document of this shape). The DRL-text branch plays the golden with ref's and clingo's values (PLAYED 1). Measured 2026-09-24 (card l3-typesysteem, fix round): a gap of this branch and not a semantic difference, so the golden's pins are a ref = clingo = DRL-text triple"
   "jutterswet-dossierrecht-catala|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-dossierspelling|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-havenrooster|EXCLUDE|transpiler SKIP: the day-kind predicate compiler (kern.Dagsoorten) carries no PARAMETER operand — it compiles a voorwaarde ONCE into the KieBase while parameter values arrive per case as session globals, so a parameter-bound day kind has no compiled predicate and the reaching rule is skipped (waarde buiten scope). Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
@@ -1081,7 +1082,11 @@ DRL_CHANNEL=(
 # 164 -> 166 (2026-09-24, card l2-referentielaag, builder C2): ambiguous-fold-role-name and
 # near-side-rolcheck-to-many, new. This branch plays both on the first run, PLAYED 1 each. Reason block
 # at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=166
+# 166 -> 167 (2026-09-24, card l3-typesysteem, builder C, fix round): jutterswet-afdrachtstapel, new —
+# the sum and the difference of two percentages in a condition, which L3 reads as percentages. This
+# branch plays its one case on the first run, PLAYED 1, with ref's and clingo's values; the exec-model
+# branch refuses it (EXPECTED_CHANNEL above), so EXPECTED_PLAYED does not move.
+EXPECTED_DRL_PLAYED=167
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

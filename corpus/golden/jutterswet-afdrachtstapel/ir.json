@@ -1,0 +1,252 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Wrakstuk",
+        "animate": false,
+        "plural": "Wrakstukken",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bergloonpercentage",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              },
+              "presentation": "percentage"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "havengeldpercentage",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              },
+              "presentation": "percentage"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "overbelast",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "bergergunstig",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "overbelast bij gezamenlijke afdracht",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "overbelast",
+          "objecttype": "Wrakstuk",
+          "bron": "Een Wrakstuk is overbelast"
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Vergelijking",
+          "op": "GROTER",
+          "links": {
+            "node": "Binair",
+            "op": "PLUS",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "bergloonpercentage",
+              "objecttype": "Wrakstuk",
+              "bron": "het bergloonpercentage van het Wrakstuk"
+            },
+            "rechts": {
+              "node": "AttribuutRef",
+              "attribuut": "havengeldpercentage",
+              "objecttype": "Wrakstuk",
+              "bron": "het havengeldpercentage van het Wrakstuk"
+            },
+            "type": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            },
+            "bron": "het bergloonpercentage van het Wrakstuk plus het havengeldpercentage van het Wrakstuk"
+          },
+          "rechts": {
+            "node": "Literal",
+            "waarde": "50",
+            "type": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            },
+            "bron": "50%"
+          },
+          "periode": null,
+          "bron": "het bergloonpercentage van het Wrakstuk plus het havengeldpercentage van het Wrakstuk groter is dan 50%"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "bergergunstig bij afdrachtverschil",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "bergergunstig",
+          "objecttype": "Wrakstuk",
+          "bron": "Een Wrakstuk is bergergunstig"
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Vergelijking",
+          "op": "GROTER",
+          "links": {
+            "node": "Binair",
+            "op": "MIN",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "bergloonpercentage",
+              "objecttype": "Wrakstuk",
+              "bron": "het bergloonpercentage van het Wrakstuk"
+            },
+            "rechts": {
+              "node": "AttribuutRef",
+              "attribuut": "havengeldpercentage",
+              "objecttype": "Wrakstuk",
+              "bron": "het havengeldpercentage van het Wrakstuk"
+            },
+            "type": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            },
+            "bron": "het bergloonpercentage van het Wrakstuk min het havengeldpercentage van het Wrakstuk"
+          },
+          "rechts": {
+            "node": "Literal",
+            "waarde": "20",
+            "type": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            },
+            "bron": "20%"
+          },
+          "periode": null,
+          "bron": "het bergloonpercentage van het Wrakstuk min het havengeldpercentage van het Wrakstuk groter is dan 20%"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
+}
