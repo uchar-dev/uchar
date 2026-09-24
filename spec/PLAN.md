@@ -721,7 +721,8 @@ gates 5/6/12 and that movement must be seen on its own; L4 = M5+M6, the
 rule and expression layer; L5 = M7+M8, the source record and the rename,
 with M7 kept as the null measurement in the card's first commit. Each
 landing regenerates every corpus zone and the toka zone, holds all
-fourteen gates green, and is followed by a toolchain re-pin. The `toka/`
+fourteen gates green; the toolchain re-pin waits for the end of the migration
+(maintainer decision 2026-09-24: one pin bump when v1 is complete). The `toka/`
 zone stays through the whole migration — decision 10's precondition is
 amended in timing only: gate 11 becomes a per-landing regression gate,
 and P11 (zone removal plus history rewrite) executes at the public flip.
@@ -750,6 +751,20 @@ timeline facet (B18), `UnitSystem {name, units}` with spellings and `DayKind
 zone's 540 pre-rounded factors reconstructed and confirmed byte-identical by
 the frontend's re-emission); negatief 400 → 407 with 165 arm fragments; no
 gate-5/6/12 outcome moved; all fourteen gates green on the landing.
+**L4 landed (2026-09-24, `1cdcd9fc`, card `backlog/done/20260924-l4-regel-en-expressielaag.md`):**
+the rule and expression layer — the six named forms as `{node, name,
+versions}` with `validity` on every version and `statuteAnnotations` on the
+form (B19), `initialisation` + `presentation?` for the v0 kind (B20),
+`Aggregation`/`BuiltinCall` for `Functie` (B21), one `Uniqueness` with
+`sources` (B27), the typed `Literal.value` in the case schema's variants
+(B22c; WF-114 new, WF-081 narrowed), `BoundDay`/`ContextValue` for
+`Constante` (B23), WF-022's new arms (a target both attribute and
+characteristic; the member kind against the tag); B24, B25 and B28 not
+taken (deferred additively, the parity golden, the timeline anchor);
+migration `spec/proposals/v1-migratie/m4.py`; the parity dump loses its two
+`COMPLEX` allocations to WARNING diagnostics; negatief 407 → 417 with 228 arm
+fragments; no gate-5/6/12 outcome moved; all fourteen gates green on the
+landing.
 
 ## 10. Rough effort
 
