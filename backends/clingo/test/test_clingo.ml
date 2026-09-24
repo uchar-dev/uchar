@@ -4619,15 +4619,19 @@ let () =
   faults_with ~name:"ch3.9a tellende vouw zonder drempel"
     ~ir:(kv_doc ~kwantor:"TEN_MINSTE" ())
     ~case_text:vals ~needle:"counting quantifier fold without a drempel";
-  (* the range fields ride [source_join], so the WF-102 verdicts are the fold
-     family's own, in the fold family's words *)
+  (* the range's shape is checked in the quantifier fold's own sentences,
+     WF-108's, before the range rides [source_join], whose sentences name
+     the aggregation's sourceRole and sourcePath *)
   faults_with ~name:"ch3.9a bereikpad van één stap"
     ~ir:
       (kv_doc
          ~ext:
            {|, "bronPad": [ { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } ]|}
          ())
-    ~case_text:vals ~needle:"a sourcePath carries at least TWO steps";
+    ~case_text:vals
+    ~needle:
+      "a quantifier fold's bronPad carries at least TWO steps, found 1 — the one-step range is \
+       spelled bronRol";
   refused_at_load ~name:"ch3.9a bereikpad naast een bronRol"
     ~ir:
       (kv_doc
@@ -11625,6 +11629,89 @@ let () =
   match translate doc case with
   | (_ : string) -> check "Rekenjaar: clingo weigert bij naam (kreeg een programma)" false
   | exception Uchar_ref.Value.Fault m -> check ("Rekenjaar: clingo weigert bij naam (" ^ m ^ ")") (m = zin)
+
+(* WF-108 (c) over the wire, on the probe that found the gap: the golden
+   jutterswet-ketenkwantor with its first rule alone and that rule's bronPad
+   cut to its last step. The verifier refuses it with WF-108's sentence at the
+   path; ref and this backend refuse it in that same sentence, where this
+   backend used to answer in the aggregation's words for a sourcePath. *)
+let () =
+  let ir =
+    {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {"node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters", "attributes": [], "characteristics": [{"node": "Characteristic", "name": "vondstrijk", "kind": "BIJVOEGLIJK"}, {"node": "Characteristic", "name": "vondstarm", "kind": "BIJVOEGLIJK"}]},
+      {"node": "ObjectType", "name": "Boot", "animate": false, "plural": "Boten", "attributes": [], "characteristics": []},
+      {"node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten", "attributes": [{"node": "Attribute", "name": "gewicht", "datatype": {"node": "Number", "whole": false, "decimals": 2, "sign": "ONBEPAALD"}}], "characteristics": []} ],
+    "factTypes": [
+      {"node": "Feittype", "naam": "bemanning", "wederkerig": false, "rollen": [{"node": "Rol", "naam": "schipper", "objecttypeNaam": "Jutter", "meervoud": null, "meervoudig": false}, {"node": "Rol", "naam": "gevoerde boot", "objecttypeNaam": "Boot", "meervoud": "gevoerde boten", "meervoudig": true}]},
+      {"node": "Feittype", "naam": "berging", "wederkerig": false, "rollen": [{"node": "Rol", "naam": "bergende boot", "objecttypeNaam": "Boot", "meervoud": "bergende boten", "meervoudig": true}, {"node": "Rol", "naam": "geborgen vondst", "objecttypeNaam": "Vondst", "meervoud": "geborgen vondsten", "meervoudig": true}]} ],
+    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [] },
+  "rules": {
+    "resolvedRegels": [
+      {"node": "Rule", "name": "vondstrijk", "versions": [{"validity": {"node": "Geldigheid", "vanaf": null, "tot": null}, "target": {"node": "AttribuutRef", "attribuut": "vondstrijk", "objecttype": "Jutter", "bron": "Een Jutter is vondstrijk"}, "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Booleaan"}, "bron": "waar"}, "condition": {"node": "Kwantorvouw", "kwantor": "TEN_MINSTE", "drempel": 4, "elementObjecttype": "Vondst", "filter": null, "toets": {"node": "Vergelijking", "op": "GROTER", "links": {"node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst", "bron": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter"}, "rechts": {"node": "Literal", "value": {"number": "1.00"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD"}, "bron": "1,00"}, "periode": null, "bron": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"}, "bron": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00", "bronPad": [{"node": "RolBinding", "feittype": "berging", "rol": "geborgen vondst"}]}, "initialisation": false}]} ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "feitCreaties": [], "resolvedStartpunten": [], "regelGroepen": [] },
+  "diagnostics": [] }|}
+  in
+  let case_text =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": { "gevoerde boot": [ "B1" ] }, "characteristics": [] },
+    { "label": "B1", "objectType": "Boot", "attributes": {}, "roles": { "geborgen vondst": [ "V1" ] }, "characteristics": [] },
+    { "label": "V1", "objectType": "Vondst", "attributes": { "gewicht": { "number": "3.00" } }, "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "characteristicAbsent", "label": "J1", "characteristic": "vondstrijk" } ] }|}
+  in
+  let zin =
+    "a quantifier fold's bronPad carries at least TWO steps, found 1 — the one-step range is \
+     spelled bronRol"
+  in
+  check "kv-eenstap: de verifier weigert met WF-108 op het pad"
+    (List.mem
+       { Ir_v0.Checks.wf = "WF-108"; at = "/rules/resolvedRegels/0/versions/0/condition/bronPad";
+         reason = zin }
+       (Ir_v0.Checks.all
+          (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string ir))));
+  let doc, case = load_pair ~ir ~case_text in
+  (match ref_report doc case with
+  | (_ : string list) -> check "kv-eenstap: ref weigert (kreeg een wereld)" false
+  | exception Uchar_ref.Value.Fault m -> check ("kv-eenstap: ref weigert (" ^ m ^ ")") (m = zin));
+  match translate doc case with
+  | (_ : string) -> check "kv-eenstap: clingo weigert (kreeg een programma)" false
+  | exception Uchar_ref.Value.Fault m -> check ("kv-eenstap: clingo weigert (" ^ m ^ ")") (m = zin)
+
+(* ... and the two shapes the loader refuses on the wire, built past it on the
+   Werf fixture: both spellings, and none. ref and this backend speak the
+   loader's sentences. *)
+let () =
+  let doc, case =
+    load_pair ~ir:(kv_doc ()) ~case_text:(kv_case ~leden:[ ("S1", heel_jaar "50") ] ~waar:true ())
+  in
+  let rb : Ir_v0.Ast.rol_binding = { rb_feittype = "ligplaats"; rb_rol = "schuit" } in
+  let bereik ~rol ~pad =
+    { doc with
+      resolved_regels =
+        List.map
+          (fun (r : Ir_v0.Ast.resolved_regel) ->
+            match r.rr_voorwaarde with
+            | Some (Kwantorvouw k) ->
+                { r with rr_voorwaarde = Some (Kwantorvouw { k with kv_bron_rol = rol; kv_bron_pad = pad }) }
+            | _ -> r)
+          doc.resolved_regels }
+  in
+  List.iter
+    (fun (naam, d, zin) ->
+      (match ref_report d case with
+      | (_ : string list) -> check (naam ^ ": ref weigert (kreeg een wereld)") false
+      | exception Uchar_ref.Value.Fault m -> check (naam ^ ": ref weigert (" ^ m ^ ")") (m = zin));
+      match translate d case with
+      | (_ : string) -> check (naam ^ ": clingo weigert (kreeg een programma)") false
+      | exception Uchar_ref.Value.Fault m -> check (naam ^ ": clingo weigert (" ^ m ^ ")") (m = zin))
+    [ ( "kwantorvouw met twee bereiken, voorbij de lader", bereik ~rol:(Some rb) ~pad:(Some [ rb; rb ]),
+        "bronPad beside bronRol: a quantifier fold carries one range, never two" );
+      ( "kwantorvouw zonder bereik, voorbij de lader", bereik ~rol:None ~pad:None,
+        "a quantifier fold carries its range (bronRol or bronPad): the range is written, never derived" ) ]
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

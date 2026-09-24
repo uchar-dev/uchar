@@ -5646,7 +5646,29 @@ let () =
                 kv_toets = None; kv_bron = None;
                 kv_bron_rol = Some { rb_feittype = "ploegindeling"; rb_rol = "berger" };
                 kv_bron_pad = None })))
-    "quantifier fold without a toets"
+    "quantifier fold without a toets";
+  (* WF-108 (c), the range's shape: one spelling and a path of at least two
+     steps. The loader and the verifier refuse the wire forms first; a node
+     built past them is refused in their sentences *)
+  let rb : Ir_v0.Ast.rol_binding = { rb_feittype = "ploegindeling"; rb_rol = "berger" } in
+  let bereik_faalt naam rol pad zin =
+    expect_fault_msg naam
+      (fun () ->
+        let w = kv_wereld [ ("B1", heel_jaar "50") ] in
+        Value.Bool
+          (Eval.eval_cond (env_of kv_doc) w (World.get w "P1") ~err:no_err
+             (match kv_cond () with
+             | Kwantorvouw k -> Kwantorvouw { k with kv_bron_rol = rol; kv_bron_pad = pad }
+             | c -> c)))
+      zin
+  in
+  bereik_faalt "WV-3.9a-kwantorvouw-met-twee-bereiken-faalt" (Some rb) (Some [ rb; rb ])
+    "bronPad beside bronRol: a quantifier fold carries one range, never two";
+  bereik_faalt "WV-3.9a-kwantorvouw-zonder-bereik-faalt" None None
+    "a quantifier fold carries its range (bronRol or bronPad): the range is written, never derived";
+  bereik_faalt "WV-3.9a-kwantorvouw-met-een-pad-van-een-stap-faalt" None (Some [ rb ])
+    "a quantifier fold's bronPad carries at least TWO steps, found 1 — the one-step range is \
+     spelled bronRol"
 
 (* The SCALAR whole-period comparison the matrix rests on (ch. 3.9): the
    same four rows the characteristic form already pins, over a VALUE

@@ -272,6 +272,28 @@ let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
            window's verdict, while ch. 3.10 norms the window as a gate on the RULE, so the \
            document is not well-formed. Declined at evaluation"
 
+(* WF-108 (c), the quantifier fold's range: one spelling, and a path of at
+   least two steps. On the wire the loader refuses the first and the
+   verifier the second; a node that reaches an executor past them is refused
+   here in their sentences, never read through a range it did not write. The
+   ASP backend calls this function too, so a quantifier fold never meets the
+   aggregation's sentences for sourceRole and sourcePath. *)
+let quantifier_range_shape ~(bron_rol : rol_binding option) ~(bron_pad : rol_binding list option)
+    =
+  match (bron_rol, bron_pad) with
+  | Some _, Some _ ->
+      Value.fault "bronPad beside bronRol: a quantifier fold carries one range, never two"
+  | None, None ->
+      Value.fault
+        "a quantifier fold carries its range (bronRol or bronPad): the range is written, never \
+         derived"
+  | _, Some pad when List.length pad < 2 ->
+      Value.fault
+        "a quantifier fold's bronPad carries at least TWO steps, found %d — the one-step range is \
+         spelled bronRol"
+        (List.length pad)
+  | _ -> ()
+
 (* WF-100 / IR-SPEC ch. 4.6 (q1), maintainer decision 2026-09-10: on a
    characteristic check the `eigenaar` is AUTHORITATIVE for the declaration.
    WF-109 / ch. 4.6 (q2), maintainer decision 2026-09-19: it is also the
@@ -2216,17 +2238,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
               "quantifier fold without a toets: the matrix is what every contributor must \
                satisfy (WF-108)"
       in
-      (match kv_bron_pad with
-      | None -> ()
-      | Some pad ->
-          if kv_bron_rol <> None then
-            Value.fault
-              "a bronPad beside a bronRol on a quantifier fold: the one-step range IS bronRol \
-               (WF-108)";
-          if List.length pad < 2 then
-            Value.fault
-              "a quantifier fold's bronPad carries at least TWO steps, found %d (WF-108)"
-              (List.length pad));
+      quantifier_range_shape ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad;
       (match kv_kwantor with
       | Alle | Geen | Ten_minste | Ten_hoogste | Precies -> ()
       | De ->

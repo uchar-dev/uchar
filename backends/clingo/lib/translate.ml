@@ -1602,8 +1602,11 @@ let role_canonical (r : rol) =
 
 (* ch. 3.4b / WF-102: the fold source's range as rol/3 atoms, one per
    step, ending on the element variable [x]. The one-step form is the
-   node's bronRol; a bronPad walks two or more steps through fresh
-   intermediate variables. The range is written, never derived (B12).
+   node's sourceRole; a sourcePath walks two or more steps through fresh
+   intermediate variables. The range is written, never derived (B12). A
+   quantifier fold (bronRol, bronPad) comes here too, its range's shape
+   already checked in its own sentences ([Eval.quantifier_range_shape]), so
+   the refusals below are an aggregation's.
 
    The DEDUP the flat union demands is free here and deliberately so:
    the intermediate variables are existentially quantified INSIDE the
@@ -6953,6 +6956,9 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
               "a quantifier fold without a matrix (toets) is ill-formed (WF-108): the verifier \
                cites the rule, and this backend does not guess a verdict for it"
       in
+      (* the range's shape in the quantifier fold's own sentences, before
+         [source_join], whose sentences name the aggregation's fields *)
+      Eval.quantifier_range_shape ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad;
       (match kv_kwantor with
       | Alle | Geen | Ten_minste | Ten_hoogste | Precies -> ()
       | De ->
