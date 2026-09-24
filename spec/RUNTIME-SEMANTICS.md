@@ -1050,8 +1050,9 @@ source). Since L2 no field on the node records which reading applies, so a
 collision of names is decided by the declarations: a count whose written
 name is also a member of the element type (an attribute or a
 characteristic) is no count source — it reads as that member, and a count
-over a member is refused (WF-093 (b); on an attribute `ref` and the ASP
-backend fault with `a count over …, which is an attribute of …`). A role
+over a member is refused (WF-093 (b); `ref` and the ASP backend fault
+with the verifier's sentence, `the source of this AANTAL aggregation reads
+'…', a member of the element type '…': a count folds INSTANCES, …`). A role
 whose declared name and declared plural both name members of the element
 type, or whose name does while it declares no plural, therefore cannot be
 counted; where only one of the two spellings collides, the count is written
@@ -3580,18 +3581,19 @@ other end. The rules:
    fire), and the negation a per-subject helper deriving the link's
    presence, read under negation-as-failure with the subject kept bound by
    the helper's `isa` base (`ASP-TRANSLATION.md` S7).
-5. **What is refused.** The check crosses its declarations before it
-   reads anything (`IR-SPEC.md` ch. 4.6 (o), the role arm of WF-034):
+5. **What is refused.** The node's declarations are crossed before the
+   check is evaluated (`IR-SPEC.md` ch. 4.6 (o), the role arm of WF-034):
    `factType` is a declared fact type; `role` is one of its roles by
    DECLARED NAME — a plural is presentation and names no role here; the
    subject fills `role`, its type ⊑ the role's declared filler — a role of
    the right fact type on the wrong side names a link the subject can
-   never be in, and the check would ask for nothing; and a written
-   `counterpartType` is a declared object type ⊑ the other role's
-   declared filler. The verifier refuses a document that breaks any of
-   these. The reference interpreter and the ASP backend refuse the same
-   shapes by name when they evaluate the check, so a document that evades
-   the verifier does not answer a silent false.
+   never be in, so the positive check could never hold and its negation
+   always would; and a written `counterpartType` is a declared object type
+   ⊑ the other role's declared filler. The verifier refuses a document
+   that breaks any of these. The reference interpreter and the ASP backend
+   refuse the same shapes by name when they evaluate the check, so such a
+   document, evaluated without the verifier, gives a refusal and never a
+   silent false.
 
 *History until L2.* v0 carried the sentence as two nodes. The **near-side**
 `Rollidmaatschap` ("hij is een wachtjutter") was lowered to a **null-test**

@@ -956,8 +956,9 @@ lexeme, which as a `rol/3` key silently counted 0 whenever it differed
 from the declared plural that keys the facts (the written singular of a
 to-many role, or an undeclared synthesized plural; hardened 2026-08-26,
 witnessed by `jutterswet-kaveltelling`). A count source whose written
-name is an attribute of the element type is refused by name (`a count
-over …, which is an attribute of …`, WF-093), and so is a count that
+name is a member of the element type (an attribute or a characteristic)
+is refused by name (`the source of this AANTAL aggregation reads '…', a
+member of the element type '…'`, WF-093 (b)), and so is a count that
 carries a `bronPad` (WF-102 (c): a count source's range is one step).
 *Until L2* a count without a binding resolved its written source name
 against the declared roles (name or plural, ci) or fell back to the
@@ -2479,9 +2480,10 @@ refused the form (`IR-SPEC.md` WF-096, negatiefs
 `wf096-aantal-setbron*`), so this backend's refusal, which was the
 strictest of the three readings, is what the verifier came round to.
 Since L2 the form has a named arm instead: WF-096 retired with the set
-flag, and a count whose source names an attribute of the element type
-is refused as WF-093's (`a count over …, which is an attribute of …`;
-negatief `wf093-telling-over-attribuutbron`), on the same ground: a
+flag, and a count whose source names a member of the element type is
+refused as WF-093's (`the source of this AANTAL aggregation reads '…', a
+member of the element type '…'`; negatief
+`wf093-telling-over-attribuutbron`), on the same ground: a
 count folds the contributors, and such a source hands it values). The LISTED
 som left this catch-all on 2026-09-19 WITHOUT being translated: it has
 a named arm of its own (`a som over listed operands is not translated
