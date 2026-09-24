@@ -1549,7 +1549,7 @@ chapters bind with:
   announced, the binding became required and WF-048 retired with the
   format bump (B12): an allocation carries its recipient role, a quantifier
   fold its range, a union selection its relation, and a single-argument
-  fold with an `elementType` its range under every kind but `TOTAAL` —
+  fold with an `elementType` its range under every kind but `total` —
   the schema and every loader refuse the bindingless form, so no reader
   derives the relation of these nodes. The two witnesses
   (`wf048-ambiguous-connecting-relation`, `wf048-telling-meerduidig`) were
@@ -5622,7 +5622,8 @@ attachment, and one field beside it, by WF-097 below.
   (WF-043 reaches it, the operand being non-time-dependent), and the
   owner was **silent** — measured verifier-clean with both executors
   ignoring the field. That silence was real and is NOT closed here; it is
-  the scalar-`eigenaar` question, which is a semantic one (WHICH owner is
+  the scalar-owner question (the `host` field, v0 `eigenaar`), which is a
+  semantic one (WHICH owner is
   authoritative, the field or the subject) rather than the
   no-reading-exists one this rule answers. It was answered separately on
   2026-09-10, in the field's favour: ch. 4.6 (q1), WF-100. Fencing it on
