@@ -1,12 +1,18 @@
 # jutterswet-seizoenvondst — the dimension-cell witness, verifier-only
 
-The **`DimensieCel` witness** of the domain rules' cell arm (WF-089/WF-090,
-ch. 2.4), and until L2 of the reference-type identity rule (`IR-SPEC.md`
-ch. 4.1, WF-091) at that arm. Until this golden the cell-read arm had **no
-positive witness anywhere**: the corpus carried exactly ONE
-`DimensionCellRead` (in the witness cabinet `jutterswet-vormenkabinet`)
-and it was not unit-bearing, so a verifier that OVER-rejected at that arm
-left every gate green.
+Until L2 the **`DimensieCel` witness** of the domain rules' cell arm
+(WF-089/WF-090, ch. 2.4) and of the reference-type identity rule
+(`IR-SPEC.md` ch. 4.1, WF-091) at that arm. Before this golden the cell-read
+arm had **no positive witness anywhere**: the corpus carried exactly ONE
+`DimensionCellRead` (in the witness cabinet `jutterswet-vormenkabinet`) and
+it was not unit-bearing, so a verifier that OVER-rejected at that arm left
+every gate green. Since L2 a cell read carries no type of its own (B13), and
+the reference arms of all three rules left the wire with it (the index rows
+WF-089, WF-090 and WF-091 in `IR-SPEC.md`). What the golden pins since then:
+the verifier passes a well-formed `DimensieCel` over a unit-bearing
+dimensioned attribute, the cell's own shape checks stay live (WF-034,
+`corpus/negatief/wf034-dimensiecel-*`), and gate 10 re-emits it byte for
+byte.
 
 It is the **second verifier-only golden** (see the "witness cabinet"
 section of `corpus/golden/README.md`): it carries no `case*.json`, so
@@ -54,9 +60,10 @@ Since L2 that mutant has no wire form: a `type` on a `DimensieCel` is an
 unknown field and is refused at load (the L2 load table in
 `backends/clingo/test/test_clingo.ml`), and the negatief
 `wf091-dimensiecel-eenheid` left the corpus with that field
-(`corpus/negatief/README.md`). What stays is the half a negatief can never
-pin: the verifier reaches the cell arm over a unit-bearing dimensioned
-attribute and does not over-reject it.
+(`corpus/negatief/README.md`). The other half, that the verifier does not
+over-reject at that arm, has no arm left to witness: no unit or domain rule
+crosses a cell read since L2. What stays is that the verifier passes the
+cell read.
 
 ## Why no replay case — measured, per executor
 
