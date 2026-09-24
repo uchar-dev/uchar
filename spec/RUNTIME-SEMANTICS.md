@@ -848,7 +848,7 @@ the §9.5 channel (v0 mirror: a companion rule raises it).
 **Fixed starting points** (§13.3.6.3–.7). The source language lets a
 timeline declare a fixed start point: a date for a week or multi-period
 grid, or a day (and months) for a month, quarter or year grid. The wire
-has **no field for it**: `Tijdlijn` carries name, `variableStart`,
+has **no field for it**: `Timeline` carries name, `variableStart`,
 granularity and count, and the start-point determination (`IR-SPEC.md`
 ch. 3.8) is the variable anchor only. Three start points add nothing to
 the timeline written without one, so they are omitted without loss: day 1
@@ -1024,12 +1024,12 @@ jutter whose only vondst fails the filter reads the fallback 0 and
 count 0.
 
 **The count source: the range selects, the written name does not.** Under
-`AANTAL` the fold's one argument is the COUNT SOURCE. Since L2 a count over
+`count` the fold's one argument is the COUNT SOURCE. Since L2 a count over
 one source argument carries its range (`sourceRole`, one step — a
 `sourcePath` belongs to a value fold's set source alone, `IR-SPEC.md`
 WF-102 (c)), and the count folds the instances that range reaches from the
 subject, narrowed by `elementType` as above. The argument's
-`attribuut` is the WRITTEN name of the bound role and selects nothing: it
+`attribute` is the WRITTEN name of the bound role and selects nothing: it
 MUST denote the bound role by its declared name or its declared plural
 (`IR-SPEC.md` WF-047), and where the written form did not, the migration to
 the L2 wire and the emitter write the declared role name in its place (the
@@ -1042,16 +1042,16 @@ a count without a binding was derived from the written name, a name
 matching several reachable roles faulted in both executors, and that
 document was a red case.
 
-**The count source is recognised at the source itself.** Its `attribuut`
+**The count source is recognised at the source itself.** Its `attribute`
 names a role of the fold subject and no member of the element type
 (`IR-SPEC.md` WF-093, in both directions: such a source is the source of
-`AANTAL` and of nothing else, and `AANTAL` reads nothing but such a
+`count` and of nothing else, and `count` reads nothing but such a
 source). Since L2 no field on the node records which reading applies, so a
 collision of names is decided by the declarations: a count whose written
 name is also a member of the element type (an attribute or a
 characteristic) is no count source — it reads as that member, and a count
 over a member is refused (WF-093 (b); `ref` and the ASP backend fault
-with the verifier's sentence, `the source of this AANTAL aggregation reads
+with the verifier's sentence, `the source of this count aggregation reads
 '…', a member of the element type '…': a count folds INSTANCES, …`). A role
 whose declared name and declared plural both name members of the element
 type, or whose name does while it declares no plural, therefore cannot be
@@ -1136,11 +1136,11 @@ stating because the nested reading answers differently:
 
 1. An intermediate instance that reaches nothing simply contributes
    nothing. It never produces an empty inner result for the outer fold to
-   absorb, so `MINIMUM`/`MAXIMUM`/`EERSTE`/`LAATSTE` — which have no
+   absorb, so `minimum`/`maximum`/`first`/`last` — which have no
    fallback — never have to decide what to do with one.
 2. A count over the union counts ELEMENTS, never intermediate instances.
    (Named here and pinned nowhere, and since 2026-09-19 for a reason
-   stronger than "no carrier": under `AANTAL` a multi-step range is not
+   stronger than "no carrier": under `count` a multi-step range is not
    EXPRESSIBLE. Since L2 one clause says so directly: a `sourcePath` is
    admissible only as the range of a VALUE fold's set source, and a count
    source's range is one step (`IR-SPEC.md` WF-102 (c)); every executor
@@ -1167,9 +1167,9 @@ stating because the nested reading answers differently:
    element reachable along two intermediate instances contributes once —
    which is this clause's claim, pinned in ch. 3.4c's last worked example
    rather than asserted here. What stays unexpressible is a counting FOLD
-   over a union under `AANTAL`, and that was never this clause's subject.
+   over a union under `count`, and that was never this clause's subject.
    Its two siblings left the asymmetry
-   the other way on the same day: `EERSTE`/`LAATSTE` over a set source are
+   the other way on the same day: `first`/`last` over a set source are
    carried by both OCaml executors, witness `jutterswet-vondstvenster`.)
 3. A sum's `emptyFallback` fires at most ONCE, for a subject whose whole
    range is empty — never once per empty intermediate instance. (With a
@@ -1217,7 +1217,7 @@ three-step union is {K1, K2} and the minimum is **1,25**.
 well-formedness: `IR-SPEC.md` ch. 4.3, "The filled count".)*
 
 One aggregation kind folds the contributors' VALUES by PRESENCE:
-`AANTAL_GEVULDE` counts the contributors whose value is not leeg. It is an
+`filledCount` counts the contributors whose value is not leeg. It is an
 instance fold and it reads a value per contributor, so it takes a SET source
 (`IR-SPEC.md` ch. 4.3: since L2 the single argument of a fold that carries a
 range, `sourceRole` or `sourcePath`; until L2 the argument marked
@@ -1234,12 +1234,12 @@ so does a boolean whose value is FALSE. False is a value; leeg is the
 absence of one. An instance that is not a contributor never reaches the
 test at all.
 
-`AANTAL_GEVULDE` over a source with no filled values is **0**, never leeg —
+`filledCount` over a source with no filled values is **0**, never leeg —
 a count is a cardinality and the empty collection has one, exactly as
 ch. 1.2e's count row says, and ch. 1.3 keeps that 0 apart from coalescing:
 it is the identity element of a rule over SETS, not an empty value dressed
-as a number. That ground belongs to every count and not to the word
-`AANTAL`. It carries no `emptyFallback`: there is no empty to fall back
+as a number. That ground belongs to every count and not to the kind
+`count`. It carries no `emptyFallback`: there is no empty to fall back
 from, and WF-037's "sum only" clause already excludes it.
 
 The result is a whole, unitless number whatever unit the folded attribute
@@ -1279,13 +1279,13 @@ observation — that only a count separates an empty population from an empty
 value — is now sharper: the INSTANCE count separates them, the FILLED count
 does not, and a document that needs the distinction writes both.
 
-**What this does NOT give.** There is no average. `SOM ÷ AANTAL_GEVULDE` is
+**What this does NOT give.** There is no average. `sum ÷ filledCount` is
 the hand-spelled form and it is the author's to write; over a wholly empty
 source it divides by zero and faults, and that fault is deliberate
 (maintainer decision G1). What the kind does give the author is the GUARD
 that makes it avoidable: a filled count is an ordinary expression, so
 "indien het aantal gevulde … groter is dan 0" is writable in a rule's
-condition, where `AANTAL` could not serve — an instance count is 1 for a
+condition, where `count` could not serve — an instance count is 1 for a
 member without a value and would let the division through.
 
 **Worked examples (absolute; `ref/` tests verbatim, WV-3.4c-*).** The
@@ -1341,7 +1341,7 @@ and `V2` (no gewicht); `B2` salvages `V3` (5,00). The union is {V1, V2, V3}
 and the filled count is **2**. With `B2` salvaging `V1` as well, the union
 is unchanged and the filled count is still **2**: an element reachable along
 two intermediate instances contributes once. This is the example ch. 3.4b's
-word ELEMENTS waited for; under `AANTAL` the shape has no wire form at all
+word ELEMENTS waited for; under `count` the shape has no wire form at all
 (`IR-SPEC.md` WF-102 (c): a count source's range is one step; until L2
 WF-096 and WF-102 met at that node), and the filled count is the operation
 that can carry it.
@@ -1391,7 +1391,7 @@ structurally to forbid a document that already answers correctly.
 **Where a union count stands.** WF-110 (a) restricts the UNION node to one
 position — the count's single argument. The COUNT over it is an ordinary whole,
 unitless number and stands wherever any other count stands: as a rule value, in
-a `voorwaarde`, on either side of a comparison. Worked example below
+a `condition`, on either side of a comparison. Worked example below
 (`jutterswet-unievoorwaarde`).
 
 **One population.** Every selection of one union names the same element type
@@ -1422,7 +1422,7 @@ selections are {V1, V3} and {V2, V3}, the union is {V1, V2, V3} and the
 count is **3** where the sum of the parts is 4. `J2` meldt one vondst that
 is neither: both selections are empty and the count is **0**.
 
-*The union count in a `voorwaarde`.* "Een Jutter is ruim voorzien indien het
+*The union count in a `condition`.* "Een Jutter is ruim voorzien indien het
 aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter
 groter is dan 2." `J1` meldt `V1`, `V2`, `V3` aan en bergt `V3` en `V4`: the
 union is 4, so the characteristic HOLDS. `J2` meldt `V5` en `V6` aan en bergt
@@ -1529,7 +1529,7 @@ an absent timeline stays leeg). Worked example (the
 "> 10" keeps the 11-segment → 6×11 = 66; a carrier without periods, and
 one without a timeline, both total 0.
 
-**The composite clip (landed 2026-08-21).** A **flat** composite ALLE
+**The composite clip (landed 2026-08-21).** A **flat** composite `all`
 condition under gedurende clips to the **intersection** of its
 members' true-periods: the pinned runtime nests the per-member clips
 over exactly such flat characteristic lists, and interval
@@ -1537,7 +1537,7 @@ intersection is associative, so member order never matters. Members
 are own-temporal-characteristic checks. The v0 boundary, stated
 precisely: v0 partitions a **static** (non-temporal) comparison
 member out as a value-side *guard* before its clip ever runs (an AND
-gate under ALLE), and markers a temporal-attribute comparison member
+gate under `all`), and markers a temporal-attribute comparison member
 and a **nested** composite bullet as Onopgelost — v1 narrows
 composite members to the characteristic checks both executors carry;
 the static-guard form and the nested bullet are recorded loud flanks
@@ -1646,9 +1646,9 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   carries one (`sourceRole` or `sourcePath`, the relation of its set
   source). The subject's own collapse carries none: of the
   single-argument aggregations that carry an `elementType`,
-  `TOTAAL` alone may omit its range (since L2, `IR-SPEC.md` ch. 4.3), and
+  `total` alone may omit its range (since L2, `IR-SPEC.md` ch. 4.3), and
   it then reads the subject itself, so its `elementType` and its
-  argument's `objecttype` both name the subject type (WF-083 (c)).
+  argument's `subjectType` both name the subject type (WF-083 (c)).
   The two temporal-total routes carry **opposite** input conventions, and
   the asymmetry is deliberate (ch. 8.4 keeps the two case conventions
   strictly apart):
@@ -1935,14 +1935,14 @@ salvage days.
 looked up among the declared day kinds' spellings — each day kind's `name`
 and `plural` — **trimmed and case-insensitive**; one day kind carries it
 (WF-001 and WF-017 keep the spellings of two day kinds apart), and its name selects
-its single `ResolvedDagsoort` (case-insensitive again; WF-031 keeps the
+its single `DayKindDefinition` (case-insensitive again; WF-031 keeps the
 definition unique, so there is nothing to disambiguate). A spelling the
 calendar table does not know and no day kind carries is ill-formed
-(WF-035/WF-038). The definition's `geldigheid` is **not consulted**: it
+(WF-035/WF-038). The definition's `validity` is **not consulted**: it
 MUST be ALTIJD (WF-031), so there is no window to read.
 
 **Evaluation — the predicate of one day.** `P_k(d)` is the definition's
-`voorwaarde`, evaluated with **the bound day set to d** and nothing else
+`condition`, evaluated with **the bound day set to d** and nothing else
 in scope. That binding IS the runtime meaning of the `BoundDay` node
 (`IR-SPEC.md` ch. 4.1; until L4 the context value `de dag`): it is not a
 session value — ch. 8.2's evaluation date is — but the arbitrary day the
@@ -2394,19 +2394,20 @@ is touched for 17 of 31 days).
 
 ### 3.9a The quantifier fold — a condition over a linked set
 
-A **quantifier fold** (`IR-SPEC.md` ch. 4.5, wire `Kwantorvouw`, WF-108)
+A **quantifier fold** (`IR-SPEC.md` ch. 4.5, wire `QuantifierFold`, v0
+`Kwantorvouw`; WF-108)
 asks one condition of every member of a linked instance set:
 
 ```
 contributors = { m : m ∈ reach ∩ population,  filter(m) }
-ALLE  = for every m in contributors:       test(m)
-GEEN  = for every m in contributors:  not  test(m)
+all   = for every m in contributors:       test(m)
+none  = for every m in contributors:  not  test(m)
 contributors = ∅  →  waar, for BOTH quantifiers
 
 count          = | { m ∈ contributors : test(m) } |
-TEN MINSTE n   =  count ≥ n
-TEN HOOGSTE n  =  count ≤ n
-PRECIES n      =  count = n
+atLeast n      =  count ≥ n
+atMost n       =  count ≤ n
+exactly n      =  count = n
 ```
 
 `reach ∩ population` and `filter` are **ch. 3.4a's**, unchanged and
@@ -2424,11 +2425,11 @@ condition's subject**. That is the whole difference between the two
 condition fields: `filter` says which members the sentence is about,
 `test` says what it claims about them.
 
-**GEEN is the per-MEMBER complement, never the fold's.** `not (ALLE)` and
-`GEEN` are different conditions and the difference shows on exactly the
+**`none` is the per-MEMBER complement, never the fold's.** `not (all)` and
+`none` are different conditions and the difference shows on exactly the
 members whose test is false for a *temporal* reason: a member whose
 timeline does not cover the period fails the matrix, so it does not block
-`ALLE`'s failure and it does not block `GEEN` either.
+`all`'s failure and it does not block `none` either.
 
 **Order and short circuit** — two disciplines meet, each taken from the
 node it belongs to, and neither is invented here. The **contributors are
@@ -2446,38 +2447,38 @@ no fault and no §9.5 channel fact.
 reads **waar** under both quantifiers. It is the empty conjunction, and
 it is the same answer the empty set gets everywhere else a universal
 appears in this document (ch. 3.9's empty to-many range, ch. 5.10's
-`ALLE` composite over no parts) — but it is written down here because it
+`all` composite over no parts) — but it is written down here because it
 is the one rule of this node that a reader is most likely to supply from
 intuition and get backwards, and because the corpus pins it.
 
 **The counting quantifiers count the CONTRIBUTORS the matrix holds of**
 (`IR-SPEC.md` ch. 4.5, WF-108 (e); the threshold is `Compound`'s field
 under `Compound`'s rule, WF-041: at least 1). They are not a second kind
-of fold: `ALLE` is `count = |contributors|` and `GEEN` is `count = 0`
+of fold: `all` is `count = |contributors|` and `none` is `count = 0`
 written the other way round, so **one** rule of evaluation covers all
 five, and it is ch. 5.10's — the contributors are settled in full first,
 the matrix is then read in the contributors' own order (ch. 5.11) and
 stops at the first one after which the outcome stands, with ch. 5.10's
 trigger table applied verbatim, the contributors as its members. Two of
 its rows fire on the **empty prefix** here as they do there and are the
-sharper for ranging over a set rather than a written list: *at-least n*
-and *exactly n* over fewer than *n* contributors are **onwaar** having
-read nothing, and *at-most n* over at most *n* contributors is **waar**
+sharper for ranging over a set rather than a written list: `atLeast` *n*
+and `exactly` *n* over fewer than *n* contributors are **onwaar** having
+read nothing, and `atMost` *n* over at most *n* contributors is **waar**
 having read nothing.
 
 **The empty set needs no separate principle under these three.** A count
-of 0 answers each of them by itself — *at-least n* (n ≥ 1) onwaar,
-*at-most n* waar, *exactly n* onwaar — so the paragraph above is a rule
-about `ALLE` and `GEEN` and is not extended to them. Those two would come
+of 0 answers each of them by itself — `atLeast` *n* (n ≥ 1) onwaar,
+`atMost` *n* waar, `exactly` *n* onwaar — so the paragraph above is a rule
+about `all` and `none` and is not extended to them. Those two would come
 out the same way from the count; they are stated separately because that
 is where the intuition slips, and the counting arms are stated here
 because a reader might expect a vacuum rule and there is none to apply.
 
 **A NIET prefix on the matrix lands on the COUNT, because a threshold
 cannot be flipped.** ch. 3.9's "niet gedurende …" qualifies the outer
-comparison, so under `ALLE` and `GEEN` an executor may fold it by
+comparison, so under `all` and `none` an executor may fold it by
 flipping the quantifier (∀c.¬P = ¬∃c.P) — and two of the three do. No
-such move exists for *at-least 2*: there is no quantifier it turns into.
+such move exists for `atLeast` 2: there is no quantifier it turns into.
 The negation is therefore read where it is written, per contributor, and
 what it changes is the count: `count(¬P) = |contributors| − count(P)`,
 an equality and not an approximation, because the whole-period predicate
@@ -2517,9 +2518,9 @@ and the fold does not stumble over it. That is ch. 3.9's rule applied
 unchanged rather than a rule of this chapter, and it is pinned so that an
 executor which collapses "absent" into "gap" fails by name.
 
-**Under GEEN that same member changes the sign, and the two vacuous
+**Under `none` that same member changes the sign, and the two vacuous
 readings part company.** An absent timeline makes the member SATISFY its
-matrix vacuously, so it satisfies what GEEN says nobody satisfies: a
+matrix vacuously, so it satisfies what `none` says nobody satisfies: a
 ploeg whose single berger has no `dagvergoeding` at all reads
 premiegerechtigd **waar** and wisselvallig **onwaar**, while a ploeg with
 no bergers reads **waar** on both. Vacuous-at-the-member and
@@ -2528,14 +2529,14 @@ conjunction of this chapter; row 4's rule is about the SET, and nothing
 about an empty set follows from a member that happens to be empty. The
 corpus pins the pair side by side for that reason.
 
-Under **GEEN**, on the same document: bergers at 30 and 20 the whole year
+Under **`none`**, on the same document: bergers at 30 and 20 the whole year
 → **waar** (no member is above 40); 30 and 50 → **onwaar**; no bergers →
 **waar**; a single berger at 50 on the first half of 2026 only →
 **waar**, because he does not have more than 40 *gedurende het gehele
-jaar* either. Rows 6 and 7 are where GEEN turns over: both read
+jaar* either. Rows 6 and 7 are where `none` turns over: both read
 **onwaar**, because a member with no timeline satisfies the matrix
-vacuously and GEEN denies exactly that. Row 7 is the one that has to be
-pinned on its own — in row 6 the berger at 50 already decides GEEN, so
+vacuously and `none` denies exactly that. Row 7 is the one that has to be
+pinned on its own — in row 6 the berger at 50 already decides `none`, so
 that row cannot tell the empty member from the full one.
 
 With a die/dat subselection — *alle bergers die een dagvergoeding van
@@ -2551,8 +2552,8 @@ executing the sentence above rather than by recognising one matrix shape.
 Document: a `Schouwploeg` reaches its `wachten` over the to-many role of
 `schouwindeling`; `dienstjaren` is a plain attribute of `Strandwacht` and
 `gediplomeerd` a characteristic of it. Four folds in one document:
-*ervaren* = `ALLE` over `dienstjaren > 5`, *onervaren* = `GEEN` over the
-same, *bevoegd* = `ALLE` over `gediplomeerd`, *sluitend* = `GEEN` over
+*ervaren* = `all` over `dienstjaren > 5`, *onervaren* = `none` over the
+same, *bevoegd* = `all` over `gediplomeerd`, *sluitend* = `none` over
 `niet gediplomeerd`.
 
 | # | ploeg | the ploeg's wachten (dienstjaren, diploma) | ervaren | onervaren | bevoegd | sluitend |
@@ -2564,7 +2565,7 @@ same, *bevoegd* = `ALLE` over `gediplomeerd`, *sluitend* = `GEEN` over
 | 4 | S1 | none | **waar** | **waar** | **waar** | **waar** |
 | 5 | S1 | leeg ja, 3 ja | onwaar | **waar** | **waar** | **waar** |
 
-Row 2 is `GEEN` ≠ `not (ALLE)` again, now with no temporal reason in the
+Row 2 is `none` ≠ `not (all)` again, now with no temporal reason in the
 matrix at all: one member above the bound and one below leaves both folds
 false. It also holds a SECOND ploeg in the same case, and that row is the
 RANGE: S2's single wacht is above the bound, so S2 reads *ervaren* while
@@ -2576,16 +2577,16 @@ defined for EVERY element has to avoid. Row 3 pins the strict bound, row 4
 the vacuous set under both quantifiers. Row 5 is the **leeg** member, and
 it is the counterpart of
 row 7 above: an ordering comparison over leeg is onwaar (ch. 1.2d), so the
-member FAILS its matrix — it breaks `ALLE` and is no witness for `GEEN` —
+member FAILS its matrix — it breaks `all` and is no witness for `none` —
 whereas an absent TIMELINE PASSES its whole-period matrix vacuously and
-therefore breaks `GEEN`. Nothing but the matrix decides which of the two
+therefore breaks `none`. Nothing but the matrix decides which of the two
 readings applies, which is why both are pinned.
 
 *sluitend* is the **negated matrix**, and it answers what *bevoegd*
 answers in every row. On a non-temporal matrix the "niet" is part of the
 condition and is read per member, so the quantifier is untouched — unlike
 ch. 3.9's "niet gedurende …", which qualifies the outer comparison and
-which an executor may therefore fold by flipping `ALLE` into `GEEN`
+which an executor may therefore fold by flipping `all` into `none`
 (∀c.¬P = ¬∃c.P). Both are the same verdict; stating where the negation
 lives is what keeps an executor from applying that flip twice.
 
@@ -2596,9 +2597,9 @@ lives is what keeps an executor from applying that flip twice.
 `Reddingssloep` and `gekeurd` a characteristic of it. One matrix — the
 ch. 3.9 whole-period test *vaartijd > 20 gedurende het gehele jaar* —
 under three quantifiers, plus a fourth fold that adds a die/dat
-subselection to the same matrix: *inzetbaar* = `TEN MINSTE 2`,
-*krap* = `TEN HOOGSTE 1`, *paraat* = `PRECIES 1`, *geschikt* =
-`TEN MINSTE 2` over the sloepen *die gekeurd zijn*. `sloeptal` is the
+subselection to the same matrix: *inzetbaar* = `atLeast` 2,
+*krap* = `atMost` 1, *paraat* = `exactly` 1, *geschikt* =
+`atLeast` 2 over the sloepen *die gekeurd zijn*. `sloeptal` is the
 plain instance fold beside them, so every row also states how large the
 unfiltered range is.
 
@@ -2618,9 +2619,9 @@ counts over the `gekeurd` survivors and its own counts are 2, 1, 0, 1, 1,
 1 and 0 in the seven rows.
 
 Rows 1 and 2 pin each threshold **from both sides at once**, which is
-what one shared matrix buys: a count of 2 satisfies *at-least 2* exactly
-at its threshold and breaks *at-most 1* by exactly one, and a count of 1
-turns both of those over while satisfying *exactly 1*. Row 3 is the empty
+what one shared matrix buys: a count of 2 satisfies `atLeast` 2 exactly
+at its threshold and breaks `atMost` 1 by exactly one, and a count of 1
+turns both of those over while satisfying `exactly` 1. Row 3 is the empty
 set under all three — and it is the paragraph above made observable: a
 count of 0 decides each quantifier without any vacuum rule, so *krap* is
 **waar** where *inzetbaar* and *paraat* are **onwaar**, which no single
@@ -2638,8 +2639,8 @@ nothing else in the document moves. V2 pins the **range** the way
 same run in which V1 reads neither, so an executor quantifying over every
 `Reddingssloep` rather than over the vloot's own sloepen answers it the
 other way — and it is also where ch. 5.10's **empty-prefix** triggers
-fire: over one contributor, *at-least 2* is out of reach before the
-matrix is read once, and *at-most 1* can no longer be exceeded, so both
+fire: over one contributor, `atLeast` 2 is out of reach before the
+matrix is read once, and `atMost` 1 can no longer be exceeded, so both
 answer having read nothing. Row 6 is the empty SELECTION beside a filled
 range: two satisfying sloepen, neither `gekeurd`, so *inzetbaar* is
 **waar** on a count of 2 while *geschikt* counts over ∅ and is **onwaar**
@@ -2653,8 +2654,9 @@ A **period condition** (`TimeWindow`, `IR-SPEC.md` ch. 4.5) restricts a
 rule to a date window. Two cases:
 
 **Scalar target — the evaluation-date gate (v0 behaviour, mirrored).**
-The rule applies iff the evaluation date lies in the window: `vanaf`
-inclusive, `tot` exclusive, "tot en met" inclusive; an absent bound is
+The rule applies iff the evaluation date lies in the window: `from`
+inclusive, `to` exclusive, inclusive where the source wrote "tot en met"
+(`toInclusive`); an absent bound is
 open; an unset evaluation date never matches; a leeg bound never matches.
 Worked example: window [2024-01-01, 2025-01-01), evaluation date
 2024-12-31 → applies; 2025-01-01 → does not; the "tot en met 2024-12-31"
@@ -2664,7 +2666,7 @@ attribute, of day precision (`IR-SPEC.md` WF-111 — the precision clause
 closes a measured split: a LEEG datum-tijd bound played in `ref`, which
 refused only a filled instant, while the ASP backend refused the bound
 statically), and the window never
-sits under `GEEN` or a counting quantifier (WF-112). Both rules promote
+sits under `none` or a counting quantifier (WF-112). Both rules promote
 what used to be a v0 mirror note about backend maturity: v0's backends
 lower only those two bound shapes and refuse the condition under counting
 quantifiers, while v0's IR admits any date expression (WF-042). The
@@ -2679,9 +2681,9 @@ hide that:
 | the window sits | status |
 |---|---|
 | as a rule's whole condition | executed by all four (five rules in the golden, one per spelling) |
-| as a member of an `ALLE` or `DE` composite | executed by all four (the golden's `borgpremie`). In a consistency assertion, as its whole criterion or an `ALLE` member, executed by all four since 2026-09-23: both Drools branches refused it until card `drools-venster-vouwtoets` (witness `VensterAssertieWitnessTest` in the Drools backend; no golden) |
-| in the `toets` or the `filter` of an `ALLE` quantifier fold, or in the die/dat `filter` of an aggregation | executed by all four since 2026-09-23, the member as the window's subject: a bound that is an attribute is read on each member. The Drools exec-model branch refused all three positions until card `drools-venster-vouwtoets`; golden `corpus/golden/jutterswet-wachtvenster` pins them, each ploeg carrying a same-named date of its own that a reading on the fold's subject would take |
-| under `GEEN` or a counting quantifier | ill-formed since 2026-09-23 (WF-112; negatief `wf112-periodevenster-tellende-kwantor`). Before that all four executors refused it, and their refusals remain as fail-fast checks — both Drools branches' by name since card `drools-venster-vouwtoets`, at every position that holds a condition: a rule condition, a quantifier fold's `filter` and `toets`, an aggregation filter, a consistency assertion and a fact-creation guard. The rule reaches into a quantifier fold's `filter` and `toets` too: measured that day, the Drools DRL-text branch answered the fold under all five quantifiers, the complement included |
+| as a member of an `all` or `the` composite | executed by all four (the golden's `borgpremie`). In a consistency assertion, as its whole criterion or an `all` member, executed by all four since 2026-09-23: both Drools branches refused it until card `drools-venster-vouwtoets` (witness `VensterAssertieWitnessTest` in the Drools backend; no golden) |
+| in the `test` or the `filter` of an `all` quantifier fold, or in the die/dat `filter` of an aggregation | executed by all four since 2026-09-23, the member as the window's subject: a bound that is an attribute is read on each member. The Drools exec-model branch refused all three positions until card `drools-venster-vouwtoets`; golden `corpus/golden/jutterswet-wachtvenster` pins them, each ploeg carrying a same-named date of its own that a reading on the fold's subject would take |
+| under `none` or a counting quantifier | ill-formed since 2026-09-23 (WF-112; negatief `wf112-periodevenster-tellende-kwantor`). Before that all four executors refused it, and their refusals remain as fail-fast checks — both Drools branches' by name since card `drools-venster-vouwtoets`, at every position that holds a condition: a rule condition, a quantifier fold's `filter` and `test`, an aggregation filter, a consistency assertion and a fact-creation guard. The rule reaches into a quantifier fold's `filter` and `test` too: measured that day, the Drools DRL-text branch answered the fold under all five quantifiers, the complement included |
 
 Both bound shapes WF-111 admits are executed (a date literal and the
 subject's own scalar date attribute). Any other bound is ill-formed:
@@ -2720,8 +2722,9 @@ format pins every expected timeline to the grid (ch. 3.12, OPEN):
   write happens with an unset evaluation date and with one outside the
   window alike. The scalar gate's clause "an unset evaluation date never
   matches" is about the evaluation moment and has no counterpart here.
-- **The bounds read as the gate's do:** `vanaf` inclusive, `tot` exclusive,
-  "tot en met" inclusive (the window then ends the day after), an absent
+- **The bounds read as the gate's do:** `from` inclusive, `to` exclusive,
+  "tot en met" (`toInclusive`) inclusive (the window then ends the day
+  after), an absent
   bound open, bound shapes per `IR-SPEC.md` WF-111. A bound that is the
   subject's own attribute is read per subject.
 - **The restriction cuts SEGMENTS, never values.** A segment that straddles
@@ -2732,7 +2735,7 @@ format pins every expected timeline to the grid (ch. 3.12, OPEN):
   *Suite-pinned only* (see above).
 - **An empty window writes an empty timeline.** A leeg bound puts no day in
   the window (the gate's "a leeg bound never matches", read per day), and a
-  window whose `vanaf` lies after its `tot` has no days either. A window
+  window whose `from` lies after its `to` has no days either. A window
   that misses the produced timeline leaves nothing of it. The clipped result
   is then the temporal leeg, and on a standing temporal target it writes
   nothing (ch. 7.8), as for any producer.
@@ -2842,20 +2845,20 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Timeline arithmetic beyond plus/min (verminderd-met, maal, division, percentage) | refused (mirrored); OPEN — per-period lifting of ch. 1.2 rules is the candidate |
 | Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |
 | min/max/eerste/laatste over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
-| §8.4.3 period condition on a **scalar** target | **specified and executed, ch. 3.10** — all four executors since 2026-09-20, witness `corpus/golden/jutterswet-premievenster` (six clauses; as a rule's whole condition and as an ALLE/DE composite member) |
-| §8.4.3 period condition under `GEEN` or a counting quantifier | **ill-formed (WF-112, maintainer decision 2026-09-23)**: the window gates the rule, and no reading is specified for its complemented or counted verdict (the time-free session is where the two readings part). Covers a quantifier fold's `filter` and `toets` too. Negatief `wf112-periodevenster-tellende-kwantor`; the executors' refusals remain as fail-fast checks, both Drools branches' by name since card `drools-venster-vouwtoets` |
+| §8.4.3 period condition on a **scalar** target | **specified and executed, ch. 3.10** — all four executors since 2026-09-20, witness `corpus/golden/jutterswet-premievenster` (six clauses; as a rule's whole condition and as an `all`/`the` composite member) |
+| §8.4.3 period condition under `none` or a counting quantifier | **ill-formed (WF-112, maintainer decision 2026-09-23)**: the window gates the rule, and no reading is specified for its complemented or counted verdict (the time-free session is where the two readings part). Covers a quantifier fold's `filter` and `test` too. Negatief `wf112-periodevenster-tellende-kwantor`; the executors' refusals remain as fail-fast checks, both Drools branches' by name since card `drools-venster-vouwtoets` |
 | §8.4.3 period condition on a temporal target | **specified (delta) and executed: the clip, ch. 3.10** — `ref` and the ASP backend since 2026-09-23, on attribute targets with the ch. 3.7/3.8 producers. Corpus-pinned by `corpus/golden/jutterswet-pachtvenster` wherever the case lies on the grid (the evaluation date ignored — unset and outside every window alike —, a leeg or empty window writing the empty timeline); the SEGMENT-CUTTING clause is suite-pinned only, in both OCaml executors. Both Drools branches refuse it by name. Still refused by name in both OCaml executors: the window as a composite MEMBER on a temporal target (OPEN), and a temporal CHARACTERISTIC target (red case `periodevenster-tijdlijnkenmerk`), because no temporal characteristic is written (ch. 3.11) |
 | A corpus carrier for a clipped (off-grid) bucket | **OPEN** — a corpus carrier for a cut bucket needs the case schema (`uchar-case-v0`, `timelineValue`) to release EXPECTED timelines from the declared grid; until then the clause lives in the executors' suites. The alternative, a WF rule demanding on-grid bounds for a clip, is not taken |
-| A time window inside the `filter` of an `ALLE` quantifier fold, in a time-free session | **OPEN, no WF-112 widening** (maintainer decision 2026-09-23): `ref`, the ASP backend and the Drools DRL-text branch answer consistently — the window never matches, the member is filtered out, the fold is vacuously true — so there is no unnamed complement reading and no ground for refusal. Since 2026-09-23 (card `drools-venster-vouwtoets`) the Drools exec-model branch carries it too, so all four executors answer it alike; `corpus/golden/jutterswet-wachtvenster` pins the vacuous reading in all four (`bevoegd` in `case3-tijdvrij`) |
-| A period-condition bound other than a literal or an own scalar attribute | **ill-formed (WF-111, maintainer decision 2026-09-23)**; negatief `wf111-periodegrens-parameterdatum`. The general date expression (a parameter, a navigated read, arithmetic) is an **OPEN wire decision**: no corpus document asks for it, and a bound not tied to the subject gives the ASP encoding no fault atom to attach to. A v1 card that takes it on moves WF-111 and gives ch. 5.11's `vanaf`-before-`tot` order its first witness |
+| A time window inside the `filter` of an `all` quantifier fold, in a time-free session | **OPEN, no WF-112 widening** (maintainer decision 2026-09-23): `ref`, the ASP backend and the Drools DRL-text branch answer consistently — the window never matches, the member is filtered out, the fold is vacuously true — so there is no unnamed complement reading and no ground for refusal. Since 2026-09-23 (card `drools-venster-vouwtoets`) the Drools exec-model branch carries it too, so all four executors answer it alike; `corpus/golden/jutterswet-wachtvenster` pins the vacuous reading in all four (`bevoegd` in `case3-tijdvrij`) |
+| A period-condition bound other than a literal or an own scalar attribute | **ill-formed (WF-111, maintainer decision 2026-09-23)**; negatief `wf111-periodegrens-parameterdatum`. The general date expression (a parameter, a navigated read, arithmetic) is an **OPEN wire decision**: no corpus document asks for it, and a bound not tied to the subject gives the ASP encoding no fault atom to attach to. A v1 card that takes it on moves WF-111 and gives ch. 5.11's `from`-before-`to` order its first witness |
 | Negated temporal-characteristic condition | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN; the navigated case stays refused/OPEN — as a WRITE producer only; the navigated whole-period READ is the row below |
 | Version-validity window on a temporal write | OPEN — the ch. 8 axis decision |
 | Date-valued whole-period comparison | refused (mirrored) |
 | Whole-period qualifier, the **characteristic-holds** test (own and navigated, both grids, the qualifier's negation) | **specified and executed, ch. 3.9** — all three executors, witnessed by `corpus/golden/synth-gehelejaarkenmerk`; the two OCaml ones carry it since 2026-09-11, the Drools backend carried it already |
 | Whole-period qualifier over a characteristic, the **inner** negation ("gedurende … NIET") | specified (ch. 3.9's formula), executed by the two OCaml executors; the Drools backend refuses it by name in both branches, so it stays suite-pinned and out of the corpus |
 | Whole-period qualifier, the **ordering/equality** test over a value timeline | **specified and executed, ch. 3.9** — the reference interpreter and the ASP backend built it 2026-09-16 (the heelperiode-forall card), the Drools backend carried it already; witnessed by `corpus/golden/jutterswet-ploegpremie` and by each executor's own suite. The **date-valued** form stays refused (its own row above), and the navigated form is untouched |
-| Whole-period qualifier, the **leeg/gevuld** tests | specified (ch. 3.9), **executed by no executor** — all three refuse them by name. The two OCaml executors refuse every whole-period leeg/gevuld test in the same words. The Drools loader refuses the NEGATED test as `Predicaat.negatie`, because the threshold it takes is an open norm point (ch. 1.2), and since 2026-09-23 the UNNEGATED test as `Predicaat.periode`, because `ref` executes neither fold, so no second executor could check its answer. Four red cases hold the refusals and close the square soort × negatie: `corpus/rood/leegnegatie-heel-tijdvak` and `corpus/rood/gevuldnegatie-heel-tijdvak` (negated), `corpus/rood/leegtest-heel-tijdvak` and `corpus/rood/gevuldtest-heel-tijdvak` (unnegated). Gate 8 pins the OCaml sentence in both OCaml executors and lists each case as a Drools loader EXCLUDE; the backend's own witness test, run in gate 8's build step, asserts key and ground for three of them, and for the negated gevuld test the listed category is the only guard. The threshold clause the leeg test needs (touched-days rather than calendar days) is stated in ch. 3.9 and implemented in the Drools runtime, which no document reaches while the loader refuses both forms; the sibling that landed above deliberately did not take it along, because a clause with no witness on this side would be a green subset |
-| **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — ALLE and GEEN in all three executors, over a WHOLE-PERIOD matrix (witness `corpus/golden/jutterswet-ploegpremie`) and, since 2026-09-16, over a NON-temporal one (witness `corpus/golden/jutterswet-schouwploeg`: five cases carrying six verdict rows — two ploegen share one of them, which is what pins the RANGE — both quantifiers, two matrix shapes and a negated matrix). The executor asymmetry this row used to record is **gone**: the ASP backend REIFIES the matrix into a helper predicate and negates that one atom (negation-as-failure over a reified conjunction is an ordinary ASP body, where the complement of an arbitrary conjunction of atoms is not), and both Drools branches ask the matrix through their ordinary per-subject condition lowering with the element as subject — the exec branch collecting the contributors, the DRL-text branch denying the failure witness with a `not` pattern. What stays bounded is which matrix FORMS each executor's condition translation carries: a form outside it is refused by name, per form, never silently. **All five quantifiers are executed since 2026-09-16**: the counting three — the named extension point this row used to record — are built in all three executors over BOTH matrix routes, each of them reading the SIZE of the satisfier set where ALLE and GEEN read a witness (the ASP backend a `#count` with the range join INSIDE the aggregate, the Drools exec branch a counting twin of the ch. 3.9 fold helpers and a count over the collected contributors, the DRL-text branch a count accumulate over the element pattern). Witnesses `corpus/golden/jutterswet-reddingsvloot` (the §8.2 matrix, seven verdict rows), `corpus/golden/jutterswet-vuurtoren` (a non-temporal one, six) and `corpus/golden/jutterswet-sleepvloot` (the NIET prefix, which under a threshold lands on the COUNT because there is no quantifier to flip into — three rows, four of whose cells invert if `count(P)` is read for `count(¬P)`). What is left on the quantifier field is `DE`, refused by name by WF-108 (a); all matrix routes of this node are executed by all four executors since 2026-09-18; what stays bounded is which matrix FORMS each executor's condition translation carries, per form and by name. Since 2026-09-19 the node also has a SOURCE language: `corpus/golden/jutterswet-vuurtoren-flogic` is the F-logic-emitted twin of the hand-written `jutterswet-vuurtoren`, over the same five case files byte for byte, played by all four executors |
+| Whole-period qualifier, the **leeg/gevuld** tests | specified (ch. 3.9), **executed by no executor** — all three refuse them by name. The two OCaml executors refuse every whole-period leeg/gevuld test in the same words. The Drools loader refuses the NEGATED test as `Predicaat.negatie`, because the threshold it takes is an open norm point (ch. 1.2), and since 2026-09-23 the UNNEGATED test as `Predicaat.periode`, because `ref` executes neither fold, so no second executor could check its answer. Four red cases hold the refusals and close the square `kind` × `negated`: `corpus/rood/leegnegatie-heel-tijdvak` and `corpus/rood/gevuldnegatie-heel-tijdvak` (negated), `corpus/rood/leegtest-heel-tijdvak` and `corpus/rood/gevuldtest-heel-tijdvak` (unnegated). Gate 8 pins the OCaml sentence in both OCaml executors and lists each case as a Drools loader EXCLUDE; the backend's own witness test, run in gate 8's build step, asserts key and ground for three of them, and for the negated gevuld test the listed category is the only guard. The threshold clause the leeg test needs (touched-days rather than calendar days) is stated in ch. 3.9 and implemented in the Drools runtime, which no document reaches while the loader refuses both forms; the sibling that landed above deliberately did not take it along, because a clause with no witness on this side would be a green subset |
+| **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — `all` and `none` in all three executors, over a WHOLE-PERIOD matrix (witness `corpus/golden/jutterswet-ploegpremie`) and, since 2026-09-16, over a NON-temporal one (witness `corpus/golden/jutterswet-schouwploeg`: five cases carrying six verdict rows — two ploegen share one of them, which is what pins the RANGE — both quantifiers, two matrix shapes and a negated matrix). The executor asymmetry this row used to record is **gone**: the ASP backend REIFIES the matrix into a helper predicate and negates that one atom (negation-as-failure over a reified conjunction is an ordinary ASP body, where the complement of an arbitrary conjunction of atoms is not), and both Drools branches ask the matrix through their ordinary per-subject condition lowering with the element as subject — the exec branch collecting the contributors, the DRL-text branch denying the failure witness with a `not` pattern. What stays bounded is which matrix FORMS each executor's condition translation carries: a form outside it is refused by name, per form, never silently. **All five quantifiers are executed since 2026-09-16**: the counting three — the named extension point this row used to record — are built in all three executors over BOTH matrix routes, each of them reading the SIZE of the satisfier set where `all` and `none` read a witness (the ASP backend a `#count` with the range join INSIDE the aggregate, the Drools exec branch a counting twin of the ch. 3.9 fold helpers and a count over the collected contributors, the DRL-text branch a count accumulate over the element pattern). Witnesses `corpus/golden/jutterswet-reddingsvloot` (the §8.2 matrix, seven verdict rows), `corpus/golden/jutterswet-vuurtoren` (a non-temporal one, six) and `corpus/golden/jutterswet-sleepvloot` (the NIET prefix, which under a threshold lands on the COUNT because there is no quantifier to flip into — three rows, four of whose cells invert if `count(P)` is read for `count(¬P)`). What is left on the quantifier field is `the`, refused by name by WF-108 (a); all matrix routes of this node are executed by all four executors since 2026-09-18; what stays bounded is which matrix FORMS each executor's condition translation carries, per form and by name. Since 2026-09-19 the node also has a SOURCE language: `corpus/golden/jutterswet-vuurtoren-flogic` is the F-logic-emitted twin of the hand-written `jutterswet-vuurtoren`, over the same five case files byte for byte, played by all four executors |
 | **Day-kind duration forms** (§6.10 count, §6.11 step) over day-precision operands | **specified and executed, ch. 3.8** — ref and clingo since 2026-09-19, the Drools backend playing the same values (golden `jutterswet-bergingsklok`; red case `dagsoort-onvervulbare-wandeling`). The reach fence and the backward step are DELTAS: the source gives neither, and the source's N = 0 sentence contradicts its own "always a day of the kind" sentence, which ch. 3.8 resolves in favour of the zero rule |
 | **`datum-tijd ± N <dagsoort>`** | **specified and executed, ch. 3.8** (maintainer decision 2026-09-19): the day kind is judged on the civil day part and the original clock time rides through unchanged; golden `jutterswet-getijklok` closes the square. The DELTA is the rule itself — the source admits datum-tijd operands and settles nothing about the time of day |
 | **`tijdsduur` in a day kind over datum-tijd operands** | **refused by name** in both OCaml executors, no corpus case (maintainer decision 2026-09-19, split from the row above): counting whole days of a kind between two INSTANTS needs a rule for the part-day at each end, and none is fixed. OPEN — it is the partial-day/boundary-instant question, not the day-kind question. The Drools backend counts over the bare date parts, a reading this spec has not adopted |
