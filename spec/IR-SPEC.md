@@ -305,7 +305,7 @@ to re-normalise inside it.
   stored unchecked, an unresolved timeline reference leaves the member
   untagged. **Delta (promotion):** unresolved references are ill-formed in
   v1; the unknown-type datatype does not exist in v1 (ch. 2.4). **Landed L2
-  (2026-09-24, B16, D15):** the unknown-type node left the datatype union, so
+  (2026-09-24, B16):** the unknown-type node left the datatype union, so
   an unfindable domain is spelled as what it is — a declaration naming a
   domain no declaration carries: an attribute (or domain) whose enumeration
   names an undeclared domain is refused here, a parameter doing the same by
@@ -1129,7 +1129,7 @@ no-hole/equality semantics are `RUNTIME-SEMANTICS.md` ch. 11.
   instead of carrying an unknown-type sentinel. Honest inexpressibility at
   the *expression* level remains the job of the `Onopgelost` node
   (`CONSTRUCTS.md` row 16), which is a different thing: a well-formed
-  marker with a reason, not a type. **Landed L2 (2026-09-24, B16, D15).**
+  marker with a reason, not a type. **Landed L2 (2026-09-24, B16).**
   The unknown-type node left the datatype union: the schema carries no
   such node and every loader refuses it by name as an unknown datatype
   node. An unfindable domain is a declaration naming a domain that no
@@ -1138,7 +1138,8 @@ no-hole/equality semantics are `RUNTIME-SEMANTICS.md` ch. 11.
   producer cannot type carries `type: null` (ch. 4.2). Of the 137 unknown-type
   nodes the four zones and the parity zone carried (measured by the L2
   migration), 130 sat on reference types and left with the reference's own
-  `type` (B13), one on a derived position became `type: null` (U3), and the
+  `type` (B13), one on a derived position became `type: null` (ch. 4.2;
+  recorded in the L2 card, `backlog/done/20260923-l2-referentielaag.md`), and the
   six at declarations and payloads of negatief witnesses were rewritten or
   removed with reason (`corpus/negatief/README.md`, L2).
 
@@ -1751,9 +1752,9 @@ granularity becomes `{granularity, count: 1}`; no v0 parameter carries a
 timeline name.
 
 - **WF-018** A parameter's datatype MUST resolve (WF-003) and its timeline
-  facet, when present, MUST satisfy WF-005. Since L2 (2026-09-24, D15) an
+  facet, when present, MUST satisfy WF-005. Since L2 (2026-09-24, B16) an
   unresolvable domain is a parameter whose enumeration names a domain no
-  declaration carries (the unknown-type node left the datatype union, B16;
+  declaration carries (the unknown-type node left the datatype union;
   witness `wf018-parameter-onbekend`, rewritten by hand). **Delta
   (promotion).**
 
@@ -1961,8 +1962,9 @@ the literal true — mirrored.)
   `RUNTIME-SEMANTICS.md` ch. 2.4 (including its candidate rule: a possibly
   non-terminating value passes explicit rounding before a bounded write).
   The keuzetype clause is the **write half** of the domain identity WF-089
-  states for the read side: WF-089 crosses what a reference *reads*, this
-  crosses what is *written* into the declaration it reads. It is also what
+  states for the read side: WF-089 crosses what a read hands on (since L2
+  the element-passing aggregation; until L2 also a reference's own `type`),
+  this crosses what is *written* into the declaration a read reads. It is also what
   makes "labels from the target's domain" mechanically true — a `Literal`'s
   label belongs to the domain the literal itself names (WF-039 against the
   local list, WF-088 for that list against the declaration), so once the
@@ -1975,10 +1977,11 @@ the literal true — mirrored.)
   (`RUNTIME-SEMANTICS.md` ch. 2.10). Deferrals, as elsewhere: a target that
   does not resolve (WF-022), a value whose type nothing declares (an
   unresolved reference, an `Unresolved` of unknown type). The precision gate needs expression-shape analysis and stays
-  OPEN — a different question from the READ-side precision facet, which is
-  WF-091's (ch. 4.1) and closed: that one crosses a reference's annotated
-  decimals against its own declaration, this one a computed value against
-  its target's. The **struct twin** of the keuzetype clause is CLOSED (2026-09-03):
+  OPEN — a different question from WF-091's precision facets (ch. 4.1),
+  which cross a derived node's annotated decimals and wholeness against
+  what its operands derive (until L2 also a reference's annotated decimals
+  against its own declaration); this one would cross a computed value
+  against its target's declared precision. The **struct twin** of the keuzetype clause is CLOSED (2026-09-03):
   `domains` declares struct domains too, and a `StructLiteral` of domain B
   assigned to an attribute of domain A used to be verifier-clean — ref
   faulted at the field read and the ASP backend gave a wrong answer. That
@@ -2169,7 +2172,7 @@ the only bound object. Semantics and worked examples:
 relation, binding **the role the hop's far side fills**; the near side
 fills the opposite role, so direction is implied and the earlier
 sketch's separate `direction` field is dropped (cardinality is the
-bound role's declared `many`). **Landed L2 (2026-09-24, B7, D12):** the
+bound role's declared `many`). **Landed L2 (2026-09-24, B7):** the
 bean fields left the wire. A backend that stores relations as reference
 fields derives them from the role bindings by its own role→field mapping:
 the derivation moved down into the backend, out of the IR (the Phase-3
@@ -2291,7 +2294,7 @@ scoped form per scope parent, with the v0 narrowing that scope-less
 instances do not participate mirrored and recorded
 (`RUNTIME-SEMANTICS.md` ch. 5.9). The emitter produces `scopeRol` since
 the 2026-08-18 pin bump (toolchain `fe46e49`). **Landed L2 (2026-09-24,
-B8, D12):** the written bean-field name of the scope, `scopeVeld`, left the wire, and
+B8):** the written bean-field name of the scope, `scopeVeld`, left the wire, and
 `scopeRol` IS the scoping — a uniqueness carrying it is scoped, one
 without it is not. **WF-054:** the scope binding resolves (WF-047's
 resolution: the declared role name binds), its near side is filled by the
@@ -2472,9 +2475,9 @@ the schema when it does.
 | Node | Fields | Notes |
 |---|---|---|
 | Literal | `value`, `type`, `source` | **Delta (row 27):** v0 carries a LEXEME as the value — a string the executors parse — and v1 carries a typed value. Which lexeme, per sort: WF-081 pins the bare number, WF-084 the ISO date, and a `Tekst` literal's value is the string BETWEEN the source delimiters (maintainer decision 2026-09-18). An enumeration value's lexeme is the BARE label, which WF-039 crosses byte-exactly against the declared value list, so the delimited spelling is ill-formed on this wire; the sentence that once stood here — "an enumeratiewaarde keeps its `'…'` delimiters, which readers strip" — described a FRONTEND reader, never the wire, and is corrected in the paragraph below (maintainer decision 2026-09-19). No sort carries a source-shaped lexeme any more: WF-095 admitted the day-first snippet for `DatumTijd` until the emitter wrote it into `waarde`, and since 2026-09-22 pins the ISO datetime alone (card `p5-datumtijd-lexeem`). The unparsed source slice always lives in `source` (`bron` on the v0 wire), which is where a reader that wants the author's spelling looks |
-| AttributeReference | `attribute`, `subjectType`, `path` (role steps), `source` | **Delta (row 4):** v0 split navigation over a written role name (`navigatieRol`), a written path (`navigatiePad`) and a set flag (`set`), and kept a transpiler-facing subject spelling (`onderwerpBron`); v1 unifies into one explicit path of role steps, with result cardinality derived from the declared role cardinalities. **Landed (2026-08-18):** the symbolic path rides the wire as the `navigatieBindingen` extension field (ch. 4.1a, WF-053); the anchor `jutterswet-kustwacht` executes all three navigated shapes through both executors. **Landed L2 (2026-09-24, B11, B13, D10):** the written-name fields, the set flag and the reference's own `type` left the wire. A reference carries no type: its type is the declaration it reads (`RUNTIME-SEMANTICS.md` ch. 2.10). A read without `navigatieBindingen` is the subject's own read |
+| AttributeReference | `attribute`, `subjectType`, `path` (role steps), `source` | **Delta (row 4):** v0 split navigation over a written role name (`navigatieRol`), a written path (`navigatiePad`) and a set flag (`set`), and kept a transpiler-facing subject spelling (`onderwerpBron`); v1 unifies into one explicit path of role steps, with result cardinality derived from the declared role cardinalities. **Landed (2026-08-18):** the symbolic path rides the wire as the `navigatieBindingen` extension field (ch. 4.1a, WF-053); the anchor `jutterswet-kustwacht` executes all three navigated shapes through both executors. **Landed L2 (2026-09-24, B11, B13):** the written-name fields, the set flag and the reference's own `type` left the wire. A reference carries no type: its type is the declaration it reads (`RUNTIME-SEMANTICS.md` ch. 2.10). A read without `navigatieBindingen` is the subject's own read, and its `objecttype` EQUALS the subject type — a supertype of the subject does not suffice (ch. 4.1a, WF-053) |
 | ParameterReference | `parameter` (name ref), `source` | the wire form is symbolic (the emitter writes the name) — the "embed the model object" wart is in-memory only. No `type` since L2 (B13): the parameter's declaration is the one source |
-| VariableReference | `name`, `source` | a rule-local let-binding (§13.4.2.10); binding is frontend scope resolution; the node survives only as the marker for a variable the resolver could not bind. No `type` since L2 (B13, D13) |
+| VariableReference | `name`, `source` | a rule-local let-binding (§13.4.2.10); binding is frontend scope resolution; the node survives only as the marker for a variable the resolver could not bind. No `type` since L2 (B13; `CONSTRUCTS.md` row 24) |
 | ContextValue | `name` ∈ evaluation-date, evaluation-year, day-kind day | **WF-098 (below):** the name is a CLOSED SET of exactly three — `Rekendatum`, `Rekenjaar`, `de dag` — crossed BYTE-EXACTLY. Nothing in the document declares a context value, so this is an enumeration, not a resolution. **Delta (row 25):** split from v0's `Constante` grab-bag; the pronoun referents that shared that node are surface forms the frontend resolves away. *v0 mirror note:* the wire carries `Constante` named `Rekendatum` (typed day-precision), `Rekenjaar` (whole number) or `de dag` (typed day-precision); `Rekendatum` is the ch. 8.2 execution-date constant and the index of the ch. 8.3 vintage read (`RUNTIME-SEMANTICS.md`); **`de dag`** is semantically the BOUND DAY of a day-kind definition (ch. 3.7) — the arbitrary day the definition is about, not a session value — spelled as a context value because v0 has no node kind of its own for it; whether v1 gives it one is an open point, deliberately not decided with this row. Its RUNTIME meaning **landed 2026-09-19** in `RUNTIME-SEMANTICS.md` ch. 3.8, with the day-kind duration forms that bind it — not in ch. 8, which is time SELECTION and owns the session values only: `de dag` is the bound day of a day-kind definition, so its meaning is stated where the binding is made, and outside one it denotes nothing and every executor faults by name (red case `contextwaarde-de-dag-buiten-dagsoort`). The converse — a SESSION value inside a day-kind voorwaarde — is refused by WF-031's position arm (ch. 3.7); WF-098 itself stays flat. `Rekenjaar` is admitted-and-unexecuted: no document carries it and the reference interpreter faults on it by name, which is the honest answer, so it stays in the set without a carrier |
 
 **The reference carries no type (landed L2, 2026-09-24, B13).** The five
@@ -2508,16 +2511,14 @@ numbers, not once under a widened term.
 sentence; the sentence is stated here whole. Since L2 its use sites are
 the derived positions (the next paragraphs): the reference-type arm and
 the rule-target arm left the wire with the reference's own `type` (B13).
-*(History until L2, the reference arm as it stood:)* a use site's serialized
-`type` MUST be **identical** to the declaration it takes its value from —
-not compatible with it, not convertible to it: identical on every facet
-the datatype carries, up to the case-insensitive comparison WF-001 fixes
-for a declared DOMAIN name. The three UNIT names are compared byte for
-byte, for the reason the unit paragraph below gives. The facets are
-compared in one fixed order,
+A derived node's `type` MUST be **identical** to the type its operands
+derive — not compatible with it, not convertible to it: identical on
+every facet the position's formula claims, up to the case-insensitive
+comparison WF-001 fixes for a declared DOMAIN name. The three UNIT names
+are compared byte for byte, for the reason the unit paragraph below
+gives. The facets are compared in one fixed order,
 
-> **soort → domain → unit → decimals → wholeness → sign → residual
-> structure**,
+> **soort → domain → unit → decimals → wholeness**,
 
 and the FIRST facet that differs is the single violation reported: one
 comparison yields one message, never two facets at once. Per *comparison*,
@@ -2535,40 +2536,62 @@ a `BinderRef`, ch. 4.7). Every facet without one is **WF-091**'s, and
 names itself in the message. That is what makes the rule extensible: a further
 facet on the wire costs a message, not a rule number.
 
-Two clauses of the order are deliberate and load-bearing.
+*(History until L2, the reference arm as it stood:)* a use site's
+serialized `type` had to be identical to the declaration it takes its
+value from, on every facet the datatype carries, and the order ran on to
+**sign → residual structure**: the reference arm claimed the whole
+datatype, so the sign restriction was a facet of it, and a residual
+comparison of the whole datatype stood behind the named facets. No
+derived position claims either (the sign exclusion below; the residual
+would report exactly the facet a formula declines), so with the
+reference arm gone (B13) no comparison reached them — measured: each of
+the sixteen places where a derived position hands the engine the list of
+facets it does not claim names both — and the verifier removed both
+facets in the L2 fix round.
+
+Two clauses of the order were deliberate and load-bearing; the first
+still is.
 
 - The **soort facet stands aside wherever either side names a keuzetype
   or a struct domain.** `domains` is ONE namespace, so
   enumeration-versus-sum-type and domain-versus-no-domain are the domain
   facet's own clauses — WF-089's variant and one-sided arms, WF-090's —
   stated and numbered there.
-- The **residual facet is the backstop, not a leftover.** The named
-  facets decide the *diagnosis*; the residual comparison — the whole
-  datatype, every declared domain name folded to its ci form and the unit
-  names left byte-exact, the same split the unit facet makes — decides
-  that nothing escapes. It is not redundant: the domain facet looks
-  *through* a `ListType` element, so a list-typed declaration and a
-  reference typed as its element agree on domain while soort has stood
-  aside, and only the residual comparison sees the missing layer.
+- *(History until L2.)* The **residual facet was the reference arm's
+  backstop.** The named facets decided the *diagnosis*; the residual
+  comparison — the whole datatype, every declared domain name folded to
+  its ci form and the unit names left byte-exact, the same split the unit
+  facet makes — decided that nothing escaped. It was not redundant there:
+  the domain facet looks *through* a `ListType` element, so a list-typed
+  declaration and a reference typed as its element agreed on domain while
+  soort had stood aside, and only the residual comparison saw the missing
+  layer. A derived position claims less than the whole datatype and never
+  ran it; the facet was removed with the reference arm (see above).
 
 **Unit identity is structural, never convertible.** Two units are the
 same unit iff their abbreviation, declaring system, canonical unit,
 conversion factor and — recursively — the denominator of a composite rate
-all agree. The three NAMES are compared **byte for byte** — the copy
-repeats the declaration literally, case included — where every declared
-domain name in this rule folds to its ci form. Name RESOLUTION is
-case-insensitive: that is WF-001's domain, and the domain facet of this
-very rule stays ci, pinned by its two golden witnesses. Copy FIDELITY is
-another question, and a consumer that reads those three names literally
-to pick its conversion diverges silently on a copy that lies in case
-alone. *Measured:* a `KG`/`GEWICHT`/`KG` copy of a `kg`/`Gewicht`/`kg`
-declaration, factor 1 on both sides, written into a target declared in
-`t` — `ref` reads the declaration and answers `3.75` for an input of
-`3750.00`, while a third executor whose unit lookup is case-sensitive
-finds no match, falls back to factor one and answers `3750.00` (the ASP
-backend carries no cross-unit write and refuses the form ahead of
-translation, so it neither confirms nor contradicts) —
-`wf091-attribuutref-eenheid-kast`. The factor and the rate shape agree
+all agree. The three NAMES are compared **byte for byte** — an annotation
+repeats the unit it states literally, case included — where every
+declared domain name in this rule folds to its ci form. Name RESOLUTION
+is case-insensitive: that is WF-001's domain, and the domain facet of
+this very rule stays ci, pinned by its two golden witnesses. Copy
+FIDELITY is another question, and a consumer that reads those three
+names literally to pick its conversion diverges silently on an
+annotation that differs in case alone. Since L2 the unit names this rule
+crosses stand on derived positions: `wf091-plus-eenheid-kast` annotates a
+`PLUS` over two reads of `Jutter.gewicht` (declared `kg`, system
+`Gewicht`, canonical `kg`, factor 1) with `KG`, system `GEWICHT`,
+canonical `KG`, factor 1, and the unit facet refuses it. *Measured until
+L2, on a reference's own copy:* a `KG`/`GEWICHT`/`KG` copy of a
+`kg`/`Gewicht`/`kg` declaration, factor 1 on both sides, written into a
+target declared in `t` — `ref` read the declaration and answered `3.75`
+for an input of `3750.00`, while a third executor whose unit lookup is
+case-sensitive found no match, fell back to factor one and answered
+`3750.00` (the ASP backend carries no cross-unit write and refused the
+form ahead of translation, so it neither confirmed nor contradicted) —
+`wf091-attribuutref-eenheid-kast`, removed with reason at L2 when the
+reference lost its own `type` (B13). The factor and the rate shape agree
 exactly as well, being no names. Convertibility is what WF-035 and WF-023
 cross, so a lie *inside* the convertible class is compatible by
 construction: `kg` and `t` share a canonical unit and a shape.
@@ -2660,12 +2683,15 @@ class), which is a decision of its own.
 
 A formula may be **silent on a facet while speaking on the rest**, so each
 position states which facets it *claims*. A facet it does not claim is not
-crossed, and the residual backstop stands down with it — otherwise the
-backstop would report the very facet the formula declined to state. Since the
-**sign** is claimed nowhere (the first exclusion below), the residual backstop
-stands down at **every** derived position: the refusal here is exactly the
-named facets of the row, and unlike the reference half it had until L2 it is not total by
-construction. That is what a partial formula buys.
+crossed, and no comparison stands behind the claimed ones: the refusal
+here is exactly the named facets of the row, and unlike the reference arm
+it had until L2 it is not total by construction. *(History until the L2
+fix round:)* the engine carried a residual backstop behind the named
+facets, and every derived position switched it off, since it would have
+reported the very facet the formula declined to state — and since the
+**sign** is claimed nowhere (the first exclusion below), at every derived
+position. With the reference arm gone no caller ran either facet, and the
+verifier removed both.
 
 | Position | Derived type | Facets claimed |
 |---|---|---|
@@ -2705,7 +2731,7 @@ frontend — since the *set-fold "totaal van"* card — strips on every reading
 *except* the non-temporal set one, tested there by one predicate
 (`ExpressieBouwer.setLezing`: exactly one operand, an attribute reference
 read as the set source — since L2 the argument of a fold that carries a
-range, D8 — over an attribute its object type declares **no** granularity
+range, ch. 4.3 — over an attribute its object type declares **no** granularity
 for). This rule mirrors that predicate rather than restating it,
 because it is the shape the emitter can actually produce: an unconditional
 strip invented a wire type no executor can compute, the set fold adding
