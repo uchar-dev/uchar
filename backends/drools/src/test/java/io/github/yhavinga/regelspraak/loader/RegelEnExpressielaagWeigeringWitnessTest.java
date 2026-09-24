@@ -130,24 +130,26 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         assertTrue(weigert(ir, "/rules/uniciteitUnies").getMessage().contains("unknown field"));
     }
 
+    /** Every key of the L3 shape on the node or version record that replaced it — and a version record, which carries
+     *  no discriminator, refuses one as it refuses any key it does not have. */
     @Test void de_velden_van_de_l3_vorm_zijn_onbekende_velden() throws Exception {
         Map<String[], List<String>> rijen = new LinkedHashMap<>();
         rijen.put(new String[] { PENNINGDREMPEL, REGEL, "Rule" }, List.of("naam", "bronAnnotaties"));
         rijen.put(new String[] { PENNINGDREMPEL, VERSIE, "RuleVersion" },
-                List.of("naam", "soort", "doel", "waarde", "voorwaarde", "geldigheid", "bronAnnotaties"));
+                List.of("node", "naam", "soort", "doel", "waarde", "voorwaarde", "geldigheid", "bronAnnotaties"));
         rijen.put(new String[] { BERGING, "/rules/verdelingen/0/versions/0", "AllocationVersion" },
-                List.of("bronType", "bronAttribuut", "doelType", "doelAttribuut", "methode", "ratoAttribuut",
+                List.of("node", "bronType", "bronAttribuut", "doelType", "doelAttribuut", "methode", "ratoAttribuut",
                         "maximumAttribuut", "afrondingDecimalen", "restantAttribuut", "groepeerAttribuut", "afnemend",
                         "verbindendeRol", "voorwaarde", "geldigheid"));
         rijen.put(new String[] { WACHTERSKETEN, "/rules/objectCreaties/0/versions/0", "ObjectCreationVersion" },
-                List.of("nieuwType", "toekenningen", "verbindendeRol", "voorwaarde", "geldigheid"));
+                List.of("node", "nieuwType", "toekenningen", "verbindendeRol", "voorwaarde", "geldigheid"));
         rijen.put(new String[] { MASTSEIN, "/rules/feitCreaties/0/versions/0", "FactCreationVersion" },
-                List.of("feittype", "ankerRol", "doelRol", "anker", "tussenstappen", "joinRol", "doel", "voorwaarde",
-                        "geldigheid"));
+                List.of("node", "feittype", "ankerRol", "doelRol", "anker", "tussenstappen", "joinRol", "doel",
+                        "voorwaarde", "geldigheid"));
         rijen.put(new String[] { WACHTERSKETEN, "/rules/consistenties/0/versions/0", "ConsistencyVersion" },
-                List.of("assertie", "geldigheid"));
+                List.of("node", "assertie", "geldigheid"));
         rijen.put(new String[] { KUSTREGISTER, "/rules/uniciteiten/0/versions/0", "UniquenessVersion" },
-                List.of("sleutels", "scopeRol", "bronnen", "subject", "geldigheid"));
+                List.of("node", "sleutels", "scopeRol", "bronnen", "subject", "geldigheid"));
         rijen.put(new String[] { KUSTREGISTER, "/rules/uniciteiten/2/versions/0/sources/0", "Source" },
                 List.of("type", "sleutels"));
         // the fold's own fields, and the builtin's facet, which it does not carry
