@@ -65,12 +65,16 @@
 # twist.)
 #
 # And the same honesty about HOW MUCH of the two Drools legs a green line covers. On the UNTOUCHED
-# corpus the derivation never disagrees with the annotation — WF-091 makes the repetition faithful,
-# so effType(e) equals e.type() at every call (measured 2026-09-04 with a StackWalker probe on
+# corpus the derivation never disagreed with the annotation — WF-091 made the repetition faithful,
+# so effType(e) equalled e.type() at every call (measured 2026-09-04 with a StackWalker probe on
 # EffectieveEenheid.van, attributing each call to its transpiler frame: zero divergences over every
-# replayable golden, in BOTH branches). On the LYING copies the same probe shows the derivation
-# overriding the annotation at a handful of call sites, and those are the whole of what this harness
-# holds each branch to (re-measured 2026-09-04 over the 11 twistable replayable goldens):
+# replayable golden, in BOTH branches). Since L2 a reference carries no annotation, so there the
+# derivation has nothing to disagree with, and WF-091 holds the derived annotations that remain. On
+# the LYING copies the same probe showed the derivation overriding the annotation at a handful of
+# call sites (measured 2026-09-04 over the 11 twistable replayable goldens, BEFORE L2: the reference
+# classes were still in the twist table then, and the two comparison sites below were reached only
+# through a twisted reference annotation, which no twist reaches since L2). The list has not been
+# re-probed since, so read it as that dated measurement:
 #   exec-model branch — 5 sites
 #     - the WRITE boundary (a consequence value restated into its doel's declared unit) — 20 hits;
 #     - the ADDITIVE OPERAND boundary (the rhs of a +/- restated into the lhs unit) — 14 hits;
@@ -123,7 +127,8 @@
 # out:
 #   - SOORT: a soort lie is a different document — ref routes its ch. 1.2d empty-equality and
 #     its date arithmetic on the static soort, so twisting it would measure ref's routing, not
-#     a declaration reading. WF-078/WF-091 cross it in the verifier instead.
+#     a declaration reading. WF-091 crosses it in the verifier instead (at a binder read that was
+#     WF-078 until L2).
 #   - PRECISION: the ASP translator sizes its integer encoding off the annotation's decimals
 #     (value_scale in backends/clingo/lib/translate.ml), so a precision lie makes clingo
 #     overflow or refuse rather than answer — measured: 21 of 402 cases. And it would probe
@@ -443,6 +448,12 @@ def loop(x, telling, sla_eigen_over=False, scope=None):
         binnen[(x.get("binder") or "").lower()] = gedeclareerd(x.get("value") or {}, scope)
     elif node in ("Lambda", "FunctionDef"):
         binnen = {(p.get("name") or "").lower(): p.get("datatype") for p in x.get("parameters", [])}
+    elif node == "FilterList":
+        # the filter binder reads each element of the list, so its type is the list's element type
+        binnen = dict(scope)
+        lijst = gedeclareerd(x.get("list") or {}, scope)
+        binnen[(x.get("binder") or "").lower()] = \
+            lijst.get("element") if isinstance(lijst, dict) else None
     for k, v in list(x.items()):
         if k == "type":        # a DECLARATION never sits under an expression's own type
             continue
@@ -459,7 +470,8 @@ def loop(x, telling, sla_eigen_over=False, scope=None):
                 loop(arm, telling, scope=armscope)
             continue
         loop(v, telling, sla_eigen_over=(v is duur),
-             scope=binnen if (node == "Let" and k == "body") or node in ("Lambda", "FunctionDef")
+             scope=binnen if (node == "Let" and k == "body")
+             or (node == "FilterList" and k == "condition") or node in ("Lambda", "FunctionDef")
              else scope)
 
 
@@ -558,10 +570,16 @@ basisvrij() {
 # that mutant would today be caught at 8, not only at 0.
 EXPECTED_MIN_TWISTS=38      # 2026-09-24: measured 38 annotations twisted over 21 goldens. LOWERED
                             # from 74 (2026-09-10) in the L2 commit that took the four reference
-                            # classes out of the twist table (D21): a reference writes no type since
+                            # classes out of the twist table (the L2 card,
+                            # backlog/done/20260923-l2-referentielaag.md): a reference writes no type since
                             # B13, so there is nothing left to twist there; the composite twists
                             # are untouched (same 38 before and after the table change)
-EXPECTED_MIN_DRL_PLAYED=13  # 2026-09-10: measured 13 goldens PLAYED by the DRL-text branch
+EXPECTED_MIN_DRL_PLAYED=20  # 2026-09-24: measured 20 goldens PLAYED by the DRL-text branch, on the
+                            # corpus and the jar of the L2 landing. RAISED from 13 (measured
+                            # 2026-09-10): a floor catches shrink only below itself, and at 13 the
+                            # leg could lose seven PLAYED goldens without this gate failing. The
+                            # growth from 13 to 20 came with the goldens and lowerings that landed
+                            # between the two dates; 20 is the count measured now, not a target
 
 status=0
 n_goldens=0
