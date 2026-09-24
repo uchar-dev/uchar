@@ -1,8 +1,9 @@
 Violates WF-079 (`spec/IR-SPEC.md` ch. 3.1; `RUNTIME-SEMANTICS.md` ch. 7.7):
-two unconditional, version-free computing rules (`BEREKENING`) write one
-attribute target without prioritized defaults — `Jutter.uitkomst` — with no
-explicit priority. `uitkomst bij grootgezin` computes `10.00` and `uitkomst
-bij kleine beurs` computes `20.00`; both fire on every `Jutter`.
+two unconditional computing rules (`BEREKENING`), each a form with one
+always-valid version, write one attribute target without prioritized defaults
+— `Jutter.uitkomst` — with no explicit priority. `uitkomst bij grootgezin`
+computes `10.00` and `uitkomst bij kleine beurs` computes `20.00`; both fire
+on every `Jutter`.
 
 Pins the PHASE5D-DIFF §8.2 divergence witness ahead of the differential
 square. The flat form is verifier-clean under the old single-writer rules
@@ -19,7 +20,9 @@ characteristic attributions, versions with neither `presentation` nor
 `initialisation` (the penningrecht `= waar` pair, monotone), are outside the
 rule, guarded case splits (`anchor/jutterswet-rekenkamer-overzee`, the
 gewone/overzeese pair) carry their own priority through their conditions,
-and two versions of one form do not count as two writers.
+and the versions of one form are a list under that form: the rule compares
+unconditional computing versions of different forms, and only where their
+validity overlaps.
 
 Old verifier: `PASS`. New verifier: `WF-079 FAIL … two unconditional computing
 rules write target (jutter, uitkomst) with no prioritized defaults`.
