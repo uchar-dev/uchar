@@ -12,8 +12,8 @@ import java.nio.file.Path;
 /**
  * IR-SPEC ch. 4.1a: a read without navigation bindings is the subject's OWN read, so its {@code objecttype} is the
  * subject type — equal, not a supertype and not another type. Both transpiler branches hold to that: the own-read
- * test is identity of the two types, and a bindingless read of any other type walks no relation of its own choosing
- * but is refused. A read of an INHERITED attribute stays an own read when it names the subject type itself.
+ * test is identity of the two types, and a bindingless read of any other type is refused: neither branch derives a
+ * relation for it. A read of an INHERITED attribute stays an own read when it names the subject type itself.
  *
  * <p>Every model is an in-memory variant of {@code jutterswet-munttelling}: Munt ⊑ Vondst, and Vondst declares
  * {@code gewicht}. Each row adds a Munt attribute {@code muntwaarde} and one rule that writes it from an own read of
@@ -50,7 +50,8 @@ class EigenLezingWitnessTest {
                     "roles": {}, "characteristics": [] } ],
                 "parameters": {} },
               "expected": [
-                { "kind": "attributeValue", "label": "M1", "attribute": "muntwaarde", "value": { "number": "7.00" } } ] }
+                { "kind": "attributeValue", "label": "M1", "attribute": "muntwaarde",
+                  "value": { "number": "7.00" } } ] }
             """;
 
     /** The golden reduced to one rule, "De muntwaarde van een Munt moet berekend worden als het gewicht", whose read

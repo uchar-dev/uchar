@@ -716,8 +716,8 @@ final class ExpressieBouwer {
      * two-step written range is not expressible on it, and the emitter's derivation ranges from the RULE
      * SUBJECT to the innermost element type — so the outer step disappears without a trace and the fold
      * runs over the wrong set. Where no relation joins subject and element that was caught downstream
-     * (WF-048, until L2; since then the emitter refuses a fold it cannot bind); where one happens to exist it is verifier-CLEAN and silently wrong, which is the shape
-     * this refusal exists for.
+     * (WF-048, until L2; since then the emitter refuses a fold it cannot bind); where one happens to exist it
+     * is verifier-CLEAN and silently wrong, which is the shape this refusal exists for.
      *
      * <p>(b) An intermediate TO-ONE step ("… van alle X van de Y van de Z"), the same loss along a third
      * route: the fold source names one relation FROM THE RULE SUBJECT, so an anchor that is not the subject

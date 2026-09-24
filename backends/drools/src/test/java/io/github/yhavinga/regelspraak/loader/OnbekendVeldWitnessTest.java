@@ -78,7 +78,8 @@ class OnbekendVeldWitnessTest {
         rijen.put("TekstReeks", new String[] { w, "{\"node\":\"TekstReeks\",\"delen\":[],\"type\":{\"node\":\"Tekst\"},"
                 + "\"bron\":\"x\",\"" + VREEMD + "\":1}", w });
         rijen.put("Letterlijk", new String[] { w, "{\"node\":\"TekstReeks\",\"delen\":[{\"node\":\"Letterlijk\","
-                + "\"tekst\":\"x\",\"" + VREEMD + "\":1}],\"type\":{\"node\":\"Tekst\"},\"bron\":\"x\"}", w + "/delen/0" });
+                + "\"tekst\":\"x\",\"" + VREEMD + "\":1}],\"type\":{\"node\":\"Tekst\"},\"bron\":\"x\"}",
+                w + "/delen/0" });
         rijen.put("Ingevoegd", new String[] { w, "{\"node\":\"TekstReeks\",\"delen\":[{\"node\":\"Ingevoegd\",\"expr\":"
                 + literal + ",\"" + VREEMD + "\":1}],\"type\":{\"node\":\"Tekst\"},\"bron\":\"x\"}", w + "/delen/0" });
         rijen.put("VariabeleRef", new String[] { w, "{\"node\":\"VariabeleRef\",\"naam\":\"x\",\"bron\":\"x\",\""
@@ -96,7 +97,8 @@ class OnbekendVeldWitnessTest {
         for (Map.Entry<String, String[]> r : rijen.entrySet()) {
             JsonNode doc = golden(PENNINGDREMPEL);
             String[] rij = r.getValue();
-            String ouder = rij[0].substring(0, rij[0].lastIndexOf('/')), veld = rij[0].substring(rij[0].lastIndexOf('/') + 1);
+            int slash = rij[0].lastIndexOf('/');
+            String ouder = rij[0].substring(0, slash), veld = rij[0].substring(slash + 1);
             ((ObjectNode) doc.at(ouder)).set(veld, JSON.readTree(rij[1]));
             IrLoader.Documentfout f = weigert(doc, r.getKey());
             assertEquals(rij[2] + "/" + VREEMD, f.plek(), r.getKey() + ": " + f.getMessage());

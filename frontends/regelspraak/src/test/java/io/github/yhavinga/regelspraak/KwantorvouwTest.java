@@ -120,8 +120,8 @@ class KwantorvouwTest {
 
     @Test void de_kwantorvouw_draagt_de_verbindende_rol_als_bereik() {
         // The required range, on this node (WF-048's concern until L2): a quantifier bound to no relation
-        // quantifies over a set the sentence never named. The range is the connecting role, spelled exactly as the instance
-        // fold's bronRol — one search in the model serves both, so the two can never disagree.
+        // quantifies over a set the sentence never named. The range is the connecting role, spelled exactly as the
+        // instance fold's bronRol — one search in the model serves both, so the two can never disagree.
         String v = voorwaarde(resolveer(ZIN.formatted("alle")));
         assertTrue(v.contains("\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\",\"rol\":\"vondst\"}"),
                 () -> "de vouw hoort het verbindende feittype+rol als bereik te dragen:\n" + v);
@@ -254,7 +254,8 @@ class KwantorvouwTest {
             Objecttype de Vondst (mv: Vondsten)
                 het gewicht (mv: gewichten) Numeriek (getal met 2 decimalen) met eenheid kg voor elke maand;
             """ + ZIN.formatted("alle"));
-        assertEquals(1, setlezingfouten(m).size(), () -> "een onbindbaar bereik hoort de weigering te houden: " + m.diagnostics);
+        assertEquals(1, setlezingfouten(m).size(),
+                () -> "een onbindbaar bereik hoort de weigering te houden: " + m.diagnostics);
         assertEquals(1, m.diagnostics.size(), () -> "en verder niets te melden: " + m.diagnostics);
         // not lowered, so the set reading stays where it was written; without a binding it has no spelling
         // either, and the emitter writes no document at all rather than a read of the Jutter's own gewicht

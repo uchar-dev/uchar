@@ -450,7 +450,8 @@ class OpslagrichtingWitnessTest {
              .put("bron", "het havengeld van de thuishaven van de werf van de Schuit");
         keten.putArray("navigatieBindingen")
              .add(JSON.createObjectNode().put("node", "RolBinding").put("feittype", "ligplaats").put("rol", "werf"))
-             .add(JSON.createObjectNode().put("node", "RolBinding").put("feittype", "werfhaven").put("rol", "thuishaven"));
+             .add(JSON.createObjectNode().put("node", "RolBinding").put("feittype", "werfhaven")
+                     .put("rol", "thuishaven"));
         return tijdelijk("keten-naamdeling-" + stap, ir);
     }
 

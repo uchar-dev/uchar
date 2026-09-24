@@ -1000,10 +1000,11 @@ final class RuleChecker {
     }
 
     // ==============================================================================================
-    // The set fence (IR-SPEC ch. 4.3), producer side. Until L2 of the v1 wire migration it was WF-096 on the wire
-    // (maintainer decisions 2026-09-09 and — the KIND half — 2026-09-19). Since L2 the wire has no set flag, and a set
-    // reading the fence let through would reach it as a read over a to-many step (WF-053) or, as the source of a
-    // count, as a count over member values (WF-093 (b)). The frontend keeps the reading in memory and refuses it here.
+    // The set fence (IR-SPEC ch. 4.3), producer side. Until L2 of the v1 wire migration it was WF-096 on the
+    // wire (maintainer decisions 2026-09-09 and — the KIND half — 2026-09-19). Since L2 the wire has no set
+    // flag, and a set reading the fence let through would reach it as a read over a to-many step (WF-053) or,
+    // as the source of a count, as a count over member values (WF-093 (b)). The frontend keeps the reading in
+    // memory and refuses it here.
     // ==============================================================================================
 
     /** The seven VALUE folds — the kinds that read a value per contributor, and so the only kinds that
@@ -1122,8 +1123,8 @@ final class RuleChecker {
                             + (telbron
                                     ? "een instantietelling vouwt de leden zelf en leest geen waarde per lid, dus als "
                                       + "bron van 'aantal' ook niet (WF-093 (b), IR-SPEC ch. 4.3)"
-                                    : "hier wordt één waarde verwacht, en een meervoudige stap in een lezing vraagt een "
-                                      + "aggregatie (WF-053, IR-SPEC ch. 4.1a)"),
+                                    : "hier wordt één waarde verwacht, en een meervoudige stap in een lezing "
+                                      + "vraagt een aggregatie (WF-053, IR-SPEC ch. 4.1a)"),
                             a.bron().line()));
             }
             case Expr.Functie f -> {

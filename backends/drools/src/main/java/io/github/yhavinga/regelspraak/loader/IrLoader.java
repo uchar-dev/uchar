@@ -288,7 +288,8 @@ public final class IrLoader {
         lijst(rules, "/rules", "resolvedRegels", (p, n) -> m.resolvedRegels.add(resolvedRegel(n)));
         lijst(rules, "/rules", "resolvedDagsoorten", (p, n) -> {
             velden(n, p, "ResolvedDagsoort", List.of("node", "naam", "voorwaarde", "geldigheid"), List.of());
-            m.resolvedDagsoorten.add(new ResolvedDagsoort(text(n, "naam"), conditie(n.get("voorwaarde")), geldigheid(n)));
+            m.resolvedDagsoorten.add(new ResolvedDagsoort(text(n, "naam"), conditie(n.get("voorwaarde")),
+                    geldigheid(n)));
         });
         lijst(rules, "/rules", "objectCreaties", (p, n) -> m.objectCreaties.add(objectCreatie(n)));
         lijst(rules, "/rules", "verdelingen", (p, n) -> m.verdelingen.add(verdeling(n)));
@@ -298,11 +299,13 @@ public final class IrLoader {
         lijst(rules, "/rules", "feitCreaties", (p, n) -> m.feitCreaties.add(feitCreatie(n)));
         lijst(rules, "/rules", "resolvedStartpunten", (p, n) -> {
             velden(n, p, "ResolvedStartpunt", List.of("node", "tijdlijn", "objecttype", "lid"), List.of());
-            m.resolvedStartpunten.add(new ResolvedStartpunt(text(n, "tijdlijn"), text(n, "objecttype"), text(n, "lid")));
+            m.resolvedStartpunten.add(new ResolvedStartpunt(text(n, "tijdlijn"), text(n, "objecttype"),
+                    text(n, "lid")));
         });
         weigerGeerfdAnker();   // the §9.9 family: asked here, where BOTH the tijdlijnen and the determinations are read
         lijst(rules, "/rules", "regelGroepen", (p, n) -> {
-            velden(n, p, "ResolvedRegelGroep", List.of("node", "naam", "recursief", "leden", "bron", "line"), List.of());
+            velden(n, p, "ResolvedRegelGroep", List.of("node", "naam", "recursief", "leden", "bron", "line"),
+                    List.of());
             m.regelGroepen.add(new ResolvedRegelGroep(
                     text(n, "naam"), bool(n, "recursief"), stringList(n.get("leden")), bron(n), intOf(n, "line")));
         });
@@ -318,8 +321,8 @@ public final class IrLoader {
 
     // --- the reference layer's questions that need the subject or the position -----------------------
 
-    /** Two questions the node-by-node reading cannot answer, because they need the SUBJECT a node is read on or the
-     *  POSITION it stands at, asked once the whole document is read and refused as the verifier refuses them and
+    /** Two checks that need more than the node itself — the SUBJECT a node is read on, or the POSITION it stands
+     *  at — made once the whole document is read and refused as the verifier refuses them and
      *  in the words {@code ref} and the ASP backend fault with: a role check whose subject does not fill the role
      *  (WF-034, IR-SPEC ch. 4.5 — a link the subject can never be in), and a characteristic read at a value
      *  position (WF-080 — a characteristic carries truth, no value). The subject of each position is the one the
@@ -376,13 +379,17 @@ public final class IrLoader {
             }
             case Expr.Binair b -> { keurWaarde(b.links(), s); keurWaarde(b.rechts(), s); }
             case Expr.Afgerond x -> keurWaarde(x.basis(), s);
-            case Expr.Begrensd x -> { keurWaarde(x.basis(), s); keurWaarde(x.minimum(), s); keurWaarde(x.maximum(), s); }
+            case Expr.Begrensd x -> {
+                keurWaarde(x.basis(), s); keurWaarde(x.minimum(), s); keurWaarde(x.maximum(), s);
+            }
             case Expr.TekstReeks t -> {
                 for (Expr.TekstReeks.Deel d : t.delen())
                     if (d instanceof Expr.TekstReeks.Ingevoegd i) keurWaarde(i.expr(), s);
             }
             case Expr.Let l -> { keurWaarde(l.value(), s); keurWaarde(l.body(), s); }
-            case Expr.IfThenElse k -> { keurConditie(k.conditie(), s); keurWaarde(k.dan(), s); keurWaarde(k.anders(), s); }
+            case Expr.IfThenElse k -> {
+                keurConditie(k.conditie(), s); keurWaarde(k.dan(), s); keurWaarde(k.anders(), s);
+            }
             case Expr.InstanceSetUnion u -> {
                 for (Expr.InstanceSetUnion.Tak t : u.takken()) keurConditie(t.filter(), t.elementType());
             }
@@ -1192,7 +1199,8 @@ public final class IrLoader {
      *  (WF-102 (c)). Under a value fold the name is read per contributor, so it must be an attribute of the element
      *  type: a characteristic carries no value there (WF-080), a role name is a count source only a count folds
      *  (WF-093 (a)), and any other name declares nothing (WF-034). Without these the exec branch played a count
-     *  over an attribute as a count of members and died at first fire on a value fold over a role name, and the
+     *  over an attribute as a count of members and failed with a runtime error at first fire on a value fold over
+     *  a role name, and the
      *  DRL-text branch compiled neither (measured on the L2 union). A navigated source is WF-053's and is left to
      *  the transpilers' refusal. */
     private void keurVouwbron(JsonNode n, String p, Expr.FunctieKind fk, Expr.Functie f) {
@@ -1292,9 +1300,9 @@ public final class IrLoader {
             case "RoleMembership" -> {
                 String p = padVan(n);
                 // WF-034, the role check's pair crossed against the declarations, in the words ref and the ASP
-                // backend fault with: a check naming no link of the model asks for nothing, and until L2's fix round
-                // this backend answered it with a storage reason instead (the fact type, the role, the narrowing
-                // here; whether the subject fills the role in keurOnderwerpen, which knows the subject)
+                // backend fault with: a check naming no declared link holds for no instance, and until L2's fix
+                // round this backend refused it with a storage reason instead (the fact type, the role, the
+                // narrowing here; whether the subject fills the role in keurOnderwerpen, which has the subject)
                 String feittype = tekst(n, p, "factType"), rol = tekst(n, p, "role");
                 Feittype ft = feittypeOpNaam(feittype);
                 if (ft == null)
@@ -1456,7 +1464,8 @@ public final class IrLoader {
         List<ResolvedObjectCreatie.Toekenning> tk = new ArrayList<>();
         forEach(n.get("toekenningen"), t -> {
             velden(t, padVan(t), "Toekenning", List.of("node", "attribuut", "waarde", "kenmerk"), List.of());
-            tk.add(new ResolvedObjectCreatie.Toekenning(text(t, "attribuut"), expr(t.get("waarde")), bool(t, "kenmerk")));
+            tk.add(new ResolvedObjectCreatie.Toekenning(text(t, "attribuut"), expr(t.get("waarde")),
+                    bool(t, "kenmerk")));
         });
         ResolvedObjectCreatie oc = new ResolvedObjectCreatie(text(n, "naam"), ot(text(n, "nieuwType")),
                 ot(text(n, "subject")), tk, conditie(n.get("voorwaarde")), geldigheid(n));
@@ -1471,8 +1480,9 @@ public final class IrLoader {
 
     private ResolvedVerdeling verdeling(JsonNode n) {
         velden(n, padVan(n), "ResolvedVerdeling", List.of("node", "naam", "bronType", "bronAttribuut", "doelType",
-                "doelAttribuut", "methode", "ratoAttribuut", "maximumAttribuut", "afrondingDecimalen", "restantAttribuut",
-                "groepeerAttribuut", "afnemend", "voorwaarde", "geldigheid", "verbindendeRol"), List.of());
+                "doelAttribuut", "methode", "ratoAttribuut", "maximumAttribuut", "afrondingDecimalen",
+                "restantAttribuut", "groepeerAttribuut", "afnemend", "voorwaarde", "geldigheid", "verbindendeRol"),
+                List.of());
         ResolvedVerdeling v = new ResolvedVerdeling(text(n, "naam"), ot(text(n, "bronType")), text(n, "bronAttribuut"),
                 ot(text(n, "doelType")), text(n, "doelAttribuut"),
                 enumOf(ResolvedVerdeling.Methode.class, n, "methode"), text(n, "ratoAttribuut"),

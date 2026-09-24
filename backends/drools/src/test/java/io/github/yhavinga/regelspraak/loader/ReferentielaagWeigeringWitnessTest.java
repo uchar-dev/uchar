@@ -25,10 +25,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * without its fact type or role, a narrowing written as {@code null}, the datatype {@code Onbekend} at every kind
  * of position, and a marker's type written as {@code null}. And the reference-layer shapes every executor refuses by
  * name: a role check naming no link the subject can be in (WF-034), a fold's set source its kind cannot consume
- * (WF-093, WF-080, WF-102 (c), WF-034), and a characteristic read at a value position (WF-080). The fields of an attribute read, a creation, a
- * uniqueness and a characteristic check are pinned where their bindings are ({@code NavigatiebindingWitnessTest},
- * {@code BonenveldWitnessTest}); a fold, a quantifier fold and a selection without their range where those are
- * ({@code TemporeleSetvouwBereikWitnessTest}, {@code KwantorvouwBereikWitnessTest}, {@code InstantieUnieWitnessTest}).
+ * (WF-093, WF-080, WF-102 (c), WF-034), and a characteristic read at a value position (WF-080). The fields of an
+ * attribute read, a creation, a uniqueness and a characteristic check are pinned where their bindings are
+ * ({@code NavigatiebindingWitnessTest}, {@code BonenveldWitnessTest}); a fold, a quantifier fold and a selection
+ * without their range where those are ({@code TemporeleSetvouwBereikWitnessTest},
+ * {@code KwantorvouwBereikWitnessTest}, {@code InstantieUnieWitnessTest}).
  *
  * <p>Every fixture is a corpus golden with ONE twist in memory; the corpus file is read and never written. Each
  * refusal is an {@link IrLoader.Documentfout} at a JSON pointer, never an {@link IrLoader.Refusal}: these are not
@@ -183,9 +184,9 @@ class ReferentielaagWeigeringWitnessTest {
     }
 
     // ---------------- the role check names a link of the model (WF-034) ----------------
-    // Until L2's fix round each of these loaded and was then answered with a storage reason, or played: a check that
-    // names no link the subject can be in asks for nothing. The sentences are the ones ref and the ASP backend fault
-    // with, or the verifier's where those have none.
+    // Until L2's fix round each of these loaded and was then refused with a storage reason, or played: a check
+    // that names no link the subject can be in holds for no instance. The sentences are the ones ref and the ASP
+    // backend fault with, or the verifier's where those have none.
 
     @Test void een_rolcheck_over_een_onbekend_feittype_of_een_onbekende_rol_weigert() throws Exception {
         String vw = "/rules/resolvedRegels/0/voorwaarde";
@@ -226,7 +227,8 @@ class ReferentielaagWeigeringWitnessTest {
     // ---------------- the set source of a fold with a range (WF-093, WF-080, WF-102 (c), WF-034) ----------------
     // jutterswet-munttelling: rule 0 counts the Jutter's vondsten over Munt, rule 1 sums the gewicht of those munten.
     // Measured on the L2 union before the fix round: the count over an attribute PLAYED in both branches, the value
-    // fold over the role name died at first fire in the exec branch and did not compile in the DRL-text one.
+    // fold over the role name failed with a runtime error at first fire in the exec branch and did not compile in the
+    // DRL-text one.
 
     @Test void een_telling_over_een_attribuut_van_het_elementtype_weigert() throws Exception {
         ObjectNode ir = golden(MUNTTELLING);

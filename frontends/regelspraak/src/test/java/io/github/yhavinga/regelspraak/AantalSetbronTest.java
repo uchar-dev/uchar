@@ -118,8 +118,8 @@ class AantalSetbronTest {
     @Test void de_ill_gevormde_telling_bereikt_de_wire_niet() {
         // The leak, stated as the property that closes it: an ERROR stops irModus writing at all, so
         // the document the verifier rejects (WF-093 (b) since L2, WF-096 before) is never produced.
-        // Before the narrowing this same source emitted with `diagnostics: []`. Since WF-113 (a) the emitter refuses the model
-        // by itself as well, so no emission route reaches the wire with it.
+        // Before the narrowing this same source emitted with `diagnostics: []`. Since WF-113 (a) the emitter
+        // refuses the model by itself as well, so no emission route reaches the wire with it.
         RegelSpraakModel m = Resolver.resolve(MODEL + TELLING);
         assertTrue(m.errors().stream().anyMatch(d -> d.message().contains("setlezing buiten een vouwbron")),
                 () -> "de telling met setbron levert geen setlezing-fout meer op: " + m.diagnostics);

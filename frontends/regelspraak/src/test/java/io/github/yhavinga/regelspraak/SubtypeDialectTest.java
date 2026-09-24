@@ -379,8 +379,8 @@ class SubtypeDialectTest {
     @Test void een_subtype_dat_het_typepaar_dubbel_verbindt_houdt_zijn_bronRol() {
         // SUBTYPING §3.4 / IR-SPEC ch. 2.2: the pair's uniqueness (WF-048's, until L2) was computed over the
         // CHAIN-CLOSED type-pair set, so adding a subtype could turn a previously well-formed BINDINGLESS fold
-        // into a loud refusal; since L2 the wire requires the binding. A role's declared filler is an UPPER bound, so once Wrakrecht joins the
-        // chain a Wrakrecht fills BOTH the Strandrecht role and its own — the pair
+        // into a loud refusal; since L2 the wire requires the binding. A role's declared filler is an UPPER
+        // bound, so once Wrakrecht joins the chain a Wrakrecht fills BOTH the Strandrecht role and its own — the pair
         // Kustgemeente x Wrakrecht is doubly connected and the by-pair search goes silent. The
         // frontend is ahead of it: the written element name still names exactly one role, so the fold
         // keeps a bronRol and never goes out bindingless.
