@@ -2741,7 +2741,30 @@ let () =
            { kind = Minimum; argumenten = [ bron "gewicht" "Vondst"; bron "gewicht" "Vondst" ];
              element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
              dimensie_selectie = None; typ = Some num2; bron = None; granulariteit = None;
-             bron_rol = None; bron_pad = Some pad2 }))
+             bron_rol = None; bron_pad = Some pad2 }));
+  (* WF-102 (c), the verifier's sentence: a count's range is one step,
+     spelled bronRol, so a path under AANTAL is refused by name, with and
+     without a die/dat subselection. Until this refusal ref counted the
+     instances the path reached while the verifier refused the document *)
+  let telling filter : Ir_v0.Ast.expr =
+    Functie
+      { kind = Aantal; argumenten = [ bron "geborgen vondsten" "Jutter" ];
+        element_objecttype = Some "Vondst"; leegwaarde = None; filter;
+        dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
+        bron_rol = None; bron_pad = Some pad2 }
+  in
+  let zwaar : Ir_v0.Ast.conditie =
+    Vergelijking
+      { op = Groter; links = Some (bron "gewicht" "Vondst");
+        rechts = Some (Literal { waarde = Some "4.00"; typ = Some num2; bron = None });
+        periode = None; bron = None }
+  in
+  expect_fault_msg "WV-3.4b-telling-over-een-pad-faalt" (fun () -> ev w1 "J1" (telling None))
+    "a bronPad is admissible only as the range of a single-argument VALUE fold's set source \
+     — a count's range is one step, spelled bronRol (WF-102)";
+  expect_fault_msg "WV-3.4b-telling-over-een-pad-met-filter-faalt"
+    (fun () -> ev w1 "J1" (telling (Some zwaar)))
+    "a count's range is one step, spelled bronRol (WF-102)"
 
 (* WV-3.4b-toone: the ch. 3.4b clause "a step through a to-ONE role is an
    ordinary step". Multiplicity is a declaration fact and does not enter

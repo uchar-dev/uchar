@@ -1313,14 +1313,16 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       if List.length pad < 2 then
         Value.fault "a bronPad carries at least TWO steps, found %d (WF-102)"
           (List.length pad);
-      (* D8 (i): the set source is the single argument of an instance fold
-         that carries a range — the range is what makes it one *)
-      match (element_objecttype, argumenten) with
-      | Some _, [ Attribuut_ref { navigatie_bindingen = None; _ } ] -> ()
+      (* WF-102 (c), the verifier's sentence: the set source is the single
+         argument of an instance fold that carries a range, and a path is the
+         range of a VALUE fold's set source only. A count's source names the
+         one relation whose role it counts, so its range is one step *)
+      match (kind, element_objecttype, argumenten) with
+      | k, Some _, [ Attribuut_ref { navigatie_bindingen = None; _ } ] when k <> Aantal -> ()
       | _ ->
           Value.fault
-            "a bronPad is admissible only on the set source of a single-argument instance fold \
-             (WF-102)"));
+            "a bronPad is admissible only as the range of a single-argument VALUE fold's set \
+             source — a count's range is one step, spelled bronRol (WF-102)"));
   match (kind, argumenten) with
   | ( Totaal,
       [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_bindingen = None; _ } ] )

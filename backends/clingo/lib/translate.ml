@@ -3312,19 +3312,20 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       fault
         "an instance-set union stands where a value term is wanted: it denotes the INSTANCES of a \
          §5.7 concatenation, and only an instance count consumes them (WF-110)"
-  (* WF-102 (c), the mirror of ref's arm: a range is admissible only on the
-     set source of a single-argument instance fold (D8 (i)); anywhere else it
-     would be dropped, and the fold would answer over the wrong population *)
-  | Functie { argumenten; element_objecttype; bron_pad = Some _; _ }
-    when not
-           (match (element_objecttype, argumenten) with
-           | Some _, [ Attribuut_ref { navigatie_bindingen = None; _ } ] -> true
-           | _ -> false) ->
+  (* WF-102 (c), the verifier's sentence and ref's arm: a path is the range
+     of a single-argument VALUE fold's set source only. Anywhere else it would
+     be dropped, and the fold would answer over the wrong population; a
+     count's source names the one relation whose role it counts *)
+  | Functie { kind; argumenten; element_objecttype; bron_pad = Some _; _ }
+    when kind = Aantal
+         || not
+              (match (element_objecttype, argumenten) with
+              | Some _, [ Attribuut_ref { navigatie_bindingen = None; _ } ] -> true
+              | _ -> false) ->
       fault
-        "a bronPad is admissible only on the set source of a single-argument instance fold \
-         (WF-102)"
-  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol; bron_pad; filter; _ }
-    when bron_rol <> None || bron_pad <> None ->
+        "a bronPad is admissible only as the range of a single-argument VALUE fold's set source \
+         — a count's range is one step, spelled bronRol (WF-102)"
+  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol = Some _ as bron_rol; filter; _ } ->
       (* D9, ref's arm word for word: a count source names a role; a name that
          is an attribute of the element type reads a value per member, which a
          count does not fold *)
@@ -3337,11 +3338,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       | _ -> ());
       (* D8 (ii), the count source: the single argument of a count that
          carries a range names the counted role, and the count folds the
-         INSTANCES the range reaches — the one-step role or the flat union
-         of a path (ch. 3.4b), built in [source_join] as for the set folds
-         below. The die/dat subselection joins per contributor: the filter
-         atoms range over the element variable (an unbound filter operand
-         excludes the contributor for free). *)
+         INSTANCES its one-step range reaches (a path is refused above),
+         built in [source_join] as for the set folds below. The die/dat
+         subselection joins per contributor: the filter atoms range over the
+         element variable (an unbound filter operand excludes the
+         contributor for free). *)
       let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty } in
       let v = fresh ctx "C" in
       let x = Printf.sprintf "X%s" v in
@@ -3349,12 +3350,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         match filter with
         | None -> []
         | Some c ->
-            let join () = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x in
+            let join () = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad:None ~x in
             with_member_reach ctx ~subject ~subject_ot ~join
-              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x ~join))
+              ~part:
+                (new_part ctx
+                   (range_order ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad:None ~x ~join))
               (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
-      let join = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x in
+      let join = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad:None ~x in
       ( [ Printf.sprintf "%s = #count { %s : %s }" v x (String.concat ", " (join @ fatoms)) ],
         v,
         1 )

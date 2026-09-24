@@ -3808,7 +3808,31 @@ let () =
               "bron": "het gewicht"
             }
           ],|})
-    ~case_text:bp_case ~needle:"a bronPad is admissible only on the set source"
+    ~case_text:bp_case
+    ~needle:"a bronPad is admissible only as the range of a single-argument VALUE fold's set source";
+  (* WF-102 (c): a count's range is one step, spelled bronRol, so a path
+     under AANTAL is refused by name, with and without a die/dat
+     subselection. Until this refusal clingo counted the instances the path
+     reached while the verifier refused the document *)
+  let telling =
+    vervang
+      (vervang bp_doc ~waar:{|"kind": "MINIMUM"|} ~door:{|"kind": "AANTAL"|})
+      ~waar:{|"attribuut": "gewicht",|} ~door:{|"attribuut": "geborgen vondsten",|}
+  in
+  faults_with ~name:"ch3.4b een telling over een pad" ~ir:telling ~case_text:bp_case
+    ~needle:"a count's range is one step, spelled bronRol (WF-102)";
+  faults_with ~name:"ch3.4b een telling over een pad met filter"
+    ~ir:
+      (vervang telling ~waar:{|"filter": null|}
+         ~door:
+           {|"filter": { "node": "Vergelijking", "op": "GROTER",
+              "links": { "node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst",
+                         "bron": "zijn gewicht" },
+              "rechts": { "node": "Literal", "waarde": "4.00",
+                          "type": { "node": "Numeriek", "geheel": false, "decimalen": 2,
+                                    "teken": "ONBEPAALD", "eenheid": null }, "bron": "4,00" },
+              "periode": null, "bron": "zijn gewicht groter is dan 4,00" }|})
+    ~case_text:bp_case ~needle:"a count's range is one step, spelled bronRol (WF-102)"
 
 
 (* ch. 3.4b's to-ONE clause: "a step through a to-ONE role is an ordinary
