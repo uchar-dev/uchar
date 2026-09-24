@@ -1893,6 +1893,8 @@ hij verdient een eigen meting.
 
 **BESLIST (2026-09-19, maintainer): (b), beide stappen in deze klap, in deze interne volgorde: (1) exacte rationale factoren; (2) één geteste canonicalisatiepas over álle waarde- en casusposities; (3) daarna pas de corpusregeneratie. Grond: de blokkerende kruis-stelsel-divergentie is op 2026-09-19 gesloten, en onder V2 (a) — één klap — is een latere tweede waardenmigratie onaantrekkelijk. TERUGVAL: kan de volledige canonicalisatiepas niet vóór de klap met absolute voorbeelden worden bewezen, dan geldt (a) — alleen de exacte breuk.**
 
+**TERUGVAL INGEROEPEN (2026-09-24, kaart `20260924-l3-typesysteem`, besluit D56): L3 landt alleen (i), de exacte factor `{num, den}`, zonder canonicalisatiepas, zodat de casusbestanden en gate 4 niet bewegen.**
+
 B17 bestaat uit twee stappen: **(i)** `factorNaarCanoniek` wordt een exacte
 `{num, den}`, **(ii)** de wire draagt canonieke eenheden in plaats van
 bron-eenheden.
@@ -2285,7 +2287,7 @@ welke families samen landen:
 |---|---|---|---|
 | L1 | M1 | B1–B5, plus V3 (de geneste root) | **GELAND 2026-09-24** (`32185b7b`, `backlog/done/20260923-m1-schema-en-container.md`): de container; 747 documenten mechanisch met `spec/proposals/v1-migratie/m1.py`, 21 getuigen verwijderd-met-reden, WF-113 |
 | L2 | M2 + M3 | B7, B8, B9, B11, B12, B13, B16 | **GELAND 2026-09-24** (`fd3f0a73`, `backlog/done/20260923-l2-referentielaag.md`): de referentielaag; migratie `spec/proposals/v1-migratie/m2.py` met afleiding van de ontbrekende bindingen; negatief 444 → 400 (stempellijst + `expect.txt` per getuige, gate 3 toetst de arm); gate 13 herzien (V15 (b), 38 twists); U11 telbronnaam, U12 `counterpartType`; twee rode cases werden goldens |
-| L3 | M4 | B14, B15, B17 (i), B18 | het typesysteem alleen: de landing die het meest waarschijnlijk waarden van gates 5/6/12 beweegt, en die wil je los zien |
+| L3 | M4 | B14, B15, B17 (i), B18 | **LOOPT** (kaart `backlog/doing/20260924-l3-typesysteem.md`): het typesysteem alleen: de landing die het meest waarschijnlijk waarden van gates 5/6/12 beweegt, en die wil je los zien |
 | L4 | M5 + M6 | B19, B20, B21, B27, B28, B22 a/b/c, B23, B24, B25 | B21 (de `Functie`-splitsing) is al een expressieknoop in de regellaagkaart; de regel- en expressieknopen worden door dezelfde lezers en vertalers in één beweging herschreven, en B22 (getypeerde literalen) heeft L3's typen nodig |
 | L5 | M7 + M8 | B26, B6, B10 | beide mechanisch; M7 blijft de nulmeting, als EERSTE commit van de kaart met een eigen gate-run waarin gates 5/6/12 niet mogen bewegen — zonder eigen regeneratie en herpin |
 
