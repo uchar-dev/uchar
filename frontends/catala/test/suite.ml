@@ -435,28 +435,28 @@ let () =
     Printf.sprintf
       {|{ "node": "Rule", "name": "r", "versions": [ {
   "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
-  "target": { "node": "AttribuutRef", "attribuut": "a", "objecttype": "T", "bron": "de a" },
+  "target": { "node": "AttribuutRef", "attribuut": "a", "objecttype": "T", "source": { "snippet": "de a" } },
   "value": %s,%s "initialisation": false, "presentation": "BEREKENING" } ] }|}
       waarde
       (match voorwaarde with None -> "" | Some c -> Printf.sprintf {| "condition": %s,|} c)
   in
   let getal =
     {|{ "node": "Literal", "value": { "number": "1" },
-  "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "bron": "1" }|}
+  "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "source": { "snippet": "1" } }|}
   in
   let emit_refusals =
     [ ("an expression Onopgelost",
        m1_doc
          ~regels:
            (regel ~voorwaarde:None
-              ~waarde:{|{ "node": "Onopgelost", "bron": "de onbekende waarde" }|})
+              ~waarde:{|{ "node": "Onopgelost", "source": { "snippet": "de onbekende waarde" } }|})
          (),
        "Onopgelost");
       ("a condition Onopgelost",
        m1_doc
          ~regels:
            (regel ~waarde:getal
-              ~voorwaarde:(Some {|{ "node": "Onopgelost", "bron": "de onbekende voorwaarde" }|}))
+              ~voorwaarde:(Some {|{ "node": "Onopgelost", "source": { "snippet": "de onbekende voorwaarde" } }|}))
          (),
        "Onopgelost");
       ("a filled diagnostics list",

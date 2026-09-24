@@ -1,4 +1,5 @@
-(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L4 shape.
+(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L4 shape
+   with the source record of L5.
 
    ARCHITECTURE. The plugin builds typed [Ir_v0.Ast] values and hands
    them to exactly one serialiser — this module — so schema conformity is
@@ -35,7 +36,23 @@ let str_opt_list (xs : string option list) : json = `List (List.map so xs)
 let map_ (f : 'a -> json) (kvs : (string * 'a) list) : json =
   `Assoc (List.map (fun (k, v) -> (k, f v)) kvs)
 
-let node k rest : json = `Assoc (("node", `String k) :: rest)
+(* The source record (delta B26): a node with source text writes it as
+   {"snippet"} under "source", at the place v0 wrote "bron"; a node without
+   source text writes no field and never a null, so [fields] and [node] leave
+   the placeholder of an absent record out. An empty snippet has no reading
+   in any reader of the wire, so it is refused here in the loader's sentence.
+   The plugin writes no line (the consistency's in-memory line is the order of
+   its assertion in the scope, not a line of a source file). *)
+let source (br : string option) : string * json =
+  match br with
+  | Some "" -> failwith ("Emit: " ^ Ir_v0.Loader.empty_snippet_refusal)
+  | Some x -> ("source", `Assoc [ ("snippet", `String x) ])
+  | None -> ("source", `Null)
+
+let fields (kvs : (string * json) list) : (string * json) list =
+  List.filter (fun (k, v) -> not (k = "source" && v = `Null)) kvs
+
+let node k rest : json = `Assoc (("node", `String k) :: fields rest)
 
 let teken_s = function
   | Onbepaald -> "ONBEPAALD" | Negatief -> "NEGATIEF"
@@ -156,18 +173,17 @@ let literal_value (v : literal_variant) : json =
 
 let rec expr (e : expr) : json =
   let typ t = ("type", opt annotation t) in
-  let bron br = ("bron", so br) in
   match e with
   | Literal { variant; typ = t; bron = br } ->
-      node "Literal" [ ("value", literal_value variant); typ t; bron br ]
+      node "Literal" [ ("value", literal_value variant); typ t; source br ]
   | Binair { op; links; rechts; typ = t; bron = br } ->
       node "Binair"
         [ ("op", s (bin_op_s op)); ("links", opt expr links);
-          ("rechts", opt expr rechts); typ t; bron br ]
+          ("rechts", opt expr rechts); typ t; source br ]
   | Afgerond { basis; modus; decimalen; typ = t; bron = br } ->
       node "Afgerond"
         [ ("basis", opt expr basis); ("modus", s (afrond_modus_s modus));
-          ("decimalen", i decimalen); typ t; bron br ]
+          ("decimalen", i decimalen); typ t; source br ]
   | Attribuut_ref { attribuut; objecttype; bron = br; navigatie_bindingen = nb } ->
       (* a reference writes no type (B13). navigatieBindingen is written only
          when the reference actually navigates (Phase 5c subscope lowering:
@@ -179,10 +195,10 @@ let rec expr (e : expr) : json =
         | Some hops -> [ ("navigatieBindingen", `List (List.map rol_binding hops)) ]
       in
       node "AttribuutRef"
-        ([ ("attribuut", so attribuut); ("objecttype", so objecttype); bron br ] @ ext)
+        ([ ("attribuut", so attribuut); ("objecttype", so objecttype); source br ] @ ext)
   | Parameter_ref { parameter; bron = br } ->
-      node "ParameterRef" [ ("parameter", so parameter); bron br ]
-  | Variabele_ref { naam; bron = br } -> node "VariabeleRef" [ ("naam", so naam); bron br ]
+      node "ParameterRef" [ ("parameter", so parameter); source br ]
+  | Variabele_ref { naam; bron = br } -> node "VariabeleRef" [ ("naam", so naam); source br ]
   (* the two context nodes (IR-SPEC ch. 4.1, delta B23): a session value
      carries its name and its datatype, the bound day of a day-kind
      definition its datatype. A name outside the closed set is refused in
@@ -199,20 +215,21 @@ let rec expr (e : expr) : json =
       let t =
         match t with Some t -> t | None -> failwith "Emit.expr: a ContextValue carries its datatype"
       in
-      node "ContextValue" [ ("name", s name); ("type", annotation t); bron br ]
+      node "ContextValue" [ ("name", s name); ("type", annotation t); source br ]
   | Bound_day { typ = t; bron = br } ->
       let t =
         match t with Some t -> t | None -> failwith "Emit.expr: a BoundDay carries its datatype"
       in
-      node "BoundDay" [ ("type", annotation t); bron br ]
+      node "BoundDay" [ ("type", annotation t); source br ]
   (* The translator builds no marker, and a written one would need a WARNING
-     naming its bron in [diagnostics] (WF-113 (b)), which this serialiser
-     never writes: it refuses like any node the skeleton never builds. *)
+     quoting its source snippet in [diagnostics] (WF-113 (b)), which this
+     serialiser never writes: it refuses like any node the skeleton never
+     builds. *)
   | Expr_onopgelost _ -> failwith "Emit.expr: node not produced by the skeleton: Onopgelost"
   | Construct { typ = t; constructor_; argument; bron = br } ->
       node "Construct"
         [ ("type", opt annotation t); ("constructor", s constructor_);
-          ("argument", opt expr argument); bron br ]
+          ("argument", opt expr argument); source br ]
   | Match { typ = t; scrutinee; arms; bron = br } ->
       node "Match"
         [ ("type", opt annotation t); ("scrutinee", expr scrutinee);
@@ -224,33 +241,33 @@ let rec expr (e : expr) : json =
                     [ ("constructor", s c); ("binder", so binder);
                       ("body", expr body) ])
                 arms));
-          bron br ]
-  | Binder_ref { naam; bron = br } -> node "BinderRef" [ ("name", s naam); bron br ]
+          source br ]
+  | Binder_ref { naam; bron = br } -> node "BinderRef" [ ("name", s naam); source br ]
   | List_literal { typ = t; elements; bron = br } ->
       node "ListLiteral"
-        [ ("type", opt annotation t); ("elements", `List (List.map expr elements)); bron br ]
+        [ ("type", opt annotation t); ("elements", `List (List.map expr elements)); source br ]
   | If_then_else { typ = t; condition; then_; else_; bron = br } ->
       node "IfThenElse"
         [ ("type", opt annotation t); ("condition", conditie condition);
-          ("then", expr then_); ("else", expr else_); bron br ]
+          ("then", expr then_); ("else", expr else_); source br ]
   | Invoke { typ = t; functie; arguments; bron = br } ->
       node "Invoke"
         [ ("type", opt annotation t); ("function", s functie);
-          ("arguments", `List (List.map expr arguments)); bron br ]
+          ("arguments", `List (List.map expr arguments)); source br ]
   | Fold { typ = t; list; functie; init; bron = br } ->
       node "Fold"
         [ ("type", opt annotation t); ("list", expr list);
-          ("function", fold_fn functie); ("init", expr init); bron br ]
+          ("function", fold_fn functie); ("init", expr init); source br ]
   | Map_list { typ = t; list; functie; bron = br } ->
       node "MapList"
         [ ("type", opt annotation t); ("list", expr list);
-          ("function", fold_fn functie); bron br ]
+          ("function", fold_fn functie); source br ]
   | Filter_list { typ = t; list; binder; condition; bron = br } ->
       node "FilterList"
         [ ("type", opt annotation t); ("list", expr list); ("binder", s binder);
-          ("condition", conditie condition); bron br ]
+          ("condition", conditie condition); source br ]
   | List_length { typ = t; list; bron = br } ->
-      node "ListLength" [ ("type", opt annotation t); ("list", expr list); bron br ]
+      node "ListLength" [ ("type", opt annotation t); ("list", expr list); source br ]
   | Struct_literal { typ = t; velden; bron = br } ->
       node "StructLiteral"
         [ ("type", opt annotation t);
@@ -259,16 +276,16 @@ let rec expr (e : expr) : json =
              (List.map
                 (fun (nm, v) -> `Assoc [ ("name", s nm); ("value", expr v) ])
                 velden));
-          bron br ]
+          source br ]
   | Field_access { typ = t; base; veld; bron = br } ->
       node "FieldAccess"
-        [ ("type", opt annotation t); ("base", expr base); ("field", s veld); bron br ]
+        [ ("type", opt annotation t); ("base", expr base); ("field", s veld); source br ]
   | Let { typ = t; binder; value; body; bron = br } ->
       (* the value-level binding (IR-SPEC ch. 4.10): [type] is non-null on the wire and
          equals the body type (WF-076); [binder] joins the WF-064 regime *)
       node "Let"
         [ ("type", opt annotation t); ("binder", s binder);
-          ("value", expr value); ("body", expr body); bron br ]
+          ("value", expr value); ("body", expr body); source br ]
   | other ->
       failwith
         ("Emit.expr: node not produced by the skeleton: "
@@ -286,24 +303,23 @@ and fold_fn (f : fold_fn) : json =
   | Fn_name n -> `String n
   | Fn_lambda { parameters; body; bron = br } ->
       node "Lambda"
-        [ ("parameters", param_list parameters); ("body", expr body); ("bron", so br) ]
+        [ ("parameters", param_list parameters); ("body", expr body); source br ]
 
 (* Lambda / FunctionDef parameters: a name and a datatype, both required. *)
 and param_list (ps : (string * datatype) list) : json =
   `List (List.map (fun (n, dt) -> `Assoc [ ("name", s n); ("datatype", datatype dt) ]) ps)
 
 and conditie (c : conditie) : json =
-  let bron br = ("bron", so br) in
   let periode p = ("periode", opt geheel_periode p) in
   match c with
   | Vergelijking { op; links; rechts; periode = p; bron = br } ->
       node "Vergelijking"
         [ ("op", s (vergelijk_op_s op)); ("links", opt expr links);
-          ("rechts", opt expr rechts); periode p; bron br ]
+          ("rechts", opt expr rechts); periode p; source br ]
   | Samengesteld { kwantor; drempel; onderdelen; bron = br } ->
       node "Samengesteld"
         [ ("kwantor", s (kwantor_s kwantor)); ("drempel", i drempel);
-          ("onderdelen", `List (List.map conditie onderdelen)); bron br ]
+          ("onderdelen", `List (List.map conditie onderdelen)); source br ]
   | Kenmerk_check
       { kenmerk; negatie; eigenaar; periode = p; bron = br; navigatie_binding = nb } ->
       (* navigatieBinding is written whole or not at all (schema: never null),
@@ -315,7 +331,7 @@ and conditie (c : conditie) : json =
       in
       node "Kenmerk"
         ([ ("kenmerk", so kenmerk); ("negatie", b negatie); ("eigenaar", so eigenaar);
-           periode p; bron br ]
+           periode p; source br ]
         @ ext)
   (* no marker either: see the expression arm *)
   | Conditie_onopgelost _ ->
@@ -469,9 +485,9 @@ let consistency (c : resolved_consistentie) : json =
   in
   form ~what:"consistency" "Consistency" c.cons_naam
     (`Assoc
-      [ ("subject", so c.cons_subject); ("assertion", assertion);
-        ("validity", validity c.cons_geldigheid); ("bron", so c.cons_bron);
-        ("line", i c.cons_line) ])
+      (fields
+         [ ("subject", so c.cons_subject); ("assertion", assertion);
+           ("validity", validity c.cons_geldigheid); source c.cons_bron ]))
 
 (* fact type + roles (IR-SPEC ch. 2.6): the connecting relation the plugin
    synthesises to carry a subscope back-link (Phase 5c). Each role names its
@@ -523,7 +539,7 @@ let rec default (d : default) : json =
     match d.default_excepties with
     | None -> [] | Some egs -> [ ("excepties", exception_groups egs) ]
   in
-  `Assoc (base @ conseq @ init @ [ ("bron", so d.default_bron) ] @ excepties)
+  `Assoc (fields (base @ conseq @ init @ [ source d.default_bron ] @ excepties))
 
 (* the nested exception group riding [excepties] (v1, Phase 5c): the
    {ongeordend, leden} object (no node discriminator) and its [ExceptionGroup]
@@ -535,24 +551,25 @@ and exception_groups (egs : exception_groups) : json =
 
 and exception_group (eg : exception_group) : json =
   node "ExceptionGroup"
-    [ ("defaults", `List (List.map default eg.eg_defaults)); ("bron", so eg.eg_bron) ]
+    [ ("defaults", `List (List.map default eg.eg_defaults)); source eg.eg_bron ]
 
 let prioritized_defaults (pd : prioritized_defaults) : json =
   let attribuut = match pd.pd_attribuut with None -> [] | Some a -> [ ("attribuut", `String a) ] in
   let ongeordend = if pd.pd_ongeordend then [ ("ongeordend", `Bool true) ] else [] in
   `Assoc
-    ([ ("node", `String "PrioritizedDefaults"); ("naam", so pd.pd_naam);
-       ("onderwerp", `String pd.pd_onderwerp); ("kenmerk", so pd.pd_kenmerk) ]
-    @ attribuut
-    @ [ ("defaults", `List (List.map default pd.defaults)) ]
-    @ ongeordend
-    @ [ ("bron", so pd.pd_bron); ("geldigheid", opt geldigheid pd.pd_geldigheid) ])
+    (fields
+       ([ ("node", `String "PrioritizedDefaults"); ("naam", so pd.pd_naam);
+          ("onderwerp", `String pd.pd_onderwerp); ("kenmerk", so pd.pd_kenmerk) ]
+       @ attribuut
+       @ [ ("defaults", `List (List.map default pd.defaults)) ]
+       @ ongeordend
+       @ [ source pd.pd_bron; ("geldigheid", opt geldigheid pd.pd_geldigheid) ]))
 
 let function_def (fd : function_def) : json =
   node "FunctionDef"
     [ ("name", s fd.fd_naam); ("parameters", param_list fd.fd_parameters);
       ("result", datatype fd.fd_result); ("body", expr fd.fd_body);
-      ("bron", so fd.fd_bron) ]
+      source fd.fd_bron ]
 
 (* The M1 container (decision V3 (b)): the declaration set under "model", the
    rule lists under "rules" with their v0 keys, in the schema's property
