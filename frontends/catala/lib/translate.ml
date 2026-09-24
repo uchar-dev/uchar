@@ -18,7 +18,7 @@
    - integer                        -> Number, whole, 0 decimals
    - money                          -> Number, 2 decimals (row 34: no money type)
    - date                           -> Date at day precision
-   - boolean                        -> Booleaan as a characteristic
+   - boolean                        -> Boolean as a characteristic
    - decimal (rational)             -> REFUSED (no declared decimals)
    - single unconditional numeric definition -> a Berekening rule
    - single boolean definition      -> a Kenmerktoekenning (its value is the guard)
@@ -27,14 +27,14 @@
    - root-level unordered exceptions (no unconditional base) ->
                                        a declared-unordered default group
    - below-root branching (a chain exception carrying unordered exceptions)
-     -> one defaults group whose default carries nested [excepties]
+     -> one defaults group whose default carries nested [exceptions]
      exception groups (row 5c, ch. 7.9: form-a default / group-default; WF-075)
    - a shared non-trivial base under all members of a root-level unordered
      group -> REFUSED (PHASE4-DEFAULTS §7; workable later by base-duplication)
    - context (reentrant) variable   -> REFUSED (see below; besluit 6 finding)
    - assertion                      -> consistency rule
    - enum (payload-carrying)        -> SumType + Construct/Match (row 36)
-   - enum (all-nullary)             -> Enumeratie domain + value Literal/Match
+   - enum (all-nullary)             -> Enumeration domain + value Literal/Match
                                        (WF-087, the keuzetype-familie card)
    - list-typed variable            -> ListType (row 10, WF-065)
    - map / filter / explicit fold   -> MapList / FilterList / Fold (row 10)
@@ -151,7 +151,7 @@ let note_optional (element : I.datatype) : unit =
    the uniform SumType mapping of PHASE5B-KERNEL §2.7). An enum with at least
    one payload-carrying constructor is the row-36 SumType. An ALL-NULLARY enum
    has NO SumType image: WF-087 declares a payloadless SumType ill-formed, so
-   it normalises to the v0 Enumeratie domain — the enum's base name is the
+   it normalises to the Enumeration domain — the enum's base name is the
    domain, its constructor names in declaration order are the values. Payload
    never converts; the nullary keuzetype exists in exactly one form.
    The declaring enum's base name is the domain either way; constructor
@@ -188,7 +188,7 @@ let rec catala_dt (enums : enum_ctx) (structs : struct_ctx) (t : typ) : I.dataty
 
 (* An enum -> its keuzetype datatype: alternatives in declaration order
    (EnumConstructor ids are generative, so the map folds declaration-first).
-   All-nullary normalises to Enumeratie (WF-087), otherwise SumType. *)
+   All-nullary normalises to an Enumeration (WF-087), otherwise a SumType. *)
 and keuzetype_of (enums : enum_ctx) (structs : struct_ctx) (name : EnumName.t) : I.datatype =
   used_enums := EnumName.Set.add name !used_enums;
   let sig_ =
@@ -215,7 +215,7 @@ and keuzetype_of (enums : enum_ctx) (structs : struct_ctx) (name : EnumName.t) :
    (StructField ids are generative, so the map folds declaration-first). Field
    datatypes recurse through [catala_dt] and must be WF-071-admissible
    (Number / Date at day precision / SumType / StructType) — an inadmissible
-   field type (Tekst, Booleaan, Enumeratie, Date at millisecond precision, a
+   field type (Text, Boolean, Enumeration, Date at millisecond precision, a
    list) refuses loudly. *)
 and struct_type_of (enums : enum_ctx) (structs : struct_ctx) (name : StructName.t) : I.datatype =
   used_structs := StructName.Set.add name !used_structs;
@@ -441,7 +441,7 @@ and attach excepts lower =
       | _ -> ( match parse_tree single with Some hi -> Some (hi @ lower) | None -> None))
   | _ -> nest excepts lower
 
-(* nest an unordered exception set as the [Form_a] excepties of the
+(* nest an unordered exception set as the [Form_a] exceptions of the
    default it excepts. Two shapes stay refused (recorded, PHASE4-DEFAULTS §7 —
    the sub-root refusal narrows to exactly these):
    - excepting a group-default (the default it excepts is itself a multi-member
@@ -627,7 +627,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     | EVar v -> (
         (* a bound binder (match-arm payload, lambda/function parameter) ->
            BinderRef (RUNTIME-SEMANTICS ch. 9.2/10.2); deliberately distinct
-           from VariabeleRef (row 24) *)
+           from VariableReference (row 24) *)
         match Var.Map.find_opt v env with
         | Some (nm, dt) -> typed_ref (Binder_ref { naam = nm; bron = Some nm }) (Some dt)
         | None -> refuse "unbound variable %S in a value position" (Bindlib.name_of v))
@@ -645,7 +645,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         | (Op.Mult_int_int | Op.Mult_dur_int | Op.Mult_rat_rat), [ a; b ] -> bin Maal a b
         | (Op.Mult_mon_int | Op.Mult_mon_rat), [ a; b ] ->
             (* Catala rounds a money product to the cent (o_mult_mon_rat, §5) —
-               wrap the product in Afgerond{REKENKUNDIG,2} exactly as the money
+               wrap the product in Rounding{halfAwayFromZero, 2} exactly as the money
                divisions are (the Div precedent). A money × 4-decimal rate takes
                clingo's split encoding downstream (money_mult_shape). *)
             Afgerond
@@ -660,7 +660,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
               { basis = Some (bin Gedeeld_door a b); modus = Rekenkundig;
                 decimalen = 2; typ = Some num_money; bron = None }
         | Op.Minus_rat, [ a ] ->
-            (* unary rational negation -> 0 - a in the additive family (MIN
+            (* unary rational negation -> 0 - a in the additive family (minus
                coalesces both operands to 0; the operand is not leeg here) *)
             Binair
               { op = Min;
@@ -848,7 +848,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         (* the declared-subscope output read (PHASE5C-TUTORIAL §3.2): an
            [EStructAccess] on a subscope-instance scope variable — the field
            name IS the callee output-variable name at scopelang — lowers to a
-           navigated [AttribuutRef] over the synthesised back-link. *)
+           navigated AttributeReference over the synthesised back-link. *)
         let via_subscope =
           match M.remove (strip inner) with
           | ELocation (ScopelangScopeVar { name = sv }) -> read_subscope_output (M.remove sv) field
@@ -930,7 +930,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
                 veld = StructField.to_string field; bron = None }))
     | EInj { name; e = payload; cons } ->
         (* a constructor value. On a normalised all-nullary enum (WF-087) the
-           keuzetype IS the Enumeratie domain, so the alternative is an ordinary
+           keuzetype IS the Enumeration domain, so the alternative is an ordinary
            enumeration-value Literal (WF-039) — Construct stays sum-only. On a
            payload enum it is the row-36 Construct; unit payload = nullary
            (argument None). *)
@@ -1036,7 +1036,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
            for both keuzetype variants (WF-063 over both): on a normalised
            all-nullary enum every payload is unit, so every arm comes out with
            the value label in [constructor] and [binder] null — exactly the
-           enumeration arm of WF-063, with the scrutinee typed Enumeratie by
+           enumeration arm of WF-063, with the scrutinee typed Enumeration by
            [keuzetype_of]. *)
         let arms_rev, inferred =
           EnumConstructor.Map.fold
@@ -1106,7 +1106,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     | EIfThenElse { cond; etrue; efalse } ->
         if not (in_body || in_let) then
           refuse
-            "if-then-else in a rule expression: a value-level conditional is admissible only inside a lambda, function or `let … in` body (WF-069); a rule keeps the defaults/voorwaarde idiom (bind through a `let … in` to carry it)";
+            "if-then-else in a rule expression: a value-level conditional is admissible only inside a lambda, function or `let … in` body (WF-069); a rule keeps the defaults/condition idiom (bind through a `let … in` to carry it)";
         (* WF-077, the condition-operand discipline: a condition reads only
            binders, parameters and literals — an attribute/field read must be
            hoisted through a `let … in` first (checked before translation) *)
@@ -1144,7 +1144,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         | Op.Not, [ inner ] -> (
             (* Catala desugars [a != b] to [not (a = b)] (from_surface:705);
                it is the only Not shape the fragment expresses — a sum-type or
-               scalar inequality -> ONGELIJK (leeg-correct: Tabel 38, both
+               scalar inequality -> notEqual (leeg-correct: Tabel 38, both
                directions false over a leeg operand). *)
             match M.remove (strip inner) with
             | EAppOp { op = iop; args = [ a; b ]; _ } -> (
@@ -1160,7 +1160,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     | EStructAccess { e = inner; field; _ } -> (
         (* the navigated leaf-read in CONDITION position (IR-SPEC ch. 4.1a/5,
            WF-053): a boolean output of a declared subscope instance read as a
-           voorwaarde lowers to a navigated [Kenmerk_check] over the synthesised
+           condition lowers to a navigated [Kenmerk_check] over the synthesised
            back-link — the condition sibling of the value-position
            [read_subscope_output], symmetric to the plain [check_var]. Only a
            declared subscope instance carries this image; a non-subscope
@@ -1345,7 +1345,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   in
   let is_value_bool v = ScopeVar.Set.mem v value_read_bools in
   (* a declared subscope's per-field output read (PHASE5C-TUTORIAL §3.2): an
-     [EStructAccess] on the instance variable becomes a navigated [AttribuutRef]
+     [EStructAccess] on the instance variable becomes a navigated AttributeReference
      over the back-link — the field name IS the callee output-variable name, so
      it is also the callee attribute name. The output field's datatype comes
      from the callee's output struct directly (never routed through
@@ -1378,7 +1378,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
         in
         (* besluit 4-A: a BOOLEAN callee output is a characteristic (kenmerk) on
            the callee, so a value-position read of it has no image — it would
-           emit a dangling AttribuutRef the verifier admits and the executors
+           emit a dangling AttributeReference the verifier admits and the executors
            split on (ref reads it leeg, clingo faults on the unknown attribute).
            Refuse loudly, the navigated sibling of scalar_read's own-boolean
            value guard and the inverse of check_subscope_output's condition
@@ -1434,7 +1434,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
          | _ ->
              refuse
                "non-boolean subscope output %S of %S read as a condition: only a boolean output (a \
-                callee characteristic) lowers to a navigated Kenmerk check"
+                callee characteristic) lowers to a navigated CharacteristicCheck"
                fld_name callee_type);
         let callee_role = subscope_callee_role v in
         let bron = Printf.sprintf "de %s is %s" (M.remove (ScopeVar.get_info v)) fld_name in
@@ -1598,7 +1598,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   in
   (* besluit 6: the value/condition walk that lowers a caller override into a
      highest default on the callee's defaults group. Same walk as the scope's
-     own, but every caller read navigates back over the back-link (feittype,
+     own, but every caller read navigates back over the back-link (fact type,
      caller role): the override default sits on the callee's defaults group yet
      reads the caller's override value and guard — Reading B expressed as
      default order, no standing machinery. *)
@@ -1621,8 +1621,8 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   (* condition option: [true] is unconditional -> None (for plain rules) *)
   let cond_opt e = if is_true e then None else Some (cond_expr e) in
   (* a default always carries a justification (WF-050): an
-     unconditional base becomes the vacuously-true ALLE, never null —
-     null is reserved for the initialisation default (ch. 7.3). *)
+     unconditional base becomes the vacuously-true all, never absent —
+     absence is reserved for the initialisation default (ch. 7.3). *)
   let cond_default e = Some (if is_true e then always_true else cond_expr e) in
   (* boolean value expression -> the guard condition it stands for *)
   let bool_value_guard value =
@@ -1766,7 +1766,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   in
   (* one declared subscope -> its synthesised fact type and object creation
      (PHASE5C-TUTORIAL §3.1): the call's args bind as member initialisations
-     (Toekenningen) on the callee's INPUT attributes, plus the connectingRole
+     (MemberInit) on the callee's INPUT attributes, plus the connectingRole
      back-link. A subscope input is an unconditional caller value; a conditional
      target or one carrying a defaults group is out of scope (the WF-050 default
      route is deferred). *)
@@ -2245,7 +2245,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
         if money_rate basis then fence_expr basis
         else
           refuse
-            "per-element callee %S wraps a rounding (Afgerond) that is not the money × 4-decimal-rate \
+            "per-element callee %S wraps a rounding (Rounding) that is not the money × 4-decimal-rate \
              cent product: clingo's closed-body term carries only that product (card clingo-bodymult) \
              — a money division or a money×integer rounding has no closed-body image, refused per \
              element"
@@ -2473,7 +2473,7 @@ let file_to_document (input : string) : I.document =
   in
   (* the enums and structs actually referenced above become keuzetype/StructType
      domains, in declaration order — each enum on the variant [keuzetype_of]
-     decided (SumType, or Enumeratie when all-nullary, WF-087); the reduce
+     decided (SumType, or Enumeration when all-nullary, WF-087); the reduce
      lowering's Optional (payload-carrying, built with the concrete element
      datatype) joins them when used. *)
   let domeinen =

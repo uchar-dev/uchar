@@ -1,13 +1,14 @@
-(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L4 shape
-   with the source record of L5.
+(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L5 shape.
 
    ARCHITECTURE. The plugin builds typed [Ir_v0.Ast] values and hands
    them to exactly one serialiser — this module — so schema conformity is
    structural, not stringly-typed: the mapping code never assembles JSON
    by hand. This module is the deliberate inverse of
-   [Ir_v0.Loader]: every key name, node discriminator and enum spelling
-   mirrors the loader's [check_keys]/[expect_node]/[enum] tables, so a
-   value that round-trips through Loader is what we emit.
+   [Ir_v0.Loader]: every key name and node discriminator mirrors the
+   loader's [check_keys]/[expect_node] tables, and every enumeration value
+   is spelled by the one translation table the loader reads with
+   ([Ir_v0.Spelling]), so a value that round-trips through Loader is what
+   we emit.
 
    FINDING (reported on the card): the [uchar-ir-v0] library ships a
    strict Loader (JSON->AST) but NO AST->JSON serialiser — the
@@ -23,6 +24,7 @@
    context rather than emitting a guessed shape. *)
 
 open Ir_v0.Ast
+module Spelling = Ir_v0.Spelling
 
 type json = Yojson.Safe.t
 
@@ -54,43 +56,23 @@ let fields (kvs : (string * json) list) : (string * json) list =
 
 let node k rest : json = `Assoc (("node", `String k) :: fields rest)
 
-let teken_s = function
-  | Onbepaald -> "ONBEPAALD" | Negatief -> "NEGATIEF"
-  | Niet_negatief -> "NIET_NEGATIEF" | Positief -> "POSITIEF"
+(* A field IR-SPEC calls optional is written whole when present and left out
+   otherwise: since the L5 landing no such field carries a null. *)
+let optional (k : string) (f : 'a -> json) : 'a option -> (string * json) list = function
+  | None -> []
+  | Some x -> [ (k, f x) ]
 
-let kenmerk_soort_s = function
-  | Bijvoeglijk -> "BIJVOEGLIJK" | Bezittelijk -> "BEZITTELIJK"
-  | Zelfstandig -> "ZELFSTANDIG"
-
-let bin_op_s = function
-  | Plus -> "PLUS" | Min -> "MIN" | Verminderd_met -> "VERMINDERD_MET"
-  | Maal -> "MAAL" | Gedeeld_door -> "GEDEELD_DOOR"
-  | Gedeeld_door_abs -> "GEDEELD_DOOR_ABS" | Tot_de_macht -> "TOT_DE_MACHT"
-  | Percentage_van -> "PERCENTAGE_VAN"
-
-let vergelijk_op_s = function
-  | Kleiner -> "KLEINER" | Kleiner_of_gelijk -> "KLEINER_OF_GELIJK"
-  | Groter -> "GROTER" | Groter_of_gelijk -> "GROTER_OF_GELIJK"
-  | Gelijk -> "GELIJK" | Ongelijk -> "ONGELIJK"
-  | Eerder -> "EERDER" | Eerder_of_gelijk -> "EERDER_OF_GELIJK"
-  | Later -> "LATER" | Later_of_gelijk -> "LATER_OF_GELIJK"
-
-let kwantor_s = function
-  | De -> "DE" | Alle -> "ALLE" | Geen -> "GEEN" | Ten_minste -> "TEN_MINSTE"
-  | Ten_hoogste -> "TEN_HOOGSTE" | Precies -> "PRECIES"
-
-let afrond_modus_s = function
-  | Naar_beneden -> "NAAR_BENEDEN" | Naar_boven -> "NAAR_BOVEN"
-  | Rekenkundig -> "REKENKUNDIG" | Richting_nul -> "RICHTING_NUL"
-  | Weg_van_nul -> "WEG_VAN_NUL"
+(* An enumeration value, spelled by its family in the translation table;
+   [Spelling.encode] refuses a constructor the family does not spell. *)
+let enum (fam : 'a Spelling.family) (c : 'a) : json = s (Spelling.encode fam c)
 
 (* the built-in '%' of a percentage that names no unit of its own *)
 let builtin_percent : eenheid =
   { afkorting = Some "%"; stelsel = None; canoniek = Some "%";
     factor_naar_canoniek = Some { num = 1; den = 1 }; noemer = None }
 
-(* The type system in its L3 shape: a Number always carries its sign (a sign
-   the in-memory form leaves open is ONBEPAALD) and its unit only when it has
+(* The type system in its L5 shape: a Number always carries its sign (a sign
+   the in-memory form leaves open is unspecified) and its unit only when it has
    one; a Percentage is a Number with the unit '%' — the built-in one when the
    in-memory form carries none — and the presentation tag at a declaration
    position only ([~decl]; an expression's own type is an annotation, where
@@ -100,19 +82,18 @@ let rec datatype ?(decl = true) (d : datatype) : json =
   | Numeriek { geheel; decimalen; teken; eenheid } ->
       node "Number"
         ([ ("whole", b geheel); ("decimals", i decimalen);
-           ("sign", s (teken_s (Option.value teken ~default:Onbepaald))) ]
+           ("sign", enum Spelling.sign (Option.value teken ~default:Onbepaald)) ]
         @ match eenheid with None -> [] | Some e -> [ ("unit", unit_j e) ])
-  | Booleaan -> node "Booleaan" []
-  | Datum_in_dagen -> node "Date" [ ("precision", s "day") ]
-  | Datum_tijd -> node "Date" [ ("precision", s "millisecond") ]
-  | Tekst -> node "Tekst" []
+  | Booleaan -> node "Boolean" []
+  | Datum_in_dagen | Datum_tijd -> node "Date" [ ("precision", enum Spelling.precision d) ]
+  | Tekst -> node "Text" []
   | Percentage { geheel; decimalen; eenheid } ->
       node "Number"
-        ([ ("whole", b geheel); ("decimals", i decimalen); ("sign", s "ONBEPAALD");
+        ([ ("whole", b geheel); ("decimals", i decimalen); ("sign", enum Spelling.sign Onbepaald);
            ("unit", unit_j (Option.value eenheid ~default:builtin_percent)) ]
         @ if decl then [ ("presentation", s "percentage") ] else [])
   | Enumeratie { domein; waarden } ->
-      node "Enumeratie" [ ("domein", so domein); ("waarden", str_opt_list waarden) ]
+      node "Enumeration" [ ("domain", so domein); ("values", str_opt_list waarden) ]
   | Sum_type { domein; constructoren } ->
       node "SumType"
         [ ("domain", s domein);
@@ -151,13 +132,14 @@ and unit_j (e : eenheid) : json =
 let annotation (d : datatype) : json = datatype ~decl:false d
 
 let geheel_periode (g : geheel_periode) : json =
-  node "GeheelPeriode" [ ("jaar", b g.gp_jaar); ("niet", b g.gp_niet) ]
+  node "WholePeriod"
+    [ ("granularity", enum Spelling.whole_period_granularity g.gp_jaar); ("negated", b g.gp_niet) ]
 
 (* the symbolic role binding (IR-SPEC ch. 2.6): a whole-or-nothing pair of
    plain strings — the back-link of an object creation and the hop of a
    navigated read (Phase 5c subscope lowering). *)
 let rol_binding (rb : rol_binding) : json =
-  node "RolBinding" [ ("feittype", s rb.rb_feittype); ("rol", s rb.rb_rol) ]
+  node "RoleBinding" [ ("factType", s rb.rb_feittype); ("role", s rb.rb_rol) ]
 
 (* The typed value of a Literal (IR-SPEC ch. 4.1, delta B22): one key, the
    variant the literal's type names. *)
@@ -177,28 +159,24 @@ let rec expr (e : expr) : json =
   | Literal { variant; typ = t; bron = br } ->
       node "Literal" [ ("value", literal_value variant); typ t; source br ]
   | Binair { op; links; rechts; typ = t; bron = br } ->
-      node "Binair"
-        [ ("op", s (bin_op_s op)); ("links", opt expr links);
-          ("rechts", opt expr rechts); typ t; source br ]
+      node "Binary"
+        [ ("op", enum Spelling.binary_op op); ("left", opt expr links);
+          ("right", opt expr rechts); typ t; source br ]
   | Afgerond { basis; modus; decimalen; typ = t; bron = br } ->
-      node "Afgerond"
-        [ ("basis", opt expr basis); ("modus", s (afrond_modus_s modus));
-          ("decimalen", i decimalen); typ t; source br ]
+      node "Rounding"
+        [ ("base", opt expr basis); ("mode", enum Spelling.rounding_mode modus);
+          ("decimals", i decimalen); typ t; source br ]
   | Attribuut_ref { attribuut; objecttype; bron = br; navigatie_bindingen = nb } ->
-      (* a reference writes no type (B13). navigatieBindingen is written only
-         when the reference actually navigates (Phase 5c subscope lowering:
-         the caller reads a callee output over the back-link); without it the
-         read is the subject's own (D10) *)
-      let ext =
-        match nb with
-        | None -> []
-        | Some hops -> [ ("navigatieBindingen", `List (List.map rol_binding hops)) ]
-      in
-      node "AttribuutRef"
-        ([ ("attribuut", so attribuut); ("objecttype", so objecttype); source br ] @ ext)
+      (* a reference writes no type (B13). path is written only when the
+         reference actually navigates (Phase 5c subscope lowering: the caller
+         reads a callee output over the back-link); without it the read is the
+         subject's own (IR-SPEC ch. 4.1a) *)
+      node "AttributeReference"
+        ([ ("attribute", so attribuut); ("subjectType", so objecttype); source br ]
+        @ optional "path" (fun hops -> `List (List.map rol_binding hops)) nb)
   | Parameter_ref { parameter; bron = br } ->
-      node "ParameterRef" [ ("parameter", so parameter); source br ]
-  | Variabele_ref { naam; bron = br } -> node "VariabeleRef" [ ("naam", so naam); source br ]
+      node "ParameterReference" [ ("parameter", so parameter); source br ]
+  | Variabele_ref { naam; bron = br } -> node "VariableReference" [ ("name", so naam); source br ]
   (* the two context nodes (IR-SPEC ch. 4.1, delta B23): a session value
      carries its name and its datatype, the bound day of a day-kind
      definition its datatype. A name outside the closed set is refused in
@@ -221,11 +199,11 @@ let rec expr (e : expr) : json =
         match t with Some t -> t | None -> failwith "Emit.expr: a BoundDay carries its datatype"
       in
       node "BoundDay" [ ("type", annotation t); source br ]
-  (* The translator builds no marker, and a written one would need a WARNING
+  (* The translator builds no marker, and a written one would need a warning
      quoting its source snippet in [diagnostics] (WF-113 (b)), which this
      serialiser never writes: it refuses like any node the skeleton never
      builds. *)
-  | Expr_onopgelost _ -> failwith "Emit.expr: node not produced by the skeleton: Onopgelost"
+  | Expr_onopgelost _ -> failwith "Emit.expr: node not produced by the skeleton: Unresolved"
   | Construct { typ = t; constructor_; argument; bron = br } ->
       node "Construct"
         [ ("type", opt annotation t); ("constructor", s constructor_);
@@ -290,9 +268,9 @@ let rec expr (e : expr) : json =
       failwith
         ("Emit.expr: node not produced by the skeleton: "
         ^ (match other with
-          | Tekst_reeks _ -> "TekstReeks" | Functie _ -> "Aggregation or BuiltinCall"
-          | Afgerond _ -> "Afgerond" | Begrensd _ -> "Begrensd"
-          | Dimensie_cel _ -> "DimensieCel" | Temporal_read _ -> "TemporalRead"
+          | Tekst_reeks _ -> "TextComposition" | Functie _ -> "Aggregation or BuiltinCall"
+          | Afgerond _ -> "Rounding" | Begrensd _ -> "Clamp"
+          | Dimensie_cel _ -> "DimensionCellRead" | Temporal_read _ -> "TemporalRead"
           | Lambda _ -> "Lambda (position-restricted; only a Fold/MapList operand)"
           | _ -> "?"))
 
@@ -310,36 +288,37 @@ and param_list (ps : (string * datatype) list) : json =
   `List (List.map (fun (n, dt) -> `Assoc [ ("name", s n); ("datatype", datatype dt) ]) ps)
 
 and conditie (c : conditie) : json =
-  let periode p = ("periode", opt geheel_periode p) in
+  let whole_period p = optional "wholePeriod" geheel_periode p in
   match c with
   | Vergelijking { op; links; rechts; periode = p; bron = br } ->
-      node "Vergelijking"
-        [ ("op", s (vergelijk_op_s op)); ("links", opt expr links);
-          ("rechts", opt expr rechts); periode p; source br ]
+      node "Comparison"
+        ([ ("op", enum Spelling.comparison_op op); ("left", opt expr links);
+           ("right", opt expr rechts) ]
+        @ whole_period p @ [ source br ])
   | Samengesteld { kwantor; drempel; onderdelen; bron = br } ->
-      node "Samengesteld"
-        [ ("kwantor", s (kwantor_s kwantor)); ("drempel", i drempel);
-          ("onderdelen", `List (List.map conditie onderdelen)); source br ]
+      node "Compound"
+        [ ("quantifier", enum Spelling.quantifier kwantor); ("threshold", i drempel);
+          ("parts", `List (List.map conditie onderdelen)); source br ]
   | Kenmerk_check
       { kenmerk; negatie; eigenaar; periode = p; bron = br; navigatie_binding = nb } ->
-      (* navigatieBinding is written whole or not at all (schema: never null),
-         only when the check actually navigates (ch. 4.1a/5: a caller reads a
-         callee characteristic over the synthesised back-link — the condition
-         sibling of a navigated AttribuutRef); it is the hop (D53) *)
-      let ext =
-        match nb with None -> [] | Some rb -> [ ("navigatieBinding", rol_binding rb) ]
-      in
-      node "Kenmerk"
-        ([ ("kenmerk", so kenmerk); ("negatie", b negatie); ("eigenaar", so eigenaar);
-           periode p; source br ]
-        @ ext)
+      (* the host is written only when the check names one (absent is the
+         subject, RUNTIME-SEMANTICS ch. 5.8b); navigation is written whole or
+         not at all, only when the check actually navigates (ch. 4.1a/5: a
+         caller reads a callee characteristic over the synthesised back-link —
+         the condition sibling of a navigated AttributeReference); it is the
+         hop *)
+      node "CharacteristicCheck"
+        ([ ("characteristic", so kenmerk); ("negated", b negatie) ]
+        @ optional "host" s eigenaar @ whole_period p @ [ source br ]
+        @ optional "navigation" rol_binding nb)
   (* no marker either: see the expression arm *)
   | Conditie_onopgelost _ ->
-      failwith "Emit.conditie: condition shape not produced by the skeleton: Onopgelost"
+      failwith "Emit.conditie: condition shape not produced by the skeleton: Unresolved"
   | _ -> failwith "Emit.conditie: condition shape not produced by the skeleton"
 
+(* an open side of a validity is an absent bound; neither bound is always *)
 let geldigheid (g : geldigheid) : json =
-  node "Geldigheid" [ ("vanaf", so g.geld_vanaf); ("tot", so g.geld_tot) ]
+  node "Validity" (optional "from" s g.geld_vanaf @ optional "to" s g.geld_tot)
 
 (* A list entry of the M1 model carries its name once, on its node, so the
    in-memory map key and the node's own name must be one spelling; two
@@ -360,13 +339,13 @@ let objecttype (key, (o : objecttype)) : json =
     | [] -> ()
     | _ -> failwith (Printf.sprintf "Emit: object type %S fills %s, which the plugin never builds" key table)
   in
-  unfilled "attribuutMeervoud" o.attribuut_meervoud;
-  unfilled "attribuutDimensies" o.attribuut_dimensies;
-  unfilled "attribuutGranulariteit" o.attribuut_granulariteit;
-  unfilled "attribuutTijdlijnAantal" o.attribuut_tijdlijn_aantal;
-  unfilled "attribuutTijdlijnNaam" o.attribuut_tijdlijn_naam;
-  unfilled "kenmerkGranulariteit" o.kenmerk_granulariteit;
-  unfilled "kenmerkTijdlijnAantal" o.kenmerk_tijdlijn_aantal;
+  unfilled "attribuut_meervoud" o.attribuut_meervoud;
+  unfilled "attribuut_dimensies" o.attribuut_dimensies;
+  unfilled "attribuut_granulariteit" o.attribuut_granulariteit;
+  unfilled "attribuut_tijdlijn_aantal" o.attribuut_tijdlijn_aantal;
+  unfilled "attribuut_tijdlijn_naam" o.attribuut_tijdlijn_naam;
+  unfilled "kenmerk_granulariteit" o.kenmerk_granulariteit;
+  unfilled "kenmerk_tijdlijn_aantal" o.kenmerk_tijdlijn_aantal;
   let kenmerken =
     List.map
       (function
@@ -398,7 +377,7 @@ let objecttype (key, (o : objecttype)) : json =
                   | Some (Some soort) -> soort
                   | Some None | None -> Zelfstandig
                 in
-                node "Characteristic" [ ("name", s k); ("kind", s (kenmerk_soort_s kind)) ])
+                node "Characteristic" [ ("name", s k); ("kind", enum Spelling.characteristic_kind kind) ])
               kenmerken)) ])
 
 (* Domain (IR-SPEC ch. 2.3): the name is written here, so the datatype at
@@ -412,16 +391,16 @@ let domain (key, (d : datatype option)) : json =
   in
   let self_name =
     match dt with
-    | Enumeratie { domein; _ } -> Some ("domein", domein)
-    | Sum_type { domein; _ } | Struct_type { domein; _ } -> Some ("domain", Some domein)
+    | Enumeratie { domein; _ } -> Some domein
+    | Sum_type { domein; _ } | Struct_type { domein; _ } -> Some (Some domein)
     | _ -> None
   in
   let body =
     match (self_name, datatype dt) with
     | None, j -> j
-    | Some (field, naam), `Assoc kvs ->
+    | Some naam, `Assoc kvs ->
         named "domain" key naam;
-        `Assoc (List.filter (fun (k, _) -> k <> field) kvs)
+        `Assoc (List.filter (fun (k, _) -> k <> "domain") kvs)
     | Some _, _ -> failwith (Printf.sprintf "Emit: domain %S did not serialise as an object" key)
   in
   node "Domain" [ ("name", s key); ("datatype", body) ]
@@ -455,8 +434,7 @@ let rule (r : resolved_regel) : json =
   if r.rr_bron_annotaties <> None then failwith "Emit: the plugin writes no statute annotations";
   let initialisation, presentation =
     match r.rr_soort with
-    | Some Gelijkstelling -> (false, [ ("presentation", s "GELIJKSTELLING") ])
-    | Some Berekening -> (false, [ ("presentation", s "BEREKENING") ])
+    | Some ((Gelijkstelling | Berekening) as k) -> (false, [ ("presentation", enum Spelling.presentation k) ])
     | Some Initialisatie -> (true, [])
     | Some Kenmerktoekenning -> (false, [])
     | None -> failwith "Emit: a rule version without its kind"
@@ -464,7 +442,7 @@ let rule (r : resolved_regel) : json =
   let target =
     match r.doel with
     | Some (Attribuut_ref _ as t) -> expr t
-    | _ -> failwith "Emit: the target of a rule version is an AttribuutRef"
+    | _ -> failwith "Emit: the target of a rule version is an AttributeReference"
   in
   let value =
     match r.waarde with Some v -> expr v | None -> failwith "Emit: a rule version without its value"
@@ -493,19 +471,20 @@ let consistency (c : resolved_consistentie) : json =
    synthesises to carry a subscope back-link (Phase 5c). Each role names its
    filler object type; the plugin's roles are always to-one. *)
 let rol (r : rol) : json =
-  node "Rol"
-    [ ("naam", so r.rol_naam); ("objecttypeNaam", so r.rol_objecttype_naam);
-      ("meervoud", so r.rol_meervoud); ("meervoudig", b r.rol_meervoudig) ]
+  node "Role"
+    ([ ("name", so r.rol_naam); ("objectType", so r.rol_objecttype_naam) ]
+    @ optional "plural" s r.rol_meervoud
+    @ [ ("many", b r.rol_meervoudig) ])
 
 let feittype (ft : feittype) : json =
-  node "Feittype"
-    [ ("naam", so ft.ft_naam); ("wederkerig", b ft.wederkerig);
-      ("rollen", `List (List.map rol ft.rollen)) ]
+  node "FactType"
+    [ ("name", so ft.ft_naam); ("reciprocal", b ft.wederkerig);
+      ("roles", `List (List.map rol ft.rollen)) ]
 
 let toekenning (t : toekenning) : json =
-  node "Toekenning"
-    [ ("attribuut", so t.toe_attribuut); ("waarde", opt expr t.toe_waarde);
-      ("kenmerk", b t.toe_kenmerk) ]
+  node "MemberInit"
+    [ ("member", so t.toe_attribuut); ("value", opt expr t.toe_waarde);
+      ("characteristic", b t.toe_kenmerk) ]
 
 let object_creation (oc : resolved_object_creatie) : json =
   (* connectingRole is optional (IR-SPEC ch. 3.3) — the created-side role of
@@ -523,47 +502,44 @@ let object_creation (oc : resolved_object_creatie) : json =
       @ connecting))
 
 let rec default (d : default) : json =
-  (* [besluit] is a required key (null on an attribute / group default);
-     [consequentie], [initialisatie] and [excepties] are extension fields —
-     written only when present, matching the loader's [ext] admission. *)
-  let base =
-    [ ("node", `String "Default");
-      ("besluit", (match d.default_besluit with None -> `Null | Some x -> `Bool x));
-      ("voorwaarde", opt conditie d.default_voorwaarde) ]
-  in
-  let conseq =
-    match d.default_consequentie with None -> [] | Some e -> [ ("consequentie", expr e) ]
-  in
-  let init = if d.default_initialisatie then [ ("initialisatie", `Bool true) ] else [] in
-  let excepties =
-    match d.default_excepties with
-    | None -> [] | Some egs -> [ ("excepties", exception_groups egs) ]
-  in
-  `Assoc (fields (base @ conseq @ init @ [ source d.default_bron ] @ excepties))
+  (* every field but the node is written only when present, matching the
+     loader's [ext] admission: no decision on an attribute or group default,
+     no justification on an initialisation or group default, and an
+     initialisation only when it is true *)
+  let init = if d.default_initialisatie then [ ("initialisation", `Bool true) ] else [] in
+  `Assoc
+    (fields
+       ([ ("node", `String "Default") ]
+       @ optional "decision" b d.default_besluit
+       @ optional "justification" conditie d.default_voorwaarde
+       @ optional "consequence" expr d.default_consequentie
+       @ init @ [ source d.default_bron ]
+       @ optional "exceptions" exception_groups d.default_excepties))
 
-(* the nested exception group riding [excepties] (v1, Phase 5c): the
-   {ongeordend, leden} object (no node discriminator) and its [ExceptionGroup]
-   members, mirroring the loader's [exception_groups]/[exception_group]. *)
+(* the nested exception group riding [exceptions] (v1, Phase 5c): the
+   {unordered, members} object (no node discriminator) and its
+   [ExceptionGroup] members, mirroring the loader's
+   [exception_groups]/[exception_group]. *)
 and exception_groups (egs : exception_groups) : json =
   `Assoc
-    [ ("ongeordend", b egs.egs_ongeordend);
-      ("leden", `List (List.map exception_group egs.egs_leden)) ]
+    [ ("unordered", b egs.egs_ongeordend);
+      ("members", `List (List.map exception_group egs.egs_leden)) ]
 
 and exception_group (eg : exception_group) : json =
   node "ExceptionGroup"
     [ ("defaults", `List (List.map default eg.eg_defaults)); source eg.eg_bron ]
 
 let prioritized_defaults (pd : prioritized_defaults) : json =
-  let attribuut = match pd.pd_attribuut with None -> [] | Some a -> [ ("attribuut", `String a) ] in
-  let ongeordend = if pd.pd_ongeordend then [ ("ongeordend", `Bool true) ] else [] in
+  let unordered = if pd.pd_ongeordend then [ ("unordered", `Bool true) ] else [] in
   `Assoc
     (fields
-       ([ ("node", `String "PrioritizedDefaults"); ("naam", so pd.pd_naam);
-          ("onderwerp", `String pd.pd_onderwerp); ("kenmerk", so pd.pd_kenmerk) ]
-       @ attribuut
+       ([ ("node", `String "PrioritizedDefaults"); ("name", so pd.pd_naam);
+          ("subject", `String pd.pd_onderwerp) ]
+       @ optional "characteristic" s pd.pd_kenmerk
+       @ optional "attribute" s pd.pd_attribuut
        @ [ ("defaults", `List (List.map default pd.defaults)) ]
-       @ ongeordend
-       @ [ source pd.pd_bron; ("geldigheid", opt geldigheid pd.pd_geldigheid) ]))
+       @ unordered
+       @ [ source pd.pd_bron; ("validity", opt geldigheid pd.pd_geldigheid) ]))
 
 let function_def (fd : function_def) : json =
   node "FunctionDef"
@@ -572,13 +548,13 @@ let function_def (fd : function_def) : json =
       source fd.fd_bron ]
 
 (* The M1 container (decision V3 (b)): the declaration set under "model", the
-   rule lists under "rules" with their v0 keys, in the schema's property
+   rule lists under "rules" with their L5 keys, in the schema's property
    order. functionDefs is an extension list, written only when non-empty;
    prioritizedDefaults is written whole, as it always was. The plugin
    builds no parameter, unit system, dimension, timeline, day kind or
    diagnostic, so those lists are written empty, and a filled one refuses:
    written as [] it would drop what it held without a word. The serialiser
-   refuses an Onopgelost as well, so no written document holds a marker a
+   refuses an Unresolved marker as well, so no written document holds a marker a
    diagnostic would have to account for (WF-113). *)
 let document (d : document) : json =
   let unfilled list = function
@@ -590,13 +566,13 @@ let document (d : document) : json =
   unfilled "dimensions" d.dimensies;
   unfilled "timelines" d.tijdlijnen;
   unfilled "dayKinds" d.dagsoorten;
-  unfilled "resolvedDagsoorten" d.resolved_dagsoorten;
-  unfilled "verdelingen" d.verdelingen;
-  unfilled "uniciteiten" d.uniciteiten;
-  unfilled "uniciteiten" d.uniciteit_unies;
-  unfilled "feitCreaties" d.feit_creaties;
-  unfilled "resolvedStartpunten" d.resolved_startpunten;
-  unfilled "regelGroepen" d.regel_groepen;
+  unfilled "dayKindDefinitions" d.resolved_dagsoorten;
+  unfilled "allocations" d.verdelingen;
+  unfilled "uniquenesses" d.uniciteiten;
+  unfilled "uniquenesses" d.uniciteit_unies;
+  unfilled "factCreations" d.feit_creaties;
+  unfilled "startPointDeterminations" d.resolved_startpunten;
+  unfilled "ruleGroups" d.regel_groepen;
   unfilled "diagnostics" d.diagnostics;
   let function_defs =
     match d.function_defs with [] -> [] | fds -> [ ("functionDefs", `List (List.map function_def fds)) ]
@@ -622,15 +598,15 @@ let document (d : document) : json =
          @ function_defs));
       ("rules",
        `Assoc
-         [ ("resolvedRegels", `List (List.map rule d.resolved_regels));
-           ("resolvedDagsoorten", `List []);
-           ("objectCreaties", `List (List.map object_creation d.object_creaties));
-           ("verdelingen", `List []);
-           ("consistenties", `List (List.map consistency d.consistenties));
-           ("uniciteiten", `List []);
-           ("feitCreaties", `List []);
-           ("resolvedStartpunten", `List []);
-           ("regelGroepen", `List []);
+         [ ("rules", `List (List.map rule d.resolved_regels));
+           ("dayKindDefinitions", `List []);
+           ("objectCreations", `List (List.map object_creation d.object_creaties));
+           ("allocations", `List []);
+           ("consistencies", `List (List.map consistency d.consistenties));
+           ("uniquenesses", `List []);
+           ("factCreations", `List []);
+           ("startPointDeterminations", `List []);
+           ("ruleGroups", `List []);
            ("prioritizedDefaults", `List (List.map prioritized_defaults d.prioritized_defaults)) ]);
       ("diagnostics", `List []) ]
 

@@ -94,7 +94,7 @@ let () =
          the plugin never sees a wildcard *)
       ("enum_wildcard.catala_en",
        [ "cases/wild_een.json"; "cases/wild_twee.json" ]);
-      (* WF-087: an ALL-NULLARY enum normalises to the Enumeratie domain — the
+      (* WF-087: an ALL-NULLARY enum normalises to the Enumeration domain — the
          value Literal, the enumeration-scrutinee Match and the ordinary enum
          equality through the full differential. The wire SHAPE is asserted
          separately below (an E2E run is blind to which variant carried it) *)
@@ -102,7 +102,7 @@ let () =
        [ "cases/getij_eb.json"; "cases/getij_vloed.json";
          "cases/getij_doodtij.json" ]);
       (* WF-087's LOWER boundary on the plugin side: ONE nullary constructor.
-         A unit type is a nullary keuzetype too, so it lands on the Enumeratie
+         A unit type is a nullary keuzetype too, so it lands on the Enumeration
          domain as well — the shape a [List.length > 1] weakening of
          [keuzetype_of] would let escape into a SumType (its verifier twin is
          negatief `wf087-unit-sumtype`). The wire assertion below is what
@@ -122,7 +122,7 @@ let () =
       ("struct.catala_en", [ "cases/struct_gevuld.json"; "cases/struct_leeg.json" ]);
       (* row-5c/ch. 7.9 nested exception groups: the tutorial article-3 tree
          (a base with an exception carrying two unordered exceptions) rides one
-         [Default.excepties] slot. The binding spurious-conflict test of
+         [Default.exceptions] slot. The binding spurious-conflict test of
          PHASE4-DEFAULTS §7 pinned frontend-side: only-one-sub-member (n=100)
          decides that member ($20 — flattening would fabricate a $20-vs-$10
          conflict), the form-a own consequence fires when the exception groups decide
@@ -141,20 +141,20 @@ let () =
       (* row-5c §5: Catala decimals at the pinned scale S = 4 — a percentage
          literal, the rational operators (Add/Sub/Mult/Div_rat_rat, unary
          Minus_rat) and the ToRat cast, plus a money × rate product that Catala
-         rounds to the cent (Afgerond{REKENKUNDIG,2}) on tutorial magnitude,
+         rounds to the cent (Rounding{halfAwayFromZero,2}) on tutorial magnitude,
          which clingo encodes SPLIT so the scale-6 product never wraps int31 *)
       ("decimals.catala_en", [ "cases/dec_drie.json"; "cases/dec_vijf.json" ]);
       (* PHASE5C-TUTORIAL §3: a declared subscope lowered onto existing kernel —
-         one ResolvedObjectCreatie of the callee (the call's args as Toekenningen
-         on its inputs, plus the verbindendeRol back-link) and the output read as
-         a navigated AttribuutRef over that back-link; the callee's rule runs in
+         one ObjectCreation of the callee (the call's args as MemberInits on
+         its inputs, plus the connectingRole back-link) and the output read as
+         a navigated AttributeReference over that back-link; the callee's rule runs in
          the caller's fixpoint on the minted instance. Through the full
          differential (ref AND clingo) *)
       ("subscope.catala_en", [ "cases/subscope_70.json"; "cases/subscope_160.json" ]);
       (* IR-SPEC ch. 4.1a/5, WF-053: a boolean OUTPUT of a declared subscope (a
-         callee characteristic) read as a VOORWAARDE lowers to a navigated
-         [Kenmerk] check over the synthesised back-link — the condition sibling
-         of the value-position navigated AttribuutRef, no new node. The exception
+         callee characteristic) read as a CONDITION lowers to a navigated
+         CharacteristicCheck over the synthesised back-link — the condition sibling
+         of the value-position navigated AttributeReference, no new node. The exception
          default's guard reads `overzees` of the minted eigenaar over the back-link;
          overseas doubles the heffing (registratiezone 200 → $6000), binnengaats
          the base decides (zone 50 → $3000), both pinned against `catala
@@ -250,25 +250,25 @@ let () =
      on is decided by its payloads, and an E2E replay cannot see that choice —
      both programs below evaluate identically whichever form carried them. So
      the emitted JSON is asserted directly, in both directions: an all-nullary
-     enum is the Enumeratie domain and carries NO SumType/Construct anywhere,
+     enum is the Enumeration domain and carries NO SumType/Construct anywhere,
      a payload-carrying enum keeps the row-36 SumType and never becomes an
-     Enumeratie. Since M1 the declaration carries its name once, as the
-     Domain wrapper's "name", and "domein" is left only at the reference
+     Enumeration. Since M1 the declaration carries its name once, as the
+     Domain wrapper's "name", and "domain" is left only at the reference
      positions, so both are asserted. *)
   let wire =
     [ ("enum_nullair.catala_en",
-       [ "\"node\": \"Enumeratie\""; "\"name\": \"Getijstand\"";
-         "\"domein\": \"Getijstand\""; "\"constructor\": \"Doodtij\""; "\"binder\": null" ],
+       [ "\"node\": \"Enumeration\""; "\"name\": \"Getijstand\"";
+         "\"domain\": \"Getijstand\""; "\"constructor\": \"Doodtij\""; "\"binder\": null" ],
        [ "SumType"; "Construct" ]);
       (* the same assertion at the rule's LOWER boundary — one constructor is
-         still all-nullary, so still the Enumeratie domain and never a SumType *)
+         still all-nullary, so still the Enumeration domain and never a SumType *)
       ("enum_unit.catala_en",
-       [ "\"node\": \"Enumeratie\""; "\"name\": \"Meldstatus\"";
-         "\"domein\": \"Meldstatus\""; "\"constructor\": \"Gemeld\""; "\"binder\": null" ],
+       [ "\"node\": \"Enumeration\""; "\"name\": \"Meldstatus\"";
+         "\"domain\": \"Meldstatus\""; "\"constructor\": \"Gemeld\""; "\"binder\": null" ],
        [ "SumType"; "Construct" ]);
       ("enum.catala_en",
        [ "\"node\": \"SumType\""; "\"node\": \"Construct\"" ],
-       [ "Enumeratie" ]) ]
+       [ "Enumeration" ]) ]
   in
   List.iter
     (fun (src, present, absent) ->
@@ -365,7 +365,7 @@ let () =
          subscope (a callee characteristic) read in a VALUE position — here an
          equality operand — refuses loudly, mirroring the own-boolean value
          guard. Read as a CONDITION it lowers (overzeelezing.catala_en); the
-         value position has no image and would emit a dangling AttribuutRef the
+         value position has no image and would emit a dangling AttributeReference the
          verifier admits but ref/clingo split on *)
       ("refuse_subscope_bool_value.catala_en", "value position");
       ("refuse_empty_arith.catala_en", "operand");
@@ -375,7 +375,7 @@ let () =
       ("refuse_partialmatch.catala_en", "total");
       ("refuse_tuple.catala_en", "tuple");
       (* the two honest narrowings of the WF-087 normalisation (maintainer
-         decision 2026-09-01): an all-nullary opsomming is an Enumeratie, not
+         decision 2026-09-01): an all-nullary opsomming is an Enumeration, not
          a SumType, and WF-065/WF-071 admit no enumeration as a list element
          or a struct field. Both carriers demand the payload form; before the
          normalisation both of these lowered. The spec speaks, not the
@@ -412,9 +412,9 @@ let () =
         (Printf.sprintf "exit %d, wanted %S in:\n%s" code needle o))
     refusals;
   (* The serialiser's own refusals, which no Catala source reaches: the
-     translator builds no Onopgelost and fills none of the lists the document
+     translator builds no Unresolved and fills none of the lists the document
      writes empty, so an E2E run never meets these arms. A loaded document
-     drives them instead. A marker written without its WARNING fails WF-113
+     drives them instead. A marker written without its warning fails WF-113
      (b) at the verifier, and a filled list written as [] drops what it held
      without a word, so each has to refuse at the serialiser. *)
   let m1_doc ?(parameters = "") ?(regels = "") ?(diagnostics = "") () =
@@ -422,9 +422,9 @@ let () =
       {|{ "format": "uchar-ir-v1",
   "model": { "objectTypes": [], "factTypes": [], "parameters": [%s], "domains": [],
     "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [] },
-  "rules": { "resolvedRegels": [%s], "resolvedDagsoorten": [], "objectCreaties": [],
-    "verdelingen": [], "consistenties": [], "uniciteiten": [],
-    "feitCreaties": [], "resolvedStartpunten": [], "regelGroepen": [] },
+  "rules": { "rules": [%s], "dayKindDefinitions": [], "objectCreations": [],
+    "allocations": [], "consistencies": [], "uniquenesses": [],
+    "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
   "diagnostics": [%s] }|}
       parameters regels diagnostics
   in
@@ -434,42 +434,42 @@ let () =
   let regel ~waarde ~voorwaarde =
     Printf.sprintf
       {|{ "node": "Rule", "name": "r", "versions": [ {
-  "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
-  "target": { "node": "AttribuutRef", "attribuut": "a", "objecttype": "T", "source": { "snippet": "de a" } },
-  "value": %s,%s "initialisation": false, "presentation": "BEREKENING" } ] }|}
+  "validity": { "node": "Validity" },
+  "target": { "node": "AttributeReference", "attribute": "a", "subjectType": "T", "source": { "snippet": "de a" } },
+  "value": %s,%s "initialisation": false, "presentation": "calculation" } ] }|}
       waarde
       (match voorwaarde with None -> "" | Some c -> Printf.sprintf {| "condition": %s,|} c)
   in
   let getal =
     {|{ "node": "Literal", "value": { "number": "1" },
-  "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "source": { "snippet": "1" } }|}
+  "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }, "source": { "snippet": "1" } }|}
   in
   let emit_refusals =
-    [ ("an expression Onopgelost",
+    [ ("an expression Unresolved",
        m1_doc
          ~regels:
            (regel ~voorwaarde:None
-              ~waarde:{|{ "node": "Onopgelost", "source": { "snippet": "de onbekende waarde" } }|})
+              ~waarde:{|{ "node": "Unresolved", "source": { "snippet": "de onbekende waarde" } }|})
          (),
-       "Onopgelost");
-      ("a condition Onopgelost",
+       "Unresolved");
+      ("a condition Unresolved",
        m1_doc
          ~regels:
            (regel ~waarde:getal
-              ~voorwaarde:(Some {|{ "node": "Onopgelost", "source": { "snippet": "de onbekende voorwaarde" } }|}))
+              ~voorwaarde:(Some {|{ "node": "Unresolved", "source": { "snippet": "de onbekende voorwaarde" } }|}))
          (),
-       "Onopgelost");
+       "Unresolved");
       ("a filled diagnostics list",
        m1_doc
          ~diagnostics:
-           {|{ "node": "Diagnostic", "severity": "WARNING", "message": "een melding", "line": 1 }|}
+           {|{ "node": "Diagnostic", "severity": "warning", "message": "een melding", "line": 1 }|}
          (),
        "fills diagnostics");
       ("a filled parameters list",
        m1_doc
          ~parameters:
            {|{ "node": "Parameter", "name": "drempel",
-  "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" } }|}
+  "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" } }|}
          (),
        "fills parameters") ]
   in
@@ -520,7 +520,9 @@ let () =
       feittypen = []; dimensies = []; tijdlijnen = []; dagsoorten = [];
       resolved_regels =
         [ regel "peildatum van een zaak" Gelijkstelling "peildatum"
-            (Constante { naam = Some "Rekendatum"; typ = Some A.Datum_in_dagen; bron = Some "de rekendatum" })
+            (Constante
+               { naam = Some Ir_v0.Spelling.evaluation_date; typ = Some A.Datum_in_dagen;
+                 bron = Some "de rekendatum" })
             None;
           regel "dagdatum van een zaak" Berekening "dagdatum"
             (Bound_day { typ = Some A.Datum_in_dagen; bron = Some "de dag" }) None;
@@ -548,7 +550,7 @@ let () =
   List.iter
     (fun needle -> check ("emit-proef : writes " ^ needle) (contains ~needle text) text)
     [ {|"node": "ContextValue"|}; {|"node": "BoundDay"|}; {|"text": "proef"|};
-      {|"dateTime": "2026-03-15T12:00:00"|}; {|"presentation": "GELIJKSTELLING"|};
+      {|"dateTime": "2026-03-15T12:00:00"|}; {|"presentation": "equation"|};
       {|"initialisation": true|}; {|"condition": {|} ];
   Printf.printf "\n%d checks, %d failures\n%!" !ntests !failures;
   if !failures > 0 then exit 1
