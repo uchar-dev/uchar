@@ -184,7 +184,7 @@ let units_compatible_adopting lexpr rexpr a b =
 (* The nine calendar units, keyed on SPELLING (case-insensitive) — the one
    normative table the verifier's WF-035/WF-038 clauses and the executors'
    calendar arithmetic share. Declared conversion factors and the declaring
-   stelsel are irrelevant to calendar arithmetic (the stelsel may be null):
+   system are irrelevant to calendar arithmetic (a unit may name no system):
    a year is a calendar year, never a second count. *)
 type time_unit =
   | Tu_jaar | Tu_kwartaal | Tu_maand | Tu_week | Tu_dag
