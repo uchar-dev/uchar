@@ -14,7 +14,7 @@
     "parameters": {}
   },
   "expectedFault": {
-    "ref": "the Rekendatum constant needs an evaluation date",
-    "clingo": "the Rekendatum constant needs an evaluation date"
+    "ref": "the Rekendatum context value needs an evaluation date",
+    "clingo": "the Rekendatum context value needs an evaluation date"
   }
 }

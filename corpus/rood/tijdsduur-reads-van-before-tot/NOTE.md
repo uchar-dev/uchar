@@ -23,8 +23,8 @@ vaartduur := Let vertrekdatum = zijn vertrek
 
 with `vertrek` **absent** and the case carrying `asOfDate: null`.
 
-* `van` = the `Rekendatum` constant — with no evaluation date in the
-  session this **faults** (ch. 8.2: the constant is the only
+* `van` = the `Rekendatum` context value — with no evaluation date in
+  the session this **faults** (ch. 8.2: the context value is the only
   expression-level access to the evaluation date, and there is none).
 * `tot` = a read of `vertrekdatum`, whose need is leeg — the ch. 10.6
   barrier, which would end the whole `Let` with no fault.
@@ -33,8 +33,8 @@ with `vertrek` **absent** and the case carrying `asOfDate: null`.
 
 | executor | pinned fragment | does it pin the order? |
 |----------|-----------------|------------------------|
-| ref | `the Rekendatum constant needs an evaluation date` | **yes** — `van` is evaluated before `tot`, so the constant is reached before the barrier |
-| clingo | `the Rekendatum constant needs an evaluation date` | **no** — the ASP translation has no operand evaluation order at all; it refuses the dateless constant whichever operand it visits first |
+| ref | `the Rekendatum context value needs an evaluation date` | **yes** — `van` is evaluated before `tot`, so the context value is reached before the barrier |
+| clingo | `the Rekendatum context value needs an evaluation date` | **no** — the ASP translation has no operand evaluation order at all; it refuses the dateless context value whichever operand it visits first |
 
 Measured: with ref's two `let`s swapped the case reports `EXPECTED FAULT
 DID NOT OCCUR: evaluation succeeded`, because the barrier fires first and
