@@ -49,11 +49,14 @@ operand, the object type of that operand being the whole defect.
 
 Falsifiable, arm-exact: in `aggregation_source_check`, let the anchor of the
 cross fall back to the operand itself in the non-set case (`let anchor = if
-set then Some element_type else Some otn`). Measured over golden + rood +
-negatief + parity — 508 documents — exactly one report changes and this case,
-alone, turns clean; its set-half sibling
-`wf083-vouwbron-vreemd-elementtype` stays rejected, and so do the two
-self-denotation cases.
+set then Some element_type else Some otn`, the code of the day). Measured over
+golden + rood + negatief + parity — 508 documents — exactly one report
+changed and this case, alone, turned clean; its set-half sibling
+`wf083-vouwbron-vreemd-elementtype` stayed rejected, and so did the two
+self-denotation cases. Since L2 the anchor is chosen per reading of the
+source: the same mutant is `Src_own -> Some otn` in place of `Src_own ->
+subject`. Measured in the L2 fix round (2026-09-24) over 718 documents:
+exactly one report changes, this one, which turns clean.
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the source
