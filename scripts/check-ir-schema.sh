@@ -7,9 +7,9 @@
 #      polarities, with no corpus document involved — without it, deleting a
 #      pattern is a silent green (measured 2026-09-11). A clamp fails when a
 #      pattern appears at a position the table does not carry;
-#  1c. the positions the M1, L2, L3 and L4 shapes close by schema alone are held
-#      the same way: one small valid document per shape, one mutation per row, in
-#      both polarities;
+#  1c. the positions the M1, L2, L3 and L4 shapes and the source record of L5
+#      close by schema alone are held the same way: one small valid document per
+#      shape, one mutation per row, in both polarities;
 #   2. every corpus/golden/**/ir.json validates against it;
 #   3. every such file round-trips: parsed with raw number lexemes preserved and
 #      re-emitted canonically, the output is byte-identical to the input (this is
@@ -173,8 +173,8 @@ LEXEMES = {
         ("5",      True,  "an integer"),
         ("-12.50", True,  "a negative decimal"),
         ("3/4",    True,  "a rational"),
-        ("12,50",  False, "a decimal comma: the literal writes a point, and the comma stays in 'bron' "
-                          "(B22)"),
+        ("12,50",  False, "a decimal comma: the literal writes a point, and the comma stays in the "
+                          "source snippet (B22)"),
         ("5 \u20ac", False, "a unit in the lexeme: the unit is the literal's type (the WF-081 family)"),
         ("5\n",    False, "a trailing newline"),
         ("1,000",  False, "a grouping comma"),
@@ -439,15 +439,14 @@ def _l2_base():
     d = _m1_base()
     num = {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD"}
     rb = lambda rol: {"node": "RolBinding", "feittype": "vondstregistratie", "rol": rol}
-    ref = lambda attr, ot: {"node": "AttribuutRef", "attribuut": attr, "objecttype": ot,
-                            "bron": None}
+    ref = lambda attr, ot: {"node": "AttribuutRef", "attribuut": attr, "objecttype": ot}
     def fold(kind, args, el, rng=None):
         f = {"node": "Aggregation", "kind": kind, "arguments": args}
         if el is not None:
             f["elementType"] = el
         if rng is not None:
             f["sourceRole"] = rng
-        f.update(type=dict(num), bron=None)
+        f.update(type=dict(num))
         return f
 
     def rule(name, value, condition):
@@ -471,30 +470,29 @@ def _l2_base():
                    {"node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
                     "meervoud": "vondsten", "meervoudig": True}]})
     som = fold("SOM", [ref("gewicht", "Vondst")], "Vondst", rb("vondst"))
-    count = fold("AANTAL", [{"node": "InstanceSetUnion", "bron": None, "branches": [{
+    count = fold("AANTAL", [{"node": "InstanceSetUnion", "branches": [{
         "node": "InstanceSetBranch", "elementType": "Vondst", "sourceRole": rb("vondst"),
-        "filter": None, "bron": None}]}], None)
+        "filter": None}]}], None)
     check = {"node": "Kenmerk", "kenmerk": "aangespoeld", "negatie": False, "eigenaar": None,
-             "periode": None, "bron": None}
-    condition = {"node": "Samengesteld", "kwantor": "ALLE", "drempel": 0, "bron": None,
+             "periode": None}
+    condition = {"node": "Samengesteld", "kwantor": "ALLE", "drempel": 0,
                  "onderdelen": [
                      {"node": "RoleMembership", "factType": "vondstregistratie", "role": "vinder",
-                      "negated": False, "bron": None},
+                      "negated": False},
                      {"node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Vondst",
-                      "filter": None, "toets": check, "bron": None, "bronRol": rb("vondst")}]}
+                      "filter": None, "toets": check, "bronRol": rb("vondst")}]}
     d["rules"]["resolvedRegels"] = [
         rule("vondstwaarde", som, condition),
         rule("vondstaantal", count, None),
-        rule("vondstdrempel", {"node": "ParameterRef", "parameter": "vondstdrempel",
-                               "bron": None}, None),
-        rule("vondstonbekend", {"node": "Onopgelost", "type": dict(num), "bron": None}, None),
+        rule("vondstdrempel", {"node": "ParameterRef", "parameter": "vondstdrempel"}, None),
+        rule("vondstonbekend", {"node": "Onopgelost", "type": dict(num),
+                                "source": {"snippet": "de onbekende vondstwaarde"}}, None),
         rule("vondstcel", {"node": "DimensieCel", "attribuut": ref("vondstwaarde", "Jutter"),
-                           "labels": ["hout"], "bron": None}, None),
+                           "labels": ["hout"]}, None),
         rule("vondstbinder", {"node": "Let", "type": dict(num), "binder": "w",
                               "value": ref("vondstwaarde", "Jutter"),
-                              "body": {"node": "BinderRef", "name": "w", "bron": None},
-                              "bron": None}, None),
-        rule("vondstvariabele", {"node": "VariabeleRef", "naam": "w", "bron": None}, None),
+                              "body": {"node": "BinderRef", "name": "w"}}, None),
+        rule("vondstvariabele", {"node": "VariabeleRef", "naam": "w"}, None),
     ]
     d["rules"]["verdelingen"] = [{
         "node": "Allocation", "name": "vondstverdeling", "versions": [{
@@ -504,7 +502,7 @@ def _l2_base():
     d["rules"]["uniciteiten"] = [{
         "node": "Uniqueness", "name": "uniek gewicht", "versions": [{
             "sources": [{"node": "Source", "objectType": "Vondst", "keys": ["gewicht"]}],
-            "scope": rb("vinder"), "validity": dict(_ALWAYS), "bron": None}]}]
+            "scope": rb("vinder"), "validity": dict(_ALWAYS)}]}]
     d["rules"]["feitCreaties"] = [{
         "node": "FactCreation", "name": "registratie", "versions": [{
             "factType": "vondstregistratie", "anchorRole": "vinder", "targetRole": "vondst",
@@ -543,8 +541,8 @@ def _listed(d):
     _rule(d, 2)["value"] = {
         "node": "Aggregation", "kind": "EERSTE",
         "arguments": [{"node": "AttribuutRef", "attribuut": "vondstwaarde",
-                       "objecttype": "Jutter", "bron": None}, _rule(d, 2)["value"]],
-        "elementType": "Jutter", "type": None, "bron": None}
+                       "objecttype": "Jutter"}, _rule(d, 2)["value"]],
+        "elementType": "Jutter", "type": None}
 
 
 def _both(d, kind):
@@ -730,12 +728,10 @@ def _l3_base():
     m["dayKinds"] = [{"node": "DayKind", "name": "schouwdag", "plural": "schouwdagen"}]
     d["rules"]["resolvedRegels"].append({"node": "Rule", "name": "vindersdeel", "versions": [{
         "validity": dict(_ALWAYS),
-        "target": {"node": "AttribuutRef", "attribuut": "vindersdeel", "objecttype": "Jutter",
-                   "bron": None},
+        "target": {"node": "AttribuutRef", "attribuut": "vindersdeel", "objecttype": "Jutter"},
         "value": {"node": "Literal", "value": {"number": "5"},
                   "type": {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD",
-                           "unit": dict(pct)},
-                  "bron": None},
+                           "unit": dict(pct)}},
         "initialisation": False, "presentation": "BEREKENING"}]})
     return d
 
@@ -946,11 +942,10 @@ def _l4_base():
     num = {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD"}
     euro = {"node": "Number", "whole": False, "decimals": 2, "sign": "NIET_NEGATIEF"}
     rb = lambda rol: {"node": "RolBinding", "feittype": "vondstregistratie", "rol": rol}
-    ref = lambda attr, ot: {"node": "AttribuutRef", "attribuut": attr, "objecttype": ot,
-                            "bron": None}
-    lit = lambda value, typ: {"node": "Literal", "value": value, "type": typ, "bron": None}
+    ref = lambda attr, ot: {"node": "AttribuutRef", "attribuut": attr, "objecttype": ot}
+    lit = lambda value, typ: {"node": "Literal", "value": value, "type": typ}
     kenmerk = lambda naam: {"node": "Kenmerk", "kenmerk": naam, "negatie": False, "eigenaar": None,
-                            "periode": None, "bron": None}
+                            "periode": None}
     soort = {"node": "Enumeratie", "domein": "Vondstsoort", "waarden": ["hout", "touw"]}
     plaats = [{"name": "Wad", "payload": None}, {"name": "Strand", "payload": None}]
 
@@ -1012,33 +1007,33 @@ def _l4_base():
             "node": "Aggregation", "kind": "SOM", "arguments": [ref("gewicht", "Vondst")],
             "elementType": "Vondst", "filter": kenmerk("aangespoeld"),
             "emptyFallback": lit({"number": "0"}, dict(num)),
-            "sourcePath": [rb("vondst"), rb("vondst")], "type": dict(num), "bron": None},
+            "sourcePath": [rb("vondst"), rb("vondst")], "type": dict(num)},
             presentation="BEREKENING")),
         # a dimension fold: no element type, so no range
         rule("vakkensom", version(ref("vondstwaarde", "Jutter"), {
             "node": "Aggregation", "kind": "SOM", "arguments": [ref("vondstwaarde", "Jutter")],
             "dimensionSelection": {"node": "DimensieSelectie", "dimensie": "kustvak",
-                                   "labels": ["noord", "zuid"], "bron": None},
-            "type": dict(num), "bron": None}, presentation="BEREKENING")),
+                                   "labels": ["noord", "zuid"]},
+            "type": dict(num)}, presentation="BEREKENING")),
         # a builtin call with its bucket and its gedurende condition, and one over a session value
         rule("tariefdeel", version(ref("vondsttarief", "Jutter"), {
             "node": "BuiltinCall", "kind": "TIJDSEVENREDIG_DEEL",
             "arguments": [ref("vondsttarief", "Jutter")], "filter": kenmerk("aangemeld"),
-            "granularity": "MAAND", "type": dict(euro), "bron": None}, presentation="BEREKENING")),
+            "granularity": "MAAND", "type": dict(euro)}, presentation="BEREKENING")),
         rule("rekendag", version(ref("vondstwaarde", "Jutter"), {
             "node": "BuiltinCall", "kind": "DAG_UIT", "arguments": [
                 {"node": "ContextValue", "name": "Rekendatum",
-                 "type": {"node": "Date", "precision": "day"}, "bron": None}],
-            "type": dict(num), "bron": None}, presentation="BEREKENING")),
+                 "type": {"node": "Date", "precision": "day"}}],
+            "type": dict(num)}, presentation="BEREKENING")),
     ]
     r["resolvedDagsoorten"] = [{
         "node": "ResolvedDagsoort", "naam": "schouwdag",
         "voorwaarde": {"node": "Vergelijking", "op": "GELIJK", "links": {
             "node": "BuiltinCall", "kind": "DAG_UIT", "arguments": [
                 {"node": "BoundDay", "type": {"node": "Date", "precision": "day"},
-                 "bron": "de dag"}],
-            "type": dict(num), "bron": None},
-            "rechts": lit({"number": "1"}, dict(num)), "periode": None, "bron": None},
+                 "source": {"snippet": "de dag"}}],
+            "type": dict(num)},
+            "rechts": lit({"number": "1"}, dict(num)), "periode": None},
         "geldigheid": None}]
     r["objectCreaties"] = [{"node": "ObjectCreation", "name": "muntregistratie", "versions": [{
         "createdType": "Muntvondst", "subject": "Jutter", "initialisations": [
@@ -1059,13 +1054,13 @@ def _l4_base():
     r["consistenties"] = [{"node": "Consistency", "name": "gewicht positief", "versions": [{
         "subject": "Vondst",
         "assertion": {"node": "Vergelijking", "op": "GROTER", "links": ref("gewicht", "Vondst"),
-                      "rechts": lit({"number": "0"}, dict(num)), "periode": None, "bron": None},
-        "validity": dict(_ALWAYS), "bron": "Het gewicht van een vondst is groter dan 0.",
-        "line": 12}]}]
+                      "rechts": lit({"number": "0"}, dict(num)), "periode": None},
+        "validity": dict(_ALWAYS),
+        "source": {"snippet": "Het gewicht van een vondst is groter dan 0.", "line": 12}}]}]
     r["uniciteiten"].append({"node": "Uniqueness", "name": "unieke registratie", "versions": [{
         "sources": [{"node": "Source", "objectType": "Jutter", "keys": ["vondstwaarde"]},
                     {"node": "Source", "objectType": "Vondst", "keys": ["gewicht"]}],
-        "validity": dict(_ALWAYS), "bron": None}]})
+        "validity": dict(_ALWAYS)}]})
     return d
 
 
@@ -1285,7 +1280,7 @@ L4_SHAPE_ROWS = [
      "the target is always written (IR-SPEC ch. 3.1)"),
     ("RuleVersion whose target is a ParameterRef",
      _set(lambda d: _rv(d, "jaartarief"), "target",
-          {"node": "ParameterRef", "parameter": "vondsttarief", "bron": None}), False,
+          {"node": "ParameterRef", "parameter": "vondsttarief"}), False,
      "the target is an attribute reference and nothing else"),
     ("RuleVersion.value = null", _set(lambda d: _rv(d, "jaartarief"), "value", None), False,
      "the value is always written (IR-SPEC ch. 3.1)"),
@@ -1339,10 +1334,8 @@ L4_SHAPE_ROWS = [
      "the assertion is always written (IR-SPEC ch. 3.5)"),
     ("ConsistencyVersion.subject = null", _set(_CONS, "subject", None), True,
      "WF-029 holds the subject's presence, with its own witness"),
-    ("ConsistencyVersion without line", _pop(_CONS, "line"), False,
-     "the source line is always written"),
 ] + _v0_keys("ConsistencyVersion", _CONS, ["naam", "assertie", "geldigheid"],
-             "B19: a consistency version writes subject, assertion, validity, bron and line") + [
+             "B19: a consistency version writes subject, assertion, validity and source") + [
     # --- uniqueness -------------------------------------------------------------------------------
     ("UniquenessVersion.sources = []", _set(_UNION, "sources", []), False,
      "B27: a uniqueness has at least one source (IR-SPEC ch. 3.6)"),
@@ -1358,7 +1351,7 @@ L4_SHAPE_ROWS = [
      "a reference name of the rule layer stays nullable; that it resolves is WF-030's"),
 ] + _v0_keys("UniquenessVersion", _SINGLE,
              ["naam", "subject", "sleutels", "scopeRol", "bronnen", "geldigheid"],
-             "B27: a uniqueness version writes sources, scope, validity and bron") + _v0_keys(
+             "B27: a uniqueness version writes sources, scope, validity and source") + _v0_keys(
     "Source", lambda d: _UNION(d)["sources"][0], ["type", "sleutels"],
     "B27: a source writes objectType and keys") + [
     # --- aggregation and builtin call -------------------------------------------------------------
@@ -1388,16 +1381,15 @@ L4_SHAPE_ROWS = [
                  ("sourceRole", {"node": "RolBinding", "feittype": "vondstregistratie",
                                  "rol": "vondst"}),
                  ("sourcePath", []),
-                 ("emptyFallback", {"node": "Literal", "value": {"number": "0"}, "type": None,
-                                    "bron": None}),
+                 ("emptyFallback", {"node": "Literal", "value": {"number": "0"}, "type": None}),
                  ("dimensionSelection", {"node": "DimensieSelectie", "dimensie": "kustvak",
-                                         "labels": ["noord"], "bron": None}))
+                                         "labels": ["noord"]}))
 ] + _v0_keys("Aggregation", _SOM,
              ["argumenten", "elementObjecttype", "leegwaarde", "dimensieSelectie", "bronRol",
               "bronPad", "granulariteit"],
              "B21: an aggregation writes the fields of IR-SPEC ch. 4.3") + _v0_keys(
     "BuiltinCall", _DEEL, ["argumenten", "elementObjecttype", "granulariteit"],
-    "B21: a builtin call writes kind, arguments, filter, granularity, type and bron") + [
+    "B21: a builtin call writes kind, arguments, filter, granularity, type and source") + [
     # --- literal ----------------------------------------------------------------------------------
     ("Literal carries waarde beside value", _set(_NUMLIT, "waarde", "0"), False,
      "B22: a literal carries a typed value, not a lexeme"),
@@ -1414,12 +1406,12 @@ L4_SHAPE_ROWS = [
      False, "exactly one variant"),
     ("Literal.value = {}", _set(_NUMLIT, "value", {}), False, "exactly one variant"),
     ("Literal.value.number = '12,50'", _set(_NUMLIT, "value", {"number": "12,50"}), False,
-     "B22: a decimal point; the source's comma stays in bron"),
+     "B22: a decimal point; the source's comma stays in the source snippet"),
     ("Literal.value.number = '5 \u20ac'", _set(_NUMLIT, "value", {"number": "5 \u20ac"}), False,
      "the unit is the literal's type, never part of its value"),
     ("Literal.value.date = '31-01-2024'",
      lambda d: _val(d, "aanmelddatum").update(value={"date": "31-01-2024"}), False,
-     "the ISO date; the source spelling stays in bron"),
+     "the ISO date; the source spelling stays in the source snippet"),
     ("Literal.value.dateTime = '2026-03-15T12:00'",
      lambda d: _val(d, "meldtijdstip").update(value={"dateTime": "2026-03-15T12:00"}), False,
      "the seconds field is always written"),
@@ -1459,13 +1451,86 @@ L4_SHAPE_ROWS = [
      "B23: the bound day carries no name"),
     ("BoundDay without type", _pop(_BOUND, "type"), False, "the type is always written"),
     ("BoundDay.type = null", _set(_BOUND, "type", None), False, "the type is a datatype"),
-] + _v0_keys("ContextValue", _CTX, ["naam"], "B23: a context value writes name, type and bron") + \
-    _v0_keys("BoundDay", _BOUND, ["naam"], "B23: the bound day writes type and bron")
+] + _v0_keys("ContextValue", _CTX, ["naam"], "B23: a context value writes name, type and source") + \
+    _v0_keys("BoundDay", _BOUND, ["naam"], "B23: the bound day writes type and source")
+
+
+# --- check 1c, the L5 rows (card L5, 2026-09-24) -------------------------------------------------
+# The first step of L5 moves every source text into the source record (delta B26): the optional
+# field 'source' {snippet, line?} stands where 'bron' stood, and the schema closes by itself what
+# the record cannot carry: 'bron' on a node, a record that is not an object with a non-empty
+# snippet, the positions file and column (they wait for the card that first writes positions), a
+# line below 1, a line beside the record on a consistency version or a rule group, and an
+# Onopgelost marker without a source. Same mechanism as the M1 to L4 rows: one small valid document
+# — the L4 base plus an Onopgelost condition and a rule group with its source line — and one
+# mutation per row. Since this step the bases above write every source text in the record: a null
+# source text is absent, a string one a snippet (the bound day's, both markers', and with its line
+# the consistency version's). The rows that must PASS pin the absences the record allows. In the
+# reasons, a B-number is a delta of spec/proposals/V1-WIREMIGRATIE.md.
+def _l5_base():
+    d = _l4_base()
+    r = d["rules"]
+    num = {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD"}
+    r["resolvedRegels"].append({"node": "Rule", "name": "verjaring", "versions": [{
+        "validity": dict(_ALWAYS),
+        "target": {"node": "AttribuutRef", "attribuut": "vondstwaarde", "objecttype": "Jutter"},
+        "value": {"node": "Literal", "value": {"number": "0"}, "type": dict(num)},
+        "condition": {"node": "Onopgelost", "source": {"snippet": "de vondst is verjaard"}},
+        "initialisation": False, "presentation": "BEREKENING"}]})
+    r["regelGroepen"] = [{"node": "ResolvedRegelGroep", "naam": "vondstregels", "recursief": False,
+                          "leden": ["vondstwaarde", "verjaring"],
+                          "source": {"snippet": "Regelgroep vondstregels", "line": 3}}]
+    return d
+
+
+_EXPR_MARKER = lambda d: _val(d, "vondstonbekend")
+_COND_MARKER = lambda d: _rv(d, "verjaring")["condition"]
+_GROUP = lambda d: d["rules"]["regelGroepen"][0]
+
+L5_SHAPE_ROWS = [
+    ("the L5 base document", lambda d: None, True,
+     "the L4 shape with every source text in the source record: a snippet on the bound day and on "
+     "both markers, and with its line on the consistency version and the rule group"),
+    ("BoundDay carries bron instead of source",
+     lambda d: _BOUND(d).update(bron=_BOUND(d).pop("source")["snippet"]), False,
+     "B26: the source text is the snippet of the source record; the v0 field bron left the wire"),
+    ("Literal carries bron = null", _set(_NUMLIT, "bron", None), False,
+     "B26: absent is the one spelling of a node without source text"),
+    ("source as a string", _set(_BOUND, "source", "de dag"), False,
+     "B26: the source text is the snippet of the record, never the field itself"),
+    ("source = null", _set(_BOUND, "source", None), False,
+     "absent is the one spelling of a node without source text"),
+    ("source = {}", _set(_BOUND, "source", {}), False,
+     "the snippet is always written: a record without it has no source text"),
+    ("source.snippet = ''", _set(_BOUND, "source", {"snippet": ""}), False,
+     "a snippet is never empty: a node without source text carries no source"),
+    ("source with file", lambda d: _BOUND(d)["source"].update(file="bron.rgs"), False,
+     "file and column wait for the card that first writes positions and fixes their conventions"),
+    ("source with column", lambda d: _BOUND(d)["source"].update(column=1), False,
+     "file and column wait for the card that first writes positions and fixes their conventions"),
+    ("source with line = 0", lambda d: _GROUP(d)["source"].update(line=0), False,
+     "a source line is at least 1"),
+    ("source with line = 12", lambda d: _GROUP(d)["source"].update(line=12), True,
+     "a line of at least 1, after the snippet"),
+    ("ConsistencyVersion carries line beside source", _set(_CONS, "line", 12), False,
+     "B26: the line of a consistency version is part of its source record"),
+    ("ResolvedRegelGroep carries line beside source", _set(_GROUP, "line", 3), False,
+     "B26: the line of a rule group is part of its source record"),
+    ("Onopgelost expression without source", _pop(_EXPR_MARKER, "source"), False,
+     "WF-113 (b) accounts for a marker by its snippet, so a marker always carries a source"),
+    ("Onopgelost condition without source", _pop(_COND_MARKER, "source"), False,
+     "WF-113 (b) accounts for a marker by its snippet, so a marker always carries a source"),
+    ("ConsistencyVersion without source", _pop(_CONS, "source"), True,
+     "absent: a version without source text, and so without a line"),
+    ("ConsistencyVersion.source without line", lambda d: _CONS(d)["source"].pop("line"), True,
+     "the line is optional in the record"),
+]
 
 
 shape_bad = 0
 for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS),
-                   (_l3_base, L3_SHAPE_ROWS), (_l4_base, L4_SHAPE_ROWS)):
+                   (_l3_base, L3_SHAPE_ROWS), (_l4_base, L4_SHAPE_ROWS),
+                   (_l5_base, L5_SHAPE_ROWS)):
     for row, mutate, want_ok, why in rows:
         probe = base()
         mutate(probe)
@@ -1478,7 +1543,8 @@ for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS),
 if shape_bad:
     sys.stderr.write("check-ir-schema: FAIL (%d shape self-test row(s) bad)\n" % shape_bad)
     sys.exit(1)
-n_shape = len(M1_SHAPE_ROWS) + len(L2_SHAPE_ROWS) + len(L3_SHAPE_ROWS) + len(L4_SHAPE_ROWS)
+n_shape = (len(M1_SHAPE_ROWS) + len(L2_SHAPE_ROWS) + len(L3_SHAPE_ROWS) + len(L4_SHAPE_ROWS)
+           + len(L5_SHAPE_ROWS))
 
 
 # NOTE: gate 9 (scripts/check-catala.sh) executes the slice of this

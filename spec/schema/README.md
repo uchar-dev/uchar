@@ -317,6 +317,30 @@ card, `../../backlog/done/20260924-l4-regel-en-expressielaag.md`):
   otherwise free: the name set is closed and crossed byte for byte by WF-098,
   which gives a name outside it a witness of its own, `de dag` included.
 
+## The source record (L5)
+
+The first step of L5 moves every source text into the source record and changes
+nothing else (delta B26 of `../proposals/V1-WIREMIGRATIE.md`). The optional field
+`source` stands where the v0 field `bron` stood, on every node that carried one,
+the defaults layer included, and is the record `{ "snippet", "line"? }`
+(`$defs/sourceReference`), which carries no `node` discriminator. `snippet` is the
+v0 string byte for byte, whitespace included, and never empty: a node without
+source text carries no `source`, so a v0 `null` is absent. The v0 field `line` of
+a consistency version and of a `ResolvedRegelGroep` went into the record after the
+snippet, and was dropped where `bron` was null; the migration and the emitters
+write `line` (at least 1) there alone, while the schema admits it in every record.
+`source` is required on both `Onopgelost` variants, because WF-113 (b) accounts
+for a marker by the diagnostic that quotes its snippet. `file` and `column` are not
+admitted until the card that first writes positions fixes their conventions.
+Where the sections above name `bron`, they describe the shape before this step.
+`../proposals/v1-migratie/m5.py --stage m7` performs the step, with the interface
+and the serialiser of `m4.py`, and refuses, with the file name and a JSON pointer
+into the L4 input, an empty `bron`, an `Onopgelost` whose `bron` is null or
+absent, a `line` below 1 or without a `bron` beside it, and a document that
+mixes the two shapes; the two negatief witnesses of WF-113 (b) that carry such a
+marker are written by hand. Gate 2 holds the record's closures in the L5 rows of
+its shape self-test.
+
 ## `uchar-ir-v1.schema.json`
 
 JSON Schema (draft 2020-12) for the format. It is strict: every object sets

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uchar.dev/schema/uchar-ir-v1.schema.json",
   "title": "uchar-ir-v1",
-  "description": "Structural schema for the 'uchar-ir-v1' format in its L4 shape (spec/proposals/V1-WIREMIGRATIE.md, section 7, landings L1 to L4): the former 'regelspraak-ir-v0' dump of the reference frontend's fully resolved model with its CONTAINER restructured (L1), its REFERENCE LAYER reduced to the symbolic form (L2), its TYPE SYSTEM in the v1 nodes (L3) and its RULE AND EXPRESSION LAYER in the v1 forms (L4), and nothing else. The root nests {format, model, rules, diagnostics} (decision V3 (b)): 'model' is the declaration set of IR-SPEC ch. 2, as lists in declaration order (WF-019), with no map keys; 'rules' carries the rule lists under their v0 keys, in v0 order, the single-source and union uniqueness forms in the one list 'uniciteiten'; 'diagnostics' is the producer's own account (WF-113). An ObjectType carries its members as Attribute and Characteristic nodes with their own facets (TimelineFacet), and a Domain wraps a name and a datatype that carries no self-name at the declaration position (domainDatatype). A reference carries only its symbolic form (L2): the five reference classes carry no type annotation, because the declaration is the one source; an attribute reference names its navigation by role bindings alone; the range of an instance fold, a quantifier fold and an allocation is written, never derived; one RoleMembership node names the fact type and the role the subject fills; a fact creation and a scoped uniqueness carry their symbolic fields alone; and the datatype union has no member for an unknown type (B16). The type system is the v1 one (L3): a number is a Number, and a percentage a Number with the unit '%' that carries the presentation tag 'percentage' at a declaration (B14); a date is one Date node with its precision (B15); a unit is a Unit whose conversion factor is an exact rational {num, den} (B17 (i)) and whose declaration carries its spellings; a unit system is a list of units; a day kind is a DayKind node with its plural; and a parameter carries the attribute's timeline facet without a timeline name (B18). The rule and expression layer is the v1 one (L4): each of the six named forms (Rule, Allocation, ObjectCreation, FactCreation, Consistency, Uniqueness) is {node, name, versions}, its version records carrying no node discriminator (B19); a rule version carries the 'initialisation' flag and, on a computing version, the dialect tag 'presentation', and whether it writes an attribute or a characteristic is its target's declaration (B20); a uniqueness names its sources, one or more (B27); a fact creation reaches its target along a 'path' of role bindings; an aggregation and a builtin call are two nodes, each with its own fields (B21); a literal carries a typed value in the variants of the case format, a decimal point where the source wrote a comma (B22); and the bound day of a day-kind definition and the two session values are BoundDay and ContextValue (B23). Every other node keeps its v0 name, field spellings and enum values until its own landing. Canonical key order is the 'properties' order of this schema: the migration script and every emitter write exactly that order, and every node L1 left untouched keeps the order its v0 emitter wrote, less the keys L2 removed. Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (connectingRole on an object creation, the fold ranges sourceRole and sourcePath on an Aggregation and bronRol and bronPad on a Kwantorvouw, and statuteAnnotations — of each range pair the second is the multi-step fold-source range of IR-SPEC ch. 4.3 / WF-102, two or more RolBindings subject-outwards and mutually exclusive with the first, which is the one-step spelling of the same field; and statuteAnnotations carries the statute annotations on a Rule, when present a non-empty list of non-empty strings and absent otherwise) are optional where L2 makes none of them required (the allocation's connectingRole and the range of a fold and of a quantifier fold, under the conditions stated on those nodes), the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md §2), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess, the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength) and the value-level binding Let (spec/proposals/PHASE5C-TUTORIAL.md §6), and the optional lists functionDefs (under 'model') and prioritizedDefaults (under 'rules') carry the named-logic and prioritized-defaults extensions, and a Default carries the optional excepties field — its nested exception groups (RUNTIME-SEMANTICS ch. 7.9) — the v0 emitter produces none of them EXCEPT Let and BinderRef, which the RegelSpraak frontend has emitted for a §13.4.2.10 variabelendeel since the let-lowering card (2026-09-01); when present they are all written whole, never null. Wire epoch v0.10 (the rename epoch, 2026-08-29): the prioritized-defaults spellings (prioritizedDefaults/Default/ExceptionGroup and the defaults list) are the only valid ones; a file in the pre-rename spelling (see the formerly notes, IR-SPEC ch. 6.1 and RUNTIME-SEMANTICS ch. 7.1) fails loudly against the closed objects. Section citations (e.g. §13.3.3) point into the source language spec by number only.",
+  "description": "Structural schema for the 'uchar-ir-v1' format in its L4 shape with the source record of L5 (spec/proposals/V1-WIREMIGRATIE.md, section 7, landings L1 to L4 and step M7 of L5): the former 'regelspraak-ir-v0' dump of the reference frontend's fully resolved model with its CONTAINER restructured (L1), its REFERENCE LAYER reduced to the symbolic form (L2), its TYPE SYSTEM in the v1 nodes (L3), its RULE AND EXPRESSION LAYER in the v1 forms (L4) and its SOURCE TEXTS in the source record (M7), and nothing else. The root nests {format, model, rules, diagnostics} (decision V3 (b)): 'model' is the declaration set of IR-SPEC ch. 2, as lists in declaration order (WF-019), with no map keys; 'rules' carries the rule lists under their v0 keys, in v0 order, the single-source and union uniqueness forms in the one list 'uniciteiten'; 'diagnostics' is the producer's own account (WF-113). An ObjectType carries its members as Attribute and Characteristic nodes with their own facets (TimelineFacet), and a Domain wraps a name and a datatype that carries no self-name at the declaration position (domainDatatype). A reference carries only its symbolic form (L2): the five reference classes carry no type annotation, because the declaration is the one source; an attribute reference names its navigation by role bindings alone; the range of an instance fold, a quantifier fold and an allocation is written, never derived; one RoleMembership node names the fact type and the role the subject fills; a fact creation and a scoped uniqueness carry their symbolic fields alone; and the datatype union has no member for an unknown type (B16). The type system is the v1 one (L3): a number is a Number, and a percentage a Number with the unit '%' that carries the presentation tag 'percentage' at a declaration (B14); a date is one Date node with its precision (B15); a unit is a Unit whose conversion factor is an exact rational {num, den} (B17 (i)) and whose declaration carries its spellings; a unit system is a list of units; a day kind is a DayKind node with its plural; and a parameter carries the attribute's timeline facet without a timeline name (B18). The rule and expression layer is the v1 one (L4): each of the six named forms (Rule, Allocation, ObjectCreation, FactCreation, Consistency, Uniqueness) is {node, name, versions}, its version records carrying no node discriminator (B19); a rule version carries the 'initialisation' flag and, on a computing version, the dialect tag 'presentation', and whether it writes an attribute or a characteristic is its target's declaration (B20); a uniqueness names its sources, one or more (B27); a fact creation reaches its target along a 'path' of role bindings; an aggregation and a builtin call are two nodes, each with its own fields (B21); a literal carries a typed value in the variants of the case format, a decimal point where the source wrote a comma (B22); and the bound day of a day-kind definition and the two session values are BoundDay and ContextValue (B23). Every source text is in the source record (M7, B26): the optional field 'source' (sourceReference: a non-empty 'snippet', and 'line' where a consistency version or a rule group has one) stands where the v0 field 'bron' stood, on every node that carried one, and is required on an Onopgelost marker; a node without source text carries none. Every other node keeps its v0 name, field spellings and enum values until its own landing. Canonical key order is the 'properties' order of this schema: the migration script and every emitter write exactly that order, and every node L1 left untouched keeps the order its v0 emitter wrote, less the keys L2 removed. Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (connectingRole on an object creation, the fold ranges sourceRole and sourcePath on an Aggregation and bronRol and bronPad on a Kwantorvouw, and statuteAnnotations — of each range pair the second is the multi-step fold-source range of IR-SPEC ch. 4.3 / WF-102, two or more RolBindings subject-outwards and mutually exclusive with the first, which is the one-step spelling of the same field; and statuteAnnotations carries the statute annotations on a Rule, when present a non-empty list of non-empty strings and absent otherwise) are optional where L2 makes none of them required (the allocation's connectingRole and the range of a fold and of a quantifier fold, under the conditions stated on those nodes), the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md §2), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess, the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength) and the value-level binding Let (spec/proposals/PHASE5C-TUTORIAL.md §6), and the optional lists functionDefs (under 'model') and prioritizedDefaults (under 'rules') carry the named-logic and prioritized-defaults extensions, and a Default carries the optional excepties field — its nested exception groups (RUNTIME-SEMANTICS ch. 7.9) — the v0 emitter produces none of them EXCEPT Let and BinderRef, which the RegelSpraak frontend has emitted for a §13.4.2.10 variabelendeel since the let-lowering card (2026-09-01); when present they are all written whole, never null. Wire epoch v0.10 (the rename epoch, 2026-08-29): the prioritized-defaults spellings (prioritizedDefaults/Default/ExceptionGroup and the defaults list) are the only valid ones; a file in the pre-rename spelling (see the formerly notes, IR-SPEC ch. 6.1 and RUNTIME-SEMANTICS ch. 7.1) fails loudly against the closed objects. Section citations (e.g. §13.3.3) point into the source language spec by number only.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -574,14 +574,31 @@
         }
       }
     },
+    "sourceReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snippet"
+      ],
+      "properties": {
+        "snippet": {
+          "type": "string",
+          "minLength": 1
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "description": "The structured source reference (IR-SPEC ch. 4; delta B26): the record under the key 'source' on every node that carries source text. It carries no node discriminator: on the wire it is a field of its node, not a node. 'snippet' is the node's source text, byte for byte as the producer wrote it, and never empty: a node without source text carries no source. 'line' (at least 1) is the line of the source text; the migration and the emitters write it on a consistency version and a rule group alone. The positions 'file' and 'column' are not admitted until the card that first writes positions fixes their conventions."
+    },
     "Literal": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
         "value",
-        "type",
-        "bron"
+        "type"
       ],
       "properties": {
         "node": {
@@ -600,14 +617,11 @@
             }
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
-      "description": "A literal (IR-SPEC ch. 4.1): a typed value, not a lexeme (delta B22). 'value' is exactly one variant of the value union of uchar-case-v0, the variant being the one 'type' names (a verifier rule: one datatype union serves every literal, so the schema cannot cross the two). A number is an exact decimal string with a point, or a rational a/b, never a JSON number; the author's spelling, a decimal comma included, stays in 'bron'. 'type' is nullable: a typeless value node is WF-034's, with its own witness."
+      "description": "A literal (IR-SPEC ch. 4.1): a typed value, not a lexeme (delta B22). 'value' is exactly one variant of the value union of uchar-case-v0, the variant being the one 'type' names (a verifier rule: one datatype union serves every literal, so the schema cannot cross the two). A number is an exact decimal string with a point, or a rational a/b, never a JSON number; the author's spelling, a decimal comma included, stays in the snippet of the source record 'source'. 'type' is nullable: a typeless value node is WF-034's, with its own witness."
     },
     "LiteralValue": {
       "description": "The value of a Literal: exactly one variant, carried over from the 'value' union of uchar-case-v0 with its patterns, without the list and struct variants (no literal carries one) and without a constructor payload (a literal names a constructor, it does not apply one). The patterns are shape tests: that a date is a calendar day and that the variant is the one the literal's type names are verifier rules with their own witnesses.",
@@ -713,8 +727,7 @@
       "required": [
         "node",
         "delen",
-        "type",
-        "bron"
+        "type"
       ],
       "properties": {
         "node": {
@@ -736,11 +749,8 @@
             }
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -752,8 +762,7 @@
         "op",
         "links",
         "rechts",
-        "type",
-        "bron"
+        "type"
       ],
       "properties": {
         "node": {
@@ -801,11 +810,8 @@
             }
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -816,8 +822,7 @@
         "node",
         "kind",
         "arguments",
-        "type",
-        "bron"
+        "type"
       ],
       "properties": {
         "node": {
@@ -872,11 +877,8 @@
             }
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "allOf": [
@@ -932,8 +934,7 @@
         "node",
         "kind",
         "arguments",
-        "type",
-        "bron"
+        "type"
       ],
       "properties": {
         "node": {
@@ -988,11 +989,8 @@
             }
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "A builtin call (IR-SPEC ch. 4.3): the seventeen scalar, text and date builtins, with plain arguments and only the fields a builtin carries (delta B21): no element type, range, empty fallback or dimension selection, which are an Aggregation's. 'granularity' is the bucket and 'filter' the condition of TIJDSEVENREDIG_DEEL and AANTAL_DAGEN_IN; which kind requires or admits them is WF-037's and WF-056's."
@@ -1005,8 +1003,7 @@
         "basis",
         "modus",
         "decimalen",
-        "type",
-        "bron"
+        "type"
       ],
       "properties": {
         "node": {
@@ -1044,11 +1041,8 @@
             }
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -1060,8 +1054,7 @@
         "basis",
         "minimum",
         "maximum",
-        "type",
-        "bron"
+        "type"
       ],
       "properties": {
         "node": {
@@ -1107,11 +1100,8 @@
             }
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -1121,8 +1111,7 @@
       "required": [
         "node",
         "attribuut",
-        "objecttype",
-        "bron"
+        "objecttype"
       ],
       "properties": {
         "node": {
@@ -1140,11 +1129,8 @@
             "null"
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         },
         "navigatieBindingen": {
           "type": "array",
@@ -1162,8 +1148,7 @@
       "required": [
         "node",
         "attribuut",
-        "labels",
-        "bron"
+        "labels"
       ],
       "properties": {
         "node": {
@@ -1188,11 +1173,8 @@
             ]
           }
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -1201,8 +1183,7 @@
       "additionalProperties": false,
       "required": [
         "node",
-        "parameter",
-        "bron"
+        "parameter"
       ],
       "properties": {
         "node": {
@@ -1214,11 +1195,8 @@
             "null"
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -1227,8 +1205,7 @@
       "additionalProperties": false,
       "required": [
         "node",
-        "naam",
-        "bron"
+        "naam"
       ],
       "properties": {
         "node": {
@@ -1240,11 +1217,8 @@
             "null"
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -1254,8 +1228,7 @@
       "required": [
         "node",
         "name",
-        "type",
-        "bron"
+        "type"
       ],
       "properties": {
         "node": {
@@ -1267,11 +1240,8 @@
         "type": {
           "$ref": "#/$defs/datatype"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "A session value (IR-SPEC ch. 4.1; delta B23): 'name' is the evaluation date Rekendatum or the evaluation year Rekenjaar, in that spelling. The schema leaves the name a free string on purpose: the name set is closed and crossed byte for byte by WF-098, which gives a name outside it a witness of its own, 'de dag' included (the bound day is BoundDay)."
@@ -1281,8 +1251,7 @@
       "additionalProperties": false,
       "required": [
         "node",
-        "type",
-        "bron"
+        "type"
       ],
       "properties": {
         "node": {
@@ -1291,11 +1260,8 @@
         "type": {
           "$ref": "#/$defs/datatype"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "The bound day of a day-kind definition (IR-SPEC ch. 3.7 and 4.1; delta B23): the day the definition is about, not a session value. It carries no name. Outside a day-kind definition it denotes nothing, and every executor faults on it by name (RUNTIME-SEMANTICS ch. 3.8)."
@@ -1305,7 +1271,7 @@
       "additionalProperties": false,
       "required": [
         "node",
-        "bron"
+        "source"
       ],
       "properties": {
         "node": {
@@ -1314,14 +1280,11 @@
         "type": {
           "$ref": "#/$defs/datatype"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
-      "description": "An expression the resolver could not resolve; surfaces as an explicit marker. 'type' is optional: absent means the type is unknown, present it is a real datatype, never null."
+      "description": "An expression the resolver could not resolve; surfaces as an explicit marker. 'type' is optional: absent means the type is unknown, present it is a real datatype, never null. 'source' is required: a marker is accounted for by the diagnostic that quotes its snippet (WF-113 (b))."
     },
     "TemporalRead": {
       "type": "object",
@@ -1330,8 +1293,7 @@
         "node",
         "basis",
         "datum",
-        "type",
-        "bron"
+        "type"
       ],
       "properties": {
         "node": {
@@ -1346,11 +1308,8 @@
         "type": {
           "$ref": "#/$defs/datatype"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (v1, CONSTRUCTS row 11): the point-in-time read read(tl, d) of spec/RUNTIME-SEMANTICS.md ch. 3.3. Never emitter-produced; basis, datum and type are required and non-null."
@@ -1362,8 +1321,7 @@
         "node",
         "type",
         "constructor",
-        "argument",
-        "bron"
+        "argument"
       ],
       "properties": {
         "node": {
@@ -1385,11 +1343,8 @@
             }
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node Construct, never emitter-produced): builds a sum-type constructor value (CONSTRUCTS row 36; spec/RUNTIME-SEMANTICS.md ch. 9.1). 'argument' is an expr iff the constructor is unary, null for a nullary constructor. 'type' (the SumType) is required and non-null."
@@ -1401,8 +1356,7 @@
         "node",
         "type",
         "scrutinee",
-        "arms",
-        "bron"
+        "arms"
       ],
       "properties": {
         "node": {
@@ -1441,11 +1395,8 @@
             }
           }
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node Match, never emitter-produced): deconstructs a sum-type value, one arm per declared constructor (CONSTRUCTS row 36; spec/RUNTIME-SEMANTICS.md ch. 9.2). A unary arm carries a 'binder' name, a nullary arm carries null. 'type' (the result datatype) and 'scrutinee' are required and non-null."
@@ -1455,8 +1406,7 @@
       "additionalProperties": false,
       "required": [
         "node",
-        "name",
-        "bron"
+        "name"
       ],
       "properties": {
         "node": {
@@ -1465,11 +1415,8 @@
         "name": {
           "type": "string"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node BinderRef, EMITTER-PRODUCED since the let-lowering card, 2026-09-01): reads the nearest enclosing binder of its name \u2014 a match arm's, a lambda/function parameter, or a Let binder (CONSTRUCTS rows 36 and 24; spec/RUNTIME-SEMANTICS.md ch. 9.2 / ch. 10.6). The RegelSpraak emitter produces one for every read of a \u00a713.4.2.10 variabele in a rule's result part. Deliberately distinct from VariabeleRef, which since that card survives only as the residual marker for a variable the resolver could NOT bind (row 24). 'name' is required and non-null; the read carries no type of its own, the binder's declaration is the one source (B13)."
@@ -1480,8 +1427,7 @@
       "required": [
         "node",
         "type",
-        "fields",
-        "bron"
+        "fields"
       ],
       "properties": {
         "node": {
@@ -1510,11 +1456,8 @@
             }
           }
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node StructLiteral, never emitter-produced): builds a record value (spec/proposals/PHASE5C-TUTORIAL.md §2; spec/RUNTIME-SEMANTICS.md ch. 11). 'fields' supplies exactly the declared fields, each once, in declaration order — WF-073; a field whose value evaluates leeg propagates (the whole literal is leeg, the no-hole rule). 'type' (the StructType) is required and non-null."
@@ -1526,8 +1469,7 @@
         "node",
         "type",
         "base",
-        "field",
-        "bron"
+        "field"
       ],
       "properties": {
         "node": {
@@ -1542,11 +1484,8 @@
         "field": {
           "type": "string"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node FieldAccess, never emitter-produced): reads one declared field of a record (spec/proposals/PHASE5C-TUTORIAL.md §2; spec/RUNTIME-SEMANTICS.md ch. 11). 'base' is struct-typed and 'field' is one of its declared fields; the node 'type' is that field's datatype — WF-074. A leeg base propagates. 'type' and 'base' are required and non-null."
@@ -1573,8 +1512,7 @@
       "required": [
         "node",
         "parameters",
-        "body",
-        "bron"
+        "body"
       ],
       "properties": {
         "node": {
@@ -1589,11 +1527,8 @@
         "body": {
           "$ref": "#/$defs/expr"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node Lambda, never emitter-produced): a typed anonymous function (CONSTRUCTS row 10; spec/RUNTIME-SEMANTICS.md ch. 10). Position-restricted to the 'function' operand of Fold/MapList — WF-069 (not a schema concern); its 'body' is closed. Carries no 'type': a lambda is never a value."
@@ -1604,8 +1539,7 @@
       "required": [
         "node",
         "type",
-        "elements",
-        "bron"
+        "elements"
       ],
       "properties": {
         "node": {
@@ -1620,11 +1554,8 @@
             "$ref": "#/$defs/expr"
           }
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node ListLiteral, never emitter-produced): an ordered list value (CONSTRUCTS row 10; spec/RUNTIME-SEMANTICS.md ch. 10.1). Every element carries the declared element datatype of 'type' (a ListType) — WF-066. 'type' is required and non-null."
@@ -1637,8 +1568,7 @@
         "type",
         "condition",
         "then",
-        "else",
-        "bron"
+        "else"
       ],
       "properties": {
         "node": {
@@ -1656,11 +1586,8 @@
         "else": {
           "$ref": "#/$defs/expr"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node IfThenElse, never emitter-produced): a value-level conditional (CONSTRUCTS row 10; spec/RUNTIME-SEMANTICS.md ch. 10.2). Position-restricted to lambda and function bodies — WF-069 (not a schema concern); the guard reuses the condition union; both branches agree on 'type'. 'type', 'condition', 'then' and 'else' are required and non-null."
@@ -1672,8 +1599,7 @@
         "node",
         "type",
         "function",
-        "arguments",
-        "bron"
+        "arguments"
       ],
       "properties": {
         "node": {
@@ -1691,11 +1617,8 @@
             "$ref": "#/$defs/expr"
           }
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node Invoke, never emitter-produced): calls a FunctionDef by name (CONSTRUCTS row 10; spec/RUNTIME-SEMANTICS.md ch. 10.2). Arity, argument and result typing: WF-068. 'type' is required and non-null."
@@ -1708,8 +1631,7 @@
         "type",
         "list",
         "function",
-        "init",
-        "bron"
+        "init"
       ],
       "properties": {
         "node": {
@@ -1734,11 +1656,8 @@
         "init": {
           "$ref": "#/$defs/expr"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node Fold, never emitter-produced): the left fold (CONSTRUCTS row 10; spec/RUNTIME-SEMANTICS.md ch. 10.2). 'function' is a two-parameter (accumulator, element) Lambda; a bare FunctionDef name is structurally valid on the wire but WF-069 requires the inline Lambda (a named function reaches a fold through a lambda body that Invokes it). The accumulator/init/body/type share one first-order non-list datatype — WF-070. 'type', 'list' and 'init' are required and non-null."
@@ -1750,8 +1669,7 @@
         "node",
         "type",
         "list",
-        "function",
-        "bron"
+        "function"
       ],
       "properties": {
         "node": {
@@ -1773,11 +1691,8 @@
             }
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node MapList, never emitter-produced): the order-preserving map (CONSTRUCTS row 10; spec/RUNTIME-SEMANTICS.md ch. 10.2). 'function' is a one-parameter Lambda; a bare FunctionDef name is structurally valid on the wire but WF-069 requires the inline Lambda (a named function reaches a map through a lambda body that Invokes it). 'type' (a ListType) is the ListType of the body's datatype — WF-070. 'type' and 'list' are required and non-null."
@@ -1790,8 +1705,7 @@
         "type",
         "list",
         "binder",
-        "condition",
-        "bron"
+        "condition"
       ],
       "properties": {
         "node": {
@@ -1809,11 +1723,8 @@
         "condition": {
           "$ref": "#/$defs/conditie"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node FilterList, never emitter-produced): keeps the elements whose 'condition' holds with 'binder' bound to the element (CONSTRUCTS row 10; spec/RUNTIME-SEMANTICS.md ch. 10.2) — the aggregation-filter precedent (a binder plus a condition, never a boolean-bodied lambda). 'type' (the source ListType) equals the source's type — WF-070. 'type', 'list' and 'condition' are required and non-null."
@@ -1824,8 +1735,7 @@
       "required": [
         "node",
         "type",
-        "list",
-        "bron"
+        "list"
       ],
       "properties": {
         "node": {
@@ -1837,11 +1747,8 @@
         "list": {
           "$ref": "#/$defs/expr"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node ListLength, never emitter-produced): the element count (CONSTRUCTS row 10; spec/RUNTIME-SEMANTICS.md ch. 10.2). 'type' is a whole Number — WF-070. 'type' and 'list' are required and non-null."
@@ -1854,8 +1761,7 @@
         "type",
         "binder",
         "value",
-        "body",
-        "bron"
+        "body"
       ],
       "properties": {
         "node": {
@@ -1873,11 +1779,8 @@
         "body": {
           "$ref": "#/$defs/expr"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node Let, EMITTER-PRODUCED since the let-lowering card, 2026-09-01): the value-level binding (spec/proposals/PHASE5C-TUTORIAL.md §6, question 2 = A; spec/RUNTIME-SEMANTICS.md ch. 10.6). The RegelSpraak frontend lowers a §13.4.2.10 variabelendeel ('Daarbij geldt: ...') to one Let per declared variable that the rule's RESULT part reads, nested in declaration order (§11.1 rule 1, first-declared outermost); a variable read only in the voorwaarde is substituted at its use site instead, because no expr node can span the separate 'condition' and 'value' wire fields of a rule version. 'binder' is visible only in 'body', never in its own 'value' — WF-076; it joins the WF-064 binder regime. The node 'type' equals the 'body' type — WF-076. Call-by-need (maintainer decision O3, 2026-09-01): the 'value' is evaluated in the enclosing scope at the FIRST read of the binder and reused for every further read; a read whose 'value' evaluates leeg makes the WHOLE Let leeg (the leeg-barrier, at the read place), so a body binder is never leeg — which is what carries the WF-069 widening (IfThenElse becomes admissible inside Let bodies) and the WF-077 condition-operand discipline; a binder the body never reads is never evaluated at all (no leeg, no fault, no channel fact) and the body's outcome is the Let's. 'type', 'binder', 'value' and 'body' are required and non-null."
@@ -1889,8 +1792,7 @@
         "node",
         "elementType",
         "sourceRole",
-        "filter",
-        "bron"
+        "filter"
       ],
       "properties": {
         "node": {
@@ -1915,11 +1817,8 @@
             }
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node InstanceSetBranch): one selection of an InstanceSetUnion — an element type, the one-step relation the selection ranges over, and an optional die/dat subselection evaluated PER CONTRIBUTOR. 'elementType' is carried nullable so a missing one is a WF-110 violation the verifier REPORTS with its rule, never a load failure; 'sourceRole' is required and non-null, because the selection's relation is written and nothing derives it (B12). There is deliberately no path spelling here: the multi-step range under a count is WF-102's and this node does not reopen it."
@@ -1929,8 +1828,7 @@
       "additionalProperties": false,
       "required": [
         "node",
-        "branches",
-        "bron"
+        "branches"
       ],
       "properties": {
         "node": {
@@ -1942,11 +1840,8 @@
             "$ref": "#/$defs/InstanceSetBranch"
           }
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node InstanceSetUnion, EMITTER-PRODUCED): the §5.7 concatenation of subject expressions as a set of INSTANCES — the source of an instance count (CONSTRUCTS row 1; spec/IR-SPEC.md ch. 4.3, semantics spec/RUNTIME-SEMANTICS.md ch. 3.4d). It carries no 'type': it denotes instances, not a value, so there is no annotation to twist and none to believe. Admissible ONLY as the single argument of an AANTAL aggregation, with at least two branches, and the count carrying it names no source of its own — WF-110. The members are the UNION of the branches' contributors, deduplicated on instance identity."
@@ -1959,8 +1854,7 @@
         "name",
         "parameters",
         "result",
-        "body",
-        "bron"
+        "body"
       ],
       "properties": {
         "node": {
@@ -1981,11 +1875,8 @@
         "body": {
           "$ref": "#/$defs/expr"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node FunctionDef, never emitter-produced): named reusable logic — DMN's Business Knowledge Model (CONSTRUCTS row 10; spec/IR-SPEC.md ch. 2.11). Carried by the optional 'functionDefs' list under 'model'. Ci-unique names, typed unique parameters, a resolvable 'result', a closed 'body', and an acyclic invocation graph: WF-067."
@@ -2144,8 +2035,7 @@
       "required": [
         "node",
         "dimensie",
-        "labels",
-        "bron"
+        "labels"
       ],
       "properties": {
         "node": {
@@ -2166,11 +2056,8 @@
             ]
           }
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -2182,8 +2069,7 @@
         "op",
         "links",
         "rechts",
-        "periode",
-        "bron"
+        "periode"
       ],
       "properties": {
         "node": {
@@ -2233,11 +2119,8 @@
             }
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -2251,8 +2134,7 @@
         "dagsoort",
         "negatie",
         "cijfers",
-        "periode",
-        "bron"
+        "periode"
       ],
       "properties": {
         "node": {
@@ -2299,11 +2181,8 @@
             }
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -2315,8 +2194,7 @@
         "kenmerk",
         "negatie",
         "eigenaar",
-        "periode",
-        "bron"
+        "periode"
       ],
       "properties": {
         "node": {
@@ -2347,11 +2225,8 @@
             }
           ]
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         },
         "navigatieBinding": {
           "$ref": "#/$defs/RolBinding",
@@ -2366,8 +2241,7 @@
         "node",
         "factType",
         "role",
-        "negated",
-        "bron"
+        "negated"
       ],
       "properties": {
         "node": {
@@ -2385,11 +2259,8 @@
         "negated": {
           "type": "boolean"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "The role check (IR-SPEC ch. 4.5): true iff a link of the declared fact type 'factType' exists in which the subject fills 'role', named by its declared name, and whose other role is filled by an instance of 'counterpartType'; 'negated': no such link exists. 'counterpartType' is optional: absent, the other role's declared filler type is meant; present, it names a declared object type that is a subtype of, or equal to, the declared filler type of the other role (WF-034, IR-SPEC ch. 4.6 (o)); the migration and the emitter write the field only where it narrows (the L2 card, backlog/done/20260923-l2-referentielaag.md, U12). One node for both directions of the check (delta B9 of spec/proposals/V1-WIREMIGRATIE.md; CONSTRUCTS row 5); its key order is this 'properties' order."
@@ -2401,8 +2272,7 @@
         "node",
         "vanaf",
         "tot",
-        "totInclusief",
-        "bron"
+        "totInclusief"
       ],
       "properties": {
         "node": {
@@ -2431,11 +2301,8 @@
         "totInclusief": {
           "type": "boolean"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -2446,8 +2313,7 @@
         "node",
         "kwantor",
         "drempel",
-        "onderdelen",
-        "bron"
+        "onderdelen"
       ],
       "properties": {
         "node": {
@@ -2472,11 +2338,8 @@
             "$ref": "#/$defs/conditie"
           }
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -2488,8 +2351,7 @@
         "kwantor",
         "elementObjecttype",
         "filter",
-        "toets",
-        "bron"
+        "toets"
       ],
       "properties": {
         "node": {
@@ -2539,11 +2401,8 @@
           ],
           "description": "The quantified matrix, evaluated PER CONTRIBUTOR with the element as subject. Nullable on the wire so a missing matrix is a citable WF-108 (d) violation rather than a load failure with no rule to name."
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         },
         "bronRol": {
           "$ref": "#/$defs/RolBinding",
@@ -2609,8 +2468,7 @@
       "required": [
         "node",
         "regel",
-        "inconsistent",
-        "bron"
+        "inconsistent"
       ],
       "properties": {
         "node": {
@@ -2625,11 +2483,8 @@
         "inconsistent": {
           "type": "boolean"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -2638,20 +2493,17 @@
       "additionalProperties": false,
       "required": [
         "node",
-        "bron"
+        "source"
       ],
       "properties": {
         "node": {
           "const": "Onopgelost"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
-      "description": "A condition the resolver could not resolve; surfaces as an explicit marker."
+      "description": "A condition the resolver could not resolve; surfaces as an explicit marker. 'source' is required: a marker is accounted for by the diagnostic that quotes its snippet (WF-113 (b))."
     },
     "conditie": {
       "description": "A resolved condition, discriminated on 'node'.",
@@ -3019,8 +2871,7 @@
       "required": [
         "node",
         "besluit",
-        "voorwaarde",
-        "bron"
+        "voorwaarde"
       ],
       "properties": {
         "node": {
@@ -3074,11 +2925,8 @@
           },
           "description": "Extension field (v1, Phase 5c): the nested exception groups of RUNTIME-SEMANTICS ch. 7.9 — a default's exception slot as a rose tree. A default carrying excepties is either a group-default (no own besluit/consequentie — its exception groups are its decision, carrying a multi-member base or exception group as a chain position) or a form-a default (own besluit/consequentie too — the exception groups decide first, its own consequence the fall-back when they decide nothing). The initialisation and input defaults are root-only. Never emitter-produced."
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
@@ -3087,8 +2935,7 @@
       "additionalProperties": false,
       "required": [
         "node",
-        "defaults",
-        "bron"
+        "defaults"
       ],
       "properties": {
         "node": {
@@ -3102,11 +2949,8 @@
           },
           "description": "One exception group — a member of a Default's excepties: a default chain (descending, highest first) inheriting the root group's target, itself possibly nesting via Default.excepties. Carries no target of its own."
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "description": "Extension node (v1, Phase 5c): one exception group — a member of a Default's excepties (RUNTIME-SEMANTICS ch. 7.9). Never emitter-produced."
@@ -3120,7 +2964,6 @@
         "onderwerp",
         "kenmerk",
         "defaults",
-        "bron",
         "geldigheid"
       ],
       "properties": {
@@ -3156,11 +2999,8 @@
             "$ref": "#/$defs/Default"
           }
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         },
         "geldigheid": {
           "anyOf": [
@@ -3690,9 +3530,7 @@
       "required": [
         "subject",
         "assertion",
-        "validity",
-        "bron",
-        "line"
+        "validity"
       ],
       "properties": {
         "subject": {
@@ -3707,17 +3545,11 @@
         "validity": {
           "$ref": "#/$defs/Geldigheid"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "line": {
-          "type": "integer"
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
-      "description": "One version of a Consistency (IR-SPEC ch. 3.5), without a node discriminator. 'subject' is nullable because WF-029 holds its presence. 'bron' and 'line' are the version's source, under their v0 names until the source record lands."
+      "description": "One version of a Consistency (IR-SPEC ch. 3.5), without a node discriminator. 'subject' is nullable because WF-029 holds its presence. 'source' is the version's source record; on a consistency version it carries the line of the source text as well."
     },
     "Uniqueness": {
       "type": "object",
@@ -3749,8 +3581,7 @@
       "additionalProperties": false,
       "required": [
         "sources",
-        "validity",
-        "bron"
+        "validity"
       ],
       "properties": {
         "sources": {
@@ -3767,11 +3598,8 @@
         "validity": {
           "$ref": "#/$defs/Geldigheid"
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       },
       "not": {
@@ -3785,7 +3613,7 @@
           }
         }
       },
-      "description": "One version of a Uniqueness (IR-SPEC ch. 3.6), without a node discriminator. One source is the single-type form, two or more the union; that the sources agree on key arity and kind is WF-030's. 'bron' is the version's source, under its v0 name until the source record lands."
+      "description": "One version of a Uniqueness (IR-SPEC ch. 3.6), without a node discriminator. One source is the single-type form, two or more the union; that the sources agree on key arity and kind is WF-030's. 'source' is the version's source record."
     },
     "Source": {
       "type": "object",
@@ -3927,9 +3755,7 @@
         "node",
         "naam",
         "recursief",
-        "leden",
-        "bron",
-        "line"
+        "leden"
       ],
       "properties": {
         "node": {
@@ -3953,14 +3779,8 @@
             ]
           }
         },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "line": {
-          "type": "integer"
+        "source": {
+          "$ref": "#/$defs/sourceReference"
         }
       }
     },
