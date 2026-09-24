@@ -72,8 +72,9 @@ import java.util.Map;
  * a field the shape does not have is an unknown field, a binding the shape requires is a missing field, and an
  * {@code Onbekend} datatype or a role check of the L1 shape is an unknown node — each a {@link Documentfout}. So is
  * a reference-layer shape every executor refuses by name: a fold's set source its kind cannot consume, a count's
- * range that is a path, a role check naming no link the subject can be in, and a characteristic read at a value
- * position ({@link #keurVouwbron}, {@link #keurOnderwerpen}).
+ * range that is a path, a TOTAAL without a range over another type than its subject, a role check naming no link
+ * the subject can be in, and a characteristic read at a value position ({@link #keurVouwbron},
+ * {@link #keurOnderwerpen}).
  * The frontend records this loader fills keep their v0 components (they are the vendored slice the toolchain
  * compiles); what the wire no longer carries is filled with {@code null}, {@code false} or an empty list, and
  * what the records have no component for rides BESIDE the model in {@link Loaded} — the same side-channel
@@ -146,7 +147,7 @@ public final class IrLoader {
     /** IR-SPEC ch. 4.1a: the navigation bindings per AttribuutRef / Kenmerk node — see
      *  {@link Loaded#navigatieBindingen()}. Identity-keyed for {@link #rolBindingen}'s reason. */
     private final Map<Object, List<RolBindingRef>> navigatieBindingen = new java.util.IdentityHashMap<>();
-    /** The JSON pointer of every AttribuutRef and role check read, by identity: the two node kinds
+    /** The JSON pointer of every AttribuutRef, fold and role check read, by identity: the node kinds
      *  {@link #keurOnderwerpen} refuses after the whole document is read, at the place they were written. */
     private final Map<Object, String> plekken = new java.util.IdentityHashMap<>();
 
@@ -323,16 +324,19 @@ public final class IrLoader {
 
     // --- the reference layer's questions that need the subject or the position -----------------------
 
-    /** Two checks that need more than the node itself — the SUBJECT a node is read on, or the POSITION it stands
-     *  at — made once the whole document is read and refused as the verifier refuses them and
-     *  in the words {@code ref} and the ASP backend fault with: a role check whose subject does not fill the role
-     *  (WF-034, IR-SPEC ch. 4.5 — a link the subject can never be in), and a characteristic read at a value
-     *  position (WF-080 — a characteristic carries truth, no value). The subject of each position is the one the
-     *  verifier walks it with: the rule target's type, the element type inside a fold's filter and a quantifier
-     *  fold, a selection's type inside a union branch, the creation and consistency subject, the allocation's
-     *  source type, the fact creation's anchor, the defaults' onderwerp, and none in a day-kind definition. A rule
-     *  target is a write, never read here; the set source of a fold with a range is {@link #keurVouwbron}'s. Until
-     *  L2's fix round the first answered with a storage reason and the second played (measured on the L2 union). */
+    /** The checks that need more than the node itself — the SUBJECT a node is read on, or the POSITION it stands
+     *  at — made once the whole document is read, and refused as the verifier refuses them, in the words
+     *  {@code ref} and the ASP backend fault with where they have them: a role check whose subject does not fill
+     *  the role (WF-034, IR-SPEC ch. 4.5 — a link the subject can never be in), a characteristic read at a value
+     *  position (WF-080 — a characteristic carries truth, no value), a value fold's set source that names no
+     *  member of the element type ({@link #keurWaardevouwbron}), and a TOTAAL without a range over another type
+     *  than the subject ({@link #keurEigenTotaal}). The subject of each position is the one the verifier walks it
+     *  with: the rule target's type, the element type inside a fold's filter and a quantifier fold, a selection's
+     *  type inside a union branch, the creation and consistency subject, the allocation's source type, the fact
+     *  creation's anchor, the defaults' onderwerp, and none in a day-kind definition. A rule target is a write,
+     *  never read here; the rest of a fold's set source is {@link #keurVouwbron}'s. Until L2's fix round the role
+     *  check was refused with a storage reason, the characteristic read played, the value fold over a role name
+     *  failed at first fire, and the own total over a foreign element type played (measured on the L2 union). */
     private void keurOnderwerpen() {
         for (ResolvedRegel r : m.resolvedRegels) {
             Objecttype s = r.doel() instanceof Expr.AttribuutRef a ? a.objecttype() : null;
@@ -375,6 +379,8 @@ public final class IrLoader {
             case Expr.Functie f -> {
                 boolean setbron = f.elementObjecttype() != null && f.argumenten().size() == 1
                         && (rolBindingen.containsKey(f) || bronPaden.containsKey(f));
+                if (setbron) keurWaardevouwbron(f, s);
+                else keurEigenTotaal(f, s);
                 if (!setbron) for (Expr x : f.argumenten()) keurWaarde(x, s);
                 keurWaarde(f.leegwaarde(), s);
                 keurConditie(f.filter(), f.elementObjecttype() != null ? f.elementObjecttype() : s);
@@ -1084,6 +1090,7 @@ public final class IrLoader {
                 RolBindingRef br = rolBinding(n, p, "bronRol");
                 if (br != null) rolBindingen.put(f, br);
                 if (eenBron && (n.has("bronRol") || n.has("bronPad"))) keurVouwbron(n, p, fk, f);
+                plekken.put(f, p);
                 yield f;
             }
             case "Afgerond" -> new Expr.Afgerond(expr(n.get("basis")),
@@ -1195,16 +1202,15 @@ public final class IrLoader {
 
     /** The set source of a single-argument fold that carries a range (IR-SPEC ch. 4.3): what its name reads on the
      *  element type decides which fold kinds may consume it, and a document that pairs the two otherwise is refused
-     *  here by name, as the verifier refuses it and as {@code ref} and the ASP backend fault on it. Under
-     *  {@code AANTAL} the source names the counted role, so a name that is a member of the element type reads a
-     *  value per contributor, which a count does not fold (WF-093 (b)), and a count's range is one step
-     *  (WF-102 (c)). Under a value fold the name is read per contributor, so it must be an attribute of the element
-     *  type: a characteristic carries no value there (WF-080), a role name is a count source only a count folds
-     *  (WF-093 (a)), and any other name declares nothing (WF-034). Without these the exec branch played a count
-     *  over an attribute as a count of members and failed with a runtime error at first fire on a value fold over
-     *  a role name, and the
-     *  DRL-text branch compiled neither (measured on the L2 union). A navigated source is WF-053's and is left to
-     *  the transpilers' refusal. */
+     *  by name, as the verifier refuses it and as {@code ref} and the ASP backend fault on it. Under {@code AANTAL}
+     *  the source names the counted role, so a name that is a member of the element type reads a value per
+     *  contributor, which a count does not fold (WF-093 (b)), and a count's range is one step (WF-102 (c)). Under a
+     *  value fold the name is read per contributor, so it must be an attribute of the element type: a
+     *  characteristic carries no value there (WF-080). A name that is neither is refused once the subject is known
+     *  ({@link #keurWaardevouwbron}). Without these the exec branch played a count over an attribute as a count of
+     *  members and failed with a runtime error at first fire on a value fold over a role name, and the DRL-text
+     *  branch compiled neither (measured on the L2 union). A navigated source is WF-053's and is left to the
+     *  transpilers' refusal. */
     private void keurVouwbron(JsonNode n, String p, Expr.FunctieKind fk, Expr.Functie f) {
         if (fk == null || f.elementObjecttype() == null
                 || !(f.argumenten().get(0) instanceof Expr.AttribuutRef bron) || navigatieBindingen.containsKey(bron)
@@ -1223,16 +1229,46 @@ public final class IrLoader {
                         + " (WF-102 (c))");
             return;
         }
-        if (!WAARDEVOUWEN.contains(fk) || attribuut) return;
-        if (kenmerk)
+        if (WAARDEVOUWEN.contains(fk) && kenmerk)
             throw new Documentfout(plek, "'" + a + "' is a characteristic of '" + el.naam + "', not an attribute — a"
                     + " characteristic endpoint is ill-formed in an aggregation source position (WF-080)");
-        if (isRolnaam(a))
+    }
+
+    /** The value fold's set source whose name is no member of the element type, judged with the fold SUBJECT, as
+     *  the verifier's source reading judges it: a name that is a role reachable from the subject — the far role of
+     *  a two-role fact type the subject fills the near role of, or a reciprocal role it fills — is a count source,
+     *  which only a count folds (WF-093 (a)); any other name declares nothing on the element type (WF-034), even
+     *  where some other type's relation carries a role of that name. At a subject-less position (a day-kind
+     *  definition) any declared role name counts, as the verifier has no subject to ask either. */
+    private void keurWaardevouwbron(Expr.Functie f, Objecttype s) {
+        if (!WAARDEVOUWEN.contains(f.kind()) || f.elementObjecttype() == null
+                || !(f.argumenten().get(0) instanceof Expr.AttribuutRef bron) || navigatieBindingen.containsKey(bron)
+                || bron.attribuut() == null) return;
+        Objecttype el = f.elementObjecttype();
+        String a = bron.attribuut(), plek = plekken.get(f) + "/argumenten/0";
+        if (el.attribuut(a) != null || el.kenmerkNaam(a) != null) return;   // read, or refused as WF-080 while reading
+        if (s == null ? isRolnaam(a) : isRolnaamVanaf(s, a))
             throw new Documentfout(plek, "value aggregation over \"" + a + "\", which is no attribute of \""
                     + el.naam + "\": a value fold reads an attribute per contributor, and a role name is a count source"
                     + " only a count folds (WF-093 (a))");
         throw new Documentfout(plek, "'" + a + "' is not a declared attribute of '" + el.naam + "': a value fold's"
                 + " source reads an attribute of each contributor (WF-034)");
+    }
+
+    /** WF-083 (c), the element type of the subject's own read: a {@code TOTAAL} over one source without a range is
+     *  the subject's own read, so the type it folds over is the subject type — equal in the WF-001 form. Neither
+     *  branch reads the field there, so a foreign type in it changed no answer: {@code jutterswet-tempototaal} with
+     *  its own total naming Vondst played in both branches (measured before this check). It is refused here in the
+     *  verifier's words. */
+    private void keurEigenTotaal(Expr.Functie f, Objecttype s) {
+        if (f.kind() != Expr.FunctieKind.TOTAAL || f.elementObjecttype() == null || s == null
+                || f.argumenten().size() != 1 || rolBindingen.containsKey(f) || bronPaden.containsKey(f)) return;
+        Objecttype el = f.elementObjecttype();
+        if (Namen.norm(el.naam).equals(Namen.norm(s.naam))) return;
+        throw new Documentfout(plekken.get(f) + "/elementObjecttype", "the elementObjecttype '" + el.naam
+                + "' of a TOTAAL without a range is not the fold subject '" + s.naam + "': without a range the fold is"
+                + " the subject's own read, so the type it folds over is the subject type, and the executors never"
+                + " read this field there (WF-083 (c))");
     }
 
     /** The fold kinds that read a VALUE per contributor (IR-SPEC ch. 4.3) — every aggregation kind but
@@ -1241,12 +1277,39 @@ public final class IrLoader {
             Expr.FunctieKind.SOM, Expr.FunctieKind.TOTAAL, Expr.FunctieKind.MINIMUM, Expr.FunctieKind.MAXIMUM,
             Expr.FunctieKind.EERSTE, Expr.FunctieKind.LAATSTE, Expr.FunctieKind.AANTAL_GEVULDE);
 
-    /** Does {@code naam} name a declared role — by its declared name or its declared plural, case-insensitively? */
+    /** Does {@code naam} name a declared role — by its declared name or its declared plural, in the WF-001 form? */
     private boolean isRolnaam(String naam) {
         for (Feittype ft : m.feittypen.values())
             for (RegelSpraakModel.Rol r : ft.rollen)
-                if (naam.equalsIgnoreCase(r.naam()) || naam.equalsIgnoreCase(r.meervoud())) return true;
+                if (noemt(r, naam)) return true;
         return false;
+    }
+
+    /** Does {@code naam} name a role reachable from {@code st}: the far role of a two-role fact type whose near role
+     *  {@code st} fills (⊑ through the supertype chain, ch. 2.6), or the one role of a reciprocal fact type it
+     *  fills? */
+    private boolean isRolnaamVanaf(Objecttype st, String naam) {
+        for (Feittype ft : m.feittypen.values()) {
+            if (ft.rollen.size() == 2) {
+                RegelSpraakModel.Rol a = ft.rollen.get(0), b = ft.rollen.get(1);
+                if ((vult(st, a) && noemt(b, naam)) || (vult(st, b) && noemt(a, naam))) return true;
+            } else if (ft.rollen.size() == 1 && ft.wederkerig) {
+                RegelSpraakModel.Rol r = ft.rollen.get(0);
+                if (vult(st, r) && noemt(r, naam)) return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean vult(Objecttype st, RegelSpraakModel.Rol r) {
+        Objecttype vuller = ot(r.objecttypeNaam());
+        return vuller != null && st.isEen(vuller);
+    }
+
+    private static boolean noemt(RegelSpraakModel.Rol r, String naam) {
+        String n = Namen.norm(naam);
+        return (r.naam() != null && Namen.norm(r.naam()).equals(n))
+                || (r.meervoud() != null && Namen.norm(r.meervoud()).equals(n));
     }
 
     /** The two range spellings are one field (IR-SPEC ch. 4.3, WF-102 (a)): never both, and never written null. */

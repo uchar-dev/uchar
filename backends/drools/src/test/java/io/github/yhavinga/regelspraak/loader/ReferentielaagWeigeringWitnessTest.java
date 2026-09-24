@@ -25,7 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * without its fact type or role, a narrowing written as {@code null}, the datatype {@code Onbekend} at every kind
  * of position, and a marker's type written as {@code null}. And the reference-layer shapes every executor refuses by
  * name: a role check naming no link the subject can be in (WF-034), a fold's set source its kind cannot consume
- * (WF-093, WF-080, WF-102 (c), WF-034), and a characteristic read at a value position (WF-080). The fields of an
+ * (WF-093, WF-080, WF-102 (c), WF-034), a TOTAAL without a range over another type than its subject (WF-083 (c)),
+ * and a characteristic read at a value position (WF-080). The fields of an
  * attribute read, a creation, a uniqueness and a characteristic check are pinned where their bindings are
  * ({@code NavigatiebindingWitnessTest}, {@code BonenveldWitnessTest}); a fold, a quantifier fold and a selection
  * without their range where those are ({@code TemporeleSetvouwBereikWitnessTest},
@@ -55,6 +56,8 @@ class ReferentielaagWeigeringWitnessTest {
     private static final String MUNTTELLING = "jutterswet-munttelling";
     /** Rule 0 folds over the two-step path Jutter -> Boot -> Vondst. */
     private static final String BOOTBERGING = "anchor/jutterswet-bootberging";
+    /** Rule 2 totals the Jutter's own timeline, a TOTAAL without a range over the subject type. */
+    private static final String TEMPOTOTAAL = "jutterswet-tempototaal";
 
     private static final String NUMERIEK =
             "{\"node\":\"Numeriek\",\"geheel\":false,\"decimalen\":2,\"teken\":\"ONBEPAALD\",\"eenheid\":null}";
@@ -252,6 +255,33 @@ class ReferentielaagWeigeringWitnessTest {
         bron(ir, 1).put("attribuut", "glans");
         e = weigert(ir, "/rules/resolvedRegels/1/waarde/argumenten/0");
         assertTrue(e.getMessage().contains("'glans' is not a declared attribute of 'Munt'"), e.getMessage());
+    }
+
+    @Test void een_rolnaam_die_het_subject_niet_bereikt_is_geen_telbron() throws Exception {
+        // `aanmelder` IS a declared role, but the one the Jutter itself fills: from the fold subject it reaches no
+        // relation, so under the value fold the name is no count source but an undeclared member (WF-034), as the
+        // verifier's source reading judges it. Until the fix round's second pass any declared role name counted.
+        ObjectNode ir = golden(MUNTTELLING);
+        bron(ir, 1).put("attribuut", "aanmelder").put("objecttype", "Jutter");
+        IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/1/waarde/argumenten/0");
+        assertTrue(e.getMessage().contains("'aanmelder' is not a declared attribute of 'Munt': a value fold's source"
+                + " reads an attribute of each contributor (WF-034)"), e.getMessage());
+    }
+
+    // ---------------- the element type of the subject's own read (WF-083 (c)) ----------------
+
+    @Test void een_totaal_zonder_bereik_over_een_ander_type_weigert() throws Exception {
+        // jutterswet-tempototaal's third rule totals the Jutter's own timeline, without a range; the twist names
+        // Vondst as its element type. No executor reads that field there, so before this check the twisted
+        // document PLAYED in both branches here, as it passed in ref and clingo.
+        ObjectNode ir = golden(TEMPOTOTAAL);
+        ObjectNode w = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(2).get("waarde");
+        assertEquals("Jutter", w.get("elementObjecttype").asText(), "de golden totaliseert de eigen tijdlijn");
+        w.put("elementObjecttype", "Vondst");
+        IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/2/waarde/elementObjecttype");
+        assertTrue(e.getMessage().contains("the elementObjecttype 'Vondst' of a TOTAAL without a range is not the fold"
+                + " subject 'Jutter': without a range the fold is the subject's own read, so the type it folds over is"
+                + " the subject type, and the executors never read this field there (WF-083 (c))"), e.getMessage());
     }
 
     @Test void een_kenmerk_als_bron_van_een_waardevouw_weigert() throws Exception {
