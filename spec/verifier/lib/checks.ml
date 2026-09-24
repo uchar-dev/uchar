@@ -1,4 +1,4 @@
-(* Well-formedness checks over a loaded uchar-ir-v1 document (L2 shape).
+(* Well-formedness checks over a loaded uchar-ir-v1 document (L3 shape).
 
    Each check implements one WF rule of spec/IR-SPEC.md, restricted to what
    the wire format can express (the WF index records per rule which
@@ -39,8 +39,7 @@ let m1_rule_lists =
     "prioritizedDefaults" ]
 
 let m1_model_lists =
-  [ ("tijdlijnen", "timelines"); ("dagsoorten", "dayKinds");
-    ("dagsoortPerEenheid", "dagsoortPerEenheid"); ("functionDefs", "functionDefs") ]
+  [ ("tijdlijnen", "timelines"); ("dagsoorten", "dayKinds"); ("functionDefs", "functionDefs") ]
 
 let m1_root at =
   match String.split_on_char '/' at with
@@ -483,12 +482,20 @@ let find_tijdlijn ctx name =
        | None -> false)
     ctx.doc.tijdlijnen
 
-(* a unit spelling declared as a day kind (dagsoortPerEenheid): admitted
-   beside the nine time units in date arithmetic and tijdsduur (WF-035/
-   WF-038) — the executors stay loud on those forms *)
+(* The spellings of a day kind: its name and its plural, every spelling it
+   has on the wire (IR-SPEC ch. 2.9). Both name it as a duration unit. *)
+let dagsoort_spellingen (d : dagsoort) = d.dk_naam :: Option.to_list d.dk_meervoud
+
+let dagsoort_namen ctx = List.map (fun (d : dagsoort) -> d.dk_naam) ctx.doc.dagsoorten
+
+(* a unit spelling that names a declared day kind: admitted beside the nine
+   time units in date arithmetic and tijdsduur (WF-035/WF-038) — the
+   executors stay loud on those forms *)
 let day_kind_unit ctx (u : eenheid) =
   match u.afkorting with
-  | Some a -> List.exists (fun (k, _) -> norm k = norm a) ctx.doc.dagsoort_per_eenheid
+  | Some a ->
+      List.exists (fun d -> List.exists (fun s -> norm s = norm a) (dagsoort_spellingen d))
+        ctx.doc.dagsoorten
   | None -> false
 
 (* All named rule forms, per array: (array-name, entry-names-with-validity). *)
@@ -551,7 +558,7 @@ let wf001 ctx =
   @ ns "eenheidstelsels" (List.map fst ctx.doc.eenheidstelsels)
   @ ns "feittypen" (List.map fst ctx.doc.feittypen)
   @ ns "dimensies" (List.map fst ctx.doc.dimensies)
-  @ ns "dagsoorten" (some_names ctx.doc.dagsoorten)
+  @ ns "dagsoorten" (dagsoort_namen ctx)
 
 let wf002 ctx =
   List.concat_map
@@ -668,6 +675,16 @@ let wf005 ctx =
             | None -> [])
           ot.attribuut_tijdlijn_naam)
     ctx.doc.objecttypen
+  (* a parameter's facet (WF-018 defers to this rule): the count clause; a
+     parameter's facet names no timeline *)
+  @ List.concat_map
+      (fun (p, (par : parameter)) ->
+        match par.par_tijdlijn_aantal with
+        | Some n when n < 1 ->
+            [ v "WF-005" ("/parameters/" ^ p ^ "/timeline/count")
+                (Printf.sprintf "timeline facet count %d < 1" n) ]
+        | _ -> [])
+      ctx.doc.parameters
 
 let wf006 ctx =
   List.concat_map
@@ -701,12 +718,24 @@ let check_number_form at = function
    back-reference resolves against (WF-034, ch. 4.6 (r)). *)
 let stelsel_namen ctx = List.map fst ctx.doc.eenheidstelsels
 
+(* A factor as a message writes it: a whole number bare, any other as
+   num/den, the two integers exactly as the wire carries them. *)
+let rationaal_render { num; den } =
+  if den = 1 then string_of_int num else Printf.sprintf "%d/%d" num den
+
+let rec ggd a b = if b = 0 then a else ggd b (a mod b)
+
 (* WF-092 (IR-SPEC ch. 2.5): the conversion pair of a unit is ONE fact in
    two fields — the canonical unit it converts into and the factor that
-   does the converting. Filled together or null together; either half
-   alone is not a unit. The kale form (both null) is the legitimate
+   does the converting. Present together or absent together; either half
+   alone is not a unit. The bare form (both absent) is the legitimate
    self-standing spelling every WF-038 duration parameter and WF-035
-   duration operand carries.
+   duration operand carries. Arm (c) holds of the factor alone: it is an
+   exact rational, and written in lowest terms, so one factor has one
+   spelling — WF-091 compares it byte for byte, and two spellings of one
+   value would be a lie it cannot tell from a real difference. That both
+   integers are at least 1 is the loader's (a factor is positive by its
+   wire form).
 
    The rule exists because neither half is reachable by a neighbour.
    WF-009 walks the declared systems but only ever looks at a factor it
@@ -733,7 +762,7 @@ let rec check_eenheid_form ~stelsels at (u : eenheid) =
   in
   (match u.stelsel with
    | Some s when not (mem_ci stelsels s) ->
-       [ v "WF-034" (at ^ "/stelsel")
+       [ v "WF-034" (at ^ "/system")
            (Printf.sprintf
               "unit %s declares unit system '%s', which no declaration carries: the unit \
                resolves against no conversion table"
@@ -749,11 +778,20 @@ let rec check_eenheid_form ~stelsels at (u : eenheid) =
   | None, Some f ->
       [ v "WF-092" at
           (Printf.sprintf
-             "unit %s carries conversion factor %g but names no canonical unit to convert into: a \
+             "unit %s carries conversion factor %s but names no canonical unit to convert into: a \
               half-filled conversion pair is not a unit (both fields, or neither)"
-             named f) ]
+             named (rationaal_render f)) ]
   | Some _, Some _ | None, None -> [])
-  @ (match u.noemer with Some n -> check_eenheid_form ~stelsels (at ^ "/noemer") n | None -> [])
+  @ (match u.factor_naar_canoniek with
+    | Some { num; den } when ggd num den <> 1 ->
+        let g = ggd num den in
+        [ v "WF-092" (at ^ "/factorToCanonical")
+            (Printf.sprintf
+               "unit %s carries conversion factor %d/%d, which is not in lowest terms: an exact \
+                factor has one spelling, here %s"
+               named num den (rationaal_render { num = num / g; den = den / g })) ]
+    | _ -> [])
+  @ (match u.noemer with Some n -> check_eenheid_form ~stelsels (at ^ "/denominator") n | None -> [])
 
 (* every unit a datatype carries, denominators and composite element/field/
    payload datatypes included — WF-092 reaches strictly further into a
@@ -761,7 +799,7 @@ let rec check_eenheid_form ~stelsels at (u : eenheid) =
    positions WF-007's row records as out of its own reach. *)
 let rec check_datatype_units ~stelsels at = function
   | Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ } ->
-      check_eenheid_form ~stelsels (at ^ "/eenheid") u
+      check_eenheid_form ~stelsels (at ^ "/unit") u
   | List_type { element } -> check_datatype_units ~stelsels (at ^ "/element") element
   | Struct_type { velden; _ } ->
       List.concat_map (fun (f, d) -> check_datatype_units ~stelsels (at ^ "/velden/" ^ f) d) velden
@@ -784,16 +822,13 @@ let wf092 ctx =
   let site at = function Some d -> check_datatype_units ~stelsels at d | None -> [] in
   List.concat_map
     (fun (sn, es) ->
-      let at = "/eenheidstelsels/" ^ sn in
-      List.concat_map
-        (fun (kind, table) ->
-          List.concat_map
-            (fun (un, e) ->
-              match e with
-              | Some e -> check_eenheid_form ~stelsels (at ^ "/" ^ kind ^ "/" ^ un) e
-              | None -> [])
-            table)
-        [ ("eenheden", es.eenheden); ("aliassen", es.aliassen) ])
+      List.concat
+        (List.mapi
+           (fun j (d : gedeclareerde_eenheid) ->
+             check_eenheid_form ~stelsels
+               (Printf.sprintf "/eenheidstelsels/%s/units/%d" sn j)
+               d.ge_eenheid)
+           es.eenheden))
     ctx.doc.eenheidstelsels
   @ List.concat_map
       (fun (otn, ot) ->
@@ -836,40 +871,54 @@ let wf007_model ctx =
         | None -> [])
       ctx.doc.parameters
 
+(* WF-007's presentation arm (IR-SPEC ch. 2.4): the tag "percentage" belongs
+   to a DECLARED datatype and never to a type annotation. An annotation is a
+   copy the readers compare with the declaration, and a tag there would be a
+   second presentation of one percentage, which the declaration alone decides.
+   The loader collects the positions (Loader.presentatie_annotaties), because
+   the in-memory datatype does not carry the tag. *)
+let wf007_presentatie ctx =
+  List.map
+    (fun at ->
+      v "WF-007" at
+        "the presentation tag \"percentage\" on a type annotation: the tag is written only \
+         where a datatype is declared")
+    ctx.doc.presentatie_annotaties
+
+(* WF-009: the canonical chain of every declared unit terminates inside its
+   own system. A canonical name resolves against the system's units by
+   abbreviation, under the WF-001 identity. That a factor is positive is its
+   wire form since L3 (two integers of at least 1, refused at load
+   otherwise), so no arm here reads the factor. *)
 let wf009 ctx =
   List.concat_map
     (fun (sn, es) ->
-      let at = "/eenheidstelsels/" ^ sn in
-      let lookup u = find_ci es.eenheden u |> Option.join in
-      List.concat_map
-        (fun (un, e) ->
-          match e with
-          | None -> []
-          | Some e ->
-              (match e.factor_naar_canoniek with
-               | Some f when f <= 0.0 ->
-                   [ v "WF-009" (at ^ "/eenheden/" ^ un)
-                       (Printf.sprintf "conversion factor %g is not positive" f) ]
-               | _ -> [])
-              @
-              (* Follow the canonical chain; must terminate inside the system. *)
-              let rec follow seen u =
-                match u.canoniek with
-                | None -> []
-                | Some c when u.afkorting = Some c -> [] (* self-canonical *)
-                | Some c ->
-                    if List.mem (norm c) seen then
-                      [ v "WF-009" (at ^ "/eenheden/" ^ un)
-                          ("conversion cycle through '" ^ c ^ "'") ]
-                    else (
-                      match lookup c with
-                      | None ->
-                          [ v "WF-009" (at ^ "/eenheden/" ^ un)
-                              ("conversion targets unknown unit '" ^ c ^ "'") ]
-                      | Some next -> follow (norm c :: seen) next)
-              in
-              follow [ (match e.afkorting with Some a -> norm a | None -> norm un) ] e)
-        es.eenheden)
+      let lookup c =
+        List.find_map
+          (fun (d : gedeclareerde_eenheid) ->
+            match d.ge_eenheid.afkorting with
+            | Some a when norm a = norm c -> Some d.ge_eenheid
+            | _ -> None)
+          es.eenheden
+      in
+      List.concat
+        (List.mapi
+           (fun j (d : gedeclareerde_eenheid) ->
+             let at = Printf.sprintf "/eenheidstelsels/%s/units/%d" sn j in
+             let rec follow seen u =
+               match u.canoniek with
+               | None -> []
+               | Some c when u.afkorting = Some c -> [] (* self-canonical *)
+               | Some c ->
+                   if List.mem (norm c) seen then
+                     [ v "WF-009" at ("conversion cycle through '" ^ c ^ "'") ]
+                   else (
+                     match lookup c with
+                     | None -> [ v "WF-009" at ("conversion targets unknown unit '" ^ c ^ "'") ]
+                     | Some next -> follow (norm c :: seen) next)
+             in
+             follow (Option.to_list (Option.map norm d.ge_eenheid.afkorting)) d.ge_eenheid)
+           es.eenheden))
     ctx.doc.eenheidstelsels
 
 let wf011 ctx =
@@ -972,164 +1021,96 @@ let wf016 ctx =
    three positions compares under. *)
 let calendar_spelling s = time_unit_of_spelling (norm s) <> None
 
-(* WF-017 over the whole SPELLING SPACE of a day kind (maintainer decision
-   2026-09-10; IR-SPEC ch. 2.9). The rule is one promoted MUST with two
-   conjuncts — a day-kind spelling collides with no built-in calendar unit and
-   with no other day kind's spelling — and on the v0 wire a day kind's
-   spellings live in TWO places: the singular in `dagsoorten`, and every
-   REGISTERED spelling, singular and plural alike, as a KEY of
-   `dagsoortPerEenheid`. Until this change the check read the first place only,
-   so both conjuncts were checked for the declared name and for no other
-   registered spelling. The two arms below read the second place; the clause
-   over `/dagsoorten` above them is unchanged.
+(* WF-017 over the whole SPELLING SPACE of a day kind (IR-SPEC ch. 2.9). The
+   rule is one promoted MUST with two conjuncts — a day-kind spelling collides
+   with no built-in calendar unit and with no other day kind's spelling — and
+   a day kind has exactly two spellings on the wire, its `name` and its
+   `plural`, so the rule reads both. (Until L3 the further spellings were keys
+   of a separate registry, which could say only which day kind a spelling
+   belonged to; the history is in ch. 2.9.)
 
-   ARM (a) — a registry KEY that shadows a built-in calendar unit. Such a key
-   makes the document contradict itself: `RUNTIME-SEMANTICS.md` ch. 3.8 states
-   normatively that a duration's unit is recognised by spelling through the
-   calendar table and that "a spelling outside the table is a declared day
-   kind", while a registry key declares exactly that spelling to be a day-kind
-   unit. Note what this arm does NOT claim: `day_kind_unit` is consulted here
-   (WF-035, WF-038) only in the None branch of `time_unit_of_eenheid`, so a key
-   `dagen` changes nothing for this verifier — `datum + 5 dagen` stays calendar
-   arithmetic. That is the order every executor reads since 2026-09-20, the
-   Drools backend included (see the widening below); until then it asked the
-   registry first at all four of its day-kind positions and read the same
-   document as day-kind arithmetic, and that split — the executors disagreeing
-   on one admitted document — was the arm's second reason. Measured 2026-09-10
-   on the pre-arm binary (md5
-   67becaba23c6d3364a9f1a080355541e), `jutterswet-schouwrooster` with one
-   entry added and nothing else changed: `"dagen": "schouwdag"` beside the four
-   ordinary entries was `verifier: PASS`, while the same spelling DECLARED is
-   refused by the clause above. Here the IR was weaker than its own producer,
-   and what carries that is the REGISTRATION GUARD, not the grammar: the
-   reference frontend refuses to register a spelling that coincides with a
-   calendar spelling, warns, and drops the entry. The grammar helps for most of
-   the singulars and plurals but not all — measured 2026-09-10 over all
-   eighteen as a day-kind plural, FOURTEEN fail to parse (the names are
-   keywords, no IR is emitted at all) and FOUR parse cleanly: `uren`,
-   `minuten`, `seconden`, `milliseconden`. For those four the frontend emits
-   with exit 0 and the guard alone does the work — the registry comes out
-   without the spelling and the warning is carried in the emitted document's
-   `diagnostics` array and, since 2026-09-19, printed to stderr besides.
-   Witnesses: `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid`
-   and, since the widening below,
-   `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalenderafkorting` and
-   `corpus/negatief/wf017-eenheidsleutel-schaduwt-tweede-meervoudsvorm`.
+   CALENDAR — the name (clause 1) and the plural (arm (a)). A spelling the
+   calendar table carries makes the document contradict itself:
+   `RUNTIME-SEMANTICS.md` ch. 3.8 recognises a duration's unit by spelling
+   through that table first, and "a spelling outside the table is a declared
+   day kind". Every executor reads that order, so no consumer acts on the
+   contradiction, which does not make the document admissible. The
+   comparison is [calendar_spelling], the table lookup itself, over all
+   thirty spellings — abbreviations and the second plurals `secondes` and
+   `millisecondes` included — so the rule and the arithmetic it fences cannot
+   come to know different tables.
 
-   WIDENED to the THIRTY-spelling table (maintainer decision 2026-09-19, card
-   `20260910-dagsoort-afkortingssleutels`). Until then arm (a) and the clause
-   above compared against the EIGHTEEN names the frontend's registration guard
-   knew — the singular and the plural of the nine units — while ch. 3.8
-   recognises thirty. The twelve that are neither (`jr`, `mnd`, `kw`, `wk`,
-   `dg`, `u`, `min`, `sec`, `s`, `ms`, and the second plurals `secondes` and
-   `millisecondes`) fell through both, measured 2026-09-20 on the pre-card
-   binary (md5 97239d1f8c2706a2548594b0541b5f34): all twelve verifier-clean as
-   registry keys AND as declared names. That flank was not wire-only either —
-   the frontend emitted `Dagsoort de wk (mv: wks)` with exit 0 and an EMPTY
-   `diagnostics` — and goldens carry the abbreviations as live calendar units
-   (`jutterswet-vervaltermijn`: `wk`, `mnd`, `kw`), so such a document split the
-   executors in earnest. Both halves moved with this widening: the frontend's
-   guard now compares against the same thirty (a declared NAME in the table is
-   an ERROR there, which blocks the emission, because dropping the name alone
-   would leave its §9.8 definition dangling), and the Drools backend's lookup
-   order was turned around at all four of its day-kind positions so that every
-   executor reads ch. 3.8's order — table first, registry in the fall-through.
-   The comparison is `time_unit_of_spelling` itself, so the rule and the
-   arithmetic share one table by construction. Cost, measured 2026-09-20 over
-   all four corpus zones plus the read-only parity zone (699 documents): not one
-   verdict and not one report line moves; the twelve abbreviations as ordinary
-   calendar UNITS stay verifier-clean, which is what `jutterswet-vervaltermijn`
-   carries.
+   ANOTHER DAY KIND — arm (b). A plural that is another day kind's name or
+   plural makes one spelling name two day kinds, and a consumer resolving the
+   spelling has no second reading to fall back on. Two NAMES that collide are
+   WF-001's (the dayKinds namespace), not this rule's. A plural equal to its
+   own day kind's name collides with nothing. Each colliding pair of plurals
+   is reported once, at the later day kind.
 
-   ARM (b) — a DECLARED day-kind name that occurs as a key must bind to
-   ITSELF. This is the wire-visible form of the day-kind/day-kind collision.
-   The collision itself is NOT visible on the wire: the map holds one value per
-   key, so the losing registration is simply absent. What remains visible is
-   the shape it leaves behind — a declared name registered as the unit spelling
-   of a DIFFERENT day kind. Measured end-to-end 2026-09-10 with the reference
-   frontend on two day kinds `schouwdag` (plural `schouwdagen`) and
-   `schouwdagen` (plural `schouwdagens`): the frontend emits with no warning
-   and no error (`registreerDagsoortEenheid` uses `putIfAbsent` — first-wins,
-   silently), the registry binds `"schouwdagen": "schouwdag"`, and the pre-arm
-   verifier reported PASS. So `5 schouwdagen` reckons with the definition of
-   `schouwdag` while a reader of `dagsoorten` sees a day kind `schouwdagen`
-   declared. WF-001 does not reach it: the two DECLARED names differ. Here the
-   producer is exactly as weak as the wire, which is why the conformance side
-   of the pin needs a frontend diagnostic of its own; this arm is the wire half.
-   Witness: `corpus/negatief/wf017-dagsoortnaam-bindt-vreemde-dagsoort`, the
-   frontend's own emission of that source.
-
-   IDENTITY. Both arms compare under `norm` — collapse whitespace, lower case —
-   the identity `day_kind_unit` already applies to the key and the clause above
-   already applies to the declared name, so the three positions agree on what
-   "the same spelling" means. It is pinned from the positive side:
-   `corpus/golden/jutterswet-vormenkabinet` registers the declared `schouwdag`
-   as `"schouwdag": "SchouwDag"`, which points to itself only through `norm`;
-   a byte-exact arm (b) reports that entry and takes gate 3 down.
-
-   BOUNDARY against WF-034 arm (s) (ch. 4.6), which reads the VALUES of this
-   same map. That arm asks whether one name RESOLVES against `dagsoorten` and
-   compares nothing; these arms COMPARE two spellings and resolve nothing. Arm
-   (b) therefore fires only when the value names a day kind that IS declared —
-   an unresolvable value, a null value and the empty string name no second day
-   kind to collide with, and are WF-034 (s)'s single diagnosis, the same
-   discipline WF-085 keeps for undeclared references. NO corpus document
-   instantiates that touch point, so it is measured by construction: a declared
-   name as key whose value is an undeclared day kind, a null, or the empty
-   string — three documents built for the measurement, each reporting exactly
-   one line, and each time WF-034's. (The corpus witness
-   `corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort` does NOT
-   instantiate it: its offending key is not a declared name, so arm (b) is
-   silent there through the declared-name lookup and never reaches the
-   step-back.)
-
-   COST, measured 2026-09-10 over all four zones plus the read-only parity zone
-   (585 documents): the two arms move the two witnesses above and not one other
-   verdict, and add no report line anywhere else. *)
+   IDENTITY. Every comparison is under [norm] — collapse whitespace, lower
+   case — the ch. 2.1 identity a consumer applies when it resolves a
+   spelling, so the three positions agree on what "the same spelling" means.
+   A byte-exact comparison would under-report, and the witness
+   `corpus/negatief/wf017-meervoud-botst-met-vreemd-meervoud` pins it: its two
+   plurals differ in case alone. *)
 let wf017 ctx =
-  let declared = some_names ctx.doc.dagsoorten in
+  let kinds = List.mapi (fun i (d : dagsoort) -> (i, d)) ctx.doc.dagsoorten in
+  let at i field = Printf.sprintf "/dagsoorten/%d/%s" i field in
   List.concat_map
-    (fun d ->
-      match d with
-      | Some d when calendar_spelling d ->
-          [ v "WF-017" "/dagsoorten"
-              ("day-kind '" ^ d ^ "' shadows a built-in calendar unit") ]
+    (fun (i, (d : dagsoort)) ->
+      (if calendar_spelling d.dk_naam then
+         [ v "WF-017" (at i "name") ("day-kind '" ^ d.dk_naam ^ "' shadows a built-in calendar unit") ]
+       else [])
+      @
+      match d.dk_meervoud with
+      | Some p when calendar_spelling p ->
+          [ v "WF-017" (at i "plural")
+              (Printf.sprintf "the plural '%s' of day kind '%s' shadows a built-in calendar unit"
+                 p d.dk_naam) ]
       | _ -> [])
-    ctx.doc.dagsoorten
-  @ List.filter_map
-      (fun (spelling, _) ->
-        if calendar_spelling spelling then
-          Some
-            (v "WF-017"
-               ("/dagsoortPerEenheid/" ^ spelling)
-               (Printf.sprintf
-                  "registered day-kind unit spelling '%s' shadows a built-in calendar unit"
-                  spelling))
-        else None)
-      ctx.doc.dagsoort_per_eenheid
-  @ List.filter_map
-      (fun (spelling, dk) ->
-        match List.find_opt (fun d -> norm d = norm spelling) declared, dk with
-        | Some own, Some d when norm d <> norm own && mem_ci declared d ->
-            Some
-              (v "WF-017"
-                 ("/dagsoortPerEenheid/" ^ spelling)
-                 (Printf.sprintf
-                    "declared day kind '%s' is registered as a unit spelling of day kind '%s': \
-                     its own spelling binds to another day kind"
-                    own d))
-        | _ -> None)
-      ctx.doc.dagsoort_per_eenheid
+    kinds
+  @ List.concat_map
+      (fun (i, (d : dagsoort)) ->
+        match d.dk_meervoud with
+        | None -> []
+        | Some p ->
+            List.filter_map
+              (fun (j, (e : dagsoort)) ->
+                if j = i then None
+                else if norm p = norm e.dk_naam then
+                  Some
+                    (v "WF-017" (at i "plural")
+                       (Printf.sprintf
+                          "the plural '%s' of day kind '%s' is the name of day kind '%s': one \
+                           spelling names two day kinds"
+                          p d.dk_naam e.dk_naam))
+                else
+                  match e.dk_meervoud with
+                  | Some q when j < i && norm p = norm q ->
+                      Some
+                        (v "WF-017" (at i "plural")
+                           (Printf.sprintf
+                              "the plural '%s' of day kind '%s' is the plural '%s' of day kind \
+                               '%s': one spelling names two day kinds"
+                              p d.dk_naam q e.dk_naam))
+                  | _ -> None)
+              kinds)
+      kinds
 
+(* WF-018: a parameter's datatype resolves, and its timeline facet, when
+   present, satisfies WF-005 — the facet's own rule, so that clause reports
+   under WF-005 (the parameter half of [wf005]). A parameter without a
+   datatype cannot be written since L3: the wire requires one and the loader
+   reads it as required. *)
 let wf018 ctx =
   List.concat_map
     (fun (p, par) ->
       let at = "/parameters/" ^ p in
       match par.par_datatype with
-      | None -> [ v "WF-018" at "parameter without a datatype" ]
       | Some (Enumeratie { domein = Some d; _ }) when find_ci ctx.doc.domeinen d = None ->
           [ v "WF-018" at ("parameter enumeration references undeclared domain '" ^ d ^ "'") ]
-      | Some _ -> [])
+      | Some _ -> []
+      | None -> assert false (* the loader reads the datatype as required *))
     ctx.doc.parameters
 
 (* ======================================================================= *)
@@ -1413,111 +1394,6 @@ let wf026 ctx =
         @ pairs rest
   in
   pairs named
-
-(* WF-034 on the VALUE half of the day-kind unit registry (maintainer decision
-   2026-09-09; IR-SPEC ch. 4.6 (s)). `dagsoortPerEenheid` couples a written
-   UNIT SPELLING (the key) to the NAME of a day kind (the value). The key side
-   is already read here — `day_kind_unit` above asks whether a spelling occurs
-   as a key, and admits it beside the nine calendar units in date arithmetic
-   (WF-035) and in a tijdsduur (WF-038). The value was crossed against nothing,
-   so that admission could rest on a name `dagsoorten` never declares: the
-   spelling is let through as a day-kind unit while the day kind it names does
-   not exist.
-
-   The value is a REFERENCE and the only one this map carries, which is what
-   separates this arm from WF-017 (ch. 2.9): WF-017 asks whether two spellings
-   COLLIDE — a day kind against a built-in calendar unit, or against another
-   day kind — and resolves nothing; this arm asks whether one name RESOLVES,
-   and compares nothing. They cannot double: since 2026-09-10 `wf017` above
-   reads this map too, but only its KEYS (arms (a) and (b)), while this arm
-   reads only the VALUES. Where the two could meet — a declared name as key
-   whose value names no declared day kind — arm (b) steps back and leaves the
-   single diagnosis here. No corpus document instantiates that touch point (the
-   witness below does not: its offending key is not a declared name), so it is
-   measured by construction — the three shapes of a declared name as key with
-   an unresolvable, null and empty value each report exactly one line on
-   2026-09-10, and each time it is this arm's.
-
-   The KEY side carries no RESOLUTION rule, and that is a decision, not an
-   omission (WF-017's collision arms are a different question). The
-   carrying argument is what the WIRE carries: a day kind's plural arrives as a
-   FURTHER KEY of this same map and as no field of its own (ch. 2.9's `plural`
-   exists on the v1 node), so nothing here distinguishes a DECLARED plural from
-   a DERIVED one or from an abbreviation — all three are ordinary keys. A key
-   rule would have to reconstruct that distinction by fixing Dutch morphology
-   inside an engine-neutral IR, and would bind every producer to one language's
-   plural formation. (The source language does make the plural an optional
-   author field, §3.12; that is not the ground, and it does not mean a plural
-   is absent when the author omits one — the reference frontend derives a `-en`
-   plural in that case and cites §3.12 for it. The wire cannot tell the two
-   apart, which is the ground.)
-
-   Measured on the LANDED state (2026-09-09, 555 documents): 35 of the 70
-   entries are keyed on something other than the declared name. That counts
-   entries, not independent cases — the 70 entries carry four distinct
-   (registry, declarations) shapes, one repeated byte-identically over 30
-   parity fragments, and the 35 keys spell three distinct words, 34 of them the
-   plain `<declared name>en` form the frontend itself derives. The corpus has
-   zero abbreviation and zero irregular-plural witnesses.
-
-   Both conjuncts of WF-017 reach a key since 2026-09-10: a registry key that
-   shadows a built-in calendar unit, and a declared day kind whose own singular
-   is registered as another day kind's spelling (`putIfAbsent`, first-wins)
-   are refused there, each with its own witness. Neither is this arm's.
-
-   Observability, measured 2026-09-09 on the twist this arm's witness carries:
-   NO consumer notices. The verifier, `ref`, the ASP backend and the Drools
-   backend all reproduce the host golden's pinned outcomes (PASS, PASS, PASS,
-   PLAYED 2). `ref` and the ASP backend never read the map. The Drools backend
-   reads it at exactly two positions, the §6.10 tijdsduur and the §6.11 date
-   arithmetic, and defends itself there ad hoc: an unresolvable name yields a
-   null day-kind global and the transpiler emits a MARKER, so the form is
-   silently not carried rather than refused — and no golden can carry those two
-   forms, because `ref` and the ASP backend both refuse day-kind durations
-   outright. So this is an arm for the wire, on the wave-6 `kenmerkSoorten`
-   argument: a name that crosses nothing in any executor still points at a
-   declaration that has to exist for the document to mean what it says.
-
-   THREE spellings of the defect, ONE arm with one guard: a value naming an
-   undeclared day kind, a `null` value, and the empty string — none of the
-   three names a declared day kind. The schema types the value
-   `["string", "null"]`, so the null is schema-valid, and the one reader
-   collapses null onto the naming case (its loader reads the value with
-   `asText()`, which turns a JSON null into the string "null" and then fails
-   the same lookup). Only the naming spelling has a corpus witness; of the 70
-   entries the four zones hold, zero are null and zero are empty. Both silent
-   spellings are folded into this arm rather than given clauses of their own,
-   the wave-5-fix-round precedent (one list-driven arm where a sub-arm has no
-   counterexample of its own).
-
-   The IDENTITY the arm compares with is `norm` — collapse whitespace, lower
-   case — the same one `day_kind_unit` applies to the key, and it is pinned:
-   `corpus/golden/jutterswet-vormenkabinet` carries two entries that resolve
-   ONLY through it (`SchouwDag` and a padded `  schouwdag  ` against a declared
-   `schouwdag`). Replacing `mem_ci` here with a byte-exact `List.mem` takes
-   gate 3 down on that golden. Before those two entries existed the
-   normalisation half moved no document at all. *)
-let wf034_dagsoort_eenheden ctx =
-  List.filter_map
-    (fun (spelling, dk) ->
-      let at = "/dagsoortPerEenheid/" ^ spelling in
-      match dk with
-      | Some d when mem_ci (some_names ctx.doc.dagsoorten) d -> None
-      | Some d ->
-          Some
-            (v "WF-034" at
-               (Printf.sprintf
-                  "day-kind unit '%s' names day kind '%s', which no declaration carries: the \
-                   registry entry resolves against no day kind"
-                  spelling d))
-      | None ->
-          Some
-            (v "WF-034" at
-               (Printf.sprintf
-                  "day-kind unit '%s' names no day kind at all: the registry entry resolves \
-                   against no day kind"
-                  spelling)))
-    ctx.doc.dagsoort_per_eenheid
 
 (* WF-034 on the allocation's two ENDPOINT attributes (maintainer decision
    2026-09-04, third wave). An allocation is not an expression, so the
@@ -2111,8 +1987,8 @@ let rec eenheid_render (u : eenheid) =
   (match u.afkorting with Some a -> "'" ^ a ^ "'" | None -> "an unnamed unit")
   ^ (match u.stelsel with Some s -> " of system '" ^ s ^ "'" | None -> "")
   ^ (match (u.factor_naar_canoniek, u.canoniek) with
-    | Some f, Some c -> Printf.sprintf " (factor %g to '%s')" f c
-    | Some f, None -> Printf.sprintf " (factor %g)" f
+    | Some f, Some c -> Printf.sprintf " (factor %s to '%s')" (rationaal_render f) c
+    | Some f, None -> Printf.sprintf " (factor %s)" (rationaal_render f)
     | None, Some c -> Printf.sprintf " (canonical '%s')" c
     | None, None -> "")
   ^ match u.noemer with Some n -> " per " ^ eenheid_render n | None -> ""
@@ -2807,7 +2683,7 @@ let wf031 ctx =
               [ v "WF-031" at
                   "day-kind definition with a blank name; it defines no declared day kind and is \
                    silently dead" ]
-          | Some n when not (mem_ci (some_names ctx.doc.dagsoorten) n) ->
+          | Some n when not (mem_ci (dagsoort_namen ctx) n) ->
               [ v "WF-031" at ("definition for undeclared day kind '" ^ n ^ "'") ]
           | _ -> [])
       (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_dagsoorten)
@@ -5699,7 +5575,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
            [ v "WF-036" at ("day-kind predicate operand is " ^ datatype_kind d ^ ", must be a date") ]
        | _ -> [])
       @ (match soort, dagsoort with
-         | Dagsoort, Some dk when not (mem_ci (some_names ctx.doc.dagsoorten) dk) ->
+         | Dagsoort, Some dk when not (mem_ci (dagsoort_namen ctx) dk) ->
              [ v "WF-034" at ("reference to undeclared day kind '" ^ dk ^ "'") ]
          | _ -> [])
       @ whole_period_check periode [ operand ]
@@ -7939,7 +7815,11 @@ let wf057 ctx =
         ctx.doc.dimensies;
       List.concat_map (fun (tl : tijdlijn) -> check "/tijdlijnen" "timeline name" tl.tl_naam)
         ctx.doc.tijdlijnen;
-      List.concat_map (fun d -> check "/dagsoorten" "day kind name" d) ctx.doc.dagsoorten;
+      List.concat
+        (List.mapi
+           (fun i (d : dagsoort) ->
+             check (Printf.sprintf "/dagsoorten/%d/name" i) "day kind name" (Some d.dk_naam))
+           ctx.doc.dagsoorten);
       List.concat_map
         (fun (_, entries) ->
           List.concat_map (fun (n, _, at) -> check at "form name" n) entries)
@@ -8868,11 +8748,11 @@ let all (doc : document) : violation list =
   @@ List.concat
     [ wf001 ctx; wf002 ctx; wf103 ctx; wf104 ctx; wf105 ctx;
       wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
-      wf007_model ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
+      wf007_model ctx; wf007_presentatie ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx;
+      wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf107 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
-      wf034_dagsoort_eenheden ctx;
       wf034_verdelingen ctx; wf034_verdeling_namen ctx; wf034_verdeling_typen ctx;
       wf034_verdeling_naamresolutie ctx; wf034_objectcreatie_subject ctx;
       wf045_046 ctx;

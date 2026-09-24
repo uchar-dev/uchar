@@ -1,4 +1,4 @@
-(* Strict loader for the uchar-ir-v1 wire format in its L2 shape.
+(* Strict loader for the uchar-ir-v1 wire format in its L3 shape.
 
    Strict means: every object must carry exactly the keys the format
    declares (the schema is additionalProperties:false with every property
@@ -14,10 +14,11 @@
    quadratic only on pathologically deep (100k+ nesting) documents.
 
    One M1 rule is enforced here and in the schema alike: a declaration in
-   one of the four model lists whose node otherwise keeps its v0 shape
-   (factTypes, parameters, unitSystems, dimensions) carries a string
-   `naam`. There is no map key beside it any more, so that field is the
-   declaration's only name.
+   one of the two model lists whose node otherwise keeps its v0 shape
+   (factTypes, dimensions) carries a string `naam`. There is no map key
+   beside it any more, so that field is the declaration's only name. The
+   other two lists of that rule (parameters, unitSystems) hold nodes L3
+   rewrote, whose `name` is a required string.
 
    The L2 rules enforced here and in the schema alike: every field that
    left the wire with the reference layer is an unknown field, refused by
@@ -27,7 +28,21 @@
    the quantifier fold's range, and the range of a single-argument fold
    with an elementObjecttype under any kind but TOTAAL (B12, U2). A reader
    of this library therefore never meets a bindingless form that it would
-   have to derive a binding for. *)
+   have to derive a binding for.
+
+   The L3 rules enforced here and in the schema alike (the type system):
+   the datatype nodes are `Number` and `Date`, a unit is a `Unit` and a
+   unit system a `UnitSystem` with a list of units, a day kind a `DayKind`
+   and a parameter's time-dependence a timeline facet; every node and
+   field that left the wire with them is unknown and refused by name. Four
+   values the schema types are refused here in one sentence each, which
+   the other readers of the wire share: a conversion factor that is not an
+   exact rational {num, den} of two integers of at least 1, a presentation
+   other than "percentage", the presentation on a number whose unit is not
+   '%', and a sign other than ONBEPAALD on a number whose unit is '%'. The
+   last two follow from the in-memory form ([Ast]): a number whose unit is
+   '%' is read as a [Percentage], which carries no sign, and any other
+   number as a [Numeriek], which carries no presentation. *)
 
 open Ast
 
@@ -107,22 +122,12 @@ let bool_ path = function
   | `Bool b -> b
   | j -> fail path ("expected boolean, got " ^ Yojson.Safe.to_string j)
 
-let float_opt path = function
-  | `Float f -> Some f
-  | `Int i -> Some (float_of_int i)
-  | `Null -> None
-  | j -> fail path ("expected number or null, got " ^ Yojson.Safe.to_string j)
-
 let opt path (f : string -> json -> 'a) : json -> 'a option = function
   | `Null -> None
   | j -> Some (f path j)
 
 let str_opt_list path j =
   List.mapi (fun i x -> str_opt (path / string_of_int i) x) (list_ path j)
-
-(* JSON map -> ordered assoc list; [f] decodes each value. *)
-let map_ path (f : string -> json -> 'a) j : (string * 'a) list =
-  List.map (fun (k, v) -> (k, f (path / k) v)) (obj path j)
 
 (* --- enums ------------------------------------------------------------- *)
 
@@ -153,10 +158,15 @@ let rol_binding path j : rol_binding =
     rb_rol = str (path / "rol") (field path kvs "rol");
   }
 
-let teken_opt =
-  enum_opt "Teken"
+let teken =
+  enum "sign"
     [ ("ONBEPAALD", Onbepaald); ("NEGATIEF", Negatief);
       ("NIET_NEGATIEF", Niet_negatief); ("POSITIEF", Positief) ]
+
+let precision =
+  enum "precision" [ ("day", Datum_in_dagen); ("millisecond", Datum_tijd) ]
+
+let presentation = enum "presentation" [ ("percentage", ()) ]
 
 let kenmerk_soort =
   enum "KenmerkSoort"
@@ -222,47 +232,91 @@ let methode_opt =
 let severity_opt =
   enum_opt "Severity" [ ("ERROR", Sev_error); ("WARNING", Sev_warning); ("INFO", Sev_info) ]
 
-(* --- eenheid and datatype ---------------------------------------------- *)
+(* --- unit and datatype ------------------------------------------------- *)
 
-let rec eenheid path j : eenheid =
-  let kvs = obj path j in
-  expect_node path kvs "Eenheid";
+(* A unit's conversion factor: the exact rational {num, den}, both integers
+   of at least 1 (IR-SPEC ch. 2.5). Whether it is in lowest terms is WF-092
+   (c), a verifier check, so {2, 4} loads. Every other form — a JSON number,
+   a string, a missing or unknown key, a value below 1 or beyond the native
+   integer range — is refused in one sentence. *)
+let rationaal path j : rationaal =
+  let refuse () =
+    fail path
+      ("a conversion factor is an exact rational {num, den} whose two integers are at least \
+        1, got " ^ Yojson.Safe.to_string j)
+  in
+  match j with
+  | `Assoc kvs ->
+      if List.sort compare (List.map fst kvs) <> [ "den"; "num" ] then refuse ();
+      let part k = match List.assoc k kvs with `Int i when i >= 1 -> i | _ -> refuse () in
+      { num = part "num"; den = part "den" }
+  | _ -> refuse ()
+
+(* The fields of a unit at every position it occupies (IR-SPEC ch. 2.5).
+   [extra] is the one further field a declaration in a unit system admits,
+   its spellings: an occurrence admits none, so a spelling written there is
+   an unknown field, refused by name rather than read and dropped. *)
+let rec unit_fields ~extra path kvs : eenheid =
+  expect_node path kvs "Unit";
   check_keys path kvs
-    [ "node"; "afkorting"; "stelsel"; "canoniek"; "factorNaarCanoniek"; "noemer" ];
+    ~ext:([ "system"; "canonical"; "factorToCanonical"; "denominator" ] @ extra)
+    [ "node"; "abbreviation" ];
   {
-    afkorting = str_opt (path / "afkorting") (field path kvs "afkorting");
-    stelsel = str_opt (path / "stelsel") (field path kvs "stelsel");
-    canoniek = str_opt (path / "canoniek") (field path kvs "canoniek");
-    factor_naar_canoniek =
-      float_opt (path / "factorNaarCanoniek") (field path kvs "factorNaarCanoniek");
-    noemer = opt (path / "noemer") eenheid (field path kvs "noemer");
+    afkorting = Some (str (path / "abbreviation") (field path kvs "abbreviation"));
+    stelsel = ext_field path kvs "system" str;
+    canoniek = ext_field path kvs "canonical" str;
+    factor_naar_canoniek = ext_field path kvs "factorToCanonical" rationaal;
+    noemer = ext_field path kvs "denominator" eenheid;
+  }
+
+and eenheid path j : eenheid = unit_fields ~extra:[] path (obj path j)
+
+(* A unit as its unit system declares it, with its further spellings. The
+   list is written whole or not at all: absent is no spelling, and an empty
+   list is refused like an explicit null. *)
+let gedeclareerde_eenheid path j : gedeclareerde_eenheid =
+  let kvs = obj path j in
+  let u = unit_fields ~extra:[ "spellings" ] path kvs in
+  let spellings p j =
+    match list_ p j with
+    | [] -> fail p "a unit's spellings are at least one spelling, or the field is absent"
+    | xs -> List.mapi (fun i x -> str (p / string_of_int i) x) xs
+  in
+  {
+    ge_eenheid = u;
+    ge_spellingen = Option.value ~default:[] (ext_field path kvs "spellings" spellings);
   }
 
 let rec datatype path j : datatype =
   let kvs = obj path j in
   let f name = field path kvs name in
   match node_kind path kvs with
-  | "Numeriek" ->
-      check_keys path kvs [ "node"; "geheel"; "decimalen"; "teken"; "eenheid" ];
-      Numeriek
-        {
-          geheel = bool_ (path / "geheel") (f "geheel");
-          decimalen = int_ (path / "decimalen") (f "decimalen");
-          teken = teken_opt (path / "teken") (f "teken");
-          eenheid = opt (path / "eenheid") eenheid (f "eenheid");
-        }
-  | "Percentage" ->
-      check_keys path kvs [ "node"; "geheel"; "decimalen"; "eenheid" ];
-      Percentage
-        {
-          geheel = bool_ (path / "geheel") (f "geheel");
-          decimalen = int_ (path / "decimalen") (f "decimalen");
-          eenheid = opt (path / "eenheid") eenheid (f "eenheid");
-        }
+  | "Number" ->
+      (* the in-memory form keeps the two v0 constructors (Ast header): a
+         unit '%' makes the number a Percentage, whatever else it carries *)
+      check_keys path kvs ~ext:[ "unit"; "presentation" ] [ "node"; "whole"; "decimals"; "sign" ];
+      let geheel = bool_ (path / "whole") (f "whole")
+      and decimalen = int_ (path / "decimals") (f "decimals")
+      and sign = teken (path / "sign") (f "sign")
+      and unit_ = ext_field path kvs "unit" eenheid
+      and tag = ext_field path kvs "presentation" presentation in
+      (match unit_ with
+       | Some ({ afkorting = Some "%"; _ } as u) ->
+           if sign <> Onbepaald then
+             fail (path / "sign")
+               "a percentage carries no sign restriction: a number whose unit is '%' has the \
+                sign ONBEPAALD";
+           Percentage { geheel; decimalen; eenheid = Some u }
+       | _ ->
+           if tag <> None then
+             fail (path / "presentation")
+               "the presentation \"percentage\" on a number whose unit is not '%'";
+           Numeriek { geheel; decimalen; teken = Some sign; eenheid = unit_ })
   | "Tekst" -> check_keys path kvs [ "node" ]; Tekst
   | "Booleaan" -> check_keys path kvs [ "node" ]; Booleaan
-  | "DatumInDagen" -> check_keys path kvs [ "node" ]; Datum_in_dagen
-  | "DatumTijd" -> check_keys path kvs [ "node" ]; Datum_tijd
+  | "Date" ->
+      check_keys path kvs [ "node"; "precision" ];
+      precision (path / "precision") (f "precision")
   | "Enumeratie" ->
       check_keys path kvs [ "node"; "domein"; "waarden" ];
       Enumeratie
@@ -853,6 +907,8 @@ and conditie path j : conditie =
    name for a characteristic, and M1 keeps that position closed (IR-SPEC
    ch. 2.2), so a [timelineName] there is an unknown field, refused with
    its path rather than read and dropped. *)
+(* A parameter's facet is read by the same function with [~named:false]:
+   no parameter records a timeline name either (IR-SPEC ch. 2.10). *)
 let timeline_facet ~named path j =
   let kvs = obj path j in
   expect_node path kvs "TimelineFacet";
@@ -937,7 +993,7 @@ let domain path j : string * datatype option =
    name, a non-null string since M1 (loader header). The node decoders keep
    reading `naam` into the AST's `string option` field, the type every
    reader of this library uses; a null is refused here, so no reader gets
-   [None] from these four lists. *)
+   [None] from these two lists. *)
 let named path (decode : string -> json -> 'a) (naam : 'a -> string option) j : string * 'a =
   let x = decode path j in
   match naam x with
@@ -946,28 +1002,41 @@ let named path (decode : string -> json -> 'a) (naam : 'a -> string option) j : 
       fail (path / "naam")
         "a declaration in a model list carries its name on its node, and null is no name"
 
-let parameter path j : parameter =
+(* The datatype is required and non-null, so [par_datatype] is always
+   [Some]; the facet, when present, fills both timeline fields. *)
+let parameter path j : string * parameter =
   let kvs = obj path j in
   expect_node path kvs "Parameter";
-  check_keys path kvs [ "node"; "naam"; "datatype"; "granulariteit" ];
-  {
-    par_naam = str_opt (path / "naam") (field path kvs "naam");
-    par_datatype = opt (path / "datatype") datatype (field path kvs "datatype");
-    par_granulariteit =
-      granulariteit_opt (path / "granulariteit") (field path kvs "granulariteit");
-  }
+  check_keys path kvs ~ext:[ "timeline" ] [ "node"; "name"; "datatype" ];
+  let name = str (path / "name") (field path kvs "name") in
+  let facet = ext_field path kvs "timeline" (timeline_facet ~named:false) in
+  ( name,
+    {
+      par_naam = Some name;
+      par_datatype = Some (datatype (path / "datatype") (field path kvs "datatype"));
+      par_granulariteit = Option.map (fun (g, _, _) -> g) facet;
+      par_tijdlijn_aantal = Option.map (fun (_, c, _) -> c) facet;
+    } )
 
-let eenheidstelsel path j : eenheidstelsel =
+let eenheidstelsel path j : string * eenheidstelsel =
   let kvs = obj path j in
-  expect_node path kvs "Eenheidstelsel";
-  check_keys path kvs [ "node"; "naam"; "eenheden"; "aliassen" ];
-  {
-    es_naam = str_opt (path / "naam") (field path kvs "naam");
-    eenheden =
-      map_ (path / "eenheden") (fun p j -> opt p eenheid j) (field path kvs "eenheden");
-    aliassen =
-      map_ (path / "aliassen") (fun p j -> opt p eenheid j) (field path kvs "aliassen");
-  }
+  expect_node path kvs "UnitSystem";
+  check_keys path kvs [ "node"; "name"; "units" ];
+  let name = str (path / "name") (field path kvs "name") in
+  ( name,
+    {
+      es_naam = Some name;
+      eenheden =
+        List.mapi
+          (fun i u -> gedeclareerde_eenheid (path / "units" / string_of_int i) u)
+          (list_ (path / "units") (field path kvs "units"));
+    } )
+
+let dagsoort path j : dagsoort =
+  let kvs = obj path j in
+  expect_node path kvs "DayKind";
+  check_keys path kvs ~ext:[ "plural" ] [ "node"; "name" ];
+  { dk_naam = str (path / "name") (field path kvs "name"); dk_meervoud = ext_field path kvs "plural" str }
 
 let rol path j : rol =
   let kvs = obj path j in
@@ -1318,6 +1387,31 @@ let function_def path j : function_def =
     fd_bron = str_opt (path / "bron") (f "bron");
   }
 
+(* The JSON pointer of every presentation tag written inside a type
+   annotation: the subtree under a `type` key, the key every expression node
+   writes its annotation under (the only other `type` in the format is a
+   string). The datatype reader validates the tag and drops it, because the
+   in-memory datatype does not carry it (Ast header); WF-007 refuses it at
+   these positions, so they are collected from the document as written. *)
+let presentatie_annotaties (j : json) : string list =
+  let rec walk ~annot path acc = function
+    | `Assoc kvs ->
+        let acc =
+          if annot && List.assoc_opt "node" kvs = Some (`String "Number")
+             && List.mem_assoc "presentation" kvs
+          then (path / "presentation") :: acc
+          else acc
+        in
+        List.fold_left (fun acc (k, x) -> walk ~annot:(annot || k = "type") (path / k) acc x) acc kvs
+    | `List xs ->
+        snd
+          (List.fold_left
+             (fun (i, acc) x -> (i + 1, walk ~annot (path / string_of_int i) acc x))
+             (0, acc) xs)
+    | _ -> acc
+  in
+  List.rev (walk ~annot:false "" [] j)
+
 (* The M1 root: {format, model, rules, diagnostics}. [model] is the
    declaration set as lists, [rules] the v0 rule lists under their v0 keys;
    each carries one optional extension list. *)
@@ -1332,7 +1426,7 @@ let document (j : json) : document =
   let model = obj mpath (field path kvs "model") in
   check_keys mpath model ~ext:[ "functionDefs" ]
     [ "objectTypes"; "factTypes"; "parameters"; "domains"; "unitSystems"; "dimensions";
-      "timelines"; "dayKinds"; "dagsoortPerEenheid" ];
+      "timelines"; "dayKinds" ];
   let rpath = path / "rules" in
   let rules = obj rpath (field path kvs "rules") in
   check_keys rpath rules ~ext:[ "prioritizedDefaults" ]
@@ -1351,15 +1445,12 @@ let document (j : json) : document =
   {
     objecttypen = m "objectTypes" objecttype;
     domeinen = m "domains" domain;
-    parameters = m "parameters" (fun p -> named p parameter (fun (x : parameter) -> x.par_naam));
-    eenheidstelsels =
-      m "unitSystems" (fun p -> named p eenheidstelsel (fun (x : eenheidstelsel) -> x.es_naam));
+    parameters = m "parameters" parameter;
+    eenheidstelsels = m "unitSystems" eenheidstelsel;
     feittypen = m "factTypes" (fun p -> named p feittype (fun (x : feittype) -> x.ft_naam));
     dimensies = m "dimensions" (fun p -> named p dimensie (fun (x : dimensie) -> x.dim_naam));
     tijdlijnen = m "timelines" tijdlijn;
-    dagsoorten = str_opt_list (mpath / "dayKinds") (field mpath model "dayKinds");
-    dagsoort_per_eenheid =
-      map_ (mpath / "dagsoortPerEenheid") str_opt (field mpath model "dagsoortPerEenheid");
+    dagsoorten = m "dayKinds" dagsoort;
     resolved_regels = r "resolvedRegels" resolved_regel;
     resolved_dagsoorten = r "resolvedDagsoorten" resolved_dagsoort;
     object_creaties = r "objectCreaties" resolved_object_creatie;
@@ -1373,6 +1464,7 @@ let document (j : json) : document =
     diagnostics = arr path kvs "diagnostics" diagnostic;
     prioritized_defaults = ext rpath rules "prioritizedDefaults" prioritized_defaults;
     function_defs = ext mpath model "functionDefs" function_def;
+    presentatie_annotaties = presentatie_annotaties j;
   }
 
 let load_file (filename : string) : document =

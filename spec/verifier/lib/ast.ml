@@ -1,12 +1,27 @@
-(* Typed AST of the uchar-ir-v1 wire format in its L2 shape
+(* Typed AST of the uchar-ir-v1 wire format in its L3 shape
    (spec/schema/uchar-ir-v1.schema.json).
 
    Modelling rules:
    - every record field of a node carried over from v0 is always present on
      the wire; "optional" means the value may be null, mapped to [option] —
      never a missing key. The exceptions are the fields the wire writes
-     whole or not at all (the role bindings, `Onopgelost.type`): absent is
+     whole or not at all (the role bindings, `Onopgelost.type`, and the
+     optional fields of the six nodes L3 rewrote — a number's unit and
+     presentation, a unit's system, canonical unit, factor, denominator and
+     spellings, a parameter's timeline, a day kind's plural): absent is
      [None] there, and an explicit null is a load error;
+   - since L3 the datatype keeps its in-memory constructors while the wire
+     writes two nodes for them: the loader reads a `Number` whose unit is
+     '%' as [Percentage] and any other `Number` as [Numeriek], and a `Date`
+     by its precision as [Datum_in_dagen] or [Datum_tijd], so every reader
+     keeps the typing families it was written against (L3 changes no
+     meaning). What the in-memory form gained is what the wire now states
+     and v0 could not: a unit's factor as an exact rational, a declared
+     unit's spellings, a day kind's plural and a parameter's period count.
+     The presentation tag of a percentage stays out of the datatype, which
+     readers compare structurally between a declaration and its copies: the
+     document lists instead where a tag was written inside a type annotation
+     ([presentatie_annotaties]), the one position WF-007 refuses it;
    - since L2 a reference carries its symbolic form and nothing else: the
      five reference classes (AttribuutRef, ParameterRef, DimensieCel,
      BinderRef, VariabeleRef) carry no type of their own — the declaration
@@ -15,10 +30,11 @@
      written name to derive it from. The loader refuses every field that
      left the wire by name, and reads a required binding as required, so no
      reader here can fall back to a derivation;
-   - JSON maps and the model lists become ordered association lists
-     (declaration order is normative, WF-019). A model list carries no map
-     key, so the key here is the declaration's own name as its node writes
-     it; the loader refuses an entry without one;
+   - the model lists become ordered association lists (declaration order
+     is normative, WF-019). A model list carries no map key, so the key here
+     is the declaration's own name as its node writes it; the loader refuses
+     an entry without one. Since L3 the wire carries no JSON map at all: a
+     unit system's units and a day kind's spellings are lists and fields;
    - an object type keeps its members in the in-memory shape every OCaml
      reader of this library (this verifier, ref, the ASP backend and the two
      OCaml frontends) was written against: a name-keyed table per facet. The loader builds
@@ -65,11 +81,17 @@ type kwantor = De | Alle | Geen | Ten_minste | Ten_hoogste | Precies
 type regel_soort = Gelijkstelling | Berekening | Initialisatie | Kenmerktoekenning
 type methode = Gelijke_delen | Naar_rato | Op_volgorde | Complex
 
+(* An exact rational, in the form the wire writes it: a unit's conversion
+   factor is [{num; den}] with both at least 1 (the loader refuses any other
+   value), and whether it is in lowest terms is WF-092's question, not the
+   loader's. *)
+type rationaal = { num : int; den : int }
+
 type eenheid = {
   afkorting : string option;
   stelsel : string option;
   canoniek : string option;
-  factor_naar_canoniek : float option;
+  factor_naar_canoniek : rationaal option;
   noemer : eenheid option;
 }
 
@@ -392,17 +414,29 @@ type objecttype = {
   meervoud : string option;
 }
 
+(* Built by the loader from a Parameter node: its timeline facet is split
+   into the two fields an attribute's facet tables hold, both [Some] iff the
+   facet is present. [par_datatype] is always [Some]: the wire requires it. *)
 type parameter = {
   par_naam : string option;
   par_datatype : datatype option;
   par_granulariteit : granulariteit option;
+  par_tijdlijn_aantal : int option;
 }
+
+(* A unit as its unit system declares it: the unit itself and the further
+   spellings that resolve to it. Only the declaration carries spellings; an
+   occurrence of the unit elsewhere is a bare [eenheid]. *)
+type gedeclareerde_eenheid = { ge_eenheid : eenheid; ge_spellingen : string list }
 
 type eenheidstelsel = {
   es_naam : string option;
-  eenheden : (string * eenheid option) list;
-  aliassen : (string * eenheid option) list;
+  eenheden : gedeclareerde_eenheid list; (* declaration order *)
 }
+
+(* A day kind: its name and its plural, the two spellings it has on the wire
+   (IR-SPEC ch. 2.9). Both name it as a duration unit. *)
+type dagsoort = { dk_naam : string; dk_meervoud : string option }
 
 type rol = {
   rol_naam : string option;
@@ -634,8 +668,7 @@ type document = {
   feittypen : (string * feittype) list;
   dimensies : (string * dimensie) list;
   tijdlijnen : tijdlijn list;
-  dagsoorten : string option list;
-  dagsoort_per_eenheid : (string * string option) list;
+  dagsoorten : dagsoort list;
   resolved_regels : resolved_regel list;
   resolved_dagsoorten : resolved_dagsoort list;
   object_creaties : resolved_object_creatie list;
@@ -649,4 +682,7 @@ type document = {
   diagnostics : diagnostic list;
   prioritized_defaults : prioritized_defaults list; (* extension: absent = [] *)
   function_defs : function_def list; (* extension: absent = [] *)
+  presentatie_annotaties : string list;
+      (* the JSON pointer of every presentation tag written inside a type
+         annotation, in document order; [] on a well-formed document *)
 }
