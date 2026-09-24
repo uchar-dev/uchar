@@ -55,7 +55,7 @@ fi
 EXPECTED_MIN_SUITE_CHECKS=83   # 2026-09-10: measured 83 (backends/clingo/test/test_clingo.ml)
 
 # The backend's own unit suite carries the fault-mode proof obligations of the
-# normalisation pass (no-finest stelsel, inexact factor) that no corpus witness
+# normalisation pass (no finest unit faults; 1/24 stays exact) that no corpus witness
 # can exercise — an un-run suite is a silent green, so the gate runs it and
 # demands a non-zero, floored check count (the gate-9 zero-checks discipline).
 SUITE_BIN=_build/default/backends/clingo/test/test_clingo.exe
