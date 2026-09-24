@@ -193,8 +193,9 @@ family: numbers, or dates of ONE precision. An equality-only operand
 (`Enumeratie`, `SumType`, `StructType`, `Tekst`, `Booleaan`,
 `ListType`: the ch. 2.4 orderability paragraph of `IR-SPEC.md`) is
 ill-formed, and so is a fold that mixes families — a number against a
-date, and (since 2026-09-05) a `DatumInDagen` against a `DatumTijd`,
-which are two representations with no order between them. That last
+date, and (since 2026-09-05) a day-precision `Date` against a
+millisecond-precision one, which are two representations with no order
+between them. That last
 half is where v1 and v0 agree rather than diverge: v0's static typing
 demands one precision too ("alle datumexpressies moeten dezelfde
 tijd-precisie hebben", the same `Typering.datumAggregatie`), so the
@@ -508,14 +509,13 @@ operators and its literals (`LRat`) carry the exact lexeme; the casts
 `ToRat_int`/`ToRat_mon` are a **pass-through** — the value is already
 exact-rational, so the plugin emits the operand unchanged, with no cast
 node of its own, and the result type is borne by the surrounding
-mixed-decimals arithmetic — and no `Percentage` node is involved (Catala
+mixed-decimals arithmetic — and no percentage (a `Number` whose unit is `%`) is involved (Catala
 pre-divides — `20%` arrives as the rational `1/5`). But because the ASP
 side scales every value by its declared `decimalen`, an *unbounded*
 decimal form would be integer-only there. The pin: a Catala-decimal
-declaration carries a **finite scale `decimalen = S`, with S = 4**
+declaration carries a **finite scale `decimals = S`, with S = 4**
 (chosen against the tutorial, fixed here) — the frontend maps `TRat` to
-`Numeriek{geheel = false, decimalen = 4, teken onbepaald, eenheid
-null}`.
+`Number{whole = false, decimals = 4, sign ONBEPAALD}` without a unit.
 
 `ref` stays exact-rational throughout; both executors then **fault
 loudly and consistently on a value that does not terminate at 4
@@ -1825,8 +1825,8 @@ span truncates toward zero, never toward −∞. Worked examples
 declared unit of its static type — for date ± duration the duration
 operand's type, for tijdsduur the node's own result type — recognised
 by SPELLING, case-insensitive, keyed on the unit's written
-abbreviation. Declared conversion factors and the declaring stelsel are
-irrelevant to calendar arithmetic (the stelsel may be null): a year is
+abbreviation. Declared conversion factors and the declaring system are
+irrelevant to calendar arithmetic (a unit may name no system): a year is
 a calendar year, never a second count. Nine units:
 
 | Unit | Recognised spellings |
@@ -1857,16 +1857,17 @@ sorts the thirty into "singulars, plurals and abbreviations" will lose
 exactly those two. The ten abbreviations (`jr`, `mnd`, `kw`, `wk`,
 `dg`, `u`, `min`, `sec`, `s`, `ms`) plus those two are the twelve that
 are neither the singular nor the `-en` plural, and **WF-017 refuses all
-thirty equally** as a day-kind spelling — as a declared name and as a
-key of `dagsoortPerEenheid` alike (`IR-SPEC.md` ch. 2.9;
+thirty equally** as a day-kind spelling — as a day kind's `name` and as
+its `plural` alike (`IR-SPEC.md` ch. 2.9;
 maintainer decision 2026-09-19). The twelve stay ordinary calendar
 units wherever a unit is written; golden `jutterswet-vervaltermijn`
 carries `wk`, `mnd` and `kw` that way.
 
 **The lookup ORDER is normative, and it is this table first.** "Outside
 the table" is a test on the table, so a consumer resolving a duration's
-unit spelling consults THIS table first and the day-kind registry
-(`dagsoortPerEenheid`) only where the table has nothing. Every executor
+unit spelling consults THIS table first and the declared day kinds'
+spellings (their `name` and `plural`, `IR-SPEC.md` ch. 2.9) only where the
+table has nothing. Every executor
 reads it in that order — the verifier's WF-035/WF-038 clauses, the
 reference interpreter, the ASP backend and both Drools branches. The
 two Drools branches asked the registry first until 2026-09-20, at all
@@ -1931,11 +1932,12 @@ closed formula, because there is no arithmetic that knows which days are
 salvage days.
 
 **Resolution — spelling to predicate.** The duration's unit spelling is
-looked up in `dagsoortPerEenheid`, **trimmed and case-insensitive**; the
-value names a declared day kind, and that name selects its single
-`ResolvedDagsoort` (case-insensitive again; WF-031 keeps the definition
-unique, so there is nothing to disambiguate). A spelling the calendar
-table does not know and the registry does not carry is ill-formed
+looked up among the declared day kinds' spellings — each day kind's `name`
+and `plural` — **trimmed and case-insensitive**; one day kind carries it
+(WF-001 and WF-017 keep the spellings of two day kinds apart), and its name selects
+its single `ResolvedDagsoort` (case-insensitive again; WF-031 keeps the
+definition unique, so there is nothing to disambiguate). A spelling the
+calendar table does not know and no day kind carries is ill-formed
 (WF-035/WF-038). The definition's `geldigheid` is **not consulted**: it
 MUST be ALTIJD (WF-031), so there is no window to read.
 
