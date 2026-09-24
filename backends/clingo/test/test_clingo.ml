@@ -10844,6 +10844,15 @@ let () =
         "missing field 'doelRol'" );
       ( "ResolvedFeitCreatie zonder joinRol", lees,
         ({|, "joinRol": |} ^ rb "vangst" "vanger", ""), "missing field 'joinRol'" );
+      ( "ResolvedFeitCreatie.feittype null", lees,
+        ({|"feittype": "vangst", "ankerRol": "vanger",|}, {|"feittype": null, "ankerRol": "vanger",|}),
+        "expected string, got null" );
+      ( "ResolvedFeitCreatie.ankerRol null", lees, ({|"ankerRol": "vanger", |}, {|"ankerRol": null, |}),
+        "expected string, got null" );
+      ( "ResolvedFeitCreatie.doelRol null", lees, ({|"doelRol": "vangst", |}, {|"doelRol": null, |}),
+        "expected string, got null" );
+      ( "ResolvedFeitCreatie.joinRol null", lees,
+        ({|, "joinRol": |} ^ rb "vangst" "vanger", {|, "joinRol": null|}), "expected object, got null" );
       ("Tussenstap.type", lees, erbij {|{ "node": "Tussenstap",|} {|"type": "Jutter",|}, "unknown field 'type'");
       ("Tussenstap.veld", lees, erbij {|{ "node": "Tussenstap",|} {|"veld": "vangst",|}, "unknown field 'veld'");
       ( "Tussenstap.viaOuderVeld", lees, erbij {|{ "node": "Tussenstap",|} {|"viaOuderVeld": false,|},
@@ -10859,6 +10868,11 @@ let () =
         ({|"toekenningen": [], "voorwaarde": null, "geldigheid": null, "verbindendeRol": |}
          ^ rb "vangst" "vanger",
          {|"toekenningen": [], "voorwaarde": null, "geldigheid": null, "verbindendeRol": null|}),
+        "expected object, got null" );
+      ( "ResolvedVerdeling.verbindendeRol null", lees,
+        ({|"afnemend": false, "voorwaarde": null, "geldigheid": null, "verbindendeRol": |}
+         ^ rb "vangst" "vanger",
+         {|"afnemend": false, "voorwaarde": null, "geldigheid": null, "verbindendeRol": null|}),
         "expected object, got null" );
       ( "ResolvedVerdeling zonder verbindendeRol", lees,
         ({|"afnemend": false, "voorwaarde": null, "geldigheid": null, "verbindendeRol": |}
