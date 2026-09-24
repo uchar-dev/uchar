@@ -1605,7 +1605,7 @@ let role_canonical (r : rol) =
    node's sourceRole; a sourcePath walks two or more steps through fresh
    intermediate variables. The range is written, never derived (B12). A
    quantifier fold (bronRol, bronPad) comes here too, its range's shape
-   already checked in its own sentences ([Eval.quantifier_range_shape]), so
+   already checked in its own sentences ([Eval.quantifier_fold_shape]), so
    the refusals below are an aggregation's.
 
    The DEDUP the flat union demands is free here and deliberately so:
@@ -6959,31 +6959,11 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          atom holds or does not. No aggregate elects a term here, so unlike the
          value folds there is nothing to keep multiplicities out of. *)
       let el = req "Kwantorvouw.elementObjecttype" kv_element_objecttype in
-      let toets =
-        match kv_toets with
-        | Some c -> c
-        | None ->
-            fault
-              "a quantifier fold without a matrix (toets) is ill-formed (WF-108): the verifier \
-               cites the rule, and this backend does not guess a verdict for it"
-      in
-      (* the range's shape in the quantifier fold's own sentences, before
+      (* the fold's shape in WF-108's sentences, ref's function: before
          [source_join], whose sentences name the aggregation's fields *)
-      Eval.quantifier_range_shape ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad;
-      (match kv_kwantor with
-      | Alle | Geen | Ten_minste | Ten_hoogste | Precies -> ()
-      | De ->
-          fault
-            "the quantifier fold carries kwantor DE, which WF-108 (a) refuses upstream: the bare \
-             definite describes ONE member, not a quantification over a set");
-      let drempel =
-        match (kv_kwantor, kv_drempel) with
-        | (Ten_minste | Ten_hoogste | Precies), Some d -> d
-        | (Ten_minste | Ten_hoogste | Precies), None ->
-            fault
-              "a counting quantifier fold without a drempel is ill-formed (WF-108 (e)): the \
-               verifier cites the rule, and this backend does not guess a threshold for it"
-        | _, _ -> 0
+      let toets, drempel =
+        Eval.quantifier_fold_shape ~kwantor:kv_kwantor ~drempel:kv_drempel ~toets:kv_toets
+          ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad
       in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;

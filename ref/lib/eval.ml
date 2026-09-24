@@ -272,15 +272,26 @@ let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
            window's verdict, while ch. 3.10 norms the window as a gate on the RULE, so the \
            document is not well-formed. Declined at evaluation"
 
-(* WF-108 (c), the quantifier fold's range: one spelling, and a path of at
-   least two steps. On the wire the loader refuses the first and the
-   verifier the second; a node that reaches an executor past them is refused
-   here in their sentences, never read through a range it did not write. The
-   ASP backend calls this function too, so a quantifier fold never meets the
-   aggregation's sentences for sourceRole and sourcePath. *)
-let quantifier_range_shape ~(bron_rol : rol_binding option) ~(bron_pad : rol_binding list option)
-    =
-  match (bron_rol, bron_pad) with
+(* WF-108, the quantifier fold's shape: a matrix; a range in one spelling,
+   a path of at least two steps; a kwantor other than DE; a threshold under
+   a counting kwantor. On the wire the loader refuses the two range
+   spellings and the verifier the rest; a node that reaches an executor past
+   them is refused here in their sentences, never read with a part it lacks.
+   The ASP backend calls this function too, so the two executors refuse in
+   one voice, and a quantifier fold never meets the aggregation's sentences
+   for sourceRole and sourcePath. Returns the matrix and the threshold (0
+   under ALLE and GEEN, which read none). *)
+let quantifier_fold_shape ~(kwantor : kwantor) ~(drempel : int option) ~(toets : conditie option)
+    ~(bron_rol : rol_binding option) ~(bron_pad : rol_binding list option) =
+  let toets =
+    match toets with
+    | Some t -> t
+    | None ->
+        Value.fault
+          "quantifier fold without a toets: the matrix is what every contributor must satisfy, \
+           and a quantifier over no condition has no verdict"
+  in
+  (match (bron_rol, bron_pad) with
   | Some _, Some _ ->
       Value.fault "bronPad beside bronRol: a quantifier fold carries one range, never two"
   | None, None ->
@@ -292,7 +303,24 @@ let quantifier_range_shape ~(bron_rol : rol_binding option) ~(bron_pad : rol_bin
         "a quantifier fold's bronPad carries at least TWO steps, found %d — the one-step range is \
          spelled bronRol"
         (List.length pad)
-  | _ -> ()
+  | _ -> ());
+  (match kwantor with
+  | Alle | Geen | Ten_minste | Ten_hoogste | Precies -> ()
+  | De ->
+      Value.fault
+        "quantifier fold with kwantor DE: the bare definite is a description of ONE member, not a \
+         quantification over the set — a fold over it has no reading");
+  let drempel =
+    match (kwantor, drempel) with
+    | (Ten_minste | Ten_hoogste | Precies), Some d -> d
+    | (Ten_minste | Ten_hoogste | Precies), None ->
+        Value.fault
+          "counting quantifier fold without a drempel: the verdict compares the number of \
+           contributors satisfying the matrix with a threshold, and there is none to compare it \
+           with"
+    | _, _ -> 0
+  in
+  (toets, drempel)
 
 (* WF-100 / IR-SPEC ch. 4.6 (q1), maintainer decision 2026-09-10: on a
    characteristic check the `eigenaar` is AUTHORITATIVE for the declaration.
@@ -2230,29 +2258,9 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       periode_onder_telkwantor kv_kwantor
         (List.filter_map Fun.id [ kv_filter; kv_toets ]);
       let el = req "Kwantorvouw.elementObjecttype" kv_element_objecttype in
-      let toets =
-        match kv_toets with
-        | Some t -> t
-        | None ->
-            Value.fault
-              "quantifier fold without a toets: the matrix is what every contributor must \
-               satisfy (WF-108)"
-      in
-      quantifier_range_shape ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad;
-      (match kv_kwantor with
-      | Alle | Geen | Ten_minste | Ten_hoogste | Precies -> ()
-      | De ->
-          Value.fault
-            "quantifier fold with kwantor DE: the bare definite describes ONE member, not a \
-             quantification over the set (WF-108)");
-      let drempel =
-        match (kv_kwantor, kv_drempel) with
-        | (Ten_minste | Ten_hoogste | Precies), Some d -> d
-        | (Ten_minste | Ten_hoogste | Precies), None ->
-            Value.fault
-              "counting quantifier fold without a drempel: there is no threshold to compare the \
-               count of satisfying contributors with (WF-108)"
-        | _, _ -> 0
+      let toets, drempel =
+        quantifier_fold_shape ~kwantor:kv_kwantor ~drempel:kv_drempel ~toets:kv_toets
+          ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad
       in
       let keep (i : World.instance) =
         match kv_filter with

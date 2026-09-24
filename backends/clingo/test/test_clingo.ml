@@ -4607,18 +4607,43 @@ let () =
          ())
     ~case_text:vals
     ~needle:"whole-period leeg/gevuld test is ch. 3.9 scope";
-  faults_with ~name:"ch3.9a vouw zonder matrix (WF-108)" ~ir:(kv_doc ~toets:"null" ())
-    ~case_text:vals ~needle:"without a matrix (toets) is ill-formed (WF-108)";
-  (* the two REFUSALS this node still carries on its quantifier field. Until
-     2026-09-16 the counting quantors were refused here too — they are built
-     since, and the rows above are their verdicts; the DE arm and the missing
-     threshold are what is left, and both come up by name rather than being
-     read as a forall. *)
-  faults_with ~name:"ch3.9a vouw met kwantor DE" ~ir:(kv_doc ~kwantor:"DE" ()) ~case_text:vals
-    ~needle:"kwantor DE, which WF-108 (a) refuses";
-  faults_with ~name:"ch3.9a tellende vouw zonder drempel"
-    ~ir:(kv_doc ~kwantor:"TEN_MINSTE" ())
-    ~case_text:vals ~needle:"counting quantifier fold without a drempel";
+  (* the matrix that is absent, and the two REFUSALS this node still carries
+     on its quantifier field. Until 2026-09-16 the counting quantors were
+     refused here too — they are built since, and the rows above are their
+     verdicts; the DE arm and the missing threshold are what is left, and
+     both come up by name rather than being read as a forall. Each of the
+     three is the verifier's WF-108 finding on the same wire document: ref
+     and this backend refuse it in the verifier's sentence, exactly *)
+  List.iter
+    (fun (naam, ir, at) ->
+      let bevinding =
+        List.filter
+          (fun (x : Ir_v0.Checks.violation) -> x.wf = "WF-108")
+          (Ir_v0.Checks.all
+             (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string ir)))
+      in
+      match bevinding with
+      | [ { at = at'; reason = zin; _ } ] when at' = at ->
+          let doc, case = load_pair ~ir ~case_text:vals in
+          (match ref_report doc case with
+          | (_ : string list) -> check (naam ^ ": ref weigert (kreeg een wereld)") false
+          | exception Uchar_ref.Value.Fault m ->
+              check (naam ^ ": ref weigert in de zin van de verifier (" ^ m ^ ")") (m = zin));
+          (match translate doc case with
+          | (_ : string) -> check (naam ^ ": clingo weigert (kreeg een programma)") false
+          | exception Uchar_ref.Value.Fault m ->
+              check (naam ^ ": clingo weigert in de zin van de verifier (" ^ m ^ ")") (m = zin))
+      | vs ->
+          check
+            (Printf.sprintf "%s: de verifier meldt precies één WF-108 op %s (kreeg %d)" naam at
+               (List.length vs))
+            false)
+    [ ( "ch3.9a vouw zonder matrix (WF-108)", kv_doc ~toets:"null" (),
+        "/rules/resolvedRegels/0/versions/0/condition/toets" );
+      ( "ch3.9a vouw met kwantor DE", kv_doc ~kwantor:"DE" (),
+        "/rules/resolvedRegels/0/versions/0/condition/kwantor" );
+      ( "ch3.9a tellende vouw zonder drempel", kv_doc ~kwantor:"TEN_MINSTE" (),
+        "/rules/resolvedRegels/0/versions/0/condition/drempel" ) ];
   (* the range's shape is checked in the quantifier fold's own sentences,
      WF-108's, before the range rides [source_join], whose sentences name
      the aggregation's sourceRole and sourcePath *)

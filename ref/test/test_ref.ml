@@ -5628,10 +5628,12 @@ let () =
   expect_fault_msg "WV-3.9a-tel-kwantorvouw-zonder-drempel-faalt"
     (fun () ->
       Value.Bool (kv_eval ~kwantor:Ten_minste [ ("B1", heel_jaar "50") ]))
-    "counting quantifier fold without a drempel";
+    "counting quantifier fold without a drempel: the verdict compares the number of contributors \
+     satisfying the matrix with a threshold, and there is none to compare it with";
   expect_fault_msg "WV-3.9a-kwantorvouw-met-kwantor-DE-faalt"
     (fun () -> Value.Bool (kv_eval ~kwantor:De [ ("B1", heel_jaar "50") ]))
-    "quantifier fold with kwantor DE";
+    "quantifier fold with kwantor DE: the bare definite is a description of ONE member, not a \
+     quantification over the set — a fold over it has no reading";
 
   (* a matrix that is absent is WF-108's business, and reaching it in
      evaluation is a fault, never a verdict *)
@@ -5646,7 +5648,8 @@ let () =
                 kv_toets = None; kv_bron = None;
                 kv_bron_rol = Some { rb_feittype = "ploegindeling"; rb_rol = "berger" };
                 kv_bron_pad = None })))
-    "quantifier fold without a toets";
+    "quantifier fold without a toets: the matrix is what every contributor must satisfy, and a \
+     quantifier over no condition has no verdict";
   (* WF-108 (c), the range's shape: one spelling and a path of at least two
      steps. The loader and the verifier refuse the wire forms first; a node
      built past them is refused in their sentences *)
