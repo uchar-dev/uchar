@@ -224,7 +224,7 @@ let time_unit_of_spelling s =
 let time_unit_of_eenheid (e : eenheid) =
   match e.afkorting with Some a -> time_unit_of_spelling a | None -> None
 
-(* sub-day units demand millisecond-precision (datum-tijd) operands *)
+(* sub-day units demand millisecond-precision operands *)
 let time_unit_sub_day = function
   | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde -> true
   | Tu_jaar | Tu_kwartaal | Tu_maand | Tu_week | Tu_dag -> false
@@ -748,7 +748,7 @@ let wf002 ctx =
 
 let wf003 ctx =
   (* Model-layer resolution: enumeration domains resolve (an unfindable
-     domain is a declaration naming an undeclared one, D15); role filler
+     domain is a declaration naming an undeclared one); role filler
      types resolve; named-timeline references resolve. (Parameters: WF-018;
      dimension refs: WF-004.) *)
   let dt_check at = function
@@ -3362,7 +3362,7 @@ let connecting_role_candidates ctx ~from_type ~to_type =
     ctx.doc.feittypen
 
 (* The SEVEN aggregation kinds that read a VALUE per contributor — every fold
-   kind except AANTAL, which reads the contributors themselves (ch. 1.2e: a
+   kind except count, which reads the contributors themselves (ch. 1.2e: a
    count is never empty because it never looks inside a member). Until the
    L2 fix round WF-093's message named the kind through this list; since
    then that message is the sentence the executors share, which names no
@@ -3370,7 +3370,7 @@ let connecting_role_candidates ctx ~from_type ~to_type =
    statement of the value-fold kinds, which the RegelSpraak frontend's
    `VouwsoortenGrensTest` holds the frontend's own list against.
 
-   Six until 2026-09-20, when AANTAL_GEVULDE joined them (IR-SPEC ch. 4.3,
+   Six until 2026-09-20, when filledCount joined them (IR-SPEC ch. 4.3,
    RUNTIME-SEMANTICS ch. 3.4c). It is a count in its RESULT and a value fold
    in its READING, and this list is about the reading: it asks each
    contributor for a value and tests that value for presence. Joining here is
@@ -3410,24 +3410,24 @@ let roles_named_from ctx ~from_type ~name =
    aggregation carrying an elementType (IR-SPEC ch. 4.3, the reading of the source). The
    range decides it: with one (sourceRole or sourcePath) the argument is the SET
    source, read per contributor; without one it is the subject's own read,
-   which the loader admits under TOTAAL alone. Under AANTAL the set source
-   counts the instances the range reaches, and its `attribuut` is the
+   which the loader admits under total alone. Under count the set source
+   counts the instances the range reaches, and its `attribute` is the
    written name of the bound role (WF-047 crosses it); under every other
-   aggregation it reads `attribuut` on each contributor, so the name is an
+   aggregation it reads `attribute` on each contributor, so the name is an
    attribute of the elementType.
 
-   The count source is recognised at the source itself (D9): its
-   `attribuut` names no member of the element type. That is the whole of
+   The count source is recognised at the source itself: its `attribute`
+   names no member of the element type. That is the whole of
    the distinction WF-093 draws in both directions — a count source is the
-   source of AANTAL and of nothing else, and AANTAL reads nothing but a
+   source of count and of nothing else, and count reads nothing but a
    count source — so the recognition must not read the node's kind, or the
    rule would be circular. A name that is no member of the element type and
    no role reachable from the subject either is neither reading: under a
-   value fold it is an unresolved member (WF-034), under AANTAL a written
+   value fold it is an unresolved member (WF-034), under count a written
    role name that denotes nothing (WF-047). *)
 type source_reading =
-  | Src_count (* AANTAL over a source naming no member of the element type *)
-  | Src_count_of_member (* AANTAL over a member of the element type: WF-093 *)
+  | Src_count (* count over a source naming no member of the element type *)
+  | Src_count_of_member (* count over a member of the element type: WF-093 *)
   | Src_value (* a value fold's set source, a member of the element type *)
   | Src_role_under_value_fold (* a value fold over a role name: WF-093 *)
   | Src_unresolved (* a value fold over a name that resolves nowhere *)
@@ -3458,12 +3458,12 @@ let source_reading ctx ~element_type ~subject ~kind ~ranged a =
    argument of an aggregation with an elementType and nowhere else;
    every other operand is an ordinary read, walked by [walk_expr]).
 
-   WF-093, both directions (D9, maintainer decision 2026-09-06 for the first
+   WF-093, both directions (maintainer decision 2026-09-06 for the first
    direction): a count source hands the fold the linked INSTANCES, which
-   only AANTAL reads; and AANTAL folds instances, so a source reading a
+   only count reads; and count folds instances, so a source reading a
    member of each contributor hands it values it does not consume.
 
-   WF-083 (c), the anchor, per position (D8): the source's `objecttype`
+   WF-083 (c), the anchor, per position: the source's `subjectType`
    names the type the executors read it at — the elementType for a
    value fold's set source (every declaration is looked up on the element),
    the fold SUBJECT for the count source (its written role name is the
@@ -3474,7 +3474,7 @@ let source_reading ctx ~element_type ~subject ~kind ~ranged a =
    silent, so one defect keeps one rule.
 
    The member resolution (WF-034, WF-080) runs on the source's own
-   `objecttype`, as on every attribute reference; the count source's name is
+   `subjectType`, as on every attribute reference; the count source's name is
    WF-047's (it must denote the bound role), so it is exempt here. *)
 let aggregation_source_check ctx at ~element_type ~subject ~kind ~ranged e =
   match e with
@@ -3788,7 +3788,7 @@ and mentions_binder_cond b (c : conditie) : bool =
 
 (* WF-077 — the condition-operand discipline (IR-SPEC ch. 4.10). Everywhere an
    IfThenElse is admissible, its condition may READ only binders, parameters
-   and literals; arithmetic combinators (Binair/Afgerond/Begrensd) over those
+   and literals; arithmetic combinators (Binary/Rounding/Clamp) over those
    are fine — the reads are what matter. An attribute/field/characteristic read
    must pass through a Let binding first: that is the leeg-barrier — at the
    READ under ch. 10.6's call-by-need — that makes ref's leeg propagation and
@@ -5265,7 +5265,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
   | Binder_ref { naam; _ } -> (
       (* WF-064: a binder reference resolves lexically to an enclosing binder
          (a match arm, or a lambda/function parameter — row 10); a
-         VariabeleRef stays outside this rule (row 24). Inside a closed body
+         VariableReference stays outside this rule (row 24). Inside a closed body
          the visible [binders] are its own — a lambda/function's parameters
          and whatever an inner Let/match/filter binds; the enclosing scope's
          binders were dropped at the closure boundary, so a reference that
@@ -6009,8 +6009,8 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                   [ v "WF-043" at "wholePeriod qualifier on a non-time-dependent characteristic" ]
               | _ -> [])
           | _ -> []))
-      @ (* WF-053: the navigated characteristic check — one hop, its binding
-           (D53); to-one only (the v0 resolver's NAAR_VEEL marker, lifted);
+      @ (* WF-053: the navigated characteristic check — one hop, its binding;
+           to-one only (the v0 resolver's NAAR_VEEL marker, lifted);
            the characteristic lives on the REACHED type. Without a binding
            the check reads the subject itself. *)
       (match (navigatie_binding, subject) with
@@ -6044,7 +6044,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                      | _ -> [])
                  | None -> []))
   | Role_membership { fact_type; role; counterpart_type; _ } -> (
-      (* WF-034, the role check (D11; IR-SPEC ch. 4.6, the v1 role arm): the
+      (* WF-034, the role check (IR-SPEC ch. 4.6, the v1 role arm): the
          node names the relation and the role, so the whole of the reference
          is the pair, crossed against the declarations — the fact type is
          declared, the role is one of its roles by declared name (the plural
@@ -6058,7 +6058,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
          (a day-kind condition) crosses the declarations only; WF-031 refuses
          it for reading role state at all.
 
-         The counterpart class (U12): where the node narrows the other end
+         The counterpart class: where the node narrows the other end
          of the link to [counterpart_type], that type is a declared object
          type ⊑ the declared filler of the other role — the narrowing a
          check such as "hij heeft een strandjutter" writes, where the role's
@@ -6638,8 +6638,7 @@ let rec dep_expr ctx ~subject acc (e : expr) =
         | None -> acc
       in
       (* the count source names the relation's role, not an attribute: it
-         reads the link set drawn above and the population, never a member
-         (D8 (ii), D9) *)
+         reads the link set drawn above and the population, never a member *)
       let count_source =
         match (kind, element_objecttype, argumenten, bron_rol, bron_pad) with
         | Aantal, Some el, [ Attribuut_ref { attribuut = Some a; _ } ], _, _
@@ -6680,7 +6679,7 @@ let rec dep_expr ctx ~subject acc (e : expr) =
   | Dimensie_cel { attribuut; _ } -> dep_opt ctx ~subject acc attribuut
   | Temporal_read { basis; datum; _ } ->
       (* the read consumes its timeline reference and its date operand;
-         the basis is an attribute/parameter reference whose own case
+         the base is an attribute/parameter reference whose own case
          adds the right edge *)
       dep_expr ctx ~subject (dep_expr ctx ~subject acc basis) datum
   | Construct { argument; _ } -> dep_opt ctx ~subject acc argument
@@ -6732,7 +6731,7 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
       dep_opt ctx ~subject (dep_opt ctx ~subject acc links) rechts
   (* WF-046, the leeg/gevuld test (maintainer decision 2026-09-23): every
      read under the test is a NEGATIVE edge, in BOTH polarities. The test
-     depends on absence whether it carries `negatie: false` or `true`, so
+     depends on absence whether it carries `negated: false` or `true`, so
      the gevuld form is negative for the same reason the leeg form is, and a
      cycle through either is forbidden even where WF-045 admits the cycle
      (a recursive creation group). Until then the operand was read like any
@@ -6740,10 +6739,10 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
      that discharges strictness on an admissible creation cycle was taken
      to discharge this read as well. It does not: the creation acts on an
      absence that the cycle fills afterwards. Measured 2026-09-23 on two
-     probes, both verifier-clean before this arm. With LEEG in the
+     probes, both verifier-clean before this arm. With empty in the
      creation's condition (R1), ref minted a chain in which every
      creation's justification is false in ref's own final world, and the
-     ASP backend found no stable model. With GEVULD negated there (R3), ref
+     ASP backend found no stable model. With filled negated there (R3), ref
      answered merk(W1) = 1 because its pass runs rules before creations;
      the opposite order leaves merk(W1) leeg, and the ASP backend found five
      stable models, one per chain length. The witnesses are
@@ -6756,8 +6755,8 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
      an assertion, a fold filter, a quantifier matrix, a composite member).
      It covers these two kinds and nothing more. The quantifier fold has
      its own arm below. Other conditions that hold on absence without a
-     `negatie` field (a comparison against leeg, a count tested against
-     zero, a propositional GEEN over a comparison, arithmetic that
+     `negated` field (a comparison against leeg, a count tested against
+     zero, a propositional none over a comparison, arithmetic that
      coalesces leeg to 0) keep their positive or stratum-strict reading
      here. They were measured on the same cycle shape and are recorded as
      open, not decided. *)
@@ -6795,11 +6794,11 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
       in
       List.fold_left (fun acc c -> dep_cond ctx ~subject ~neg:neg' acc c) acc onderdelen
   (* the quantifier fold (ch. 3.9a), maintainer decision 2026-09-23: the
-     RANGE is a negative edge under ALLE, GEEN, TEN_HOOGSTE and PRECIES,
-     because the verdict can be lost when the range grows; under TEN_MINSTE
+     RANGE is a negative edge under all, none, atMost and exactly,
+     because the verdict can be lost when the range grows; under atLeast
      it cannot, and the range reads positively. The MATRIX, comparisons
-     included, is negative only under GEEN, TEN_HOOGSTE and PRECIES; under
-     TEN_MINSTE and ALLE the verdict is monotone in the matrix. The range
+     included, is negative only under none, atMost and exactly; under
+     atLeast and all the verdict is monotone in the matrix. The range
      is the reach (the bound role or path) and the filter, which are the
      fold's range fields in ch. 4.5: a member that newly passes the filter
      joins the range. Under a negative context both follow the context, so
@@ -6820,7 +6819,7 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
      corpus/negatief/wf046-kwantorvouw-*.
 
      The range is written since L2 (B12): the loader admits the node with
-     exactly one of bronRol and bronPad, so the reach is always the relations
+     exactly one of sourceRole and sourcePath, so the reach is always the relations
      it names. *)
   | Kwantorvouw { kv_kwantor; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol; kv_bron_pad; _ }
     ->
@@ -8729,23 +8728,25 @@ let wf105 ctx =
    unresolved in a document it did write (IR-SPEC ch. 2, decision V2 (ii);
    the rule since M1, 2026-09-23).
 
-   (a) Every entry carries severity WARNING, a message that is neither empty
+   (a) Every entry carries severity warning, a message that is neither empty
    nor blank, and an integer line >= 0. That the line is an integer is the
    loader's: it reads [line] as one or refuses the document; a negative one
    is refused here, because 0 is already the value for "no source position"
    (a hand-built document, or a frontend warning without a token) and a line
-   below it names nothing. ERROR and INFO
-   are refused here BY NAME — the loader admits both so that a document
-   carrying one fails on this rule and says why, not on a load error: an
-   ERROR means the producer refused to write the document, and INFO is
-   tooling talk (zero carriers in 769 documents, measured 2026-09-23).
+   below it names nothing. The severities error and info, and a null
+   severity, are refused here BY NAME — the verifier's loader admits them so
+   that a document carrying one fails on this rule and says why, not on a
+   load error, while every executor refuses them at load in the same
+   sentences ([severity_refusal]): an error means the producer refused to
+   write the document, and info is tooling talk (zero carriers in 769
+   documents, measured 2026-09-23).
 
-   (b) Every Onopgelost node — the expression marker and the condition
+   (b) Every Unresolved node — the expression marker and the condition
    marker, at every expression and condition position of the document — is
    accounted for: at least one diagnostic's message contains the snippet of
    the marker's source record verbatim (the decision of 2026-09-19 that every
    surviving marker carries a WARNING, made checkable). Any diagnostic counts;
-   that it is a WARNING is (a)'s business, so each clause fails on its own
+   that it is a warning is (a)'s business, so each clause fails on its own
    witness. A marker without a source is refused, and so is one whose snippet
    is blank: blank counts as absent, as it does for a named form's name
    (WF-107). The containment is literal, so a blank snippet would be contained

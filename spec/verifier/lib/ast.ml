@@ -1,18 +1,27 @@
-(* Typed AST of the uchar-ir-v1 wire format in its L4 shape
+(* Typed AST of the uchar-ir-v1 wire format in its L5 shape
    (spec/schema/uchar-ir-v1.schema.json).
 
    Modelling rules:
-   - every record field of a node carried over from v0 is always present on
-     the wire; "optional" means the value may be null, mapped to [option] —
-     never a missing key. The exceptions are the fields the wire writes
-     whole or not at all (the role bindings, `Onopgelost.type`, and the
-     optional fields of the nodes L3 and L4 rewrote — a number's unit, a
-     unit's system, canonical unit, factor and denominator, a parameter's
-     timeline, a day kind's plural; a version's condition, a rule
-     version's presentation, an allocation's optional attribute fields and
-     rounding, an aggregation's and a builtin's optional fields): absent is
-     [None] there (a declared unit's absent spellings are []), and an
-     explicit null is a load error;
+   - since L5 the wire spells every node, key and enumeration value with its
+     IR-SPEC name, while the constructors and fields here keep their v0
+     names: the loader reads the one onto the other, the enumeration values
+     through the translation table [Spelling];
+   - a record field of a node carried over from v0 is present on the wire
+     where the wire requires it, and "optional" there means the value may
+     be null, mapped to [option]. The exceptions are the fields the wire
+     writes whole or not at all (the role bindings, the source record of
+     every node, `Unresolved.type`, the optional fields of the nodes L3 and
+     L4 rewrote — a number's unit, a unit's system, canonical unit, factor
+     and denominator, a parameter's timeline, a day kind's plural; a
+     version's condition, a rule version's presentation, an allocation's
+     optional attribute fields and rounding, an aggregation's and a
+     builtin's optional fields — and the fields L5 made optional: the
+     bounds of a Validity, a TimeWindow and a Clamp, a characteristic
+     check's host, every wholePeriod, a role's and a dimension's plural, a
+     dimension's preposition, a default's decision and justification, a
+     defaults group's characteristic, a predicate's dayKind, a quantifier
+     fold's filter): absent is [None] there (a declared unit's absent
+     spellings are []), and an explicit null is a load error;
    - since L4 the rule layer and the expression layer keep their in-memory
      constructors while the wire writes their L4 nodes, and the loader reads
      the one onto the other (IR-SPEC ch. 3 and 4.1–4.3): a named form with
@@ -48,8 +57,9 @@
      document lists instead where a tag was written inside a type annotation
      ([presentatie_annotaties]), the one position WF-007 refuses it;
    - since L2 a reference carries its symbolic form and nothing else: the
-     five reference classes (AttribuutRef, ParameterRef, DimensieCel,
-     BinderRef, VariabeleRef) carry no type of their own — the declaration
+     five reference classes (AttributeReference, ParameterReference,
+     DimensionCellRead, BinderRef, VariableReference) carry no type of their
+     own — the declaration
      is the one source, [Checks.expr_type] — and a navigated read, a fold
      range, a creation step and a scope carry their role binding, never a
      written name to derive it from. The loader refuses every field that
@@ -68,7 +78,7 @@
      facet always hangs on a member — the wire can no longer say otherwise;
    - the datatype union carries no unknown variant since L2: an
      unresolvable domain is a declaration naming an undeclared domain
-     (WF-003, WF-018), and an unknown expression type is an `Onopgelost`
+     (WF-003, WF-018), and an unknown expression type is an `Unresolved`
      without a `type`;
    - enums that admit null on the wire are [t option]. *)
 
@@ -148,7 +158,9 @@ type datatype =
      non-null datatype (WF-071). Never emitter-produced. *)
   | Struct_type of { domein : string; velden : (string * datatype) list }
 
-(* The whole-period qualifier tag riding Vergelijking/Predicaat/Kenmerk. *)
+(* The whole-period qualifier, the wire's WholePeriod, riding a Comparison, a
+   Predicate or a CharacteristicCheck: [gp_jaar] is its granularity (year
+   true, month false), [gp_niet] its negation. *)
 type geheel_periode = { gp_jaar : bool; gp_niet : bool }
 
 (* A symbolic role binding — the v1 extension of IR-SPEC ch. 2.6: one
@@ -200,8 +212,8 @@ type expr =
              LOADED, empty included, so the arity is a violation the rule
              reports and never a load failure. The loader admits at most one
              of the two, and demands one on a single-argument fold with an
-             elementType under any kind but TOTAAL (B12): a range here
-             makes the argument the set source (D8), its absence makes it the
+             elementType under any kind but total (B12): a range here
+             makes the argument the set source, its absence makes it the
              subject's own read *)
     }
   | Instance_set_union of {
@@ -234,16 +246,17 @@ type expr =
       navigatie_bindingen : rol_binding list option;
           (* the navigation hops, subject-outward, one binding per hop — the
              bound role is the role the hop reaches. Absent: the subject's
-             own read, whose objecttype is the subject type (WF-053, D10);
-             never empty *)
+             own read, whose [objecttype] (the wire's subjectType) is the
+             subject type (WF-053); never empty *)
     }
   | Dimensie_cel of { attribuut : expr option; labels : string option list; bron : string option }
   | Parameter_ref of { parameter : string option; bron : string option }
   | Variabele_ref of { naam : string option; bron : string option }
   (* The wire's ContextValue (IR-SPEC ch. 4.1, delta B23): a session value,
-     Rekendatum or Rekenjaar, and nothing else — the bound day of a day-kind
-     definition is [Bound_day]. [naam] and [typ] are required on the wire,
-     so both are always [Some]; which names are admissible is WF-098's. *)
+     evaluationDate or evaluationYear, and nothing else — the bound day of a
+     day-kind definition is [Bound_day]. [naam] is the wire name verbatim.
+     [naam] and [typ] are required on the wire, so both are always [Some];
+     which names are admissible is WF-098's. *)
   | Constante of { naam : string option; typ : datatype option; bron : string option }
   (* The wire's BoundDay (IR-SPEC ch. 3.7 and 4.1, delta B23): the day a
      day-kind definition is about. It carries no name; [typ] is required on
@@ -386,7 +399,7 @@ and conditie =
       bron : string option;
       navigatie_binding : rol_binding option;
           (* the one hop of a navigated check — the bound role is the role
-             the hop reaches. Absent: the check reads the subject (D53) *)
+             the hop reaches. Absent: the check reads the subject *)
     }
   (* The role check (IR-SPEC ch. 4.5, B9): true iff a link of the declared
      fact type [fact_type] exists in which the subject fills [role], named
@@ -399,7 +412,7 @@ and conditie =
       counterpart_type : string option;
           (* the object type the filler of the OTHER role of [fact_type]
              must belong to, ⊑ that role's declared filler; absent = the
-             declared filler itself (U12) *)
+             declared filler itself *)
       negated : bool;
       bron : string option;
     }
@@ -694,15 +707,15 @@ type default = {
   default_excepties : exception_groups option;
       (* extension (v1, Phase 5c): the nested exception groups
          (RUNTIME-SEMANTICS ch. 7.9). A default carrying them is a group-default
-         (no own consequence/besluit — its exception groups are its decision) or
-         a form-a default (own consequence/besluit too — the exception groups
+         (no own consequence/decision — its exception groups are its decision) or
+         a form-a default (own consequence/decision too — the exception groups
          decide first, the own consequence is the fall-back when they decide
          nothing). A differing-deciding exception group propagates the conflict
          to the root (WF-075). Absent = a flat default. *)
   default_bron : string option;
 }
 
-(* Extension records (v1, Phase 5c): a Default's [excepties] field and its
+(* Extension records (v1, Phase 5c): a Default's `exceptions` field and its
    members (RUNTIME-SEMANTICS ch. 7.9). [egs_ongeordend] carries the
    declared-unordered flag itself (the root regime, recursed); each
    [exception_group] is a default chain (descending, highest first)
