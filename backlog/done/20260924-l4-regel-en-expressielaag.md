@@ -1152,3 +1152,303 @@ de hoofdsessie GELAND, met B24/B25/B28 als "niet mee" en hun reden).
 `Functie` (gemeten) en zijn vrijstelling «the Literal lexeme» blijft
 kloppen (de string in `value.number` is het lexeem, de eenheid staat in het
 `type`); gate 2 en gate 3 noemen geen L4-vorm. Daarna de memory.
+
+## Correcties op de kaarttekst (gemeten door de bouwers, aanvaard door de hoofdsessie)
+
+- **U8** (A1): de tekstvariant volgt het casusschema letterlijk, dus `{"text": ""}` is
+  toegelaten (0 dragers; een aanvaarde gate-2-rij pint het); "niet-lege string" geldt via
+  de patronen voor `number`, `date` en `dateTime`, niet voor `text`.
+- **U13 en U15** (A2): "de gedeelde OCaml-lader weigert" is dezelfde lader als die van de
+  verifier; een laadweigering zou `verifier.exe` vóór elke regel laten stoppen en de
+  WF-114- en WF-098-getuigen uit gate 3 halen. De lader kreeg daarom een leesstand
+  (`Loader.reader = Verifier | Executor`, standaard `Executor`): de verifier laadt het
+  document en laat zijn regel oordelen; ref, clingo en de emitter-suites weigeren bij het
+  laden met de kernzin.
+- **Laderzinnen** (A2): de kaart stelde bij U3, U4, U6, U8, U9 en U10 geen zin voor; A2 koos
+  ze en C nam ze letterlijk over (de lijst staat in het Result).
+- **Naamtabel** (A1): de rij `soort@ResolvedRegel` stond als gat; de Delta-alinea van IR-SPEC
+  3.1 noemt de afbeelding, dus de rij heeft twee groepen met herkomst "vermelding".
+  `BoundDay` is een gat tot A2's rij in IR-SPEC 4.1 er staat (dan identiteit + geland M6).
+- **Schema-README** (A1): de L3-knooptelling 10802 was gemeten 10839; op L4 zijn het 11509
+  knopen plus versierecords.
+- **Negatief-zone** (A1, A2): na de migratie zijn 26 van 407 documenten schema-ongeldig (de
+  vijf geweigerde plus 21 waarvan het schema het defect nu ook sluit); gate 2 valideert de
+  zone niet en de verifier-lader laadt elke string in een variant, zodat de WF-regel oordeelt.
+- **Clingo-suite** (B): geen "39 ingebedde documenten" — de suite laadt 973 IR-documenten uit
+  hele tekstblokken en fragmenten; 935 zijn structureel gelijk aan m4.py's migratie van hun
+  L3-tegenhanger, de 38 van de L2-laadtabel (zonder feittype, m4.py weigert hun basis) zijn met
+  de hand omgezet; `model.ml` hoefde niet te veranderen; de catala-suite telt 216 door het
+  proefdocument.
+- **U15** (B): bij wire-documenten zit de benoemde arm al in de gedeelde lader; ref en clingo
+  kregen er een voor handgebouwde knopen.
+- **Gedeelde zinnen** (B, C, hoofdsessie): ref en clingo zetten eerst " (WF-0xx)" achter de drie
+  met de verifier gedeelde zinnen; de hoofdsessie haalde die staart weg, zodat verifier, ref,
+  clingo en Drools byte-gelijk zijn.
+- **U11-zinnen** (C): het kaartvoorstel miste "a " en de staart die lid en type noemt; de
+  definitieve zinnen zijn die van de verifier.
+- **U19** (C): "één grammatica voor één variant" — de Drools-lader weigerde eerst alleen de komma
+  en las `.5`, `5 €`, `-.5` en `3/04` stil verkeerd; sinds de landing weigert hij elk getal
+  buiten de casusgrammatica, zoals ref en clingo.
+- **Knoopsoortvloer** (C): elf oude soorten verdwijnen, maar tien nieuwe verschijnen in goldens
+  die laden (`ContextValue` alleen in een golden die om een andere reden geweigerd wordt) plus
+  zes versierecords; de meting ging van 59 naar 64. `ContractValidator` hoefde niet te
+  veranderen (leest de in-memory lijsten).
+- **Meldingen met een v0-veldnaam** (A2): 21 in plaats van 13; negatief-NOTE's met een pointer
+  in een benoemde vorm: 199 in plaats van 203 (vier hoorden bij verwijderde getuigen).
+- **Gate 11 en 8** (B, C): op een bouwersbranch alleen niet groen te krijgen (de Drools-poot
+  is van C, de OCaml-lezers van B); C2 mat ze groen op een proefunie.
+- **U13** (B-fix, gemeten in de fixronde): geen lezer las het v0-lexeem `Literal.waarde`, ook de
+  verifier niet (die leest de variant); het veld is uit de AST gehaald — dode staat die uiteen kon
+  lopen. `Loader.literal_lexeme` blijft als functie voor wie de string nodig heeft.
+- **U19 en dezelfde klasse** (lens B6, B-fix, C-fix): niet alleen een getal, ook een datum- of
+  datumtijdlexeem buiten de grammatica wordt door elke uitvoerder bij het laden geweigerd met de
+  kernzin van de verifier (WF-081, WF-084, WF-095, één gedeelde functie per regel in checks.ml);
+  de verifier laadt en laat zijn regel oordelen.
+- **Kwantorvouw** (B-fix, gevonden bij het meten): de Kwantorvouw houdt tot L5 zijn v0-velden
+  (`bronRol`/`bronPad`); clingo's gedeelde bereikcode noemde sinds L4 de Aggregation-velden, zodat
+  vier lezers vier uitkomsten gaven — nu toetst een eigen functie de kwantorvouw met de
+  WF-108-zinnen van de verifier.
+- **A8** (C-fix): `Rekenjaar` is admitted-and-unexecuted; Drools voerde het uit en weigert het nu
+  vóór het verlagen met dezelfde zin als ref en clingo; `rsRekenjaar` uit de geporteerde runtime.
+- **Kaartpunt 3 en 4 van N**: het `regels`-register en `kenmerkSoorten`/`kenmerkGranulariteit`
+  verlieten de wire bij L1 (M1-kaart), niet bij L2/L3 zoals de hoofdsessie schreef.
+
+## Result
+
+**Geland (L4 van de v1-klap, 2026-09-24; basis main `1014450f` — L1, L2 en
+L3 eronder; de landingscommit is deze kaartverplaatsing zelf, unie
+`2c38f4a0`).** Vier bouwers (A1 wire, A2 verifier/spec in twee fasen, B
+OCaml, C Java — C liep op zijn contextgrens en C2 maakte zijn werk af),
+27 uitvoeringsbesluiten van de hoofdsessie (U1–U27) bovenop D26–D40, de
+kruisende besluiten en het standaardantwoord op N3; één lensronde op unie 1
+(`e1f329ec`: EERST FIXEN — B1–B7 en A1–A12, alle in dezelfde kaart gefixt op
+vier branches door A2-fix, B-fix, C-fix en een NOTE-fixer N, plus wat de
+fixers zelf van dezelfde klasse vonden), de herkeuring door een verse lens op
+unie 2 (`076d40a4`): EERST FIXEN op alleen tekst (H1–H3) — in de adviesronde door de hoofdsessie afgehandeld, zonder derde lens. Alle veertien gates groen op de unie, die op de main-tip
+stond.
+
+**De wire.** De zes benoemde vormen als `{node, name, versions}` met
+versierecords zonder `node` (B19: de `" #i"`-afvlakking omgekeerd, `validity`
+altijd geschreven, `statuteAnnotations` op de vorm); `RuleVersion
+{validity, target, value, condition?, initialisation, presentation?}` (B20:
+`soort` uiteengevallen; de kenmerktoekenning is een versie zonder tag en
+zonder initialisatie waarvan het doel een kenmerk is); `Allocation`,
+`ObjectCreation` (met `connectingRole`), `FactCreation` (met `path`, zonder
+`doel`), `Consistency` en `Uniqueness` met `sources: [Source]` (B27; één
+lijst `uniciteiten`, `uniciteitUnies` weg); `Aggregation` en `BuiltinCall`
+elk met alleen eigen velden (B21); `Literal.value` in de zeven varianten van
+het casusschema, gekozen door `type`, komma → punt met de juridische
+spelling in `bron` (B22c); `BoundDay {type, bron}` en `ContextValue {name,
+type, bron}` (B23). Enumwaarden en de sleutels onder `rules` v0 tot L5
+(D26); B24, B25 en B28 niet mee (D38–D40). In-memory bleven de
+v0-constructoren in elke lezer: de regelsoort is een structurele afbeelding
+uit vlag en tag, de literaal houdt zijn lexeem naast de variant, de gebonden
+dag kreeg een eigen constructor, elk record van de zes vormen draagt de
+wirepointer van zijn versie; de gedeelde OCaml-lader kreeg een leesstand
+(`Verifier` laadt wat de verifier moet beoordelen, `Executor` weigert het
+bij het laden met de kernzin van de regel: de variant tegen het type, een
+contextwaarde buiten de twee namen, en sinds de fixronde ook een getal-,
+datum- of datumtijdlexeem buiten de grammatica — één gedeelde functie per
+regel in `checks.ml`); `Literal.waarde` (het v0-lexeem) en `Complex` gingen
+uit de AST, want geen lezer las ze meer.
+
+**Migratie.** `spec/proposals/v1-migratie/m4.py` (`migrate_bytes`, `--all`,
+`--check`, idempotent, luid met JSON-pointer): 720 van 726 documenten
+mechanisch (anchor 40, golden 202, negatief 402, rood 47, toka-slices 29);
+de zes weigeringen zijn precies de verwachte — de vier onschrijfbare
+getuigen, `wf034-typeloos-literal` (met de hand) en de casus-dump (2×
+`COMPLEX`, door C opnieuw geëmitteerd). Elk document veranderde
+(`uniciteitUnies`), 37 alleen daarin. Tellingen: Rule-vormen 1014 uit 1016
+v0-invoeren (2 versiegroepen van 2); soort BEREKENING/GELIJKSTELLING/
+INITIALISATIE/KENMERKTOEKENNING 581/202/3/230; `validity` uit `null` 97 in
+43 documenten; Allocation/ObjectCreation/FactCreation/Consistency
+40/47/24/40; Uniqueness 15 enkelvoudig + 9 unie; Aggregation/BuiltinCall
+251/78; literalen number/boolean/text/date/dateTime/enumeration/constructor
+724/237/67/87/12/23/1, komma → punt 17 in 12 documenten; BoundDay/
+ContextValue 52/8; padlengtes 1/2/3: 5/18/1. U1: de emitter laat de twee
+`COMPLEX`-verdelingen van de dump weg en schrijft er een WARNING-diagnostic
+voor; de nieuwe dump is byte-identiek aan m4.py's migratie van een
+meetkopie van de L3-dump zonder die twee verdelingen plus de twee
+diagnostics (`toka/README.md`, divergentieregel L4 met de pointers
+`/rules/verdelingen/3` en `/5` van de L3-dump); de 29 slices via m4.py.
+
+**Regels.** WF-024 vervallen (geschiedenisregel; `COMPLEX` is een laadfout);
+de WF-030-arm "at least two sources", de WF-037/047-facetarmen op de andere
+knoop en de WF-020-arm "mixes a bare name with versioned entries" vervallen
+(hun object is onschrijfbaar); WF-022 kreeg de N3-arm (een doelnaam die
+attribuut én kenmerk is) en de ledensoortarm (U11: een versie zonder tag en
+zonder initialisatie MOET een kenmerk schrijven, met tag of initialisatie
+een attribuut — zonder die arm zette ref voor een Booleaan-attribuut zonder
+tag stil een kenmerk); WF-114 nieuw (U21: de variant is die welke het type
+noemt); WF-081 versmald tot de getalgrammatica van het casusschema (U19);
+WF-081/084/095 sleutelen op de variant; WF-079's tekst herschreven naar wat
+de check doet (twee onvoorwaardelijke rekenversies van verschillende vormen
+met overlappende geldigheid); WF-098 gesloten op twee namen (`de
+dag` als contextwaarde valt erbuiten); WF-020/021/107 op de gegroepeerde
+vorm, WF-082 op `statuteAnnotations`, WF-028 op `path`, WF-029/054/030/034
+op de L4-velden, WF-031 met `BoundDay`, WF-037/038/083/093/102/110/055/056
+op `Aggregation`/`BuiltinCall`, WF-039 op `enumeration`/`number`; elke
+melding op de L4-wirepointer (`/rules/<lijst>/<f>/versions/<v>/…`), 21
+meldingen kregen L4-veldnamen. IR-SPEC ch. 3 en 3.1–3.6, 3.10, 4.1
+(`Literal`, `ContextValue`, de nieuwe `BoundDay`-rij), 4.3, 4.5 (naar V13),
+4.6 en de WF-index (WF-114-rij, WF-024-geschiedenisrij, WF-082-golden =
+`jutterswet-hardheidsoverschot`); RUNTIME-SEMANTICS op de genoemde plekken;
+D33 getoetst (RS 4.2: `orderingAttribute` is de sorteersleutel, ref en
+clingo lezen het zo). De weigerzinnen letterlijk gelijk in verifier, ref,
+clingo en Drools, ook de drie gedeelde (WF-083, WF-102 (b) en (c)) zonder
+regelnummerstaart.
+
+**Stempels (V14 (a)), lijst in `corpus/negatief/README.md` sectie "L4":**
+5 verwijderd-met-reden (`wf024-complex`, `wf037-aantalgevulde-granulariteit`,
+`wf047-bereik-op-builtin`, `wf034-sentinel-builtin-wratoperand` — m4.py
+faalt erop —, `wf030-single-source-union` — de verifier aanvaardt de
+vertaling), 1 met de hand (`wf034-typeloos-literal`), 112 herschreven (m)
+met een L4-delta op het defect, 7 nieuw (`wf022-doel-attribuut-en-kenmerk`,
+`wf022-kenmerkdoel-met-presentatie`, `wf022-attribuutdoel-zonder-
+presentatie`, `wf114-literaalvariant-tegen-type`, `wf114-datumvariant-
+tegen-precisie`, `wf098-de-dag-als-contextwaarde`, `wf081-decimale-komma`,
+en uit de fixronde acht getuigen voor armen die er geen meer hadden:
+`wf037-granulariteit-op-jaar-uit`, `wf037-tijdsevenredig-deel-zonder-
+granulariteit`, `wf047-bereik-op-opgesomde-vouw`, `wf030-brontype-niet-
+gedeclareerd`, `wf030-sleutel-geen-attribuut`, `wf037-jaar-uit-twee-
+operanden`, `wf037-tijdsduur-een-operand`, `wf037-eerste-een-operand`; elk
+arm-exact); negatief 407 → 417; `expect.txt` 165 → 228
+(`EXPECTED_MIN_EXPECT` mee; 15 bestaande opnieuw gepind); vloer 350 blijft;
+199 negatief-NOTE's en 3 golden-NOTE's opnieuw uit de echte
+verifieruitvoer; L3-verifier op L3-corpus tegen L4-verifier op L4-corpus
+(696 documenten): 388 byte-gelijk, 274 alleen de pointer, 29 melding in
+tekst, 5 van regel gewisseld.
+
+**Consumenten en emitters.** Gedeelde OCaml-lader op de L4-vorm met de
+bijectie (uitvouwing tot `naam #i`; regelsoort uit vlag en tag; `fc_doel` uit
+de vuller van `targetRole`; uniciteiten gesplitst op aantal bronnen) en elk
+vervallen veld en elke vervallen knoop bij naam geweigerd (74 mutatieproeven;
+92 laadrijen in de clingo-suite; `RegelEnExpressielaagWeigeringWitnessTest`
+in Drools, 22 tests); ref en clingo lezen strata op de wirepointer, de
+literaal uit zijn variant, `Bound_day`, en delen één getallezer met de
+casusgrammatica; nulmeting: de uitvoer van ref, clingo en `ref --noop` over
+619 golden-, 48 rood- en 29 toka-cases byte-gelijk tussen L3 en L4 op de
+twee U24-regels na (`the Rekendatum context value`, opnieuw gepind in
+`tijdsduur-reads-van-before-tot`); catala en flogic schrijven de L4-vorm
+(proefdocument in de catala-suite); `IrEmitter` schrijft de L4-vorm
+(versiegroepering met de regels van m4.py, de afbeelding van `soort`, de
+variant uit het type, `BoundDay`/`ContextValue`, `path`, `uniciteiten`
+samen, de U25-weigeringen, de `COMPLEX`-WARNING) en `IrEmitterTest` pint
+wat geen golden draagt (43 → 54); de Drools-lader strikt op de L4-vorm met
+de zinnen van de OCaml-lader, de ledensoortarm, de doelsoort uit
+`targetRole`, de variant tegen het type en de volledige getalgrammatica
+(vóór de landing las de Drools-lader `.5`, `5 €`, `-.5` en `3/04` stil
+verkeerd), datum- en datumtijdlexemen en een granularity op een
+niet-emmerende builtin (speelde stil), de onoplosbare `anchorRole` in de
+WF-028-zinnen, en `Rekenjaar` geweigerd vóór het verlagen met dezelfde zin
+als ref en clingo (Drools voerde het uit; `rsRekenjaar` uit de geporteerde
+runtime); ref en clingo toetsen de Kwantorvouw (v0-velden tot L5) met de
+WF-108-zinnen van de verifier in plaats van de Aggregation-zinnen die de
+gedeelde bereikcode sinds L4 gaf, en delen de WF-028-zinnen; 73
+rgs-goldens, 12 catala-, 2 flogic-goldens en de dump byte-identiek. Het
+NOTE-proza van 110 goldens en getuigen beschrijft het eigen document in de
+L4-namen, en de beslisnummers van de L2-kaart (146 in 78 getuigen-NOTE's)
+zijn vervangen door wat ze aanduidden.
+
+**Gate-scripts (per regel):** `check-ir-schema.sh` (`_l4_base`,
+`L4_SHAPE_ROWS` 188 rijen; patroonrijen 26 → 77 voor `number`, `date`,
+`dateTime` en het naampatroon; vormrijen 123 → 311); `check-verifier.sh`
+(`EXPECTED_MIN_EXPECT` 165 → 228); `check-reftype-derivation.sh` (twister
+op `Aggregation`/`BuiltinCall`/`kind`/`arguments`, `GEDRAGEN`, de
+vrijstelling op een `BuiltinCall` met TIJDSDUUR; `EXPECTED_MIN_TWISTS` 38
+blijft, 40 twists over 22 goldens gemeten); `check-drools.sh` en
+`check-rood.sh` ongewijzigd (geen kanaalwissel; alleen de twee
+U24-fragmenten in de case zelf).
+
+**Lens:** eerste ronde op unie 1 (`e1f329ec`) EERST FIXEN met zeven blokkerende
+vondsten en twaalf adviespunten: B1–B4 spec-tekst (een verkeerde
+geschiedenisnoot, de WF-079-uitleg smaller dan de check, een onjuiste
+WF-034-bewering, drie zinnen die een verdwenen wirevorm als geldend
+beschreven), B5 twee bereikbare armen zonder getuige, B6 één weigerzin die
+niet in alle lezers gelijk was (een getal buiten de grammatica: vier lezers,
+vier reacties), B7 NOTE-proza in v0-namen zonder geschiedeniskader; de
+fixronde op vier branches (`card/l4-fix-spec`, `card/l4-fix-ocaml`,
+`card/l4-fix-java`, `card/l4-fix-notes`) sloot B1–B7 en A1–A9, A11 en A12
+(A10, de oudere laderstijl van Drools, bewust als open punt), en de fixers
+vonden zelf nog dezelfde klasse (drie WF-037-armen zonder getuige, datum- en
+datumtijdlexemen, de Kwantorvouw die de Aggregation-zinnen kreeg, een
+granularity die clingo en Drools stil negeerden, `Literal.waarde` dat geen
+lezer las, `Rekenjaar` dat Drools uitvoerde, een onoplosbare `anchorRole`
+die Drools laadde) en sloten dat in dezelfde ronde; de herkeuring door een
+verse lens op unie 2 (`076d40a4`): EERST FIXEN op alleen tekst — alle
+negentien vondsten in code en data verwerkt en nagemeten (acht armmutanten
+over 736 documenten, elk raakt precies de eigen getuige; veertien
+lexeemproeven met zin en pointer gelijk in ref, clingo en Drools; de
+nulmeting over 696 cases byte-gelijk tussen unie 1 en unie 2; de
+hermigratie van de basis byte-gelijk op de bekende uitzonderingen na), met
+drie blokkerende tekstpunten (één NOTE en vier IR-SPEC-passages beschreven
+het uitvoerdergedrag van vóór de fixronde; vier NOTE's idem) en drie
+adviespunten, alle in de adviesronde door de hoofdsessie afgehandeld zonder
+derde lens (gate 1 en 3 opnieuw groen); proeven in
+`/tmp/lens-l4-meet/` en `/tmp/lens-l4-meet/herkeuring/`.
+
+**Gates op de landing (alle veertien, elk los):** 1 PASS; 2 PASS 289 bestanden, 77 + 311 zelftestrijen; 3 PASS 289 schoon / 417 negatiefs / 228 armfragmenten; 4 PASS 667 case-files; 5 PASS ref-suite 976 / 619 replays; 6 PASS suite 1284 / 619; 7 PASS 582 + 37; 8 PASS 48 / 96 (Drools-poot 11 / 37); 9 PASS 216 / 12; 10 PASS 570 tests / 73 goldens; 11 PASS 45 fragmenten, 27 tests, 29 slices, replay 29/29/29; 12 PASS played 188, DRL 167, JUnit 748; 13 PASS 40 twists / 22 goldens, 100 replays, DRL 21; 14 PASS 135 / 2. Gemeten op `076d40a4`; de tekstcommit `2c38f4a0` erbovenop raakt alleen IR-SPEC en NOTE's, gate 1 en 3 daarop opnieuw groen.
+
+**Open punten (genummerd, hoofdsessie weegt ze bij L5):**
+1. U13/U15 zijn uitgevoerd als leesstand van de gedeelde lader (correctie op
+   de kaart, zie "Correcties"): de verifier laadt en oordeelt, een uitvoerder
+   weigert bij het laden met dezelfde kernzin.
+2. B24 (de reden bij `Onopgelost`), B25 (de knoopvorm van `Regelversie`, tot
+   de paritygolden) en B28 (de startpuntregistratie) landen later; de
+   gescoopte unie blijft een ontwerpvraag (schema en laders weigeren haar).
+3. `Rekenjaar`: Drools voert het uit (het jaar van de rekendatum), ref
+   weigert het bij naam, clingo vertaalt het niet — bestond vóór L4, 0
+   corpuscases; een eigen kaart of een normvraag.
+4. Clingo weigert een uniciteit op `Tekst`-sleutels ("unscalable
+   datatype") — bestond vóór L4 (gemeten op een proefdocument van C2).
+5. Twee javadoc-regels in de recordlaag van de frontend (`ir/Expr.java`,
+   `model/RegelSpraakModel.java`) noemen v0-wirenamen; de records bewegen
+   niet tot de pin-bump van de toolchain (D6).
+6. De NOTE van `jutterswet-vaarwaterspelling` en de leeshelft van
+   `jutterswet-dossierspelling` beschrijven een referentietype dat bij L2 van
+   de wire ging; of die goldens de ci-leesarm van WF-089/WF-090 nog pinnen,
+   is een meting (sinds L2 open).
+7. De negen getuigen `wf055-*` en `wf056-*` hebben nooit een NOTE gehad (wel
+   `expect.txt`); WF-021 citeert versies bij hun in-memory naam (`… #1`).
+8. `Ast.Literal.waarde` (het v0-lexeem) wordt door ref, clingo, catala en
+   flogic niet meer gelezen, alleen door de verifier; het blijft de
+   in-memory vorm (U13). Ref faalt op twee vormen met dezelfde wirepointer
+   (alleen bereikbaar met handgebouwde documenten).
+9. Testwijzigingen (gemeld, onder kaartmandaat): ref 955 → 976, clingo
+   1129 → 1284, catala 207 → 216, flogic 135, frontend JUnit 559 → 570,
+   Drools JUnit 717 → 748 (`OnbekendVeldWitnessTest` knoopsoortvloer 59,
+   gemeten 64; herschreven, niet verwijderd: een onbekende `kind` is een
+   documentfout, een onoplosbare `targetRole` wordt geweigerd, de zeven
+   datumlexeemrijen pinnen de laadweigering).
+11. Eigen toetsen van ref en clingo op handgebouwde of ongeverifieerde
+    documenten, van vóór L4 en niet in deze kaart gelijkgetrokken: de
+    zinnen van ref's `bound_role` voor andere rolbindingen dan WF-028; de
+    volgorde van de toetsen in clingo's `source_join`; de vijfde WF-108-arm
+    (`elementObjecttype`) met eigen zinnen; een drempel onder ALLE of GEEN
+    die ref en clingo stil negeren waar de verifier WF-108 meldt; een
+    emmerende builtin zonder granularity die op de bodemzin valt waar de
+    verifier WF-037 meldt — kandidaatkaart: één gedeelde vormtoets in de
+    lader.
+12. De Drools-lader: de oudere stijlverschillen (`unknown field on <Knoop>`
+    op de veldpointer, `null` op een optioneel veld, `expected a JSON
+    object`; de WF-028-pointer op het veld waar de verifier de versie
+    noemt), twee WF-028-armen (rollen verschillen; ankertype onder de vuller)
+    en de WF-037-arm "bucketing builtin without a granularity" — van vóór L4,
+    eigen kaart; wie de transpilers rechtstreeks aanroept krijgt in een
+    consistentietoets nog de algemene scopezin (elke productie-ingang gaat
+    langs de weigering vóór het verlagen).
+13. `jutterswet-vaarwaterspelling` bewijst sinds L2 de hoofdletter-
+    ongevoeligheid van WF-089 niet meer (`VAARWATER` staat alleen in `bron`);
+    meting en eventueel een andere drager.
+14. De Drools-lader draagt geen WF-030-arm: op een niet-gedeclareerd
+    brontype crasht de DRL-tekst-tak en op een sleutel die geen attribuut is
+    faalt hij bij het compileren (de exec-tak sluit uit of faalt bij het
+    rekenen) — dezelfde klasse als punt 12. Een emmerende builtin binnen een
+    expressie op een tijdsafhankelijk doel komt door de verifier, en ref,
+    clingo en Drools weigeren dan met drie verschillende zinnen (bestond op
+    unie 1 al; de benoemde clingo-arm uit de fixronde wordt op zo'n doel niet
+    bereikt).
+10. Stap (k), de herpin van `regelspraak-java`: uitgesteld tot de nieuwe
+    toolchain onder uchar (maintainerbesluit 2026-09-24); A.7 noemt 7
+    zekere en 1 mogelijke `IrEmitterTest`-kanteling en 21 recordbestanden
+    die bij ongewijzigde records niet bewegen.
