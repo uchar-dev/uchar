@@ -63,8 +63,8 @@ the clause on and off.
 
 A hand-broken variant of `corpus/golden/jutterswet-gelijkdeling/ir.json` — one
 field blanked, a one-field diff. The shape is schema-valid: the version's
-`sourceAttribute` is `["string","null"]` on the wire and `""` is a string, which is precisely why the verifier, not the schema, is the
-fence.
+`sourceAttribute` is `["string","null"]` on the wire and `""` is a string,
+which is precisely why the verifier, not the schema, is the fence.
 
 Falsifiable, clause-exact: drop `wf034_verdeling_namen` from the verifier's
 check list and this case and its two `-lege-` siblings — those three and

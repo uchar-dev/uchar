@@ -1,7 +1,7 @@
 Violates WF-101 (`spec/IR-SPEC.md` ch. 4.1) at the **validity window's upper
-bound**: the rule version's `validity.tot` reads `2026-02-30`, a lexeme of
-the right shape naming a day February does not have. The document says nothing else
-wrong.
+bound**: the rule version's `validity.tot` reads `2026-02-30`, a lexeme of the
+right shape naming a day February does not have. The document says nothing
+else wrong.
 
     WF-101 FAIL /rules/resolvedRegels/0/versions/0/validity/tot: validity bound
     '2026-02-30' is not the ISO form yyyy-mm-dd (fixed field widths, valid

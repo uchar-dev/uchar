@@ -10,8 +10,8 @@ resolves against the declaration scope of **its own side**, the side both
 executors read it on — `sourceAttribute` and `remainderAttribute` against
 `sourceType` (the pot that is distributed, and the remainder written back on
 the source), `targetAttribute`, `ratioAttribute`, `maximumAttribute` and
-`orderingAttribute` against `targetType` (the share written on each
-recipient, and the three facets read per recipient). The two earlier arms of this rule
+`orderingAttribute` against `targetType` (the share written on each recipient,
+and the three facets read per recipient). The two earlier arms of this rule
 ask whether the field is there and whether it is more than blanks; this one
 asks the question the rule is about — does the name resolve?
 

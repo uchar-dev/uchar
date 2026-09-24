@@ -18,8 +18,8 @@ neither the creation nor the type: the fixpoint counter is the last line of
 defence, and the document was refusable statically.
 
 The literal-name twin of this case was ALREADY refused before the repair — a
-creation with `subject` and `createdType` both `Strandrecht` produces
-exactly the report above — so what the case pins is that a subtype is not an escape
+creation with `subject` and `createdType` both `Strandrecht` produces exactly
+the report above — so what the case pins is that a subtype is not an escape
 hatch from a rule the same document in one type already met.
 
 **The boundary, measured on this document's three variants** (2026-09-12,
