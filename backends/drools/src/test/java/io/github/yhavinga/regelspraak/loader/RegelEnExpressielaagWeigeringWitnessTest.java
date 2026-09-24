@@ -41,10 +41,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * attribute reference; a presentation tag beside an initialisation; a context node without its name or datatype — in
  * the words of the shared OCaml loader. And, as the shared loader refuses them only when it reads for an executor: a
  * literal whose variant is not the one its type names (WF-114's sentence) and a context value outside the two names
- * (WF-098's); beside them a number outside the case format's number grammar (WF-081's, which ref and the ASP backend
- * fault on when they read the lexeme), the member-kind arm and the name that is both an attribute and a
- * characteristic (WF-022's sentences, which need the model the shared loader does not consult) and a fact creation
- * whose target role names no declared filler (WF-028's). Read: every version of a named form as one
+ * (WF-098's); beside them a number, a date or a date-time outside its grammar (WF-081's, WF-084's and WF-095's
+ * sentences; ref and the ASP backend fault when they read such a lexeme), a granularity on a builtin that does not
+ * bucket (WF-037's), the member-kind arm and the name that is both an attribute and a characteristic (WF-022's
+ * sentences, which need the model the shared loader does not consult) and a fact creation whose anchor or target role
+ * is no role of the created relation (WF-028's). Read: every version of a named form as one
  * record, named as the frontend names a version of a form with several; the kind of a rule version from its
  * structure; a fact creation's target type as the filler of its target role and its path as its steps and its join;
  * the one list of uniquenesses split on the number of sources; both function nodes as the one function record; a
@@ -83,6 +84,8 @@ class RegelEnExpressielaagWeigeringWitnessTest {
     private static final String KUSTREGISTER = "anchor/jutterswet-kustregister";
     /** Rule 0's value is a TIJDSEVENREDIG_DEEL with a granularity and a filter. */
     private static final String PACHTVENSTER = "jutterswet-pachtvenster";
+    /** Rule 0's value is a JAAR_UIT over a date attribute, without a granularity. */
+    private static final String PAASVONDST = "jutterswet-paasvondst";
     /** Rule 0's value is a MINIMUM over a two-step path; rule 1's a SOM with an empty fallback. */
     private static final String BOOTBERGING = "anchor/jutterswet-bootberging";
     /** Day kind 0 compares the bound day. */
@@ -283,6 +286,76 @@ class RegelEnExpressielaagWeigeringWitnessTest {
             zet(ir, WAARDE + "/value", "{\"number\":\"" + lexeem + "\"}");
             assertEquals(lexeem, ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
         }
+    }
+
+    /** WF-084's sentence, over the verifier's date grammar: fixed four-two-two digit fields and a day of the calendar.
+     *  Before this check the two witnesses' lexemes loaded and both branches refused the rule only while lowering, under
+     *  a scope note ("regel (waarde buiten scope)", "TODO datumliteral"), where the verifier names the lexeme. */
+    @Test void een_datum_volgt_de_iso_vorm() throws Exception {
+        for (String lexeem : List.of("31-01-2024", "dd. 31-01-2024", "2024-1-31", "+2024-01-31", "2024-02-30",
+                "2023-02-29", "1900-02-29", "2024-13-01", "2024-01-31T00:00:00", "")) {
+            ObjectNode ir = golden(PREMIEVENSTER);
+            zet(ir, WAARDE + "/type", DAG);
+            zet(ir, WAARDE + "/value", "{\"date\":\"" + lexeem + "\"}");
+            assertTrue(weigert(ir, WAARDE + "/value").getMessage().endsWith(": date literal lexeme '" + lexeem
+                    + "' is not the ISO form yyyy-mm-dd (fixed field widths, valid ranges — ch. 4.1)"), lexeem);
+        }
+        for (String lexeem : List.of("2024-01-31", "2024-02-29", "2000-02-29")) {
+            ObjectNode ir = golden(PREMIEVENSTER);
+            zet(ir, WAARDE + "/type", DAG);
+            zet(ir, WAARDE + "/value", "{\"date\":\"" + lexeem + "\"}");
+            assertEquals(lexeem, ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
+        }
+    }
+
+    /** WF-095's sentence, over the verifier's date-time grammar: the date of WF-084, a 'T', the seconds always written,
+     *  a fraction of exactly three digits and nothing after it. The first six lexemes are the six WF-095 witnesses'. */
+    @Test void een_datumtijd_volgt_de_canonieke_iso_vorm() throws Exception {
+        for (String lexeem : List.of("15-03-2026 12:00:00.000", "2026-03-15T12:00:00.1", "rommel 2026-03-15T12:00:00 x",
+                "2026-03-15T12:00", "2026-03-15 12:00:00", "2026-03-15T12:00:00Z", "2026-03-15T12:00:00+01:00",
+                "2026-03-15T24:00:00", "2026-03-15T12:60:00", "2026-03-15T12:00:60", "2026-02-30T12:00:00",
+                "2026-03-15")) {
+            ObjectNode ir = golden(PREMIEVENSTER);
+            zet(ir, WAARDE + "/type", "{\"node\":\"Date\",\"precision\":\"millisecond\"}");
+            zet(ir, WAARDE + "/value", "{\"dateTime\":\"" + lexeem + "\"}");
+            assertTrue(weigert(ir, WAARDE + "/value").getMessage().endsWith(": millisecond-precision date literal lexeme '"
+                    + lexeem + "' is not the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' never"
+                    + " a space, the seconds field written, no zone or offset, a fraction of exactly three digits; the"
+                    + " day-first source snippet belongs in `bron` — ch. 4.1)"), lexeem);
+        }
+        for (String lexeem : List.of("2026-03-15T12:00:00", "2026-03-15T12:00:00.000", "2024-02-29T23:59:59.999")) {
+            ObjectNode ir = golden(PREMIEVENSTER);
+            zet(ir, WAARDE + "/type", "{\"node\":\"Date\",\"precision\":\"millisecond\"}");
+            zet(ir, WAARDE + "/value", "{\"dateTime\":\"" + lexeem + "\"}");
+            assertEquals(lexeem, ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
+        }
+    }
+
+    // ---------------- the builtin's granularity ----------------
+
+    /** WF-037's sentence on the builtin node: a granularity belongs to the two bucketing builtins. Before this check
+     *  both branches played jutterswet-paasvondst with MAAND on its JAAR_UIT as if the facet were not written (PLAYED 5
+     *  in each), where the verifier refuses it; every other builtin kind is refused the same way, and the two bucketing
+     *  kinds keep it. */
+    @Test void een_granulariteit_staat_alleen_op_een_emmerende_builtin() throws Exception {
+        ObjectNode ir = golden(PAASVONDST);
+        ((ObjectNode) ir.at(WAARDE)).put("granularity", "MAAND");
+        assertTrue(weigert(ir, WAARDE).getMessage().endsWith(": granularity facet on a non-bucketing kind"));
+        int geweigerd = 0;
+        for (Expr.FunctieKind kind : Expr.FunctieKind.values()) {
+            ir = golden(PACHTVENSTER);
+            ((ObjectNode) ir.at(WAARDE)).put("kind", kind.name());
+            if (List.of("SOM", "TOTAAL", "AANTAL", "MINIMUM", "MAXIMUM", "EERSTE", "LAATSTE", "AANTAL_GEVULDE")
+                    .contains(kind.name())) continue;   // the folds: a kind of the other node, refused by name above
+            if (kind == Expr.FunctieKind.TIJDSEVENREDIG_DEEL || kind == Expr.FunctieKind.AANTAL_DAGEN_IN) {
+                assertNotNull(IrLoader.load(ir), kind.name());
+                continue;
+            }
+            assertTrue(weigert(ir, WAARDE).getMessage().endsWith(": granularity facet on a non-bucketing kind"),
+                    kind.name());
+            geweigerd++;
+        }
+        assertEquals(15, geweigerd, "the seventeen builtin kinds but the two bucketing ones");
     }
 
     // ---------------- the context nodes ----------------

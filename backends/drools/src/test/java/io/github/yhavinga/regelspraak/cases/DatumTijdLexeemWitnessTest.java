@@ -3,6 +3,7 @@ package io.github.yhavinga.regelspraak.cases;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.yhavinga.regelspraak.kern.Literalen;
+import io.github.yhavinga.regelspraak.loader.IrLoader;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +28,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * ISO there and WF-095 admits ISO alone, so a snippet in {@code waarde} has no producer and no verifier-clean
  * document. The pins that said "the snippet plays" now say "the snippet is refused on both branches, and the
  * refusal names the lexeme"; the canonical pins are unchanged.
+ *
+ * <p><b>Since the fix round of the L4 landing the loader refuses every form outside the canonical lexeme</b>, in
+ * WF-095's sentence at the literal's value and before either branch lowers anything; the refusal rows below pin
+ * that. Until then each branch refused the rule while lowering it, naming the "datum-tijd-lexeem"; the branches
+ * keep that refusal, and no document read off the wire reaches it any more. The reader rows keep pinning the
+ * reader's own grammar.
  *
  * <p><b>Why this lived in the suite and not in the corpus — and what changed.</b> Measured 2026-09-05, no
  * golden could carry a datum-tijd literal at all: {@code ref}'s {@code literal_value} had no
@@ -98,20 +105,11 @@ class DatumTijdLexeemWitnessTest {
 
     /** Until 2026-09-23 both snippet lexemes PLAYED on both branches (the old pins
      *  {@code het_bronsnippet_speelt_identiek_op_de_exec_model_tak} and the snippet half of the DRL pin).
-     *  Now each branch refuses the rule and names the unreadable lexeme, exactly as it does for the
-     *  zone-suffixed form below. */
+     *  Then each branch refused the rule and named the unreadable lexeme; now the loader refuses the literal,
+     *  exactly as it does the zone-suffixed form below. */
     @Test void het_bronsnippet_wordt_op_beide_takken_luid_geweigerd() throws Exception {
-        for (String[] paar : new String[][] {{SNIPPET_MIDDAG, SUBDAG_CASE}, {SNIPPET_HALVE, MS_CASE}}) {
-            String snippet = model(paar[0]);
-            CaseRunner.Excluded ex = assertThrows(CaseRunner.Excluded.class, () -> speel(snippet, paar[1]),
-                    "the exec-model branch refuses the rule for snippet " + paar[0]);
-            assertTrue(ex.getMessage().contains("datum-tijd-lexeem"),
-                    "and names the unreadable lexeme: " + ex.getMessage());
-            CaseRunner.Result r = drl(snippet, paar[1]);
-            assertEquals("EXCLUDE", r.status(), "the DRL-text branch refuses snippet " + paar[0]);
-            assertTrue(r.reason().contains("datum-tijd-lexeem"),
-                    "in the same words as the other branch: " + r.reason());
-        }
+        for (String[] paar : new String[][] {{SNIPPET_MIDDAG, SUBDAG_CASE}, {SNIPPET_HALVE, MS_CASE}})
+            geweigerdBijHetLaden(model(paar[0]), paar[1], paar[0]);
     }
 
     // ---------------- neither branch may degrade an unreadable lexeme ----------------
@@ -119,18 +117,8 @@ class DatumTijdLexeemWitnessTest {
     @Test void een_onleesbaar_datumtijd_lexeem_weigert_luid_op_beide_takken() throws Exception {
         // "2024-01-31T12:00" has no seconds, so no datum-tijd reader accepts it. The DATE reader would still
         // match its prefix — which is exactly the fall-through that made a wrong answer look played — so the
-        // pin is that BOTH branches refuse the rule instead of quietly comparing against 2024-01-31T00:00:00.
-        String kapot = model("2024-01-31T12:00");
-        CaseRunner.Excluded ex = assertThrows(CaseRunner.Excluded.class, () -> speel(kapot, SUBDAG_CASE),
-                "the exec-model branch refuses the rule");
-        assertTrue(ex.getMessage().contains("datum-tijd-lexeem"),
-                "and says WHY, not 'outside Phase-B scope': " + ex.getMessage());
-        CaseRunner.Result r = drl(kapot, SUBDAG_CASE);
-        assertEquals("EXCLUDE", r.status(), "the DRL-text branch refuses instead of degrading to the bare date");
-        assertTrue(r.reason().contains("Kenmerktoekenning verjaard"),
-                "the refusal names the construct it dropped: " + r.reason());
-        assertTrue(r.reason().contains("datum-tijd-lexeem"),
-                "and names the cause in the same words as the other branch: " + r.reason());
+        // pin is that BOTH branches refuse the document instead of quietly comparing against 2024-01-31T00:00:00.
+        geweigerdBijHetLaden(model("2024-01-31T12:00"), SUBDAG_CASE, "2024-01-31T12:00");
     }
 
     // ---------------- the lexeme FENCE itself (unit pins on the shared reader) ----------------
@@ -186,18 +174,25 @@ class DatumTijdLexeemWitnessTest {
      *  answered as if it were — the exec-model branch played it, the DRL branch played it. Both must now refuse,
      *  and the refusal must NAME the lexeme rather than blame a construct scope it never was. */
     @Test void het_zone_lexeem_wordt_op_beide_takken_luid_geweigerd() throws Exception {
-        String zone = model("2024-01-31T12:00:00Z");
-        CaseRunner.Excluded ex = assertThrows(CaseRunner.Excluded.class, () -> speel(zone, SUBDAG_CASE),
-                "the exec-model branch must refuse the rule, not play a zone-stripped instant");
-        assertTrue(ex.getMessage().contains("datum-tijd-lexeem"),
-                "the exec-model refusal names the unreadable lexeme: " + ex.getMessage());
-        CaseRunner.Result r = drl(zone, SUBDAG_CASE);
-        assertEquals("EXCLUDE", r.status(), "the DRL-text branch must refuse it too");
-        assertTrue(r.reason().contains("datum-tijd-lexeem"),
-                "the DRL refusal names the unreadable lexeme: " + r.reason());
+        geweigerdBijHetLaden(model("2024-01-31T12:00:00Z"), SUBDAG_CASE, "2024-01-31T12:00:00Z");
     }
 
     // ---------------- helpers: replay ----------------
+
+    /** Both branches refuse the document at load, at the comparison literal's value, in the verifier's WF-095
+     *  sentence: the loader is shared, and each branch is asked on its own so neither can stop reaching it unseen. */
+    private static void geweigerdBijHetLaden(String ir, String zaak, String lexeem) {
+        for (boolean viaDrl : new boolean[] { false, true }) {
+            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+                    () -> { if (viaDrl) drl(ir, zaak); else speel(ir, zaak); },
+                    (viaDrl ? "drl-tekst" : "exec-model") + " refuses '" + lexeem + "' at load");
+            assertEquals("/rules/resolvedRegels/0/versions/0/condition/rechts/value", e.plek(), e.getMessage());
+            assertTrue(e.getMessage().endsWith(": millisecond-precision date literal lexeme '" + lexeem + "' is not the"
+                    + " canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' never a space, the seconds"
+                    + " field written, no zone or offset, a fraction of exactly three digits; the day-first source"
+                    + " snippet belongs in `bron` — ch. 4.1)"), e.getMessage());
+        }
+    }
 
     /** One authored model + case through the exec-model replay; the per-case failure line, null on a match. */
     private static String speel(String ir, String caseJson) throws Exception {

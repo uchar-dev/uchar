@@ -1375,6 +1375,11 @@ public final class IrLoader {
         if (g != null) {
             for (Granulariteit x : Granulariteit.values()) if (x.name().equals(g)) granulariteit = x;
             if (granulariteit == null) throw new Documentfout(p + "/granularity", onbekendeWaarde("granularity", g));
+            // WF-037: the facet belongs to the two bucketing builtins. On any other kind neither branch reads it, and
+            // both played the call as if it were not written (measured, JAAR_UIT with MAAND), where the verifier
+            // refuses it and ref faults.
+            if (fk != Expr.FunctieKind.TIJDSEVENREDIG_DEEL && fk != Expr.FunctieKind.AANTAL_DAGEN_IN)
+                throw new Documentfout(p, "granularity facet on a non-bucketing kind");
         }
         Expr.Functie f = new Expr.Functie(fk, args, null, null, conditie(knoopVeld(n, "filter")), null, typeVeld(n),
                 bron(n), granulariteit);
@@ -1407,15 +1412,17 @@ public final class IrLoader {
     /**
      * IR-SPEC ch. 4.1: a literal's typed value, read into the frontend's literal record as the lexeme it always
      * held — the string of the variant, and waar or onwaar for a boolean. The value is exactly one variant of the
-     * case format's value union, without a payload; its string is loaded as written (its spelling is WF-081's,
-     * WF-084's and WF-095's, and the schema's patterns), with two exceptions no executor may read past. A variant
-     * that is not the one the literal's type names is refused (WF-114's sentence without its number), so no branch
-     * reads {@code {"text": "5"}} under a Number as a number; a literal without a type has nothing to cross it
-     * against (WF-034's typeless value node). And a number outside the case format's number grammar is refused
-     * (WF-081's sentence), the grammar ref and the ASP backend read with: the frontend's shared number reader, which
-     * also reads source text, searches the lexeme for its first number, so it took a comma for a point and read
-     * {@code .5} and {@code 5 €} as 5, {@code -.5} as 5 and {@code 3/04} as 0.75 where those two fault (measured on
-     * both branches before this check).
+     * case format's value union, without a payload; its string is loaded as written, with the exceptions below,
+     * which no executor may read past. A variant that is not the one the literal's type names is refused (WF-114's
+     * sentence without its number), so no branch reads {@code {"text": "5"}} under a Number as a number; a literal
+     * without a type has nothing to cross it against (WF-034's typeless value node). And a number, a date or a
+     * date-time outside its grammar is refused in the verifier's sentence (WF-081, WF-084, WF-095), keyed on the
+     * variant as the verifier keys it. For the number that grammar is the one ref and the ASP backend read with: the
+     * frontend's shared number reader, which also reads source text, searches the lexeme for its first number, so it
+     * took a comma for a point and read {@code .5} and {@code 5 €} as 5, {@code -.5} as 5 and {@code 3/04} as 0.75
+     * where those two fault (measured on both branches before this check). A date or date-time outside ISO loaded
+     * until the fix round of the L4 landing and was refused only while lowering, under a scope note ("waarde buiten
+     * scope", "TODO datumliteral"), where the verifier named the lexeme (measured on the WF-084 and WF-095 witnesses).
      */
     private Expr literal(JsonNode n) {
         String p = padVan(n);
@@ -1437,8 +1444,42 @@ public final class IrLoader {
             throw new Documentfout(p + "/value", "numeric literal lexeme '" + lexeem + "' is not a number of the case"
                     + " format (an optional '-', digits, an optional '.' and digits, or a rational a/b whose denominator"
                     + " has no leading zero — ch. 4.1)");
+        if (variant.equals("date") && !isoDatum(lexeem))
+            throw new Documentfout(p + "/value", "date literal lexeme '" + lexeem + "' is not the ISO form yyyy-mm-dd"
+                    + " (fixed field widths, valid ranges — ch. 4.1)");
+        if (variant.equals("dateTime") && !isoDatumTijd(lexeem))
+            throw new Documentfout(p + "/value", "millisecond-precision date literal lexeme '" + lexeem + "' is not the"
+                    + " canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' never a space, the seconds"
+                    + " field written, no zone or offset, a fraction of exactly three digits; the day-first source"
+                    + " snippet belongs in `bron` — ch. 4.1)");
         return new Expr.Literal(lexeem, type, bron(n));
     }
+
+    /** WF-084's grammar, the verifier's: four-two-two digit fields, a month of the year and a day of that month,
+     *  leap years included. */
+    private static boolean isoDatum(String s) {
+        java.util.regex.Matcher m = DATUM.matcher(s);
+        return m.matches() && kalenderdag(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)),
+                Integer.parseInt(m.group(3)));
+    }
+
+    /** WF-095's grammar, the verifier's: the date of WF-084, a 'T', hours, minutes and seconds in range, and an
+     *  optional fraction of exactly three digits, with nothing after it. */
+    private static boolean isoDatumTijd(String s) {
+        java.util.regex.Matcher m = DATUMTIJD.matcher(s);
+        return m.matches() && kalenderdag(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)),
+                Integer.parseInt(m.group(3))) && Integer.parseInt(m.group(4)) <= 23 && Integer.parseInt(m.group(5)) <= 59
+                && Integer.parseInt(m.group(6)) <= 59;
+    }
+
+    private static boolean kalenderdag(int jaar, int maand, int dag) {
+        return maand >= 1 && maand <= 12 && dag >= 1 && dag <= java.time.YearMonth.of(jaar, maand).lengthOfMonth();
+    }
+
+    private static final java.util.regex.Pattern DATUM =
+            java.util.regex.Pattern.compile("([0-9]{4})-([0-9]{2})-([0-9]{2})");
+    private static final java.util.regex.Pattern DATUMTIJD = java.util.regex.Pattern.compile(
+            "([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})(\\.[0-9]{3})?");
 
     /** The number grammar of the case format (uchar-case-v0), which the literal's number variant carries. */
     private static final java.util.regex.Pattern GETAL =
