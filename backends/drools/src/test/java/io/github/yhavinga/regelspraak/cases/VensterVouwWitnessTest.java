@@ -17,8 +17,8 @@ import java.util.Set;
 
 /**
  * A TIME WINDOW (RUNTIME-SEMANTICS ch. 3.10) inside a QUANTIFIER FOLD (ch. 3.9a), replayed through BOTH
- * Drools branches: played where WF-112 admits it — the {@code toets} and the {@code filter} of an
- * {@code ALLE} fold, and beside them the die/dat filter of an aggregation, which shares the filter's
+ * Drools branches: played where WF-112 admits it — the {@code test} and the {@code filter} of an
+ * {@code all} fold, and beside them the die/dat filter of an aggregation, which shares the filter's
  * machinery — and refused BY NAME everywhere WF-112 forbids it.
  *
  * <p><b>Why these rows exist.</b> Measured 2026-09-23 (card drools-venster-vouwtoets) on documents built

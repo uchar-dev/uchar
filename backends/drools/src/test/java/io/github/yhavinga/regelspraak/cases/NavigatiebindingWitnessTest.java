@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The IR-SPEC ch. 4.1a navigation-binding witness: both Drools branches decide a navigation by the wire's
- * {@code navigatieBindingen} / {@code navigatieBinding} and by nothing else — since L2 of the v1 wire migration a
+ * {@code path} / {@code navigation} and by nothing else — since L2 of the v1 wire migration a
  * read carries no written step beside its binding, and a read without bindings is the subject's own.
  *
  * <p>The rows twist ONE binding on an in-memory variant of {@code jutterswet-dubbelverbinding}, where four feittypen

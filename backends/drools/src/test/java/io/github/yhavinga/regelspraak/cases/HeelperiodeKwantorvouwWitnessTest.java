@@ -144,7 +144,7 @@ class HeelperiodeKwantorvouwWitnessTest {
     // ---------------- the NIET prefix binds to the MATRIX, not to the verdict ----------------
 
     /**
-     * ch. 3.9a maakt {@code toets} een GEWONE conditie met het element als onderwerp, dus haar §8.2
+     * ch. 3.9a maakt {@code test} een GEWONE conditie met het element als onderwerp, dus haar §8.2
      * "niet gedurende …"-prefix ontkent PER BIJDRAGER. Dat maakt een genegeerde ALLE precies een GEEN
      * over de positieve matrix (∀c.¬P = ¬∃c.P) — de dualiteit waarop deze tak de kwantor omklapt in
      * plaats van een derde runtime-helper te bouwen. Zou de NIET op het VERDICT slaan (zoals bij de

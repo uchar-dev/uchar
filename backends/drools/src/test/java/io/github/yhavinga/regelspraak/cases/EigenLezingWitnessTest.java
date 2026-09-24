@@ -69,7 +69,7 @@ class EigenLezingWitnessTest {
             """;
 
     /** The golden reduced to one rule, "De muntwaarde van een Munt moet berekend worden als het gewicht", whose read
-     *  names {@code objecttype}. */
+     *  names {@code objecttype} as its subjectType. */
     private static ObjectNode metMuntwaarde(String objecttype) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(GOLDEN.resolve("ir.json")));
         JsonNode gewicht = IrPad.attribute(IrPad.objectType(ir, "Vondst"), "gewicht").get("datatype");

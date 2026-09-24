@@ -2124,7 +2124,7 @@ public final class ExecModelTranspiler {
     }
 
     /** IR-SPEC ch. 4.3, the set source: a fold whose single argument is read through a range — a one-step
-     *  {@code bronRol} or a {@code bronPad} — ranges over linked instances, and that argument is the SET source. */
+     *  {@code sourceRole} or a {@code sourcePath} — ranges over linked instances, and that argument is the SET source. */
     private boolean heeftBereik(Expr.Functie f) {
         return rolBindingen.containsKey(f) || bronPaden.containsKey(f);
     }
@@ -2152,7 +2152,7 @@ public final class ExecModelTranspiler {
     }
 
     /** The one hop of a navigated kenmerk check: the reached role (the bean field on the subject) and the type it
-     *  reaches, from the wire's {@code navigatieBinding} — null when the check does not navigate or that hop does
+     *  reaches, from the wire's {@code navigation} — null when the check does not navigate or that hop does
      *  not fit {@code subject}. */
     private record KenmerkHop(String rol, Objecttype doel) {}
     private KenmerkHop kenmerkHop(Conditie.Kenmerk k, Objecttype subject) {
@@ -3021,7 +3021,7 @@ public final class ExecModelTranspiler {
      *  {@link RegelSpraakRuntime#rsGeheelPeriodeGeen}. Three pieces, each taken from the machinery that already
      *  exists rather than rebuilt:
      *  <ul>
-     *    <li>the CONTRIBUTORS are the instance fold's — the by-pair join first and the wire's {@code bronRol} as the
+     *    <li>the CONTRIBUTORS are the instance fold's — the by-pair join first and the wire's {@code sourceRole} as the
      *        fallback for the self-typed pair no by-pair search can disambiguate, with the SAME §13.3.9
      *        storage-direction questions {@link #aggregatie} asks (a derived role is not yet a bean field);</li>
      *    <li>the {@code filter} is applied to the accumulate SOURCE through {@link #filterSource}, which is exactly

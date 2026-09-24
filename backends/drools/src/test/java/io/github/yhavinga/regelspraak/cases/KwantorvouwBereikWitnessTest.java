@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The ch. 4.3 {@code bronRol} witness for the ch. 3.9a QUANTIFIER FOLD — the fourth seam that resolves a fold's
+ * The ch. 4.3 {@code sourceRole} witness for the ch. 3.9a QUANTIFIER FOLD — the fourth seam that resolves a fold's
  * own range, after the instance fold, the §5.8.2 temporal set fold and the §13.4.6 creation back-link.
  *
  * <p>RED FIRST, measured on the jar from the commit before the fix, on {@code jutterswet-keurploeg} with ONE

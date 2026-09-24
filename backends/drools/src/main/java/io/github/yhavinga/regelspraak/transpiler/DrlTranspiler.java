@@ -139,7 +139,7 @@ public final class DrlTranspiler {
 
     /** @param rolBindingen the wire's symbolic (feittype, rol) binding per IR node
      *      ({@code IrLoader.Loaded.rolBindingen}), by IDENTITY — on an aggregation {@link Expr.Functie} the
-     *      ch. 4.3 {@code bronRol}, naming the role the folded ELEMENT plays. Read as the LAST resort in
+     *      ch. 4.3 {@code sourceRole}, naming the role the folded ELEMENT plays. Read as the LAST resort in
      *      {@link #scope}, after the written element name and the by-pair search, so every join the model
      *      already derives stays exactly as it was. Without it a fold whose argument is an ATTRIBUTE name
      *      (SOM/MINIMUM/MAXIMUM/TOTAAL) has only the by-pair search, which is ambiguous by construction on a
@@ -171,7 +171,7 @@ public final class DrlTranspiler {
     private java.util.Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen = java.util.Map.of();
 
     /** IR-SPEC ch. 4.3, the set source: a fold whose single argument is read through a range — a one-step
-     *  {@code bronRol} or a {@code bronPad} — ranges over linked instances, and that argument is the SET source;
+     *  {@code sourceRole} or a {@code sourcePath} — ranges over linked instances, and that argument is the SET source;
      *  without one the argument is the subject's own attribute. */
     private boolean heeftBereik(Expr.Functie f) {
         return rolBindingen.containsKey(f) || bronPaden.containsKey(f);
@@ -3823,7 +3823,7 @@ public final class DrlTranspiler {
     }
 
     /** The one hop of a navigated kenmerk check: the reached role (the bean field on the subject) and the type it
-     *  reaches, from the wire's {@code navigatieBinding} — null when the check does not navigate or that hop does
+     *  reaches, from the wire's {@code navigation} — null when the check does not navigate or that hop does
      *  not fit {@code subject}. */
     private record KenmerkHop(String rol, Objecttype doel) {}
     private KenmerkHop kenmerkHop(Conditie.Kenmerk k, Objecttype subject) {

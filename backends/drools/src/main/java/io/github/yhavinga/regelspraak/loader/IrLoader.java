@@ -245,7 +245,7 @@ public final class IrLoader {
      *         tree it came from ({@code EffectieveEenheid}'s binder-read table, which answers the unit of a
      *         {@link Expr.BinderRef} asked in isolation). Empty for a document that carries no Let.
      *  @param bronPaden the ch. 4.3 / WF-102 fold-source RANGE per {@link Expr.Functie} node, by IDENTITY: the
-     *         ordered RolBinding steps, subject-outward, VERBATIM off the wire. It rides here for the same reason
+     *         ordered RoleBinding steps, subject-outward, VERBATIM off the wire. It rides here for the same reason
      *         {@code sourceRole} does — {@code Expr.Functie} is the vendored slice — and for a sharper one: unlike
      *         every other extension this loader carries, a path is not re-derivable. The type PAIR answers for the
      *         endpoints only, and a path's intermediate types are its own claim; a consumer that dropped this list
@@ -1197,7 +1197,9 @@ public final class IrLoader {
     }
 
     /** Every expression node this loader reads, with the schema's keys. A node kind outside the table is a form this
-     *  backend does not carry and reaches the dispatch's refusal; the union's selection is read inside its union. */
+     *  backend does not carry and reaches the dispatch's refusal; the union's selection is read inside its union. The
+     *  temporal read is such a form, and its keys stand here all the same: a key of its v0 shape is refused by name
+     *  before the form is refused. */
     private static final Map<String, Sleutels> EXPRESSIE = Map.ofEntries(
             sleutels("Literal", List.of("node", "value", "type"), "source"),
             sleutels("TextComposition", List.of("node", "parts", "type"), "source"),
@@ -1214,6 +1216,7 @@ public final class IrLoader {
             sleutels("BoundDay", List.of("node", "type"), "source"),
             sleutels("ContextValue", List.of("node", "name", "type"), "source"),
             sleutels("Unresolved", List.of("node"), "type", "source"),
+            sleutels("TemporalRead", List.of("node", "base", "date", "type"), "source"),
             sleutels("Let", List.of("node", "type", "binder", "value", "body"), "source"),
             sleutels("BinderRef", List.of("node", "name"), "source"),
             sleutels("IfThenElse", List.of("node", "type", "condition", "then", "else"), "source"),

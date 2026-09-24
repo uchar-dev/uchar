@@ -410,7 +410,7 @@ class LaderWeigeringWitnessTest {
         ObjectNode ir = golden(BAKENMEESTER);
         ObjectNode ot = IrPad.objectType(ir, "Bakenmeester");
         ArrayNode kenmerken = (ArrayNode) ot.get("characteristics");
-        kenmerken.addObject().put("node", "Characteristic").put("name", "dienstdoend").put("kind", "BEZITTELIJK");
+        kenmerken.addObject().put("node", "Characteristic").put("name", "dienstdoend").put("kind", "possessive");
         IrLoader.Documentfout e = weigert(ir, objectTypePad(ir, "Bakenmeester") + "/characteristics/"
                 + (kenmerken.size() - 1) + "/name");
         assertTrue(e.getMessage().contains("'dienstdoend'"), e.getMessage());

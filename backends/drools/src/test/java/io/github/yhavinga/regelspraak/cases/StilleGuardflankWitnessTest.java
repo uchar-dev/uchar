@@ -20,7 +20,7 @@ import java.util.Set;
  * the replay refuses the document by name. The exec branch returned no rule and recorded no skip, which the coverage
  * manifest reads as LOWERED — the document replayed as PLAYED with the creation's count at 0.
  *
- * <p>That is the gate-8 principle inside one backend: the two measured shapes below are an {@code Onopgelost} guard
+ * <p>That is the gate-8 principle inside one backend: the two measured shapes below are an {@code Unresolved} guard
  * and a hosting the reader cannot honour, and both are FAULTS in {@code ref} and in the clingo backend. A fault that
  * becomes a plain zero in the third executor is the divergence the differential exists to catch, and the played
  * channel counted it as agreement.

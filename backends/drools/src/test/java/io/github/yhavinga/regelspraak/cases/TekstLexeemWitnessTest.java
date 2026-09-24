@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * One {@code Literal} of type {@code Tekst}, one value — in BOTH transpiler branches. IR-SPEC ch. 4.1 puts the
+ * One {@code Literal} of type {@code Text}, one value — in BOTH transpiler branches. IR-SPEC ch. 4.1 puts the
  * parsed string in its {@code text} value (the 2026-09-18 canonicalisation strips only the emitter's outer delimiters;
  * a hand-authored value may carry any text); the reference interpreter reads it verbatim into its text value and a
  * case input's {@code {"text": …}} carries it verbatim too, so the value a back-end compares (or writes) must be
