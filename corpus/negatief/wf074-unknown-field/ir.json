@@ -102,25 +102,20 @@
                 "base": {
                   "node": "AttribuutRef",
                   "attribuut": "dossier",
-                  "objecttype": "Jutter",
-                  "bron": null
+                  "objecttype": "Jutter"
                 },
-                "field": "onbekend",
-                "bron": null
+                "field": "onbekend"
               },
               "dagsoort": null,
               "negatie": false,
               "cijfers": 0,
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
-            },
-            "bron": null,
-            "line": 1
+            }
           }
         ]
       }

@@ -51,7 +51,9 @@
               "node": "AttribuutRef",
               "attribuut": "volwassen",
               "objecttype": "Persoon",
-              "bron": "Een Persoon is volwassen"
+              "source": {
+                "snippet": "Een Persoon is volwassen"
+              }
             },
             "value": {
               "node": "Literal",
@@ -61,7 +63,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -70,7 +74,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "leeftijd",
                 "objecttype": "Persoon",
-                "bron": "zijn leeftijd"
+                "source": {
+                  "snippet": "zijn leeftijd"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -83,10 +89,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "18"
+                "source": {
+                  "snippet": "18"
+                }
               },
               "periode": null,
-              "bron": "zijn leeftijd groter of gelijk is aan 18"
+              "source": {
+                "snippet": "zijn leeftijd groter of gelijk is aan 18"
+              }
             },
             "initialisation": false
           }
@@ -113,7 +123,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "leeftijd",
                     "objecttype": "Persoon",
-                    "bron": "zijn leeftijd"
+                    "source": {
+                      "snippet": "zijn leeftijd"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -126,7 +138,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "1"
+                    "source": {
+                      "snippet": "1"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -134,7 +148,9 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "zijn leeftijd plus 1"
+                  "source": {
+                    "snippet": "zijn leeftijd plus 1"
+                  }
                 },
                 "kenmerk": false
               }
@@ -145,7 +161,9 @@
               "negatie": true,
               "eigenaar": "Persoon",
               "periode": null,
-              "bron": "hij niet volwassen is"
+              "source": {
+                "snippet": "hij niet volwassen is"
+              }
             },
             "validity": {
               "node": "Geldigheid",
@@ -169,8 +187,10 @@
         "leden": [
           "maak kind"
         ],
-        "bron": "Regelgroep groei is recursief",
-        "line": 1
+        "source": {
+          "snippet": "Regelgroep groei is recursief",
+          "line": 1
+        }
       }
     ]
   },

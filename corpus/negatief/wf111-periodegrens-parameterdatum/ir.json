@@ -55,7 +55,9 @@
               "node": "AttribuutRef",
               "attribuut": "vondstpremie",
               "objecttype": "Vondst",
-              "bron": "De vondstpremie van een Vondst"
+              "source": {
+                "snippet": "De vondstpremie van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -68,18 +70,24 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "50"
+              "source": {
+                "snippet": "50"
+              }
             },
             "condition": {
               "node": "Periode",
               "vanaf": {
                 "node": "ParameterRef",
                 "parameter": "peildatum",
-                "bron": "de peildatum"
+                "source": {
+                  "snippet": "de peildatum"
+                }
               },
               "tot": null,
               "totInclusief": false,
-              "bron": "vanaf de peildatum"
+              "source": {
+                "snippet": "vanaf de peildatum"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

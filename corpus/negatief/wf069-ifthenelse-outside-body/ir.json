@@ -55,8 +55,7 @@
                       "whole": false,
                       "decimals": 2,
                       "sign": "ONBEPAALD"
-                    },
-                    "bron": null
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -68,11 +67,9 @@
                       "whole": false,
                       "decimals": 2,
                       "sign": "ONBEPAALD"
-                    },
-                    "bron": null
+                    }
                   },
-                  "periode": null,
-                  "bron": null
+                  "periode": null
                 },
                 "then": {
                   "node": "Literal",
@@ -84,8 +81,7 @@
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
-                  },
-                  "bron": null
+                  }
                 },
                 "else": {
                   "node": "Literal",
@@ -97,24 +93,19 @@
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
-                  },
-                  "bron": null
-                },
-                "bron": null
+                  }
+                }
               },
               "dagsoort": null,
               "negatie": false,
               "cijfers": 0,
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
-            },
-            "bron": null,
-            "line": 1
+            }
           }
         ]
       }

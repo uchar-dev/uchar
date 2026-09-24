@@ -274,7 +274,9 @@
               "node": "AttribuutRef",
               "attribuut": "bergingslast",
               "objecttype": "Vondst",
-              "bron": "De bergingslast van een Vondst"
+              "source": {
+                "snippet": "De bergingslast van een Vondst"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -284,7 +286,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bewaarvergoeding per maand",
                   "objecttype": "Jutter",
-                  "bron": "zijn bewaarvergoeding per maand"
+                  "source": {
+                    "snippet": "zijn bewaarvergoeding per maand"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -304,7 +308,9 @@
                   }
                 }
               },
-              "bron": "het totaal van zijn bewaarvergoeding per maand"
+              "source": {
+                "snippet": "het totaal van zijn bewaarvergoeding per maand"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -68,7 +68,9 @@
               "node": "AttribuutRef",
               "attribuut": "eerstehoogwater",
               "objecttype": "Getijdendag",
-              "bron": "Het eerstehoogwater van een Getijdendag"
+              "source": {
+                "snippet": "Het eerstehoogwater van een Getijdendag"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -78,14 +80,18 @@
                   "node": "AttribuutRef",
                   "attribuut": "ochtendhoogwater",
                   "objecttype": "Getijdendag",
-                  "bron": "zijn ochtendhoogwater"
+                  "source": {
+                    "snippet": "zijn ochtendhoogwater"
+                  }
                 }
               ],
               "type": {
                 "node": "Date",
                 "precision": "millisecond"
               },
-              "bron": "de eerste van zijn ochtendhoogwater en zijn avondhoogwater"
+              "source": {
+                "snippet": "de eerste van zijn ochtendhoogwater en zijn avondhoogwater"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -106,7 +112,9 @@
               "node": "AttribuutRef",
               "attribuut": "laatstehoogwater",
               "objecttype": "Getijdendag",
-              "bron": "Het laatstehoogwater van een Getijdendag"
+              "source": {
+                "snippet": "Het laatstehoogwater van een Getijdendag"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -116,20 +124,26 @@
                   "node": "AttribuutRef",
                   "attribuut": "ochtendhoogwater",
                   "objecttype": "Getijdendag",
-                  "bron": "zijn ochtendhoogwater"
+                  "source": {
+                    "snippet": "zijn ochtendhoogwater"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "avondhoogwater",
                   "objecttype": "Getijdendag",
-                  "bron": "zijn avondhoogwater"
+                  "source": {
+                    "snippet": "zijn avondhoogwater"
+                  }
                 }
               ],
               "type": {
                 "node": "Date",
                 "precision": "millisecond"
               },
-              "bron": "de laatste van zijn ochtendhoogwater en zijn avondhoogwater"
+              "source": {
+                "snippet": "de laatste van zijn ochtendhoogwater en zijn avondhoogwater"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

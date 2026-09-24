@@ -125,7 +125,9 @@
               "node": "AttribuutRef",
               "attribuut": "uitkering",
               "objecttype": "Jutter",
-              "bron": "de uitkering"
+              "source": {
+                "snippet": "de uitkering"
+              }
             },
             "value": {
               "node": "Literal",
@@ -138,7 +140,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "5.00"
+              "source": {
+                "snippet": "5.00"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -147,7 +151,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "beschikking",
                 "objecttype": "Jutter",
-                "bron": "de beschikking"
+                "source": {
+                  "snippet": "de beschikking"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -163,10 +169,11 @@
                     "Aangehouden"
                   ]
                 },
-                "bron": "Afgewezen"
+                "source": {
+                  "snippet": "Afgewezen"
+                }
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "initialisation": false,
             "presentation": "BEREKENING"

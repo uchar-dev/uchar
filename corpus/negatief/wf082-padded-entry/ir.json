@@ -76,7 +76,9 @@
               "node": "AttribuutRef",
               "attribuut": "jaarsom",
               "objecttype": "Jutter",
-              "bron": "De jaarsom van een Jutter"
+              "source": {
+                "snippet": "De jaarsom van een Jutter"
+              }
             },
             "value": {
               "node": "Binair",
@@ -85,13 +87,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "drempeloverschot",
                 "objecttype": "Jutter",
-                "bron": "het drempeloverschot van de Jutter"
+                "source": {
+                  "snippet": "het drempeloverschot van de Jutter"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "hardheidsoverschot",
                 "objecttype": "Jutter",
-                "bron": "het hardheidsoverschot van de Jutter"
+                "source": {
+                  "snippet": "het hardheidsoverschot van de Jutter"
+                }
               },
               "type": {
                 "node": "Number",
@@ -99,7 +105,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het drempeloverschot van de Jutter plus het hardheidsoverschot van de Jutter"
+              "source": {
+                "snippet": "het drempeloverschot van de Jutter plus het hardheidsoverschot van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

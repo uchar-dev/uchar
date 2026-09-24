@@ -325,7 +325,9 @@
               "node": "AttribuutRef",
               "attribuut": "kopie",
               "objecttype": "Jutter",
-              "bron": "De kopie van een Jutter"
+              "source": {
+                "snippet": "De kopie van een Jutter"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -333,7 +335,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "gewicht",
                 "objecttype": "Jutter",
-                "bron": "de gewicht van de Jutter"
+                "source": {
+                  "snippet": "de gewicht van de Jutter"
+                }
               },
               "modus": "REKENKUNDIG",
               "decimalen": 2,
@@ -353,7 +357,9 @@
                   }
                 }
               },
-              "bron": "het gewicht van de Jutter afgerond op 2 decimalen"
+              "source": {
+                "snippet": "het gewicht van de Jutter afgerond op 2 decimalen"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

@@ -74,7 +74,9 @@
           "factType": "wachtindeling",
           "role": "wachtjutter",
           "negated": false,
-          "bron": "de dag valt op een dag waarop hij een wachtjutter is"
+          "source": {
+            "snippet": "de dag valt op een dag waarop hij een wachtjutter is"
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",

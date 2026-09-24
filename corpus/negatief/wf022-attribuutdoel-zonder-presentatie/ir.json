@@ -118,7 +118,9 @@
               "node": "AttribuutRef",
               "attribuut": "meldloon",
               "objecttype": "Vondst",
-              "bron": "Het meldloon van een Vondst"
+              "source": {
+                "snippet": "Het meldloon van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -127,7 +129,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "waarde",
                 "objecttype": "Vondst",
-                "bron": "de waarde van de Vondst"
+                "source": {
+                  "snippet": "de waarde van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -150,7 +154,9 @@
                     }
                   }
                 },
-                "bron": "5 \u20ac"
+                "source": {
+                  "snippet": "5 \u20ac"
+                }
               },
               "type": {
                 "node": "Number",
@@ -168,7 +174,9 @@
                   }
                 }
               },
-              "bron": "de waarde van de Vondst plus 5 \u20ac"
+              "source": {
+                "snippet": "de waarde van de Vondst plus 5 \u20ac"
+              }
             },
             "initialisation": false
           }
@@ -188,7 +196,9 @@
               "node": "AttribuutRef",
               "attribuut": "nettoloon",
               "objecttype": "Vondst",
-              "bron": "Het nettoloon van een Vondst"
+              "source": {
+                "snippet": "Het nettoloon van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -197,7 +207,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "meldloon",
                 "objecttype": "Vondst",
-                "bron": "het meldloon van de Vondst"
+                "source": {
+                  "snippet": "het meldloon van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -220,7 +232,9 @@
                     }
                   }
                 },
-                "bron": "12,50 \u20ac"
+                "source": {
+                  "snippet": "12,50 \u20ac"
+                }
               },
               "type": {
                 "node": "Number",
@@ -238,7 +252,9 @@
                   }
                 }
               },
-              "bron": "het meldloon van de Vondst min 12,50 \u20ac"
+              "source": {
+                "snippet": "het meldloon van de Vondst min 12,50 \u20ac"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -53,13 +53,17 @@
               "node": "AttribuutRef",
               "attribuut": "etiket",
               "objecttype": "Jutter",
-              "bron": "het etiket van de Jutter"
+              "source": {
+                "snippet": "het etiket van de Jutter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Jutter",
-              "bron": "het gewicht van de Jutter"
+              "source": {
+                "snippet": "het gewicht van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

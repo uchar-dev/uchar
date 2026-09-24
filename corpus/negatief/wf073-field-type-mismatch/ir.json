@@ -98,8 +98,7 @@
                       },
                       "type": {
                         "node": "Tekst"
-                      },
-                      "bron": null
+                      }
                     }
                   },
                   {
@@ -114,26 +113,21 @@
                         "whole": true,
                         "decimals": 0,
                         "sign": "NIET_NEGATIEF"
-                      },
-                      "bron": null
+                      }
                     }
                   }
-                ],
-                "bron": null
+                ]
               },
               "dagsoort": null,
               "negatie": false,
               "cijfers": 0,
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
-            },
-            "bron": null,
-            "line": 1
+            }
           }
         ]
       }

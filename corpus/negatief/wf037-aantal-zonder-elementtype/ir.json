@@ -107,7 +107,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal gewogen posten",
               "objecttype": "Jutter",
-              "bron": "Het aantal gewogen posten van een Jutter"
+              "source": {
+                "snippet": "Het aantal gewogen posten van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -117,7 +119,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewogen vangst",
                   "objecttype": "Jutter",
-                  "bron": "het gewogen vangst van de Jutter"
+                  "source": {
+                    "snippet": "het gewogen vangst van de Jutter"
+                  }
                 }
               ],
               "type": {
@@ -126,7 +130,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal van het gewogen vangst van de Jutter"
+              "source": {
+                "snippet": "het aantal van het gewogen vangst van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

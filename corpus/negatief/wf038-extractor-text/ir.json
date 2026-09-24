@@ -46,7 +46,9 @@
               "node": "AttribuutRef",
               "attribuut": "vondstjaar",
               "objecttype": "Vondst",
-              "bron": "Het vondstjaar van een Vondst"
+              "source": {
+                "snippet": "Het vondstjaar van een Vondst"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -60,7 +62,9 @@
                   "type": {
                     "node": "Tekst"
                   },
-                  "bron": "'strandvondst'"
+                  "source": {
+                    "snippet": "'strandvondst'"
+                  }
                 }
               ],
               "type": {
@@ -69,7 +73,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de maand uit 'strandvondst'"
+              "source": {
+                "snippet": "de maand uit 'strandvondst'"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

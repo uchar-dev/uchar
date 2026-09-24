@@ -325,7 +325,9 @@
               "node": "AttribuutRef",
               "attribuut": "kopie",
               "objecttype": "Jutter",
-              "bron": "De kopie van een Jutter"
+              "source": {
+                "snippet": "De kopie van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -335,7 +337,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Jutter",
-                  "bron": "de gewicht van de Jutter"
+                  "source": {
+                    "snippet": "de gewicht van de Jutter"
+                  }
                 },
                 {
                   "node": "Literal",
@@ -358,7 +362,9 @@
                       }
                     }
                   },
-                  "bron": "0 kg"
+                  "source": {
+                    "snippet": "0 kg"
+                  }
                 }
               ],
               "type": {
@@ -377,7 +383,9 @@
                   }
                 }
               },
-              "bron": "de maximale waarde van het gewicht van de Jutter en 0 kg"
+              "source": {
+                "snippet": "de maximale waarde van het gewicht van de Jutter en 0 kg"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

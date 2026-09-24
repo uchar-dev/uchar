@@ -134,7 +134,9 @@
               "node": "AttribuutRef",
               "attribuut": "bergstand",
               "objecttype": "Berging",
-              "bron": "de bergstand"
+              "source": {
+                "snippet": "de bergstand"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -144,7 +146,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "stand",
                   "objecttype": "Schuit",
-                  "bron": "de stand van alle schuiten van de Berging"
+                  "source": {
+                    "snippet": "de stand van alle schuiten van de Berging"
+                  }
                 }
               ],
               "elementType": "Schuit",
@@ -172,7 +176,9 @@
                   }
                 ]
               },
-              "bron": "het maximum stand van alle schuiten van de Berging"
+              "source": {
+                "snippet": "het maximum stand van alle schuiten van de Berging"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

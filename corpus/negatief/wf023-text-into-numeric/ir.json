@@ -46,7 +46,9 @@
               "node": "AttribuutRef",
               "attribuut": "etiket",
               "objecttype": "Kavel",
-              "bron": "Het etiket van een Kavel"
+              "source": {
+                "snippet": "Het etiket van een Kavel"
+              }
             },
             "value": {
               "node": "Literal",
@@ -56,7 +58,9 @@
               "type": {
                 "node": "Tekst"
               },
-              "bron": "'strand'"
+              "source": {
+                "snippet": "'strand'"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

@@ -58,14 +58,18 @@
             "node": "Default",
             "besluit": null,
             "voorwaarde": null,
-            "bron": "groep-default met lege excepties",
+            "source": {
+              "snippet": "groep-default met lege excepties"
+            },
             "excepties": {
               "ongeordend": true,
               "leden": []
             }
           }
         ],
-        "bron": "art. n",
+        "source": {
+          "snippet": "art. n"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

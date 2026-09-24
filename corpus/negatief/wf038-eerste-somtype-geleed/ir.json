@@ -127,7 +127,9 @@
               "node": "AttribuutRef",
               "attribuut": "bergstand",
               "objecttype": "Berging",
-              "bron": "de bergstand"
+              "source": {
+                "snippet": "de bergstand"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -137,13 +139,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "bakboordstand",
                   "objecttype": "Berging",
-                  "bron": "zijn bakboordstand"
+                  "source": {
+                    "snippet": "zijn bakboordstand"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "stuurboordstand",
                   "objecttype": "Berging",
-                  "bron": "zijn stuurboordstand"
+                  "source": {
+                    "snippet": "zijn stuurboordstand"
+                  }
                 }
               ],
               "type": {
@@ -165,7 +171,9 @@
                   }
                 ]
               },
-              "bron": "de eerste van zijn bakboordstand en zijn stuurboordstand"
+              "source": {
+                "snippet": "de eerste van zijn bakboordstand en zijn stuurboordstand"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

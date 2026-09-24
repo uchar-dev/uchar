@@ -79,12 +79,16 @@
           "links": {
             "node": "BinderRef",
             "name": "acc",
-            "bron": "de opgetelde som"
+            "source": {
+              "snippet": "de opgetelde som"
+            }
           },
           "rechts": {
             "node": "BinderRef",
             "name": "x",
-            "bron": "het bedrag"
+            "source": {
+              "snippet": "het bedrag"
+            }
           },
           "type": {
             "node": "Number",
@@ -92,9 +96,13 @@
             "decimals": 2,
             "sign": "ONBEPAALD"
           },
-          "bron": "de opgetelde som plus het bedrag"
+          "source": {
+            "snippet": "de opgetelde som plus het bedrag"
+          }
         },
-        "bron": "de som van twee bedragen"
+        "source": {
+          "snippet": "de som van twee bedragen"
+        }
       }
     ]
   },
@@ -114,7 +122,9 @@
               "node": "AttribuutRef",
               "attribuut": "totaal",
               "objecttype": "Jutter",
-              "bron": "Het totaal van een Jutter"
+              "source": {
+                "snippet": "Het totaal van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -127,7 +137,9 @@
               "list": {
                 "node": "ParameterRef",
                 "parameter": "bedragen",
-                "bron": "de bedragen"
+                "source": {
+                  "snippet": "de bedragen"
+                }
               },
               "function": "optellen",
               "init": {
@@ -141,9 +153,13 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               },
-              "bron": "de bedragen opgeteld"
+              "source": {
+                "snippet": "de bedragen opgeteld"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

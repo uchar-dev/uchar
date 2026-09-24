@@ -185,7 +185,9 @@
               "node": "AttribuutRef",
               "attribuut": "aanvoerplichtig",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is aanvoerplichtig"
+              "source": {
+                "snippet": "Een Jutter is aanvoerplichtig"
+              }
             },
             "value": {
               "node": "Literal",
@@ -195,7 +197,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -204,15 +208,21 @@
                 "node": "AttribuutRef",
                 "attribuut": "aangevoerd gewicht",
                 "objecttype": "Jutter",
-                "bron": "zijn aangevoerd gewicht"
+                "source": {
+                  "snippet": "zijn aangevoerd gewicht"
+                }
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": null,
-                "bron": "de aanvoerdrempel"
+                "source": {
+                  "snippet": "de aanvoerdrempel"
+                }
               },
               "periode": null,
-              "bron": "zijn aangevoerd gewicht groter of gelijk is aan de aanvoerdrempel"
+              "source": {
+                "snippet": "zijn aangevoerd gewicht groter of gelijk is aan de aanvoerdrempel"
+              }
             },
             "initialisation": false
           }
@@ -232,7 +242,9 @@
               "node": "AttribuutRef",
               "attribuut": "aanvoergeld",
               "objecttype": "Jutter",
-              "bron": "Het aanvoergeld van een Jutter"
+              "source": {
+                "snippet": "Het aanvoergeld van een Jutter"
+              }
             },
             "value": {
               "node": "Binair",
@@ -241,12 +253,16 @@
                 "node": "AttribuutRef",
                 "attribuut": "aanvoerwaarde",
                 "objecttype": "Jutter",
-                "bron": "zijn aanvoerwaarde"
+                "source": {
+                  "snippet": "zijn aanvoerwaarde"
+                }
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "aanvoertarief",
-                "bron": "het aanvoertarief"
+                "source": {
+                  "snippet": "het aanvoertarief"
+                }
               },
               "type": {
                 "node": "Number",
@@ -264,7 +280,9 @@
                   }
                 }
               },
-              "bron": "zijn aanvoerwaarde plus het aanvoertarief"
+              "source": {
+                "snippet": "zijn aanvoerwaarde plus het aanvoertarief"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

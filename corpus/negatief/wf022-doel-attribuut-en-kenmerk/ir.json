@@ -77,7 +77,9 @@
               "node": "AttribuutRef",
               "attribuut": "toelage",
               "objecttype": "Jutter",
-              "bron": "De toelage van een jutter"
+              "source": {
+                "snippet": "De toelage van een jutter"
+              }
             },
             "value": {
               "node": "Literal",
@@ -90,7 +92,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "10"
+              "source": {
+                "snippet": "10"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

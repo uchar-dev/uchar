@@ -83,7 +83,9 @@
               "node": "AttribuutRef",
               "attribuut": "vaarwater",
               "objecttype": "Berging",
-              "bron": "de vaarwater"
+              "source": {
+                "snippet": "de vaarwater"
+              }
             },
             "value": {
               "node": "Binair",
@@ -92,13 +94,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "tarief",
                 "objecttype": "Berging",
-                "bron": "de tarief"
+                "source": {
+                  "snippet": "de tarief"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "tarief",
                 "objecttype": "Berging",
-                "bron": "de tarief"
+                "source": {
+                  "snippet": "de tarief"
+                }
               },
               "type": {
                 "node": "Enumeratie",
@@ -109,7 +115,9 @@
                   "Ruimzee"
                 ]
               },
-              "bron": "de tarief plus de tarief"
+              "source": {
+                "snippet": "de tarief plus de tarief"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

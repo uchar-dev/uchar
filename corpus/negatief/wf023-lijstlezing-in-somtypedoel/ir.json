@@ -120,13 +120,17 @@
               "node": "AttribuutRef",
               "attribuut": "aanspraak",
               "objecttype": "Jutter",
-              "bron": "de aanspraak van de Jutter"
+              "source": {
+                "snippet": "de aanspraak van de Jutter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "aanspraken",
               "objecttype": "Jutter",
-              "bron": "de aanspraken van de Jutter"
+              "source": {
+                "snippet": "de aanspraken van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

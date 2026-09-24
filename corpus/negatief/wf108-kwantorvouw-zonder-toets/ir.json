@@ -87,7 +87,9 @@
               "node": "AttribuutRef",
               "attribuut": "premiegerechtigd",
               "objecttype": "Bergingsploeg",
-              "bron": "Een Bergingsploeg is premiegerechtigd"
+              "source": {
+                "snippet": "Een Bergingsploeg is premiegerechtigd"
+              }
             },
             "value": {
               "node": "Literal",
@@ -97,7 +99,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -105,7 +109,9 @@
               "elementObjecttype": "Berger",
               "filter": null,
               "toets": null,
-              "bron": "de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40",
+              "source": {
+                "snippet": "de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "ploegindeling",

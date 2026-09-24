@@ -62,13 +62,17 @@
               "node": "AttribuutRef",
               "attribuut": "geschatte waarde",
               "objecttype": "Vondst",
-              "bron": "De geschatte waarde van een Vondst"
+              "source": {
+                "snippet": "De geschatte waarde van een Vondst"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "taxatiewaarde",
               "objecttype": "Vondst",
-              "bron": "de taxatiewaarde van de Vondst"
+              "source": {
+                "snippet": "de taxatiewaarde van de Vondst"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -76,7 +80,9 @@
               "negatie": false,
               "eigenaar": "Bestaatniet",
               "periode": null,
-              "bron": "de Vondst gemeld is"
+              "source": {
+                "snippet": "de Vondst gemeld is"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

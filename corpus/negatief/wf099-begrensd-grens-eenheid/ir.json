@@ -109,7 +109,9 @@
               "node": "AttribuutRef",
               "attribuut": "bandbreedte",
               "objecttype": "Jutter",
-              "bron": "De bandbreedte van een Jutter"
+              "source": {
+                "snippet": "De bandbreedte van een Jutter"
+              }
             },
             "value": {
               "node": "Begrensd",
@@ -117,7 +119,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "ruwbedrag",
                 "objecttype": "Jutter",
-                "bron": "het ruwbedrag van de Jutter"
+                "source": {
+                  "snippet": "het ruwbedrag van de Jutter"
+                }
               },
               "minimum": {
                 "node": "Literal",
@@ -140,7 +144,9 @@
                     }
                   }
                 },
-                "bron": "10 kg"
+                "source": {
+                  "snippet": "10 kg"
+                }
               },
               "maximum": {
                 "node": "Literal",
@@ -163,7 +169,9 @@
                     }
                   }
                 },
-                "bron": "100 kg"
+                "source": {
+                  "snippet": "100 kg"
+                }
               },
               "type": {
                 "node": "Number",
@@ -181,7 +189,9 @@
                   }
                 }
               },
-              "bron": "het ruwbedrag van de Jutter begrensd op minimaal 10 kg en maximaal 100 kg"
+              "source": {
+                "snippet": "het ruwbedrag van de Jutter begrensd op minimaal 10 kg en maximaal 100 kg"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

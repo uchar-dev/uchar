@@ -33,7 +33,9 @@
               "node": "Date",
               "precision": "day"
             },
-            "bron": "2026-03-01"
+            "source": {
+              "snippet": "2026-03-01"
+            }
           },
           "rechts": {
             "node": "Literal",
@@ -44,10 +46,14 @@
               "node": "Date",
               "precision": "day"
             },
-            "bron": "2026-10-01"
+            "source": {
+              "snippet": "2026-10-01"
+            }
           },
           "periode": null,
-          "bron": "voor de najaarsschouw"
+          "source": {
+            "snippet": "voor de najaarsschouw"
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",

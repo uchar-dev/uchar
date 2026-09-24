@@ -77,7 +77,9 @@
               "node": "AttribuutRef",
               "attribuut": "wachtsom",
               "objecttype": "Jutter",
-              "bron": "De wachtsom van een Jutter"
+              "source": {
+                "snippet": "De wachtsom van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -87,7 +89,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "wachtvergoeding per maand",
                   "objecttype": "Jutter",
-                  "bron": "zijn wachtvergoeding per maand"
+                  "source": {
+                    "snippet": "zijn wachtvergoeding per maand"
+                  }
                 }
               ],
               "elementType": "Jutter",
@@ -97,7 +101,9 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "gedurende de tijd dat hij wachtplichtig is"
+                "source": {
+                  "snippet": "gedurende de tijd dat hij wachtplichtig is"
+                }
               },
               "type": {
                 "node": "Number",
@@ -105,7 +111,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is"
+              "source": {
+                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

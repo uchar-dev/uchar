@@ -55,7 +55,9 @@
               "node": "AttribuutRef",
               "attribuut": "tijdig",
               "objecttype": "Aanmelding",
-              "bron": "Een Aanmelding is tijdig"
+              "source": {
+                "snippet": "Een Aanmelding is tijdig"
+              }
             },
             "value": {
               "node": "Literal",
@@ -65,7 +67,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -74,7 +78,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "meldstip",
                 "objecttype": "Aanmelding",
-                "bron": "haar meldstip"
+                "source": {
+                  "snippet": "haar meldstip"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -85,10 +91,14 @@
                   "node": "Date",
                   "precision": "millisecond"
                 },
-                "bron": "15-03-2026 12:00:00.000"
+                "source": {
+                  "snippet": "15-03-2026 12:00:00.000"
+                }
               },
               "periode": null,
-              "bron": "haar meldstip eerder is dan 15-03-2026 12:00:00.000"
+              "source": {
+                "snippet": "haar meldstip eerder is dan 15-03-2026 12:00:00.000"
+              }
             },
             "initialisation": false
           }
@@ -108,7 +118,9 @@
               "node": "AttribuutRef",
               "attribuut": "verlaat",
               "objecttype": "Aanmelding",
-              "bron": "Een Aanmelding is verlaat"
+              "source": {
+                "snippet": "Een Aanmelding is verlaat"
+              }
             },
             "value": {
               "node": "Literal",
@@ -118,7 +130,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -127,7 +141,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "meldstip",
                 "objecttype": "Aanmelding",
-                "bron": "haar meldstip"
+                "source": {
+                  "snippet": "haar meldstip"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -138,10 +154,14 @@
                   "node": "Date",
                   "precision": "millisecond"
                 },
-                "bron": "15-03-2026 12:00:00.000"
+                "source": {
+                  "snippet": "15-03-2026 12:00:00.000"
+                }
               },
               "periode": null,
-              "bron": "haar meldstip later is dan 15-03-2026 12:00:00.000"
+              "source": {
+                "snippet": "haar meldstip later is dan 15-03-2026 12:00:00.000"
+              }
             },
             "initialisation": false
           }

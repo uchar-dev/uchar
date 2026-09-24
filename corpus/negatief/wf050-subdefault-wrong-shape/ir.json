@@ -68,7 +68,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij grondX heeft"
+              "source": {
+                "snippet": "hij grondX heeft"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -81,9 +83,13 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "40.00"
+              "source": {
+                "snippet": "40.00"
+              }
             },
-            "bron": "grondX: 40.00, met excepties",
+            "source": {
+              "snippet": "grondX: 40.00, met excepties"
+            },
             "excepties": {
               "ongeordend": true,
               "leden": [
@@ -99,18 +105,26 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij grondY heeft"
+                        "source": {
+                          "snippet": "hij grondY heeft"
+                        }
                       },
-                      "bron": "sub-default met een besluit op attribuut-defaults (onwelgevormd)"
+                      "source": {
+                        "snippet": "sub-default met een besluit op attribuut-defaults (onwelgevormd)"
+                      }
                     }
                   ],
-                  "bron": "lid met een besluit-default"
+                  "source": {
+                    "snippet": "lid met een besluit-default"
+                  }
                 }
               ]
             }
           }
         ],
-        "bron": "art. n",
+        "source": {
+          "snippet": "art. n"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

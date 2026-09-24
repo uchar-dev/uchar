@@ -92,7 +92,9 @@
               "node": "AttribuutRef",
               "attribuut": "tegenwachtsom",
               "objecttype": "Jutter",
-              "bron": "De tegenwachtsom van een Jutter"
+              "source": {
+                "snippet": "De tegenwachtsom van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -102,7 +104,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "wachtvergoeding per maand",
                   "objecttype": "Jutter",
-                  "bron": "zijn wachtvergoeding per maand"
+                  "source": {
+                    "snippet": "zijn wachtvergoeding per maand"
+                  }
                 }
               ],
               "elementType": "Jutter",
@@ -117,7 +121,9 @@
                     "negatie": false,
                     "eigenaar": null,
                     "periode": null,
-                    "bron": "hij borgplichtig is"
+                    "source": {
+                      "snippet": "hij borgplichtig is"
+                    }
                   },
                   {
                     "node": "Kenmerk",
@@ -125,10 +131,14 @@
                     "negatie": true,
                     "eigenaar": null,
                     "periode": null,
-                    "bron": "hij niet aangesteld is"
+                    "source": {
+                      "snippet": "hij niet aangesteld is"
+                    }
                   }
                 ],
-                "bron": "gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij borgplichtig is - hij niet aangesteld is"
+                "source": {
+                  "snippet": "gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij borgplichtig is - hij niet aangesteld is"
+                }
               },
               "type": {
                 "node": "Number",
@@ -136,7 +146,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij borgplichtig is - hij niet aangesteld is"
+              "source": {
+                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij borgplichtig is - hij niet aangesteld is"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -157,7 +169,9 @@
               "node": "AttribuutRef",
               "attribuut": "stilwachtsom",
               "objecttype": "Jutter",
-              "bron": "De stilwachtsom van een Jutter"
+              "source": {
+                "snippet": "De stilwachtsom van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -167,7 +181,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "wachtvergoeding per maand",
                   "objecttype": "Jutter",
-                  "bron": "zijn wachtvergoeding per maand"
+                  "source": {
+                    "snippet": "zijn wachtvergoeding per maand"
+                  }
                 }
               ],
               "elementType": "Jutter",
@@ -181,7 +197,9 @@
                   "jaar": true,
                   "niet": false
                 },
-                "bron": "gedurende de tijd dat hij niet aangesteld is"
+                "source": {
+                  "snippet": "gedurende de tijd dat hij niet aangesteld is"
+                }
               },
               "type": {
                 "node": "Number",
@@ -189,7 +207,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij niet aangesteld is"
+              "source": {
+                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij niet aangesteld is"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

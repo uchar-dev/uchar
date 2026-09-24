@@ -53,7 +53,9 @@
           "negatie": false,
           "eigenaar": "Jutter",
           "periode": null,
-          "bron": "de dag valt op een dag waarop een Jutter penninggerechtigd is"
+          "source": {
+            "snippet": "de dag valt op een dag waarop een Jutter penninggerechtigd is"
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",

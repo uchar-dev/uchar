@@ -126,7 +126,9 @@
               "node": "AttribuutRef",
               "attribuut": "vaarwater",
               "objecttype": "Berging",
-              "bron": "de vaarwater"
+              "source": {
+                "snippet": "de vaarwater"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -136,7 +138,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "kust",
                   "objecttype": "Schuit",
-                  "bron": "de kust van alle schuiten van de Berging"
+                  "source": {
+                    "snippet": "de kust van alle schuiten van de Berging"
+                  }
                 }
               ],
               "elementType": "Schuit",
@@ -154,7 +158,9 @@
                   "Ruimzee"
                 ]
               },
-              "bron": "de eerste kust van alle schuiten van de Berging"
+              "source": {
+                "snippet": "de eerste kust van alle schuiten van de Berging"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -175,7 +181,9 @@
               "node": "AttribuutRef",
               "attribuut": "tarief",
               "objecttype": "Berging",
-              "bron": "de tarief"
+              "source": {
+                "snippet": "de tarief"
+              }
             },
             "value": {
               "node": "Match",
@@ -189,7 +197,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vaarwater",
                 "objecttype": "Berging",
-                "bron": "de vaarwater"
+                "source": {
+                  "snippet": "de vaarwater"
+                }
               },
               "arms": [
                 {
@@ -206,7 +216,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "1"
+                    "source": {
+                      "snippet": "1"
+                    }
                   }
                 },
                 {
@@ -223,7 +235,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "2"
+                    "source": {
+                      "snippet": "2"
+                    }
                   }
                 },
                 {
@@ -240,11 +254,15 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "3"
+                    "source": {
+                      "snippet": "3"
+                    }
                   }
                 }
               ],
-              "bron": "match"
+              "source": {
+                "snippet": "match"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

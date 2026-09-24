@@ -325,7 +325,9 @@
               "node": "AttribuutRef",
               "attribuut": "uittarief",
               "objecttype": "Jutter",
-              "bron": "De uittarief van een Jutter"
+              "source": {
+                "snippet": "De uittarief van een Jutter"
+              }
             },
             "value": {
               "node": "Binair",
@@ -334,13 +336,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "tarief",
                 "objecttype": "Jutter",
-                "bron": "de tarief van de Jutter"
+                "source": {
+                  "snippet": "de tarief van de Jutter"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "duur",
                 "objecttype": "Jutter",
-                "bron": "de duur van de Jutter"
+                "source": {
+                  "snippet": "de duur van de Jutter"
+                }
               },
               "type": {
                 "node": "Number",
@@ -368,7 +374,9 @@
                   }
                 }
               },
-              "bron": "het tarief van de Jutter maal de duur van de Jutter"
+              "source": {
+                "snippet": "het tarief van de Jutter maal de duur van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

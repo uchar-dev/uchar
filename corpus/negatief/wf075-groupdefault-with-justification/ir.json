@@ -68,9 +68,13 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "stray justification on a group default"
+              "source": {
+                "snippet": "stray justification on a group default"
+              }
             },
-            "bron": "groep-default met een verdwaalde voorwaarde",
+            "source": {
+              "snippet": "groep-default met een verdwaalde voorwaarde"
+            },
             "excepties": {
               "ongeordend": false,
               "leden": [
@@ -86,7 +90,9 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij grondY heeft"
+                        "source": {
+                          "snippet": "hij grondY heeft"
+                        }
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -99,18 +105,26 @@
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "10.00"
+                        "source": {
+                          "snippet": "10.00"
+                        }
                       },
-                      "bron": "grondY: 10.00"
+                      "source": {
+                        "snippet": "grondY: 10.00"
+                      }
                     }
                   ],
-                  "bron": "uitzondering Y"
+                  "source": {
+                    "snippet": "uitzondering Y"
+                  }
                 }
               ]
             }
           }
         ],
-        "bron": "art. n",
+        "source": {
+          "snippet": "art. n"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

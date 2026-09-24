@@ -93,13 +93,17 @@
               "node": "AttribuutRef",
               "attribuut": "kopie",
               "objecttype": "Jutter",
-              "bron": "de kopie van de Jutter"
+              "source": {
+                "snippet": "de kopie van de Jutter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Jutter",
-              "bron": "het gewicht van de Jutter"
+              "source": {
+                "snippet": "het gewicht van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

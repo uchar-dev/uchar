@@ -139,7 +139,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal gevulde vondstgewichten",
               "objecttype": "Jutter",
-              "bron": "Het aantal gevulde vondstgewichten van een Jutter"
+              "source": {
+                "snippet": "Het aantal gevulde vondstgewichten van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -149,7 +151,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vondstgewicht",
                   "objecttype": "Jutter",
-                  "bron": "het vondstgewicht van een Jutter"
+                  "source": {
+                    "snippet": "het vondstgewicht van een Jutter"
+                  }
                 }
               ],
               "type": {
@@ -158,7 +162,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

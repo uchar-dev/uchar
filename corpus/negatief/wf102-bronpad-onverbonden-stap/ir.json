@@ -261,7 +261,9 @@
               "node": "AttribuutRef",
               "attribuut": "laagste vondstgewicht",
               "objecttype": "Jutter",
-              "bron": "Het laagste vondstgewicht van een Jutter"
+              "source": {
+                "snippet": "Het laagste vondstgewicht van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -271,7 +273,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "inhoudsgewicht",
                   "objecttype": "Kist",
-                  "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+                  "source": {
+                    "snippet": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Kist",
@@ -303,7 +307,9 @@
                   }
                 }
               },
-              "bron": "de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+              "source": {
+                "snippet": "de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

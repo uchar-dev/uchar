@@ -53,7 +53,9 @@
               "node": "AttribuutRef",
               "attribuut": "etiket",
               "objecttype": "Jutter",
-              "bron": "het etiket van de Jutter"
+              "source": {
+                "snippet": "het etiket van de Jutter"
+              }
             },
             "value": {
               "node": "Let",
@@ -65,14 +67,20 @@
                 "node": "AttribuutRef",
                 "attribuut": "basis",
                 "objecttype": "Jutter",
-                "bron": "de basis van de Jutter"
+                "source": {
+                  "snippet": "de basis van de Jutter"
+                }
               },
               "body": {
                 "node": "BinderRef",
                 "name": "b",
-                "bron": "de basis"
+                "source": {
+                  "snippet": "de basis"
+                }
               },
-              "bron": "de basis als etiket"
+              "source": {
+                "snippet": "de basis als etiket"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

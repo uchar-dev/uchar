@@ -100,7 +100,9 @@
               "node": "AttribuutRef",
               "attribuut": "sleeplengte",
               "objecttype": "Sleepbaan",
-              "bron": "De sleeplengte van een Sleepbaan"
+              "source": {
+                "snippet": "De sleeplengte van een Sleepbaan"
+              }
             },
             "value": {
               "node": "Binair",
@@ -126,13 +128,17 @@
                     }
                   }
                 },
-                "bron": "2,5 km"
+                "source": {
+                  "snippet": "2,5 km"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "aanloop",
                 "objecttype": "Sleepbaan",
-                "bron": "de aanloop van de Sleepbaan"
+                "source": {
+                  "snippet": "de aanloop van de Sleepbaan"
+                }
               },
               "type": {
                 "node": "Number",
@@ -150,7 +156,9 @@
                   }
                 }
               },
-              "bron": "2,5 km plus de aanloop van de Sleepbaan"
+              "source": {
+                "snippet": "2,5 km plus de aanloop van de Sleepbaan"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

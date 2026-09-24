@@ -101,9 +101,13 @@
         "body": {
           "node": "BinderRef",
           "name": "melding",
-          "bron": "melding"
+          "source": {
+            "snippet": "melding"
+          }
         },
-        "bron": "Meldstand"
+        "source": {
+          "snippet": "Meldstand"
+        }
       }
     ]
   },

@@ -87,7 +87,9 @@
               "node": "AttribuutRef",
               "attribuut": "aanlandkust",
               "objecttype": "Berging",
-              "bron": "de aanlandkust"
+              "source": {
+                "snippet": "de aanlandkust"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -97,13 +99,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "bakboordkust",
                   "objecttype": "Berging",
-                  "bron": "zijn bakboordkust"
+                  "source": {
+                    "snippet": "zijn bakboordkust"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "stuurboordkust",
                   "objecttype": "Berging",
-                  "bron": "zijn stuurboordkust"
+                  "source": {
+                    "snippet": "zijn stuurboordkust"
+                  }
                 }
               ],
               "type": {
@@ -115,7 +121,9 @@
                   "West"
                 ]
               },
-              "bron": "de laatste van zijn bakboordkust en zijn stuurboordkust"
+              "source": {
+                "snippet": "de laatste van zijn bakboordkust en zijn stuurboordkust"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

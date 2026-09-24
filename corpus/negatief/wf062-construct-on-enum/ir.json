@@ -62,8 +62,7 @@
               "links": {
                 "node": "AttribuutRef",
                 "attribuut": "keurstatus",
-                "objecttype": "Vondst",
-                "bron": null
+                "objecttype": "Vondst"
               },
               "rechts": {
                 "node": "Construct",
@@ -76,19 +75,15 @@
                   ]
                 },
                 "constructor": "Gaaf",
-                "argument": null,
-                "bron": null
+                "argument": null
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
-            },
-            "bron": null,
-            "line": 1
+            }
           }
         ]
       }

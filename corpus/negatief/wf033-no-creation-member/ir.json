@@ -89,7 +89,9 @@
               "node": "AttribuutRef",
               "attribuut": "erfvolgeraantal",
               "objecttype": "Wachter",
-              "bron": "Het erfvolgeraantal van een Wachter"
+              "source": {
+                "snippet": "Het erfvolgeraantal van een Wachter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -99,7 +101,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "erfvolgers",
                   "objecttype": "Wachter",
-                  "bron": "alle erfvolgers van de Wachter"
+                  "source": {
+                    "snippet": "alle erfvolgers van de Wachter"
+                  }
                 }
               ],
               "elementType": "Wachter",
@@ -114,7 +118,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het aantal erfvolgers van de Wachter"
+              "source": {
+                "snippet": "het aantal erfvolgers van de Wachter"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -136,9 +142,7 @@
         "recursief": true,
         "leden": [
           "erfvolgeraantal van een wachter"
-        ],
-        "bron": null,
-        "line": 1
+        ]
       }
     ]
   },

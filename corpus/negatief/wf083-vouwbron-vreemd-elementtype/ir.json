@@ -294,7 +294,9 @@
               "node": "AttribuutRef",
               "attribuut": "bergloon",
               "objecttype": "Jutter",
-              "bron": "Het bergloon van een Jutter"
+              "source": {
+                "snippet": "Het bergloon van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -304,7 +306,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "kistgeld",
                   "objecttype": "Jutter",
-                  "bron": "het kistgeld van alle vondsten van de Jutter"
+                  "source": {
+                    "snippet": "het kistgeld van alle vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -329,7 +333,9 @@
                   }
                 }
               },
-              "bron": "het totaal van het kistgeld van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "het totaal van het kistgeld van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

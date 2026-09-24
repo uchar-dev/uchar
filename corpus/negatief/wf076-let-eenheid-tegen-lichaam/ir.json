@@ -103,7 +103,9 @@
               "node": "AttribuutRef",
               "attribuut": "kopie",
               "objecttype": "Jutter",
-              "bron": "de kopie van de Jutter"
+              "source": {
+                "snippet": "de kopie van de Jutter"
+              }
             },
             "value": {
               "node": "Let",
@@ -128,14 +130,20 @@
                 "node": "AttribuutRef",
                 "attribuut": "gewicht",
                 "objecttype": "Jutter",
-                "bron": "het gewicht van de Jutter"
+                "source": {
+                  "snippet": "het gewicht van de Jutter"
+                }
               },
               "body": {
                 "node": "BinderRef",
                 "name": "b",
-                "bron": "het gewicht"
+                "source": {
+                  "snippet": "het gewicht"
+                }
               },
-              "bron": "het gewicht als kopie"
+              "source": {
+                "snippet": "het gewicht als kopie"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

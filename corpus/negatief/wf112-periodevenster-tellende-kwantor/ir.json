@@ -52,7 +52,9 @@
               "node": "AttribuutRef",
               "attribuut": "premie",
               "objecttype": "Vondst",
-              "bron": "De premie van een Vondst"
+              "source": {
+                "snippet": "De premie van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -65,7 +67,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "7"
+              "source": {
+                "snippet": "7"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -78,7 +82,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "de Vondst geborgen is"
+                  "source": {
+                    "snippet": "de Vondst geborgen is"
+                  }
                 },
                 {
                   "node": "Periode",
@@ -91,7 +97,9 @@
                       "node": "Date",
                       "precision": "day"
                     },
-                    "bron": "2024-01-01"
+                    "source": {
+                      "snippet": "2024-01-01"
+                    }
                   },
                   "tot": {
                     "node": "Literal",
@@ -102,13 +110,19 @@
                       "node": "Date",
                       "precision": "day"
                     },
-                    "bron": "2025-01-01"
+                    "source": {
+                      "snippet": "2025-01-01"
+                    }
                   },
                   "totInclusief": false,
-                  "bron": "van 1 januari 2024 tot 1 januari 2025"
+                  "source": {
+                    "snippet": "van 1 januari 2024 tot 1 januari 2025"
+                  }
                 }
               ],
-              "bron": "kwantor over twee onderdelen"
+              "source": {
+                "snippet": "kwantor over twee onderdelen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

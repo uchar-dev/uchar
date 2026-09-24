@@ -238,7 +238,9 @@
               "node": "AttribuutRef",
               "attribuut": "bewaarlast",
               "objecttype": "Jutter",
-              "bron": "De bewaarlast van een Jutter"
+              "source": {
+                "snippet": "De bewaarlast van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -248,7 +250,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bewaartarief",
                   "objecttype": "Vondst",
-                  "bron": "het bewaartarief van alle vondsten van de Jutter"
+                  "source": {
+                    "snippet": "het bewaartarief van alle vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -279,7 +283,9 @@
                   }
                 }
               },
-              "bron": "het totaal van het bewaartarief van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "het totaal van het bewaartarief van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -300,7 +306,9 @@
               "node": "AttribuutRef",
               "attribuut": "bewaarsom",
               "objecttype": "Jutter",
-              "bron": "De bewaarsom van een Jutter"
+              "source": {
+                "snippet": "De bewaarsom van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -310,7 +318,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bewaartarief",
                   "objecttype": "Vondst",
-                  "bron": "het bewaartarief van alle vondsten van de Jutter"
+                  "source": {
+                    "snippet": "het bewaartarief van alle vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -341,7 +351,9 @@
                   }
                 }
               },
-              "bron": "de som van het bewaartarief van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "de som van het bewaartarief van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -362,7 +374,9 @@
               "node": "AttribuutRef",
               "attribuut": "bewaargeld",
               "objecttype": "Jutter",
-              "bron": "Het bewaargeld van een Jutter"
+              "source": {
+                "snippet": "Het bewaargeld van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -372,7 +386,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bewaarvergoeding per maand",
                   "objecttype": "Jutter",
-                  "bron": "zijn bewaarvergoeding per maand"
+                  "source": {
+                    "snippet": "zijn bewaarvergoeding per maand"
+                  }
                 }
               ],
               "elementType": "Jutter",
@@ -392,7 +408,9 @@
                   }
                 }
               },
-              "bron": "het totaal van zijn bewaarvergoeding per maand"
+              "source": {
+                "snippet": "het totaal van zijn bewaarvergoeding per maand"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

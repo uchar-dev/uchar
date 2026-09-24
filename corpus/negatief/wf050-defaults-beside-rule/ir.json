@@ -61,7 +61,9 @@
               "node": "AttribuutRef",
               "attribuut": "uitgesloten",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is uitgesloten"
+              "source": {
+                "snippet": "Een Jutter is uitgesloten"
+              }
             },
             "value": {
               "node": "Literal",
@@ -71,7 +73,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -79,7 +83,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "zijn raapvergunning is geweigerd"
+              "source": {
+                "snippet": "zijn raapvergunning is geweigerd"
+              }
             },
             "initialisation": false
           }
@@ -115,7 +121,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "zijn raapvergunning is geweigerd"
+                  "source": {
+                    "snippet": "zijn raapvergunning is geweigerd"
+                  }
                 },
                 {
                   "node": "Kenmerk",
@@ -123,7 +131,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "de weigering is herroepen"
+                  "source": {
+                    "snippet": "de weigering is herroepen"
+                  }
                 },
                 {
                   "node": "Kenmerk",
@@ -131,12 +141,18 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "de herroeping is vervallen"
+                  "source": {
+                    "snippet": "de herroeping is vervallen"
+                  }
                 }
               ],
-              "bron": "de weigering is herroepen maar de herroeping is vervallen"
+              "source": {
+                "snippet": "de weigering is herroepen maar de herroeping is vervallen"
+              }
             },
-            "bron": "art. 4, derde laag"
+            "source": {
+              "snippet": "art. 4, derde laag"
+            }
           },
           {
             "node": "Default",
@@ -152,7 +168,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "zijn raapvergunning is geweigerd"
+                  "source": {
+                    "snippet": "zijn raapvergunning is geweigerd"
+                  }
                 },
                 {
                   "node": "Kenmerk",
@@ -160,12 +178,18 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "de weigering is herroepen"
+                  "source": {
+                    "snippet": "de weigering is herroepen"
+                  }
                 }
               ],
-              "bron": "de weigering is herroepen"
+              "source": {
+                "snippet": "de weigering is herroepen"
+              }
             },
-            "bron": "art. 4, tweede laag"
+            "source": {
+              "snippet": "art. 4, tweede laag"
+            }
           },
           {
             "node": "Default",
@@ -176,12 +200,18 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "zijn raapvergunning is geweigerd"
+              "source": {
+                "snippet": "zijn raapvergunning is geweigerd"
+              }
             },
-            "bron": "art. 4, eerste laag"
+            "source": {
+              "snippet": "art. 4, eerste laag"
+            }
           }
         ],
-        "bron": "art. 4",
+        "source": {
+          "snippet": "art. 4"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

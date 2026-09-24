@@ -68,7 +68,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij kustwacht is"
+              "source": {
+                "snippet": "hij kustwacht is"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -81,13 +83,13 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "30"
-            },
-            "bron": null
+              "source": {
+                "snippet": "30"
+              }
+            }
           }
         ],
         "ongeordend": false,
-        "bron": null,
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

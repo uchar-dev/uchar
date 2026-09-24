@@ -56,7 +56,9 @@
               "node": "AttribuutRef",
               "attribuut": "aanslag",
               "objecttype": "Jutter",
-              "bron": "de aanslag"
+              "source": {
+                "snippet": "de aanslag"
+              }
             },
             "value": {
               "node": "Let",
@@ -77,8 +79,7 @@
                   "whole": false,
                   "decimals": 2,
                   "sign": "ONBEPAALD"
-                },
-                "bron": null
+                }
               },
               "body": {
                 "node": "Literal",
@@ -90,10 +91,11 @@
                   "whole": false,
                   "decimals": 4,
                   "sign": "ONBEPAALD"
-                },
-                "bron": null
+                }
               },
-              "bron": "een verkeerd getypeerde let"
+              "source": {
+                "snippet": "een verkeerd getypeerde let"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -46,7 +46,9 @@
               "node": "AttribuutRef",
               "attribuut": "uitkomst",
               "objecttype": "Jutter",
-              "bron": "de uitkomst van de Jutter"
+              "source": {
+                "snippet": "de uitkomst van de Jutter"
+              }
             },
             "value": {
               "node": "Literal",
@@ -59,7 +61,9 @@
                 "decimals": 2,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "10.00"
+              "source": {
+                "snippet": "10.00"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -80,7 +84,9 @@
               "node": "AttribuutRef",
               "attribuut": "uitkomst",
               "objecttype": "Jutter",
-              "bron": "de uitkomst van de Jutter"
+              "source": {
+                "snippet": "de uitkomst van de Jutter"
+              }
             },
             "value": {
               "node": "Literal",
@@ -93,7 +99,9 @@
                 "decimals": 2,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "20.00"
+              "source": {
+                "snippet": "20.00"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

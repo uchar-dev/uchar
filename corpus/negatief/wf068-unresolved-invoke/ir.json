@@ -43,22 +43,18 @@
                   "sign": "ONBEPAALD"
                 },
                 "function": "aanspraakwaarde",
-                "arguments": [],
-                "bron": null
+                "arguments": []
               },
               "dagsoort": null,
               "negatie": false,
               "cijfers": 0,
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
-            },
-            "bron": null,
-            "line": 1
+            }
           }
         ]
       }

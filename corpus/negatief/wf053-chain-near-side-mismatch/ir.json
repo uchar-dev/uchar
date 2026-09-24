@@ -170,13 +170,17 @@
               "node": "AttribuutRef",
               "attribuut": "risicotoeslag",
               "objecttype": "Wachter",
-              "bron": "De risicotoeslag van een Wachter"
+              "source": {
+                "snippet": "De risicotoeslag van een Wachter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "gevarenklasse",
               "objecttype": "Kustvak",
-              "bron": "de gevarenklasse van het kustvak van zijn post",
+              "source": {
+                "snippet": "de gevarenklasse van het kustvak van zijn post"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",

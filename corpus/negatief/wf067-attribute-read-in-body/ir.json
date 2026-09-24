@@ -53,10 +53,8 @@
         "body": {
           "node": "AttribuutRef",
           "attribuut": "saldo",
-          "objecttype": "Jutter",
-          "bron": null
-        },
-        "bron": null
+          "objecttype": "Jutter"
+        }
       }
     ]
   },

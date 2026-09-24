@@ -81,7 +81,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal maten",
               "objecttype": "Jutter",
-              "bron": "Het aantal maten van een Jutter"
+              "source": {
+                "snippet": "Het aantal maten van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -91,7 +93,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "maten",
                   "objecttype": "Jutter",
-                  "bron": "maten van de Jutter"
+                  "source": {
+                    "snippet": "maten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Jutter",
@@ -106,7 +110,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal maten van de Jutter"
+              "source": {
+                "snippet": "het aantal maten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -127,7 +133,9 @@
               "node": "AttribuutRef",
               "attribuut": "maatwaarde",
               "objecttype": "Jutter",
-              "bron": "De maatwaarde van een Jutter"
+              "source": {
+                "snippet": "De maatwaarde van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -137,7 +145,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bestaatniet",
                   "objecttype": "Jutter",
-                  "bron": "de vondstwaarde van alle maten van de Jutter"
+                  "source": {
+                    "snippet": "de vondstwaarde van alle maten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Jutter",
@@ -152,7 +162,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -165,7 +177,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van de vondstwaarde van alle maten van de Jutter of 0 als die er niet zijn"
+              "source": {
+                "snippet": "de som van de vondstwaarde van alle maten van de Jutter of 0 als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

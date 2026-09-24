@@ -129,7 +129,9 @@
               "node": "AttribuutRef",
               "attribuut": "resultaat",
               "objecttype": "Vat",
-              "bron": "Het resultaat van een Vat"
+              "source": {
+                "snippet": "Het resultaat van een Vat"
+              }
             },
             "value": {
               "node": "Binair",
@@ -138,13 +140,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "zwaar",
                 "objecttype": "Vat",
-                "bron": "het zwaar van het Vat"
+                "source": {
+                  "snippet": "het zwaar van het Vat"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "lang",
                 "objecttype": "Vat",
-                "bron": "het lang van het Vat"
+                "source": {
+                  "snippet": "het lang van het Vat"
+                }
               },
               "type": {
                 "node": "Number",
@@ -162,7 +168,9 @@
                   }
                 }
               },
-              "bron": "het zwaar van het Vat verminderd met het lang van het Vat"
+              "source": {
+                "snippet": "het zwaar van het Vat verminderd met het lang van het Vat"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

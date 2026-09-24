@@ -83,13 +83,17 @@
               "node": "AttribuutRef",
               "attribuut": "tarief",
               "objecttype": "Berging",
-              "bron": "de tarief"
+              "source": {
+                "snippet": "de tarief"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "vaarwater",
               "objecttype": "Berging",
-              "bron": "de vaarwater"
+              "source": {
+                "snippet": "de vaarwater"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

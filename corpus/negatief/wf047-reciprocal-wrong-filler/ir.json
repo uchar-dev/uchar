@@ -69,7 +69,9 @@
               "node": "AttribuutRef",
               "attribuut": "telling",
               "objecttype": "Vondst",
-              "bron": "De telling van een Vondst"
+              "source": {
+                "snippet": "De telling van een Vondst"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -79,7 +81,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "maten",
                   "objecttype": "Vondst",
-                  "bron": "maten van de Vondst"
+                  "source": {
+                    "snippet": "maten van de Vondst"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -94,7 +98,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal maten van de Vondst"
+              "source": {
+                "snippet": "het aantal maten van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -74,7 +74,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "rang",
                     "objecttype": "Wachter",
-                    "bron": "de rang van de Wachter"
+                    "source": {
+                      "snippet": "de rang van de Wachter"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -87,7 +89,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "1"
+                    "source": {
+                      "snippet": "1"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -95,7 +99,9 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "de rang van de Wachter plus 1"
+                  "source": {
+                    "snippet": "de rang van de Wachter plus 1"
+                  }
                 },
                 "kenmerk": false
               }
@@ -112,7 +118,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "rang",
                     "objecttype": "Wachter",
-                    "bron": "de rang van de Wachter"
+                    "source": {
+                      "snippet": "de rang van de Wachter"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -125,10 +133,14 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "5"
+                    "source": {
+                      "snippet": "5"
+                    }
                   },
                   "periode": null,
-                  "bron": "de rang van de Wachter is kleiner dan 5"
+                  "source": {
+                    "snippet": "de rang van de Wachter is kleiner dan 5"
+                  }
                 },
                 {
                   "node": "Kwantorvouw",
@@ -142,15 +154,21 @@
                       "node": "AttribuutRef",
                       "attribuut": "rang",
                       "objecttype": "Wachter",
-                      "bron": "de rang van alle opvolgers van de Wachter"
+                      "source": {
+                        "snippet": "de rang van alle opvolgers van de Wachter"
+                      }
                     },
                     "dagsoort": null,
                     "negatie": false,
                     "cijfers": 0,
                     "periode": null,
-                    "bron": "de rang van de opvolger leeg is"
+                    "source": {
+                      "snippet": "de rang van de opvolger leeg is"
+                    }
                   },
-                  "bron": "de rang van alle opvolgers van de Wachter is leeg",
+                  "source": {
+                    "snippet": "de rang van alle opvolgers van de Wachter is leeg"
+                  },
                   "bronRol": {
                     "node": "RolBinding",
                     "feittype": "opvolging",
@@ -158,7 +176,9 @@
                   }
                 }
               ],
-              "bron": "de rang van de Wachter is kleiner dan 5 en de rang van alle opvolgers van de Wachter is leeg"
+              "source": {
+                "snippet": "de rang van de Wachter is kleiner dan 5 en de rang van alle opvolgers van de Wachter is leeg"
+              }
             },
             "validity": {
               "node": "Geldigheid",
@@ -186,9 +206,7 @@
         "recursief": true,
         "leden": [
           "werf de opvolger"
-        ],
-        "bron": null,
-        "line": 1
+        ]
       }
     ]
   },

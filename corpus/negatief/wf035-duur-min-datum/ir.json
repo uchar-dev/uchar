@@ -52,7 +52,9 @@
               "node": "AttribuutRef",
               "attribuut": "toetsdatum",
               "objecttype": "Vondst",
-              "bron": "De toetsdatum van een Vondst"
+              "source": {
+                "snippet": "De toetsdatum van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -72,19 +74,25 @@
                     "abbreviation": "wk"
                   }
                 },
-                "bron": "2 weken"
+                "source": {
+                  "snippet": "2 weken"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "aangiftedatum",
                 "objecttype": "Vondst",
-                "bron": "zijn aangiftedatum"
+                "source": {
+                  "snippet": "zijn aangiftedatum"
+                }
               },
               "type": {
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "2 weken min zijn aangiftedatum"
+              "source": {
+                "snippet": "2 weken min zijn aangiftedatum"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

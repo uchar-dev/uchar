@@ -44,7 +44,9 @@
               "node": "AttribuutRef",
               "attribuut": "meldstip",
               "objecttype": "Aanmelding",
-              "bron": "De meldstip van een Aanmelding"
+              "source": {
+                "snippet": "De meldstip van een Aanmelding"
+              }
             },
             "value": {
               "node": "Literal",
@@ -55,7 +57,9 @@
                 "node": "Date",
                 "precision": "millisecond"
               },
-              "bron": "15-03-2026 12:00:00.000"
+              "source": {
+                "snippet": "15-03-2026 12:00:00.000"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

@@ -151,7 +151,9 @@
               "node": "AttribuutRef",
               "attribuut": "aangegeven gewicht",
               "objecttype": "Vondst",
-              "bron": "Het aangegeven gewicht van een Vondst"
+              "source": {
+                "snippet": "Het aangegeven gewicht van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -160,7 +162,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "brutogewicht",
                 "objecttype": "Vondst",
-                "bron": "het brutogewicht van de Vondst"
+                "source": {
+                  "snippet": "het brutogewicht van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -183,7 +187,9 @@
                     }
                   }
                 },
-                "bron": "1 t"
+                "source": {
+                  "snippet": "1 t"
+                }
               },
               "type": {
                 "node": "Number",
@@ -201,7 +207,9 @@
                   }
                 }
               },
-              "bron": "het brutogewicht van de Vondst plus 1 t"
+              "source": {
+                "snippet": "het brutogewicht van de Vondst plus 1 t"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -222,7 +230,9 @@
               "node": "AttribuutRef",
               "attribuut": "geborgen gewicht",
               "objecttype": "Munt",
-              "bron": "Het geborgen gewicht van een Munt"
+              "source": {
+                "snippet": "Het geborgen gewicht van een Munt"
+              }
             },
             "value": {
               "node": "Binair",
@@ -231,7 +241,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "brutogewicht",
                 "objecttype": "Vondst",
-                "bron": "het brutogewicht van de Munt"
+                "source": {
+                  "snippet": "het brutogewicht van de Munt"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -254,7 +266,9 @@
                     }
                   }
                 },
-                "bron": "1 t"
+                "source": {
+                  "snippet": "1 t"
+                }
               },
               "type": {
                 "node": "Number",
@@ -272,7 +286,9 @@
                   }
                 }
               },
-              "bron": "het brutogewicht van de Munt plus 1 t"
+              "source": {
+                "snippet": "het brutogewicht van de Munt plus 1 t"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -325,7 +325,9 @@
               "node": "AttribuutRef",
               "attribuut": "uittarief",
               "objecttype": "Jutter",
-              "bron": "De uittarief van een Jutter"
+              "source": {
+                "snippet": "De uittarief van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -335,13 +337,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "tarief",
                   "objecttype": "Jutter",
-                  "bron": "de tarief van de Jutter"
+                  "source": {
+                    "snippet": "de tarief van de Jutter"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "tarief",
                   "objecttype": "Jutter",
-                  "bron": "de tarief van de Jutter"
+                  "source": {
+                    "snippet": "de tarief van de Jutter"
+                  }
                 }
               ],
               "type": {
@@ -370,7 +376,9 @@
                   }
                 }
               },
-              "bron": "het totaal van het tarief van de Jutter en het tarief van de Jutter"
+              "source": {
+                "snippet": "het totaal van het tarief van de Jutter en het tarief van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

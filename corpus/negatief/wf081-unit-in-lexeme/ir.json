@@ -46,7 +46,9 @@
               "node": "AttribuutRef",
               "attribuut": "vondstpremie",
               "objecttype": "Jutter",
-              "bron": "De vondstpremie van een Jutter"
+              "source": {
+                "snippet": "De vondstpremie van een Jutter"
+              }
             },
             "value": {
               "node": "Literal",
@@ -59,7 +61,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "5 \u20ac"
+              "source": {
+                "snippet": "5 \u20ac"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

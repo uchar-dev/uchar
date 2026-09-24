@@ -72,7 +72,9 @@
               "node": "AttribuutRef",
               "attribuut": "stilwachtsom",
               "objecttype": "Jutter",
-              "bron": "De stilwachtsom van een Jutter"
+              "source": {
+                "snippet": "De stilwachtsom van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -82,7 +84,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "wachtvergoeding per maand",
                   "objecttype": "Jutter",
-                  "bron": "zijn wachtvergoeding per maand"
+                  "source": {
+                    "snippet": "zijn wachtvergoeding per maand"
+                  }
                 }
               ],
               "elementType": "Jutter",
@@ -92,7 +96,9 @@
                 "negatie": true,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "gedurende de tijd dat hij niet aangesteld is"
+                "source": {
+                  "snippet": "gedurende de tijd dat hij niet aangesteld is"
+                }
               },
               "type": {
                 "node": "Number",
@@ -100,7 +106,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij niet aangesteld is"
+              "source": {
+                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij niet aangesteld is"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -121,7 +129,9 @@
               "node": "AttribuutRef",
               "attribuut": "aangesteld",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is aangesteld"
+              "source": {
+                "snippet": "Een Jutter is aangesteld"
+              }
             },
             "value": {
               "node": "Literal",
@@ -131,7 +141,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -140,7 +152,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "stilwachtsom",
                 "objecttype": "Jutter",
-                "bron": "zijn stilwachtsom"
+                "source": {
+                  "snippet": "zijn stilwachtsom"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -153,10 +167,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "periode": null,
-              "bron": "zijn stilwachtsom groter is dan 0"
+              "source": {
+                "snippet": "zijn stilwachtsom groter is dan 0"
+              }
             },
             "initialisation": false
           }

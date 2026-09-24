@@ -325,7 +325,9 @@
               "node": "AttribuutRef",
               "attribuut": "uitfijn",
               "objecttype": "Jutter",
-              "bron": "De uitfijn van een Jutter"
+              "source": {
+                "snippet": "De uitfijn van een Jutter"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -333,7 +335,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "fijn",
                 "objecttype": "Jutter",
-                "bron": "de fijn van de Jutter"
+                "source": {
+                  "snippet": "de fijn van de Jutter"
+                }
               },
               "modus": "REKENKUNDIG",
               "decimalen": 0,
@@ -343,7 +347,9 @@
                 "decimals": 4,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het fijn van de Jutter afgerond op 0 decimalen"
+              "source": {
+                "snippet": "het fijn van de Jutter afgerond op 0 decimalen"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

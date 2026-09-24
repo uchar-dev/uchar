@@ -66,9 +66,13 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij nx heeft"
+              "source": {
+                "snippet": "hij nx heeft"
+              }
             },
-            "bron": "nx: vrijgesteld, tenzij een uitzondering geldt",
+            "source": {
+              "snippet": "nx: vrijgesteld, tenzij een uitzondering geldt"
+            },
             "excepties": {
               "ongeordend": true,
               "leden": [
@@ -84,12 +88,18 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij ny heeft"
+                        "source": {
+                          "snippet": "hij ny heeft"
+                        }
                       },
-                      "bron": "ny"
+                      "source": {
+                        "snippet": "ny"
+                      }
                     }
                   ],
-                  "bron": "uitzondering ny: niet vrijgesteld"
+                  "source": {
+                    "snippet": "uitzondering ny: niet vrijgesteld"
+                  }
                 },
                 {
                   "node": "ExceptionGroup",
@@ -103,18 +113,26 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij nz heeft"
+                        "source": {
+                          "snippet": "hij nz heeft"
+                        }
                       },
-                      "bron": "nz"
+                      "source": {
+                        "snippet": "nz"
+                      }
                     }
                   ],
-                  "bron": "uitzondering nz: vrijgesteld"
+                  "source": {
+                    "snippet": "uitzondering nz: vrijgesteld"
+                  }
                 }
               ]
             }
           }
         ],
-        "bron": "art. 7: de vrijstelling met een geneste uitzondering",
+        "source": {
+          "snippet": "art. 7: de vrijstelling met een geneste uitzondering"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

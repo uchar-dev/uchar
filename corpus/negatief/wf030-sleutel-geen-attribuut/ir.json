@@ -66,24 +66,32 @@
                 "node": "AttribuutRef",
                 "attribuut": "aanmelddatum",
                 "objecttype": "Vondst",
-                "bron": "De aanmelddatum van een Vondst"
+                "source": {
+                  "snippet": "De aanmelddatum van een Vondst"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "vondstdag",
                 "objecttype": "Vondst",
-                "bron": "de vondstdag van de Vondst"
+                "source": {
+                  "snippet": "de vondstdag van de Vondst"
+                }
               },
               "periode": null,
-              "bron": "De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst"
+              "source": {
+                "snippet": "De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst"
+              }
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
             },
-            "bron": "De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst",
-            "line": 12
+            "source": {
+              "snippet": "De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst",
+              "line": 12
+            }
           }
         ]
       }
@@ -108,7 +116,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "De vondstnummers van alle Vondsten moeten uniek zijn."
+            "source": {
+              "snippet": "De vondstnummers van alle Vondsten moeten uniek zijn."
+            }
           }
         ]
       }

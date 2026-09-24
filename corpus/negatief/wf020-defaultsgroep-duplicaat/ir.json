@@ -99,7 +99,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "het Strandrecht betwist is"
+              "source": {
+                "snippet": "het Strandrecht betwist is"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -112,12 +114,18 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "99.00"
+              "source": {
+                "snippet": "99.00"
+              }
             },
-            "bron": "99,00 indien het Strandrecht betwist is"
+            "source": {
+              "snippet": "99,00 indien het Strandrecht betwist is"
+            }
           }
         ],
-        "bron": "99,00 indien het Strandrecht betwist is",
+        "source": {
+          "snippet": "99,00 indien het Strandrecht betwist is"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,
@@ -141,7 +149,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "het Strandrecht geborgen is"
+              "source": {
+                "snippet": "het Strandrecht geborgen is"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -154,12 +164,18 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "44.00"
+              "source": {
+                "snippet": "44.00"
+              }
             },
-            "bron": "44,00 indien het Strandrecht geborgen is"
+            "source": {
+              "snippet": "44,00 indien het Strandrecht geborgen is"
+            }
           }
         ],
-        "bron": "44,00 indien het Strandrecht geborgen is",
+        "source": {
+          "snippet": "44,00 indien het Strandrecht geborgen is"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

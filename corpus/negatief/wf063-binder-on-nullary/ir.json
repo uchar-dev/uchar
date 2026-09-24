@@ -102,8 +102,7 @@
               "links": {
                 "node": "AttribuutRef",
                 "attribuut": "uitkering",
-                "objecttype": "Jutter",
-                "bron": null
+                "objecttype": "Jutter"
               },
               "rechts": {
                 "node": "Match",
@@ -116,8 +115,7 @@
                 "scrutinee": {
                   "node": "AttribuutRef",
                   "attribuut": "beschikking",
-                  "objecttype": "Jutter",
-                  "bron": null
+                  "objecttype": "Jutter"
                 },
                 "arms": [
                   {
@@ -133,8 +131,7 @@
                         "whole": false,
                         "decimals": 2,
                         "sign": "ONBEPAALD"
-                      },
-                      "bron": null
+                      }
                     }
                   },
                   {
@@ -150,8 +147,7 @@
                         "whole": false,
                         "decimals": 2,
                         "sign": "ONBEPAALD"
-                      },
-                      "bron": null
+                      }
                     }
                   },
                   {
@@ -167,23 +163,18 @@
                         "whole": false,
                         "decimals": 2,
                         "sign": "ONBEPAALD"
-                      },
-                      "bron": null
+                      }
                     }
                   }
-                ],
-                "bron": null
+                ]
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
-            },
-            "bron": null,
-            "line": 1
+            }
           }
         ]
       }

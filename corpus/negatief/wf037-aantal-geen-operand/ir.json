@@ -107,7 +107,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal gewogen posten",
               "objecttype": "Jutter",
-              "bron": "Het aantal gewogen posten van een Jutter"
+              "source": {
+                "snippet": "Het aantal gewogen posten van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -119,7 +121,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal"
+              "source": {
+                "snippet": "het aantal"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

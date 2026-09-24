@@ -52,7 +52,9 @@
               "node": "AttribuutRef",
               "attribuut": "toetsdatum",
               "objecttype": "Vondst",
-              "bron": "De toetsdatum van een Vondst"
+              "source": {
+                "snippet": "De toetsdatum van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -61,7 +63,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "aangiftedatum",
                 "objecttype": "Vondst",
-                "bron": "zijn aangiftedatum"
+                "source": {
+                  "snippet": "zijn aangiftedatum"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -78,13 +82,17 @@
                     "abbreviation": "uur"
                   }
                 },
-                "bron": "3 uur"
+                "source": {
+                  "snippet": "3 uur"
+                }
               },
               "type": {
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "zijn aangiftedatum plus 3 uur"
+              "source": {
+                "snippet": "zijn aangiftedatum plus 3 uur"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

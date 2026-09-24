@@ -128,7 +128,9 @@
               "node": "AttribuutRef",
               "attribuut": "som",
               "objecttype": "Jutter",
-              "bron": "de som"
+              "source": {
+                "snippet": "de som"
+              }
             },
             "value": {
               "node": "Fold",
@@ -153,7 +155,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "aanspraken",
                   "objecttype": "Jutter",
-                  "bron": "de aanspraken"
+                  "source": {
+                    "snippet": "de aanspraken"
+                  }
                 },
                 "function": {
                   "node": "Lambda",
@@ -196,7 +200,9 @@
                     "scrutinee": {
                       "node": "BinderRef",
                       "name": "a",
-                      "bron": "a"
+                      "source": {
+                        "snippet": "a"
+                      }
                     },
                     "arms": [
                       {
@@ -208,7 +214,9 @@
                           "links": {
                             "node": "BinderRef",
                             "name": "bedrag",
-                            "bron": "bedrag"
+                            "source": {
+                              "snippet": "bedrag"
+                            }
                           },
                           "rechts": {
                             "node": "Literal",
@@ -221,15 +229,16 @@
                               "decimals": 2,
                               "sign": "ONBEPAALD"
                             },
-                            "bron": "25.00"
+                            "source": {
+                              "snippet": "25.00"
+                            }
                           },
                           "type": {
                             "node": "Number",
                             "whole": false,
                             "decimals": 2,
                             "sign": "ONBEPAALD"
-                          },
-                          "bron": null
+                          }
                         }
                       },
                       {
@@ -246,7 +255,9 @@
                             "decimals": 2,
                             "sign": "ONBEPAALD"
                           },
-                          "bron": "0.00"
+                          "source": {
+                            "snippet": "0.00"
+                          }
                         }
                       },
                       {
@@ -263,15 +274,23 @@
                             "decimals": 2,
                             "sign": "ONBEPAALD"
                           },
-                          "bron": "12.00"
+                          "source": {
+                            "snippet": "12.00"
+                          }
                         }
                       }
                     ],
-                    "bron": "match"
+                    "source": {
+                      "snippet": "match"
+                    }
                   },
-                  "bron": "lambda"
+                  "source": {
+                    "snippet": "lambda"
+                  }
                 },
-                "bron": "map"
+                "source": {
+                  "snippet": "map"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -301,22 +320,27 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "acc"
+                    "source": {
+                      "snippet": "acc"
+                    }
                   },
                   "rechts": {
                     "node": "BinderRef",
                     "name": "x",
-                    "bron": "x"
+                    "source": {
+                      "snippet": "x"
+                    }
                   },
                   "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
-                  },
-                  "bron": null
+                  }
                 },
-                "bron": "lambda"
+                "source": {
+                  "snippet": "lambda"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -329,9 +353,13 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               },
-              "bron": "fold"
+              "source": {
+                "snippet": "fold"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

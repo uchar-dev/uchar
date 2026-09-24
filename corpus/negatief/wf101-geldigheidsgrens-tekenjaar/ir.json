@@ -44,7 +44,9 @@
               "node": "AttribuutRef",
               "attribuut": "ijkdatum",
               "objecttype": "Vondst",
-              "bron": "De ijkdatum van een Vondst"
+              "source": {
+                "snippet": "De ijkdatum van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -55,7 +57,9 @@
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "dd. 31-01-2024"
+              "source": {
+                "snippet": "dd. 31-01-2024"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

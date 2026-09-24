@@ -158,7 +158,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal penningen",
               "objecttype": "Jutter",
-              "bron": "Het aantal penningen van een Jutter"
+              "source": {
+                "snippet": "Het aantal penningen van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -168,7 +170,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "penningen",
                   "objecttype": "Jutter",
-                  "bron": "penningen van de Jutter"
+                  "source": {
+                    "snippet": "penningen van de Jutter"
+                  }
                 }
               ],
               "elementType": "Penning",
@@ -183,7 +187,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal penningen van de Jutter"
+              "source": {
+                "snippet": "het aantal penningen van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -204,7 +210,9 @@
               "node": "AttribuutRef",
               "attribuut": "penningtotaal",
               "objecttype": "Jutter",
-              "bron": "Het penningtotaal van een Jutter"
+              "source": {
+                "snippet": "Het penningtotaal van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -214,7 +222,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bedrag",
                   "objecttype": "Penning",
-                  "bron": "het bedrag van alle penningen van de Jutter"
+                  "source": {
+                    "snippet": "het bedrag van alle penningen van de Jutter"
+                  }
                 }
               ],
               "elementType": "Penning",
@@ -229,7 +239,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -242,7 +254,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van het bedrag van alle penningen van de Jutter of 0 als die er niet zijn"
+              "source": {
+                "snippet": "de som van het bedrag van alle penningen van de Jutter of 0 als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -263,7 +277,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal dossiers",
               "objecttype": "Jutter",
-              "bron": "Het aantal dossiers van een Jutter"
+              "source": {
+                "snippet": "Het aantal dossiers van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -273,7 +289,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "dossiers",
                   "objecttype": "Jutter",
-                  "bron": "dossiers van de Jutter"
+                  "source": {
+                    "snippet": "dossiers van de Jutter"
+                  }
                 }
               ],
               "elementType": "Dossier",
@@ -288,7 +306,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal dossiers van de Jutter"
+              "source": {
+                "snippet": "het aantal dossiers van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -313,7 +333,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vondstwaarde",
                   "objecttype": "Jutter",
-                  "bron": "de vondstwaarde van de Jutter"
+                  "source": {
+                    "snippet": "de vondstwaarde van de Jutter"
+                  }
                 },
                 "kenmerk": false
               },
@@ -328,7 +350,9 @@
                   "type": {
                     "node": "Booleaan"
                   },
-                  "bron": "waar"
+                  "source": {
+                    "snippet": "waar"
+                  }
                 },
                 "kenmerk": true
               }
@@ -339,7 +363,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "de Jutter is penninggerechtigd"
+              "source": {
+                "snippet": "de Jutter is penninggerechtigd"
+              }
             },
             "validity": {
               "node": "Geldigheid",
@@ -363,7 +389,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "de Jutter is penninggerechtigd"
+              "source": {
+                "snippet": "de Jutter is penninggerechtigd"
+              }
             },
             "validity": {
               "node": "Geldigheid",
@@ -388,15 +416,19 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "de Penning is uitgereikt"
+              "source": {
+                "snippet": "de Penning is uitgereikt"
+              }
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
             },
-            "bron": "Er moet worden voldaan aan: elke Penning is uitgereikt",
-            "line": 1
+            "source": {
+              "snippet": "Er moet worden voldaan aan: elke Penning is uitgereikt",
+              "line": 1
+            }
           }
         ]
       },
@@ -417,7 +449,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "houder",
                     "objecttype": "Penning",
-                    "bron": "houder van de Penning"
+                    "source": {
+                      "snippet": "houder van de Penning"
+                    }
                   }
                 ],
                 "elementType": "Jutter",
@@ -432,7 +466,9 @@
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "het aantal houder van de Penning"
+                "source": {
+                  "snippet": "het aantal houder van de Penning"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -445,18 +481,24 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "1"
+                "source": {
+                  "snippet": "1"
+                }
               },
               "periode": null,
-              "bron": "het aantal houder van de Penning is groter of gelijk aan 1"
+              "source": {
+                "snippet": "het aantal houder van de Penning is groter of gelijk aan 1"
+              }
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
             },
-            "bron": "Er moet worden voldaan aan: elke Penning heeft een houder",
-            "line": 2
+            "source": {
+              "snippet": "Er moet worden voldaan aan: elke Penning heeft een houder",
+              "line": 2
+            }
           }
         ]
       }

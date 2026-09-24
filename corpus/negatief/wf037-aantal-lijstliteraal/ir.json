@@ -107,7 +107,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal gewogen posten",
               "objecttype": "Jutter",
-              "bron": "Het aantal gewogen posten van een Jutter"
+              "source": {
+                "snippet": "Het aantal gewogen posten van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -135,8 +137,7 @@
                         "whole": false,
                         "decimals": 2,
                         "sign": "ONBEPAALD"
-                      },
-                      "bron": null
+                      }
                     },
                     {
                       "node": "Literal",
@@ -148,11 +149,9 @@
                         "whole": false,
                         "decimals": 2,
                         "sign": "ONBEPAALD"
-                      },
-                      "bron": null
+                      }
                     }
-                  ],
-                  "bron": null
+                  ]
                 }
               ],
               "type": {
@@ -161,7 +160,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal van de lijst 1,00 en 2,00"
+              "source": {
+                "snippet": "het aantal van de lijst 1,00 en 2,00"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

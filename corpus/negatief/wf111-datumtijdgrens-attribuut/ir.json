@@ -120,7 +120,9 @@
               "node": "AttribuutRef",
               "attribuut": "bergloon",
               "objecttype": "Vondst",
-              "bron": "Het bergloon van een Vondst"
+              "source": {
+                "snippet": "Het bergloon van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -133,7 +135,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "5"
+              "source": {
+                "snippet": "5"
+              }
             },
             "condition": {
               "node": "Periode",
@@ -141,11 +145,15 @@
                 "node": "AttribuutRef",
                 "attribuut": "meldatum",
                 "objecttype": "Vondst",
-                "bron": "de meldatum van de Vondst"
+                "source": {
+                  "snippet": "de meldatum van de Vondst"
+                }
               },
               "tot": null,
               "totInclusief": false,
-              "bron": "vanaf de meldatum van de Vondst"
+              "source": {
+                "snippet": "vanaf de meldatum van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

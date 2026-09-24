@@ -46,7 +46,9 @@
               "node": "AttribuutRef",
               "attribuut": "herleefd",
               "objecttype": "Recht",
-              "bron": "Een Recht is herleefd"
+              "source": {
+                "snippet": "Een Recht is herleefd"
+              }
             },
             "value": {
               "node": "Literal",
@@ -56,7 +58,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "onwaar"
+              "source": {
+                "snippet": "onwaar"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -64,7 +68,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij nieuw recht ontstaan is"
+              "source": {
+                "snippet": "hij nieuw recht ontstaan is"
+              }
             },
             "initialisation": false
           }

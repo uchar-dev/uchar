@@ -229,8 +229,7 @@
             "target": {
               "node": "AttribuutRef",
               "attribuut": "premie",
-              "objecttype": "Jutter",
-              "bron": null
+              "objecttype": "Jutter"
             },
             "value": {
               "node": "Binair",
@@ -246,24 +245,20 @@
                 "base": {
                   "node": "AttribuutRef",
                   "attribuut": "dossier",
-                  "objecttype": "Jutter",
-                  "bron": null
+                  "objecttype": "Jutter"
                 },
-                "field": "waarde",
-                "bron": null
+                "field": "waarde"
               },
               "rechts": {
                 "node": "ParameterRef",
-                "parameter": "opslag",
-                "bron": null
+                "parameter": "opslag"
               },
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
                 "sign": "NIET_NEGATIEF"
-              },
-              "bron": null
+              }
             },
             "condition": {
               "node": "Predicaat",
@@ -271,14 +266,12 @@
               "operand": {
                 "node": "AttribuutRef",
                 "attribuut": "dossier",
-                "objecttype": "Jutter",
-                "bron": null
+                "objecttype": "Jutter"
               },
               "dagsoort": null,
               "negatie": false,
               "cijfers": 0,
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -298,8 +291,7 @@
             "target": {
               "node": "AttribuutRef",
               "attribuut": "totaalwaarde",
-              "objecttype": "Jutter",
-              "bron": null
+              "objecttype": "Jutter"
             },
             "value": {
               "node": "Fold",
@@ -323,8 +315,7 @@
                 "list": {
                   "node": "AttribuutRef",
                   "attribuut": "dossiers",
-                  "objecttype": "Jutter",
-                  "bron": null
+                  "objecttype": "Jutter"
                 },
                 "function": {
                   "node": "Lambda",
@@ -367,15 +358,11 @@
                     },
                     "base": {
                       "node": "BinderRef",
-                      "name": "d",
-                      "bron": null
+                      "name": "d"
                     },
-                    "field": "waarde",
-                    "bron": null
-                  },
-                  "bron": null
-                },
-                "bron": null
+                    "field": "waarde"
+                  }
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -404,23 +391,19 @@
                   "op": "PLUS",
                   "links": {
                     "node": "BinderRef",
-                    "name": "acc",
-                    "bron": null
+                    "name": "acc"
                   },
                   "rechts": {
                     "node": "BinderRef",
-                    "name": "x",
-                    "bron": null
+                    "name": "x"
                   },
                   "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
-                  },
-                  "bron": null
-                },
-                "bron": null
+                  }
+                }
               },
               "init": {
                 "node": "Literal",
@@ -432,10 +415,8 @@
                   "whole": false,
                   "decimals": 2,
                   "sign": "ONBEPAALD"
-                },
-                "bron": null
-              },
-              "bron": null
+                }
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -455,8 +436,7 @@
             "target": {
               "node": "AttribuutRef",
               "attribuut": "samenvatting",
-              "objecttype": "Jutter",
-              "bron": null
+              "objecttype": "Jutter"
             },
             "value": {
               "node": "StructLiteral",
@@ -490,8 +470,7 @@
                   "value": {
                     "node": "AttribuutRef",
                     "attribuut": "premie",
-                    "objecttype": "Jutter",
-                    "bron": null
+                    "objecttype": "Jutter"
                   }
                 },
                 {
@@ -507,11 +486,12 @@
                       "decimals": 0,
                       "sign": "NIET_NEGATIEF"
                     },
-                    "bron": "2"
+                    "source": {
+                      "snippet": "2"
+                    }
                   }
                 }
-              ],
-              "bron": null
+              ]
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -531,8 +511,7 @@
             "target": {
               "node": "AttribuutRef",
               "attribuut": "dubbel",
-              "objecttype": "Jutter",
-              "bron": null
+              "objecttype": "Jutter"
             },
             "value": {
               "node": "Literal",
@@ -541,8 +520,7 @@
               },
               "type": {
                 "node": "Booleaan"
-              },
-              "bron": null
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -550,8 +528,7 @@
               "links": {
                 "node": "AttribuutRef",
                 "attribuut": "dossier",
-                "objecttype": "Jutter",
-                "bron": null
+                "objecttype": "Jutter"
               },
               "rechts": {
                 "node": "StructLiteral",
@@ -592,8 +569,7 @@
                         "whole": false,
                         "decimals": 2,
                         "sign": "NIET_NEGATIEF"
-                      },
-                      "bron": null
+                      }
                     }
                   },
                   {
@@ -608,15 +584,12 @@
                         "whole": true,
                         "decimals": 0,
                         "sign": "NIET_NEGATIEF"
-                      },
-                      "bron": null
+                      }
                     }
                   }
-                ],
-                "bron": null
+                ]
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "initialisation": false
           }
@@ -635,8 +608,7 @@
             "target": {
               "node": "AttribuutRef",
               "attribuut": "afwijkend",
-              "objecttype": "Jutter",
-              "bron": null
+              "objecttype": "Jutter"
             },
             "value": {
               "node": "Literal",
@@ -645,8 +617,7 @@
               },
               "type": {
                 "node": "Booleaan"
-              },
-              "bron": null
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -654,8 +625,7 @@
               "links": {
                 "node": "AttribuutRef",
                 "attribuut": "dossier",
-                "objecttype": "Jutter",
-                "bron": null
+                "objecttype": "Jutter"
               },
               "rechts": {
                 "node": "StructLiteral",
@@ -696,8 +666,7 @@
                         "whole": false,
                         "decimals": 2,
                         "sign": "NIET_NEGATIEF"
-                      },
-                      "bron": null
+                      }
                     }
                   },
                   {
@@ -712,15 +681,12 @@
                         "whole": true,
                         "decimals": 0,
                         "sign": "NIET_NEGATIEF"
-                      },
-                      "bron": null
+                      }
                     }
                   }
-                ],
-                "bron": null
+                ]
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "initialisation": false
           }
@@ -739,8 +705,7 @@
             "target": {
               "node": "AttribuutRef",
               "attribuut": "waardekopie",
-              "objecttype": "Jutter",
-              "bron": null
+              "objecttype": "Jutter"
             },
             "value": {
               "node": "FieldAccess",
@@ -753,11 +718,9 @@
               "base": {
                 "node": "AttribuutRef",
                 "attribuut": "samenvatting",
-                "objecttype": "Jutter",
-                "bron": null
+                "objecttype": "Jutter"
               },
-              "field": "waarde",
-              "bron": null
+              "field": "waarde"
             },
             "initialisation": false,
             "presentation": "BEREKENING"

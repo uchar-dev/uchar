@@ -141,7 +141,9 @@
               "node": "AttribuutRef",
               "attribuut": "bedragen",
               "objecttype": "Jutter",
-              "bron": "de bedragen"
+              "source": {
+                "snippet": "de bedragen"
+              }
             },
             "value": {
               "node": "ListLiteral",
@@ -209,9 +211,13 @@
                       "decimals": 2,
                       "sign": "NIET_NEGATIEF"
                     },
-                    "bron": "10.00"
+                    "source": {
+                      "snippet": "10.00"
+                    }
                   },
-                  "bron": "goedgekeurd"
+                  "source": {
+                    "snippet": "goedgekeurd"
+                  }
                 },
                 {
                   "node": "Construct",
@@ -240,10 +246,14 @@
                   },
                   "constructor": "Verworpen",
                   "argument": null,
-                  "bron": "verworpen"
+                  "source": {
+                    "snippet": "verworpen"
+                  }
                 }
               ],
-              "bron": "lijst"
+              "source": {
+                "snippet": "lijst"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

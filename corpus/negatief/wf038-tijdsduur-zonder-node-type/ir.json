@@ -62,7 +62,9 @@
               "node": "AttribuutRef",
               "attribuut": "jutleeftijd",
               "objecttype": "Jutter",
-              "bron": "De jutleeftijd van een Jutter"
+              "source": {
+                "snippet": "De jutleeftijd van een Jutter"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -72,17 +74,23 @@
                   "node": "AttribuutRef",
                   "attribuut": "geboortedatum",
                   "objecttype": "Jutter",
-                  "bron": "zijn geboortedatum"
+                  "source": {
+                    "snippet": "zijn geboortedatum"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "peildatum",
                   "objecttype": "Jutter",
-                  "bron": "zijn peildatum"
+                  "source": {
+                    "snippet": "zijn peildatum"
+                  }
                 }
               ],
               "type": null,
-              "bron": "de tijdsduur van zijn geboortedatum tot zijn peildatum"
+              "source": {
+                "snippet": "de tijdsduur van zijn geboortedatum tot zijn peildatum"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

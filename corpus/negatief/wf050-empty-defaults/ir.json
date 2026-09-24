@@ -62,7 +62,9 @@
         "onderwerp": "Jutter",
         "kenmerk": "uitgesloten",
         "defaults": [],
-        "bron": "art. 4",
+        "source": {
+          "snippet": "art. 4"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

@@ -63,7 +63,9 @@
               "node": "AttribuutRef",
               "attribuut": "penninggerechtigd",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is penninggerechtigd"
+              "source": {
+                "snippet": "Een Jutter is penninggerechtigd"
+              }
             },
             "value": {
               "node": "Literal",
@@ -73,14 +75,18 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Periode",
               "vanaf": null,
               "tot": null,
               "totInclusief": false,
-              "bron": "gedurende de periode"
+              "source": {
+                "snippet": "gedurende de periode"
+              }
             },
             "initialisation": false
           }

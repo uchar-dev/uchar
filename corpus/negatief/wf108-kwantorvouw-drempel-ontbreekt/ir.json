@@ -87,7 +87,9 @@
               "node": "AttribuutRef",
               "attribuut": "premiegerechtigd",
               "objecttype": "Bergingsploeg",
-              "bron": "Een Bergingsploeg is premiegerechtigd"
+              "source": {
+                "snippet": "Een Bergingsploeg is premiegerechtigd"
+              }
             },
             "value": {
               "node": "Literal",
@@ -97,7 +99,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -111,7 +115,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "dagvergoeding",
                   "objecttype": "Berger",
-                  "bron": "de dagvergoeding van de berger"
+                  "source": {
+                    "snippet": "de dagvergoeding van de berger"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -124,16 +130,22 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "40"
+                  "source": {
+                    "snippet": "40"
+                  }
                 },
                 "periode": {
                   "node": "GeheelPeriode",
                   "jaar": true,
                   "niet": false
                 },
-                "bron": "zijn dagvergoeding gedurende het gehele jaar groter is dan 40"
+                "source": {
+                  "snippet": "zijn dagvergoeding gedurende het gehele jaar groter is dan 40"
+                }
               },
-              "bron": "de dagvergoeding van ten minste 2 van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40",
+              "source": {
+                "snippet": "de dagvergoeding van ten minste 2 van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "ploegindeling",

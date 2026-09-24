@@ -89,7 +89,9 @@
               "node": "AttribuutRef",
               "attribuut": "tarief",
               "objecttype": "Berging",
-              "bron": "de tarief"
+              "source": {
+                "snippet": "de tarief"
+              }
             },
             "value": {
               "node": "Match",
@@ -103,7 +105,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vaarwater",
                 "objecttype": "Berging",
-                "bron": "de vaarwater"
+                "source": {
+                  "snippet": "de vaarwater"
+                }
               },
               "arms": [
                 {
@@ -120,7 +124,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "3"
+                    "source": {
+                      "snippet": "3"
+                    }
                   }
                 },
                 {
@@ -137,7 +143,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "7"
+                    "source": {
+                      "snippet": "7"
+                    }
                   }
                 },
                 {
@@ -154,11 +162,15 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "12"
+                    "source": {
+                      "snippet": "12"
+                    }
                   }
                 }
               ],
-              "bron": "match"
+              "source": {
+                "snippet": "match"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -200,9 +212,13 @@
                   "Ruimzee"
                 ]
               },
-              "bron": "Wad"
+              "source": {
+                "snippet": "Wad"
+              }
             },
-            "bron": "anders: Noord",
+            "source": {
+              "snippet": "anders: Noord"
+            },
             "initialisatie": true,
             "excepties": {
               "ongeordend": true,
@@ -219,7 +235,9 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij uitzonderlijk is"
+                        "source": {
+                          "snippet": "hij uitzonderlijk is"
+                        }
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -235,18 +253,26 @@
                             "West"
                           ]
                         },
-                        "bron": "Noord"
+                        "source": {
+                          "snippet": "Noord"
+                        }
                       },
-                      "bron": "uitzonderlijk: Noord"
+                      "source": {
+                        "snippet": "uitzonderlijk: Noord"
+                      }
                     }
                   ],
-                  "bron": "uitzondering"
+                  "source": {
+                    "snippet": "uitzondering"
+                  }
                 }
               ]
             }
           }
         ],
-        "bron": "vaarwater: Noord",
+        "source": {
+          "snippet": "vaarwater: Noord"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

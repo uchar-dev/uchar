@@ -62,14 +62,18 @@
               "node": "AttribuutRef",
               "attribuut": "huidig penningbedrag",
               "objecttype": "Jutter",
-              "bron": "Het huidig penningbedrag van een Jutter"
+              "source": {
+                "snippet": "Het huidig penningbedrag van een Jutter"
+              }
             },
             "value": {
               "node": "TemporalRead",
               "basis": {
                 "node": "ParameterRef",
                 "parameter": "penningbedrag",
-                "bron": "het penningbedrag"
+                "source": {
+                  "snippet": "het penningbedrag"
+                }
               },
               "datum": {
                 "node": "ContextValue",
@@ -78,7 +82,9 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "de rekendatum"
+                "source": {
+                  "snippet": "de rekendatum"
+                }
               },
               "type": {
                 "node": "Number",
@@ -86,7 +92,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het penningbedrag op de rekendatum"
+              "source": {
+                "snippet": "het penningbedrag op de rekendatum"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

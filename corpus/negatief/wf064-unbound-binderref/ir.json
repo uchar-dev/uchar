@@ -48,24 +48,19 @@
               "links": {
                 "node": "AttribuutRef",
                 "attribuut": "uitkering",
-                "objecttype": "Jutter",
-                "bron": null
+                "objecttype": "Jutter"
               },
               "rechts": {
                 "node": "BinderRef",
-                "name": "bedrag",
-                "bron": null
+                "name": "bedrag"
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
-            },
-            "bron": null,
-            "line": 1
+            }
           }
         ]
       }

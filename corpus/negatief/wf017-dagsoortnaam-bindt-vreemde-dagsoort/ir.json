@@ -36,7 +36,9 @@
               "node": "Date",
               "precision": "day"
             },
-            "bron": "de dag"
+            "source": {
+              "snippet": "de dag"
+            }
           },
           "rechts": {
             "node": "Literal",
@@ -47,10 +49,14 @@
               "node": "Date",
               "precision": "day"
             },
-            "bron": "28-02-2026"
+            "source": {
+              "snippet": "28-02-2026"
+            }
           },
           "periode": null,
-          "bron": "de dag later is dan 28-02-2026"
+          "source": {
+            "snippet": "de dag later is dan 28-02-2026"
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",
@@ -70,7 +76,9 @@
               "node": "Date",
               "precision": "day"
             },
-            "bron": "de dag"
+            "source": {
+              "snippet": "de dag"
+            }
           },
           "rechts": {
             "node": "Literal",
@@ -81,10 +89,14 @@
               "node": "Date",
               "precision": "day"
             },
-            "bron": "30-09-2026"
+            "source": {
+              "snippet": "30-09-2026"
+            }
           },
           "periode": null,
-          "bron": "de dag later is dan 30-09-2026"
+          "source": {
+            "snippet": "de dag later is dan 30-09-2026"
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",

@@ -95,7 +95,9 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "10"
+                  "source": {
+                    "snippet": "10"
+                  }
                 },
                 "kenmerk": false
               }
@@ -132,15 +134,21 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij erkend is"
+              "source": {
+                "snippet": "hij erkend is"
+              }
             },
             "consequentie": {
               "node": "AttribuutRef",
               "attribuut": "basisbedrag",
               "objecttype": "Jutter",
-              "bron": "zijn basisbedrag"
+              "source": {
+                "snippet": "zijn basisbedrag"
+              }
             },
-            "bron": "voor een erkend jutter: het basisbedrag"
+            "source": {
+              "snippet": "voor een erkend jutter: het basisbedrag"
+            }
           },
           {
             "node": "Default",
@@ -151,15 +159,21 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij kandidaat is"
+              "source": {
+                "snippet": "hij kandidaat is"
+              }
             },
             "consequentie": {
               "node": "AttribuutRef",
               "attribuut": "kandidaatbedrag",
               "objecttype": "Jutter",
-              "bron": "zijn kandidaatbedrag"
+              "source": {
+                "snippet": "zijn kandidaatbedrag"
+              }
             },
-            "bron": "voor een kandidaat: het kandidaatbedrag"
+            "source": {
+              "snippet": "voor een kandidaat: het kandidaatbedrag"
+            }
           },
           {
             "node": "Default",
@@ -176,13 +190,19 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "25"
+              "source": {
+                "snippet": "25"
+              }
             },
             "initialisatie": true,
-            "bron": "anders: 25, tenzij al gevuld"
+            "source": {
+              "snippet": "anders: 25, tenzij al gevuld"
+            }
           }
         ],
-        "bron": "waardering: basisbedrag voor erkenden, kandidaatbedrag voor kandidaten, anders 25",
+        "source": {
+          "snippet": "waardering: basisbedrag voor erkenden, kandidaatbedrag voor kandidaten, anders 25"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

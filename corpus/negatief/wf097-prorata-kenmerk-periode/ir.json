@@ -107,7 +107,9 @@
               "node": "AttribuutRef",
               "attribuut": "borgdeel",
               "objecttype": "Jutter",
-              "bron": "Het borgdeel van een Jutter"
+              "source": {
+                "snippet": "Het borgdeel van een Jutter"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -117,7 +119,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "borgtarief",
                   "objecttype": "Jutter",
-                  "bron": "zijn borgtarief"
+                  "source": {
+                    "snippet": "zijn borgtarief"
+                  }
                 }
               ],
               "filter": {
@@ -130,7 +134,9 @@
                   "jaar": true,
                   "niet": false
                 },
-                "bron": "gedurende de tijd dat hij borgplichtig is"
+                "source": {
+                  "snippet": "gedurende de tijd dat hij borgplichtig is"
+                }
               },
               "granularity": "MAAND",
               "type": {
@@ -139,7 +145,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het tijdsevenredig deel per maand van zijn borgtarief gedurende de tijd dat hij borgplichtig is"
+              "source": {
+                "snippet": "het tijdsevenredig deel per maand van zijn borgtarief gedurende de tijd dat hij borgplichtig is"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -160,7 +168,9 @@
               "node": "AttribuutRef",
               "attribuut": "jaardeel",
               "objecttype": "Jutter",
-              "bron": "Het jaardeel van een Jutter"
+              "source": {
+                "snippet": "Het jaardeel van een Jutter"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -170,7 +180,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "jaartarief",
                   "objecttype": "Jutter",
-                  "bron": "zijn jaartarief"
+                  "source": {
+                    "snippet": "zijn jaartarief"
+                  }
                 }
               ],
               "filter": {
@@ -179,7 +191,9 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "gedurende de tijd dat hij borgplichtig is"
+                "source": {
+                  "snippet": "gedurende de tijd dat hij borgplichtig is"
+                }
               },
               "granularity": "JAAR",
               "type": {
@@ -188,7 +202,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het tijdsevenredig deel per jaar van zijn jaartarief gedurende de tijd dat hij borgplichtig is"
+              "source": {
+                "snippet": "het tijdsevenredig deel per jaar van zijn jaartarief gedurende de tijd dat hij borgplichtig is"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

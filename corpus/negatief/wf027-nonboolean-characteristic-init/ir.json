@@ -70,7 +70,9 @@
                     "decimals": 0,
                     "sign": "NIET_NEGATIEF"
                   },
-                  "bron": "5"
+                  "source": {
+                    "snippet": "5"
+                  }
                 },
                 "kenmerk": true
               }

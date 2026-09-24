@@ -73,7 +73,9 @@
               "node": "AttribuutRef",
               "attribuut": "penninggerechtigd",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is penninggerechtigd"
+              "source": {
+                "snippet": "Een Jutter is penninggerechtigd"
+              }
             },
             "value": {
               "node": "Literal",
@@ -83,7 +85,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -92,15 +96,21 @@
                 "node": "AttribuutRef",
                 "attribuut": "aantal aangemelde vondsten",
                 "objecttype": "Jutter",
-                "bron": "zijn aantal aangemelde vondsten"
+                "source": {
+                  "snippet": "zijn aantal aangemelde vondsten"
+                }
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "vondstdrempel",
-                "bron": "de vondstdrempel"
+                "source": {
+                  "snippet": "de vondstdrempel"
+                }
               },
               "periode": null,
-              "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
+              "source": {
+                "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
+              }
             },
             "initialisation": false
           }

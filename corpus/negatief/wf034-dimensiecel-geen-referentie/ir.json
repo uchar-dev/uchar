@@ -111,7 +111,9 @@
               "node": "AttribuutRef",
               "attribuut": "voorjaarsgewicht",
               "objecttype": "Jutter",
-              "bron": "Het voorjaarsgewicht van een Jutter"
+              "source": {
+                "snippet": "Het voorjaarsgewicht van een Jutter"
+              }
             },
             "value": {
               "node": "DimensieCel",
@@ -136,12 +138,16 @@
                     }
                   }
                 },
-                "bron": "1,00 kg"
+                "source": {
+                  "snippet": "1,00 kg"
+                }
               },
               "labels": [
                 "voorjaar"
               ],
-              "bron": "zijn vondstgewicht in voorjaar"
+              "source": {
+                "snippet": "zijn vondstgewicht in voorjaar"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

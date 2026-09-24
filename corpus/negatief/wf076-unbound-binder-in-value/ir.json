@@ -56,7 +56,9 @@
               "node": "AttribuutRef",
               "attribuut": "aanslag",
               "objecttype": "Jutter",
-              "bron": "de aanslag"
+              "source": {
+                "snippet": "de aanslag"
+              }
             },
             "value": {
               "node": "Let",
@@ -70,14 +72,20 @@
               "value": {
                 "node": "BinderRef",
                 "name": "x",
-                "bron": "x in zijn eigen waarde"
+                "source": {
+                  "snippet": "x in zijn eigen waarde"
+                }
               },
               "body": {
                 "node": "BinderRef",
                 "name": "x",
-                "bron": "x in de body"
+                "source": {
+                  "snippet": "x in de body"
+                }
               },
-              "bron": "een let die zijn binder in de waarde leest"
+              "source": {
+                "snippet": "een let die zijn binder in de waarde leest"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

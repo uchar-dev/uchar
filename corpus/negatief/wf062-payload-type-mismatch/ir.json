@@ -92,8 +92,7 @@
               "links": {
                 "node": "AttribuutRef",
                 "attribuut": "beschikking",
-                "objecttype": "Jutter",
-                "bron": null
+                "objecttype": "Jutter"
               },
               "rechts": {
                 "node": "Construct",
@@ -128,21 +127,16 @@
                   },
                   "type": {
                     "node": "Tekst"
-                  },
-                  "bron": null
-                },
-                "bron": null
+                  }
+                }
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
-            },
-            "bron": null,
-            "line": 1
+            }
           }
         ]
       }

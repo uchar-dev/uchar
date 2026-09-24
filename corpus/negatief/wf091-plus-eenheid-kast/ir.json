@@ -325,7 +325,9 @@
               "node": "AttribuutRef",
               "attribuut": "kopie",
               "objecttype": "Jutter",
-              "bron": "De kopie van een Jutter"
+              "source": {
+                "snippet": "De kopie van een Jutter"
+              }
             },
             "value": {
               "node": "Binair",
@@ -334,13 +336,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "gewicht",
                 "objecttype": "Jutter",
-                "bron": "de gewicht van de Jutter"
+                "source": {
+                  "snippet": "de gewicht van de Jutter"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "gewicht",
                 "objecttype": "Jutter",
-                "bron": "de gewicht van de Jutter"
+                "source": {
+                  "snippet": "de gewicht van de Jutter"
+                }
               },
               "type": {
                 "node": "Number",
@@ -358,7 +364,9 @@
                   }
                 }
               },
-              "bron": "het gewicht van de Jutter plus het gewicht van de Jutter"
+              "source": {
+                "snippet": "het gewicht van de Jutter plus het gewicht van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

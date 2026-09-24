@@ -63,7 +63,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vloototal",
                   "objecttype": "Rederij",
-                  "bron": "de vloototal van de Rederij"
+                  "source": {
+                    "snippet": "de vloototal van de Rederij"
+                  }
                 },
                 "kenmerk": true
               }

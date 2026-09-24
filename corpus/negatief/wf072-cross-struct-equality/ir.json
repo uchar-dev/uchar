@@ -131,25 +131,20 @@
               "links": {
                 "node": "AttribuutRef",
                 "attribuut": "dossier",
-                "objecttype": "Jutter",
-                "bron": null
+                "objecttype": "Jutter"
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "kaart",
-                "objecttype": "Jutter",
-                "bron": null
+                "objecttype": "Jutter"
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
-            },
-            "bron": null,
-            "line": 1
+            }
           }
         ]
       }

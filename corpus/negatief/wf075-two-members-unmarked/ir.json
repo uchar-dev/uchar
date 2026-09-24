@@ -63,7 +63,9 @@
             "node": "Default",
             "besluit": null,
             "voorwaarde": null,
-            "bron": "groep-default met twee ongemarkeerde leden",
+            "source": {
+              "snippet": "groep-default met twee ongemarkeerde leden"
+            },
             "excepties": {
               "ongeordend": false,
               "leden": [
@@ -79,7 +81,9 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij grondY heeft"
+                        "source": {
+                          "snippet": "hij grondY heeft"
+                        }
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -92,12 +96,18 @@
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "10.00"
+                        "source": {
+                          "snippet": "10.00"
+                        }
                       },
-                      "bron": "grondY: 10.00"
+                      "source": {
+                        "snippet": "grondY: 10.00"
+                      }
                     }
                   ],
-                  "bron": "lid Y"
+                  "source": {
+                    "snippet": "lid Y"
+                  }
                 },
                 {
                   "node": "ExceptionGroup",
@@ -111,7 +121,9 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij grondZ heeft"
+                        "source": {
+                          "snippet": "hij grondZ heeft"
+                        }
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -124,18 +136,26 @@
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "20.00"
+                        "source": {
+                          "snippet": "20.00"
+                        }
                       },
-                      "bron": "grondZ: 20.00"
+                      "source": {
+                        "snippet": "grondZ: 20.00"
+                      }
                     }
                   ],
-                  "bron": "lid Z"
+                  "source": {
+                    "snippet": "lid Z"
+                  }
                 }
               ]
             }
           }
         ],
-        "bron": "art. n",
+        "source": {
+          "snippet": "art. n"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

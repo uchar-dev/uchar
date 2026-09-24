@@ -96,7 +96,9 @@
               "node": "AttribuutRef",
               "attribuut": "uurspanne",
               "objecttype": "Getijdenpaar",
-              "bron": "De uurspanne van een Getijdenpaar"
+              "source": {
+                "snippet": "De uurspanne van een Getijdenpaar"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -106,7 +108,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "aankomst",
                   "objecttype": "Getijdenpaar",
-                  "bron": "zijn aankomst"
+                  "source": {
+                    "snippet": "zijn aankomst"
+                  }
                 }
               ],
               "type": {
@@ -119,7 +123,9 @@
                   "abbreviation": "uur"
                 }
               },
-              "bron": "de tijdsduur van zijn aankomst tot zijn vertrek in hele uren"
+              "source": {
+                "snippet": "de tijdsduur van zijn aankomst tot zijn vertrek in hele uren"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -140,7 +146,9 @@
               "node": "AttribuutRef",
               "attribuut": "dagspanne",
               "objecttype": "Getijdenpaar",
-              "bron": "De dagspanne van een Getijdenpaar"
+              "source": {
+                "snippet": "De dagspanne van een Getijdenpaar"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -150,13 +158,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "aankomst",
                   "objecttype": "Getijdenpaar",
-                  "bron": "zijn aankomst"
+                  "source": {
+                    "snippet": "zijn aankomst"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "vertrek",
                   "objecttype": "Getijdenpaar",
-                  "bron": "zijn vertrek"
+                  "source": {
+                    "snippet": "zijn vertrek"
+                  }
                 }
               ],
               "type": {
@@ -169,7 +181,9 @@
                   "abbreviation": "dagen"
                 }
               },
-              "bron": "de tijdsduur van zijn aankomst tot zijn vertrek in hele dagen"
+              "source": {
+                "snippet": "de tijdsduur van zijn aankomst tot zijn vertrek in hele dagen"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -190,7 +204,9 @@
               "node": "AttribuutRef",
               "attribuut": "hersteltijd",
               "objecttype": "Getijdenpaar",
-              "bron": "De hersteltijd van een Getijdenpaar"
+              "source": {
+                "snippet": "De hersteltijd van een Getijdenpaar"
+              }
             },
             "value": {
               "node": "Binair",
@@ -199,7 +215,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "aankomst",
                 "objecttype": "Getijdenpaar",
-                "bron": "zijn aankomst"
+                "source": {
+                  "snippet": "zijn aankomst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -216,13 +234,17 @@
                     "abbreviation": "uur"
                   }
                 },
-                "bron": "26 uur"
+                "source": {
+                  "snippet": "26 uur"
+                }
               },
               "type": {
                 "node": "Date",
                 "precision": "millisecond"
               },
-              "bron": "zijn aankomst plus 26 uur"
+              "source": {
+                "snippet": "zijn aankomst plus 26 uur"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -243,7 +265,9 @@
               "node": "AttribuutRef",
               "attribuut": "ijkdatum",
               "objecttype": "Getijdenpaar",
-              "bron": "De ijkdatum van een Getijdenpaar"
+              "source": {
+                "snippet": "De ijkdatum van een Getijdenpaar"
+              }
             },
             "value": {
               "node": "Binair",
@@ -252,7 +276,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "aankomst",
                 "objecttype": "Getijdenpaar",
-                "bron": "zijn aankomst"
+                "source": {
+                  "snippet": "zijn aankomst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -269,13 +295,17 @@
                     "abbreviation": "maand"
                   }
                 },
-                "bron": "1 maand"
+                "source": {
+                  "snippet": "1 maand"
+                }
               },
               "type": {
                 "node": "Date",
                 "precision": "millisecond"
               },
-              "bron": "zijn aankomst plus 1 maand"
+              "source": {
+                "snippet": "zijn aankomst plus 1 maand"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

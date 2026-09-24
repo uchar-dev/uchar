@@ -77,13 +77,13 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij kustwacht is"
-            },
-            "bron": null
+              "source": {
+                "snippet": "hij kustwacht is"
+              }
+            }
           }
         ],
         "ongeordend": false,
-        "bron": null,
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

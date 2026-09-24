@@ -178,7 +178,9 @@
               "node": "AttribuutRef",
               "attribuut": "sluitsom",
               "objecttype": "Vondst",
-              "bron": "De sluitsom van een Vondst"
+              "source": {
+                "snippet": "De sluitsom van een Vondst"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -188,13 +190,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "meldloon",
                   "objecttype": "Vondst",
-                  "bron": "haar meldloon"
+                  "source": {
+                    "snippet": "haar meldloon"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "bakenloon",
                   "objecttype": "Baken",
-                  "bron": "het bakenloon van het Baken"
+                  "source": {
+                    "snippet": "het bakenloon van het Baken"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -214,7 +220,9 @@
                   }
                 }
               },
-              "bron": "het maximum van haar meldloon en het bakenloon van het Baken"
+              "source": {
+                "snippet": "het maximum van haar meldloon en het bakenloon van het Baken"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

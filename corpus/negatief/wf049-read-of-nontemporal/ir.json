@@ -105,7 +105,9 @@
               "node": "AttribuutRef",
               "attribuut": "quotum bij aanmelding",
               "objecttype": "Jutter",
-              "bron": "Het quotum bij aanmelding van een Jutter"
+              "source": {
+                "snippet": "Het quotum bij aanmelding van een Jutter"
+              }
             },
             "value": {
               "node": "TemporalRead",
@@ -113,13 +115,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "vast quotum",
                 "objecttype": "Jutter",
-                "bron": "zijn vast quotum"
+                "source": {
+                  "snippet": "zijn vast quotum"
+                }
               },
               "datum": {
                 "node": "AttribuutRef",
                 "attribuut": "aanmelddatum",
                 "objecttype": "Jutter",
-                "bron": "zijn aanmelddatum"
+                "source": {
+                  "snippet": "zijn aanmelddatum"
+                }
               },
               "type": {
                 "node": "Number",
@@ -127,7 +133,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "zijn jaarquotum op zijn aanmelddatum"
+              "source": {
+                "snippet": "zijn jaarquotum op zijn aanmelddatum"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

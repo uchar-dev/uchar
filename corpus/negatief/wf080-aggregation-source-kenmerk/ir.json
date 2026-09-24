@@ -93,7 +93,9 @@
               "node": "AttribuutRef",
               "attribuut": "penningtotaal",
               "objecttype": "Jutter",
-              "bron": "Het penningtotaal van een Jutter"
+              "source": {
+                "snippet": "Het penningtotaal van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -103,7 +105,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "uitgereikt",
                   "objecttype": "Penning",
-                  "bron": "het uitgereikt van alle penningen van de Jutter"
+                  "source": {
+                    "snippet": "het uitgereikt van alle penningen van de Jutter"
+                  }
                 }
               ],
               "elementType": "Penning",
@@ -118,7 +122,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -131,7 +137,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van het uitgereikt van alle penningen van de Jutter of 0 als die er niet zijn"
+              "source": {
+                "snippet": "de som van het uitgereikt van alle penningen van de Jutter of 0 als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

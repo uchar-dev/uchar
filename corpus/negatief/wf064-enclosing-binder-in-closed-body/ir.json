@@ -72,8 +72,7 @@
               "links": {
                 "node": "AttribuutRef",
                 "attribuut": "uitkering",
-                "objecttype": "Jutter",
-                "bron": null
+                "objecttype": "Jutter"
               },
               "rechts": {
                 "node": "Let",
@@ -84,11 +83,15 @@
                   "sign": "ONBEPAALD"
                 },
                 "binder": "f",
-                "bron": "f is de factor",
+                "source": {
+                  "snippet": "f is de factor"
+                },
                 "value": {
                   "node": "ParameterRef",
                   "parameter": "factor",
-                  "bron": "de factor"
+                  "source": {
+                    "snippet": "de factor"
+                  }
                 },
                 "body": {
                   "node": "Fold",
@@ -101,7 +104,9 @@
                   "list": {
                     "node": "ParameterRef",
                     "parameter": "bedragen",
-                    "bron": "de bedragen"
+                    "source": {
+                      "snippet": "de bedragen"
+                    }
                   },
                   "function": {
                     "node": "Lambda",
@@ -125,14 +130,18 @@
                         }
                       }
                     ],
-                    "bron": "de vouwstap",
+                    "source": {
+                      "snippet": "de vouwstap"
+                    },
                     "body": {
                       "node": "Binair",
                       "op": "PLUS",
                       "links": {
                         "node": "BinderRef",
                         "name": "acc",
-                        "bron": "de opgetelde waarde"
+                        "source": {
+                          "snippet": "de opgetelde waarde"
+                        }
                       },
                       "rechts": {
                         "node": "Binair",
@@ -140,12 +149,16 @@
                         "links": {
                           "node": "BinderRef",
                           "name": "x",
-                          "bron": "het bedrag"
+                          "source": {
+                            "snippet": "het bedrag"
+                          }
                         },
                         "rechts": {
                           "node": "BinderRef",
                           "name": "f",
-                          "bron": "de factor"
+                          "source": {
+                            "snippet": "de factor"
+                          }
                         },
                         "type": {
                           "node": "Number",
@@ -153,7 +166,9 @@
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "het bedrag maal de factor"
+                        "source": {
+                          "snippet": "het bedrag maal de factor"
+                        }
                       },
                       "type": {
                         "node": "Number",
@@ -161,7 +176,9 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "de opgetelde waarde plus het bedrag maal de factor"
+                      "source": {
+                        "snippet": "de opgetelde waarde plus het bedrag maal de factor"
+                      }
                     }
                   },
                   "init": {
@@ -175,21 +192,22 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0"
+                    "source": {
+                      "snippet": "0"
+                    }
                   },
-                  "bron": "de gevouwen som"
+                  "source": {
+                    "snippet": "de gevouwen som"
+                  }
                 }
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
-            },
-            "bron": null,
-            "line": 1
+            }
           }
         ]
       }

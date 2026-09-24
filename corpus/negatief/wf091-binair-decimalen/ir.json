@@ -325,7 +325,9 @@
               "node": "AttribuutRef",
               "attribuut": "uitdeel",
               "objecttype": "Jutter",
-              "bron": "De uitdeel van een Jutter"
+              "source": {
+                "snippet": "De uitdeel van een Jutter"
+              }
             },
             "value": {
               "node": "Binair",
@@ -334,13 +336,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "deel",
                 "objecttype": "Jutter",
-                "bron": "de deel van de Jutter"
+                "source": {
+                  "snippet": "de deel van de Jutter"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "fijn",
                 "objecttype": "Jutter",
-                "bron": "de fijn van de Jutter"
+                "source": {
+                  "snippet": "de fijn van de Jutter"
+                }
               },
               "type": {
                 "node": "Number",
@@ -348,7 +354,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het deel van de Jutter plus het fijn van de Jutter"
+              "source": {
+                "snippet": "het deel van de Jutter plus het fijn van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

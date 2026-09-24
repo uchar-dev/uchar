@@ -58,7 +58,9 @@
             "node": "Default",
             "besluit": null,
             "voorwaarde": null,
-            "bron": "groep-default",
+            "source": {
+              "snippet": "groep-default"
+            },
             "excepties": {
               "ongeordend": true,
               "leden": [
@@ -74,18 +76,26 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij grondX heeft"
+                        "source": {
+                          "snippet": "hij grondX heeft"
+                        }
                       },
-                      "bron": "een default die niets beslist: geen consequentie, geen excepties"
+                      "source": {
+                        "snippet": "een default die niets beslist: geen consequentie, geen excepties"
+                      }
                     }
                   ],
-                  "bron": "lid met een inhoudsloze default"
+                  "source": {
+                    "snippet": "lid met een inhoudsloze default"
+                  }
                 }
               ]
             }
           }
         ],
-        "bron": "art. n",
+        "source": {
+          "snippet": "art. n"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

@@ -42,13 +42,10 @@
           "arguments": [
             {
               "node": "BinderRef",
-              "name": "a",
-              "bron": null
+              "name": "a"
             }
-          ],
-          "bron": null
-        },
-        "bron": null
+          ]
+        }
       },
       {
         "node": "FunctionDef",
@@ -82,13 +79,10 @@
           "arguments": [
             {
               "node": "BinderRef",
-              "name": "a",
-              "bron": null
+              "name": "a"
             }
-          ],
-          "bron": null
-        },
-        "bron": null
+          ]
+        }
       }
     ]
   },

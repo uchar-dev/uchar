@@ -115,7 +115,9 @@
               "node": "AttribuutRef",
               "attribuut": "premie",
               "objecttype": "Schuit",
-              "bron": "de premie"
+              "source": {
+                "snippet": "de premie"
+              }
             },
             "value": {
               "node": "Match",
@@ -129,7 +131,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vaarwater",
                 "objecttype": "Werf",
-                "bron": "de vaarwater",
+                "source": {
+                  "snippet": "de vaarwater"
+                },
                 "navigatieBindingen": [
                   {
                     "node": "RolBinding",
@@ -153,7 +157,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "3"
+                    "source": {
+                      "snippet": "3"
+                    }
                   }
                 },
                 {
@@ -170,7 +176,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "7"
+                    "source": {
+                      "snippet": "7"
+                    }
                   }
                 },
                 {
@@ -187,11 +195,15 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "12"
+                    "source": {
+                      "snippet": "12"
+                    }
                   }
                 }
               ],
-              "bron": "match"
+              "source": {
+                "snippet": "match"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

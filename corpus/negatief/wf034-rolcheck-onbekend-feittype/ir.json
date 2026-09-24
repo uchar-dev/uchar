@@ -76,7 +76,9 @@
               "node": "AttribuutRef",
               "attribuut": "wachtdoend",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is wachtdoend"
+              "source": {
+                "snippet": "Een Jutter is wachtdoend"
+              }
             },
             "value": {
               "node": "Literal",
@@ -86,14 +88,18 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "RoleMembership",
               "factType": "bestaatniet",
               "role": "wachtjutter",
               "negated": false,
-              "bron": "hij een wachtjutter is"
+              "source": {
+                "snippet": "hij een wachtjutter is"
+              }
             },
             "initialisation": false
           }
@@ -113,7 +119,9 @@
               "node": "AttribuutRef",
               "attribuut": "vrijgesteld",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is vrijgesteld"
+              "source": {
+                "snippet": "Een Jutter is vrijgesteld"
+              }
             },
             "value": {
               "node": "Literal",
@@ -123,14 +131,18 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "RoleMembership",
               "factType": "wachtindeling",
               "role": "wachtjutter",
               "negated": true,
-              "bron": "hij geen wachtjutter is"
+              "source": {
+                "snippet": "hij geen wachtjutter is"
+              }
             },
             "initialisation": false
           }

@@ -75,7 +75,9 @@
               "node": "AttribuutRef",
               "attribuut": "vondstjaar",
               "objecttype": "Vondst",
-              "bron": "Het vondstjaar van een Vondst"
+              "source": {
+                "snippet": "Het vondstjaar van een Vondst"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -85,13 +87,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "vondstdatum",
                   "objecttype": "Vondst",
-                  "bron": "zijn vondstdatum"
+                  "source": {
+                    "snippet": "zijn vondstdatum"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "vondstdatum",
                   "objecttype": "Vondst",
-                  "bron": "zijn vondstdatum"
+                  "source": {
+                    "snippet": "zijn vondstdatum"
+                  }
                 }
               ],
               "type": {
@@ -100,7 +106,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het jaar uit zijn vondstdatum"
+              "source": {
+                "snippet": "het jaar uit zijn vondstdatum"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -121,7 +129,9 @@
               "node": "AttribuutRef",
               "attribuut": "vondstdag",
               "objecttype": "Vondst",
-              "bron": "De vondstdag van een Vondst"
+              "source": {
+                "snippet": "De vondstdag van een Vondst"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -131,7 +141,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vondstdatum",
                   "objecttype": "Vondst",
-                  "bron": "zijn vondstdatum"
+                  "source": {
+                    "snippet": "zijn vondstdatum"
+                  }
                 }
               ],
               "type": {
@@ -140,7 +152,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de dag uit zijn vondstdatum"
+              "source": {
+                "snippet": "de dag uit zijn vondstdatum"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -161,7 +175,9 @@
               "node": "AttribuutRef",
               "attribuut": "zomervondst",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is zomervondst"
+              "source": {
+                "snippet": "Een Vondst is zomervondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -171,7 +187,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -189,7 +207,9 @@
                         "node": "AttribuutRef",
                         "attribuut": "vondstdatum",
                         "objecttype": "Vondst",
-                        "bron": "zijn vondstdatum"
+                        "source": {
+                          "snippet": "zijn vondstdatum"
+                        }
                       }
                     ],
                     "type": {
@@ -198,7 +218,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de maand uit zijn vondstdatum"
+                    "source": {
+                      "snippet": "de maand uit zijn vondstdatum"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -211,10 +233,14 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "7"
+                    "source": {
+                      "snippet": "7"
+                    }
                   },
                   "periode": null,
-                  "bron": "de maand uit zijn vondstdatum is gelijk aan 7"
+                  "source": {
+                    "snippet": "de maand uit zijn vondstdatum is gelijk aan 7"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -227,7 +253,9 @@
                         "node": "AttribuutRef",
                         "attribuut": "vondstdatum",
                         "objecttype": "Vondst",
-                        "bron": "zijn vondstdatum"
+                        "source": {
+                          "snippet": "zijn vondstdatum"
+                        }
                       }
                     ],
                     "type": {
@@ -236,7 +264,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de maand uit zijn vondstdatum"
+                    "source": {
+                      "snippet": "de maand uit zijn vondstdatum"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -249,13 +279,19 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "8"
+                    "source": {
+                      "snippet": "8"
+                    }
                   },
                   "periode": null,
-                  "bron": "de maand uit zijn vondstdatum is gelijk aan 8"
+                  "source": {
+                    "snippet": "de maand uit zijn vondstdatum is gelijk aan 8"
+                  }
                 }
               ],
-              "bron": "hij aan ten minste een van de volgende voorwaarden voldoet"
+              "source": {
+                "snippet": "hij aan ten minste een van de volgende voorwaarden voldoet"
+              }
             },
             "initialisation": false
           }
@@ -275,7 +311,9 @@
               "node": "AttribuutRef",
               "attribuut": "paasvondst",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is paasvondst"
+              "source": {
+                "snippet": "Een Vondst is paasvondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -285,7 +323,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -294,7 +334,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vondstdatum",
                 "objecttype": "Vondst",
-                "bron": "zijn vondstdatum"
+                "source": {
+                  "snippet": "zijn vondstdatum"
+                }
               },
               "rechts": {
                 "node": "BuiltinCall",
@@ -308,7 +350,9 @@
                         "node": "AttribuutRef",
                         "attribuut": "vondstdatum",
                         "objecttype": "Vondst",
-                        "bron": "zijn vondstdatum"
+                        "source": {
+                          "snippet": "zijn vondstdatum"
+                        }
                       }
                     ],
                     "type": {
@@ -317,17 +361,23 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "het jaar uit zijn vondstdatum"
+                    "source": {
+                      "snippet": "het jaar uit zijn vondstdatum"
+                    }
                   }
                 ],
                 "type": {
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "de eerste paasdag van het jaar uit zijn vondstdatum"
+                "source": {
+                  "snippet": "de eerste paasdag van het jaar uit zijn vondstdatum"
+                }
               },
               "periode": null,
-              "bron": "zijn vondstdatum gelijk is aan de eerste paasdag van het jaar uit zijn vondstdatum"
+              "source": {
+                "snippet": "zijn vondstdatum gelijk is aan de eerste paasdag van het jaar uit zijn vondstdatum"
+              }
             },
             "initialisation": false
           }

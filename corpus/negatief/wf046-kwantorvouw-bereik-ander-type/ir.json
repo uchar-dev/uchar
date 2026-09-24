@@ -97,7 +97,9 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "1"
+                  "source": {
+                    "snippet": "1"
+                  }
                 },
                 "kenmerk": false
               }
@@ -114,7 +116,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "rang",
                     "objecttype": "Wachter",
-                    "bron": "de rang van de Wachter"
+                    "source": {
+                      "snippet": "de rang van de Wachter"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -127,10 +131,14 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "5"
+                    "source": {
+                      "snippet": "5"
+                    }
                   },
                   "periode": null,
-                  "bron": "de rang van de Wachter is kleiner dan 5"
+                  "source": {
+                    "snippet": "de rang van de Wachter is kleiner dan 5"
+                  }
                 },
                 {
                   "node": "Kwantorvouw",
@@ -144,7 +152,9 @@
                       "node": "AttribuutRef",
                       "attribuut": "nummer",
                       "objecttype": "Post",
-                      "bron": "de nummer van alle posten van de Wachter"
+                      "source": {
+                        "snippet": "de nummer van alle posten van de Wachter"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -157,12 +167,18 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "5"
+                      "source": {
+                        "snippet": "5"
+                      }
                     },
                     "periode": null,
-                    "bron": "het nummer is groter dan 5"
+                    "source": {
+                      "snippet": "het nummer is groter dan 5"
+                    }
                   },
-                  "bron": "alle posten van de Wachter hebben een nummer groter dan 5",
+                  "source": {
+                    "snippet": "alle posten van de Wachter hebben een nummer groter dan 5"
+                  },
                   "bronRol": {
                     "node": "RolBinding",
                     "feittype": "bemanning",
@@ -170,7 +186,9 @@
                   }
                 }
               ],
-              "bron": "de rang van de Wachter is kleiner dan 5 en alle posten van de Wachter hebben een nummer groter dan 5"
+              "source": {
+                "snippet": "de rang van de Wachter is kleiner dan 5 en alle posten van de Wachter hebben een nummer groter dan 5"
+              }
             },
             "validity": {
               "node": "Geldigheid",
@@ -198,9 +216,7 @@
         "recursief": true,
         "leden": [
           "richt een post in"
-        ],
-        "bron": null,
-        "line": 1
+        ]
       }
     ]
   },

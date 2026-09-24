@@ -99,7 +99,9 @@
               "node": "AttribuutRef",
               "attribuut": "merk",
               "objecttype": "Wachter",
-              "bron": "Het merk van een Wachter"
+              "source": {
+                "snippet": "Het merk van een Wachter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -109,7 +111,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "opvolgers",
                   "objecttype": "Wachter",
-                  "bron": "opvolgers van de Wachter"
+                  "source": {
+                    "snippet": "opvolgers van de Wachter"
+                  }
                 }
               ],
               "elementType": "Wachter",
@@ -124,7 +128,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal opvolgers van de Wachter"
+              "source": {
+                "snippet": "het aantal opvolgers van de Wachter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -152,7 +158,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "rang",
                     "objecttype": "Wachter",
-                    "bron": "de rang van de Wachter"
+                    "source": {
+                      "snippet": "de rang van de Wachter"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -165,7 +173,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "1"
+                    "source": {
+                      "snippet": "1"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -173,7 +183,9 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "de rang van de Wachter plus 1"
+                  "source": {
+                    "snippet": "de rang van de Wachter plus 1"
+                  }
                 },
                 "kenmerk": false
               }
@@ -190,7 +202,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "rang",
                     "objecttype": "Wachter",
-                    "bron": "de rang van de Wachter"
+                    "source": {
+                      "snippet": "de rang van de Wachter"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -203,10 +217,14 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "5"
+                    "source": {
+                      "snippet": "5"
+                    }
                   },
                   "periode": null,
-                  "bron": "de rang van de Wachter is kleiner dan 5"
+                  "source": {
+                    "snippet": "de rang van de Wachter is kleiner dan 5"
+                  }
                 },
                 {
                   "node": "Kwantorvouw",
@@ -220,7 +238,9 @@
                       "node": "AttribuutRef",
                       "attribuut": "merk",
                       "objecttype": "Wachter",
-                      "bron": "de merk van alle ploegleden van de Wachter"
+                      "source": {
+                        "snippet": "de merk van alle ploegleden van de Wachter"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -233,12 +253,18 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "0"
+                      "source": {
+                        "snippet": "0"
+                      }
                     },
                     "periode": null,
-                    "bron": "het merk is groter dan 0"
+                    "source": {
+                      "snippet": "het merk is groter dan 0"
+                    }
                   },
-                  "bron": "geen van de ploegleden van de Wachter heeft een merk groter dan 0",
+                  "source": {
+                    "snippet": "geen van de ploegleden van de Wachter heeft een merk groter dan 0"
+                  },
                   "bronRol": {
                     "node": "RolBinding",
                     "feittype": "ploeg",
@@ -246,7 +272,9 @@
                   }
                 }
               ],
-              "bron": "de rang van de Wachter is kleiner dan 5 en geen van de ploegleden van de Wachter heeft een merk groter dan 0"
+              "source": {
+                "snippet": "de rang van de Wachter is kleiner dan 5 en geen van de ploegleden van de Wachter heeft een merk groter dan 0"
+              }
             },
             "validity": {
               "node": "Geldigheid",
@@ -274,9 +302,7 @@
         "recursief": true,
         "leden": [
           "werf de opvolger"
-        ],
-        "bron": null,
-        "line": 1
+        ]
       }
     ]
   },

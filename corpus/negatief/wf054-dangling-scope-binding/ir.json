@@ -150,7 +150,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "De etiket van alle Kavel van de gemeente moeten uniek zijn."
+            "source": {
+              "snippet": "De etiket van alle Kavel van de gemeente moeten uniek zijn."
+            }
           }
         ]
       }

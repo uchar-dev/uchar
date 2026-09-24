@@ -149,13 +149,17 @@
               "node": "AttribuutRef",
               "attribuut": "uitkijkbonus",
               "objecttype": "Wachter",
-              "bron": "De uitkijkbonus van een Wachter"
+              "source": {
+                "snippet": "De uitkijkbonus van een Wachter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "hoogte",
               "objecttype": "Post",
-              "bron": "de hoogte van zijn posten",
+              "source": {
+                "snippet": "de hoogte van zijn posten"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",

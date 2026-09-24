@@ -149,7 +149,9 @@
               "node": "AttribuutRef",
               "attribuut": "sluitsom",
               "objecttype": "Vondst",
-              "bron": "De sluitsom van een Vondst"
+              "source": {
+                "snippet": "De sluitsom van een Vondst"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -159,13 +161,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "meldloon",
                   "objecttype": "Vondst",
-                  "bron": "haar meldloon"
+                  "source": {
+                    "snippet": "haar meldloon"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "ijkloon",
                   "objecttype": "Jutter",
-                  "bron": "het ijkloon van de bewarende jutter",
+                  "source": {
+                    "snippet": "het ijkloon van de bewarende jutter"
+                  },
                   "navigatieBindingen": [
                     {
                       "node": "RolBinding",
@@ -197,7 +203,9 @@
                   }
                 }
               },
-              "bron": "de laatste van haar meldloon en het ijkloon van de bewarende jutter"
+              "source": {
+                "snippet": "de laatste van haar meldloon en het ijkloon van de bewarende jutter"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

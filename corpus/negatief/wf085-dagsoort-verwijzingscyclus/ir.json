@@ -37,13 +37,17 @@
               "node": "Date",
               "precision": "day"
             },
-            "bron": "die dag"
+            "source": {
+              "snippet": "die dag"
+            }
           },
           "dagsoort": "ebdag",
           "negatie": false,
           "cijfers": 0,
           "periode": null,
-          "bron": "die dag is een ebdag"
+          "source": {
+            "snippet": "die dag is een ebdag"
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",
@@ -66,13 +70,17 @@
               "node": "Date",
               "precision": "day"
             },
-            "bron": "die dag"
+            "source": {
+              "snippet": "die dag"
+            }
           },
           "dagsoort": "vloeddag",
           "negatie": false,
           "cijfers": 0,
           "periode": null,
-          "bron": "die dag is een vloeddag"
+          "source": {
+            "snippet": "die dag is een vloeddag"
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",

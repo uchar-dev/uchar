@@ -185,8 +185,7 @@
             "target": {
               "node": "AttribuutRef",
               "attribuut": "samenvatting",
-              "objecttype": "Berging",
-              "bron": null
+              "objecttype": "Berging"
             },
             "value": {
               "node": "Aggregation",
@@ -196,7 +195,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "kern",
                   "objecttype": "Schuit",
-                  "bron": "de kern van alle schuiten van de Berging"
+                  "source": {
+                    "snippet": "de kern van alle schuiten van de Berging"
+                  }
                 }
               ],
               "elementType": "Schuit",
@@ -229,7 +230,9 @@
                   }
                 ]
               },
-              "bron": "de eerste kern van alle schuiten van de Berging"
+              "source": {
+                "snippet": "de eerste kern van alle schuiten van de Berging"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -249,8 +252,7 @@
             "target": {
               "node": "AttribuutRef",
               "attribuut": "tarief",
-              "objecttype": "Berging",
-              "bron": null
+              "objecttype": "Berging"
             },
             "value": {
               "node": "FieldAccess",
@@ -263,11 +265,9 @@
               "base": {
                 "node": "AttribuutRef",
                 "attribuut": "samenvatting",
-                "objecttype": "Berging",
-                "bron": null
+                "objecttype": "Berging"
               },
-              "field": "bedrag",
-              "bron": null
+              "field": "bedrag"
             },
             "initialisation": false,
             "presentation": "BEREKENING"

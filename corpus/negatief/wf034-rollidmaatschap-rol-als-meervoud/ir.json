@@ -95,7 +95,9 @@
               "node": "AttribuutRef",
               "attribuut": "bemand",
               "objecttype": "Wachtpost",
-              "bron": "Een Wachtpost is bemand"
+              "source": {
+                "snippet": "Een Wachtpost is bemand"
+              }
             },
             "value": {
               "node": "Literal",
@@ -105,14 +107,18 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "RoleMembership",
               "factType": "wachtindeling",
               "role": "wachtjutters",
               "negated": false,
-              "bron": "hij een wachtjutter heeft"
+              "source": {
+                "snippet": "hij een wachtjutter heeft"
+              }
             },
             "initialisation": false
           }
@@ -132,7 +138,9 @@
               "node": "AttribuutRef",
               "attribuut": "onbemand",
               "objecttype": "Wachtpost",
-              "bron": "Een Wachtpost is onbemand"
+              "source": {
+                "snippet": "Een Wachtpost is onbemand"
+              }
             },
             "value": {
               "node": "Literal",
@@ -142,14 +150,18 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "RoleMembership",
               "factType": "wachtindeling",
               "role": "toegewezen wachtpost",
               "negated": true,
-              "bron": "hij geen wachtjutter heeft"
+              "source": {
+                "snippet": "hij geen wachtjutter heeft"
+              }
             },
             "initialisation": false
           }
@@ -169,7 +181,9 @@
               "node": "AttribuutRef",
               "attribuut": "strandbemand",
               "objecttype": "Wachtpost",
-              "bron": "Een Wachtpost is strandbemand"
+              "source": {
+                "snippet": "Een Wachtpost is strandbemand"
+              }
             },
             "value": {
               "node": "Literal",
@@ -179,7 +193,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "RoleMembership",
@@ -187,7 +203,9 @@
               "role": "toegewezen wachtpost",
               "counterpartType": "Strandjutter",
               "negated": false,
-              "bron": "hij een strandjutter heeft"
+              "source": {
+                "snippet": "hij een strandjutter heeft"
+              }
             },
             "initialisation": false
           }
@@ -207,7 +225,9 @@
               "node": "AttribuutRef",
               "attribuut": "strandvrij",
               "objecttype": "Wachtpost",
-              "bron": "Een Wachtpost is strandvrij"
+              "source": {
+                "snippet": "Een Wachtpost is strandvrij"
+              }
             },
             "value": {
               "node": "Literal",
@@ -217,7 +237,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "RoleMembership",
@@ -225,7 +247,9 @@
               "role": "toegewezen wachtpost",
               "counterpartType": "Strandjutter",
               "negated": true,
-              "bron": "hij geen strandjutter heeft"
+              "source": {
+                "snippet": "hij geen strandjutter heeft"
+              }
             },
             "initialisation": false
           }

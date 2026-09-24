@@ -58,7 +58,9 @@
             "node": "Default",
             "besluit": null,
             "voorwaarde": null,
-            "bron": "groep-default",
+            "source": {
+              "snippet": "groep-default"
+            },
             "excepties": {
               "ongeordend": true,
               "leden": [
@@ -75,13 +77,17 @@
                           "node": "AttribuutRef",
                           "attribuut": "heffing",
                           "objecttype": "Jutter",
-                          "bron": "zijn heffing"
+                          "source": {
+                            "snippet": "zijn heffing"
+                          }
                         },
                         "dagsoort": null,
                         "negatie": false,
                         "cijfers": 0,
                         "periode": null,
-                        "bron": "zijn heffing is gevuld"
+                        "source": {
+                          "snippet": "zijn heffing is gevuld"
+                        }
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -94,18 +100,26 @@
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "10.00"
+                        "source": {
+                          "snippet": "10.00"
+                        }
                       },
-                      "bron": "sub-default die het eigen doel leest (zelf-cyclus)"
+                      "source": {
+                        "snippet": "sub-default die het eigen doel leest (zelf-cyclus)"
+                      }
                     }
                   ],
-                  "bron": "lid dat het root-doel leest"
+                  "source": {
+                    "snippet": "lid dat het root-doel leest"
+                  }
                 }
               ]
             }
           }
         ],
-        "bron": "art. n",
+        "source": {
+          "snippet": "art. n"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

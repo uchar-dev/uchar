@@ -72,7 +72,9 @@
               "node": "AttribuutRef",
               "attribuut": "waarde",
               "objecttype": "Vondst",
-              "bron": "De waarde van een Vondst"
+              "source": {
+                "snippet": "De waarde van een Vondst"
+              }
             },
             "value": {
               "node": "Match",
@@ -86,7 +88,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "staat",
                 "objecttype": "Vondst",
-                "bron": "de staat van de Vondst"
+                "source": {
+                  "snippet": "de staat van de Vondst"
+                }
               },
               "arms": [
                 {
@@ -102,8 +106,7 @@
                       "whole": false,
                       "decimals": 2,
                       "sign": "ONBEPAALD"
-                    },
-                    "bron": null
+                    }
                   }
                 },
                 {
@@ -119,12 +122,10 @@
                       "whole": false,
                       "decimals": 2,
                       "sign": "ONBEPAALD"
-                    },
-                    "bron": null
+                    }
                   }
                 }
-              ],
-              "bron": null
+              ]
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

@@ -83,7 +83,9 @@
               "node": "AttribuutRef",
               "attribuut": "tarief",
               "objecttype": "Berging",
-              "bron": "de tarief"
+              "source": {
+                "snippet": "de tarief"
+              }
             },
             "value": {
               "node": "Literal",
@@ -96,7 +98,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "5"
+              "source": {
+                "snippet": "5"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -105,7 +109,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vaarwater",
                 "objecttype": "Berging",
-                "bron": "de vaarwater"
+                "source": {
+                  "snippet": "de vaarwater"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -130,10 +136,11 @@
                     }
                   ]
                 },
-                "bron": "Wad"
+                "source": {
+                  "snippet": "Wad"
+                }
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "initialisation": false,
             "presentation": "BEREKENING"

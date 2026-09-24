@@ -77,7 +77,9 @@
               "node": "AttribuutRef",
               "attribuut": "borgdagen",
               "objecttype": "Jutter",
-              "bron": "De borgdagen van een Jutter"
+              "source": {
+                "snippet": "De borgdagen van een Jutter"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -93,7 +95,9 @@
                   "jaar": true,
                   "niet": false
                 },
-                "bron": "gedurende de tijd dat hij borgplichtig is"
+                "source": {
+                  "snippet": "gedurende de tijd dat hij borgplichtig is"
+                }
               },
               "granularity": "MAAND",
               "type": {
@@ -102,7 +106,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal dagen in de maand dat hij borgplichtig is"
+              "source": {
+                "snippet": "het aantal dagen in de maand dat hij borgplichtig is"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -123,7 +129,9 @@
               "node": "AttribuutRef",
               "attribuut": "jaardagen",
               "objecttype": "Jutter",
-              "bron": "De jaardagen van een Jutter"
+              "source": {
+                "snippet": "De jaardagen van een Jutter"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -135,7 +143,9 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "gedurende de tijd dat hij borgplichtig is"
+                "source": {
+                  "snippet": "gedurende de tijd dat hij borgplichtig is"
+                }
               },
               "granularity": "JAAR",
               "type": {
@@ -144,7 +154,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal dagen in de jaar dat hij borgplichtig is"
+              "source": {
+                "snippet": "het aantal dagen in de jaar dat hij borgplichtig is"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

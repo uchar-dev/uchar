@@ -50,7 +50,9 @@
               "node": "AttribuutRef",
               "attribuut": "verjaard",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is verjaard"
+              "source": {
+                "snippet": "Een Vondst is verjaard"
+              }
             },
             "value": {
               "node": "Literal",
@@ -60,11 +62,15 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Onopgelost",
-              "bron": "zijn vondstdag eerder is dan de verjaringsgrens"
+              "source": {
+                "snippet": "zijn vondstdag eerder is dan de verjaringsgrens"
+              }
             },
             "initialisation": false
           }

@@ -125,9 +125,10 @@
             "decimals": 2,
             "sign": "NIET_NEGATIEF"
           },
-          "bron": "1.00"
-        },
-        "bron": null
+          "source": {
+            "snippet": "1.00"
+          }
+        }
       }
     ]
   },

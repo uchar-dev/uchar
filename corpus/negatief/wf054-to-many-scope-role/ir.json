@@ -150,7 +150,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "De kavelaantal van alle Gemeente van de kavels moeten uniek zijn."
+            "source": {
+              "snippet": "De kavelaantal van alle Gemeente van de kavels moeten uniek zijn."
+            }
           }
         ]
       }

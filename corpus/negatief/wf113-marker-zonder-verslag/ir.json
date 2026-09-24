@@ -50,7 +50,9 @@
               "node": "AttribuutRef",
               "attribuut": "verjaard",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is verjaard"
+              "source": {
+                "snippet": "Een Vondst is verjaard"
+              }
             },
             "value": {
               "node": "Literal",
@@ -60,7 +62,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -69,7 +73,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vondstdag",
                 "objecttype": "Vondst",
-                "bron": "zijn vondstdag"
+                "source": {
+                  "snippet": "zijn vondstdag"
+                }
               },
               "rechts": {
                 "node": "Onopgelost",
@@ -77,10 +83,14 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "de verjaringsgrens"
+                "source": {
+                  "snippet": "de verjaringsgrens"
+                }
               },
               "periode": null,
-              "bron": "zijn vondstdag eerder is dan de verjaringsgrens"
+              "source": {
+                "snippet": "zijn vondstdag eerder is dan de verjaringsgrens"
+              }
             },
             "initialisation": false
           }

@@ -325,7 +325,9 @@
               "node": "AttribuutRef",
               "attribuut": "aandeel",
               "objecttype": "Jutter",
-              "bron": "De aandeel van een Jutter"
+              "source": {
+                "snippet": "De aandeel van een Jutter"
+              }
             },
             "value": {
               "node": "Binair",
@@ -334,18 +336,24 @@
                 "node": "AttribuutRef",
                 "attribuut": "deel",
                 "objecttype": "Jutter",
-                "bron": "de deel van de Jutter"
+                "source": {
+                  "snippet": "de deel van de Jutter"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "deel",
                 "objecttype": "Jutter",
-                "bron": "de deel van de Jutter"
+                "source": {
+                  "snippet": "de deel van de Jutter"
+                }
               },
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "het deel van de Jutter plus het deel van de Jutter"
+              "source": {
+                "snippet": "het deel van de Jutter plus het deel van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

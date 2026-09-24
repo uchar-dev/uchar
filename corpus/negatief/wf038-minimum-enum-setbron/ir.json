@@ -104,7 +104,9 @@
               "node": "AttribuutRef",
               "attribuut": "aanlandkust",
               "objecttype": "Berging",
-              "bron": "de aanlandkust"
+              "source": {
+                "snippet": "de aanlandkust"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -114,7 +116,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "kust",
                   "objecttype": "Schuit",
-                  "bron": "de kust van alle schuiten van de Berging"
+                  "source": {
+                    "snippet": "de kust van alle schuiten van de Berging"
+                  }
                 }
               ],
               "elementType": "Schuit",
@@ -132,7 +136,9 @@
                   "West"
                 ]
               },
-              "bron": "het minimum kust van alle schuiten van de Berging"
+              "source": {
+                "snippet": "het minimum kust van alle schuiten van de Berging"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

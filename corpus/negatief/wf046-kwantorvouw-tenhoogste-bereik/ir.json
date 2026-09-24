@@ -109,7 +109,9 @@
               "node": "AttribuutRef",
               "attribuut": "merk",
               "objecttype": "Wachter",
-              "bron": "Het merk van een Wachter"
+              "source": {
+                "snippet": "Het merk van een Wachter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -119,7 +121,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "opvolgers",
                   "objecttype": "Wachter",
-                  "bron": "opvolgers van de Wachter"
+                  "source": {
+                    "snippet": "opvolgers van de Wachter"
+                  }
                 }
               ],
               "elementType": "Wachter",
@@ -134,7 +138,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal opvolgers van de Wachter"
+              "source": {
+                "snippet": "het aantal opvolgers van de Wachter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -162,7 +168,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "rang",
                     "objecttype": "Wachter",
-                    "bron": "de rang van de Wachter"
+                    "source": {
+                      "snippet": "de rang van de Wachter"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -175,7 +183,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "1"
+                    "source": {
+                      "snippet": "1"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -183,7 +193,9 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "de rang van de Wachter plus 1"
+                  "source": {
+                    "snippet": "de rang van de Wachter plus 1"
+                  }
                 },
                 "kenmerk": false
               }
@@ -200,7 +212,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "rang",
                     "objecttype": "Wachter",
-                    "bron": "de rang van de Wachter"
+                    "source": {
+                      "snippet": "de rang van de Wachter"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -213,10 +227,14 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "5"
+                    "source": {
+                      "snippet": "5"
+                    }
                   },
                   "periode": null,
-                  "bron": "de rang van de Wachter is kleiner dan 5"
+                  "source": {
+                    "snippet": "de rang van de Wachter is kleiner dan 5"
+                  }
                 },
                 {
                   "node": "Kwantorvouw",
@@ -230,7 +248,9 @@
                       "node": "AttribuutRef",
                       "attribuut": "kleur",
                       "objecttype": "Wachter",
-                      "bron": "de kleur van alle opvolgers van de Wachter"
+                      "source": {
+                        "snippet": "de kleur van alle opvolgers van de Wachter"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -243,12 +263,18 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "7"
+                      "source": {
+                        "snippet": "7"
+                      }
                     },
                     "periode": null,
-                    "bron": "de kleur is ongelijk aan 7"
+                    "source": {
+                      "snippet": "de kleur is ongelijk aan 7"
+                    }
                   },
-                  "bron": "ten hoogste 1 opvolger van de Wachter heeft een kleur ongelijk aan 7",
+                  "source": {
+                    "snippet": "ten hoogste 1 opvolger van de Wachter heeft een kleur ongelijk aan 7"
+                  },
                   "drempel": 1,
                   "bronRol": {
                     "node": "RolBinding",
@@ -257,7 +283,9 @@
                   }
                 }
               ],
-              "bron": "de rang van de Wachter is kleiner dan 5 en ten hoogste 1 opvolger van de Wachter heeft een kleur ongelijk aan 7"
+              "source": {
+                "snippet": "de rang van de Wachter is kleiner dan 5 en ten hoogste 1 opvolger van de Wachter heeft een kleur ongelijk aan 7"
+              }
             },
             "validity": {
               "node": "Geldigheid",
@@ -285,9 +313,7 @@
         "recursief": true,
         "leden": [
           "werf een opvolger"
-        ],
-        "bron": null,
-        "line": 1
+        ]
       }
     ]
   },

@@ -52,8 +52,7 @@
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
-                  },
-                  "bron": null
+                  }
                 },
                 "function": {
                   "node": "Lambda",
@@ -82,23 +81,19 @@
                     "op": "PLUS",
                     "links": {
                       "node": "BinderRef",
-                      "name": "acc",
-                      "bron": null
+                      "name": "acc"
                     },
                     "rechts": {
                       "node": "BinderRef",
-                      "name": "x",
-                      "bron": null
+                      "name": "x"
                     },
                     "type": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
                       "sign": "ONBEPAALD"
-                    },
-                    "bron": null
-                  },
-                  "bron": null
+                    }
+                  }
                 },
                 "init": {
                   "node": "Literal",
@@ -110,24 +105,19 @@
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
-                  },
-                  "bron": null
-                },
-                "bron": null
+                  }
+                }
               },
               "dagsoort": null,
               "negatie": false,
               "cijfers": 0,
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
-            },
-            "bron": null,
-            "line": 1
+            }
           }
         ]
       }

@@ -65,7 +65,9 @@
               "node": "AttribuutRef",
               "attribuut": "uitkering",
               "objecttype": "Wrakrecht",
-              "bron": "de uitkering van een Wrakrecht"
+              "source": {
+                "snippet": "de uitkering van een Wrakrecht"
+              }
             },
             "value": {
               "node": "Binair",
@@ -74,7 +76,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "grondslag",
                 "objecttype": "Wrakrecht",
-                "bron": "de grondslag van het Wrakrecht"
+                "source": {
+                  "snippet": "de grondslag van het Wrakrecht"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -87,7 +91,9 @@
                   "decimals": 2,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "1,00"
+                "source": {
+                  "snippet": "1,00"
+                }
               },
               "type": {
                 "node": "Number",
@@ -95,7 +101,9 @@
                 "decimals": 2,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "de grondslag van het Wrakrecht plus 1,00"
+              "source": {
+                "snippet": "de grondslag van het Wrakrecht plus 1,00"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -116,7 +124,9 @@
               "node": "AttribuutRef",
               "attribuut": "grondslag",
               "objecttype": "Strandrecht",
-              "bron": "de grondslag van een Strandrecht"
+              "source": {
+                "snippet": "de grondslag van een Strandrecht"
+              }
             },
             "value": {
               "node": "Binair",
@@ -125,7 +135,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "uitkering",
                 "objecttype": "Strandrecht",
-                "bron": "de uitkering van het Strandrecht"
+                "source": {
+                  "snippet": "de uitkering van het Strandrecht"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -138,7 +150,9 @@
                   "decimals": 2,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "1,00"
+                "source": {
+                  "snippet": "1,00"
+                }
               },
               "type": {
                 "node": "Number",
@@ -146,7 +160,9 @@
                 "decimals": 2,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "de uitkering van het Strandrecht plus 1,00"
+              "source": {
+                "snippet": "de uitkering van het Strandrecht plus 1,00"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -61,7 +61,9 @@
               "node": "AttribuutRef",
               "attribuut": "peildatum",
               "objecttype": "Berging",
-              "bron": "de peildatum"
+              "source": {
+                "snippet": "de peildatum"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -71,20 +73,26 @@
                   "node": "AttribuutRef",
                   "attribuut": "sluitingsdag",
                   "objecttype": "Berging",
-                  "bron": "zijn sluitingsdag"
+                  "source": {
+                    "snippet": "zijn sluitingsdag"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "volgnummer",
                   "objecttype": "Berging",
-                  "bron": "zijn volgnummer"
+                  "source": {
+                    "snippet": "zijn volgnummer"
+                  }
                 }
               ],
               "type": {
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "de eerste van zijn sluitingsdag en zijn volgnummer"
+              "source": {
+                "snippet": "de eerste van zijn sluitingsdag en zijn volgnummer"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

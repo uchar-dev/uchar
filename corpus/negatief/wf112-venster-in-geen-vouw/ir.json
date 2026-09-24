@@ -114,7 +114,9 @@
               "node": "AttribuutRef",
               "attribuut": "ervaren",
               "objecttype": "Schouwploeg",
-              "bron": "Een Schouwploeg is ervaren"
+              "source": {
+                "snippet": "Een Schouwploeg is ervaren"
+              }
             },
             "value": {
               "node": "Literal",
@@ -124,7 +126,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -138,7 +142,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "dienstjaren",
                   "objecttype": "Strandwacht",
-                  "bron": "de dienstjaren van alle wachten van de Schouwploeg"
+                  "source": {
+                    "snippet": "de dienstjaren van alle wachten van de Schouwploeg"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -151,12 +157,18 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "5"
+                  "source": {
+                    "snippet": "5"
+                  }
                 },
                 "periode": null,
-                "bron": "de dienstjaren van alle wachten van de Schouwploeg groter zijn dan 5"
+                "source": {
+                  "snippet": "de dienstjaren van alle wachten van de Schouwploeg groter zijn dan 5"
+                }
               },
-              "bron": "de dienstjaren van alle wachten van de Schouwploeg groter zijn dan 5",
+              "source": {
+                "snippet": "de dienstjaren van alle wachten van de Schouwploeg groter zijn dan 5"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "schouwindeling",
@@ -181,7 +193,9 @@
               "node": "AttribuutRef",
               "attribuut": "onervaren",
               "objecttype": "Schouwploeg",
-              "bron": "Een Schouwploeg is onervaren"
+              "source": {
+                "snippet": "Een Schouwploeg is onervaren"
+              }
             },
             "value": {
               "node": "Literal",
@@ -191,7 +205,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -205,7 +221,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "dienstjaren",
                   "objecttype": "Strandwacht",
-                  "bron": "de dienstjaren van geen van de wachten van de Schouwploeg"
+                  "source": {
+                    "snippet": "de dienstjaren van geen van de wachten van de Schouwploeg"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -218,12 +236,18 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "5"
+                  "source": {
+                    "snippet": "5"
+                  }
                 },
                 "periode": null,
-                "bron": "de dienstjaren van geen van de wachten van de Schouwploeg groter zijn dan 5"
+                "source": {
+                  "snippet": "de dienstjaren van geen van de wachten van de Schouwploeg groter zijn dan 5"
+                }
               },
-              "bron": "de dienstjaren van geen van de wachten van de Schouwploeg groter zijn dan 5",
+              "source": {
+                "snippet": "de dienstjaren van geen van de wachten van de Schouwploeg groter zijn dan 5"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "schouwindeling",
@@ -248,7 +272,9 @@
               "node": "AttribuutRef",
               "attribuut": "bevoegd",
               "objecttype": "Schouwploeg",
-              "bron": "Een Schouwploeg is bevoegd"
+              "source": {
+                "snippet": "Een Schouwploeg is bevoegd"
+              }
             },
             "value": {
               "node": "Literal",
@@ -258,7 +284,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -276,7 +304,9 @@
                     "node": "Date",
                     "precision": "day"
                   },
-                  "bron": "2024-01-01"
+                  "source": {
+                    "snippet": "2024-01-01"
+                  }
                 },
                 "tot": {
                   "node": "Literal",
@@ -287,12 +317,18 @@
                     "node": "Date",
                     "precision": "day"
                   },
-                  "bron": "2025-01-01"
+                  "source": {
+                    "snippet": "2025-01-01"
+                  }
                 },
                 "totInclusief": false,
-                "bron": "van 1 januari 2024 tot 1 januari 2025"
+                "source": {
+                  "snippet": "van 1 januari 2024 tot 1 januari 2025"
+                }
               },
-              "bron": "alle wachten van de Schouwploeg gediplomeerd zijn",
+              "source": {
+                "snippet": "alle wachten van de Schouwploeg gediplomeerd zijn"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "schouwindeling",
@@ -317,7 +353,9 @@
               "node": "AttribuutRef",
               "attribuut": "sluitend",
               "objecttype": "Schouwploeg",
-              "bron": "Een Schouwploeg is sluitend"
+              "source": {
+                "snippet": "Een Schouwploeg is sluitend"
+              }
             },
             "value": {
               "node": "Literal",
@@ -327,7 +365,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -340,9 +380,13 @@
                 "negatie": true,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "geen van de wachten van de Schouwploeg niet gediplomeerd is"
+                "source": {
+                  "snippet": "geen van de wachten van de Schouwploeg niet gediplomeerd is"
+                }
               },
-              "bron": "geen van de wachten van de Schouwploeg niet gediplomeerd is",
+              "source": {
+                "snippet": "geen van de wachten van de Schouwploeg niet gediplomeerd is"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "schouwindeling",
@@ -367,7 +411,9 @@
               "node": "AttribuutRef",
               "attribuut": "wachttal",
               "objecttype": "Schouwploeg",
-              "bron": "Het wachttal van een Schouwploeg"
+              "source": {
+                "snippet": "Het wachttal van een Schouwploeg"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -377,7 +423,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "wachten",
                   "objecttype": "Schouwploeg",
-                  "bron": "wachten van de Schouwploeg"
+                  "source": {
+                    "snippet": "wachten van de Schouwploeg"
+                  }
                 }
               ],
               "elementType": "Strandwacht",
@@ -392,7 +440,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal wachten van de Schouwploeg"
+              "source": {
+                "snippet": "het aantal wachten van de Schouwploeg"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

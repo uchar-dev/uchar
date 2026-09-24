@@ -129,13 +129,17 @@
               "node": "AttribuutRef",
               "attribuut": "maatgevend gewicht",
               "objecttype": "Jutter",
-              "bron": "Het maatgevend gewicht van een Jutter"
+              "source": {
+                "snippet": "Het maatgevend gewicht van een Jutter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Vondst",
-              "bron": "het gewicht van alle vondsten van de Jutter",
+              "source": {
+                "snippet": "het gewicht van alle vondsten van de Jutter"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",

@@ -108,7 +108,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal strandvondsten",
               "objecttype": "Jutter",
-              "bron": "Het aantal strandvondsten van een Jutter"
+              "source": {
+                "snippet": "Het aantal strandvondsten van een Jutter"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -126,7 +128,9 @@
                         "rol": "aangemelde vondst"
                       },
                       "filter": null,
-                      "bron": "aangemelde vondsten van de Jutter"
+                      "source": {
+                        "snippet": "aangemelde vondsten van de Jutter"
+                      }
                     },
                     {
                       "node": "InstanceSetBranch",
@@ -137,10 +141,14 @@
                         "rol": "geborgen vondst"
                       },
                       "filter": null,
-                      "bron": "geborgen vondsten van de Jutter"
+                      "source": {
+                        "snippet": "geborgen vondsten van de Jutter"
+                      }
                     }
                   ],
-                  "bron": "aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter"
+                  "source": {
+                    "snippet": "aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter"
+                  }
                 }
               ],
               "type": {
@@ -149,7 +157,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "de absolute waarde van aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter"
+              "source": {
+                "snippet": "de absolute waarde van aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

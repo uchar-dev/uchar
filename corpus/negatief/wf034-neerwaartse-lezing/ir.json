@@ -107,7 +107,9 @@
               "node": "AttribuutRef",
               "attribuut": "dieptetotaal",
               "objecttype": "Kustgemeente",
-              "bron": "Het dieptetotaal van een Kustgemeente"
+              "source": {
+                "snippet": "Het dieptetotaal van een Kustgemeente"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -117,7 +119,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bergingsdiepte",
                   "objecttype": "Strandrecht",
-                  "bron": "de bergingsdiepte van alle geregistreerde strandrechten van de Kustgemeente"
+                  "source": {
+                    "snippet": "de bergingsdiepte van alle geregistreerde strandrechten van de Kustgemeente"
+                  }
                 }
               ],
               "elementType": "Strandrecht",
@@ -132,7 +136,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -145,7 +151,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "de som van de bergingsdiepte van alle geregistreerde strandrechten van de Kustgemeente of 0 als die er niet zijn"
+              "source": {
+                "snippet": "de som van de bergingsdiepte van alle geregistreerde strandrechten van de Kustgemeente of 0 als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

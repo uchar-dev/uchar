@@ -49,13 +49,17 @@
               "node": "AttribuutRef",
               "attribuut": "markering",
               "objecttype": "Jutter",
-              "bron": "de markering van de Jutter"
+              "source": {
+                "snippet": "de markering van de Jutter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "penninggerechtigd",
               "objecttype": "Jutter",
-              "bron": "de penninggerechtigd van de Jutter"
+              "source": {
+                "snippet": "de penninggerechtigd van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

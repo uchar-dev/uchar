@@ -251,7 +251,9 @@
               "node": "AttribuutRef",
               "attribuut": "laagste vondstgewicht",
               "objecttype": "Jutter",
-              "bron": "Het laagste vondstgewicht van een Jutter"
+              "source": {
+                "snippet": "Het laagste vondstgewicht van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -261,7 +263,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "geborgen vondst",
                   "objecttype": "Jutter",
-                  "bron": "geborgen vondst van de Jutter"
+                  "source": {
+                    "snippet": "geborgen vondst van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -283,7 +287,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal geborgen vondsten van de Jutter"
+              "source": {
+                "snippet": "het aantal geborgen vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

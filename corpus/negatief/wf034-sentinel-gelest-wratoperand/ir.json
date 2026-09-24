@@ -149,7 +149,9 @@
               "node": "AttribuutRef",
               "attribuut": "maatgevend gewicht",
               "objecttype": "Jutter",
-              "bron": "Het maatgevend gewicht van een Jutter"
+              "source": {
+                "snippet": "Het maatgevend gewicht van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -159,13 +161,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "drempelgewicht",
                   "objecttype": "Jutter",
-                  "bron": "het drempelgewicht van de Jutter"
+                  "source": {
+                    "snippet": "het drempelgewicht van de Jutter"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "vondsten",
                   "objecttype": "Jutter",
-                  "bron": "vondsten van de Jutter"
+                  "source": {
+                    "snippet": "vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Jutter",
@@ -185,7 +191,9 @@
                   }
                 }
               },
-              "bron": "het maximum van het drempelgewicht van de Jutter en vondsten van de Jutter"
+              "source": {
+                "snippet": "het maximum van het drempelgewicht van de Jutter en vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

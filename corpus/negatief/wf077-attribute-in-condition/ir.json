@@ -56,7 +56,9 @@
               "node": "AttribuutRef",
               "attribuut": "aanslag",
               "objecttype": "Jutter",
-              "bron": "de aanslag"
+              "source": {
+                "snippet": "de aanslag"
+              }
             },
             "value": {
               "node": "Let",
@@ -78,7 +80,9 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "een"
+                "source": {
+                  "snippet": "een"
+                }
               },
               "body": {
                 "node": "IfThenElse",
@@ -95,7 +99,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "inkomen",
                     "objecttype": "Jutter",
-                    "bron": "het inkomen"
+                    "source": {
+                      "snippet": "het inkomen"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -108,10 +114,14 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "nul"
+                    "source": {
+                      "snippet": "nul"
+                    }
                   },
                   "periode": null,
-                  "bron": "het inkomen groter dan nul"
+                  "source": {
+                    "snippet": "het inkomen groter dan nul"
+                  }
                 },
                 "then": {
                   "node": "Literal",
@@ -124,7 +134,9 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "tien"
+                  "source": {
+                    "snippet": "tien"
+                  }
                 },
                 "else": {
                   "node": "Literal",
@@ -137,11 +149,17 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "nul"
+                  "source": {
+                    "snippet": "nul"
+                  }
                 },
-                "bron": "een als-dan-anders"
+                "source": {
+                  "snippet": "een als-dan-anders"
+                }
               },
-              "bron": "een let om de if toe te laten"
+              "source": {
+                "snippet": "een let om de if toe te laten"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
