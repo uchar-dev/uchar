@@ -48,11 +48,16 @@ Shape, in brief:
   carry no `type`: the declaration is the one source of a reference's type. An
   `AttribuutRef` navigates by its `navigatieBindingen` alone, and without them
   it is the subject's own read. The role check is one `RoleMembership` node
-  (`factType`, `role`, `counterpartType`?, `negated`, `bron`); `counterpartType`
-  names the type the other role's filler must belong to where that is a strict
-  subtype of the role's declared filler type, and is absent otherwise (U12). A
-  fact creation carries its symbolic fields alone, a scoped uniqueness its
-  `scopeRol`, a navigated characteristic check its hop as `navigatieBinding`.
+  (`factType`, `role`, `counterpartType`?, `negated`, `bron`; delta B9 of
+  `../proposals/V1-WIREMIGRATIE.md`, `../CONSTRUCTS.md` row 5).
+  `counterpartType` names the type the other role's filler must belong to: a
+  declared object type that is a subtype of, or equal to, the declared filler
+  type of the other role (WF-034, IR-SPEC ch. 4.6 (o)); absent, that declared
+  filler type is meant. The migration and the emitter write the field only
+  where it narrows (the L2 card,
+  `../../backlog/done/20260923-l2-referentielaag.md`, U12). A fact creation
+  carries its symbolic fields alone, a scoped uniqueness its `scopeRol`, a
+  navigated characteristic check its hop as `navigatieBinding`.
   An unresolved expression's `type` is optional (absent: unknown), and the
   datatype union has no member for an unknown type (B16). The written ranges
   have their own section below.
@@ -143,7 +148,8 @@ failure that names its path.
 
 ## The written ranges (L2)
 
-A range is written, never derived (delta B12, decision D7): the relation an
+A range is written, never derived (delta B12 of
+`../proposals/V1-WIREMIGRATIE.md`; `../CONSTRUCTS.md` row 4): the relation an
 instance fold, a quantifier fold, an allocation or a union selection reads is a
 `RolBinding` on the node, and a reader that finds none has no type-pair
 derivation to fall back on. The schema states the obligation where it can:
@@ -159,16 +165,17 @@ derivation to fall back on. The schema states the obligation where it can:
 
 The `Functie` condition is narrower than "has an `elementObjecttype`" on two
 sides, each for a measured reason (2026-09-23). A bindingless `TOTAAL` is the
-subject's own read over its own attribute, the timeline total (D8 (iv)):
-fifteen folds in the golden and red zones carry it, they read no relation, and
-the verifier holds that such a node really is the own read (WF-083) — which
-depends on the declarations, so the schema cannot state it. A fold with two or
-more arguments is the listed value fold, which reads its operands and not a
-relation; the RegelSpraak frontend stamps an `elementObjecttype` on some of
-them anyway (five folds in two golden documents, two in the parity zone), so a
-condition on the element type alone would demand a range such a fold does not
-have. The single-argument scope is D7's own: a range belongs to a fold with
-one argument that reads linked instances. The precedent for a conditional
+subject's own read over its own attribute, the timeline total (IR-SPEC ch. 4.3,
+reading (iv)): fifteen folds in the golden and red zones carry it, they read no
+relation, and the verifier holds that such a node really is the own read
+(WF-083) — which depends on the declarations, so the schema cannot state it. A
+fold with two or more arguments is the listed value fold, which reads its
+operands and not a relation; the RegelSpraak frontend stamps an
+`elementObjecttype` on some of them anyway (five folds in two golden documents,
+two in the parity zone), so a condition on the element type alone would demand
+a range such a fold does not have. The single-argument scope is IR-SPEC
+ch. 4.3's own (the `sourceRole` row): a range belongs to a fold with one
+argument that reads linked instances. The precedent for a conditional
 obligation is the `drempel` of `Kwantorvouw` (WF-108 (e)).
 
 ## `uchar-ir-v1.schema.json`

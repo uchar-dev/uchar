@@ -928,7 +928,7 @@
           }
         }
       ],
-      "description": "A builtin or an aggregation (IR-SPEC ch. 4.3/4.6). The RANGE of an instance fold is written, never derived (B12, D7): with an elementObjecttype, exactly one argument and a kind other than TOTAAL, exactly one of bronRol (the one-step range) and bronPad (the multi-step range, WF-102) is present. A TOTAAL without either is the subject's own read over its own attribute (the verifier holds that it is, WF-083), and no fold carries both. With two or more arguments the node is the listed value fold, whose operands are ordinary reads: it has no range, whatever elementObjecttype it carries."
+      "description": "A builtin or an aggregation (IR-SPEC ch. 4.3/4.6). The RANGE of an instance fold is written, never derived (delta B12 of spec/proposals/V1-WIREMIGRATIE.md; CONSTRUCTS row 4): with an elementObjecttype, exactly one argument and a kind other than TOTAAL, exactly one of bronRol (the one-step range) and bronPad (the multi-step range, WF-102) is present. A TOTAAL without either is the subject's own read over its own attribute (the verifier holds that it is, WF-083), and no fold carries both. With two or more arguments the node is the listed value fold, whose operands are ordinary reads: it has no range, whatever elementObjecttype it carries."
     },
     "Afgerond": {
       "type": "object",
@@ -2267,7 +2267,7 @@
         },
         "navigatieBinding": {
           "$ref": "#/$defs/RolBinding",
-          "description": "The one navigation hop of a navigated characteristic check as a symbolic role binding — the bound role is the role the hop reaches, and the characteristic lives on the type it reaches. Absent: the check reads the subject itself (D53). Written whole or not at all, never null."
+          "description": "The one navigation hop of a navigated characteristic check as a symbolic role binding — the bound role is the role the hop reaches, and the characteristic lives on the type it reaches. Absent: the check reads the subject itself (IR-SPEC ch. 4.1a and ch. 4.5). Written whole or not at all, never null."
         }
       }
     },
@@ -2304,7 +2304,7 @@
           ]
         }
       },
-      "description": "The role check (IR-SPEC ch. 4.5): true iff a link of the declared fact type 'factType' exists in which the subject fills 'role', named by its declared name, and whose other role is filled by an instance of 'counterpartType'; 'negated': no such link exists. 'counterpartType' is optional: absent, the other role's declared filler type is meant; present, it names a strict subtype of that type (U12). One node for both directions of the check (B9, D11); its key order is this 'properties' order."
+      "description": "The role check (IR-SPEC ch. 4.5): true iff a link of the declared fact type 'factType' exists in which the subject fills 'role', named by its declared name, and whose other role is filled by an instance of 'counterpartType'; 'negated': no such link exists. 'counterpartType' is optional: absent, the other role's declared filler type is meant; present, it names a declared object type that is a subtype of, or equal to, the declared filler type of the other role (WF-034, IR-SPEC ch. 4.6 (o)); the migration and the emitter write the field only where it narrows (the L2 card, backlog/done/20260923-l2-referentielaag.md, U12). One node for both directions of the check (delta B9 of spec/proposals/V1-WIREMIGRATIE.md; CONSTRUCTS row 5); its key order is this 'properties' order."
     },
     "Periode": {
       "type": "object",
@@ -3576,7 +3576,7 @@
         },
         "verbindendeRol": {
           "$ref": "#/$defs/RolBinding",
-          "description": "The recipient relation: the connecting fact type with the role the doelType instances fill bound. Required: the allocation's relation is written, never derived (B12, D7)."
+          "description": "The recipient relation: the connecting fact type with the role the doelType instances fill bound. Required: the allocation's relation is written, never derived (delta B12 of spec/proposals/V1-WIREMIGRATIE.md; CONSTRUCTS row 4)."
         }
       }
     },
