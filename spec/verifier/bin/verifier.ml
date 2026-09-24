@@ -2,7 +2,8 @@ let () =
   match Sys.argv with
   | [| _; file |] -> (
       try
-        let doc = Ir_v0.Loader.load_file file in
+        (* the verifier loads what its rules judge (Loader.reader) *)
+        let doc = Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier file in
         match Ir_v0.Checks.all doc with
         | [] ->
             print_endline "verifier: PASS"

@@ -316,6 +316,71 @@ let lexeme_datum_tijd s =
   && s.[10] = 'T' && time_ok 11
   && date_ok ~y:(int_at 0 4) ~m:(int_at 5 2) ~d:(int_at 8 2)
 
+(* --- the two sentences the executors' loader shares ------------------- *)
+
+(* WF-114 (IR-SPEC ch. 4.1): the value variant a literal's type names — a
+   Number (a percentage included) names number, a Booleaan boolean, a Tekst
+   text, a day-precision Date date, a millisecond-precision Date dateTime,
+   an Enumeratie enumeration, a SumType constructor; a list or struct type
+   names none. [literal_variant_refusal] is the rule's sentence, and the
+   loader refuses with the same sentence wherever an executor loads the
+   document ([Loader.reader]), so the two cannot drift apart. *)
+let literal_variant_key = function
+  | Lv_number _ -> "number"
+  | Lv_boolean _ -> "boolean"
+  | Lv_text _ -> "text"
+  | Lv_date _ -> "date"
+  | Lv_date_time _ -> "dateTime"
+  | Lv_enumeration _ -> "enumeration"
+  | Lv_constructor _ -> "constructor"
+
+let variant_named_by = function
+  | Numeriek _ | Percentage _ -> Some "number"
+  | Booleaan -> Some "boolean"
+  | Tekst -> Some "text"
+  | Datum_in_dagen -> Some "date"
+  | Datum_tijd -> Some "dateTime"
+  | Enumeratie _ -> Some "enumeration"
+  | Sum_type _ -> Some "constructor"
+  | List_type _ | Struct_type _ -> None
+
+let literal_variant_refusal (variant : literal_variant) (typ : datatype) =
+  let key = literal_variant_key variant in
+  if variant_named_by typ = Some key then None
+  else
+    let named =
+      match typ with
+      | Numeriek _ | Percentage _ -> "a Number"
+      | Booleaan -> "a Booleaan"
+      | Tekst -> "a Tekst"
+      | Datum_in_dagen -> "a day-precision Date"
+      | Datum_tijd -> "a millisecond-precision Date"
+      | Enumeratie _ -> "an Enumeratie"
+      | Sum_type _ -> "a SumType"
+      | List_type _ -> "a ListType"
+      | Struct_type _ -> "a StructType"
+    in
+    Some
+      (Printf.sprintf "literal value is %s %s value but its type is %s: the variant is the one \
+                       the type names"
+         (if key = "enumeration" then "an" else "a")
+         key named)
+
+(* WF-098 (IR-SPEC ch. 4.1): a context value names one of two session
+   values, compared byte for byte. The bound day of a day-kind definition is
+   no context value since L4 but a node of its own (BoundDay), so a
+   ContextValue naming it falls outside the set like any other name. Shared
+   with the loader like the sentence above. *)
+let context_value_names = [ "Rekendatum"; "Rekenjaar" ]
+
+let context_value_refusal name =
+  if List.mem name context_value_names then None
+  else
+    Some
+      ("context value '" ^ name
+     ^ "' is not one of the two admissible names Rekendatum, Rekenjaar: the context-value name \
+        is a closed set, spelled byte for byte")
+
 (* --- document context --------------------------------------------------- *)
 
 type ctx = { doc : document }
@@ -1722,7 +1787,7 @@ let wf034_objectcreatie_subject ctx =
 let annotation = function
   | Literal { typ; _ } | Tekst_reeks { typ; _ } | Binair { typ; _ }
   | Functie { typ; _ } | Afgerond { typ; _ } | Begrensd { typ; _ }
-  | Constante { typ; _ } | Expr_onopgelost { typ; _ }
+  | Constante { typ; _ } | Bound_day { typ; _ } | Expr_onopgelost { typ; _ }
   | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
   | Struct_literal { typ; _ } | Field_access { typ; _ }
   | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
@@ -2665,8 +2730,8 @@ let dagsoort_scan at (c0 : conditie) : violation list * string list =
     | Constante { naam = Some n; _ }
       when norm n = norm "Rekendatum" || norm n = norm "Rekenjaar" ->
         session n
-    | Constante _ | Literal _ | Parameter_ref _ | Variabele_ref _ | Expr_onopgelost _
-    | Binder_ref _ ->
+    | Constante _ | Bound_day _ | Literal _ | Parameter_ref _ | Variabele_ref _
+    | Expr_onopgelost _ | Binder_ref _ ->
         ()
     | Dimensie_cel { attribuut; _ } -> opt attribuut
     | Binair { links; rechts; _ } -> opt links; opt rechts
@@ -3563,8 +3628,8 @@ let rec mentions_binder b (e : expr) : bool =
   let opt = function Some e -> mentions_binder b e | None -> false in
   match e with
   | Binder_ref { naam; _ } -> same naam
-  | Literal _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Attribuut_ref _
-  | Dimensie_cel _ | Expr_onopgelost _ -> false
+  | Literal _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Bound_day _
+  | Attribuut_ref _ | Dimensie_cel _ | Expr_onopgelost _ -> false
   | Binair { links; rechts; _ } -> opt links || opt rechts
   | Afgerond { basis; _ } -> opt basis
   | Begrensd { basis; minimum; maximum; _ } -> opt basis || opt minimum || opt maximum
@@ -4866,6 +4931,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
               ("context value '" ^ n
              ^ "' is not one of the three admissible names Rekendatum, Rekenjaar, de dag: the \
                 context-value name is a closed set, spelled byte for byte") ])
+  | Bound_day _ -> []
   | Expr_onopgelost _ -> [] (* honest marker; WF-044 is behavioural *)
   | Temporal_read { basis; datum; typ; _ } ->
       (* WF-049: the point-in-time read (extension node, row 11) *)
@@ -6449,7 +6515,7 @@ let rec dep_expr ctx ~subject acc (e : expr) =
       in
       rel_edges @ ((n_attr ot a, Dep_pos) :: acc)
   | Attribuut_ref _ | Literal _ | Parameter_ref _ | Variabele_ref _ | Constante _
-  | Expr_onopgelost _ ->
+  | Bound_day _ | Expr_onopgelost _ ->
       acc
   | Tekst_reeks { delen; _ } ->
       List.fold_left
@@ -8302,7 +8368,7 @@ let rec invoked_expr acc (e : expr) : string list =
   | Dimensie_cel { attribuut; _ } -> invoked_opt acc attribuut
   | Temporal_read { basis; datum; _ } -> invoked_expr (invoked_expr acc basis) datum
   | Literal _ | Attribuut_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _
-  | Expr_onopgelost _ | Binder_ref _ ->
+  | Bound_day _ | Expr_onopgelost _ | Binder_ref _ ->
       acc
   (* a union's branch fields are symbolic and its filter is a condition, which
      this walk over EXPRESSIONS does not enter — the same boundary the fold's
@@ -8592,7 +8658,8 @@ let rec markers_expr acc (e : expr) : string option list =
   let c acc = function Some x -> markers_cond acc x | None -> acc in
   match e with
   | Expr_onopgelost { bron; _ } -> bron :: acc
-  | Literal _ | Attribuut_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Binder_ref _ ->
+  | Literal _ | Attribuut_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Bound_day _
+  | Binder_ref _ ->
       acc
   | Tekst_reeks { delen; _ } ->
       List.fold_left

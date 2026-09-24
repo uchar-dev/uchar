@@ -1,4 +1,4 @@
-(* Typed AST of the uchar-ir-v1 wire format in its L3 shape
+(* Typed AST of the uchar-ir-v1 wire format in its L4 shape
    (spec/schema/uchar-ir-v1.schema.json).
 
    Modelling rules:
@@ -6,10 +6,30 @@
      the wire; "optional" means the value may be null, mapped to [option] —
      never a missing key. The exceptions are the fields the wire writes
      whole or not at all (the role bindings, `Onopgelost.type`, and the
-     optional fields of the nodes L3 rewrote — a number's unit, a unit's
-     system, canonical unit, factor and denominator, a parameter's
-     timeline, a day kind's plural): absent is [None] there (a declared
-     unit's absent spellings are []), and an explicit null is a load error;
+     optional fields of the nodes L3 and L4 rewrote — a number's unit, a
+     unit's system, canonical unit, factor and denominator, a parameter's
+     timeline, a day kind's plural; a version's condition, a rule
+     version's presentation, an allocation's optional attribute fields and
+     rounding, an aggregation's and a builtin's optional fields): absent is
+     [None] there (a declared unit's absent spellings are []), and an
+     explicit null is a load error;
+   - since L4 the rule layer and the expression layer keep their in-memory
+     constructors while the wire writes their L4 nodes, and the loader reads
+     the one onto the other (IR-SPEC ch. 3 and 4.1–4.3): a named form with
+     its versions (Rule, Allocation, ObjectCreation, FactCreation,
+     Consistency, Uniqueness) becomes one record per version, named
+     "<name> #<i>" (i from 1) when the form has two or more versions and
+     bare when it has one, and each such record carries the wire pointer of
+     its version (`/rules/<list>/<f>/versions/<v>`), the pointer every
+     report about it cites; a rule version's kind is read from its
+     `initialisation` flag and `presentation` tag; the two uniqueness
+     shapes stay two lists, split by the number of sources; a fact
+     creation's target type is the declared filler of its target role, and
+     its path splits into the intermediate hops and the final one; an
+     Aggregation and a BuiltinCall are both a [Functie]; a Literal keeps its
+     v0 lexeme beside the typed value it is read from ([literal_variant]);
+     a ContextValue is a [Constante], and the bound day of a day-kind
+     definition has its own constructor, [Bound_day];
    - since L3 the datatype keeps its in-memory constructors while the wire
      writes two nodes for them: the loader reads a `Number` whose unit is
      '%' as [Percentage] and any other `Number` as [Numeriek], and a `Date`
@@ -136,8 +156,32 @@ type geheel_periode = { gp_jaar : bool; gp_niet : bool }
    Extension fields carrying it are absent in every v0 emitter dump. *)
 type rol_binding = { rb_feittype : string; rb_rol : string }
 
+(* The typed value of a Literal (IR-SPEC ch. 4.1, delta B22): the value
+   variants of uchar-case-v0, one constructor per variant key, without the
+   list and struct variants (no literal carries one). A number is its exact
+   decimal or rational string with a point, a constructor carries no
+   payload. The string is loaded as written: its spelling is the business
+   of WF-081, WF-084 and WF-095, and whether the variant is the one the
+   literal's type names is WF-114's. *)
+type literal_variant =
+  | Lv_number of string
+  | Lv_boolean of bool
+  | Lv_text of string
+  | Lv_date of string
+  | Lv_date_time of string
+  | Lv_enumeration of string
+  | Lv_constructor of string
+
 type expr =
-  | Literal of { waarde : string option; typ : datatype option; bron : string option }
+  | Literal of {
+      waarde : string option;
+          (* the v0 lexeme, which the loader derives from [variant] and which
+             is therefore always [Some]: the variant's string, and `waar` or
+             `onwaar` for a boolean *)
+      variant : literal_variant;
+      typ : datatype option;
+      bron : string option;
+    }
   | Tekst_reeks of { delen : tekst_deel list; typ : datatype option; bron : string option }
   | Binair of {
       op : bin_op;
@@ -202,7 +246,15 @@ type expr =
   | Dimensie_cel of { attribuut : expr option; labels : string option list; bron : string option }
   | Parameter_ref of { parameter : string option; bron : string option }
   | Variabele_ref of { naam : string option; bron : string option }
+  (* The wire's ContextValue (IR-SPEC ch. 4.1, delta B23): a session value,
+     Rekendatum or Rekenjaar, and nothing else — the bound day of a day-kind
+     definition is [Bound_day]. [naam] and [typ] are required on the wire,
+     so both are always [Some]; which names are admissible is WF-098's. *)
   | Constante of { naam : string option; typ : datatype option; bron : string option }
+  (* The wire's BoundDay (IR-SPEC ch. 3.7 and 4.1, delta B23): the day a
+     day-kind definition is about. It carries no name; [typ] is required on
+     the wire, so it is always [Some]. *)
+  | Bound_day of { typ : datatype option; bron : string option }
   | Expr_onopgelost of { typ : datatype option; bron : string option }
       (* [typ] absent = the type is unknown; present, a real datatype *)
   (* Extension node (v1, row 11): the ch. 3.3 point-in-time read —
@@ -474,15 +526,30 @@ type tijdlijn = {
 
 type geldigheid = { geld_vanaf : string option; geld_tot : string option }
 
+(* The records of the six named forms (IR-SPEC ch. 3, Versioning) are one
+   per VERSION, as v0 flattened them (Ast header): [*_naam] is the form's
+   name with the suffix " #<i>" when the form has two or more versions, and
+   [*_pointer] is the wire pointer of the version itself,
+   `/rules/<list>/<f>/versions/<v>`, set by the loader. Every field the
+   wire holds on the version is always present there, so a [geldigheid
+   option] or a kind is always [Some] after a load; the options are the v0
+   types every reader was written against. *)
 type resolved_regel = {
   rr_naam : string option;
   rr_soort : regel_soort option;
-  doel : expr option;
+      (* read from the version's `initialisation` and `presentation`: a
+         presentation tag is Gelijkstelling or Berekening,
+         `initialisation: true` is Initialisatie, and neither is
+         Kenmerktoekenning *)
+  doel : expr option; (* always an [Attribuut_ref] *)
   waarde : expr option;
   rr_voorwaarde : conditie option;
   rr_geldigheid : geldigheid option;
   rr_bron_annotaties : string list option;
-      (* extension: `// Bron:` statute annotations, source order (WF-082) *)
+      (* extension: `// Bron:` statute annotations, source order (WF-082).
+         The wire writes them once, on the form (`statuteAnnotations`), and
+         every version's record carries that one list *)
+  rr_pointer : string;
 }
 
 type resolved_dagsoort = {
@@ -507,6 +574,7 @@ type resolved_object_creatie = {
   oc_verbindende_rol : rol_binding option;
       (* extension: the created-side role of the back-link — required
          where the derivation is role-ambiguous (a self-typed pair) *)
+  oc_pointer : string;
 }
 
 type resolved_verdeling = {
@@ -525,6 +593,7 @@ type resolved_verdeling = {
   vd_voorwaarde : conditie option;
   vd_geldigheid : geldigheid option;
   verbindende_rol : rol_binding; (* the recipient role, required (B12) *)
+  vd_pointer : string;
 }
 
 type resolved_consistentie = {
@@ -534,8 +603,13 @@ type resolved_consistentie = {
   cons_bron : string option;
   cons_line : int;
   cons_geldigheid : geldigheid option;
+  cons_pointer : string;
 }
 
+(* A uniqueness version with ONE source (IR-SPEC ch. 3.6): the source's
+   object type and keys. A version with two or more is a
+   [resolved_uniciteit_unie]; the wire writes both shapes in one list
+   (delta B27), and the loader splits them by the number of sources. *)
 type resolved_uniciteit = {
   uni_naam : string option;
   uni_subject : string option;
@@ -546,6 +620,7 @@ type resolved_uniciteit = {
       (* the scope-parent role of a parent-scoped uniqueness — the bound
          role's filler is the scope parent. Its presence IS the scoping
          (B8): absent, the uniqueness is unscoped *)
+  uni_pointer : string;
 }
 
 type uniciteit_unie_bron = {
@@ -555,19 +630,26 @@ type uniciteit_unie_bron = {
 
 type resolved_uniciteit_unie = {
   uu_naam : string option;
-  bronnen : uniciteit_unie_bron list;
+  bronnen : uniciteit_unie_bron list; (* two or more; a union carries no scope *)
   uu_bron : string option;
   uu_geldigheid : geldigheid option;
+  uu_pointer : string;
 }
 
 (* One intermediate hop of a fact creation's join chain: its binding and
-   nothing else (B7). *)
+   nothing else (B7). Since L4 the wire writes the chain as one [path]; the
+   loader makes every hop but the last a [tussenstap] and the last the
+   [join_rol]. *)
 type tussenstap = { ts_rol : rol_binding }
 
 type resolved_feit_creatie = {
   fc_naam : string option;
   anker : string option;
   fc_doel : string option;
+      (* not on the wire since L4 (IR-SPEC ch. 3.4): the declared filler of
+         [doel_rol] in [fc_feittype], resolved by the loader with the
+         verifier's name identity; [None] where that does not resolve (an
+         undeclared fact type or role, which WF-028 and WF-034 report) *)
   tussenstappen : tussenstap list;
   fc_voorwaarde : conditie option;
   fc_geldigheid : geldigheid option;
@@ -577,6 +659,7 @@ type resolved_feit_creatie = {
   anker_rol : string;
   doel_rol : string;
   join_rol : rol_binding;
+  fc_pointer : string;
 }
 
 type resolved_startpunt = {
@@ -679,8 +762,8 @@ type document = {
   object_creaties : resolved_object_creatie list;
   verdelingen : resolved_verdeling list;
   consistenties : resolved_consistentie list;
-  uniciteiten : resolved_uniciteit list;
-  uniciteit_unies : resolved_uniciteit_unie list;
+  uniciteiten : resolved_uniciteit list; (* the wire's single-source versions *)
+  uniciteit_unies : resolved_uniciteit_unie list; (* the wire's versions with two or more *)
   feit_creaties : resolved_feit_creatie list;
   resolved_startpunten : resolved_startpunt list;
   regel_groepen : resolved_regel_groep list;

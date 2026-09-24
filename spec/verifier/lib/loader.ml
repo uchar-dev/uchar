@@ -1,4 +1,4 @@
-(* Strict loader for the uchar-ir-v1 wire format in its L3 shape.
+(* Strict loader for the uchar-ir-v1 wire format in its L4 shape.
 
    Strict means: every object must carry exactly the keys the format
    declares (the schema is additionalProperties:false with every property
@@ -42,7 +42,29 @@
    '%', and a sign other than ONBEPAALD on a number whose unit is '%'. The
    last two follow from the in-memory form ([Ast]): a number whose unit is
    '%' is read as a [Percentage], which carries no sign, and any other
-   number as a [Numeriek], which carries no presentation. *)
+   number as a [Numeriek], which carries no presentation.
+
+   The L4 rules enforced here and in the schema alike (the rule and the
+   expression layer): a named form is {node, name, versions} with at least
+   one version, and its name never ends in a space, '#' and digits, the
+   in-memory spelling of one version ([Ast]); a version record carries no
+   node; a rule version's target is an AttribuutRef, and initialisation
+   true never stands beside a presentation; a uniqueness version has at
+   least one source and each source at least one key, and a version with
+   two or more sources carries no scope; a fact creation's path has at
+   least one hop; an Aggregation and a BuiltinCall carry only their own
+   fields and kinds; a literal's value is exactly one variant of the case
+   format's value union; a context value carries a string name and a
+   datatype, the bound day a datatype. Every node and field that left the
+   wire with them is unknown and refused by name, and so is an enum value
+   outside a field's set (`unknown <field> value "<v>"`). The string inside
+   a literal's variant is loaded as written: its spelling is a verifier
+   rule's (WF-081, WF-084, WF-095). Two other defects are a verifier rule's
+   and not the schema's, which cannot cross them: a value variant that is
+   not the one the literal's type names (WF-114) and a context-value name
+   outside the closed set (WF-098). The verifier loads both so the rule can
+   cite them; every other reader refuses them here, in the rule's own
+   sentence ([reader]). *)
 
 open Ast
 
@@ -185,12 +207,18 @@ let bin_op =
       ("GEDEELD_DOOR_ABS", Gedeeld_door_abs); ("TOT_DE_MACHT", Tot_de_macht);
       ("PERCENTAGE_VAN", Percentage_van) ]
 
-let functie_kind =
-  enum "FunctieKind"
+(* The kind decides the node (delta B21): the eight folds are an
+   Aggregation's and the seventeen other kinds a BuiltinCall's, so a kind of
+   the other node is an unknown value of this one. *)
+let aggregation_kind =
+  enum "kind"
     [ ("SOM", Som); ("TOTAAL", Totaal); ("AANTAL", Aantal);
       ("MINIMUM", Minimum); ("MAXIMUM", Maximum); ("EERSTE", Eerste);
-      ("LAATSTE", Laatste); ("AANTAL_GEVULDE", Aantal_gevulde);
-      ("WORTEL", Wortel);
+      ("LAATSTE", Laatste); ("AANTAL_GEVULDE", Aantal_gevulde) ]
+
+let builtin_kind =
+  enum "kind"
+    [ ("WORTEL", Wortel);
       ("ABSOLUTE_WAARDE", Absolute_waarde); ("CONCATENATIE", Concatenatie);
       ("TIJDSDUUR", Tijdsduur); ("ABSOLUTE_TIJDSDUUR", Absolute_tijdsduur);
       ("EERSTE_PAASDAG", Eerste_paasdag);
@@ -219,15 +247,21 @@ let kwantor =
     [ ("DE", De); ("ALLE", Alle); ("GEEN", Geen); ("TEN_MINSTE", Ten_minste);
       ("TEN_HOOGSTE", Ten_hoogste); ("PRECIES", Precies) ]
 
-let regel_soort_opt =
-  enum_opt "Soort"
-    [ ("GELIJKSTELLING", Gelijkstelling); ("BEREKENING", Berekening);
-      ("INITIALISATIE", Initialisatie); ("KENMERKTOEKENNING", Kenmerktoekenning) ]
+let builtin_granularity = enum "granularity" granulariteit_tbl
 
-let methode_opt =
-  enum_opt "Methode"
-    [ ("GELIJKE_DELEN", Gelijke_delen); ("NAAR_RATO", Naar_rato);
-      ("OP_VOLGORDE", Op_volgorde); ("COMPLEX", Complex) ]
+(* The presentation tag of a computing rule version, in its v0 spelling
+   (IR-SPEC ch. 3.1). The two other v0 kinds are no tag: an initialisation
+   is the version's flag, and a characteristic assignment is a version that
+   carries neither (the kind follows from the member its target names). *)
+let rule_presentation =
+  enum "presentation" [ ("GELIJKSTELLING", Gelijkstelling); ("BEREKENING", Berekening) ]
+
+(* The three real methods (IR-SPEC ch. 3.2). The v0 placeholder of an
+   unhandled form, COMPLEX, is no method: an unknown value, refused like any
+   other, so no reader meets [Complex]. *)
+let methode =
+  enum "method"
+    [ ("GELIJKE_DELEN", Gelijke_delen); ("NAAR_RATO", Naar_rato); ("OP_VOLGORDE", Op_volgorde) ]
 
 let severity_opt =
   enum_opt "Severity" [ ("ERROR", Sev_error); ("WARNING", Sev_warning); ("INFO", Sev_info) ]
@@ -401,15 +435,61 @@ let geheel_periode path j : geheel_periode =
 
 (* --- expr and conditie -------------------------------------------------- *)
 
+(* The value of a Literal (delta B22): exactly one variant of the case
+   format's value union, without a constructor payload. The string is loaded
+   as written ([Ast.literal_variant]); every other shape — a bare string, a
+   JSON number, two keys, an unknown key, a payload — is refused in one
+   sentence, which names the seven shapes. *)
+let literal_variant path j : literal_variant =
+  let refuse () =
+    fail path
+      "a literal value is exactly one variant: {\"number\": string}, {\"boolean\": true or \
+       false}, {\"text\": string}, {\"date\": string}, {\"dateTime\": string}, \
+       {\"enumeration\": string} or {\"constructor\": string}, without a payload"
+  in
+  match j with
+  | `Assoc [ (key, v) ] -> (
+      match (key, v) with
+      | "number", `String s -> Lv_number s
+      | "boolean", `Bool b -> Lv_boolean b
+      | "text", `String s -> Lv_text s
+      | "date", `String s -> Lv_date s
+      | "dateTime", `String s -> Lv_date_time s
+      | "enumeration", `String s -> Lv_enumeration s
+      | "constructor", `String s -> Lv_constructor s
+      | _ -> refuse ())
+  | _ -> refuse ()
+
+(* The v0 lexeme the in-memory Literal keeps beside its variant ([Ast]). *)
+let literal_lexeme = function
+  | Lv_number s | Lv_text s | Lv_date s | Lv_date_time s | Lv_enumeration s | Lv_constructor s
+    ->
+      s
+  | Lv_boolean true -> "waar"
+  | Lv_boolean false -> "onwaar"
+
+(* The datatype of a context node, which the wire requires (IR-SPEC ch. 4.1):
+   anything but a node object is refused in the node's own sentence. *)
+let context_type ~refusal path kvs : datatype =
+  match field path kvs "type" with
+  | `Assoc _ as t -> datatype (path / "type") t
+  | _ -> fail (path / "type") refusal
+
 let rec expr path j : expr =
   let kvs = obj path j in
   let f name = field path kvs name in
   let typ () = opt (path / "type") datatype (f "type") in
   let bron () = str_opt (path / "bron") (f "bron") in
+  let arguments () =
+    List.mapi
+      (fun i x -> expr (path / "arguments" / string_of_int i) x)
+      (list_ (path / "arguments") (f "arguments"))
+  in
   match node_kind path kvs with
   | "Literal" ->
-      check_keys path kvs [ "node"; "waarde"; "type"; "bron" ];
-      Literal { waarde = str_opt (path / "waarde") (f "waarde"); typ = typ (); bron = bron () }
+      check_keys path kvs [ "node"; "value"; "type"; "bron" ];
+      let variant = literal_variant (path / "value") (f "value") in
+      Literal { waarde = Some (literal_lexeme variant); variant; typ = typ (); bron = bron () }
   | "TekstReeks" ->
       check_keys path kvs [ "node"; "delen"; "type"; "bron" ];
       Tekst_reeks
@@ -431,48 +511,68 @@ let rec expr path j : expr =
           typ = typ ();
           bron = bron ();
         }
-  | "Functie" ->
-      check_keys path kvs ~ext:[ "bronRol"; "bronPad" ]
-        [ "node"; "kind"; "argumenten"; "elementObjecttype"; "leegwaarde";
-          "filter"; "dimensieSelectie"; "type"; "bron"; "granulariteit" ];
-      let kind = functie_kind (path / "kind") (f "kind") in
-      let argumenten =
-        List.mapi
-          (fun i x -> expr (path / "argumenten" / string_of_int i) x)
-          (list_ (path / "argumenten") (f "argumenten"))
-      in
-      let element_objecttype = str_opt (path / "elementObjecttype") (f "elementObjecttype") in
-      (* the range (B12, U2): one spelling at most, and a single-argument
-         fold with an elementObjecttype carries one under every kind but
-         TOTAAL, where its absence is the subject's own read *)
-      (match (List.mem_assoc "bronRol" kvs, List.mem_assoc "bronPad" kvs) with
+  | "Aggregation" ->
+      (* the eight folds (delta B21), read into the in-memory [Functie] with
+         no granularity: that field is a builtin's and unknown here *)
+      check_keys path kvs
+        ~ext:[ "elementType"; "filter"; "emptyFallback"; "dimensionSelection"; "sourceRole";
+               "sourcePath" ]
+        [ "node"; "kind"; "arguments"; "type"; "bron" ];
+      let kind = aggregation_kind (path / "kind") (f "kind") in
+      let argumenten = arguments () in
+      let element_objecttype = ext_field path kvs "elementType" str in
+      (* the range (B12): one spelling at most, and a single-argument fold
+         with an elementType carries one under every kind but TOTAAL, where
+         its absence is the subject's own read *)
+      (match (List.mem_assoc "sourceRole" kvs, List.mem_assoc "sourcePath" kvs) with
       | true, true ->
-          fail (path / "bronPad") "bronPad beside bronRol: a fold carries one range, never two"
+          fail (path / "sourcePath")
+            "sourcePath beside sourceRole: a fold carries one range, never two"
       | false, false
         when element_objecttype <> None && List.length argumenten = 1 && kind <> Totaal ->
           fail path
-            "a single-argument fold with an elementObjecttype carries its range (bronRol or \
-             bronPad) under every kind but TOTAAL: the range is written, never derived"
+            "a single-argument fold with an elementType carries its range (sourceRole or \
+             sourcePath) under every kind but TOTAAL: the range is written, never derived"
       | _ -> ());
       Functie
         {
           kind;
           argumenten;
           element_objecttype;
-          leegwaarde = opt (path / "leegwaarde") expr (f "leegwaarde");
-          filter = opt (path / "filter") conditie (f "filter");
-          dimensie_selectie =
-            opt (path / "dimensieSelectie") dimensie_selectie (f "dimensieSelectie");
+          leegwaarde = ext_field path kvs "emptyFallback" expr;
+          filter = ext_field path kvs "filter" conditie;
+          dimensie_selectie = ext_field path kvs "dimensionSelection" dimensie_selectie;
           typ = typ ();
           bron = bron ();
-          granulariteit = granulariteit_opt (path / "granulariteit") (f "granulariteit");
-          bron_rol = ext_field path kvs "bronRol" rol_binding;
+          granulariteit = None;
+          bron_rol = ext_field path kvs "sourceRole" rol_binding;
           (* loaded verbatim, empty list included: WF-102 (b) owns the
              arity, so a defective path is a citable violation and not a
              load failure with no rule to name *)
           bron_pad =
-            ext_field path kvs "bronPad" (fun p j ->
+            ext_field path kvs "sourcePath" (fun p j ->
                 List.mapi (fun i x -> rol_binding (p / string_of_int i) x) (list_ p j));
+        }
+  | "BuiltinCall" ->
+      (* the seventeen other kinds (delta B21), with plain arguments: an
+         element type, a range, a fallback or a selection is a fold's field
+         and unknown here *)
+      check_keys path kvs ~ext:[ "filter"; "granularity" ]
+        [ "node"; "kind"; "arguments"; "type"; "bron" ];
+      let kind = builtin_kind (path / "kind") (f "kind") in
+      Functie
+        {
+          kind;
+          argumenten = arguments ();
+          element_objecttype = None;
+          leegwaarde = None;
+          filter = ext_field path kvs "filter" conditie;
+          dimensie_selectie = None;
+          typ = typ ();
+          bron = bron ();
+          granulariteit = ext_field path kvs "granularity" builtin_granularity;
+          bron_rol = None;
+          bron_pad = None;
         }
   | "InstanceSetUnion" ->
       check_keys path kvs [ "node"; "branches"; "bron" ];
@@ -697,9 +797,29 @@ let rec expr path j : expr =
           body = expr (path / "body") (f "body");
           bron = bron ();
         }
-  | "Constante" ->
-      check_keys path kvs [ "node"; "naam"; "type"; "bron" ];
-      Constante { naam = str_opt (path / "naam") (f "naam"); typ = typ (); bron = bron () }
+  | "ContextValue" ->
+      (* a session value (delta B23): its name is a string whatever it
+         spells — the closed set is WF-098's, crossed below for an executor
+         ([reader]) — and its datatype is required *)
+      check_keys path kvs [ "node"; "name"; "type"; "bron" ];
+      let naam =
+        match f "name" with
+        | `String s -> s
+        | _ -> fail (path / "name") "a ContextValue carries its name as a string"
+      in
+      Constante
+        {
+          naam = Some naam;
+          typ = Some (context_type ~refusal:"a ContextValue carries its datatype" path kvs);
+          bron = bron ();
+        }
+  | "BoundDay" ->
+      check_keys path kvs [ "node"; "type"; "bron" ];
+      Bound_day
+        {
+          typ = Some (context_type ~refusal:"a BoundDay carries its datatype" path kvs);
+          bron = bron ();
+        }
   | "Onopgelost" ->
       (* the honest-marker node. Its type is written whole or not at all:
          absent means unknown, and a null is a load error (D14) *)
@@ -1097,23 +1217,100 @@ let geldigheid path j : geldigheid =
     geld_tot = str_opt (path / "tot") (field path kvs "tot");
   }
 
-let resolved_regel path j : resolved_regel =
+(* Whether a name ends in a space, '#' and at least one digit: the schema's
+   pattern on a form name, which may not end so. *)
+let versioned_name name =
+  let n = String.length name in
+  let is_digit c = c >= '0' && c <= '9' in
+  let rec digits k = if k < n && is_digit name.[n - 1 - k] then digits (k + 1) else k in
+  let k = digits 0 in
+  k >= 1 && n - k >= 2 && name.[n - k - 1] = '#' && name.[n - k - 2] = ' '
+
+(* A named form (IR-SPEC ch. 3, Versioning; delta B19): {node, name,
+   versions}. The in-memory records are one per version ([Ast]): a form
+   with two or more versions spells them "<name> #<i>" (i from 1), a form
+   with one keeps the bare name, and each record carries the pointer of
+   its version. That spelling is why a form's own name may not end in a
+   space, '#' and digits: it would read as a version of another form. A
+   null name is WF-107's and stays null on every version. Returns the
+   form's fields (for a field it writes once for all its versions) and,
+   per version, its in-memory name, its pointer and its record. *)
+let named_form ~node ?(ext = []) path j =
   let kvs = obj path j in
-  expect_node path kvs "ResolvedRegel";
-  check_keys path kvs ~ext:[ "bronAnnotaties" ]
-    [ "node"; "naam"; "soort"; "doel"; "waarde"; "voorwaarde"; "geldigheid" ];
+  expect_node path kvs node;
+  check_keys path kvs ~ext [ "node"; "name"; "versions" ];
+  let name =
+    match str_opt (path / "name") (field path kvs "name") with
+    | Some n when versioned_name n ->
+        fail (path / "name")
+          "a form's name does not end in a space, '#' and digits: that spelling names one version \
+           of a form with several"
+    | name -> name
+  in
+  let vpath = path / "versions" in
+  let versions =
+    match list_ vpath (field path kvs "versions") with
+    | [] -> fail vpath "a form carries at least one version"
+    | vs -> vs
+  in
+  let several = List.length versions >= 2 in
+  ( kvs,
+    List.mapi
+      (fun i x ->
+        let vname =
+          if several then Option.map (fun n -> n ^ " #" ^ string_of_int (i + 1)) name else name
+        in
+        (vname, vpath / string_of_int i, x))
+      versions )
+
+(* A rule version's kind is read, never looked up (IR-SPEC ch. 3.1; delta
+   B20): a presentation tag is the kind it spells, initialisation true is
+   an initialisation, and a version with neither assigns a characteristic.
+   Initialisation true beside a presentation is no kind at all. Whether the
+   target's member is the kind of member the version writes is WF-022's. *)
+let rule_version ~annotations name path j : resolved_regel =
+  let kvs = obj path j in
+  check_keys path kvs ~ext:[ "condition"; "presentation" ]
+    [ "validity"; "target"; "value"; "initialisation" ];
   let f name = field path kvs name in
+  let initialisation = bool_ (path / "initialisation") (f "initialisation") in
+  let soort =
+    match (initialisation, ext_field path kvs "presentation" rule_presentation) with
+    | true, Some _ ->
+        fail (path / "presentation")
+          "presentation beside initialisation true: a presentation tags a computing version, never \
+           an initialisation"
+    | true, None -> Initialisatie
+    | false, Some tag -> tag
+    | false, None -> Kenmerktoekenning
+  in
+  let target =
+    match f "target" with
+    | `Assoc tkvs as t when List.assoc_opt "node" tkvs = Some (`String "AttribuutRef") ->
+        expr (path / "target") t
+    | _ -> fail (path / "target") "the target of a rule version is an AttribuutRef"
+  in
   {
-    rr_naam = str_opt (path / "naam") (f "naam");
-    rr_soort = regel_soort_opt (path / "soort") (f "soort");
-    doel = opt (path / "doel") expr (f "doel");
-    waarde = opt (path / "waarde") expr (f "waarde");
-    rr_voorwaarde = opt (path / "voorwaarde") conditie (f "voorwaarde");
-    rr_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
-    rr_bron_annotaties =
-      ext_field path kvs "bronAnnotaties" (fun p j ->
-          List.mapi (fun i x -> str (p / string_of_int i) x) (list_ p j));
+    rr_naam = name;
+    rr_soort = Some soort;
+    doel = Some target;
+    waarde = Some (expr (path / "value") (f "value"));
+    rr_voorwaarde = ext_field path kvs "condition" conditie;
+    rr_geldigheid = Some (geldigheid (path / "validity") (f "validity"));
+    rr_bron_annotaties = annotations;
+    rr_pointer = path;
   }
+
+(* A Rule writes its statute annotations once, on the form; every version's
+   record carries that list ([Ast]). An empty list or a blank entry loads:
+   both are WF-082's. *)
+let rule path j : resolved_regel list =
+  let kvs, versions = named_form ~node:"Rule" ~ext:[ "statuteAnnotations" ] path j in
+  let annotations =
+    ext_field path kvs "statuteAnnotations" (fun p j ->
+        List.mapi (fun i x -> str (p / string_of_int i) x) (list_ p j))
+  in
+  List.map (fun (name, p, x) -> rule_version ~annotations name p x) versions
 
 let resolved_dagsoort path j : resolved_dagsoort =
   let kvs = obj path j in
@@ -1136,133 +1333,194 @@ let toekenning path j : toekenning =
     toe_kenmerk = bool_ (path / "kenmerk") (field path kvs "kenmerk");
   }
 
-let resolved_object_creatie path j : resolved_object_creatie =
-  let kvs = obj path j in
-  expect_node path kvs "ResolvedObjectCreatie";
-  check_keys path kvs ~ext:[ "verbindendeRol" ]
-    [ "node"; "naam"; "nieuwType"; "subject"; "toekenningen"; "voorwaarde"; "geldigheid" ];
-  let f name = field path kvs name in
-  {
-    oc_naam = str_opt (path / "naam") (f "naam");
-    nieuw_type = str_opt (path / "nieuwType") (f "nieuwType");
-    oc_subject = str_opt (path / "subject") (f "subject");
-    toekenningen =
-      List.mapi
-        (fun i x -> toekenning (path / "toekenningen" / string_of_int i) x)
-        (list_ (path / "toekenningen") (f "toekenningen"));
-    oc_voorwaarde = opt (path / "voorwaarde") conditie (f "voorwaarde");
-    oc_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
-    oc_verbindende_rol = ext_field path kvs "verbindendeRol" rol_binding;
-  }
+let object_creation path j : resolved_object_creatie list =
+  let _, versions = named_form ~node:"ObjectCreation" path j in
+  List.map
+    (fun (name, path, j) ->
+      let kvs = obj path j in
+      check_keys path kvs ~ext:[ "condition"; "connectingRole" ]
+        [ "createdType"; "subject"; "initialisations"; "validity" ];
+      let f name = field path kvs name in
+      {
+        oc_naam = name;
+        nieuw_type = str_opt (path / "createdType") (f "createdType");
+        oc_subject = str_opt (path / "subject") (f "subject");
+        toekenningen =
+          List.mapi
+            (fun i x -> toekenning (path / "initialisations" / string_of_int i) x)
+            (list_ (path / "initialisations") (f "initialisations"));
+        oc_voorwaarde = ext_field path kvs "condition" conditie;
+        oc_geldigheid = Some (geldigheid (path / "validity") (f "validity"));
+        oc_verbindende_rol = ext_field path kvs "connectingRole" rol_binding;
+        oc_pointer = path;
+      })
+    versions
 
-let resolved_verdeling path j : resolved_verdeling =
-  let kvs = obj path j in
-  expect_node path kvs "ResolvedVerdeling";
-  check_keys path kvs
-    [ "node"; "naam"; "bronType"; "bronAttribuut"; "doelType"; "doelAttribuut";
-      "methode"; "ratoAttribuut"; "maximumAttribuut"; "afrondingDecimalen";
-      "restantAttribuut"; "groepeerAttribuut"; "afnemend"; "voorwaarde"; "geldigheid";
-      "verbindendeRol" ];
-  let f name = field path kvs name in
-  {
-    vd_naam = str_opt (path / "naam") (f "naam");
-    bron_type = str_opt (path / "bronType") (f "bronType");
-    bron_attribuut = str_opt (path / "bronAttribuut") (f "bronAttribuut");
-    doel_type = str_opt (path / "doelType") (f "doelType");
-    doel_attribuut = str_opt (path / "doelAttribuut") (f "doelAttribuut");
-    vd_methode = methode_opt (path / "methode") (f "methode");
-    rato_attribuut = str_opt (path / "ratoAttribuut") (f "ratoAttribuut");
-    maximum_attribuut = str_opt (path / "maximumAttribuut") (f "maximumAttribuut");
-    afronding_decimalen = int_opt (path / "afrondingDecimalen") (f "afrondingDecimalen");
-    restant_attribuut = str_opt (path / "restantAttribuut") (f "restantAttribuut");
-    groepeer_attribuut = str_opt (path / "groepeerAttribuut") (f "groepeerAttribuut");
-    afnemend = bool_ (path / "afnemend") (f "afnemend");
-    vd_voorwaarde = opt (path / "voorwaarde") conditie (f "voorwaarde");
-    vd_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
-    verbindende_rol = rol_binding (path / "verbindendeRol") (f "verbindendeRol");
-  }
+let allocation path j : resolved_verdeling list =
+  let _, versions = named_form ~node:"Allocation" path j in
+  List.map
+    (fun (name, path, j) ->
+      let kvs = obj path j in
+      check_keys path kvs
+        ~ext:[ "ratioAttribute"; "maximumAttribute"; "roundingDecimals"; "remainderAttribute";
+               "orderingAttribute"; "condition" ]
+        [ "sourceType"; "sourceAttribute"; "targetType"; "targetAttribute"; "method";
+          "descending"; "validity"; "connectingRole" ];
+      let f name = field path kvs name in
+      {
+        vd_naam = name;
+        bron_type = str_opt (path / "sourceType") (f "sourceType");
+        bron_attribuut = str_opt (path / "sourceAttribute") (f "sourceAttribute");
+        doel_type = str_opt (path / "targetType") (f "targetType");
+        doel_attribuut = str_opt (path / "targetAttribute") (f "targetAttribute");
+        vd_methode = Some (methode (path / "method") (f "method"));
+        rato_attribuut = ext_field path kvs "ratioAttribute" str;
+        maximum_attribuut = ext_field path kvs "maximumAttribute" str;
+        afronding_decimalen = ext_field path kvs "roundingDecimals" int_;
+        restant_attribuut = ext_field path kvs "remainderAttribute" str;
+        (* the sort key of an OP_VOLGORDE allocation (RUNTIME-SEMANTICS
+           ch. 4.2), the v0 field it was *)
+        groepeer_attribuut = ext_field path kvs "orderingAttribute" str;
+        afnemend = bool_ (path / "descending") (f "descending");
+        vd_voorwaarde = ext_field path kvs "condition" conditie;
+        vd_geldigheid = Some (geldigheid (path / "validity") (f "validity"));
+        verbindende_rol = rol_binding (path / "connectingRole") (f "connectingRole");
+        vd_pointer = path;
+      })
+    versions
 
-let resolved_consistentie path j : resolved_consistentie =
-  let kvs = obj path j in
-  expect_node path kvs "ResolvedConsistentie";
-  check_keys path kvs [ "node"; "naam"; "subject"; "assertie"; "bron"; "line"; "geldigheid" ];
-  let f name = field path kvs name in
-  {
-    cons_naam = str_opt (path / "naam") (f "naam");
-    cons_subject = str_opt (path / "subject") (f "subject");
-    assertie = opt (path / "assertie") conditie (f "assertie");
-    cons_bron = str_opt (path / "bron") (f "bron");
-    cons_line = int_ (path / "line") (f "line");
-    cons_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
-  }
+let consistency path j : resolved_consistentie list =
+  let _, versions = named_form ~node:"Consistency" path j in
+  List.map
+    (fun (name, path, j) ->
+      let kvs = obj path j in
+      check_keys path kvs [ "subject"; "assertion"; "validity"; "bron"; "line" ];
+      let f name = field path kvs name in
+      {
+        cons_naam = name;
+        cons_subject = str_opt (path / "subject") (f "subject");
+        assertie = Some (conditie (path / "assertion") (f "assertion"));
+        cons_bron = str_opt (path / "bron") (f "bron");
+        cons_line = int_ (path / "line") (f "line");
+        cons_geldigheid = Some (geldigheid (path / "validity") (f "validity"));
+        cons_pointer = path;
+      })
+    versions
 
-let resolved_uniciteit path j : resolved_uniciteit =
+(* One source of a uniqueness version: its object type and its keys. *)
+let source path j : string option * string option list =
   let kvs = obj path j in
-  expect_node path kvs "ResolvedUniciteit";
-  check_keys path kvs ~ext:[ "scopeRol" ]
-    [ "node"; "naam"; "subject"; "sleutels"; "bron"; "geldigheid" ];
-  let f name = field path kvs name in
-  {
-    uni_naam = str_opt (path / "naam") (f "naam");
-    uni_subject = str_opt (path / "subject") (f "subject");
-    sleutels = str_opt_list (path / "sleutels") (f "sleutels");
-    uni_bron = str_opt (path / "bron") (f "bron");
-    uni_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
-    scope_rol = ext_field path kvs "scopeRol" rol_binding;
-  }
+  expect_node path kvs "Source";
+  check_keys path kvs [ "node"; "objectType"; "keys" ];
+  let kpath = path / "keys" in
+  match list_ kpath (field path kvs "keys") with
+  | [] -> fail kpath "a source carries at least one key"
+  | keys ->
+      ( str_opt (path / "objectType") (field path kvs "objectType"),
+        List.mapi (fun i x -> str_opt (kpath / string_of_int i) x) keys )
 
-let uniciteit_unie_bron path j : uniciteit_unie_bron =
-  let kvs = obj path j in
-  expect_node path kvs "Bron";
-  check_keys path kvs [ "node"; "type"; "sleutels" ];
-  {
-    uub_type = str_opt (path / "type") (field path kvs "type");
-    uub_sleutels = str_opt_list (path / "sleutels") (field path kvs "sleutels");
-  }
+(* A uniqueness version is one construct on the wire (delta B27) and one of
+   two records here: with one source the single-type uniqueness, with two
+   or more the union, which carries no scope (a scoped union is an open
+   design question, IR-SPEC ch. 3.6). The document splits the two into
+   their own lists; the order of the wire's list carries no meaning. *)
+let uniqueness path j : (resolved_uniciteit, resolved_uniciteit_unie) Either.t list =
+  let _, versions = named_form ~node:"Uniqueness" path j in
+  List.map
+    (fun (name, path, j) ->
+      let kvs = obj path j in
+      check_keys path kvs ~ext:[ "scope" ] [ "sources"; "validity"; "bron" ];
+      let f name = field path kvs name in
+      let spath = path / "sources" in
+      let sources =
+        match list_ spath (f "sources") with
+        | [] -> fail spath "a uniqueness version carries at least one source"
+        | xs -> List.mapi (fun i x -> source (spath / string_of_int i) x) xs
+      in
+      let validity = Some (geldigheid (path / "validity") (f "validity")) in
+      let bron = str_opt (path / "bron") (f "bron") in
+      match sources with
+      | [ (subject, keys) ] ->
+          Either.Left
+            {
+              uni_naam = name;
+              uni_subject = subject;
+              sleutels = keys;
+              uni_bron = bron;
+              uni_geldigheid = validity;
+              scope_rol = ext_field path kvs "scope" rol_binding;
+              uni_pointer = path;
+            }
+      | _ ->
+          if List.mem_assoc "scope" kvs then
+            fail (path / "scope")
+              "a uniqueness version with two or more sources carries no scope: a scoped union is \
+               an open design question";
+          Either.Right
+            {
+              uu_naam = name;
+              bronnen =
+                List.map (fun (t, keys) -> { uub_type = t; uub_sleutels = keys }) sources;
+              uu_bron = bron;
+              uu_geldigheid = validity;
+              uu_pointer = path;
+            })
+    versions
 
-let resolved_uniciteit_unie path j : resolved_uniciteit_unie =
-  let kvs = obj path j in
-  expect_node path kvs "ResolvedUniciteitUnie";
-  check_keys path kvs [ "node"; "naam"; "bronnen"; "bron"; "geldigheid" ];
-  let f name = field path kvs name in
-  {
-    uu_naam = str_opt (path / "naam") (f "naam");
-    bronnen =
-      List.mapi
-        (fun i x -> uniciteit_unie_bron (path / "bronnen" / string_of_int i) x)
-        (list_ (path / "bronnen") (f "bronnen"));
-    uu_bron = str_opt (path / "bron") (f "bron");
-    uu_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
-  }
+(* The target type of a fact creation, which the wire no longer writes
+   (IR-SPEC ch. 3.4): the declared filler of the target role in the created
+   fact type, read as WF-028 reads a role — the fact type found with the
+   verifier's name identity, and the one of its two roles that the name
+   matches. Where that does not resolve the target type stays empty, and
+   WF-028 and WF-034 report the creation. *)
+let target_filler feittypen ~fact_type ~role =
+  match Checks.find_ci feittypen fact_type with
+  | Some ({ rollen = [ a; b ]; _ } : feittype) -> (
+      let named (r : rol) =
+        match r.rol_naam with Some n -> Checks.norm n = Checks.norm role | None -> false
+      in
+      match (named a, named b) with
+      | true, false -> a.rol_objecttype_naam
+      | false, true -> b.rol_objecttype_naam
+      | _ -> None)
+  | _ -> None
 
-let tussenstap path j : tussenstap =
-  let kvs = obj path j in
-  expect_node path kvs "Tussenstap";
-  check_keys path kvs [ "node"; "rolBinding" ];
-  { ts_rol = rol_binding (path / "rolBinding") (field path kvs "rolBinding") }
-
-let resolved_feit_creatie path j : resolved_feit_creatie =
-  let kvs = obj path j in
-  expect_node path kvs "ResolvedFeitCreatie";
-  check_keys path kvs
-    [ "node"; "naam"; "anker"; "doel"; "tussenstappen"; "voorwaarde"; "geldigheid";
-      "feittype"; "ankerRol"; "doelRol"; "joinRol" ];
-  let f name = field path kvs name in
-  {
-    fc_naam = str_opt (path / "naam") (f "naam");
-    anker = str_opt (path / "anker") (f "anker");
-    fc_doel = str_opt (path / "doel") (f "doel");
-    tussenstappen =
-      List.mapi
-        (fun i x -> tussenstap (path / "tussenstappen" / string_of_int i) x)
-        (list_ (path / "tussenstappen") (f "tussenstappen"));
-    fc_voorwaarde = opt (path / "voorwaarde") conditie (f "voorwaarde");
-    fc_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
-    fc_feittype = str (path / "feittype") (f "feittype");
-    anker_rol = str (path / "ankerRol") (f "ankerRol");
-    doel_rol = str (path / "doelRol") (f "doelRol");
-    join_rol = rol_binding (path / "joinRol") (f "joinRol");
-  }
+(* A fact creation's path is its whole join chain (IR-SPEC ch. 3.4), anchor
+   outward: every hop but the last is a [tussenstap], the last reaches the
+   target and is the [join_rol]. *)
+let fact_creation feittypen path j : resolved_feit_creatie list =
+  let _, versions = named_form ~node:"FactCreation" path j in
+  List.map
+    (fun (name, path, j) ->
+      let kvs = obj path j in
+      check_keys path kvs ~ext:[ "condition" ]
+        [ "factType"; "anchorRole"; "targetRole"; "anchor"; "path"; "validity" ];
+      let f name = field path kvs name in
+      let ppath = path / "path" in
+      let steps, join =
+        match list_ ppath (f "path") with
+        | [] -> fail ppath "a fact creation's path carries at least one hop"
+        | xs ->
+            let hops = List.mapi (fun i x -> rol_binding (ppath / string_of_int i) x) xs in
+            let last = List.length hops - 1 in
+            (List.filteri (fun i _ -> i < last) hops, List.nth hops last)
+      in
+      let fact_type = str (path / "factType") (f "factType") in
+      let target_role = str (path / "targetRole") (f "targetRole") in
+      {
+        fc_naam = name;
+        anker = str_opt (path / "anchor") (f "anchor");
+        fc_doel = target_filler feittypen ~fact_type ~role:target_role;
+        tussenstappen = List.map (fun rb -> { ts_rol = rb }) steps;
+        fc_voorwaarde = ext_field path kvs "condition" conditie;
+        fc_geldigheid = Some (geldigheid (path / "validity") (f "validity"));
+        fc_feittype = fact_type;
+        anker_rol = str (path / "anchorRole") (f "anchorRole");
+        doel_rol = target_role;
+        join_rol = join;
+        fc_pointer = path;
+      })
+    versions
 
 let resolved_startpunt path j : resolved_startpunt =
   let kvs = obj path j in
@@ -1413,10 +1671,50 @@ let presentatie_annotaties (j : json) : string list =
   in
   List.rev (walk ~annot:false "" [] j)
 
+(* Who loads the document. Two defects on the wire are a verifier rule's,
+   because the schema cannot cross them: a literal whose value variant is
+   not the one its type names (WF-114) and a context value whose name is
+   outside the closed set (WF-098). The [Verifier] loads both, so that the
+   rule cites them. Every other reader of this library — an executor or a
+   frontend — is an [Executor] and refuses both at load, in the rule's own
+   sentence without its number ([Checks.literal_variant_refusal],
+   [Checks.context_value_refusal]): no evaluator reads {"text": "5"} under
+   a Number as a number, or a session value that does not exist. *)
+type reader = Verifier | Executor
+
+(* The executor's refusals, after the structural load: every Literal and
+   ContextValue node of the document as written, in document order. A
+   literal without a type is WF-034's typeless value node, with no type to
+   cross its variant against. *)
+let executor_refusals (j : json) =
+  let rec walk path = function
+    | `Assoc kvs ->
+        (match List.assoc_opt "node" kvs with
+        | Some (`String "Literal") -> (
+            match opt (path / "type") datatype (field path kvs "type") with
+            | None -> ()
+            | Some typ -> (
+                let variant = literal_variant (path / "value") (field path kvs "value") in
+                match Checks.literal_variant_refusal variant typ with
+                | Some sentence -> fail (path / "value") sentence
+                | None -> ()))
+        | Some (`String "ContextValue") -> (
+            match Checks.context_value_refusal (str (path / "name") (field path kvs "name")) with
+            | Some sentence -> fail (path / "name") sentence
+            | None -> ())
+        | _ -> ());
+        List.iter (fun (k, x) -> walk (path / k) x) kvs
+    | `List xs -> List.iteri (fun i x -> walk (path / string_of_int i) x) xs
+    | _ -> ()
+  in
+  walk "" j
+
 (* The M1 root: {format, model, rules, diagnostics}. [model] is the
-   declaration set as lists, [rules] the v0 rule lists under their v0 keys;
-   each carries one optional extension list. *)
-let document (j : json) : document =
+   declaration set as lists, [rules] the rule lists under their v0 keys;
+   each carries one optional extension list. Since L4 the six named forms
+   are read version by version into the v0-shaped records, and the one wire
+   list of uniquenesses into the two in-memory lists. *)
+let document ?(reader = Executor) (j : json) : document =
   let path = "" in
   let kvs = obj path j in
   check_keys path kvs [ "format"; "model"; "rules"; "diagnostics" ];
@@ -1432,8 +1730,7 @@ let document (j : json) : document =
   let rules = obj rpath (field path kvs "rules") in
   check_keys rpath rules ~ext:[ "prioritizedDefaults" ]
     [ "resolvedRegels"; "resolvedDagsoorten"; "objectCreaties"; "verdelingen";
-      "consistenties"; "uniciteiten"; "uniciteitUnies"; "feitCreaties";
-      "resolvedStartpunten"; "regelGroepen" ];
+      "consistenties"; "uniciteiten"; "feitCreaties"; "resolvedStartpunten"; "regelGroepen" ];
   let arr p kvs name g =
     List.mapi (fun i x -> g (p / name / string_of_int i) x) (list_ (p / name) (field p kvs name))
   in
@@ -1443,30 +1740,38 @@ let document (j : json) : document =
     | None -> []
   in
   let m name g = arr mpath model name g and r name g = arr rpath rules name g in
-  {
-    objecttypen = m "objectTypes" objecttype;
-    domeinen = m "domains" domain;
-    parameters = m "parameters" parameter;
-    eenheidstelsels = m "unitSystems" eenheidstelsel;
-    feittypen = m "factTypes" (fun p -> named p feittype (fun (x : feittype) -> x.ft_naam));
-    dimensies = m "dimensions" (fun p -> named p dimensie (fun (x : dimensie) -> x.dim_naam));
-    tijdlijnen = m "timelines" tijdlijn;
-    dagsoorten = m "dayKinds" dagsoort;
-    resolved_regels = r "resolvedRegels" resolved_regel;
-    resolved_dagsoorten = r "resolvedDagsoorten" resolved_dagsoort;
-    object_creaties = r "objectCreaties" resolved_object_creatie;
-    verdelingen = r "verdelingen" resolved_verdeling;
-    consistenties = r "consistenties" resolved_consistentie;
-    uniciteiten = r "uniciteiten" resolved_uniciteit;
-    uniciteit_unies = r "uniciteitUnies" resolved_uniciteit_unie;
-    feit_creaties = r "feitCreaties" resolved_feit_creatie;
-    resolved_startpunten = r "resolvedStartpunten" resolved_startpunt;
-    regel_groepen = r "regelGroepen" resolved_regel_groep;
-    diagnostics = arr path kvs "diagnostics" diagnostic;
-    prioritized_defaults = ext rpath rules "prioritizedDefaults" prioritized_defaults;
-    function_defs = ext mpath model "functionDefs" function_def;
-    presentatie_annotaties = presentatie_annotaties j;
-  }
+  let forms name g = List.concat (r name g) in
+  (* the fact types first: a fact creation's target type is read from them *)
+  let feittypen = m "factTypes" (fun p -> named p feittype (fun (x : feittype) -> x.ft_naam)) in
+  let uniqueness_versions = forms "uniciteiten" uniqueness in
+  let doc =
+    {
+      objecttypen = m "objectTypes" objecttype;
+      domeinen = m "domains" domain;
+      parameters = m "parameters" parameter;
+      eenheidstelsels = m "unitSystems" eenheidstelsel;
+      feittypen;
+      dimensies = m "dimensions" (fun p -> named p dimensie (fun (x : dimensie) -> x.dim_naam));
+      tijdlijnen = m "timelines" tijdlijn;
+      dagsoorten = m "dayKinds" dagsoort;
+      resolved_regels = forms "resolvedRegels" rule;
+      resolved_dagsoorten = r "resolvedDagsoorten" resolved_dagsoort;
+      object_creaties = forms "objectCreaties" object_creation;
+      verdelingen = forms "verdelingen" allocation;
+      consistenties = forms "consistenties" consistency;
+      uniciteiten = List.filter_map Either.find_left uniqueness_versions;
+      uniciteit_unies = List.filter_map Either.find_right uniqueness_versions;
+      feit_creaties = forms "feitCreaties" (fact_creation feittypen);
+      resolved_startpunten = r "resolvedStartpunten" resolved_startpunt;
+      regel_groepen = r "regelGroepen" resolved_regel_groep;
+      diagnostics = arr path kvs "diagnostics" diagnostic;
+      prioritized_defaults = ext rpath rules "prioritizedDefaults" prioritized_defaults;
+      function_defs = ext mpath model "functionDefs" function_def;
+      presentatie_annotaties = presentatie_annotaties j;
+    }
+  in
+  (match reader with Executor -> executor_refusals j | Verifier -> ());
+  doc
 
-let load_file (filename : string) : document =
-  document (Yojson.Safe.from_file filename)
+let load_file ?reader (filename : string) : document =
+  document ?reader (Yojson.Safe.from_file filename)
