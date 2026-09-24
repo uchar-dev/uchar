@@ -8535,7 +8535,9 @@ let () =
     ~case_text:
       (pf_case ~instances:[ j1_klip ] ~params:[ pf_bind "klipgrens" "10" ]
          [ pf_is ~attr:"topsom" "66"; pf_cons ])
-    ~needle:"the elementObjecttype 'Persoon' of a TOTAAL without a range is not the fold subject 'Jutter'"
+    ~needle:"the elementObjecttype 'Persoon' of a TOTAAL without a range is not the fold subject \
+     'Jutter': without a range the fold is the subject's own read, so its elementObjecttype must \
+     name the subject type (WF-083)"
 
 (* the defaults: ref walks a chain in order and stops at the first default
    that settles, and reads a consequence only under its holding
