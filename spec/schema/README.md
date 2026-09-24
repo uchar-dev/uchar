@@ -225,14 +225,16 @@ second run changes nothing.
 `../proposals/v1-migratie/m2.py` converts an L1 document to the L2 shape, with
 the same interface and the same serialiser. It removes what L2 takes off the
 wire and writes out every binding the L2 shape requires and the document
-lacks, with the resolution the verifier performs
-(`../verifier/lib/checks.ml`: the range from the type pair, the navigation
-walk, the scope and the characteristic hop by role name, the two role checks)
-and the subject type taken from the same context. Zero or several candidates
-refuse the document with the file name and a JSON pointer into the L1 input,
-and so does every L1 value the L2 shape cannot carry. One line on stderr per
-migrated document counts what was derived and removed; a document already in
-the L2 shape is left untouched.
+lacks, with the resolution the verifier performed until L2
+(`../verifier/lib/checks.ml` at main 2a701b23: the range from the type pair,
+the navigation walk, the scope and the characteristic hop by role name, the two
+role checks; L2 removed that resolution from the verifier) and the subject type
+taken from the same context. The script's header lists, with measured document
+counts, where it derives more than that resolution did. Zero or several
+candidates refuse the document with the file name and a JSON pointer into the
+L1 input, and so does every L1 value the L2 shape cannot carry. One line on
+stderr per migrated document counts what was derived and removed; a document
+already in the L2 shape is left untouched.
 
 ## Gate: `../../scripts/check-ir-schema.sh`
 

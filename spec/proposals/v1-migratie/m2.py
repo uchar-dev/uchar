@@ -17,23 +17,50 @@ Every other node, field and value spelling is carried verbatim, in its own key
 order; a derived binding is appended after the node's last key, where every
 producer already writes it.
 
-The derivations mirror spec/verifier/lib/checks.ml (U4 of the card) and take the
-subject type from the context checks.ml takes it from: a rule's target, an object
+The derivations mirror the resolution of spec/verifier/lib/checks.ml at main
+2a701b23, the last L1 state of the verifier (U4 of the card), and take the subject
+type from the context checks.ml took it from there: a rule's target, an object
 creation's, consistency's or fact creation's subject (the anker), an allocation's
 bronType, a defaults group's onderwerp; the element type inside the filter of a fold
 and of a quantifier fold and inside a union selection's filter; no subject in a
 day-kind condition or a function body. Each derivation names the function it
-mirrors. Zero or several candidates fail the document; nothing is chosen.
+mirrors. Every checks.ml name in this script, in comments and in refusal messages,
+is the function at 2a701b23: L2 removed that resolution from the verifier, and a
+name marked (removed at L2) no longer exists in checks.ml. Zero or several
+candidates fail the document; nothing is chosen.
+
+Where the script derives more than checks.ml at 2a701b23 did (measured by the L2
+lens on 2026-09-24 over the L1 state of the four corpus zones and the parity zone;
+a measured difference, not a defect):
+- an instance source that carries a written navigatieRol (the Onbekend-typed count
+  source, or a source with set: true) gets a derived range; checks.ml's fold_source
+  recognised only an instance source without a written navigation, so WF-048
+  derived nothing for these: 8 documents (golden 1, negatief 5, parity zone 2);
+- the range counts candidate ROLES (connecting_role_candidates) where
+  wf048_derivable counted fact types (connecting_candidates), so a self-typed pair
+  with one fact type and two candidate roles is refused here and was derivable
+  there: 1 document (negatief wf034-zelftype-typenpaar, removed with reason at L2);
+- a role check demands exactly one candidate, where WF-034 (o) and (t) reported
+  only an empty candidate list and did not report several: no document in the
+  measured set has several;
+- a written name beside a binding (navigatieRol or navigatiePad beside
+  navigatieBindingen, scopeVeld beside scopeRol, Kenmerk.navigatie beside
+  navigatieBinding) is dropped without checking that it names the bound role:
+  4 documents, all on the stamp list of the L2 card (negatief
+  wf053-chain-near-side-mismatch, wf053-dangling-navigation-binding,
+  wf053-written-role-mismatch, wf054-dangling-scope-binding).
 
 One written name is rewritten (U11 of the card): the count source of an AANTAL with a
 range names the bound role, by declared name or declared plural (D8 (ii), WF-047).
 Where it names neither that role nor a member of the element type, the declared name
 of the bound role is written in its place; the written spelling stays in `bron`.
 
-A role check keeps its filler class (U12): where the type a role check names for the
-other end of the relation is a strict subtype of that role's declared filler type,
-RoleMembership carries it as `counterpartType`; where it is the declared type itself,
-the field stays absent.
+A role check keeps its filler class (U12). `counterpartType` names a declared object
+type that is a subtype of, or equal to, the declared filler type of the other role,
+and the migration writes it only where it narrows: where the type a role check names
+for the other end of the relation is a strict subtype of that role's declared filler
+type, RoleMembership carries it as `counterpartType`; where it is the declared type
+itself, the field stays absent.
 
 Loud by construction: an L1 value the L2 shape cannot carry fails the document with
 its file name and the JSON pointer into the L1 input; nothing is repaired. A failing
@@ -202,11 +229,12 @@ class Model:
                 out.append((fn, a, b))
         return out
 
-    # checks.ml connecting_candidates (WF-048's count, in fact types)
+    # checks.ml connecting_candidates (WF-048's count at 2a701b23, in fact types; WF-048 left the
+    # verifier at L2)
     def connecting_fact_types(self, from_type, to_type):
         return sorted({fn for fn, _, _ in self.connecting_roles(from_type, to_type)})
 
-    # checks.ml nav_roles_by_name
+    # mirrors checks.ml nav_roles_by_name at 2a701b23 (removed at L2)
     def nav_roles_by_name(self, from_type, name, endpoint=None):
         def matches(r):
             return self.denotes(r, name) and (
@@ -224,7 +252,7 @@ class Model:
                 out.append((fn, a))
         return out
 
-    # checks.ml nav_role_by_pair
+    # mirrors checks.ml nav_role_by_pair at 2a701b23 (removed at L2)
     def nav_roles_by_pair(self, from_type, to_type):
         out = []
         for fn, rollen, recip in self.shapes():
@@ -239,7 +267,8 @@ class Model:
                 out.append((fn, a))
         return out
 
-    # checks.ml far_role_candidates, as (fact type, the subject's role, the far role)
+    # mirrors checks.ml far_role_candidates at 2a701b23 (removed at L2), as (fact type, the
+    # subject's role, the far role)
     def far_roles(self, subject, filler, backref):
         out = []
         for fn, rollen, recip in self.shapes():
@@ -276,7 +305,7 @@ class Model:
             for m in (t.get('attributes') or []) + (t.get('characteristics') or [])
             if isinstance(m, dict))
 
-    # checks.ml self_denoting_role
+    # mirrors checks.ml self_denoting_role at 2a701b23 (removed at L2)
     def self_denoting_role(self, otype, name):
         return any(norm(r.get('objecttypeNaam') or '') == norm(otype) and self.denotes(r, name)
                    for _, ft in self.feittypen for r in ft.get('rollen') or []
@@ -317,9 +346,10 @@ class Migration:
 
     # --- the range of a fold, a quantifier fold and an allocation -------------------------------
     def derive_range(self, p, from_type, to_type, site):
-        """checks.ml wf048_derivable over the type pair, with the bound role counted as
-           connecting_role_candidates counts it (a self-typed pair offers both roles and blocks,
-           as the executors' connecting role does): exactly one candidate role or a refusal."""
+        """Mirrors checks.ml wf048_derivable at 2a701b23 (removed at L2) over the type pair, with
+           the bound role counted as connecting_role_candidates counts it (a self-typed pair
+           offers both roles and blocks, as the executors' connecting role does): exactly one
+           candidate role or a refusal."""
         cands = self.m.connecting_roles(from_type, to_type)
         if len(cands) == 1:
             fn, far, _ = cands[0]
@@ -397,7 +427,8 @@ class Migration:
         return v
 
     def verdeling(self, v, p, subject):
-        # checks.ml wf047_048_verdelingen: the bound role is the one doelType fills
+        # mirrors checks.ml wf047_048_verdelingen at 2a701b23 (removed at L2): the bound role is
+        # the one doelType fills
         if 'verbindendeRol' not in v:
             bt, dt = v.get('bronType'), v.get('doelType')
             if isinstance(bt, str) and isinstance(dt, str):
@@ -412,7 +443,8 @@ class Migration:
         return v
 
     def uniciteit(self, v, p, subject):
-        # checks.ml wf054: the scope role, bound or derived from the written scope field by name
+        # mirrors checks.ml wf054 at 2a701b23: the scope role, bound or derived from the written
+        # scope field by name (the derivation by name removed at L2)
         l1, sv, has_rol = 'scopeVeld' in v, v.get('scopeVeld'), 'scopeRol' in v
         self.drop(v, ('scopeVeld',))
         if not l1:
@@ -468,8 +500,9 @@ class Migration:
         self.drop(a, ATTR_REF_DROPPED)
 
     def attribuut_ref(self, a, p, subject):
-        """An ordinary read: checks.ml walk_expr's AttribuutRef arm, and nav_hops on its
-           bindingless route for a read that navigates."""
+        """An ordinary read: mirrors checks.ml at 2a701b23, walk_expr's AttribuutRef arm and
+           nav_hops on its bindingless route for a read that navigates (that route removed at
+           L2)."""
         otn, nr = a.get('objecttype'), a.get('navigatieRol')
         pad = a.get('navigatiePad') if isinstance(a.get('navigatiePad'), list) else []
         bound = 'navigatieBindingen' in a
@@ -507,8 +540,9 @@ class Migration:
         return a
 
     def nav_hops(self, subject, nr, pad, endpoint):
-        """checks.ml nav_hops with no bindings: (hops, errors); no hops is the zero-hop
-           self-reference, the subject's own read (ch. 4.1a)."""
+        """Mirrors checks.ml nav_hops at 2a701b23 with no bindings (that route removed at L2):
+           (hops, errors); no hops is the zero-hop self-reference, the subject's own read
+           (ch. 4.1a)."""
         if pad:
             if any(s is None for s in pad):
                 return None, ['the navigation path carries a null step']
@@ -545,9 +579,10 @@ class Migration:
         return hops, []
 
     def fold_source(self, a, p, subject, wart):
-        """The single argument of a fold with an elementObjecttype: checks.ml
-           aggregation_source_check. A fold source never navigates; the one written role it
-           carries is the count source's own name for the fold subject, which is presentation."""
+        """The single argument of a fold with an elementObjecttype: mirrors checks.ml
+           aggregation_source_check at 2a701b23 (rewritten at L2). A fold source never
+           navigates; the one written role it carries is the count source's own name for the
+           fold subject, which is presentation."""
         nr = a.get('navigatieRol')
         pad = a.get('navigatiePad') if isinstance(a.get('navigatiePad'), list) else []
         self.drop_ref_fields(a)
@@ -591,7 +626,8 @@ class Migration:
         if isinstance(el, str) and single and is_node(args[0], 'AttribuutRef'):
             a0 = args[0]
             if 'set' in a0 or 'type' in a0:
-                # checks.ml fold_source: the set reading or the sentinel-typed count source
+                # mirrors checks.ml's fold_source at 2a701b23: the set reading or the
+                # sentinel-typed count source (both readings removed at L2)
                 shape = 'instances' if (a0.get('set') is True or
                                         is_node(a0.get('type'), 'Onbekend')) else 'own'
             else:
@@ -663,7 +699,8 @@ class Migration:
             self.fail(p + ptr('bronPad'), 'bronPad beside bronRol: the L2 shape carries exactly '
                       'one range on a quantifier fold (U2)')
         elif not has_rol and not has_pad:
-            # checks.ml walk_cond's Kwantorvouw arm, (c): wf048_derivable over subject/element
+            # mirrors checks.ml at 2a701b23, walk_cond's Kwantorvouw arm (c): wf048_derivable
+            # over subject/element (removed at L2)
             if not isinstance(el, str):
                 self.fail(p, 'a quantifier fold without a range and without an elementObjecttype: '
                           'the L2 shape requires the range and there is no type to derive it towards')
@@ -687,7 +724,8 @@ class Migration:
 
     # --- conditions ------------------------------------------------------------------------------
     def kenmerk(self, v, p, subject):
-        # D53, checks.ml walk_cond's Kenmerk arm: one hop, derived by the written name
+        # D53; mirrors checks.ml at 2a701b23, walk_cond's Kenmerk arm: one hop, derived by the
+        # written name (the derivation removed at L2)
         l1, nav, has_b = 'navigatie' in v, v.get('navigatie'), 'navigatieBinding' in v
         self.drop(v, ('navigatie',))
         if not l1:
@@ -743,9 +781,10 @@ class Migration:
         return node
 
     def rollidmaatschap(self, v, p, subject):
-        """The near-side check: checks.ml WF-034 (o) — the one fact type between the subject and
-           anderTeFiller (connecting_role_candidates); the role is the one the SUBJECT fills, and
-           the written role must name it by declared name or declared plural."""
+        """The near-side check: mirrors the Rollidmaatschap arm of checks.ml WF-034 (o) at
+           2a701b23 (removed at L2) — the one fact type between the subject and anderTeFiller
+           (connecting_role_candidates); the role is the one the SUBJECT fills, and the written
+           role must name it by declared name or declared plural."""
         f, rol = v.get('anderTeFiller'), v.get('rol')
         if not isinstance(subject, str):
             self.fail(p, 'a role check with no subject type to derive its fact type from')
@@ -777,8 +816,9 @@ class Migration:
         return self.membership(p, subject, fn, near['naam'], ct, v.get('negatie'), v.get('bron'))
 
     def verre_rollidmaatschap(self, v, p, subject):
-        """The far-side check: checks.ml WF-034 (t) — the fact type where filler and backref meet
-           (far_role_candidates); the role is the subject's side."""
+        """The far-side check: mirrors the Verre_rollidmaatschap arm of checks.ml WF-034 (t) at
+           2a701b23 (removed at L2) — the fact type where filler and backref meet
+           (far_role_candidates, removed at L2 too); the role is the subject's side."""
         f, b = v.get('filler'), v.get('backref')
         if not isinstance(subject, str):
             self.fail(p, 'a far-side role check with no subject type to derive its fact type from')
