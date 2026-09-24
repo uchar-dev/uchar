@@ -1939,7 +1939,7 @@ its single `DayKindDefinition` (case-insensitive again; WF-031 keeps the
 definition unique, so there is nothing to disambiguate). A spelling the
 calendar table does not know and no day kind carries is ill-formed
 (WF-035/WF-038). The definition's `validity` is **not consulted**: it
-MUST be ALTIJD (WF-031), so there is no window to read.
+MUST be always, neither bound written (WF-031), so there is no window to read.
 
 **Evaluation — the predicate of one day.** `P_k(d)` is the definition's
 `condition`, evaluated with **the bound day set to d** and nothing else
@@ -1952,7 +1952,7 @@ falls back on the evaluation date (red case
 `contextwaarde-de-dag-buiten-dagsoort` pins both executors).
 
 `P_k` is a function of **the day alone**. WF-031's purity clause is what
-makes that true: the voorwaarde reaches no fact base, and — the position
+makes that true: the condition reaches no fact base, and — the position
 arm, landed with this chapter — no session value either, so the same
 document classifies the same calendar day identically in every session.
 A definition may reference other day kinds (`P_k` calls `P_j` on the same
@@ -2034,11 +2034,11 @@ here**, so a model that needs more knows what it is asking for; raising
 the number is a spec change, not a configuration knob.
 
 What those three properties are about is the FENCE, and they do not claim
-that every executor evaluates every well-formed voorwaarde. Each executor
+that every executor evaluates every well-formed day-kind condition. Each executor
 states its own carried set and refuses the rest **by name** — the ASP
 backend, which evaluates the predicate rather than walking it, carries a
 named subset of WF-031's admission list (`spec/ASP-TRANSLATION.md`), and
-a voorwaarde outside it is refused there and computed in `ref`. That is a
+a condition outside it is refused there and computed in `ref`. That is a
 loud, per-form boundary and an extensible one; it is not a second fence
 and not a silent one.
 
@@ -3482,7 +3482,7 @@ null-safe navigation readers:
    relation as a leegwaarde. In the ASP reading the hop is a positive
    body literal and only the characteristic sits under negation-as-
    failure — the same asymmetry, for free.
-4. **A read without navigation bindings is the subject's own read —
+4. **A read without a path is the subject's own read —
    unconditionally.** An attribute reference that carries no
    `path` reads the subject's OWN attribute, and its
    `subjectType` is the subject type itself — equality, not ⊑ (IR-SPEC
@@ -3518,7 +3518,7 @@ fill the role aanmelder in feittype vondstaanmelding, and the role
 strandmaat in the reciprocal feittype strandmaatschap. J1
 (strandtegoed 10) is strandmaat of J2 (25); J3 (7) carries no links at
 all. "het strandtegoed van de aanmelder plus 2" is on the wire the
-subject's own read, a reference without navigation bindings: meldkrediet
+subject's own read, a reference without a path: meldkrediet
 J1 = 12, J2 = 27, **J3 = 9** — J3 has no links and still reads its own
 attribute (the unconditional own read). "het strandtegoed van zijn
 strandmaat" is the one hop its binding names over the reciprocal role
@@ -4729,7 +4729,7 @@ binding is made — ch. 3.8, the day-kind duration forms. Two consequences
 follow, and both are checked. Outside a day-kind evaluation the bound day
 denotes nothing and every executor
 faults by name (red case `contextwaarde-de-dag-buiten-dagsoort`); and the
-converse, a SESSION value inside a day-kind voorwaarde, is refused
+converse, a SESSION value inside a day-kind condition, is refused
 statically (WF-031's position arm, `IR-SPEC.md` ch. 3.7), because a
 stratum-0 classification that moved with the session would classify the
 same calendar day differently in two runs of the same document.
