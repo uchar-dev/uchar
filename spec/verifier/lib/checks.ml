@@ -276,13 +276,14 @@ let lexeme_iso_date s =
       m >= 1 && m <= 12 && d >= 1 && d <= days_in_month y m
   | _ -> false
 
-(* WF-095: the datum-tijd literal lexeme (IR-SPEC ch. 4.1) is ONE spelling,
-   the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] — fixed field widths, 'T'
-   as the separator and never a space, the seconds field always written, no
+(* WF-095: the literal lexeme of a millisecond-precision date (IR-SPEC
+   ch. 4.1) is ONE spelling, the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff]
+   — fixed field widths, 'T' as the separator and never a space, the seconds
+   field always written, no
    zone suffix and no offset, a fraction that is optional but exactly three
    digits, read as whole milliseconds, the date half calendar-valid.
 
-   Outside it the readers of a datum-tijd lexeme stop agreeing — the same
+   Outside it the readers of such a lexeme stop agreeing — the same
    three digits ".1" read as ONE millisecond, as a HUNDRED, and refused; a
    missing seconds field taken by one reader and refused by another — and
    until this rule a literal reading `rommel 2024-01-31 12:00:00Z x` was
@@ -3642,7 +3643,7 @@ let wf097_clip_qualifications at (c : conditie) : violation list =
    so it is refused here instead of by each executor at its own phase.
    "Own" is extensional, as everywhere (ch. 2.2): an attribute declared on a
    type the subject satisfies. The day-precision clause (maintainer decision
-   2026-09-23) closes a measured split: a LEEG datum-tijd attribute bound
+   2026-09-23) closes a measured split: a LEEG millisecond-precision attribute bound
    played in ref (a leeg bound never matches; ref refused only a FILLED
    instant) while the ASP backend refused it statically — ref ≠ clingo on a
    verifier-clean document. Ch. 3.10 speaks of civil days only. The declared datatype decides for an
@@ -3658,8 +3659,8 @@ let wf111_bound ctx ~subject at side (e : expr) =
   let instant =
     [ v "WF-111" at
         (Printf.sprintf
-           "the %s bound of a time window is a datum-tijd: the window is a range of civil days and \
-            no clause reads an instant bound"
+           "the %s bound of a time window is a millisecond-precision date: the window is a range \
+            of civil days and no clause reads an instant bound"
            side) ]
   in
   match e with
@@ -3790,7 +3791,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                ^ "' is not the ISO form yyyy-mm-dd (fixed field widths, valid ranges — ch. 4.1)") ]
       | Some Datum_tijd, Some w when not (lexeme_datum_tijd w) ->
           [ v "WF-095" at
-              ("datum-tijd literal lexeme '" ^ w
+              ("millisecond-precision date literal lexeme '" ^ w
                ^ "' is not the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field \
                   widths, 'T' never a space, the seconds field written, no zone or offset, a \
                   fraction of exactly three digits; the day-first source snippet belongs in \
