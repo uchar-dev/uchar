@@ -31,11 +31,19 @@ verbatim, in its own key order. The six L3 nodes are written in the schema's
   number is carried verbatim over 1; any other factor becomes the fraction with the
   smallest denominator whose value lies within 10^-14 relative of the L2 double, with no
   bound on the denominator, and a factor for which that fraction has a denominator above
-  10^9 fails the document. The tolerance is there because the v0 doubles are products of
-  ratios rounded to 16 digits per step, so exact double equality does not find the
-  intended fraction (the parity zone's time units: 1/24, 1/1440, 1/86400, 1/86400000).
-  What checks the result against the truth is the frontend's re-emission of the casus
-  dump, which knows the declared 1/N forms.
+  10^9 fails the document. The rule finds the intended fraction p/q with certainty only
+  where no other fraction with a denominator of at most q fits in the tolerance interval:
+  such a fraction lies at least 1/q^2 from p/q and the interval is 2 * 10^-14 * p/q wide,
+  so the guarantee holds while p*q stays below 5 * 10^13, for a factor around 1 roughly a
+  denominator below 10^7. Beyond that the rule may choose a fraction with a smaller
+  denominator; 10^9 is only the bound at which the script fails loudly. On the migrated
+  data every case was measured again: the 542 reconstructed factors (540 in the parity
+  zone, 2 in negatief; 8 distinct lexemes) all lie within the tolerance and inside the
+  guarantee, the largest p*q being 86400000. The tolerance is there because the v0
+  doubles are products of ratios rounded to 16 digits per step, so exact double equality
+  does not find the intended fraction (the parity zone's time units: 1/24, 1/1440,
+  1/86400, 1/86400000). What checks the result against the truth is the frontend's
+  re-emission of the casus dump, which knows the declared 1/N forms.
 - Eenheidstelsel becomes UnitSystem {node, name, units}. The map of units becomes a
   list in map order, one Unit per abbreviation; a map key that differs from its unit's
   abbreviation becomes the first spelling of that unit, and every alias becomes a
