@@ -252,7 +252,7 @@ class OpslagrichtingWitnessTest {
     // A value-divergence is exactly what gate 12's played channel is meant to catch — but a golden of this shape
     // with the displacing attribute LEFT EMPTY plays green, so the corpus can carry the broken model unseen.
     // Since L2 of the v1 wire migration a one-hop read is one binding, which navReader reads; the chain reader
-    // takes a read of two bindings or more.
+    // (navKetenReader) takes a read of two bindings or more, and asks the same question at EVERY hop.
 
     @Test void de_genavigeerde_waardelezing_weigert_het_verdrongen_veld() throws Exception {
         // navReader — the read as the wire carries it: one binding, ligplaats/werf.
@@ -262,6 +262,21 @@ class OpslagrichtingWitnessTest {
         assertTrue(e.getMessage().contains("genavigeerde lezing"), e.getMessage());
         assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"), e.getMessage());
         assertTrue(e.getMessage().contains("§13.3.9 opslagrichting"), e.getMessage());
+    }
+
+    @Test void de_ketenlezing_weigert_het_verdrongen_veld_op_elke_stap() throws Exception {
+        // navKetenReader — a read of two bindings, Schuit -(ligplaats/werf)-> Werf -(werfhaven/thuishaven)-> Haven.
+        // The displacing member sits at the FIRST hop (Schuit.werf) in one model and at the SECOND (Werf.thuishaven)
+        // in the other; both branches name the hop whose field is gone and never read past it. In the exec branch
+        // the question is asked twice, by the chain reader and by the far-side reactivity walk (navReactiviteit),
+        // so this row holds the construct's refusal, not one of the two sites alone (measured: dropping the
+        // chain reader's per-hop question leaves the row green).
+        for (int stap : new int[] { 1, 2 }) {
+            String rol = stap == 1 ? "de rol 'werf' op Schuit" : "de rol 'thuishaven' op Werf";
+            BeideTakken.geweigerd(naamdelendeKeten(stap), JSON.readTree(schuitZonderRol("premie", "0")),
+                    "genavigeerde lezing: " + rol + " deelt haar naam met een gedeclareerd lid",
+                    "the displaced field at hop " + stap + " of a two-binding chain");
+        }
     }
 
     @Test void de_genavigeerde_vergelijking_weigert_hetzelfde_veld() throws Exception {
@@ -408,6 +423,35 @@ class OpslagrichtingWitnessTest {
         IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", numeriek());
         houdRegel(ir, "premie van een schuit");
         return tijdelijk("schuit-naamdeling", ir);
+    }
+
+    /** The premie rule reading a Haven's havengeld over two hops — ligplaats/werf, then a new to-one
+     *  werfhaven/thuishaven — with a Numeriek member displacing the field of hop {@code stap}: {@code werf} on
+     *  Schuit, or {@code thuishaven} on Werf. */
+    private static Path naamdelendeKeten(int stap) throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(NAVIGATIEPREMIE)));
+        ObjectNode haven = IrPad.modelLijst(ir, "objectTypes").addObject();
+        haven.put("node", "ObjectType").put("name", "Haven").put("animate", false);
+        haven.putArray("attributes");
+        haven.putArray("characteristics");
+        IrPad.addAttribute(haven, "havengeld", numeriek());
+        ObjectNode ft = IrPad.modelLijst(ir, "factTypes").addObject();
+        ft.put("node", "Feittype").put("naam", "werfhaven").put("wederkerig", false);
+        ft.putArray("rollen")
+          .add(JSON.createObjectNode().put("node", "Rol").put("naam", "thuishaven").put("objecttypeNaam", "Haven")
+                  .putNull("meervoud").put("meervoudig", false))
+          .add(JSON.createObjectNode().put("node", "Rol").put("naam", "havenwerf").put("objecttypeNaam", "Werf")
+                  .put("meervoud", "havenwerven").put("meervoudig", true));
+        if (stap == 1) IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", numeriek());
+        else IrPad.addAttribute(IrPad.objectType(ir, "Werf"), "thuishaven", numeriek());
+        houdRegel(ir, "premie van een schuit");
+        ObjectNode keten = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("waarde").get("rechts");
+        keten.put("attribuut", "havengeld").put("objecttype", "Haven")
+             .put("bron", "het havengeld van de thuishaven van de werf van de Schuit");
+        keten.putArray("navigatieBindingen")
+             .add(JSON.createObjectNode().put("node", "RolBinding").put("feittype", "ligplaats").put("rol", "werf"))
+             .add(JSON.createObjectNode().put("node", "RolBinding").put("feittype", "werfhaven").put("rol", "thuishaven"));
+        return tijdelijk("keten-naamdeling-" + stap, ir);
     }
 
     /** The same collision on the CONDITION side: the `toeslag` rule with its voorwaarde operand replaced by the
