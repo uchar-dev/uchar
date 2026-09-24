@@ -4,8 +4,9 @@ import io.github.yhavinga.regelspraak.ir.Expr;
 
 /**
  * The execution year, as this backend refuses it. {@code spec/IR-SPEC.md} ch. 4.1 keeps the context value
- * {@code Rekenjaar} in WF-098's closed set as ADMITTED-AND-UNEXECUTED: no document in any zone carries it, and the
- * reference interpreter faults on it by name when it evaluates the node.
+ * {@code evaluationYear} in WF-098's closed set as ADMITTED-AND-UNEXECUTED: no document in any zone carries it, and
+ * the reference interpreter faults on it by name when it evaluates the node. The records keep its v0 name,
+ * {@code Rekenjaar}, which the loader reads the wire name onto.
  *
  * <p>This backend read it as the year of the evaluation date until the L4 landing's fix round. Measured on
  * verifier-clean documents: as a rule value, an arithmetic operand or a comparison operand both branches PLAYED where
@@ -24,9 +25,11 @@ public final class Rekenjaar {
     private Rekenjaar() {}
 
     /** The reference interpreter's refusal of the node, verbatim. */
-    public static final String WEIGERING = "the Rekenjaar context value is not exercised by any corpus case (ch. 8.2)";
+    public static final String WEIGERING = "the evaluationYear context value is not exercised by any corpus case"
+            + " (ch. 8.2)";
 
-    /** Whether {@code e} is the context value {@code Rekenjaar}, spelled byte for byte as WF-098 admits it. */
+    /** Whether {@code e} is the evaluation year: the record's name {@code Rekenjaar}, which the loader gives the one
+     *  wire name WF-098 admits for it. */
     public static boolean is(Expr e) {
         return e instanceof Expr.Constante c && "Rekenjaar".equals(c.naam());
     }

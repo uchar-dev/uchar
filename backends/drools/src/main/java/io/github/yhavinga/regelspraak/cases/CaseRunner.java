@@ -9,6 +9,7 @@ import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.ir.Expr;
 import io.github.yhavinga.regelspraak.ir.PrioritizedDefaults;
 import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
+import io.github.yhavinga.regelspraak.ir.Spelling;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Granulariteit;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
@@ -279,11 +280,13 @@ public final class CaseRunner {
         }
     }
 
-    /** Whether the document carries the context value Rekenjaar at any position. Read off the wire, which the loader
-     *  has just accepted: a walk over the whole document finds the node wherever it stands, where a walk over the
-     *  model's construct lists finds it only in the surfaces it was written to visit. */
+    /** Whether the document carries the evaluation year at any position: a context value whose wire name the
+     *  translation table reads as the records' Rekenjaar. Read off the wire, which the loader has just accepted: a
+     *  walk over the whole document finds the node wherever it stands, where a walk over the model's construct lists
+     *  finds it only in the surfaces it was written to visit. */
     private static boolean draagtRekenjaar(JsonNode n) {
-        if (n.isObject() && "ContextValue".equals(n.path("node").asText()) && "Rekenjaar".equals(n.path("name").asText()))
+        if (n.isObject() && "ContextValue".equals(n.path("node").asText()) && "Rekenjaar".equals(
+                Spelling.CONTEXT_VALUE_NAME.waarde("ContextValue.name", n.path("name").asText())))
             return true;
         for (JsonNode kind : n) if (draagtRekenjaar(kind)) return true;
         return false;
