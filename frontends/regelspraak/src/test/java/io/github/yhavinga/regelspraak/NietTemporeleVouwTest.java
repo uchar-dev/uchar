@@ -301,7 +301,7 @@ class NietTemporeleVouwTest {
     /**
      * A die/dat that does not bind against the element must BLOCK the document, and this row is the one
      * that says so out loud. On the comparison route a declined fold leaves the set reading standing and
-     * WF-096 raises the blocking ERROR; this route has no set reading, so the only thing between the
+     * the set fence raises the blocking ERROR; this route has no set reading, so the only thing between the
      * sentence and a silent wrong set is {@code keurDeelselecties}, whose whole point is that it is an
      * ERROR and not a WARNING. The fold therefore hands the subselectie BACK when it declines —
      * measured regression during this card: for one commit the sentence produced a document with a

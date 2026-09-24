@@ -377,9 +377,9 @@ class SubtypeDialectTest {
     // -------------------------------------------------------------------- de rolbinding-consequentie
 
     @Test void een_subtype_dat_het_typepaar_dubbel_verbindt_houdt_zijn_bronRol() {
-        // SUBTYPING §3.4 / IR-SPEC ch. 2.2: WF-048's uniqueness is computed over the CHAIN-CLOSED
-        // type-pair set, so adding a subtype can turn a previously well-formed BINDINGLESS fold into
-        // a loud refusal. A role's declared filler is an UPPER bound, so once Wrakrecht joins the
+        // SUBTYPING §3.4 / IR-SPEC ch. 2.2: the pair's uniqueness (WF-048's, until L2) was computed over the
+        // CHAIN-CLOSED type-pair set, so adding a subtype could turn a previously well-formed BINDINGLESS fold
+        // into a loud refusal; since L2 the wire requires the binding. A role's declared filler is an UPPER bound, so once Wrakrecht joins the
         // chain a Wrakrecht fills BOTH the Strandrecht role and its own — the pair
         // Kustgemeente x Wrakrecht is doubly connected and the by-pair search goes silent. The
         // frontend is ahead of it: the written element name still names exactly one role, so the fold
@@ -417,7 +417,7 @@ class SubtypeDialectTest {
         assertTrue(c.contains("\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"wrakberging\","
                         + "\"rol\":\"geborgenwrakrecht\"}"),
                 () -> "de vouwbron hoort op de GESCHREVEN rol te binden in plaats van bindingloos de wire op te "
-                        + "gaan (WF-048 zou die dan weigeren):\n" + c);
+                        + "gaan (de wire eist sinds L2 het bereik):\n" + c);
     }
 
     // ------------------------------------------------- de ketenresolutie in de resolverlaag (§3.2)

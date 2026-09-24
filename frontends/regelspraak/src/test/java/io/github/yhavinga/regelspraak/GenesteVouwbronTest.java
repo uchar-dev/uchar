@@ -193,7 +193,7 @@ class GenesteVouwbronTest {
                 Het vondstaantal van een Jutter moet berekend worden als het aantal aangemelde vondsten van de Jutter.
         """;
 
-    /** Counter-proof: the same nested chain with NO fold around it — the WF-096 setlezing position, which is
+    /** Counter-proof: the same nested chain with NO fold around it — the set fence's position, which is
      *  another card's decision and must keep its own diagnosis. */
     static final String SETLEZING_ZONDER_VOUW = """
 
@@ -426,7 +426,8 @@ class GenesteVouwbronTest {
     }
 
     /** Without the direct fact type there is nothing to bind silently, so the by-pair check stays out of it
-     *  and the document keeps its existing downstream failure (WF-048). */
+     *  and the document keeps its existing downstream failure (WF-048 until L2; since then the emitter refuses a
+     *  fold it cannot bind). */
     @Test
     void een_eenstaps_vouw_zonder_enige_relatie_blijft_stroomafwaarts() {
         assertEquals(List.of(), vouwbronDiagnoses(MODEL_A + BOTSENDE_EENSTAPSREGEL));
@@ -464,15 +465,16 @@ class GenesteVouwbronTest {
         assertTrue(json.contains("\"rol\": \"aangemelde vondst\""), "de telling bindt via de geschreven naam");
     }
 
-    /** The same nested chain with no fold around it is the WF-096 position, decided by another card: it must
-     *  keep ITS diagnosis and must not pick up this one. */
+    /** The same nested chain with no fold around it is the set fence's position, decided by another card: it
+     *  must keep ITS diagnosis and must not pick up this one. Since L2 that diagnosis cites WF-053. */
     @Test
     void een_setlezing_buiten_een_vouw_houdt_haar_eigen_diagnose() {
         assertEquals(List.of(), vouwbronDiagnoses(MODEL_B + SETLEZING_ZONDER_VOUW));
         RegelSpraakModel m = Resolver.resolve(MODEL_B + SETLEZING_ZONDER_VOUW);
         assertEquals(1, m.diagnostics.size(), () -> "verwacht enkel de setlezing-diagnose, kreeg " + m.diagnostics);
-        assertTrue(m.diagnostics.get(0).message().contains("WF-096"),
-                () -> "verwacht de WF-096-melding, kreeg " + m.diagnostics.get(0));
+        assertTrue(m.diagnostics.get(0).message().startsWith("setlezing buiten een vouwbron")
+                        && m.diagnostics.get(0).message().contains("(WF-053, IR-SPEC ch. 4.1a)"),
+                () -> "verwacht de setlezing-melding, kreeg " + m.diagnostics.get(0));
     }
 
     // ---------------- the severity, and the wire ----------------

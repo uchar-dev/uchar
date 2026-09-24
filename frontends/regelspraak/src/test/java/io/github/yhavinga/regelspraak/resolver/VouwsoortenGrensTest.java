@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * was there both times.
  *
  * <p><b>What it reads and why that is the right anchor.</b> Since L2 of the v1 wire migration the wire
- * has no set flag and WF-096 is withdrawn; its counting half is WF-093's (D9), and the verifier draws
+ * has no set flag and WF-096 is withdrawn; its counting half is WF-093's (IR-SPEC ch. 4.3), and the verifier draws
  * the boundary in {@code source_reading}: a ranged source under {@code Aantal} is read as the linked
  * instances, under every other aggregation kind as a value per contributor, and {@code value_fold_name}
  * names exactly those other kinds. This test pins both halves: the arm list of that function (the
@@ -111,11 +111,11 @@ class VouwsoortenGrensTest {
 
     @Test void de_grens_telt_zeven_soorten() {
         // A floor-and-ceiling on the frontend half alone, so a change that edits BOTH sides in one
-        // sweep still comes past a human: the count is the number the RuleChecker doc, the WF-096
+        // sweep still comes past a human: the count is the number the RuleChecker doc, the setlezing
         // diagnostic and RUNTIME-SEMANTICS ch. 3.4c all spell out.
         assertEquals(7, RuleChecker.VOUWSOORTEN.size(),
                 () -> "de waardevouwen zijn " + RuleChecker.VOUWSOORTEN + " — was dat de bedoeling, werk dan "
-                        + "ook de zeven-tellingen in RuleChecker en in de WF-096-melding bij");
+                        + "ook de zeven-tellingen in RuleChecker en in de setlezing-melding bij");
         assertTrue(RuleChecker.VOUWSOORTEN.contains(Expr.FunctieKind.AANTAL_GEVULDE),
                 "de gevulde telling leest een waarde per bijdrager en hoort dus in de exemptie (ch. 3.4c)");
         assertFalse(RuleChecker.VOUWSOORTEN.contains(Expr.FunctieKind.AANTAL),

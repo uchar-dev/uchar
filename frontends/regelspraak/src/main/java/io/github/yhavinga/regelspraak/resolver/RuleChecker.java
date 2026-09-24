@@ -96,7 +96,7 @@ final class RuleChecker {
         beslistabellen(doc);
         regelGroepen(doc);   // build the §9.10 group IR + the fase-2 recursief structural checks
         keurKringverwijzingen();
-        // WF-096 runs BEFORE the defaults lift: that pass MOVES resolved rules out of resolvedRegels into
+        // The set fence runs BEFORE the defaults lift: that pass MOVES resolved rules out of resolvedRegels into
         // PrioritizedDefaults nodes whose consequentie is a copy of the rule's waarde, so checking here
         // covers the lifted rules too — and covers them once.
         keurSetlezingen();
@@ -1000,14 +1000,17 @@ final class RuleChecker {
     }
 
     // ==============================================================================================
-    // WF-096 (IR-SPEC ch. 4.3, maintainer decisions 2026-09-09 and — the KIND half — 2026-09-19)
-    // — the set fence, producer side.
+    // The set fence (IR-SPEC ch. 4.3), producer side. Until L2 of the v1 wire migration it was WF-096 on the wire
+    // (maintainer decisions 2026-09-09 and — the KIND half — 2026-09-19). Since L2 the wire has no set flag, and a set
+    // reading the fence let through would reach it as a read over a to-many step (WF-053) or, as the source of a
+    // count, as a count over member values (WF-093 (b)). The frontend keeps the reading in memory and refuses it here.
     // ==============================================================================================
 
     /** The seven VALUE folds — the kinds that read a value per contributor, and so the only kinds that
-     *  consume what a set reading hands them. This is WF-096's exemption exactly as the verifier draws
-     *  it in {@code set_source_exempt} (arity one AND a value-folding kind AND a resolved element
-     *  type), so the frontend's fence and the wire's are once more the same boundary.
+     *  consume what a set reading hands them. This is the exemption the verifier drew in
+     *  {@code set_source_exempt} under WF-096 until L2 and draws in {@code source_reading} since (arity one
+     *  AND a value-folding kind AND a resolved element type), so the frontend's fence and the wire's are the
+     *  same boundary.
      *
      *  <p><b>AANTAL_GEVULDE joined this set on 2026-09-20</b> (decision G9's card). The verifier's
      *  {@code value_fold_name} grew the kind on 2026-09-20 with the wire itself, and this set did not
@@ -1015,7 +1018,7 @@ final class RuleChecker {
      *  kind, so nothing measured the gap. It is the same class of leak the AANTAL narrowing below was,
      *  from the other side, which is why {@code VouwsoortenGrensTest} now READS the verifier's own
      *  list instead of trusting a comment that says the two agree.
-     *  The kind belongs here for WF-096's own reason: a filled count is a count in its RESULT but a
+     *  The kind belongs here for the fence's own reason: a filled count is a count in its RESULT but a
      *  VALUE fold in its READING — it asks each contributor's value whether it is there
      *  (`RUNTIME-SEMANTICS.md` ch. 3.4c), which is exactly what a set reading hands it.
      *
@@ -1024,12 +1027,12 @@ final class RuleChecker {
      *  words and ch. 3.4b restates it for the union — so a set reading under a count names a
      *  collection the node does not read. Keeping it here was a LEAK, not a stale comment: measured
      *  2026-09-19, a count over a set reading passed this naloop untouched and was emitted with
-     *  {@code diagnostics: []} although the verifier rejects it under WF-096 and nothing else
+     *  {@code diagnostics: []} although the verifier rejected it under WF-096 and nothing else
      *  ({@link io.github.yhavinga.regelspraak.AantalSetbronTest}).
      *
      *  <p><b>One boundary, one consumer — measured before narrowing.</b> The verifier had to SPLIT its
-     *  hoisted exemption, because one boolean there fed two rules (WF-034's sentinel fence, which
-     *  still exempts the whole folding family, and WF-096's set fence, which no longer does). Here no
+     *  hoisted exemption then, because one boolean there fed two rules (WF-034's sentinel fence, which
+     *  exempted the whole folding family, and WF-096's set fence, which no longer did; both left with L2). Here no
      *  split is needed and that was checked rather than assumed: this set has exactly ONE reader, the
      *  fold-source test in {@link #keurSetlezing}, and it is the frontend's only collection of fold
      *  kinds at all — the count's own element derivation keys on {@code kind == AANTAL} directly
@@ -1045,14 +1048,15 @@ final class RuleChecker {
     /** A §13.4.2 set quantifier ("alle &lt;mv&gt;", and every other quantor that is not the bare
      *  definite "de") makes a reference a SET reading: it names the members' values, one per member —
      *  a collection. Exactly one node consumes a collection, the instance fold that OWNS the source,
-     *  so WF-096 makes the shape ill-formed at every other READ position: as a whole rule value, as an
-     *  operand of a composite node, inside a condition, and as an operand of the listed value fold.
+     *  so the shape is ill-formed at every other READ position: as a whole rule value, as an operand of a
+     *  composite node, inside a condition, and as an operand of the listed value fold (WF-096 until L2; since
+     *  then WF-053 at such a position, and WF-093 (b) at a count's source).
      *
      *  <p>Measured on this frontend (2026-09-11), all from the one sentence fragment "het gewicht van
      *  alle vondsten van de Jutter": eight routes reached the wire with {@code diagnostics: []} — a
      *  BEREKENING value, an operand of a {@code Binair}, a §13.4.4 GELIJKSTELLING value, a §13.4.9
      *  INITIALISATIE value, a rule voorwaarde, a §13.4.8 consistentieregel, an objectcreatie
-     *  voorwaarde and a §13.4.6 objectcreatie-toekenning value — and the uchar verifier rejects all
+     *  voorwaarde and a §13.4.6 objectcreatie-toekenning value — and the uchar verifier rejected all
      *  eight under WF-096.
      *
      *  <p>A NALOOP over the built tree, not a test inside {@link ExpressieBouwer}: the reference is
@@ -1069,9 +1073,9 @@ final class RuleChecker {
      *  route — asserts that a rule value of exactly this shape resolves error-free, and moving that is
      *  the maintainer's call. Raising the level is a one-token change at the {@link Severity} below.
      *
-     *  <p>Scope: the READ. A rule's {@code doel} is a WRITE position, which WF-096's own scope note
-     *  does not reach (it is verifier-clean and all three executors ignore the field), so it is
-     *  deliberately not walked.
+     *  <p>Scope: the READ. A rule's {@code doel} is a WRITE position, outside the fence (under WF-096 it was
+     *  verifier-clean and all three executors ignored the field; since L2 the wire carries no set flag at all),
+     *  so it is deliberately not walked.
      *  <p>The three VALUE slots of this repo's IR are all walked, and that is the whole list rather than
      *  a sample: a {@link ResolvedRegel}'s waarde, a {@code ResolvedConsistentie}'s assertie, and a
      *  §13.4.6 {@link ResolvedObjectCreatie.Toekenning}'s waarde — the last a generic expressie RHS and
@@ -1086,7 +1090,8 @@ final class RuleChecker {
             for (var t : oc.toekenningen()) keurSetlezing(t.waarde(), false);
     }
 
-    /** Walk {@code e} for WF-096 violations. {@code vouwbron} marks the ONE exempt position: the single
+    /** Walk {@code e} for set readings outside the fence's exempt position. {@code vouwbron} marks the ONE exempt
+     *  position: the single
      *  argument of a VALUE-folding kind that carries an {@code elementObjecttype} — the source the fold
      *  consumes. That is the boundary the verifier draws (arity, kind AND a resolved element type):
      *  narrower here would refuse a legitimate fold source, wider would let the frontend emit a
@@ -1098,6 +1103,14 @@ final class RuleChecker {
      *  {@link Expr#bevat} states: the next node the union grows must be a compile error here rather
      *  than a silent leaf that under-reports. */
     private void keurSetlezing(Expr e, boolean vouwbron) {
+        keurSetlezing(e, vouwbron, false);
+    }
+
+    /** {@code telbron} marks the single argument of an {@code AANTAL} over an element type: a set reading there
+     *  is refused under the count's own rule, WF-093 (b); at every other non-exempt position it is a read over a
+     *  to-many step, WF-053's. The message names the rule the emitted document would fail, so a reader who runs
+     *  the verifier finds the same id there. */
+    private void keurSetlezing(Expr e, boolean vouwbron, boolean telbron) {
         if (e == null) return;
         switch (e) {
             case Expr.AttribuutRef a -> {
@@ -1105,15 +1118,20 @@ final class RuleChecker {
                     model.diagnostics.add(new Diagnostic(Severity.ERROR,
                             "setlezing buiten een vouwbron: '" + a.bron() + "' noemt de waarde van elk lid van de "
                             + "verzameling — alleen toegestaan als bron van één waardevouw (som, totaal, minimum, "
-                            + "maximum, eerste, laatste, aantal gevulde waarden); een instantietelling vouwt de leden "
-                            + "zelf en leest geen waarde per lid, dus onder 'aantal' ook niet (besluit 2026-09-19); "
-                            + "hier wordt één waarde verwacht (WF-096, IR-SPEC ch. 4.3)",
+                            + "maximum, eerste, laatste, aantal gevulde waarden); "
+                            + (telbron
+                                    ? "een instantietelling vouwt de leden zelf en leest geen waarde per lid, dus als "
+                                      + "bron van 'aantal' ook niet (WF-093 (b), IR-SPEC ch. 4.3)"
+                                    : "hier wordt één waarde verwacht, en een meervoudige stap in een lezing vraagt een "
+                                      + "aggregatie (WF-053, IR-SPEC ch. 4.1a)"),
                             a.bron().line()));
             }
             case Expr.Functie f -> {
                 boolean isVouwbron = f.elementObjecttype() != null && f.argumenten().size() == 1
                         && VOUWSOORTEN.contains(f.kind());
-                for (Expr a : f.argumenten()) keurSetlezing(a, isVouwbron);
+                boolean isTelbron = f.elementObjecttype() != null && f.argumenten().size() == 1
+                        && f.kind() == Expr.FunctieKind.AANTAL;
+                for (Expr a : f.argumenten()) keurSetlezing(a, isVouwbron, isTelbron);
                 keurSetlezing(f.leegwaarde(), false);   // §5.8.2 fallback: an ordinary read, never a source
                 keurSetlezing(f.filter());
             }
@@ -1197,7 +1215,7 @@ final class RuleChecker {
             bouwer.setSubject(subjectVan(rsr.resultaatDeel())); // so "zijn …" resolves against the rule subject
             bouwer.zetVariabelen(rsr.variabeleDeel());          // §11 capture "Daarbij geldt:" vars in BOTH forms (clears per rule)
             Conditie voorwaarde = rsr.voorwaardeDeel() != null ? bouwVoorwaarde(rsr.voorwaardeDeel()) : null;
-            // WF-096 on the CONDITION, here rather than in the naloop: this is the one place every
+            // The set fence on the CONDITION, here rather than in the naloop: this is the one place every
             // resultaatdeel kind's voorwaarde passes through, so one call covers the constructs that do
             // not become a ResolvedRegel (verdeling, objectcreatie, feitcreatie, dagsoort, startpunt)
             // as well as the ones that do. The naloop then walks the VALUES alone, so nothing is said twice.
@@ -1524,7 +1542,7 @@ final class RuleChecker {
             Expr lhs = bouwer.bouw(e.expressie());
             // The voorwaarde's operator machinery MINUS the ch. 4.5 quantifier fold: a Kwantorvouw has no
             // violation rule on this carrier (transpileerbaar declines it), so folding a quantified
-            // assertion here would trade WF-096's ERROR for the "nog niet omgezet" WARNING below and drop
+            // assertion here would trade the set fence's ERROR for the "nog niet omgezet" WARNING below and drop
             // the check from the wire. The set reading keeps its fence until the §13.4.8 consistentieregel
             // gets a quantified form of its own. (The BULLET criteria need no such guard: a samengestelde
             // consistentieregel sets no rule subject, so the fold's range never binds.)
@@ -3015,8 +3033,8 @@ final class RuleChecker {
      * §13.4.2.9 + §13.4.15 / IR-SPEC ch. 4.5: lower the official sentence shape "… indien de
      * &lt;attribuut&gt; van ALLE &lt;leden&gt; van de &lt;Onderwerp&gt; groter is dan &lt;grens&gt;" to a
      * {@link Conditie.Kwantorvouw} — a first-order quantification over the members of a linked instance
-     * set. Without it the condition keeps a {@code set: true} operand in a slot that takes one value, and
-     * WF-096 refuses the whole document: the sentence is officially sanctioned RegelSpraak that this
+     * set. Without it the condition keeps a set operand in a slot that takes one value, and the set
+     * fence refuses the whole document: the sentence is officially sanctioned RegelSpraak that this
      * frontend could parse and resolve but never emit.
      *
      * <p>The §8.2 whole-period qualifier is OPTIONAL here, exactly as v2.3.0 writes it. Quantification
@@ -3028,9 +3046,9 @@ final class RuleChecker {
      * 2026-09-17). The matrix is then an ordinary, non-temporal condition of the member
      * (RUNTIME-SEMANTICS ch. 3.9a, whose formula is stated over an arbitrary {@code test}).
      *
-     * <p>Scope is exactly ONE set operand in a CONDITION. Every other WF-096 producer route — a rule
+     * <p>Scope is exactly ONE set operand in a CONDITION. Every other producer route of the fence — a rule
      * value, a composite operand, a gelijkstelling/initialisatie value, an objectcreatie toekenning —
-     * keeps raising WF-096 verbatim, because for those the set reading really is a collection in a
+     * keeps raising its ERROR verbatim, because for those the set reading really is a collection in a
      * one-value slot and there is no quantifier to give it a home. Widening to a value position is a spec
      * question (which quantified form means what there), not a frontend one. The §13.4.8 consistentieregel
      * ASSERTION is fenced too, and on its own carrier's terms rather than the wire's — see
@@ -3039,18 +3057,19 @@ final class RuleChecker {
      * <p>All five §13.4.14 quantifiers over a set lower: ALLE and GEEN, and — since 2026-09-16 — the three
      * COUNTING quantors, which carry the written telwoord as the fold's {@code drempel} (IR-SPEC ch. 4.5,
      * WF-108 (e); the verdict counts the contributors the matrix holds of). A telwoord that is not a
-     * positive whole number declines and keeps the WF-096 error: "ten minste 0 van de" would read as a
+     * positive whole number declines and keeps the fence's error: "ten minste 0 van de" would read as a
      * forall or as nothing at all depending on which arm saw it, and WF-041 refuses the wire form, so
      * emitting it would only move the refusal downstream.
      *
-     * <p>Two further shapes decline and keep the WF-096 error rather than lowering, each because lowering
+     * <p>Two further shapes decline and keep the fence's error rather than lowering, each because lowering
      * would be a guess: a MULTI-STEP written range (the operand
      * resolved a {@code bereikPad}), whose {@code bronPad} spelling is a separate card; and a range that
-     * does not resolve at all — a quantifier bound to no relation is the silent-wrong-set failure WF-048
-     * exists to prevent, and a loud refusal beats a fold over a set the sentence never named.
+     * does not resolve at all — a quantifier bound to no relation is the silent-wrong-set failure a required
+     * range prevents (WF-048 until L2; since L2 the quantifier fold carries its range by schema), and a loud
+     * refusal beats a fold over a set the sentence never named.
      *
      * <p>A FOURTH shape declines for the same reason the other three do, and it is the §5.6 die/dat
-     * SUBSELECTION: a subselectie this resolver cannot bind against the element type leaves the WF-096
+     * SUBSELECTION: a subselectie this resolver cannot bind against the element type leaves the fence's
      * ERROR standing and draws a WARNING naming itself. Dropping it would be worse than refusing —
      * "alle vondsten DIE AANGEMELD ZIJN" would land as a fold over every vondst, a verifier-clean wire
      * form carrying a set the sentence never named, which every executor then answers consistently and
@@ -3069,7 +3088,7 @@ final class RuleChecker {
                 "het telwoord van de kwantor in '" + zet.bron() + "' is geen positief geheel getal (>= 1), dus de "
                 + "vouw wordt NIET gelowerd: een drempel onder 1 stelt geen telling die iets kan voldoen en wordt "
                 + "op de wire geweigerd (WF-041, IR-SPEC ch. 4.5); de setlezing blijft daarmee buiten een vouwbron "
-                + "staan (WF-096)", zet.bron().line()));
+                + "staan (WF-053)", zet.bron().line()));
             return c;
         }
         Objecttype elem = zet.objecttype();
@@ -3091,14 +3110,14 @@ final class RuleChecker {
                 "de 'die/dat'-deelselectie in '" + zet.bron() + "' wordt niet omgezet naar een "
                 + "kwantorvouw-filter: " + ds.reden() + "; de vouw wordt daarom NIET gelowerd — een vouw "
                 + "over het volle bereik zou een andere verzameling kwantificeren dan de zin noemt, dus de "
-                + "setlezing blijft buiten een vouwbron staan (WF-096)", zet.bron().line()));
+                + "setlezing blijft buiten een vouwbron staan (WF-053)", zet.bron().line()));
             return c;
         }
         Conditie filter = ds == null ? null : ds.filter();
         // The matrix: the SAME condition, with the quantified operand replaced by an own, element-subject
         // read of the same attribute. The §8.2 qualifier stays ON it — per member, the whole-period test is
         // what each contributor must satisfy. No navigation role/path/range and no quantor survive: the
-        // element IS the subject there, which is also why no set reading is left for WF-096 to find.
+        // element IS the subject there, which is also why no set reading is left for the fence to find.
         Expr.AttribuutRef eigen = new Expr.AttribuutRef(zet.attribuut(), elem, zet.onderwerpBron(), null,
                 zet.type(), zet.bron(), false, List.of(), List.of(), null);
         return new Conditie.Kwantorvouw(q, drempel, elem, filter, metOperand(c, zet, eigen), bronRol,
@@ -3109,7 +3128,7 @@ final class RuleChecker {
      * §13.4.15.44/.45 + ch. 4.5: the sibling of {@link #kwantorvouw} for a MEMBERSHIP matrix — "… indien
      * ALLE wachten van de Schouwploeg gediplomeerd zijn". Here the quantified onderwerp IS the whole
      * operand, so it names no attribute and arrives as no reference at all: {@link #enigeSetOperand}
-     * finds nothing, no WF-096 fires (there is no set READING on the wire to fence), and the condition
+     * finds nothing, the fence does not fire (there is no set READING to fence), and the condition
      * stayed an {@link Conditie.Onopgelost} marker. The quantifier is nevertheless written and the matrix
      * is an ordinary kenmerkcheck of the member, so the fold has everything it needs — it just has to read
      * the onderwerp off the parse tree and bind the kenmerk against the ELEMENT type instead of the rule
@@ -3169,7 +3188,7 @@ final class RuleChecker {
         ExpressieBouwer.Deelselectie ds = bouwer.deelselectie(lhsCtx, g.element(), null);
         if (ds != null && ds.filter() == null) {
             // The comparison route can stop at a WARNING here because the set reading it leaves standing
-            // raises the WF-096 ERROR that blocks the document. This route has no set reading, so the
+            // raises the fence's ERROR that blocks the document. This route has no set reading, so the
             // subselectie goes back on keurDeelselecties' refusal list and the ERROR comes from there —
             // the WARNING beside it names the axis the binding failed on, which that ERROR cannot.
             bouwer.geefDeelselectieTerug(lhsCtx);
