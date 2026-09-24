@@ -1130,7 +1130,9 @@
               "node": "AttribuutRef",
               "attribuut": "hoeveelheid passagiers",
               "objecttype": "Vlucht",
-              "bron": "De hoeveelheid passagiers van een reis"
+              "source": {
+                "snippet": "De hoeveelheid passagiers van een reis"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -1140,7 +1142,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "passagier",
                   "objecttype": "Vlucht",
-                  "bron": "passagiers van de reis"
+                  "source": {
+                    "snippet": "passagiers van de reis"
+                  }
                 }
               ],
               "elementType": "Natuurlijk persoon",
@@ -1155,7 +1159,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal passagiers van de reis"
+              "source": {
+                "snippet": "het aantal passagiers van de reis"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

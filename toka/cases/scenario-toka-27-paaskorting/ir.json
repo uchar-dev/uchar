@@ -1130,7 +1130,9 @@
               "node": "AttribuutRef",
               "attribuut": "reis met paaskorting",
               "objecttype": "Vlucht",
-              "bron": "Een Vlucht is een reis met paaskorting"
+              "source": {
+                "snippet": "Een Vlucht is een reis met paaskorting"
+              }
             },
             "value": {
               "node": "Literal",
@@ -1140,7 +1142,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -1149,7 +1153,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vluchtdatum",
                 "objecttype": "Vlucht",
-                "bron": "de vluchtdatum van de Vlucht"
+                "source": {
+                  "snippet": "de vluchtdatum van de Vlucht"
+                }
               },
               "rechts": {
                 "node": "BuiltinCall",
@@ -1163,7 +1169,9 @@
                         "node": "AttribuutRef",
                         "attribuut": "vluchtdatum",
                         "objecttype": "Vlucht",
-                        "bron": "de vluchtdatum van de Vlucht"
+                        "source": {
+                          "snippet": "de vluchtdatum van de Vlucht"
+                        }
                       }
                     ],
                     "type": {
@@ -1172,17 +1180,23 @@
                       "decimals": 0,
                       "sign": "NIET_NEGATIEF"
                     },
-                    "bron": "het jaar uit (de vluchtdatum van de Vlucht)"
+                    "source": {
+                      "snippet": "het jaar uit (de vluchtdatum van de Vlucht)"
+                    }
                   }
                 ],
                 "type": {
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "de eerste paasdag van (het jaar uit (de vluchtdatum van de Vlucht))"
+                "source": {
+                  "snippet": "de eerste paasdag van (het jaar uit (de vluchtdatum van de Vlucht))"
+                }
               },
               "periode": null,
-              "bron": "de vluchtdatum van de Vlucht gelijk is aan de eerste paasdag van (het jaar uit (de vluchtdatum van de Vlucht))"
+              "source": {
+                "snippet": "de vluchtdatum van de Vlucht gelijk is aan de eerste paasdag van (het jaar uit (de vluchtdatum van de Vlucht))"
+              }
             },
             "initialisation": false
           }

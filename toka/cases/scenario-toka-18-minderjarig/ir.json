@@ -1130,7 +1130,9 @@
               "node": "AttribuutRef",
               "attribuut": "minderjarig",
               "objecttype": "Natuurlijk persoon",
-              "bron": "Een Natuurlijk persoon is minderjarig"
+              "source": {
+                "snippet": "Een Natuurlijk persoon is minderjarig"
+              }
             },
             "value": {
               "node": "Literal",
@@ -1140,7 +1142,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -1153,13 +1157,17 @@
                     "node": "AttribuutRef",
                     "attribuut": "geboortedatum",
                     "objecttype": "Natuurlijk persoon",
-                    "bron": "zijn geboortedatum"
+                    "source": {
+                      "snippet": "zijn geboortedatum"
+                    }
                   },
                   {
                     "node": "AttribuutRef",
                     "attribuut": "vluchtdatum",
                     "objecttype": "Vlucht",
-                    "bron": "de vluchtdatum van zijn reis",
+                    "source": {
+                      "snippet": "de vluchtdatum van zijn reis"
+                    },
                     "navigatieBindingen": [
                       {
                         "node": "RolBinding",
@@ -1185,15 +1193,21 @@
                     }
                   }
                 },
-                "bron": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren"
+                "source": {
+                  "snippet": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren"
+                }
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "volwassenleeftijd",
-                "bron": "de volwassenleeftijd"
+                "source": {
+                  "snippet": "de volwassenleeftijd"
+                }
               },
               "periode": null,
-              "bron": "X kleiner is dan de volwassenleeftijd"
+              "source": {
+                "snippet": "X kleiner is dan de volwassenleeftijd"
+              }
             },
             "initialisation": false
           }

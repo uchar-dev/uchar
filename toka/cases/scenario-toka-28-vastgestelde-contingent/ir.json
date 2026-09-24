@@ -1140,7 +1140,9 @@
                         "node": "AttribuutRef",
                         "attribuut": "passagier",
                         "objecttype": "Vlucht",
-                        "bron": "passagiers van de Vlucht"
+                        "source": {
+                          "snippet": "passagiers van de Vlucht"
+                        }
                       }
                     ],
                     "elementType": "Natuurlijk persoon",
@@ -1155,12 +1157,16 @@
                       "decimals": 0,
                       "sign": "NIET_NEGATIEF"
                     },
-                    "bron": "het aantal passagiers van de Vlucht"
+                    "source": {
+                      "snippet": "het aantal passagiers van de Vlucht"
+                    }
                   },
                   "rechts": {
                     "node": "ParameterRef",
                     "parameter": "aantal treinmiles per passagier voor contingent",
-                    "bron": "het aantal treinmiles per passagier voor contingent"
+                    "source": {
+                      "snippet": "het aantal treinmiles per passagier voor contingent"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -1168,7 +1174,9 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "het aantal passagiers van de Vlucht maal het aantal treinmiles per passagier voor contingent"
+                  "source": {
+                    "snippet": "het aantal passagiers van de Vlucht maal het aantal treinmiles per passagier voor contingent"
+                  }
                 },
                 "kenmerk": false
               }

@@ -1130,7 +1130,9 @@
               "node": "AttribuutRef",
               "attribuut": "passagier van 18 tot en met 24 jaar",
               "objecttype": "Natuurlijk persoon",
-              "bron": "Een Natuurlijk persoon is een passagier van 18 tot en met 24 jaar"
+              "source": {
+                "snippet": "Een Natuurlijk persoon is een passagier van 18 tot en met 24 jaar"
+              }
             },
             "value": {
               "node": "Literal",
@@ -1140,7 +1142,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -1154,15 +1158,21 @@
                     "node": "AttribuutRef",
                     "attribuut": "leeftijd",
                     "objecttype": "Natuurlijk persoon",
-                    "bron": "zijn leeftijd"
+                    "source": {
+                      "snippet": "zijn leeftijd"
+                    }
                   },
                   "rechts": {
                     "node": "ParameterRef",
                     "parameter": "volwassenleeftijd",
-                    "bron": "de volwassenleeftijd"
+                    "source": {
+                      "snippet": "de volwassenleeftijd"
+                    }
                   },
                   "periode": null,
-                  "bron": "zijn leeftijd is groter of gelijk aan de volwassenleeftijd"
+                  "source": {
+                    "snippet": "zijn leeftijd is groter of gelijk aan de volwassenleeftijd"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -1171,7 +1181,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "leeftijd",
                     "objecttype": "Natuurlijk persoon",
-                    "bron": "zijn leeftijd"
+                    "source": {
+                      "snippet": "zijn leeftijd"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -1194,20 +1206,28 @@
                         }
                       }
                     },
-                    "bron": "24 jr"
+                    "source": {
+                      "snippet": "24 jr"
+                    }
                   },
                   "periode": null,
-                  "bron": "zijn leeftijd is kleiner of gelijk aan 24 jr"
+                  "source": {
+                    "snippet": "zijn leeftijd is kleiner of gelijk aan 24 jr"
+                  }
                 },
                 {
                   "node": "RoleMembership",
                   "factType": "Vlucht van natuurlijke personen",
                   "role": "passagier",
                   "negated": false,
-                  "bron": "hij is een passagier"
+                  "source": {
+                    "snippet": "hij is een passagier"
+                  }
                 }
               ],
-              "bron": "hij aan alle volgende voorwaarden voldoet: - zijn leeftijd is groter of gelijk aan de volwassenleeftijd - zijn leeftijd is kleiner of gelijk aan 24 jr - hij is een passagier."
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn leeftijd is groter of gelijk aan de volwassenleeftijd - zijn leeftijd is kleiner of gelijk aan 24 jr - hij is een passagier."
+              }
             },
             "initialisation": false
           }

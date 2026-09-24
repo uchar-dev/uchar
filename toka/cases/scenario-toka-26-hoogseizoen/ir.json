@@ -1130,7 +1130,9 @@
               "node": "AttribuutRef",
               "attribuut": "in het hoogseizoen",
               "objecttype": "Vlucht",
-              "bron": "Een Vlucht is in het hoogseizoen"
+              "source": {
+                "snippet": "Een Vlucht is in het hoogseizoen"
+              }
             },
             "value": {
               "node": "Literal",
@@ -1140,7 +1142,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -1158,7 +1162,9 @@
                         "node": "AttribuutRef",
                         "attribuut": "vluchtdatum",
                         "objecttype": "Vlucht",
-                        "bron": "de vluchtdatum van de Vlucht"
+                        "source": {
+                          "snippet": "de vluchtdatum van de Vlucht"
+                        }
                       }
                     ],
                     "type": {
@@ -1167,7 +1173,9 @@
                       "decimals": 0,
                       "sign": "NIET_NEGATIEF"
                     },
-                    "bron": "de maand uit (de vluchtdatum van de Vlucht)"
+                    "source": {
+                      "snippet": "de maand uit (de vluchtdatum van de Vlucht)"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -1180,10 +1188,14 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "6"
+                    "source": {
+                      "snippet": "6"
+                    }
                   },
                   "periode": null,
-                  "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6"
+                  "source": {
+                    "snippet": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -1196,7 +1208,9 @@
                         "node": "AttribuutRef",
                         "attribuut": "vluchtdatum",
                         "objecttype": "Vlucht",
-                        "bron": "de vluchtdatum van de Vlucht"
+                        "source": {
+                          "snippet": "de vluchtdatum van de Vlucht"
+                        }
                       }
                     ],
                     "type": {
@@ -1205,7 +1219,9 @@
                       "decimals": 0,
                       "sign": "NIET_NEGATIEF"
                     },
-                    "bron": "de maand uit (de vluchtdatum van de Vlucht)"
+                    "source": {
+                      "snippet": "de maand uit (de vluchtdatum van de Vlucht)"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -1218,10 +1234,14 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "7"
+                    "source": {
+                      "snippet": "7"
+                    }
                   },
                   "periode": null,
-                  "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7"
+                  "source": {
+                    "snippet": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -1234,7 +1254,9 @@
                         "node": "AttribuutRef",
                         "attribuut": "vluchtdatum",
                         "objecttype": "Vlucht",
-                        "bron": "de vluchtdatum van de Vlucht"
+                        "source": {
+                          "snippet": "de vluchtdatum van de Vlucht"
+                        }
                       }
                     ],
                     "type": {
@@ -1243,7 +1265,9 @@
                       "decimals": 0,
                       "sign": "NIET_NEGATIEF"
                     },
-                    "bron": "de maand uit (de vluchtdatum van de Vlucht)"
+                    "source": {
+                      "snippet": "de maand uit (de vluchtdatum van de Vlucht)"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -1256,13 +1280,19 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "8"
+                    "source": {
+                      "snippet": "8"
+                    }
                   },
                   "periode": null,
-                  "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8"
+                  "source": {
+                    "snippet": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8"
+                  }
                 }
               ],
-              "bron": "er aan ten minste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8."
+              "source": {
+                "snippet": "er aan ten minste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8."
+              }
             },
             "initialisation": false
           }

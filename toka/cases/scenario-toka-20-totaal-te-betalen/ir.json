@@ -1130,7 +1130,9 @@
               "node": "AttribuutRef",
               "attribuut": "totaal te betalen belasting",
               "objecttype": "Vlucht",
-              "bron": "De totaal te betalen belasting van een reis"
+              "source": {
+                "snippet": "De totaal te betalen belasting van een reis"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -1140,7 +1142,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "te betalen belasting",
                   "objecttype": "Natuurlijk persoon",
-                  "bron": "de te betalen belasting van alle passagiers van de reis"
+                  "source": {
+                    "snippet": "de te betalen belasting van alle passagiers van de reis"
+                  }
                 }
               ],
               "elementType": "Natuurlijk persoon",
@@ -1155,7 +1159,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van de te betalen belasting van alle passagiers van de reis"
+              "source": {
+                "snippet": "de som van de te betalen belasting van alle passagiers van de reis"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

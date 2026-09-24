@@ -1130,7 +1130,9 @@
               "node": "AttribuutRef",
               "attribuut": "leeftijd",
               "objecttype": "Natuurlijk persoon",
-              "bron": "De leeftijd van een Natuurlijk persoon"
+              "source": {
+                "snippet": "De leeftijd van een Natuurlijk persoon"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -1140,13 +1142,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "geboortedatum",
                   "objecttype": "Natuurlijk persoon",
-                  "bron": "zijn geboortedatum"
+                  "source": {
+                    "snippet": "zijn geboortedatum"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "vluchtdatum",
                   "objecttype": "Vlucht",
-                  "bron": "de vluchtdatum van zijn reis",
+                  "source": {
+                    "snippet": "de vluchtdatum van zijn reis"
+                  },
                   "navigatieBindingen": [
                     {
                       "node": "RolBinding",
@@ -1172,7 +1178,9 @@
                   }
                 }
               },
-              "bron": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren"
+              "source": {
+                "snippet": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -1130,7 +1130,9 @@
               "node": "AttribuutRef",
               "attribuut": "verwachte datum-tijd van aankomst",
               "objecttype": "Vlucht",
-              "bron": "De verwachte datum-tijd van aankomst van een vlucht"
+              "source": {
+                "snippet": "De verwachte datum-tijd van aankomst van een vlucht"
+              }
             },
             "value": {
               "node": "Binair",
@@ -1139,19 +1141,25 @@
                 "node": "AttribuutRef",
                 "attribuut": "verwachte Datum-tijd van vertrek",
                 "objecttype": "Vlucht",
-                "bron": "de verwachte Datum-tijd van vertrek van de Vlucht"
+                "source": {
+                  "snippet": "de verwachte Datum-tijd van vertrek van de Vlucht"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "verwachte duur",
                 "objecttype": "Vlucht",
-                "bron": "de verwachte duur van de vlucht"
+                "source": {
+                  "snippet": "de verwachte duur van de vlucht"
+                }
               },
               "type": {
                 "node": "Date",
                 "precision": "millisecond"
               },
-              "bron": "de verwachte Datum-tijd van vertrek van de Vlucht plus de verwachte duur van de vlucht"
+              "source": {
+                "snippet": "de verwachte Datum-tijd van vertrek van de Vlucht plus de verwachte duur van de vlucht"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

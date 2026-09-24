@@ -1130,12 +1130,16 @@
               "node": "AttribuutRef",
               "attribuut": "te betalen belasting",
               "objecttype": "Natuurlijk persoon",
-              "bron": "De te betalen belasting van een passagier"
+              "source": {
+                "snippet": "De te betalen belasting van een passagier"
+              }
             },
             "value": {
               "node": "ParameterRef",
               "parameter": "initiele belasting",
-              "bron": "de initiele belasting"
+              "source": {
+                "snippet": "de initiele belasting"
+              }
             },
             "initialisation": true
           }

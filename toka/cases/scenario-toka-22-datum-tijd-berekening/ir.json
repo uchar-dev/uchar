@@ -1130,7 +1130,9 @@
               "node": "AttribuutRef",
               "attribuut": "datum-tijd voor het berekenen van de belasting op basis van afstand",
               "objecttype": "Vlucht",
-              "bron": "De datum-tijd voor het berekenen van de belasting op basis van afstand van een vlucht"
+              "source": {
+                "snippet": "De datum-tijd voor het berekenen van de belasting op basis van afstand van een vlucht"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -1140,13 +1142,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "verwachte datum-tijd van vertrek",
                   "objecttype": "Vlucht",
-                  "bron": "de verwachte datum-tijd van vertrek van de vlucht"
+                  "source": {
+                    "snippet": "de verwachte datum-tijd van vertrek van de vlucht"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "daadwerkelijke datum-tijd van vertrek",
                   "objecttype": "Vlucht",
-                  "bron": "de daadwerkelijke datum-tijd van vertrek van de vlucht"
+                  "source": {
+                    "snippet": "de daadwerkelijke datum-tijd van vertrek van de vlucht"
+                  }
                 }
               ],
               "elementType": "Vlucht",
@@ -1154,7 +1160,9 @@
                 "node": "Date",
                 "precision": "millisecond"
               },
-              "bron": "de eerste van de verwachte datum-tijd van vertrek van de vlucht en de daadwerkelijke datum-tijd van vertrek van de vlucht"
+              "source": {
+                "snippet": "de eerste van de verwachte datum-tijd van vertrek van de vlucht en de daadwerkelijke datum-tijd van vertrek van de vlucht"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -1130,7 +1130,9 @@
               "node": "AttribuutRef",
               "attribuut": "te betalen belasting",
               "objecttype": "Natuurlijk persoon",
-              "bron": "De te betalen belasting van een passagier"
+              "source": {
+                "snippet": "De te betalen belasting van een passagier"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -1143,12 +1145,16 @@
                     "node": "AttribuutRef",
                     "attribuut": "belasting op basis van afstand",
                     "objecttype": "Natuurlijk persoon",
-                    "bron": "zijn belasting op basis van afstand"
+                    "source": {
+                      "snippet": "zijn belasting op basis van afstand"
+                    }
                   },
                   "rechts": {
                     "node": "ParameterRef",
                     "parameter": "korting bij gebruik niet-fossiele brandstof",
-                    "bron": "de korting bij gebruik niet-fossiele brandstof"
+                    "source": {
+                      "snippet": "de korting bij gebruik niet-fossiele brandstof"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -1156,7 +1162,9 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof"
+                  "source": {
+                    "snippet": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof"
+                  }
                 },
                 "minimum": {
                   "node": "Literal",
@@ -1179,7 +1187,9 @@
                       }
                     }
                   },
-                  "bron": "0 \u20ac"
+                  "source": {
+                    "snippet": "0 \u20ac"
+                  }
                 },
                 "maximum": null,
                 "type": {
@@ -1188,7 +1198,9 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof, met een minimum van 0 \u20ac"
+                "source": {
+                  "snippet": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof, met een minimum van 0 \u20ac"
+                }
               },
               "modus": "NAAR_BENEDEN",
               "decimalen": 0,
@@ -1198,7 +1210,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof, met een minimum van 0 \u20ac naar beneden afgerond op 0 decimalen"
+              "source": {
+                "snippet": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof, met een minimum van 0 \u20ac naar beneden afgerond op 0 decimalen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

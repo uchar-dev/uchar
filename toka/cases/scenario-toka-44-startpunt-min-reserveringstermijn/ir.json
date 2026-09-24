@@ -1138,7 +1138,9 @@
               "node": "AttribuutRef",
               "attribuut": "startpunt variabele periode van 3 maanden",
               "objecttype": "Vlucht",
-              "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
+              "source": {
+                "snippet": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
+              }
             },
             "value": {
               "node": "Binair",
@@ -1147,18 +1149,24 @@
                 "node": "AttribuutRef",
                 "attribuut": "datum van vertrek",
                 "objecttype": "Vlucht",
-                "bron": "de datum van vertrek van de reis"
+                "source": {
+                  "snippet": "de datum van vertrek van de reis"
+                }
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "STANDAARDTERMIJN VOOR RESERVERING",
-                "bron": "de STANDAARDTERMIJN VOOR RESERVERING"
+                "source": {
+                  "snippet": "de STANDAARDTERMIJN VOOR RESERVERING"
+                }
               },
               "type": {
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
+              "source": {
+                "snippet": "de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

@@ -1130,7 +1130,9 @@
               "node": "AttribuutRef",
               "attribuut": "leeftijd van de oudste passagier",
               "objecttype": "Vlucht",
-              "bron": "De leeftijd van de oudste passagier van een reis"
+              "source": {
+                "snippet": "De leeftijd van de oudste passagier van een reis"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -1140,7 +1142,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "leeftijd",
                   "objecttype": "Natuurlijk persoon",
-                  "bron": "de leeftijden van alle passagiers van de reis"
+                  "source": {
+                    "snippet": "de leeftijden van alle passagiers van de reis"
+                  }
                 }
               ],
               "elementType": "Natuurlijk persoon",
@@ -1165,7 +1169,9 @@
                   }
                 }
               },
-              "bron": "de maximale waarde van de leeftijden van alle passagiers van de reis"
+              "source": {
+                "snippet": "de maximale waarde van de leeftijden van alle passagiers van de reis"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

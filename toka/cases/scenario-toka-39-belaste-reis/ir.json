@@ -1130,7 +1130,9 @@
               "node": "AttribuutRef",
               "attribuut": "belaste reis",
               "objecttype": "Vlucht",
-              "bron": "Een Vlucht is een belaste reis"
+              "source": {
+                "snippet": "Een Vlucht is een belaste reis"
+              }
             },
             "value": {
               "node": "Literal",
@@ -1140,7 +1142,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -1149,7 +1153,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "bereikbaar per trein",
                 "objecttype": "Vlucht",
-                "bron": "bereikbaar per trein van de vlucht"
+                "source": {
+                  "snippet": "bereikbaar per trein van de vlucht"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -1159,10 +1165,14 @@
                 "type": {
                   "node": "Booleaan"
                 },
-                "bron": "waar"
+                "source": {
+                  "snippet": "waar"
+                }
               },
               "periode": null,
-              "bron": "bereikbaar per trein van de vlucht gelijk is aan waar"
+              "source": {
+                "snippet": "bereikbaar per trein van de vlucht gelijk is aan waar"
+              }
             },
             "initialisation": false
           }

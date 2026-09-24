@@ -1133,24 +1133,32 @@
                 "node": "AttribuutRef",
                 "attribuut": "luchthaven van vertrek",
                 "objecttype": "Vlucht",
-                "bron": "De luchthaven van vertrek van een vlucht"
+                "source": {
+                  "snippet": "De luchthaven van vertrek van een vlucht"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "luchthaven van bestemming",
                 "objecttype": "Vlucht",
-                "bron": "de luchthaven van bestemming van de vlucht"
+                "source": {
+                  "snippet": "de luchthaven van bestemming van de vlucht"
+                }
               },
               "periode": null,
-              "bron": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht"
+              "source": {
+                "snippet": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht"
+              }
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
             },
-            "bron": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht",
-            "line": 151
+            "source": {
+              "snippet": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht",
+              "line": 151
+            }
           }
         ]
       }

@@ -1130,7 +1130,9 @@
               "node": "AttribuutRef",
               "attribuut": "recht op duurzaamheidskorting",
               "objecttype": "Natuurlijk persoon",
-              "bron": "Een passagier heeft recht op duurzaamheidskorting"
+              "source": {
+                "snippet": "Een passagier heeft recht op duurzaamheidskorting"
+              }
             },
             "value": {
               "node": "Literal",
@@ -1140,7 +1142,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -1153,7 +1157,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "zijn reis is duurzaam",
+                  "source": {
+                    "snippet": "zijn reis is duurzaam"
+                  },
                   "navigatieBinding": {
                     "node": "RolBinding",
                     "feittype": "Vlucht van natuurlijke personen",
@@ -1167,7 +1173,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "afstand tot bestemming",
                     "objecttype": "Vlucht",
-                    "bron": "de afstand tot bestemming in kilometers van zijn reis",
+                    "source": {
+                      "snippet": "de afstand tot bestemming in kilometers van zijn reis"
+                    },
                     "navigatieBindingen": [
                       {
                         "node": "RolBinding",
@@ -1179,10 +1187,14 @@
                   "rechts": {
                     "node": "ParameterRef",
                     "parameter": "duurzaamheidskorting minimale afstand",
-                    "bron": "de duurzaamheidskorting minimale afstand"
+                    "source": {
+                      "snippet": "de duurzaamheidskorting minimale afstand"
+                    }
                   },
                   "periode": null,
-                  "bron": "de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand"
+                  "source": {
+                    "snippet": "de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand"
+                  }
                 },
                 {
                   "node": "Samengesteld",
@@ -1195,7 +1207,9 @@
                       "negatie": false,
                       "eigenaar": null,
                       "periode": null,
-                      "bron": "hij is een passagier jonger dan 18 jaar"
+                      "source": {
+                        "snippet": "hij is een passagier jonger dan 18 jaar"
+                      }
                     },
                     {
                       "node": "Kenmerk",
@@ -1203,7 +1217,9 @@
                       "negatie": false,
                       "eigenaar": null,
                       "periode": null,
-                      "bron": "hij is een passagier van 18 tot en met 24 jaar"
+                      "source": {
+                        "snippet": "hij is een passagier van 18 tot en met 24 jaar"
+                      }
                     },
                     {
                       "node": "Kenmerk",
@@ -1211,13 +1227,19 @@
                       "negatie": false,
                       "eigenaar": null,
                       "periode": null,
-                      "bron": "hij is een passagier van 25 tot en met 64 jaar"
+                      "source": {
+                        "snippet": "hij is een passagier van 25 tot en met 64 jaar"
+                      }
                     }
                   ],
-                  "bron": "hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
+                  "source": {
+                    "snippet": "hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
+                  }
                 }
               ],
-              "bron": "hij aan alle volgende voorwaarden voldoet: - zijn reis is duurzaam - de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand - hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn reis is duurzaam - de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand - hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
+              }
             },
             "initialisation": false
           }
