@@ -40,13 +40,13 @@ class EenheidIdentiteitTest {
         // the old degradation
         assertFalse(c.contains("\"type\":null"),
                 () -> "het product mag niet meer degraderen naar een ontypeerbaar resultaat:\n" + c);
-        // the MAAL product carries its own type Numeriek with the EUR unit (2 = 0 + 2 decimalen, Tabel 13).
+        // the MAAL product carries its own number type with the EUR unit (2 = 0 + 2 decimals, Tabel 13).
         // NOTE emitCompact strips ALL whitespace, also inside the bron string value.
         assertTrue(c.contains("\"op\":\"MAAL\","), () -> "het MAAL-product ontbreekt:\n" + c);
         assertTrue(c.contains(
-                "\"type\":{\"node\":\"Numeriek\",\"geheel\":false,\"decimalen\":2,\"teken\":\"ONBEPAALD\","
-                + "\"eenheid\":{\"node\":\"Eenheid\",\"afkorting\":\"EUR\",\"stelsel\":\"Munt\",\"canoniek\":\"EUR\","
-                + "\"factorNaarCanoniek\":1,\"noemer\":null}},"
+                "\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"ONBEPAALD\","
+                + "\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"EUR\",\"system\":\"Munt\",\"canonical\":\"EUR\","
+                + "\"factorToCanonical\":{\"num\":1,\"den\":1}}},"
                 + "\"bron\":\"hetstuktalvandeVerkoopmaaldestukprijsvandeVerkoop\""),
                 () -> "het product moet het echte EUR-type (2 decimalen) dragen:\n" + c);
     }

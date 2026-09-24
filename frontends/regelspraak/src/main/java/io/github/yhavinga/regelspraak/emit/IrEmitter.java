@@ -37,10 +37,14 @@ import java.util.Map;
 /**
  * The mirror emitter: a faithful, engine-neutral JSON dump of the complete resolved
  * {@link RegelSpraakModel} — every declaration, every resolved IR list, and the diagnostics.
- * It writes {@code uchar-ir-v1} in its L2 shape. The container is the v1 one
+ * It writes {@code uchar-ir-v1} in its L3 shape. The container is the v1 one
  * ({@code {format, model, rules, diagnostics}}, the declarations as lists, an object type's
  * members as {@code Attribute}/{@code Characteristic} nodes, a domain as a {@code Domain}
- * wrapper). A reference to a declared thing carries its symbolic form and nothing beside it:
+ * wrapper). The type system is IR-SPEC's: a number is a {@code Number} (a percentage one with the
+ * unit '%'), a date a {@code Date} with its precision, a unit a {@code Unit} whose factor is the
+ * exact fraction its declaration wrote, a unit system a {@code UnitSystem} listing its units with
+ * their spellings, a parameter a {@code Parameter} with its timeline facet, a day kind a
+ * {@code DayKind}. A reference to a declared thing carries its symbolic form and nothing beside it:
  * the reference nodes carry no type annotation (the declaration is the one source), a read that
  * navigates carries its role bindings and a read without them is the subject's own, a fold over
  * linked instances, an allocation, a navigated characteristic check and a fact creation carry
@@ -50,7 +54,9 @@ import java.util.Map;
  * EXACTLY as the Java records name them until its own migration step. No filtering: it is the
  * uchar-programme mirror artifact (mirror first, diverge later). For the M1 containers and nodes
  * (the root, {@code model}, {@code rules}, {@code ObjectType}, {@code Attribute},
- * {@code Characteristic}, {@code TimelineFacet}, {@code Domain}) and for {@code RoleMembership} the
+ * {@code Characteristic}, {@code TimelineFacet}, {@code Domain}), for {@code RoleMembership} and for
+ * the type-system nodes ({@code Number}, {@code Date}, {@code Unit}, {@code UnitSystem},
+ * {@code Parameter}, {@code DayKind}) the
  * key order is the {@code properties} order of the schema ({@code spec/schema/uchar-ir-v1.schema.json});
  * a node carried over from v0 keeps the order this emitter has always written it in, without the
  * keys L2 took off it, so a re-emission is byte-identical to a migrated document. That order is not
@@ -150,7 +156,7 @@ public final class IrEmitter {
         w.endArray();
 
         w.key("unitSystems").beginArray();
-        for (var en : m.eenheidstelsels.entrySet()) { eenNaam("eenheidstelsel", en.getKey(), en.getValue().naam); eenheidstelsel(en.getValue()); }
+        for (var en : m.eenheidstelsels.entrySet()) { eenNaam("eenheidstelsel", en.getKey(), en.getValue().naam); unitSystem(en.getValue()); }
         w.endArray();
 
         w.key("dimensions").beginArray();
@@ -161,8 +167,7 @@ public final class IrEmitter {
         for (Tijdlijn t : m.tijdlijnen) tijdlijn(t);
         w.endArray();
 
-        w.key("dayKinds"); stringList(m.dagsoorten);
-        w.key("dagsoortPerEenheid"); stringMap(m.dagsoortPerEenheid);
+        w.key("dayKinds"); dayKinds();
 
         w.endObject();
 
@@ -309,7 +314,7 @@ public final class IrEmitter {
             w.beginObject();
             w.key("node").value("Attribute");
             w.key("name").value(a);
-            w.key("datatype"); datatype(en.getValue());
+            w.key("datatype"); datatype(en.getValue(), true);
             String meervoud = ot.attribuutMeervoud.get(a);
             if (meervoud != null) w.key("plural").value(meervoud);
             List<String> dimensies = ot.attribuutDimensies.get(a);
@@ -387,43 +392,162 @@ public final class IrEmitter {
             w.key("waarden"); stringList(e.waarden());
             w.endObject();
         } else {
-            datatype(dt);
+            datatype(dt, true);
         }
         w.endObject();
     }
 
+    /** IR-SPEC ch. 2.10: a time-dependent parameter carries the timeline facet an attribute does, without a timeline
+     *  name (no parameter declares one). The datatype is required: a parameter without one has no document. */
     private void parameter(Parameter p) {
+        if (p.datatype() == null)
+            throw new IllegalStateException("IrEmitter: parameter '" + p.naam() + "' heeft geen datatype; de wire "
+                    + "eist er een");
         w.beginObject();
         w.key("node").value("Parameter");
-        w.key("naam").value(p.naam());
-        w.key("datatype"); datatype(p.datatype());
-        w.key("granulariteit").value(p.granulariteit() == null ? null : p.granulariteit().name());
+        w.key("name").value(p.naam());
+        w.key("datatype"); datatype(p.datatype(), true);
+        if (p.granulariteit() != null) timelineFacet(p.granulariteit(), null, null);
         w.endObject();
     }
 
-    private void eenheidstelsel(Eenheidstelsel es) {
+    /** IR-SPEC ch. 2.5: a unit system is its list of units in declaration order, each unit once with its further
+     *  spellings on it. The model keeps two maps — every written abbreviation, and the unit words and plurals
+     *  (normalised) — and a key of either that is not the unit's own abbreviation is one of its spellings, the map's
+     *  keys before the aliases; a spelling is never the abbreviation itself. What the list cannot carry — an alias of
+     *  a unit the system does not declare, one abbreviation for two different units, a spelling reached twice — is a
+     *  frontend defect, refused rather than dropped. */
+    private void unitSystem(Eenheidstelsel es) {
+        Map<String, Eenheid> eenheden = new java.util.LinkedHashMap<>();
+        Map<String, List<String>> spellingen = new java.util.LinkedHashMap<>();
+        for (var en : es.eenheden.entrySet()) {
+            Eenheid e = stelselEenheid(es, en.getKey(), en.getValue());
+            Eenheid eerder = eenheden.putIfAbsent(e.afkorting(), e);
+            if (eerder != null && !eerder.equals(e))
+                throw new IllegalStateException("IrEmitter: eenheidstelsel '" + es.naam + "' schrijft de afkorting '"
+                        + e.afkorting() + "' voor twee verschillende eenheden; de lijst draagt elke eenheid eenmaal");
+            spellingen.putIfAbsent(e.afkorting(), new java.util.ArrayList<>());
+            if (!en.getKey().equals(e.afkorting())) spellingen.get(e.afkorting()).add(en.getKey());
+        }
+        for (var en : es.aliassen.entrySet()) {
+            Eenheid e = stelselEenheid(es, en.getKey(), en.getValue());
+            if (!e.equals(eenheden.get(e.afkorting())))
+                throw new IllegalStateException("IrEmitter: eenheidstelsel '" + es.naam + "' kent de spelling '"
+                        + en.getKey() + "' toe aan de eenheid '" + e.afkorting() + "', die het niet zo declareert; een "
+                        + "spelling staat alleen op een gedeclareerde eenheid");
+            if (!en.getKey().equals(e.afkorting())) spellingen.get(e.afkorting()).add(en.getKey());
+        }
         w.beginObject();
-        w.key("node").value("Eenheidstelsel");
-        w.key("naam").value(es.naam);
-        w.key("eenheden").beginObject();
-        for (var en : es.eenheden.entrySet()) { w.key(en.getKey()); eenheid(en.getValue()); }
-        w.endObject();
-        w.key("aliassen").beginObject();
-        for (var en : es.aliassen.entrySet()) { w.key(en.getKey()); eenheid(en.getValue()); }
-        w.endObject();
+        w.key("node").value("UnitSystem");
+        w.key("name").value(es.naam);
+        w.key("units").beginArray();
+        for (Eenheid e : eenheden.values()) {
+            List<String> sp = spellingen.get(e.afkorting());
+            if (new java.util.HashSet<>(sp).size() != sp.size())
+                throw new IllegalStateException("IrEmitter: eenheidstelsel '" + es.naam + "' draagt een spelling van '"
+                        + e.afkorting() + "' tweemaal, als afkorting en als alias: " + sp);
+            w.beginObject();
+            unitVelden(e);
+            if (!sp.isEmpty()) { w.key("spellings"); stringList(sp); }
+            w.endObject();
+        }
+        w.endArray();
         w.endObject();
     }
 
-    private void eenheid(Eenheid e) {
-        if (e == null) { w.valueNull(); return; }
+    /** IR-SPEC ch. 2.9: a day kind is one node with its name and the plural it takes as a duration unit. The model
+     *  keeps the names and a registry from every unit spelling of a day kind (lower-cased) to its name; a registry
+     *  key that is the name itself (under the verifier's name identity, {@link #norm}) adds nothing, one further key
+     *  is the plural, and what the node cannot carry — a third spelling, a key naming no single declared day kind —
+     *  is a frontend defect, refused rather than dropped. */
+    private void dayKinds() {
+        List<String> namen = m.dagsoorten;
+        List<List<String>> verder = new java.util.ArrayList<>();
+        for (int i = 0; i < namen.size(); i++) verder.add(new java.util.ArrayList<>());
+        for (var en : m.dagsoortPerEenheid.entrySet()) {
+            String waarde = en.getValue();
+            List<Integer> kandidaten = new java.util.ArrayList<>();
+            for (int i = 0; i < namen.size(); i++)
+                if (waarde != null && norm(namen.get(i)).equals(norm(waarde))) kandidaten.add(i);
+            if (kandidaten.size() != 1)
+                throw new IllegalStateException("IrEmitter: de dagsoortspelling '" + en.getKey() + "' noemt '" + waarde
+                        + "', dat " + kandidaten.size() + " gedeclareerde dagsoorten aanduidt; een spelling staat op "
+                        + "precies één dagsoort");
+            int i = kandidaten.get(0);
+            if (!norm(en.getKey()).equals(norm(namen.get(i)))) verder.get(i).add(en.getKey());
+        }
+        w.beginArray();
+        for (int i = 0; i < namen.size(); i++) {
+            if (verder.get(i).size() > 1)
+                throw new IllegalStateException("IrEmitter: dagsoort '" + namen.get(i) + "' heeft naast haar naam de "
+                        + "spellingen " + verder.get(i) + "; de wire draagt een naam en één meervoud");
+            w.beginObject();
+            w.key("node").value("DayKind");
+            w.key("name").value(namen.get(i));
+            if (!verder.get(i).isEmpty()) w.key("plural").value(verder.get(i).get(0));
+            w.endObject();
+        }
+        w.endArray();
+    }
+
+    private static Eenheid stelselEenheid(Eenheidstelsel es, String sleutel, Eenheid e) {
+        if (e == null)
+            throw new IllegalStateException("IrEmitter: eenheidstelsel '" + es.naam + "' heeft onder '" + sleutel
+                    + "' geen eenheid");
+        return e;
+    }
+
+    /** A unit where it occurs — on a number, as the denominator of a rate: its fields, never its spellings (those
+     *  belong to the declaration in its unit system). */
+    private void unit(Eenheid e) {
         w.beginObject();
-        w.key("node").value("Eenheid");
-        w.key("afkorting").value(e.afkorting());
-        w.key("stelsel").value(e.stelsel());
-        w.key("canoniek").value(e.canoniek());
-        w.key("factorNaarCanoniek").value(e.factorNaarCanoniek());
-        w.key("noemer"); eenheid(e.noemer());
+        unitVelden(e);
         w.endObject();
+    }
+
+    /** The fields of a Unit in the schema's order; an absent field is left out. The factor is the exact fraction
+     *  (see {@link #exacteFactor}). */
+    private void unitVelden(Eenheid e) {
+        w.key("node").value("Unit");
+        w.key("abbreviation").value(e.afkorting());
+        if (e.stelsel() != null) w.key("system").value(e.stelsel());
+        if (e.canoniek() != null) w.key("canonical").value(e.canoniek());
+        Eenheidstelsel.Factor f = exacteFactor(e);
+        if (f != null) {
+            w.key("factorToCanonical").beginObject();
+            w.key("num").value(f.num());
+            w.key("den").value(f.den());
+            w.endObject();
+        }
+        if (e.noemer() != null) { w.key("denominator"); unit(e.noemer()); }
+    }
+
+    /** The factor of a unit as the wire writes it: an exact positive fraction in lowest terms, or null when the unit
+     *  carries none (a product of units). A unit its system declares takes the fraction that declaration wrote
+     *  ({@link Eenheidstelsel#exacteFactoren}) — its record's decimal factor is that fraction rounded per
+     *  declaration step, and the two must agree to that rounding. A unit outside every system — the built-in '%', a
+     *  bare calendar unit — is its own canonical with factor 1, a whole number, written over 1. Any other factor has
+     *  no exact spelling here and is refused, as is a factor that is not positive. */
+    private Eenheidstelsel.Factor exacteFactor(Eenheid e) {
+        BigDecimal f = e.factorNaarCanoniek();
+        if (f == null) return null;
+        Eenheidstelsel es = e.stelsel() == null ? null : m.eenheidstelsels.get(e.stelsel());
+        Eenheidstelsel.Factor x = es == null ? null : es.exacteFactoren.get(e.afkorting());
+        if (x == null) {
+            if (f.signum() <= 0 || f.stripTrailingZeros().scale() > 0)
+                throw new IllegalStateException("IrEmitter: eenheid '" + e.weergave() + "' draagt de factor "
+                        + f.toPlainString() + ", en geen eenheidstelsel declareert haar als breuk; de wire schrijft de "
+                        + "factor als exacte positieve breuk");
+            return new Eenheidstelsel.Factor(f.toBigIntegerExact(), java.math.BigInteger.ONE);
+        }
+        if (x.num().signum() <= 0)
+            throw new IllegalStateException("IrEmitter: eenheid '" + e.weergave() + "' heeft de gedeclareerde factor "
+                    + x.num() + "/" + x.den() + "; de wire schrijft de factor als exacte positieve breuk");
+        BigDecimal breuk = new BigDecimal(x.num()).divide(new BigDecimal(x.den()), java.math.MathContext.DECIMAL128);
+        if (f.subtract(breuk).abs().compareTo(breuk.movePointLeft(12)) > 0)
+            throw new IllegalStateException("IrEmitter: eenheid '" + e.weergave() + "' draagt de factor "
+                    + f.toPlainString() + ", maar haar stelsel declareert " + x.num() + "/" + x.den());
+        return x;
     }
 
     private void feittype(Feittype ft) {
@@ -469,27 +593,46 @@ public final class IrEmitter {
 
     // --- Datatype (exhaustive) --------------------------------------------
 
-    private void datatype(Datatype dt) {
+    /** A datatype at a type annotation: the {@code type} of an expression node. */
+    private void datatype(Datatype dt) { datatype(dt, false); }
+
+    /** IR-SPEC ch. 2.4. A number is a {@code Number}, its sign always written (a number declared without one is
+     *  ONBEPAALD); a percentage is a {@code Number} whose unit is '%' — the built-in one when it has none — and at a
+     *  {@code declaratie} position (the datatype of an attribute, a parameter or a domain) it carries the presentation
+     *  tag, which a type annotation never does. A date is a {@code Date} with its precision. */
+    private void datatype(Datatype dt, boolean declaratie) {
         if (dt == null) { w.valueNull(); return; }
         w.beginObject();
         switch (dt) {
             case Datatype.Numeriek n -> {
-                w.key("node").value("Numeriek");
-                w.key("geheel").value(n.geheel());
-                w.key("decimalen").value(n.decimalen());
-                w.key("teken").value(n.teken() == null ? null : n.teken().name());
-                w.key("eenheid"); eenheid(n.eenheid());
+                w.key("node").value("Number");
+                w.key("whole").value(n.geheel());
+                w.key("decimals").value(n.decimalen());
+                w.key("sign").value((n.teken() == null ? Datatype.Teken.ONBEPAALD : n.teken()).name());
+                if (n.eenheid() != null) { w.key("unit"); unit(n.eenheid()); }
             }
             case Datatype.Percentage p -> {
-                w.key("node").value("Percentage");
-                w.key("geheel").value(p.geheel());
-                w.key("decimalen").value(p.decimalen());
-                w.key("eenheid"); eenheid(p.eenheid());
+                Eenheid e = p.eenheid() == null ? Datatype.Percentage.PROCENT : p.eenheid();
+                if (!"%".equals(e.afkorting()))
+                    throw new IllegalStateException("IrEmitter: een percentage met de eenheid '" + e.weergave()
+                            + "'; de wire schrijft een percentage als getal met de eenheid '%'");
+                w.key("node").value("Number");
+                w.key("whole").value(p.geheel());
+                w.key("decimals").value(p.decimalen());
+                w.key("sign").value(Datatype.Teken.ONBEPAALD.name());
+                w.key("unit"); unit(e);
+                if (declaratie) w.key("presentation").value("percentage");
             }
             case Datatype.Tekst t -> w.key("node").value("Tekst");
             case Datatype.Booleaan b -> w.key("node").value("Booleaan");
-            case Datatype.DatumInDagen d -> w.key("node").value("DatumInDagen");
-            case Datatype.DatumTijd d -> w.key("node").value("DatumTijd");
+            case Datatype.DatumInDagen d -> {
+                w.key("node").value("Date");
+                w.key("precision").value("day");
+            }
+            case Datatype.DatumTijd d -> {
+                w.key("node").value("Date");
+                w.key("precision").value("millisecond");
+            }
             case Datatype.Enumeratie e -> {
                 w.key("node").value("Enumeratie");
                 w.key("domein").value(e.domein());
@@ -1360,11 +1503,6 @@ public final class IrEmitter {
         w.endArray();
     }
 
-    private void stringMap(Map<String, String> map) {
-        w.beginObject();
-        for (var en : map.entrySet()) w.key(en.getKey()).value(en.getValue());
-        w.endObject();
-    }
 
     /**
      * A minimal streaming JSON writer: two-space indentation, correct escaping (quotes,
@@ -1413,6 +1551,7 @@ public final class IrEmitter {
 
         Json value(String s) { preValue(); if (s == null) sb.append("null"); else escape(s); return this; }
         Json value(BigDecimal d) { preValue(); sb.append(d == null ? "null" : d.toPlainString()); return this; }
+        Json value(java.math.BigInteger i) { preValue(); sb.append(i.toString()); return this; }
         Json value(Integer i) { preValue(); sb.append(i == null ? "null" : Integer.toString(i)); return this; }
         Json value(int i) { preValue(); sb.append(Integer.toString(i)); return this; }
         Json value(boolean b) { preValue(); sb.append(b ? "true" : "false"); return this; }

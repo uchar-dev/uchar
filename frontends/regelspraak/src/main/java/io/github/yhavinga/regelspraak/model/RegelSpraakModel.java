@@ -1065,7 +1065,29 @@ public final class RegelSpraakModel {
         public final String naam;
         public final Map<String, Eenheid> eenheden = new LinkedHashMap<>(); // abbreviation -> unit
         public final Map<String, Eenheid> aliassen = new LinkedHashMap<>(); // unit word / plural (normalised) -> unit
+        /** The EXACT conversion factor of each declared unit, by abbreviation: the product of the fractions its
+         *  declaration chain writes ("= 1/60 u" over "= 1/24 dg" is 1/1440), a base unit 1/1. The unit's own
+         *  {@link Eenheid#factorNaarCanoniek} is the product of those fractions each rounded to 16 digits, which no
+         *  reader can turn back into the fraction for certain; the wire writes this one ({@code factorToCanonical}
+         *  of uchar-ir-v1 is an exact fraction). */
+        public final Map<String, Factor> exacteFactoren = new LinkedHashMap<>();
         public Eenheidstelsel(String naam) { this.naam = naam; }
+
+        /** A fraction in lowest terms, its sign on the numerator. A declared factor may be zero or negative; the
+         *  emitter refuses those, because the wire writes a factor as a positive fraction. */
+        public record Factor(java.math.BigInteger num, java.math.BigInteger den) {
+            public static final Factor EEN = new Factor(java.math.BigInteger.ONE, java.math.BigInteger.ONE);
+
+            public Factor {
+                if (den.signum() == 0) throw new IllegalArgumentException("een factor met noemer 0");
+                if (den.signum() < 0) { num = num.negate(); den = den.negate(); }
+                java.math.BigInteger g = num.gcd(den);
+                num = num.divide(g);
+                den = den.divide(g);
+            }
+
+            public Factor maal(Factor o) { return new Factor(num.multiply(o.num), den.multiply(o.den)); }
+        }
     }
 
     /** §13.3.6.2/§13.3.6.10 the period unit of a tijdlijn — the granularity at which a temporal value

@@ -206,7 +206,7 @@ class IrEmitterTest {
 
     @Test void unit_literal_lexeme_is_kaal_eenheid_in_type() {
         // uchar WF-081 (IR-SPEC ch. 4.1): a numeric literal's waarde is the BARE number lexeme;
-        // the unit rides the literal's datatype ("eenheid"), exactly as attribute datatypes carry
+        // the unit rides the literal's datatype ("unit"), exactly as attribute datatypes carry
         // it. The source snippet ("5 €") stays in bron. The old form ("waarde":"5 €") is
         // verifier-ill-formed and faults in both uchar executors.
         String src = """
@@ -222,17 +222,50 @@ class IrEmitterTest {
         String c = emitCompact(src);
         // the emitter JSON-escapes non-ASCII, so the compacted € is the six-char escape \\u20ac
         assertTrue(c.contains(
-                "{\"node\":\"Literal\",\"waarde\":\"5\",\"type\":{\"node\":\"Numeriek\",\"geheel\":true,"
-                + "\"decimalen\":0,\"teken\":\"ONBEPAALD\",\"eenheid\":{\"node\":\"Eenheid\",\"afkorting\":\"EUR\","
-                + "\"stelsel\":\"Munt\",\"canoniek\":\"EUR\",\"factorNaarCanoniek\":1,\"noemer\":null}},\"bron\":\"5\\u20ac\"}"),
+                "{\"node\":\"Literal\",\"waarde\":\"5\",\"type\":{\"node\":\"Number\",\"whole\":true,"
+                + "\"decimals\":0,\"sign\":\"ONBEPAALD\",\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"EUR\","
+                + "\"system\":\"Munt\",\"canonical\":\"EUR\",\"factorToCanonical\":{\"num\":1,\"den\":1}}},"
+                + "\"bron\":\"5\\u20ac\"}"),
                 () -> "de unit-literal moet een kaal lexeme dragen met de eenheid in het type:\n" + c);
         assertFalse(c.contains("\"waarde\":\"5\\u20ac\""),
                 () -> "de eenheid mag niet in het literal-lexeme zitten:\n" + c);
     }
 
+    @Test void de_factor_is_de_gedeclareerde_breuk_en_de_spellingen_staan_op_de_declaratie() {
+        // IR-SPEC ch. 2.5: a unit's factor is the exact fraction its declarations write, multiplied along the chain
+        // ("1/60" over "1/24" is 1/1440; "1,5" is 3/2), not the product of 16-digit decimals the unit record holds. A
+        // unit's further spellings — a second abbreviation, then its word and plural — stand on its declaration and
+        // nowhere else, and a spelling equal to the abbreviation is none.
+        String src = """
+            Eenheidsysteem Inhoud
+                de emmer (mv: emmers) em
+                de schep sp = 1/24 em
+                de korrel kr kl = 1/60 sp
+                de baal bl = 1,5 em
+            Objecttype de Vondst
+                de zaaihoeveelheid Numeriek (geheel getal) met eenheid kr;
+            """;
+        String c = emitCompact(src);
+        String stelsel = "\"system\":\"Inhoud\",\"canonical\":\"em\",\"factorToCanonical\":";
+        assertTrue(c.contains("{\"node\":\"UnitSystem\",\"name\":\"Inhoud\",\"units\":["
+                + "{\"node\":\"Unit\",\"abbreviation\":\"em\"," + stelsel + "{\"num\":1,\"den\":1},"
+                + "\"spellings\":[\"emmer\",\"emmers\"]},"
+                + "{\"node\":\"Unit\",\"abbreviation\":\"sp\"," + stelsel + "{\"num\":1,\"den\":24},"
+                + "\"spellings\":[\"schep\"]},"
+                + "{\"node\":\"Unit\",\"abbreviation\":\"kr\"," + stelsel + "{\"num\":1,\"den\":1440},"
+                + "\"spellings\":[\"kl\",\"korrel\"]},"
+                + "{\"node\":\"Unit\",\"abbreviation\":\"bl\"," + stelsel + "{\"num\":3,\"den\":2},"
+                + "\"spellings\":[\"baal\"]}]}"),
+                () -> "het stelsel draagt de gedeclareerde breuken en de spellingen op de declaratie:\n" + c);
+        assertTrue(c.contains("\"datatype\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"ONBEPAALD\","
+                + "\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"kr\"," + stelsel + "{\"num\":1,\"den\":1440}}}"),
+                () -> "het voorkomen draagt dezelfde breuk en geen spellingen:\n" + c);
+        assertEquals(4, c.split("\"spellings\"", -1).length - 1, () -> "spellingen alleen in het stelsel:\n" + c);
+    }
+
     @Test void percentage_literal_lexeme_is_kaal() {
-        // Same WF-081 fence for the '%' suffix: "21%" emits waarde "21", type Percentage
-        // (whose datatype already carries the %-eenheid).
+        // Same WF-081 fence for the '%' suffix: "21%" emits waarde "21", its type a number with the unit '%'.
+        // The presentation tag belongs to the declaration and never to a type annotation (IR-SPEC ch. 2.4).
         String src = """
             Objecttype de Vondst
                 het heffingspercentage Percentage (geheel getal) met eenheid %;
@@ -241,8 +274,17 @@ class IrEmitterTest {
                     Het heffingspercentage van een Vondst moet gesteld worden op 21%.
             """;
         String c = emitCompact(src);
-        assertTrue(c.contains("{\"node\":\"Literal\",\"waarde\":\"21\",\"type\":{\"node\":\"Percentage\""),
-                () -> "de percentage-literal moet een kaal lexeme dragen:\n" + c);
+        assertTrue(c.contains("{\"node\":\"Literal\",\"waarde\":\"21\",\"type\":{\"node\":\"Number\",\"whole\":true,"
+                + "\"decimals\":0,\"sign\":\"ONBEPAALD\",\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"%\","
+                + "\"canonical\":\"%\",\"factorToCanonical\":{\"num\":1,\"den\":1}}},\"bron\":\"21%\"}"),
+                () -> "de percentage-literal moet een kaal lexeme dragen, als getal met de eenheid %, zonder tag:\n" + c);
+        assertTrue(c.contains("{\"node\":\"Attribute\",\"name\":\"heffingspercentage\",\"datatype\":{\"node\":"
+                + "\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"ONBEPAALD\",\"unit\":{\"node\":\"Unit\","
+                + "\"abbreviation\":\"%\",\"canonical\":\"%\",\"factorToCanonical\":{\"num\":1,\"den\":1}},"
+                + "\"presentation\":\"percentage\"}}"),
+                () -> "de declaratie draagt de presentatietag:\n" + c);
+        assertEquals(1, c.split("\"presentation\"", -1).length - 1,
+                () -> "de presentatietag staat alleen op de declaratie:\n" + c);
         assertFalse(c.contains("\"waarde\":\"21%\""),
                 () -> "het %-teken mag niet in het literal-lexeme zitten:\n" + c);
     }
@@ -263,7 +305,8 @@ class IrEmitterTest {
             """;
         String c = emitCompact(src);
         assertTrue(c.contains(
-                "{\"node\":\"Literal\",\"waarde\":\"2024-01-31\",\"type\":{\"node\":\"DatumInDagen\"},\"bron\":\"31-01-2024\"}"),
+                "{\"node\":\"Literal\",\"waarde\":\"2024-01-31\",\"type\":{\"node\":\"Date\",\"precision\":\"day\"},"
+                + "\"bron\":\"31-01-2024\"}"),
                 () -> "de datum-literal moet het kale ISO-lexeme dragen, de bron-snippet in bron:\n" + c);
         assertFalse(c.contains("\"waarde\":\"31-01-2024\""),
                 () -> "de day-first bron-snippet mag niet in het literal-lexeme zitten:\n" + c);
@@ -282,7 +325,7 @@ class IrEmitterTest {
                     indien zijn vondstdag eerder is dan dd. 31-01-2024.
             """;
         String c = emitCompact(src);
-        assertTrue(c.contains("{\"node\":\"Literal\",\"waarde\":\"2024-01-31\",\"type\":{\"node\":\"DatumInDagen\"}"),
+        assertTrue(c.contains("{\"node\":\"Literal\",\"waarde\":\"2024-01-31\",\"type\":{\"node\":\"Date\",\"precision\":\"day\"}"),
                 () -> "de de-dato-literal moet het kale ISO-lexeme dragen:\n" + c);
         assertFalse(c.contains("\"waarde\":\"dd.31-01-2024\"") || c.contains("\"waarde\":\"31-01-2024\""),
                 () -> "de bron-snippet (prefix of day-first) mag niet in het literal-lexeme zitten:\n" + c);
@@ -307,14 +350,15 @@ class IrEmitterTest {
         String c = emitRaw(src.formatted("15-03-2026 12:00:00.000"));
         java.util.regex.Pattern literal = java.util.regex.Pattern.compile(
                 "\\{\\s*\"node\"\\s*:\\s*\"Literal\",\\s*\"waarde\"\\s*:\\s*\"([^\"]*)\",\\s*"
-                + "\"type\"\\s*:\\s*\\{\\s*\"node\"\\s*:\\s*\"DatumTijd\"\\s*\\},\\s*\"bron\"\\s*:\\s*\"([^\"]*)\"");
+                + "\"type\"\\s*:\\s*\\{\\s*\"node\"\\s*:\\s*\"Date\",\\s*\"precision\"\\s*:\\s*\"millisecond\"\\s*\\},"
+                + "\\s*\"bron\"\\s*:\\s*\"([^\"]*)\"");
         java.util.regex.Matcher m = literal.matcher(c);
-        assertTrue(m.find(), () -> "geen DatumTijd-literal in de emissie:\n" + c);
+        assertTrue(m.find(), () -> "geen datum-tijd-literal in de emissie:\n" + c);
         assertEquals("2026-03-15T12:00:00.000", m.group(1), "waarde draagt het ISO-lexeme");
         assertEquals("15-03-2026 12:00:00.000", m.group(2), "bron draagt de bron-snippet, spatie inbegrepen");
         String d = emitRaw(src.formatted("dd. 5-3-2026 09:07:05.004"));
         java.util.regex.Matcher md = literal.matcher(d);
-        assertTrue(md.find(), () -> "geen DatumTijd-literal in de emissie:\n" + d);
+        assertTrue(md.find(), () -> "geen datum-tijd-literal in de emissie:\n" + d);
         assertEquals("2026-03-05T09:07:05.004", md.group(1),
                 "de-dato-prefix en eencijferige dag/maand horen bij de snippet, niet bij het lexeme");
         assertEquals("dd. 5-3-2026 09:07:05.004", md.group(2));
@@ -706,8 +750,8 @@ class IrEmitterTest {
         int to = c.indexOf("\"bron\"", from);
         assertTrue(from > at && to > from, () -> "de node-veldvolgorde is onverwacht:\n" + c);
         String ownType = c.substring(from, to);
-        assertTrue(ownType.contains("\"type\":{\"node\":\"Numeriek\"") && ownType.contains("\"decimalen\":2"),
-                () -> "de pro-rata-node draagt het basistype (Numeriek, 2 decimalen) niet zelf:\n" + ownType);
+        assertTrue(ownType.contains("\"type\":{\"node\":\"Number\"") && ownType.contains("\"decimals\":2"),
+                () -> "de pro-rata-node draagt het basistype (een getal met 2 decimalen) niet zelf:\n" + ownType);
         assertFalse(ownType.contains("\"type\":null"),
                 () -> "de pro-rata-node mag geen ontypeerbaar resultaat dragen:\n" + ownType);
     }

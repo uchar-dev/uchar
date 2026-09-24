@@ -179,8 +179,8 @@ class VariabeledeelLoweringTest {
     }
 
     @Test void de_let_draagt_het_bodytype_wf076() {
-        // WF-076: the Let's type IS its body's type. Here the body is a Datum-valued read, so the Let must
-        // carry DatumInDagen — not the (Numeriek) type of its own value.
+        // WF-076: the Let's type IS its body's type. Here the value is a date read and the body the year taken
+        // from it, so the Let carries the body's number type — not the date type of its own value.
         String src = """
             Objecttype de Vondst
                 de vonddatum Datum in dagen;
@@ -192,11 +192,11 @@ class VariabeledeelLoweringTest {
                         de datum is de vonddatum van de Vondst.
             """;
         String c = emitCompact(src);
-        // the VALUE is a Datum read, the BODY a Numeriek year extraction: the Let must carry the body's type.
+        // the VALUE is a date read, the BODY a number (the year): the Let must carry the body's type.
         assertTrue(c.contains("\"binder\":\"datum\",\"value\":{\"node\":\"AttribuutRef\",\"attribuut\":\"vonddatum\""),
                 () -> "de Let-value is de datum-lezing:\n" + c);
-        assertTrue(c.contains("\"node\":\"Let\",\"type\":{\"node\":\"Numeriek\",\"geheel\":true"),
-                () -> "WF-076: het Let-type is het body-type (Numeriek), niet dat van zijn value (Datum):\n" + c);
+        assertTrue(c.contains("\"node\":\"Let\",\"type\":{\"node\":\"Number\",\"whole\":true"),
+                () -> "WF-076: het Let-type is het body-type (een getal), niet dat van zijn value (een datum):\n" + c);
     }
 
     @Test void een_variabele_in_een_structuurgevoelige_positie_blijft_gesubstitueerd() {

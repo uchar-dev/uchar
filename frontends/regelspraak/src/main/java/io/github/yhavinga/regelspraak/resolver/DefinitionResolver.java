@@ -472,9 +472,10 @@ public final class DefinitionResolver {
     }
 
     // ---------------- §13.3.5 unit systems ----------------
-    /** A unit's raw declaration before its conversion factor is resolved. */
+    /** A unit's raw declaration before its conversion factor is resolved: the factor as the decimal the unit record
+     *  carries and as the exact fraction the wire writes, both read from the one written number. */
     private record EenheidRuw(java.util.List<String> afkortingen, String woord, String meervoud,
-                              java.math.BigDecimal omrekenN, String omrekenNaar) {}
+                              java.math.BigDecimal omrekenN, Eenheidstelsel.Factor omrekenExact, String omrekenNaar) {}
 
     private void eenheidsysteem(EenheidsysteemDefinitionContext ctx) {
         Eenheidstelsel stelsel = new Eenheidstelsel(src(ctx.eenheidsysteemNaam()));
@@ -484,18 +485,21 @@ public final class DefinitionResolver {
             java.util.List<String> afk = u.eenheidAfkorting().stream().map(DefinitionResolver::src).toList();
             String primair = !afk.isEmpty() ? afk.get(0) : (u.eenheidWoord() != null ? src(u.eenheidWoord()) : null);
             if (primair == null) continue;
-            java.math.BigDecimal n = null; String naar = null;
+            java.math.BigDecimal n = null; Eenheidstelsel.Factor exact = null; String naar = null;
             if (u.omrekenSpecificatie() != null) {                       // "= 12 mnd" or "= 1/1000 m"
-                n = rationeel(u.omrekenSpecificatie().NUMBER().getText(), primair);
+                String getal = u.omrekenSpecificatie().NUMBER().getText();
+                n = rationeel(getal, primair);
+                if (n != null) exact = exacteFactor(getal);
                 naar = src(u.omrekenSpecificatie().eenheidAfkorting());
             }
             ruw.put(primair, new EenheidRuw(afk, u.eenheidWoord() != null ? src(u.eenheidWoord()) : null,
-                    u.meervoudsvorm() != null ? src(u.meervoudsvorm()) : null, n, naar));
+                    u.meervoudsvorm() != null ? src(u.meervoudsvorm()) : null, n, exact, naar));
         }
         // pass 2: resolve each unit's canonical + factor, then register every spelling
         java.util.Map<String, Eenheid> opgelost = new java.util.HashMap<>();
         for (String primair : ruw.keySet()) {
-            Eenheid e = resolveFactor(primair, ruw, stelsel.naam, opgelost, new java.util.HashSet<>());
+            Eenheid e = resolveFactor(primair, ruw, stelsel.naam, opgelost, new java.util.HashSet<>(),
+                    stelsel.exacteFactoren);
             EenheidRuw r = ruw.get(primair);
             for (String a : r.afkortingen()) stelsel.eenheden.put(a, e);
             if (r.woord() != null) stelsel.aliassen.put(RegelSpraakModel.normaliseerTijdseenheid(r.woord()), e);
@@ -523,21 +527,39 @@ public final class DefinitionResolver {
 
     /** Reduce a unit to its system canonical and the factor to reach it: a base unit
      *  is its own canonical (factor 1); "<u> = N <v>" inherits v's canonical with
-     *  factor N·factor(v). Memoised; a cycle or external target stops at a base. */
+     *  factor N·factor(v). Memoised; a cycle or external target stops at a base.
+     *  {@code exact} receives the same factor as an exact fraction, step for step, so the two agree on every
+     *  unit, the cycle's included. */
     private Eenheid resolveFactor(String abbrev, java.util.Map<String, EenheidRuw> ruw, String stelsel,
-                                  java.util.Map<String, Eenheid> memo, java.util.Set<String> bezig) {
+                                  java.util.Map<String, Eenheid> memo, java.util.Set<String> bezig,
+                                  java.util.Map<String, Eenheidstelsel.Factor> exact) {
         if (memo.containsKey(abbrev)) return memo.get(abbrev);
         EenheidRuw r = ruw.get(abbrev);
         Eenheid e;
         if (r == null || r.omrekenNaar() == null || r.omrekenN() == null || !bezig.add(abbrev)) {
             e = new Eenheid(abbrev, stelsel, abbrev, java.math.BigDecimal.ONE);
+            exact.put(abbrev, Eenheidstelsel.Factor.EEN);
         } else {
-            Eenheid basis = resolveFactor(r.omrekenNaar(), ruw, stelsel, memo, bezig);
+            Eenheid basis = resolveFactor(r.omrekenNaar(), ruw, stelsel, memo, bezig, exact);
             bezig.remove(abbrev);
             e = new Eenheid(abbrev, stelsel, basis.canoniek(), r.omrekenN().multiply(basis.factorNaarCanoniek()));
+            exact.put(abbrev, r.omrekenExact().maal(exact.get(basis.afkorting())));
         }
         memo.put(abbrev, e);
         return e;
+    }
+
+    /** The omrekenfactor as an exact fraction, from the same NUMBER text {@link #rationeel} reads and failing on the
+     *  same texts (the caller asks only after that reading succeeded): "12" is 12/1, "1,5" is 3/2, "1/24" is 1/24. */
+    private static Eenheidstelsel.Factor exacteFactor(String tekst) {
+        int slash = tekst.indexOf('/');
+        if (slash >= 0)
+            return new Eenheidstelsel.Factor(new java.math.BigInteger(tekst.substring(0, slash)),
+                    new java.math.BigInteger(tekst.substring(slash + 1)));
+        java.math.BigDecimal d = new java.math.BigDecimal(tekst.replace(',', '.'));
+        return d.scale() <= 0
+                ? new Eenheidstelsel.Factor(d.toBigIntegerExact(), java.math.BigInteger.ONE)
+                : new Eenheidstelsel.Factor(d.unscaledValue(), java.math.BigInteger.TEN.pow(d.scale()));
     }
 
     // ---------------- §13.3.8 parameters ----------------

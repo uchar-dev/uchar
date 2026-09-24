@@ -503,7 +503,7 @@ class GenesteVouwbronTest {
             assertTrue(json.contains("\"node\": \"Onopgelost\""), "verwacht een markering");
             assertTrue(java.util.regex.Pattern.compile("\"node\": \"Onopgelost\",\\s*\"type\": \\{").matcher(json).find(),
                     "de markering hoort haar eigen resultaattype te dragen");
-            assertTrue(json.contains("\"afkorting\": \"kg\""), "het eigen resultaattype hoort erop te staan");
+            assertTrue(json.contains("\"abbreviation\": \"kg\""), "het eigen resultaattype hoort erop te staan");
         }
     }
 
