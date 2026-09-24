@@ -147,6 +147,21 @@ zegt; de Java-records van de frontend blijven v0), en voor L3:
   verifier, ref, clingo en Drools (L2 kostte twee rondes aan ongelijke
   zinnen); (f) geen besluitnummers (D/U) in IR-SPEC, RS, schema of golden-
   NOTE's — verwijs naar B-delta's, CONSTRUCTS-rijen en deze kaart.
+- **U11 (L3) — de reconstructie van de factor, verfijning van D25:** de
+  v0-doubles van de pariteitszone zijn producten van per stap op 16 cijfers
+  afgeronde verhoudingen, dus exacte double-gelijkheid vindt de bedoelde
+  breuk niet. `m3.py` neemt daarom de breuk met de KLEINSTE noemer waarvan de
+  waarde binnen 10^-14 relatief van de v0-double ligt, zonder noemergrens
+  (jouw gemeten alternatief: noemers 24/100/1000/1440/86400/86400000; gelijk
+  aan de exacte regel overal waar die slaagt); vindt hij binnen die
+  tolerantie geen breuk met noemer ≤ 10^9, dan faalt hij luid. De toets op de
+  waarheid is de her-emissie van de casus-dump door de frontend, die de
+  gedeclareerde `1/N`-vormen kent (bouwer C meet byte-identiteit; elk verschil
+  is een bevinding). Zet die regel in de docstring en de README-zin.
+- **U12 (L3) — `spellings` bevatten nooit de `abbreviation` zelf:** een alias
+  die gelijk is aan de afkorting van zijn eenheid (jouw open punt 5: 30 in
+  toka) wordt geen spelling; `spellings` blijft dan afwezig als er niets
+  overblijft. De emitter van C past dezelfde regel toe.
 
 ## Lens-checklist — vooraf, per bouwer (de twaalf punten van L2, plus L3)
 
@@ -372,3 +387,20 @@ V7-terugval (D56). `spec/PLAN.md` §9 (11): L3 geland. `V1-WIREMIGRATIE.md`:
 de L3-rij (A2 zet "loopt"; de hoofdsessie GELAND) en de V7-terugval
 genoteerd. `CLAUDE.md`: geen gatetekst verandert (gate 13 blijft
 "afgeleide posities"). Daarna herpin en memory.
+
+## Correcties op de kaarttekst (A1, gemeten)
+
+Gemeten op de kaartbranch (kop `87fc726b`, na de migratie van alle zones).
+
+- Stand: golden 241 en rood 47; met negatief 400 en toka 30 zijn dat 718
+  documenten (de kaart noemde golden 240 en rood 46, samen 716).
+- "de 540 niet-gehele factoren van de dump": de 540 zijn verspreid over de
+  hele toka-zone, 18 per document; de casus-dump zelf draagt er 18.
+- `wf034-dagsoorteenheid-onbekende-dagsoort` is een vierde onschrijfbare
+  getuige: zijn registrywaarde noemt een niet-gedeclareerde dagsoort, en arm
+  (s) van WF-034 verliest met het register zijn object. A2 stempelt hem
+  verwijderd-met-reden.
+- Nulmeting D24: 45 knopen kregen `sign: "ONBEPAALD"` uit een v0-null (golden
+  35 in 6 documenten, negatief 10 in 7, rood 0, toka 0); 21 knopen kregen
+  `ONBEPAALD` uit een `Percentage` (golden 6, negatief 14, rood 1), en sinds
+  de toka-zone migreert komen daar 90 in toka bij.
