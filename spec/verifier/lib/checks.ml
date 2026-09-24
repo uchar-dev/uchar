@@ -335,7 +335,7 @@ let lexeme_datum_tijd s =
   && s.[10] = 'T' && time_ok 11
   && date_ok ~y:(int_at 0 4) ~m:(int_at 5 2) ~d:(int_at 8 2)
 
-(* --- the two sentences the executors' loader shares ------------------- *)
+(* --- the sentences the executors' loader shares ---------------------- *)
 
 (* WF-114 (IR-SPEC ch. 4.1): the value variant a literal's type names — a
    Number (a percentage included) names number, a Booleaan boolean, a Tekst
@@ -399,6 +399,17 @@ let context_value_refusal name =
       ("context value '" ^ name
      ^ "' is not one of the two admissible names Rekendatum, Rekenjaar: the context-value name \
         is a closed set, spelled byte for byte")
+
+(* WF-081 (IR-SPEC ch. 4.1): the string of a number variant outside the case
+   format's number grammar ([lexeme_bare_number]). Shared with the loader
+   like the two sentences above. *)
+let number_lexeme_refusal w =
+  if lexeme_bare_number w then None
+  else
+    Some
+      ("numeric literal lexeme '" ^ w
+     ^ "' is not a number of the case format (an optional '-', digits, an optional '.' and \
+        digits, or a rational a/b whose denominator has no leading zero — ch. 4.1)")
 
 (* --- document context --------------------------------------------------- *)
 
@@ -3984,12 +3995,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       | None -> [])
       @
       match (variant, typ) with
-      | Lv_number w, _ when not (lexeme_bare_number w) ->
-          [ v "WF-081" vat
-              ("numeric literal lexeme '" ^ w
-               ^ "' is not a number of the case format (an optional '-', digits, an optional \
-                  '.' and digits, or a rational a/b whose denominator has no leading zero — \
-                  ch. 4.1)") ]
+      | Lv_number w, _ when number_lexeme_refusal w <> None ->
+          [ v "WF-081" vat (Option.get (number_lexeme_refusal w)) ]
       | Lv_date w, _ when not (lexeme_iso_date w) ->
           [ v "WF-084" vat
               ("date literal lexeme '" ^ w

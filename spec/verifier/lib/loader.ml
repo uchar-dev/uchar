@@ -1682,21 +1682,10 @@ let presentatie_annotaties (j : json) : string list =
    [Checks.context_value_refusal]): no evaluator reads {"text": "5"} under
    a Number as a number, or a session value that does not exist. A number
    variant outside the case format's number grammar (WF-081) is refused the
-   same way ([number_lexeme_refusal]): the Drools loader refuses it at load,
-   and an executor that met it only at evaluation would refuse the same
-   document in another phase and in other words. *)
+   same way ([Checks.number_lexeme_refusal]): the Drools loader refuses it at
+   load, and an executor that met it only at evaluation would refuse the
+   same document in another phase and in other words. *)
 type reader = Verifier | Executor
-
-(* WF-081's sentence without its number, read with the verifier's grammar
-   ([Checks.lexeme_bare_number]); the verifier's arm spells the same
-   sentence, and the executors' suites hold the two equal. *)
-let number_lexeme_refusal w =
-  if Checks.lexeme_bare_number w then None
-  else
-    Some
-      ("numeric literal lexeme '" ^ w
-     ^ "' is not a number of the case format (an optional '-', digits, an optional '.' and \
-        digits, or a rational a/b whose denominator has no leading zero — ch. 4.1)")
 
 (* The executor's refusals, after the structural load: every Literal and
    ContextValue node of the document as written, in document order, a
@@ -1717,7 +1706,7 @@ let executor_refusals (j : json) =
                 | None -> ()));
             match variant with
             | Lv_number w -> (
-                match number_lexeme_refusal w with
+                match Checks.number_lexeme_refusal w with
                 | Some sentence -> fail (path / "value") sentence
                 | None -> ())
             | _ -> ())
