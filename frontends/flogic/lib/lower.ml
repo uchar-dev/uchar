@@ -108,11 +108,11 @@ let slot_of_ty ~line (t : ty) : slot =
 (* --- pass 1: collect ----------------------------------------------------- *)
 
 (* One member name is declared once per class. Two declarations would put
-   the same key twice in the `attributen` object, which RFC 8259 leaves
-   undefined and every reader resolves by its own rule — so the frontend
-   refuses it, exactly as it refuses two unconditional definitions of one
-   target. (The verifier catches it too, but only after a reader has
-   already had to pick.) *)
+   two members of one name in the object type's `attributes` list, which
+   every reader would resolve by its own rule — so the frontend refuses it,
+   exactly as it refuses two unconditional definitions of one target. (The
+   verifier catches it too, but only after a reader has already had to
+   pick.) *)
 let declare_once (o : otdecl) name line =
   let hit =
     List.find_map (fun (n, _, l) -> if n = name then Some l else None) o.o_attrs
