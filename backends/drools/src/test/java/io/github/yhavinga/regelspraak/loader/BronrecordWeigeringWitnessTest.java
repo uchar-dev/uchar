@@ -108,6 +108,30 @@ class BronrecordWeigeringWitnessTest {
         }
     }
 
+    /** The kinds that carry a record and stand in no loadable golden, placed at a rule's value or condition with a file
+     *  in their record: each reads its record, so the file is refused at the record's pointer. */
+    @Test void de_knoopsoorten_zonder_golden_lezen_hun_record_ook() throws Exception {
+        String w = WAARDE, v = VOORWAARDE, bronrecord = "\"source\":{\"snippet\":\"x\",\"file\":\"jutterswet.rgs\"}";
+        Map<String, String[]> rijen = new java.util.LinkedHashMap<>();
+        rijen.put("TekstReeks", new String[] { w, "{\"node\":\"TekstReeks\",\"delen\":[],\"type\":{\"node\":\"Tekst\"},"
+                + bronrecord + "}", w });
+        rijen.put("VariabeleRef", new String[] { w, "{\"node\":\"VariabeleRef\",\"naam\":\"x\"," + bronrecord + "}", w });
+        rijen.put("DimensieSelectie", new String[] { w, "{\"node\":\"Aggregation\",\"kind\":\"SOM\",\"arguments\":[],"
+                + "\"dimensionSelection\":{\"node\":\"DimensieSelectie\",\"dimensie\":\"d\",\"labels\":[]," + bronrecord
+                + "},\"type\":null,\"source\":{\"snippet\":\"x\"}}", w + "/dimensionSelection" });
+        rijen.put("ContextValue", new String[] { w, "{\"node\":\"ContextValue\",\"name\":\"Rekendatum\",\"type\":"
+                + "{\"node\":\"Date\",\"precision\":\"day\"}," + bronrecord + "}", w });
+        rijen.put("Onopgelost (expressie)", new String[] { w, "{\"node\":\"Onopgelost\"," + bronrecord + "}", w });
+        rijen.put("Regelversie", new String[] { v, "{\"node\":\"Regelversie\",\"regel\":\"x\",\"inconsistent\":false,"
+                + bronrecord + "}", v });
+        rijen.put("Onopgelost (conditie)", new String[] { v, "{\"node\":\"Onopgelost\"," + bronrecord + "}", v });
+        for (Map.Entry<String, String[]> r : rijen.entrySet()) {
+            ObjectNode ir = golden(PENNINGDREMPEL);
+            zet(ir, r.getValue()[0], r.getValue()[1]);
+            onbekendVeld(ir, r.getValue()[2] + "/source/file", "");
+        }
+    }
+
     /** The line went into the record: beside it, on the two nodes that carried it, it is a field they do not have. */
     @Test void een_regel_naast_het_record_is_een_onbekend_veld() throws Exception {
         ObjectNode ir = golden(WACHTERSKETEN);
