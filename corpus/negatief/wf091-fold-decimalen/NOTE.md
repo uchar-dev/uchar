@@ -24,8 +24,9 @@ operand precision, the conjunction of wholeness, operand 0's sign and unit —
 the sentence WF-091's own clause already stated informally about
 `MINIMUM`/`MAXIMUM` and nothing enforced.
 
-Falsifiable: drop `decimals` and this case turns clean (the min/max arm
-skips sign and residual, so nothing stands behind it) while
+Falsifiable: drop `decimals` and this case turns clean (no facet stands
+behind it: the min/max arm skipped sign and residual, and since the L2 fix
+round the engine has neither) while
 `wf091-foldwortel-eenheid` stays red on the same arm. And the FORMULA is
 pinned as sharply as the facet: replace the `min` fold over the operands
 with operand 0's own precision and this case turns clean too — which is

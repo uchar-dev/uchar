@@ -28,9 +28,9 @@ backend refuses a multi-operand `MINIMUM`/`MAXIMUM` ahead of translation,
 so the shape can carry no pinned expectations — which is exactly why the
 artifact that closes it is a negatief.
 
-Falsifiable: drop `unit` from the facet list and this case turns clean (the
-min/max arm skips sign and residual, so nothing stands behind the unit
-facet); keep the facet and remove `Minimum | Maximum` from
+Falsifiable: drop `unit` from the facet list and this case turns clean (no facet
+stands behind the unit facet: the min/max arm skipped sign and residual,
+and since the L2 fix round the engine has neither); keep the facet and remove `Minimum | Maximum` from
 `composite_expectation` and this case turns clean while `wf091-som-eenheid`
 and `wf091-totaal-eenheid` stay red.
 
