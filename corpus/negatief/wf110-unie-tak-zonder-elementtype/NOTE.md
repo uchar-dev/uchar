@@ -49,9 +49,10 @@ the neighbouring WF-034 arm as well (`instance-set selection element type
 'Wrak' is not declared`, measured), so a MISSING name and an UNKNOWN name
 never share a sentence.
 
-Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
-with only its own fields — `arguments`, and on an aggregation `elementType`,
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each with
+only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
 builtin `granularity`; the report cites and names them. The load error quoted
-above carries the pointer of the wire it was measured on (`waarde/argumenten`,
-since L4 `versions/0/value/arguments`). `expect.txt` pins the arm.
+above carries the pointer of the wire it was measured on (`resolvedRegels`,
+since L5 `rules`; `waarde/argumenten`, since L4 `versions/0/value/arguments`).
+`expect.txt` pins the arm.

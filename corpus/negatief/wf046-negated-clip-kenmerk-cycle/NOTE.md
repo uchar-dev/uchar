@@ -7,7 +7,7 @@ the Jutter is NOT `aangesteld`, and the characteristic rule derives
 
 This case pins the ROUTE rather than the rule: it is the witness that a
 filter condition on an `Aggregation` reaches the dependency walk at all, and
-that a member with `negatie: true` enters it as a negative edge. The
+that a member with `negated: true` enters it as a negative edge. The
 cycle passes through no recursive creation, so WF-045 is reported as
 well; `wf046-negated-read-in-recursive-cycle` is the case that isolates
 WF-046 on a WF-045-admissible cycle.

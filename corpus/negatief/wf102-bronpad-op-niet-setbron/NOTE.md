@@ -7,7 +7,7 @@ that is not a value fold's SET source.
     sourcePath is admissible only as the range of a single-argument VALUE fold's
     set source — a count's range is one step, spelled sourceRole
 
-The document turns the golden's minimum fold into a count: an `AANTAL` whose
+The document turns the golden's minimum fold into a count: a `count` whose
 source names a ROLE (`geborgen vondst`), anchored on the fold subject as
 WF-083 (c) demands of a count source, with the two-step path left in place
 as its range. A count's range is one step, spelled `sourceRole`: its source

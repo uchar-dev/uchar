@@ -1,7 +1,7 @@
 # wf111-datumtijdgrens-literal
 
 Violates WF-111's DAY-PRECISION clause (`spec/IR-SPEC.md` ch. 4.6) with a
-literal: the window's `vanaf` is a `Literal` annotated with a `Date` of
+literal: the window's `from` is a `Literal` annotated with a `Date` of
 `precision: millisecond`.
 
     WF-111 FAIL /rules/rules/0/versions/0/condition/from: the from

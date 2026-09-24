@@ -1,5 +1,5 @@
 Violates WF-101 (`spec/IR-SPEC.md` ch. 4.1) at the **validity window's lower
-bound**: the rule version's `validity.vanaf` reads `+012026-01-01`, the
+bound**: the rule version's `validity.from` reads `+012026-01-01`, the
 sign-prefixed extended-year spelling. It is not the strict `yyyy-mm-dd`
 lexeme, and the document says nothing else wrong.
 
@@ -40,7 +40,7 @@ carry `2026-01-01`/`2026-12-31` and an open-ended `2025-12-31` (distinct names
 and distinct target attributes — that document exercises the window, not
 version selection).
 
-Note what does NOT guard this. The schema pattern on `Geldigheid.vanaf`/`tot`
+Note what does NOT guard this. The schema pattern on `Validity.from`/`to`
 refuses this same lexeme — but gate 2 validates `corpus/golden` and
 `corpus/rood` only and never sees this zone, so the pattern and this case
 guard different populations rather than the same one twice.
@@ -48,3 +48,6 @@ guard different populations rather than the same one twice.
 Arm-exact: measured over the verifier-gated zones the day the rule landed
 (golden 169, negatief 364, rood 26 — 559 documents), the before/after sweep
 moves this verdict and its sister's and not one other report line anywhere.
+
+Since L5 the bounds are the optional fields `from` and `to` of a `Validity`
+(delta B6), absent where the window is open; `expect.txt` pins the arm.

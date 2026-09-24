@@ -9,7 +9,7 @@ nothing.
     be: this position binds the subject 'Kustvak'
 
 Broken from `corpus/golden/jutterswet-seinhijsing` by wrapping one field: the
-first creation's bare guard becomes an ALLE composite over itself and a second
+first creation's bare guard becomes an `all` composite over itself and a second
 check hosted on the anker. Both conjuncts are individually well-formed; it is
 the nesting that the rule refuses.
 
@@ -33,3 +33,6 @@ Falsifiable in two directions, each turning this case clean:
 - unwrap it — the doel host as the whole guard, which is the golden;
 - re-host the first conjunct on `Kustvak` — a purely anker-side composite, at
   which point the whole guard gates the anker.
+
+Since L5 the field is `host` (delta B10); the report cites `…/host`, and
+`expect.txt` pins the arm.

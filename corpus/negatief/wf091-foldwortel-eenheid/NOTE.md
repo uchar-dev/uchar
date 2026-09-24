@@ -20,11 +20,11 @@ domain facet alone. Measured before the law landed: this document is
 verifier-clean.
 
 This is honesty note 4's own counter-shape, the one the note recorded as
-**pinned by no artifact**: a `MAXIMUM` over a `kg` attribute and a `kg`
+**pinned by no artifact**: a `maximum` over a `kg` attribute and a `kg`
 literal, its own `type` annotated `t`, where `ref` answers `3,75` from the
 declarations and a consumer honouring the node's annotation answers
 `3.750.000`. The note also explained why a GOLDEN cannot pin it — the ASP
-backend refuses a multi-operand `MINIMUM`/`MAXIMUM` ahead of translation,
+backend refuses a multi-operand `minimum`/`maximum` ahead of translation,
 so the shape can carry no pinned expectations — which is exactly why the
 artifact that closes it is a negatief.
 

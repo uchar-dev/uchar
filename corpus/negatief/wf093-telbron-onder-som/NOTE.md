@@ -1,5 +1,5 @@
 Violates WF-093 (`spec/IR-SPEC.md` ch. 4.3) in the direction that a count
-source demands AANTAL (since the L2 landing): the `SOM` over the `Vondst`en of
+source demands `count` (since the L2 landing): the `sum` over the `Vondst`en of
 the subject names `vondsten` as its source — a role of the fold subject, and
 no attribute of the element type `Vondst`. Such a source hands the fold the
 linked instances, and a sum reads a value per contributor.

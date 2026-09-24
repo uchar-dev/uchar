@@ -29,3 +29,6 @@ Falsifiable in three directions, each turning this case clean:
 - host it on `Kustvak` — the anker reading;
 - drop one of the two supertype edges — whichever type leaves the chain stops
   being a `Baken`, and the host names one object again.
+
+Since L5 the field is `host` (delta B10); the report cites `…/host`, and
+`expect.txt` pins the arm.

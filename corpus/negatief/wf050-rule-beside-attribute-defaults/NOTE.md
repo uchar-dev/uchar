@@ -1,4 +1,4 @@
-Violates WF-050 (`spec/IR-SPEC.md`): a plain GELIJKSTELLING rule
+Violates WF-050 (`spec/IR-SPEC.md`): a plain `equation` rule
 writes `Jutter.waardering` while attribute defaults own that
 target — an unordered plain writer would silently defeat the defaults'
 decisions (the ch. 7.1 single-writer lift, attribute side).

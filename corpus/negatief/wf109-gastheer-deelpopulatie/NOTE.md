@@ -37,3 +37,6 @@ moves it to another rule**:
 - drop the `Strandvondst` declaration — NOT clean. The host then resolves to
   nothing and the document is **WF-034 (q)** instead, a different rule and a
   different report; WF-109 steps aside for an undeclared host.
+
+Since L5 the field is `host` (delta B10); the report cites `…/host`, and
+`expect.txt` pins the arm.

@@ -9,7 +9,7 @@ the reason the hit test is no longer a plain `⊑` count.
 
 `Sein` is declared a **subtype of** `Kustvak` here, which means every `Sein`
 IS a `Kustvak` and can fill any position declared `Kustvak` — including the
-anker of this fact creation. So `eigenaar: "Sein"` designates the doel (always)
+anker of this fact creation. So `host: "Sein"` designates the doel (always)
 and the anker (whenever the anker object happens to be a `Sein`), which is one
 name for two objects.
 
@@ -55,3 +55,6 @@ Falsifiable in three directions, each turning this case clean:
 `ref` refuses the same document at evaluation, by its own named arm ("the host
 names exactly one (WF-109), and this reader will not pick for it"), so the
 executor does not depend on the verifier having run.
+
+Since L5 the field is `host` (delta B10); the report cites `…/host`, and
+`expect.txt` pins the arm.

@@ -8,7 +8,7 @@ cap names an attribute *no declaration carries*.
 The clause is the one described in full in the sibling NOTE
 (`wf034-verdeling-onbekend-ratoattribuut`): every filled attribute name on the
 allocation's six name fields resolves against the declaration scope of its own
-side. `maximumAttribute` is the per-recipient cap of a `NAAR_RATO`
+side. `maximumAttribute` is the per-recipient cap of a `proportional`
 allocation — the ceiling above which a share is not paid out and the excess
 falls to the remainder.
 

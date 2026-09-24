@@ -2,7 +2,7 @@
 
 Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1, "Derived-type identity on
 composite positions") at the **twelfth** derived arm, the unit facet: an
-`AANTAL_GEVULDE` annotated `kg` where the operation derives no unit at all.
+`filledCount` annotated `kg` where the operation derives no unit at all.
 
     WF-091 FAIL /rules/rules/0/versions/0/value/type: unit mismatch:
     the filledCount aggregation is typed 'kg' of system 'Gewicht' (factor 1
@@ -13,7 +13,7 @@ rather than by a gate.** `RUNTIME-SEMANTICS.md` ch. 3.4c and `IR-SPEC.md`
 ch. 4.3 both say a filled count answers a whole, unitless cardinality
 whatever the folded attribute carries — a MUST with, until this case, no
 check and no failing witness. The identity engine matches on the fold KIND,
-so the `AANTAL` arm did not cover the new kind and nothing crossed its node
+so the `count` arm did not cover the new kind and nothing crossed its node
 type.
 
 Measured on this very document before the arm landed, and it is worse than
@@ -21,7 +21,7 @@ a clean document that should not be: the lie is PLAYED. With the count's
 target declared `kg` too — so WF-023's assignment cross agrees and has
 nothing to say — the verifier reported **PASS**, and `ref` then replayed a
 case over it with `oracle: PASS`, writing a unitless 1 into a kg-declared
-attribute. The *identical* lie one kind over, under `AANTAL`, was
+attribute. The *identical* lie one kind over, under `count`, was
 `WF-091 FAIL`. One aggregation's node type was unchecked while every other
 one's was.
 
@@ -40,7 +40,7 @@ result type no twist can reach, since it has no convertible sister.
 
 Rood-eerst, measured on this document. Without the arm (verifier md5
 `d970a571d0ecbc88de4bea5b14da9fc7` — byte-identical to the binary that
-shipped `AANTAL_GEVULDE`, so the red-first state and the mutant are the
+shipped `filledCount`, so the red-first state and the mutant are the
 same measurement): `verifier: PASS`. With the arm (md5
 `cb504f858c625baf82378a77d00362bf`): the single rejection above.
 

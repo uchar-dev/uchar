@@ -8,7 +8,7 @@ lives on, and here it names none.
     be: this position binds the subject 'Vondst'
 
 Broken from `corpus/golden/jutterswet-keurhouder` by moving one field and
-adding one declaration: the first rule's `eigenaar` from `Vondst` to `Jutter`,
+adding one declaration: the first rule's `host` from `Vondst` to `Jutter`,
 and `gekeurd` onto `Jutter` as well. The second declaration is the point of the
 case. Without it the document is also WF-100 — the host declaring no such
 characteristic — and the two rules would report together; with it WF-100 is
@@ -38,3 +38,6 @@ Arm-exact: this case exercises the ZERO flank at a ONE-object position. The
 TWO flank is `wf109-gastheer-ambigu-zelfgetypeerd`, the two-object position is
 `wf109-gastheer-derde-type`, and the two scope fences are
 `wf109-doelgastheer-samengesteld` and `wf109-doelgastheer-genavigeerd`.
+
+Since L5 the field is `host` (delta B10); the report cites `…/host`, and
+`expect.txt` pins the arm.

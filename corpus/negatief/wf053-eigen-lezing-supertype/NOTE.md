@@ -1,14 +1,14 @@
 # wf053-eigen-lezing-supertype
 
-Violates WF-053 (`spec/IR-SPEC.md` ch. 4.1a), the arm of the read WITHOUT
-navigation bindings: such a read is the subject's own read, and its
-`objecttype` is the subject type itself — equality in the WF-001 form, not ⊑.
+Violates WF-053 (`spec/IR-SPEC.md` ch. 4.1a), the arm of the read WITHOUT a
+`path`: such a read is the subject's own read, and its `subjectType` is the
+subject type itself — equality in the WF-001 form, not ⊑.
 A supertype of the subject does not satisfy it.
 
 The rule "het geborgen gewicht van een Munt is het brutogewicht van de Munt
 plus 1 t" has the subject `Munt` (⊑ `Vondst`). Its left operand reads
 `brutogewicht`, an attribute `Munt` inherits from `Vondst`, and writes
-`objecttype: "Vondst"`, without navigation bindings.
+`subjectType: "Vondst"`, without a `path`.
 
     WF-053 FAIL /rules/rules/1/versions/0/value/left: an attribute
     reference without a path is the subject's own read, so its
@@ -28,5 +28,5 @@ the one rule for every reader (IR-SPEC ch. 4.1a); a read on a supertype names
 the subject type itself or navigates.
 
 The document is `corpus/golden/jutterswet-muntweging` with that one
-`objecttype` changed from `Munt` to `Vondst`; nothing else fires.
+`subjectType` changed from `Munt` to `Vondst`; nothing else fires.
 `expect.txt` pins the arm.

@@ -8,7 +8,7 @@ day-first, where the lexeme is the canonical ISO form
 Until 2026-09-22 WF-095 admitted this spelling beside the canonical one,
 because the repository's own emitter wrote it into `waarde`. The emitter now
 writes the ISO lexeme into the literal's value (since L4 its `dateTime`
-variant) and keeps the snippet in `bron`, as it already did for a
+variant) and keeps the snippet in `source`, as it already did for a
 day-precision date (WF-084), and the rule narrowed to the one spelling. This
 document was verifier-clean under the two-spelling rule (measured 2026-09-22
 before the narrowing), which is what makes it the witness: the other five
@@ -21,7 +21,7 @@ sentence (since the L4 fix round; the readers' tolerance for the snippet ended
 
 Minimal own-authored document (Jutterswet vocabulary); the well-formed
 counterpart is the canonical-lexeme literal in
-`corpus/golden/jutterswet-meldstip/ir.json`, whose `bron` carries this
+`corpus/golden/jutterswet-meldstip/ir.json`, whose `source` carries this
 same snippet.
 
 **Migrated at L3 (2026-09-24), stamp: herschreven (m).** The literal's type

@@ -10,7 +10,7 @@ are both wrong**. The clause is the one described in full in the sibling NOTE
 (`wf034-verdeling-lege-bronattribuut`): a present attribute name on any of the
 allocation's six name fields is not blank, while an absent facet field
 keeps its meaning of a facet switched off. `orderingAttribute` is the key an
-`OP_VOLGORDE` allocation orders recipients by; absent, WF-025 already
+`ordered` allocation orders recipients by; absent, WF-025 already
 forbids it on any other method, so on an ordered allocation it is the field
 that decides *who gets served first*.
 

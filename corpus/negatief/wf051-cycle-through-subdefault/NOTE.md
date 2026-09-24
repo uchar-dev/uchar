@@ -6,5 +6,5 @@ group's negative edges, so the read closes a dependency cycle through the
 defaults: no strata exist.
 
 A minimal hand-built document: a group default whose single member chain
-holds a default whose justification is `GEVULD(zijn heffing)` and whose
+holds a default whose justification is `filled(zijn heffing)` and whose
 consequence is 10.00.

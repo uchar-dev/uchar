@@ -9,9 +9,9 @@ The recursive creation "werf de opvolger" (member of the recursive group
 "estafette") mints a successor Wachter while "het merk van de Wachter is
 leeg". The rule "merk van een wachter" writes merk = 1 when "de rang van de
 opvolger van de Wachter is gevuld". The creation writes the successor's rang
-and the `opvolging` link; the rule reads both under GEVULD; the merk the rule
-writes is what the creation tests under LEEG. Both tests carry
-`negatie: false`, so this is the witness for that polarity.
+and the `opvolging` link; the rule reads both under `filled`; the merk the rule
+writes is what the creation tests under `empty`. Both tests carry
+`negated: false`, so this is the witness for that polarity.
 
     WF-046 FAIL /rules/objectCreations/0/versions/0: negative dependency edge on
     a cycle: werf de opvolger reads what merk van een wachter produces while
@@ -33,7 +33,7 @@ probe of 2026-09-23 as a corpus document.
 
 Falsifiable in one edit: drop the merk test from the creation's condition
 and the document is clean (measured: `verifier: PASS`). The rule still reads
-the successor under GEVULD, but nothing on the creation's side reads the
+the successor under `filled`, but nothing on the creation's side reads the
 rule's merk any more, so no negative edge lies on a cycle.
 
 Minimal own-authored document on the shape of

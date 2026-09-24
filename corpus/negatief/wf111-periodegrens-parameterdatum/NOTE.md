@@ -32,3 +32,6 @@ non-conforming document that reaches them without going through the
 verifier. Each executor's own suite still pins its sentence. The document
 has lost its case file: a negatief directory holds only the ill-formed
 `ir.json`.
+
+Since L5 the bound is the window's `from` (delta B6); the report names it, and
+`expect.txt` pins the arm.

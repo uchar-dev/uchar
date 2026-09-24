@@ -9,7 +9,7 @@ The clause is the one described in full in the sibling NOTE
 (`wf034-verdeling-onbekend-ratoattribuut`): every filled attribute name on the
 allocation's six name fields resolves against the declaration scope of its own
 side — the source-side pair against `sourceType`, the four target-side
-fields against `targetType`. `orderingAttribute` is the key an `OP_VOLGORDE`
+fields against `targetType`. `orderingAttribute` is the key an `ordered`
 allocation orders recipients by: it decides *who gets served first*.
 
 The second **silent, agreeing** witness, and the sharper one, because here the

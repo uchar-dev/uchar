@@ -12,7 +12,7 @@ Built from a Jutterswet model whose fact creation runs `Kustvak` → `Post` →
 `Sein` beside a to-one `vakbebakening` relation, and whose guard the RegelSpraak
 frontend emits as a legal ANKER-side navigated check ("indien de baak van het
 kustvak brandend is", host absent, navigation binding present). One field is
-then moved: `eigenaar` from absent to `Sein`. Nothing else differs, so the
+then moved: `host` from absent to `Sein`. Nothing else differs, so the
 defect is the host alone — the hop itself resolves, and WF-053 has nothing to
 say.
 
@@ -34,3 +34,6 @@ Falsifiable in three directions, each turning this case clean:
 - put `Kustvak` in it — the same reading spelled out;
 - drop the navigation and host it on `Sein` — the golden's shape, where the
   guard filters the doelen.
+
+Since L5 the field is `host` (delta B10); the report cites `…/host`, and
+`expect.txt` pins the arm.

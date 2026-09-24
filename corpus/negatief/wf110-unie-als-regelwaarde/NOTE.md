@@ -46,9 +46,10 @@ construction, exactly as it exempts a Lambda) is unreachable without one.
 Arm-exact: the rule-value position never sets the admissibility flag, so
 this witness falls on the default and the count's own argument does not.
 
-Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
-with only its own fields — `arguments`, and on an aggregation `elementType`,
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each with
+only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
 builtin `granularity`; the report cites and names them. The load error quoted
-above carries the pointer of the wire it was measured on (`waarde`, since L4
-`versions/0/value`). `expect.txt` pins the arm.
+above carries the pointer of the wire it was measured on (`resolvedRegels`,
+since L5 `rules`; `waarde`, since L4 `versions/0/value`). `expect.txt` pins the
+arm.

@@ -78,3 +78,6 @@ Falsifiable, arm-exact: make the `eigenaar` arm of the `Kenmerk_check` branch
 of `walk_cond` (`spec/verifier/lib/checks.ml`) inert and this case, alone in
 all four zones, turns clean — 522 documents compared, one verdict moved, no
 report elsewhere.
+
+Since L5 the field is `host` (delta B10), absent where the subject is meant;
+the report cites `…/host`, and `expect.txt` pins the arm.

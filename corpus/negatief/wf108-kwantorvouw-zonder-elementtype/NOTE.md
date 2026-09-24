@@ -1,5 +1,5 @@
 Violates WF-108 (b) (`spec/IR-SPEC.md` ch. 4.5): the quantifier fold names no
-`elementObjecttype`, so the population it ranges over is unnamed. `elementType`
+`elementType`, so the population it ranges over is unnamed. `elementType`
 is the fold family's POPULATION — extensionally, every instance whose type is
 ⊑ it (ch. 2.2) — and without it the contributors are `reach ∩ ∅` in one reading
 and `reach` in another, which is exactly the "one document, two answers" class

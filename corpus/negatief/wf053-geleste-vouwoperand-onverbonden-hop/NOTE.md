@@ -1,8 +1,8 @@
 Violates WF-053 (`spec/IR-SPEC.md` ch. 4.1a) in the arm for an unbound read
-(since the L2 landing): the second operand of a listed `MAXIMUM` reads
-`bakenloon` on `Baken` from the subject `Vondst` and carries no navigation
-bindings. A read without bindings is the subject's own read, so its
-`objecttype` is the subject type; `Baken` names a type only a navigation
+(since the L2 landing): the second operand of a listed `maximum` reads
+`bakenloon` on `Baken` from the subject `Vondst` and carries no `path`. A
+read without a path is the subject's own read, so its `subjectType` is the
+subject type; `Baken` names a type only a navigation
 reaches, and no fact type relates `Vondst` to `Baken` at all.
 
     WF-053 FAIL /rules/rules/0/versions/0/value/arguments/1: an attribute
@@ -16,6 +16,6 @@ the type pair, finding none ("bindingless navigation: no fact type relates
 'Vondst' to 'Baken'"). Since L2 a navigation carries its bindings and
 nothing derives them (B11); the migration refused the document for the
 same missing relation. Written by hand: the read keeps its foreign
-`objecttype` and carries no binding, which is that arm. The position — a
+`subjectType` and carries no binding, which is that arm. The position — a
 listed value fold's operand, an ordinary read — is unchanged. `expect.txt`
 pins the arm.

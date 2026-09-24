@@ -22,7 +22,7 @@ verifier-clean.
 This pins the one aggregation formula that is not a pass-through: the least
 operand precision, the conjunction of wholeness, operand 0's sign and unit —
 the sentence WF-091's own clause already stated informally about
-`MINIMUM`/`MAXIMUM` and nothing enforced.
+`minimum`/`maximum` and nothing enforced.
 
 Falsifiable: drop `decimals` and this case turns clean (no facet stands
 behind it: the min/max arm skipped sign and residual, and since the L2 fix

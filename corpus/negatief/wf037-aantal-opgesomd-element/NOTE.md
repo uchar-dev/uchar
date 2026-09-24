@@ -1,7 +1,7 @@
 # wf037-aantal-opgesomd-element
 
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3) in the count's ARITY clause,
-in the spelling that ALSO claims an instance source: an `AANTAL` carrying
+in the spelling that ALSO claims an instance source: a `count` carrying
 `elementType: "Vondst"` and, beside it, an operand list of two
 ordinary reads.
 

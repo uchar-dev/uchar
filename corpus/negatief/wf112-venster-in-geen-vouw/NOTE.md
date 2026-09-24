@@ -1,14 +1,14 @@
 # wf112-venster-in-geen-vouw
 
 Violates WF-112 (`spec/IR-SPEC.md` ch. 4.6) in its FOLD arm: the time
-window is the `toets` of a `Kwantorvouw` whose quantifier is `GEEN`.
+window is the `test` of a `QuantifierFold` whose quantifier is `none`.
 
     WF-112 FAIL /rules/rules/2/versions/0/condition: a time window
     under none or a counting quantifier: …
 
 Derived from `corpus/golden/jutterswet-schouwploeg/ir.json`. The rule
-*bevoegd bij diploma* has quantifier `GEEN` and the bare window
-[2024-01-01, 2025-01-01) as its toets. Nothing else changed.
+*bevoegd bij diploma* has quantifier `none` and the bare window
+[2024-01-01, 2025-01-01) as its `test`. Nothing else changed.
 
 This is the arm that matters, not an extra spelling of the composite arm.
 On 2026-09-23 the Drools DRL-text branch answered exactly this document

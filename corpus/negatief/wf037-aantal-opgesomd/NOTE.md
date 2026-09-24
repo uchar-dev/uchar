@@ -2,7 +2,7 @@
 
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3) in the count's ARITY clause —
 the refusal of 2026-09-20, which took the LISTED form of a count off the
-wire. This is the form the decision was taken about: an `AANTAL` with no
+wire. This is the form the decision was taken about: a `count` with no
 `elementType`, no `sourceRole`, and two ordinary reads as its operand
 list.
 
@@ -16,7 +16,7 @@ list.
 The document. A `Jutter` with two weighed posts of her own — `gewogen
 vangst` and `gewogen bijvangst`, both kg with two decimals — and a
 count-typed target, `aantal gewogen posten` (whole, non-negative,
-unitless). The `AANTAL` reads both posts as ordinary own-attribute reads.
+unitless). The `count` reads both posts as ordinary own-attribute reads.
 Every other clause holds: the node type is the count's own derived type
 (WF-091 is silent), no facet is present, and the verifier reports one fault.
 
@@ -57,7 +57,7 @@ maintainer refused the wire form rather than normalise one executor's
 reading into a second meaning under one kind (2026-09-20, route (a) of
 `backlog/done/20260920-aantal-opgesomde-telling.md`). The listed filled
 count stays expressible the day someone norms a source spelling for it;
-`AANTAL_GEVULDE` already carries the meaning over a set source.
+`filledCount` already carries the meaning over a set source.
 
 Rood-eerst, measured on this document. Pre-refusal verifier (binary md5
 `c7356ed0f3002e933a550b899e888a1a`, source `spec/verifier/lib/checks.ml`
@@ -80,4 +80,4 @@ with only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
 builtin `granularity`; the report cites and names them. The measurements above
 name the fields as they were spelled then (`elementObjecttype` →
-`elementType`). `expect.txt` pins the arm.
+`elementType`; since L5 `AANTAL` → `count`). `expect.txt` pins the arm.

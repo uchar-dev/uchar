@@ -2,7 +2,7 @@ Violates WF-090 (`spec/IR-SPEC.md` ch. 2.4) at the third write position —
 a prioritized-defaults consequence. The `PrioritizedDefaults` on
 `Jutter.samenvatting` (declared with the struct domain `dossier`) carries
 one default whose consequence is a `StructLiteral` of `logboek`
-(`initialisatie: true`); a rule reads `samenvatting.waarde` faithfully.
+(`initialisation: true`); a rule reads `samenvatting.waarde` faithfully.
 
     WF-090 FAIL /rules/prioritizedDefaults/0/defaults/0/consequence: a value of
     the struct domain 'logboek' is assigned to a target of the struct

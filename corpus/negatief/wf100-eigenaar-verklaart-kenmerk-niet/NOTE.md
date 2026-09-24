@@ -10,7 +10,7 @@ looked at the field.
     is not a declared characteristic of 'Jutter'
 
 Broken from `corpus/golden/jutterswet-keurhouder` by moving one field: the
-first rule's `eigenaar` from `Vondst` to `Jutter`. Everything else — the two
+first rule's `host` from `Vondst` to `Jutter`. Everything else — the two
 rules, both polarities, both object types — is that golden verbatim, so the
 defect is the owner name alone.
 
@@ -49,3 +49,6 @@ WF-109's, and it is the one rule this directory does not declare. The declared
 rule still fires and still fires first-class; the document violates both
 obligations at one field, which is what two independent crosses on one field
 look like.
+
+Since L5 the field is `host` (delta B10); the report cites `…/host`, and
+`expect.txt` pins the arm.

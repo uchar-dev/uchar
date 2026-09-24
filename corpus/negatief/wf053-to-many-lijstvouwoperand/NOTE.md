@@ -1,5 +1,5 @@
 Violates WF-053 (`spec/IR-SPEC.md` ch. 4.1a) at a listed value fold's
-operand: `MAXIMUM(drempelgewicht, gewicht van de vondsten)` lists two
+operand: `maximum(drempelgewicht, gewicht van de vondsten)` lists two
 operands, and the second reads `Vondst.gewicht` from the subject `Jutter`
 through the to-many role `vondst` of `vondstaanmelding`. A listed fold's
 operands are ordinary reads, one value each (§5.8.3); a to-many step there

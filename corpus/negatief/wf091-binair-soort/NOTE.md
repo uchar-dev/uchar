@@ -1,6 +1,6 @@
 Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a composite position,
-`Binary`/PLUS arm, soort facet: two plain numbers are summed and the result
-is annotated `Booleaan`. ch. 2.3's additive row derives a number from two
+`Binary`/`plus` arm, soort facet: two plain numbers are summed and the result
+is annotated `Boolean`. ch. 2.3's additive row derives a number from two
 numbers.
 
     WF-091 FAIL /rules/rules/0/versions/0/value/type: soort mismatch:
@@ -15,7 +15,7 @@ it rewrote the annotation to a non-numeric soort; the arm this witness pins did
 not move at L3 (measured: the report is unchanged). The expectation did not
 hold: every reader reads a `Number` with the unit `%` as a percentage, so on a
 percentage annotation the report stays on the soort facet (measured
-2026-09-24: "soort mismatch: the PLUS composite is typed percentage, but the
+2026-09-24: "soort mismatch: the plus composite is typed percentage, but the
 type derived from its operands is number"). The WF-023 line
 beside it is the boolean written into the percentage target, a consequence of
 the same annotation. `expect.txt` pins the arm.

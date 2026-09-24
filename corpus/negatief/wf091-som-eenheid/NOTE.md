@@ -26,7 +26,7 @@ no reference arm can reach.
 Falsifiable: drop `unit` and this case turns CLEAN — the derived arms carry no
 backstop since the sign round, so the unit facet alone carries this refusal
 (measured); remove `Som` from the aggregation branch and it turns clean while
-the MAXIMUM, TOTAAL, MINIMUM and AANTAL cases stay red.
+the `maximum`, `total`, `minimum` and `count` cases stay red.
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the operand

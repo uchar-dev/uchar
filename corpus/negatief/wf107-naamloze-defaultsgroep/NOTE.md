@@ -1,7 +1,7 @@
 # wf107-naamloze-defaultsgroep
 
 Violates **WF-107** (`spec/IR-SPEC.md` ch. 3.1): the single
-`PrioritizedDefaults` group carries `naam: null`.
+`PrioritizedDefaults` group carries `name: null`.
 
     WF-107 FAIL /rules/prioritizedDefaults/0/name: form in prioritizedDefaults
     carries no name (a named form's identity on this wire IS its name —

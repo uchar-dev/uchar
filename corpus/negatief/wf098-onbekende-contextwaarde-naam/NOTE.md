@@ -1,7 +1,7 @@
-Violates WF-098 (`spec/IR-SPEC.md` ch. 4.1): a **context value** whose `name`
-is not one of the two admissible names — `de dagX` where the closed set holds
-`Rekendatum` and `Rekenjaar` (until L4 it held `de dag` as well; see the last
-paragraph).
+Violates WF-098 (`spec/IR-SPEC.md` ch. 4.1): a **context value** whose `name` is
+not one of the two admissible names — `de dagX` where the closed set holds
+`evaluationDate` and `evaluationYear` (until L4 it held `de dag` as well; see
+the last paragraph).
 
     WF-098 FAIL /rules/dayKindDefinitions/0/condition/parts/0/left/name: context
     value 'de dagX' is not one of the two admissible names evaluationDate,
@@ -57,7 +57,8 @@ elsewhere. Dropping only the byte-exactness (relaxing
 refused, so the two witnesses fall independently.
 
 Since L4 the node is a `ContextValue` (delta B23), its name is written in
-`name`, and the closed set holds two names, `Rekendatum` and `Rekenjaar`: the
+`name`, and the closed set holds two names, since L5 spelled `evaluationDate`
+and `evaluationYear` (delta B6): the
 bound day of a day-kind definition is its own node, `BoundDay`, and a context
 value named `de dag` falls outside the set like any other name (witness
 `wf098-de-dag-als-contextwaarde`). A context value without a name cannot be

@@ -22,7 +22,7 @@ fields of an allocation at once: `sourceAttribute`, `targetAttribute`,
 
 Absence keeps its meaning and stays legal where it carries one: an absent
 `ratioAttribute`, `maximumAttribute`, `remainderAttribute` or
-`orderingAttribute` is a facet switched **off**, and a `NAAR_RATO` without a
+`orderingAttribute` is a facet switched **off**, and a `proportional` without a
 `ratioAttribute` is already refused by WF-025's method-facet cross. Emptiness
 is decided by the verifier's own name identity (whitespace collapsed,
 lowercased, ch. 2.4), so a blank spelling is the same empty name.

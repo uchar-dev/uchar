@@ -1,4 +1,4 @@
-Violates WF-093 (`spec/IR-SPEC.md` ch. 4.3) in the direction that AANTAL
+Violates WF-093 (`spec/IR-SPEC.md` ch. 4.3) in the direction that `count`
 demands a count source (since the L2 landing): the count ranges over the
 `Vondst`en that `vondstaanmelding` links to the subject `Jutter`, and its
 source reads `gewicht`, an attribute of the element type. A count folds the
@@ -12,7 +12,7 @@ something it does not consume.
 
 **Successor at L2 (2026-09-24), stamp: vervangen, named after the rule it now
 pins.** This directory replaces `wf096-aantal-setbron`, whose defect was the
-set reading under `AANTAL` (WF-096). The set reading left the wire with L2
+set reading under `count` (WF-096). The set reading left the wire with L2
 (B11), and the count's half of WF-096 went into WF-093, which since L2 keys on
 the source itself: a count source names a role of the fold subject and no
 attribute of the element type, and this source names an attribute. The

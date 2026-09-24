@@ -11,10 +11,10 @@ of an instance count. Clause (a): the union is admissible under the instance cou
     argument of a count aggregation and at no other position (ch. 4.3)
 
 The document. The two-selection union as the single operand of
-`ABSOLUTE_WAARDE` — a single-argument BUILTIN, so the arity clause of
+`absoluteValue` — a single-argument BUILTIN, so the arity clause of
 WF-037 is satisfied and this position's only defect is the position.
 
-Why a builtin and not a fold. Under `SOM` the same document draws a second
+Why a builtin and not a fold. Under `sum` the same document draws a second
 citation, measured: `WF-037 FAIL … value fold with fewer than two operands`,
 because a sum with no element type and one argument is already ill-formed
 for a reason of its own. The builtin isolates clause (a): there is nothing
@@ -55,9 +55,10 @@ with a false default, so it reaches the argument the count hands over and no
 descendant of it — a union nested inside a selection's filter is at a wrong
 position again and says so.
 
-Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
-with only its own fields — `arguments`, and on an aggregation `elementType`,
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each with
+only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
 builtin `granularity`; the report cites and names them. The load error quoted
-above carries the pointer of the wire it was measured on (`waarde/argumenten`,
-since L4 `versions/0/value/arguments`). `expect.txt` pins the arm.
+above carries the pointer of the wire it was measured on (`resolvedRegels`,
+since L5 `rules`; `waarde/argumenten`, since L4 `versions/0/value/arguments`).
+`expect.txt` pins the arm.

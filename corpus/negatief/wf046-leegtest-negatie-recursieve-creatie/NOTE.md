@@ -3,7 +3,7 @@
 Violates **WF-046** (`spec/IR-SPEC.md` ch. 4.6 and 5.2,
 `RUNTIME-SEMANTICS.md` ch. 6.3). A leeg/gevuld test is a negative edge in
 both polarities (maintainer decision 2026-09-23). This is the witness for
-`negatie: true`: both tests on the cycle carry it.
+`negated: true`: both tests on the cycle carry it.
 
 The recursive creation "werf de opvolger" (group "estafette") mints a
 successor Wachter while "het merk van de Wachter is niet gevuld". The rule
@@ -19,9 +19,9 @@ creation reads.
     a cycle: merk van een wachter reads what werf de opvolger produces while
     werf de opvolger is reachable from it (no strata exist)
 
-This is the R3 probe of 2026-09-23. The probe wrote the rule's test as LEEG,
-which means the same as GEVULD negated; it is spelled here with
-`negatie: true` so that no test with `negatie: false` sits on the cycle.
+This is the R3 probe of 2026-09-23. The probe wrote the rule's test as
+`empty`, which means the same as `filled` negated; it is spelled here with
+`negated: true` so that no test with `negated: false` sits on the cycle.
 
 Measured before the arm (2026-09-23), with one input Wachter W1 of rang 1.
 The verifier said `verifier: PASS`. The reference interpreter answered

@@ -14,7 +14,7 @@ comparison node and not at an operand.
     across two date precisions (day and millisecond), which share no order
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-vondstnummer`
-(a `LATER_OF_GELIJK` consistency over two day-precision operands). Two
+(a `laterOrEqual` consistency over two day-precision operands). Two
 lines move and nothing else: the precision of the declaration of
 `Vondst.vondstdag` from `day` to `millisecond`, and the single operand
 annotation that

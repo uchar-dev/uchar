@@ -30,7 +30,7 @@ is the argument of a fold that carries a range, IR-SPEC ch. 4.3), because that
 reading is an alias of the sum and integrates over nothing. The ASP
 translator's `eff_unit` and the Drools backend's `EffectieveEenheid` strip in
 neither reading: both hand the first operand's unit through whole. The
-verifier follows the source that states a `TOTAAL` rule and mirrors its
+verifier follows the source that states a `total` rule and mirrors its
 predicate rather than restating the strip — an unconditional strip is *not*
 what §4.20 plus the emitter say together, and writing one made
 `jutterswet-tempototaal` red on a wire type no executor can produce. The two
@@ -39,7 +39,7 @@ consumer-side question, not a well-formedness one.
 
 This document reaches the strip on the arity half of that predicate: it totals
 **two** operands, both ordinary reads without a range, so no reading of it is
-the set alias. *Measured 2026-09-04:* 15 `TOTAAL` nodes over the four zones —
+the set alias. *Measured 2026-09-04:* 15 `total` nodes over the four zones —
 9 golden, 6 negatief, none in rood or the parity zone — of which only three
 carry a rate unit at all (the two in `jutterswet-tempototaal`, one per
 reading, and this one), so at the other twelve the strip is a no-op either
@@ -55,7 +55,7 @@ unconditional instead (delete the `set_lezing` guard, the shape before fix
 round 3) and this case stays red while that same golden's non-temporal set
 fold turns red. The strip is therefore pinned on both sides by one negatief
 and one golden; the **granularity** half of the guard is not pinned here at
-all — no `TOTAAL` in any zone reads a temporal attribute as a set, so
+all — no `total` in any zone reads a temporal attribute as a set, so
 dropping that half leaves gate 3 green, and ch. 4.1 says so.
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the

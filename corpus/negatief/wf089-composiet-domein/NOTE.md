@@ -1,5 +1,5 @@
 Violates WF-089 (`spec/IR-SPEC.md` ch. 2.4) on its one-sided arm at a
-**composite** position: a `PLUS` over two `Number` operands is annotated
+**composite** position: a `plus` over two `Number` operands is annotated
 with the keuzetype domain `Vaarwater` and written to the enumeration
 attribute it claims to produce. The derived type of an additive node is a
 number (ch. 2.3 / ch. 2.6), which names no keuzetype domain, so the rule
@@ -14,7 +14,7 @@ same facet order and the same number-follows-the-facet rule as the
 reference arms, so the domain facet at a composite reports under WF-089 —
 not under WF-091. Until this case that firing path had no artifact at all:
 WF-089's own aggregation arm reaches an element-passing fold and nothing
-else, so a `PLUS`, a `MAAL`, a rounding, a clamp, a `SOM`, a `TOTAAL` or a
+else, so a `plus`, a `times`, a rounding, a clamp, a `sum`, a `total` or a
 count could name any domain it liked. The witness is arm-exact and cheap
 because the path already existed; what it pins is that the derived half
 keeps WF-089's number and WF-089's wording instead of absorbing them.

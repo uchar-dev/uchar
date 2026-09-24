@@ -11,10 +11,12 @@ outright.
 
 A minimal hand-broken variant of
 `corpus/golden/anchor/jutterswet-borgdeel/ir.json`: one field on one node —
-`resolvedRegels[0].versions[0].value.filter.periode` goes from `null` to an
-affirmative `GeheelPeriode`. The characteristic is TIME-DEPENDENT, so WF-043's
+`rules[0].versions[0].value.filter.wholePeriod` goes from absent to an
+affirmative `WholePeriod`. The characteristic is TIME-DEPENDENT, so WF-043's
 non-time-dependent arm cannot fire here — which is exactly why the qualifier
-evaporated in silence at this position.
+evaporated in silence at this position. Since L5 the qualifier is a
+`WholePeriod {granularity, negated}` (delta B6); the report names it
+`wholePeriod`, and `expect.txt` pins the arm.
 
 Only the AFFIRMATIVE polarity is pinned per clip. The negated one is not a
 separate arm but a branch inside the shared one, and it is pinned twice already

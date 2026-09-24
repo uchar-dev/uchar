@@ -4,7 +4,7 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3) in the count's SOURCE arm —
 the maintainer decision of 2026-09-23 (option (a) of
 `backlog/done/20260920-aantal-zonder-bron.md`): a count is an instance
 fold and MUST carry an element type, the same sentence the filled count's
-element-type arm states. This is the arity-0 spelling: an `AANTAL` with no
+element-type arm states. This is the arity-0 spelling: a `count` with no
 argument at all and no `elementType`. One sentence covers it and the
 arity-1 spellings, because the defect is the same — no source.
 
@@ -17,7 +17,7 @@ arity-1 spellings, because the defect is the same — no source.
 The document. A `Jutter` with two weighed posts of her own (`gewogen
 vangst`, `gewogen bijvangst`, kg with two decimals) and a count-typed
 target, `aantal gewogen posten` (whole, non-negative, unitless). The
-`AANTAL` carries an empty argument list and no `elementType`. Every other
+`count` carries an empty argument list and no `elementType`. Every other
 clause holds: no facet, the node type is the count's own derived type; the
 verifier reports one fault.
 

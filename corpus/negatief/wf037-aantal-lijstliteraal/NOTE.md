@@ -17,7 +17,7 @@ count without an element type.
 The document. A `Jutter` with two weighed posts of her own (`gewogen
 vangst`, `gewogen bijvangst`, kg with two decimals) and a count-typed
 target, `aantal gewogen posten` (whole, non-negative, unitless). The
-`AANTAL` carries one argument, a `ListLiteral` of two unitless decimals
+`count` carries one argument, a `ListLiteral` of two unitless decimals
 (1.00 and 2.00), and no `elementType`. Every other clause holds: no facet,
 the node type is the count's own derived type; the verifier reports one
 fault.

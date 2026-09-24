@@ -1,4 +1,4 @@
-Violates WF-049 (`spec/IR-SPEC.md`): the temporal read's `basis`
+Violates WF-049 (`spec/IR-SPEC.md`): the temporal read's `base`
 references `vast quotum`, a plain (non-temporal) attribute — there is
 no timeline to read. The basis must be an own temporal attribute
 reference or a granular parameter reference.

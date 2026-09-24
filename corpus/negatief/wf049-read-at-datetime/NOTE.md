@@ -1,4 +1,4 @@
-Violates WF-049 (`spec/IR-SPEC.md`): the temporal read's `datum`
+Violates WF-049 (`spec/IR-SPEC.md`): the temporal read's `date`
 operand is typed `Date` with `precision: millisecond` — the read indexes
 day-precision timelines, so its date operand must be a day-precision
 date expression.

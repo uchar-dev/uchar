@@ -8,9 +8,9 @@ anker is the only object bound and `Sein` names none.
     this position binds the subject 'Kustvak'
 
 Broken from `corpus/golden/jutterswet-seinhijsing` by two moves: `gehesen` on
-`Sein` becomes time-dependent (`granularity: JAAR` in the `timeline` of its
+`Sein` becomes time-dependent (`granularity: year` in the `timeline` of its
 `Characteristic`; `kenmerkGranulariteit` until L1, B5) and the guard gains a
-`GeheelPeriode` qualifier. The host field is untouched.
+`WholePeriod` qualifier. The host field is untouched.
 
 Why the fence exists, measured rather than assumed (2026-09-19, on this exact
 document with a whole-year S1 and a half-year S2):
@@ -78,3 +78,6 @@ document they answer
 instead of the doel reading (exec) and the package-wide compile error (drl-tekst).
 The fence falls only when the §8.2 family norms a qualified doel host and all four
 executors carry it.
+
+Since L5 the field is `host` (delta B10) and the qualifier a `WholePeriod`
+(delta B6); the report cites `…/host`, and `expect.txt` pins the arm.

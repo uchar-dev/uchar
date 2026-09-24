@@ -1,10 +1,10 @@
 Violates WF-090 (`spec/IR-SPEC.md` ch. 2.4) at the first write position —
 a rule target. The document is the `jutterswet-vondstdossier` model with a
 second, internally consistent struct domain `logboek` (`bedrag`, `aantal`)
-beside `dossier` (`waarde`, `telling`). The `BEREKENING` on
+beside `dossier` (`waarde`, `telling`). The `calculation` on
 `Jutter.samenvatting`, declared `dossier`, writes a `StructLiteral` of
 `logboek`; a second rule reads `samenvatting.waarde` through a faithfully
-typed `AttribuutRef`, so WF-073 and WF-074 have nothing to say — each
+typed `AttributeReference`, so WF-073 and WF-074 have nothing to say — each
 crosses a use site against the domain it names, never against the
 declaration the value enters.
 
@@ -13,7 +13,7 @@ declaration the value enters.
 
 Why it has to exist: this is the flank the use-site-declaration-identity
 card measured and left open — WF-023's domain clause is scoped to the
-keuzetype family (Enumeratie and SumType), so nothing typed a struct value
+keuzetype family (Enumeration and SumType), so nothing typed a struct value
 against its target. Verifier-clean before; ref faulted
 (`field "waarde" is not present on the record value`) while clingo left
 `J1.waardekopie` underived where 125.50 was expected — a verifier-clean

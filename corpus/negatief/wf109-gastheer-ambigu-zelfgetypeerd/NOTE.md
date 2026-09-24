@@ -1,6 +1,6 @@
 Violates WF-109 (`spec/IR-SPEC.md` ch. 4.6 (q2)) on its **second flank**: the
 host names a type that BOTH bound objects are. The fact creation is
-self-typed — a `Wachter` anker and a `Wachter` doel — so `eigenaar: "Wachter"`
+self-typed — a `Wachter` anker and a `Wachter` doel — so `host: "Wachter"`
 picks out the anker and the doel equally well, and the type string settles
 nothing.
 
@@ -33,3 +33,6 @@ Falsifiable in two directions, each turning this case clean:
   absent host has always meant, and the document answers;
 - make the pair heterotypic — give the creation a doel type distinct from the
   anker's, and the host names one object again.
+
+Since L5 the field is `host` (delta B10); the report cites `…/host`, and
+`expect.txt` pins the arm.

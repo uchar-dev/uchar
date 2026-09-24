@@ -17,9 +17,10 @@ so the migration had to derive one and refused: nothing derives a range
 beside a union. Written by hand with the first selection's relation as
 `bronRol`; the clause now names both halves of the count's own source.
 
-Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
-with only its own fields — `arguments`, and on an aggregation `elementType`,
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each with
+only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
 builtin `granularity`; the report cites and names them. The L2 paragraph above
-names the fields as they were spelled then (`elementObjecttype` →
-`elementType`, `bronRol` → `sourceRole`). `expect.txt` pins the arm.
+names the fields as they were spelled then (`elementObjecttype` → `elementType`,
+`bronRol` → `sourceRole`; since L5 `TOTAAL` → `total`). `expect.txt` pins the
+arm.

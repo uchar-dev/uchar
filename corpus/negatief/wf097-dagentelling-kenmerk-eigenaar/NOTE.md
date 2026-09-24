@@ -1,6 +1,6 @@
-Violates WF-097 (`spec/IR-SPEC.md`): a `gedurende` clip member carries
-an `eigenaar`. The clip reads the subject's own characteristic timeline over the whole
-span it ranges over, so the owner names a subject no reader consults.
+Violates WF-097 (`spec/IR-SPEC.md`): a `gedurende` clip member carries a `host`.
+The clip reads the subject's own characteristic timeline over the whole span it
+ranges over, so the host names a subject no reader consults.
 
 This is the **day count (ch. 3.8, the WF-058 clip)** — one of the three clips WF-097 fences. The rule lives in
 ONE shared helper per artifact, reached from two or three call sites depending on
@@ -11,8 +11,9 @@ outright.
 
 A minimal hand-broken variant of
 `corpus/golden/anchor/jutterswet-dagentelling/ir.json`: one field on one node
-— `resolvedRegels[0].versions[0].value.filter.eigenaar` goes from `null` to
-`"Jutter"` — a DECLARED type, so WF-034's owner arm stays silent.
+— `rules[0].versions[0].value.filter.host` goes from absent to `"Jutter"` — a
+DECLARED type, so WF-034's owner arm stays silent. Since L5 the field is `host`
+(delta B10); the report names it, and `expect.txt` pins the arm.
 
 Before the rule reached this clip the document was verifier-clean and both
 executors replayed every one of the anchor's cases with the untwisted answers.

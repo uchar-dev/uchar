@@ -5,7 +5,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a LISTED fold operand names
 `Jutter`. A listed value fold (§5.8.3) has no source; its operands are
 ordinary reads, and a role name read as an attribute resolves to nothing.
 
-The document. A `MAXIMUM` with two arguments and a vestigial
+The document. A `maximum` with two arguments and a vestigial
 `elementType`: operand 0 the subject's `drempelgewicht`, operand 1
 `vondsten` on `Jutter`. The name is a count source only as the single
 argument of an aggregation (WF-093); here it is the second of two operands, and

@@ -10,10 +10,10 @@ neither.
     this position binds the anchor 'Kustvak' and the target 'Sein'
 
 Broken from `corpus/golden/jutterswet-seinhijsing` by moving one field: the
-first creation's `eigenaar` from `Sein` to `Post`. `Post` declares `gehesen` in
+first creation's `host` from `Sein` to `Post`. `Post` declares `gehesen` in
 that model, so WF-100 is satisfied and this rule is the only one speaking. The
 SECOND creation is left untouched on purpose: it carries the legal doel host
-(`eigenaar: "Sein"`, negated) in the same document, so the file holds the
+(`host: "Sein"`, negated) in the same document, so the file holds the
 contrast rather than only the defect.
 
 Why it has to exist. An intermediate step is an object the chain walks
@@ -34,3 +34,6 @@ Falsifiable in two directions, each turning this case clean:
 
 Both directions change the ANSWER, not only the verdict, which is why the
 golden pins three different numbers for the three readings.
+
+Since L5 the field is `host` (delta B10); the report cites `…/host`, and
+`expect.txt` pins the arm.

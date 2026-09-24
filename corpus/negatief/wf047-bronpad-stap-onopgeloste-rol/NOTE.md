@@ -9,7 +9,7 @@ names a role the fact type does not declare.
 
 The second step spells the DECLARED PLURAL (`geborgen vondsten`) where the
 binding takes the declared NAME (`geborgen vondst`). WF-102 adds no resolution
-rule of its own: a step is a `RolBinding` and resolves exactly as one
+rule of its own: a step is a `RoleBinding` and resolves exactly as one
 anywhere else on the wire, which is what makes the path reuse rather than
 restate. The witness exists because the POSITION is new — a rule that walked
 the path without resolving each step would report the chain break instead of

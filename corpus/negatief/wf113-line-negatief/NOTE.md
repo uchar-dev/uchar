@@ -1,9 +1,9 @@
-Violates WF-113 (a) (`spec/IR-SPEC.md` ch. 2): a `WARNING` whose `line` is -1.
+Violates WF-113 (a) (`spec/IR-SPEC.md` ch. 2): a `warning` whose `line` is -1.
 
     WF-113 FAIL /diagnostics/0/line: diagnostic with line -1: a line is a source position, and 0 is the value for none (a hand-built document, or a producer warning without a token)
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-vondstverjaring/ir.json`:
-the golden unchanged, plus one entry with severity `WARNING`, the
+the golden unchanged, plus one entry with severity `warning`, the
 decision-table message of `wf113-severity-null`, and `"line": -1`. That `line`
 is an integer is the loader's check; that it is at least 0 is this rule's. A
 line is a source position, and 0 is the value for none: a hand-built document

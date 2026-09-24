@@ -1,6 +1,6 @@
 Violates WF-047 (`spec/IR-SPEC.md` ch. 2.6; the `sourceRole` row of
 ch. 4.3): a fold-source role binding on a fold that is not an instance fold —
-a `sourceRole` on a listed `LAATSTE` of two operands.
+a `sourceRole` on a listed `last` of two operands.
 
     WF-047 FAIL /rules/rules/0/versions/0/value/sourceRole: a
     fold-source role binding on a node that is not an instance fold over a
@@ -24,8 +24,8 @@ of the source golden: the reference interpreter and the ASP backend pass both,
 and the Drools backend plays both. Only the verifier reports it.
 
 **The document.** `corpus/golden/jutterswet-sluitsom/ir.json` with one field
-added to the `LAATSTE` of its rule, after `elementType`:
-`"sourceRole": {"node": "RolBinding", "feittype": "bewaring", "rol":
+added to the `last` of its rule, after `elementType`:
+`"sourceRole": {"node": "RoleBinding", "factType": "bewaring", "role":
 "bewarende jutter"}`.
 
 Falsifiable, arm-exact: emptying the arm `None, Some _` of the range match in

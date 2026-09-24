@@ -56,9 +56,10 @@ Arm-exact: the (d) arm compares each selection against selection 0 and
 reports at the selection that differs, so the equal-population union — the
 form the goldens carry — is untouched by construction.
 
-Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
-with only its own fields — `arguments`, and on an aggregation `elementType`,
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each with
+only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
 builtin `granularity`; the report cites and names them. The load error quoted
-above carries the pointer of the wire it was measured on (`waarde/argumenten`,
-since L4 `versions/0/value/arguments`). `expect.txt` pins the arm.
+above carries the pointer of the wire it was measured on (`resolvedRegels`,
+since L5 `rules`; `waarde/argumenten`, since L4 `versions/0/value/arguments`).
+`expect.txt` pins the arm.
