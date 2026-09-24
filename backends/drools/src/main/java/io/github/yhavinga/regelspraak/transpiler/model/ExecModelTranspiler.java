@@ -5279,10 +5279,19 @@ public final class ExecModelTranspiler {
         return e instanceof Expr.Binair || e instanceof Expr.Functie || e instanceof Expr.Begrensd
                 || e instanceof Expr.Afgerond || Expr.isRekenConstante(e);
     }
-    /** An operand admissible to a NUMERIC comparison branch: a genuinely numeric/percentage type, OR a numeric-domain
+    /** An operand admissible to a NUMERIC comparison branch: a NUMBER type ({@code isNumeriek}), OR a numeric-domain
      *  arithmetic EXPRESSION the resolver could not unit-type (Onbekend, e.g. a §4 composite/rate unit from Bedrag×km) —
      *  scalarWaarde still lowers it to a BigDecimal. Datum expressions are typed isDatum (NOT Onbekend), so they are
-     *  excluded; a Tekst/Boolean is not a numeriekeExpressie. Mirrors DRL, which structurally descends with no isNumeriek gate. */
+     *  excluded; a Tekst/Boolean is not a numeriekeExpressie.
+     *
+     *  <p>A PERCENTAGE is not admitted either: a percentage attribute or literal, and since L3 of the v1 wire migration
+     *  also a derived result whose unit is '%' (a sum or difference of percentages), which the loader reads as a
+     *  percentage where on the L2 base it read a number. A comparison with such an operand therefore falls through to
+     *  the branch's named skip ("voorwaarde buiten Phase-B scope"), a loud EXCLUDE: "A plus B groter is dan C plus D"
+     *  over percentages, which the L2 base played, is refused now (no corpus document carries it), and
+     *  jutterswet-afdrachtstapel, a sum and a difference of percentages against a percentage literal, is pinned EXCLUDE
+     *  on it in gate 12. Admitting percentages here moves gate-12 channels, so it waits for a card of its own. The DRL
+     *  branch descends structurally with no isNumeriek gate and plays that golden. */
     private boolean getalachtigVergelijkbaar(Expr e) {
         return e != null && eff.typeVan(e) != null
             && (eff.typeVan(e).isNumeriek() || (eff.typeVan(e).isOnbekend() && numeriekeExpressie(e)));
