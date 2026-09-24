@@ -1062,6 +1062,10 @@ public final class IrLoader {
                 // once, or either written as null, is no document.
                 String p = padVan(n);
                 bereikVelden(n, p);
+                // WF-102 (c): a count's range is one step, whatever its source reads — asked before anything of the
+                // source is, so a source this loader cannot judge (a null name, a navigated or non-reference
+                // argument) is no way past it (measured: with a null name the count was counted along the path)
+                if (fk == Expr.FunctieKind.AANTAL && n.has("bronPad")) throw new Documentfout(p + "/bronPad", BRONPAD_C);
                 boolean eenBron = n.hasNonNull("elementObjecttype") && args.size() == 1;
                 if (eenBron && fk != Expr.FunctieKind.TOTAAL && !n.has("bronRol") && !n.has("bronPad"))
                     throw new Documentfout(p, "missing field 'bronRol' (a " + fk + " over one source with an element"
@@ -1081,9 +1085,7 @@ public final class IrLoader {
                     if (pad.size() < 2)
                         throw new Refusal("Functie.bronPad", "a bronPad carries at least TWO steps, found "
                                 + pad.size() + " — the one-step range is spelled bronRol (WF-102 (b))");
-                    if (!isLedenVouwbron(n))
-                        throw new Refusal("Functie.bronPad", "a bronPad is admissible only on the SOURCE of a"
-                                + " single-argument instance fold — the position bronRol stands at (WF-102 (c))");
+                    if (!isLedenVouwbron(n)) throw new Documentfout(p + "/bronPad", BRONPAD_C);
                     bronPaden.put(f, List.copyOf(pad));
                 }
                 // the one-step range — see Loaded#rolBindingen. It stays OUT of the record (that one is vendored).
@@ -1189,6 +1191,11 @@ public final class IrLoader {
         return waarde;
     }
 
+    /** WF-102 (c), the one sentence for both halves of the position: a path ranges a value fold's set source and
+     *  nothing else. */
+    private static final String BRONPAD_C = "a bronPad is admissible only as the range of a single-argument VALUE"
+            + " fold's set source — a count's range is one step, spelled bronRol (WF-102 (c))";
+
     /** WF-102 (c): is this {@code Functie} node a single-argument instance fold — the one position a range stands
      *  at? Asked of the RAW node: a declared {@code elementObjecttype} plus exactly one argument that is a read
      *  carrying no navigation of its own (IR-SPEC ch. 4.3: with a range, that argument IS the source). */
@@ -1204,8 +1211,9 @@ public final class IrLoader {
      *  element type decides which fold kinds may consume it, and a document that pairs the two otherwise is refused
      *  by name, as the verifier refuses it and as {@code ref} and the ASP backend fault on it. Under {@code AANTAL}
      *  the source names the counted role, so a name that is a member of the element type reads a value per
-     *  contributor, which a count does not fold (WF-093 (b)), and a count's range is one step (WF-102 (c)). Under a
-     *  value fold the name is read per contributor, so it must be an attribute of the element type: a
+     *  contributor, which a count does not fold (WF-093 (b)); a count's range is one step (WF-102 (c)), which the
+     *  fold's own arm asks before this, whatever the source reads. Under a value fold the name is read per
+     *  contributor, so it must be an attribute of the element type: a
      *  characteristic carries no value there (WF-080). A name that is neither is refused once the subject is known
      *  ({@link #keurWaardevouwbron}). Without these the exec branch played a count over an attribute as a count of
      *  members and failed with a runtime error at first fire on a value fold over a role name, and the DRL-text
@@ -1223,10 +1231,6 @@ public final class IrLoader {
                 throw new Documentfout(plek, "a count over \"" + a + "\", which is "
                         + (attribuut ? "an attribute" : "a characteristic") + " of \"" + el.naam + "\": a count source"
                         + " names the counted role, and a value read per member is a value fold's source (WF-093 (b))");
-            if (n.has("bronPad"))
-                throw new Documentfout(p + "/bronPad", "a bronPad is admissible only as the range of a"
-                        + " single-argument VALUE fold's set source — a count's range is one step, spelled bronRol"
-                        + " (WF-102 (c))");
             return;
         }
         if (WAARDEVOUWEN.contains(fk) && kenmerk)

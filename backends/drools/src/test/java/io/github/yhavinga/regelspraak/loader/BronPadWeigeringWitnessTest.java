@@ -21,7 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * What the LOADER does with {@code bronPad} (IR-SPEC ch. 4.3 / WF-102): it keeps the whole ordered walk
- * VERBATIM, and refuses the three SHAPE violations by name.
+ * VERBATIM, and refuses the three SHAPE violations by name — both spellings at once (a) and a path at another
+ * position than a value fold's set source (c) as a malformed document, a path of fewer than two steps (b) as a
+ * form it declines.
  *
  * <p><b>Why the shape arms are refused here rather than downstream.</b> A verifier-clean document cannot
  * reach them; a document that reaches this backend WITHOUT passing the verifier must fail naming the shape
@@ -86,11 +88,16 @@ class BronPadWeigeringWitnessTest {
      *  navigates on its own hands the fold something else, so a range does not apply to it, and a document that
      *  writes one there is refused rather than half-read. */
     @Test void een_bronpad_op_een_niet_ledenbron_wordt_geweigerd() throws Exception {
+        // Since L2's fix round a malformed document, not a form this backend declines: WF-102 (c) makes the
+        // position part of the shape, in the verifier's one sentence for both halves of it.
         ObjectNode root = (ObjectNode) anker();
         ((ObjectNode) vouw(root).get("argumenten").get(0)).putArray("navigatieBindingen").addObject()
                 .put("node", "RolBinding").put("feittype", "bemanning").put("rol", "gevoerde boot");
-        assertTrue(weigering(root).contains("WF-102 (c)"),
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root),
                 "alleen de bron van een eenargumentsvouw draagt een bereik");
+        assertEquals("/rules/resolvedRegels/0/waarde/bronPad", e.plek(), e.getMessage());
+        assertTrue(e.getMessage().contains("a bronPad is admissible only as the range of a single-argument VALUE"
+                + " fold's set source — a count's range is one step, spelled bronRol (WF-102 (c))"), e.getMessage());
     }
 
     /** Without the field the fold has no range at all, and a MINIMUM over one source with an element type is no

@@ -304,6 +304,13 @@ class ReferentielaagWeigeringWitnessTest {
         IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/0/waarde/bronPad");
         assertTrue(e.getMessage().contains("a bronPad is admissible only as the range of a single-argument VALUE"
                 + " fold's set source — a count's range is one step, spelled bronRol (WF-102 (c))"), e.getMessage());
+
+        // ...whatever the source reads: with a null name the source check has nothing to judge, and until the
+        // advisory round the count then passed and was counted along the path (the lens measured "verwacht 2,
+        // werkelijk 3" on the exec branch)
+        bron(ir, 0).putNull("attribuut");
+        e = weigert(ir, "/rules/resolvedRegels/0/waarde/bronPad");
+        assertTrue(e.getMessage().contains("(WF-102 (c))"), e.getMessage());
     }
 
     // ---------------- a characteristic at a value position (WF-080) ----------------
