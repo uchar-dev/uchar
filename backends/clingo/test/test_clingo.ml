@@ -11783,6 +11783,60 @@ let () =
        ~door:{|"kind": "DAG_UIT", "granularity": "MAAND", "arguments"|})
     dk_case "/rules/resolvedDagsoorten/0/voorwaarde/links"
 
+(* A bucketing builtin (TIJDSEVENREDIG_DEEL, AANTAL_DAGEN_IN) as a term inside
+   an expression. Both executors carry it only as the whole value of a rule on
+   a temporal target (ch. 3.7, 3.8); met anywhere else it is refused by name,
+   in ref's sentence, where this backend used to fall through to its bottom
+   sentence. The probe is also refused by the verifier, for other reasons
+   (WF-056 on its base and gedurende condition). *)
+let () =
+  let ir =
+    {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [
+          { "node": "Attribute", "name": "basis", "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "ONBEPAALD" } },
+          { "node": "Attribute", "name": "heffing", "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "ONBEPAALD" } } ],
+        "characteristics": [ { "node": "Characteristic", "name": "actief", "kind": "BIJVOEGLIJK" } ] } ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [] },
+  "rules": {
+    "resolvedRegels": [
+      { "node": "Rule", "name": "heffing", "versions": [ {
+          "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
+          "target": { "node": "AttribuutRef", "attribuut": "heffing", "objecttype": "Jutter", "bron": "De heffing" },
+          "value": { "node": "Binair", "op": "PLUS",
+            "links": { "node": "BuiltinCall", "kind": "TIJDSEVENREDIG_DEEL",
+              "arguments": [ { "node": "AttribuutRef", "attribuut": "basis", "objecttype": "Jutter", "bron": "zijn basis" } ],
+              "filter": { "node": "Kenmerk", "kenmerk": "actief", "negatie": false, "eigenaar": null, "periode": null, "bron": "hij actief is" },
+              "granularity": "MAAND",
+              "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "ONBEPAALD" }, "bron": "het tijdsevenredig deel" },
+            "rechts": { "node": "Literal", "value": { "number": "1" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "bron": "1" },
+            "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "ONBEPAALD" }, "bron": "som" },
+          "initialisation": false, "presentation": "BEREKENING" } ] } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "feitCreaties": [], "resolvedStartpunten": [], "regelGroepen": [] },
+  "diagnostics": [] }|}
+  in
+  let case_text =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "J1", "objectType": "Jutter", "attributes": { "basis": { "number": "10" } }, "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+  in
+  let zin =
+    "a granularity-bucketed builtin call is executed only as the whole value of a rule on a \
+     temporal target (ch. 3.7, 3.8)"
+  in
+  let doc, case = load_pair ~ir ~case_text in
+  (match ref_report doc case with
+  | (_ : string list) -> check "emmerende builtin in een expressie: ref weigert (kreeg een wereld)" false
+  | exception Uchar_ref.Value.Fault m ->
+      check ("emmerende builtin in een expressie: ref weigert (" ^ m ^ ")") (m = zin));
+  match translate doc case with
+  | (_ : string) -> check "emmerende builtin in een expressie: clingo weigert (kreeg een programma)" false
+  | exception Uchar_ref.Value.Fault m ->
+      check ("emmerende builtin in een expressie: clingo weigert (" ^ m ^ ")") (m = zin)
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

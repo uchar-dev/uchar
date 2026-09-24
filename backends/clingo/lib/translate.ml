@@ -3147,9 +3147,12 @@ let unshadow_payload (lets : (string * expr * datatype option * string option) l
 
 (* WF-037: a granularity is read by the two bucketing builtins alone, and
    those are translated only as the whole value of a rule on a temporal
-   target. On any other kind the facet is refused in the verifier's
+   target (the rule translation reads that shape itself, never through
+   [expr_term]). On any other kind the facet is refused in the verifier's
    sentence, the one ref speaks, and never translated with the facet
-   dropped; both the term translation and the day-kind evaluation ask. *)
+   dropped; both the term translation and the day-kind evaluation ask. A
+   bucketing builtin met as a term is refused by name, in ref's sentence,
+   rather than by the fall-through. *)
 let bucketing = function Tijdsevenredig_deel | Aantal_dagen_in -> true | _ -> false
 
 let foreign_granularity () = fault "granularity facet on a non-bucketing kind"
@@ -3160,6 +3163,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | None ->
   match e with
   | Functie { kind; granulariteit = Some _; _ } when not (bucketing kind) -> foreign_granularity ()
+  | Functie { kind = Tijdsevenredig_deel | Aantal_dagen_in; granulariteit = Some _; _ } ->
+      fault
+        "a granularity-bucketed builtin call is executed only as the whole value of a rule on a \
+         temporal target (ch. 3.7, 3.8)"
   | Literal { variant; typ; _ } -> (
       let lex = Ir_v0.Loader.literal_lexeme variant in
       match typ with
