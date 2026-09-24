@@ -2,7 +2,7 @@
 
 Machine enforcement of the well-formedness rules (`WF-###`) of
 `spec/IR-SPEC.md`, over IR documents in the `uchar-ir-v1` wire format, in
-its M1 shape (`spec/schema/uchar-ir-v1.schema.json`).
+its L3 shape (`spec/schema/uchar-ir-v1.schema.json`).
 
 The project is an OCaml dune build in two parts:
 
@@ -16,12 +16,16 @@ The project is an OCaml dune build in two parts:
   were written against: the model lists as name-keyed association lists,
   and an object type's members as name-keyed facet tables that the loader
   builds from the Attribute, Characteristic and TimelineFacet nodes (the
-  header of `ast.ml` says what that implies). The library is still named
+  header of `ast.ml` says what that implies). Since L3 the datatype keeps
+  its v0 constructors as well: the loader reads a `Number` whose unit is `%`
+  as a percentage, any other `Number` as a plain number, and a `Date` by its
+  precision, so every reader keeps its typing families; a unit's factor is
+  an exact rational in memory too. The library is still named
   `uchar-ir-v0`; renaming it is a change to every reader.
 - `bin/` — the `verifier` executable: `verifier <ir.json>` exits 0 when
   the document is well-formed, non-zero with one `WF-### FAIL <path>:
   <reason>` line per violation otherwise. `<path>` is a JSON pointer into
-  the M1 document (`/model/objectTypes/0/attributes/1/timeline/count`,
+  the document (`/model/objectTypes/0/attributes/1/timeline/count`,
   `/rules/resolvedRegels/2/voorwaarde`), as a load error's is; below a
   node a check may add a segment of its own reading, such as a struct
   field by its name.
