@@ -5231,10 +5231,10 @@ is **root-level branching**. What neither expresses is **branching below the
 root** — a chain whose exceptions themselves branch. Phase 5c adds it as
 one concept applied recursively (`PHASE4-DEFAULTS.md` §7 option i,
 ratified 2026-08-22): a default's exception slot may hold **exception
-groups** — `exceptions = { unordered, members }` (v0 `excepties = {
-ongeordend, leden }`), each member an `ExceptionGroup` (a default chain,
-descending, highest first, inheriting the root target and itself nesting
-via `Default.exceptions`). An exception group carries **no
+groups** — `exceptions = { unordered, members }`
+(v0 `excepties = { ongeordend, leden }`), each member an `ExceptionGroup`
+(a default chain, descending, highest first, inheriting the root target
+and itself nesting via `Default.exceptions`). An exception group carries **no
 target of its own**. Two default shapes result:
 
 - a **form-a default** — own justification/consequence (or decision) **and**
