@@ -13,11 +13,10 @@ that, so the check resolves against no declaration.
 
 Why this spelling. `role` is the role the SUBJECT plays, by its declared name;
 a plural is presentation and names no role here, as in a role binding. The
-plural of the OTHER role is the spelling a producer carries over from the v0
-node, whose written role name could name the far role by name or by plural
-("heeft wachtjutters"). A reader that resolved plurals would find
-`wachtjutter`, which the subject `Wachtpost` does not fill, and would answer
-a different question than the one the sentence asks.
+sentence "hij een wachtjutter heeft" names the OTHER role, and a producer that
+writes the role the sentence names, in its plural, writes exactly this. A
+reader that resolved plurals would find `wachtjutter`, a role the subject
+`Wachtpost` does not fill.
 
 What the executors do (measured in the L2 fix round, 2026-09-24, with the
 golden's three cases): `ref` and the ASP backend both refuse by name on every
