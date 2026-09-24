@@ -6,10 +6,10 @@
      the wire; "optional" means the value may be null, mapped to [option] —
      never a missing key. The exceptions are the fields the wire writes
      whole or not at all (the role bindings, `Onopgelost.type`, and the
-     optional fields of the six nodes L3 rewrote — a number's unit and
-     presentation, a unit's system, canonical unit, factor, denominator and
-     spellings, a parameter's timeline, a day kind's plural): absent is
-     [None] there, and an explicit null is a load error;
+     optional fields of the nodes L3 rewrote — a number's unit, a unit's
+     system, canonical unit, factor and denominator, a parameter's
+     timeline, a day kind's plural): absent is [None] there (a declared
+     unit's absent spellings are []), and an explicit null is a load error;
    - since L3 the datatype keeps its in-memory constructors while the wire
      writes two nodes for them: the loader reads a `Number` whose unit is
      '%' as [Percentage] and any other `Number` as [Numeriek], and a `Date`
