@@ -675,11 +675,30 @@ let num0 : Ir_v0.Ast.datatype = Numeriek { geheel = true; decimalen = 0; teken =
 let aref attr otn : Ir_v0.Ast.expr =
   Attribuut_ref { attribuut = Some attr; objecttype = Some otn; bron = None; navigatie_bindingen = None }
 
-let litv lex typ : Ir_v0.Ast.expr = Literal { waarde = Some lex; typ = Some typ; bron = None }
+(* a literal as the loader reads it off the wire (Ir_v0.Loader): the value
+   variant its type names, and the lexeme the in-memory node keeps beside it *)
+let litv lex typ : Ir_v0.Ast.expr =
+  let variant : Ir_v0.Ast.literal_variant =
+    match typ with
+    | Ir_v0.Ast.Numeriek _ | Percentage _ -> Lv_number lex
+    | Booleaan -> (
+        match lex with
+        | "waar" -> Lv_boolean true
+        | "onwaar" -> Lv_boolean false
+        | _ -> invalid_arg ("litv: a boolean literal is waar or onwaar, not " ^ lex))
+    | Tekst -> Lv_text lex
+    | Datum_in_dagen -> Lv_date lex
+    | Datum_tijd -> Lv_date_time lex
+    | Enumeratie _ -> Lv_enumeration lex
+    | Sum_type _ -> Lv_constructor lex
+    | List_type _ | Struct_type _ -> invalid_arg "litv: a list or struct type names no literal variant"
+  in
+  Literal
+    { waarde = Some (Ir_v0.Loader.literal_lexeme variant); variant; typ = Some typ; bron = None }
 
 let rr name soort doel waarde cond : Ir_v0.Ast.resolved_regel =
   { rr_naam = Some name; rr_soort = Some soort; doel; waarde; rr_voorwaarde = cond; rr_geldigheid = None;
-    rr_bron_annotaties = None }
+    rr_bron_annotaties = None; rr_pointer = "" }
 
 let inst label otype attrs : World.instance =
   {
@@ -691,8 +710,55 @@ let inst label otype attrs : World.instance =
     tls = World.SMap.empty; ctls = World.SMap.empty;
   }
 
+(* Every version record carries the wire pointer the loader sets on it
+   (`/rules/<list>/<f>/versions/<v>`), and ref finds a form's stratum by that
+   pointer. A hand-built document leaves the pointers empty; [env_of] fills
+   each empty one the way the loader numbers a form with one version, the
+   uniqueness unions after the single-source ones in the wire's one list. *)
+let with_pointers (doc : Ir_v0.Ast.document) : Ir_v0.Ast.document =
+  let at list i p = if p = "" then Printf.sprintf "/rules/%s/%d/versions/0" list i else p in
+  let n_uni = List.length doc.uniciteiten in
+  {
+    doc with
+    resolved_regels =
+      List.mapi
+        (fun i (r : Ir_v0.Ast.resolved_regel) ->
+          { r with rr_pointer = at "resolvedRegels" i r.rr_pointer })
+        doc.resolved_regels;
+    object_creaties =
+      List.mapi
+        (fun i (o : Ir_v0.Ast.resolved_object_creatie) ->
+          { o with oc_pointer = at "objectCreaties" i o.oc_pointer })
+        doc.object_creaties;
+    verdelingen =
+      List.mapi
+        (fun i (v : Ir_v0.Ast.resolved_verdeling) ->
+          { v with vd_pointer = at "verdelingen" i v.vd_pointer })
+        doc.verdelingen;
+    consistenties =
+      List.mapi
+        (fun i (c : Ir_v0.Ast.resolved_consistentie) ->
+          { c with cons_pointer = at "consistenties" i c.cons_pointer })
+        doc.consistenties;
+    uniciteiten =
+      List.mapi
+        (fun i (u : Ir_v0.Ast.resolved_uniciteit) ->
+          { u with uni_pointer = at "uniciteiten" i u.uni_pointer })
+        doc.uniciteiten;
+    uniciteit_unies =
+      List.mapi
+        (fun i (u : Ir_v0.Ast.resolved_uniciteit_unie) ->
+          { u with uu_pointer = at "uniciteiten" (n_uni + i) u.uu_pointer })
+        doc.uniciteit_unies;
+    feit_creaties =
+      List.mapi
+        (fun i (f : Ir_v0.Ast.resolved_feit_creatie) ->
+          { f with fc_pointer = at "feitCreaties" i f.fc_pointer })
+        doc.feit_creaties;
+  }
+
 let env_of doc : Eval.env =
-  { doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
+  { doc = with_pointers doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
     locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
 
 (* WV-6.4-a (= the ch. 5.3 pair): producer/consumer across one negative
@@ -766,6 +832,7 @@ let () =
             oc_voorwaarde = None;
             oc_geldigheid = None;
             oc_verbindende_rol = None;
+            oc_pointer = "";
           };
         ];
     }
@@ -821,6 +888,7 @@ let () =
             cons_bron = None;
             cons_line = 0;
             cons_geldigheid = None;
+            cons_pointer = "";
           };
         ];
       resolved_regels =
@@ -1106,6 +1174,7 @@ let () =
                    });
             oc_geldigheid = None;
             oc_verbindende_rol = Some opvolger;
+            oc_pointer = "";
           };
         ];
       regel_groepen =
@@ -1118,10 +1187,10 @@ let () =
   in
   expect_fault_msg "WV-6.4-g-r3-negatie-waar"
     (fun () -> run (doc ~in_creatie:(toets Gevuld true merk) ~in_regel:(toets Gevuld true opvolger_rang)))
-    "WF-046 at /rules/objectCreaties/0: negative dependency edge on a cycle";
+    "WF-046 at /rules/objectCreaties/0/versions/0: negative dependency edge on a cycle";
   expect_fault_msg "WV-6.4-g-r1-negatie-onwaar"
     (fun () -> run (doc ~in_creatie:(toets Leeg false merk) ~in_regel:(toets Gevuld false opvolger_rang)))
-    "WF-046 at /rules/objectCreaties/0: negative dependency edge on a cycle"
+    "WF-046 at /rules/objectCreaties/0/versions/0: negative dependency edge on a cycle"
 
 (* WV-7.9: nested exception groups (ch. 7.9) — the PHASE4-DEFAULTS §7
    spurious-conflict test at the unit level (b <- x, x <- {y, z}, hand-built
@@ -2298,7 +2367,7 @@ let () =
     Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = Some kerstdagen }
   in
   let de_dag : Ir_v0.Ast.expr =
-    Constante { naam = Some "de dag"; typ = Some Datum_in_dagen; bron = None }
+    Bound_day { typ = Some Datum_in_dagen; bron = None }
   in
   let deel kind : Ir_v0.Ast.expr =
     Functie
@@ -2688,7 +2757,7 @@ let () =
   let minimum = vouw Minimum "gewicht" "Vondst" pad2 None in
   let som =
     vouw Som "gewicht" "Vondst" pad2
-      (Some (Literal { waarde = Some "0"; typ = Some num0; bron = None }))
+      (Some (litv "0" num0))
   in
   let diep = vouw Minimum "inhoudsgewicht" "Kist" pad3 None in
   let env = env_of doc in
@@ -2780,7 +2849,7 @@ let () =
   let zwaar : Ir_v0.Ast.conditie =
     Vergelijking
       { op = Groter; links = Some (bron "gewicht" "Vondst");
-        rechts = Some (Literal { waarde = Some "4.00"; typ = Some num2; bron = None });
+        rechts = Some (litv "4.00" num2);
         periode = None; bron = None }
   in
   expect_fault_msg "WV-3.4b-telling-over-een-pad-faalt" (fun () -> ev w1 "J1" (telling None))
@@ -4148,7 +4217,7 @@ let () =
                      periode = None; bron = None; navigatie_binding = None });
             fc_geldigheid = None; fc_feittype = "vakbeseining";
             anker_rol = "seinvak"; doel_rol = "vaksein";
-            join_rol = rb "seinvoering" "sein" } ];
+            join_rol = rb "seinvoering" "sein"; fc_pointer = "" } ];
     }
   in
   let links l = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty l in
@@ -5196,7 +5265,7 @@ let () =
       uniciteiten =
         [ { uni_naam = Some "nummer is uniek"; uni_subject = Some "Vondst";
             sleutels = [ Some "nummer" ]; uni_bron = None;
-            uni_geldigheid = None; scope_rol = None } ] }
+            uni_geldigheid = None; scope_rol = None; uni_pointer = "" } ] }
   in
   let uni_run a b =
     let w =
@@ -5220,7 +5289,7 @@ let () =
                 (Vergelijking
                    { op = Kleiner; links = Some (aref "boete" "Vondst");
                      rechts = Some (litv "100" num0); periode = None; bron = None });
-            cons_bron = None; cons_line = 0; cons_geldigheid = None } ] }
+            cons_bron = None; cons_line = 0; cons_geldigheid = None; cons_pointer = "" } ] }
   in
   let cons_run otype boete =
     let w = World.add_instance World.empty (inst "x" otype [ ("boete", n boete) ]) in
@@ -5273,7 +5342,7 @@ let () =
       uniciteiten =
         [ { uni_naam = Some "eenmalige staat"; uni_subject = Some "Vondst";
             sleutels = [ Some "staat" ]; uni_bron = None;
-            uni_geldigheid = None; scope_rol = None } ] }
+            uni_geldigheid = None; scope_rol = None; uni_pointer = "" } ] }
   in
   let run a b =
     let w =
@@ -6334,13 +6403,19 @@ let () =
   weigert "WF-022-kenmerk-berekend-weigert"
     (aref "actief" "Recht")
     (zin "a computed value");
-  (* both halves of the constant, each on its own: the lexeme waar with
-     another type, and the type Booleaan with another spelling (lens
-     mutants MW3 and MW4 dropped one half each and the suite stayed green) *)
+  (* both halves of the constant, each on its own (lens mutants MW3 and MW4
+     dropped one half each and the suite stayed green): the text waar, and
+     the boolean variant true under a type other than Booleaan. Since the
+     L4 landing a boolean literal is a JSON boolean, so a capitalised "Waar"
+     is no spelling of one any more and the type half is probed by the true
+     variant under Tekst — a node only a hand builds, since the loader
+     refuses a variant its type does not name (WF-114) *)
   weigert "WF-022-kenmerk-waar-als-tekst-weigert" (litv "waar" Ir_v0.Ast.Tekst)
     (zin {|the literal "waar" typed Tekst|});
-  weigert "WF-022-kenmerk-hoofdletter-weigert" (litv "Waar" Ir_v0.Ast.Booleaan)
-    (zin {|the literal "Waar" typed Booleaan|});
+  weigert "WF-022-kenmerk-booleaanse-variant-als-tekst-weigert"
+    (Literal
+       { waarde = Some "waar"; variant = Lv_boolean true; typ = Some Ir_v0.Ast.Tekst; bron = None })
+    (zin {|the literal "waar" typed Tekst|});
   (* the control: the constant itself still attributes, on the condition *)
   let w = Eval.evaluate (env_of (doc (litv "waar" Ir_v0.Ast.Booleaan))) wereld in
   check "WF-022-kenmerk-waar-kent-toe"

@@ -620,26 +620,37 @@ let unit_of_datatype = function
       Value.Unit e
   | _ -> Value.Unitless
 
-let literal_value (waarde : string option) (typ : datatype option) =
-  let lex = req "Literal.waarde" waarde in
-  match typ with
-  | Some (Numeriek _ | Percentage _) | None ->
-      Value.Num (Value.q_of_lexeme lex, unit_of_datatype typ)
-  | Some Booleaan -> (
-      match norm lex with
-      | "waar" -> Value.Bool true
-      | "onwaar" -> Value.Bool false
-      | _ -> Value.fault "malformed boolean literal %S" lex)
-  | Some Tekst -> Value.Text lex
-  | Some (Enumeratie _) -> Value.Enum lex
-  | Some Datum_in_dagen -> Value.date_of_iso lex
+(* A literal's value is its variant (IR-SPEC ch. 4.1, delta B22), read
+   under the literal's type: a number's string through the one number
+   grammar ([Value.q_of_lexeme]), a date's and a dateTime's through the one
+   date readers. The loader has crossed the variant against the type before
+   any evaluation (WF-114, [Ir_v0.Loader.reader]), so a variant its type
+   does not name never arrives from the wire; a node built by hand that
+   carries one is refused here in the loader's own sentence, never read as
+   the type's value. A literal without a type (WF-034's typeless value node)
+   reads its lexeme as a unitless number, as it always did. *)
+let literal_value (variant : literal_variant) (typ : datatype option) =
+  (match typ with
+  | Some t -> (
+      match Ir_v0.Checks.literal_variant_refusal variant t with
+      | Some sentence -> Value.fault "%s" sentence
+      | None -> ())
+  | None -> ());
+  match (typ, variant) with
+  | None, v -> Value.Num (Value.q_of_lexeme (Ir_v0.Loader.literal_lexeme v), Value.Unitless)
+  | Some (Numeriek _ | Percentage _), Lv_number s -> Value.Num (Value.q_of_lexeme s, unit_of_datatype typ)
+  | Some Booleaan, Lv_boolean b -> Value.Bool b
+  | Some Tekst, Lv_text s -> Value.Text s
+  | Some (Enumeratie _), Lv_enumeration s -> Value.Enum s
+  | Some Datum_in_dagen, Lv_date s -> Value.date_of_iso s
   (* WF-095 (ch. 4.1): a datum-tijd literal reads into the SAME millisecond
      layer the case wire reads its `dateTime` into, through the same single
      admitted spelling — the canonical ISO lexeme; the day-first source
      snippet is refused like any other form. An unreadable lexeme faults
      with the position, never silently becoming some other instant. *)
-  | Some Datum_tijd -> Value.datetime_of_lexeme lex
-  | Some _ -> Value.fault "literal of this datatype not implemented: %S" lex
+  | Some Datum_tijd, Lv_date_time s -> Value.datetime_of_lexeme s
+  | Some _, v ->
+      Value.fault "literal of this datatype not implemented: %S" (Ir_v0.Loader.literal_lexeme v)
 
 (* --- expression evaluation --------------------------------------------- *)
 
@@ -674,6 +685,7 @@ let rec static_type env (e : expr) : datatype option =
   | Afgerond { typ; _ }
   | Begrensd { typ; _ }
   | Constante { typ; _ }
+  | Bound_day { typ; _ }
   | Expr_onopgelost { typ; _ }
   | Temporal_read { typ; _ }
   | Construct { typ; _ }
@@ -733,7 +745,7 @@ let omgekeerd : Ir_v0.Ast.vergelijk_op -> Ir_v0.Ast.vergelijk_op = function
 
 let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   match e with
-  | Literal { waarde; typ; _ } -> literal_value waarde typ
+  | Literal { variant; typ; _ } -> literal_value variant typ
   | Parameter_ref { parameter; _ } -> (
       let name = req "ParameterRef.parameter" parameter in
       let decl =
@@ -952,28 +964,28 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   | Expr_onopgelost _ ->
       Value.fault "Onopgelost reached in evaluation: this rule fails observably (WF-044)"
   | Constante { naam = Some n; _ } when norm n = norm "Rekendatum" -> (
-      (* ch. 8.2: the execution-date constant — the only expression-level
-         access to the evaluation date *)
+      (* ch. 8.2: the execution-date context value — the only
+         expression-level access to the evaluation date *)
       match env.as_of with
       | Some d -> Value.date_of_iso d
       | None ->
           Value.fault
-            "the Rekendatum constant needs an evaluation date; the case carries asOfDate null")
+            "the Rekendatum context value needs an evaluation date; the case carries asOfDate null")
   | Constante { naam = Some n; _ } when norm n = norm "Rekenjaar" ->
-      Value.fault "the Rekenjaar constant is not exercised by any corpus case (ch. 8.2)"
-  | Constante { naam = Some n; _ } when norm n = norm "de dag" -> (
-      (* ch. 3.7/3.8: the BOUND DAY of a day-kind definition — the day the
-         defining predicate is being applied to. It is not a session value
-         (that is Rekendatum, above) and it has a value only inside a
-         day-kind evaluation, which is exactly where [day_kind_binding]
-         puts one. *)
+      Value.fault "the Rekenjaar context value is not exercised by any corpus case (ch. 8.2)"
+  | Bound_day _ -> (
+      (* ch. 3.7/3.8: the BOUND DAY of a day-kind definition (BoundDay) —
+         the day the defining predicate is being applied to. It is not a
+         session value (that is Rekendatum, above) and it has a value only
+         inside a day-kind evaluation, which is exactly where
+         [day_kind_binding] puts one. *)
       match SMap.find_opt day_kind_binder env.locals with
       | Some (Now v) -> v
       | Some (Later f) -> f ()
       | None ->
           Value.fault
-            "the 'de dag' context value is the bound day of a day-kind definition (ch. 3.7); \
-             outside a day-kind evaluation it denotes nothing")
+            "a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind \
+             evaluation it denotes nothing")
   | Dimensie_cel _ | Variabele_ref _ | Constante _ ->
       Value.fault "expression kind not implemented in this card"
   | Temporal_read { basis; datum; typ = _; bron = _ } -> (
@@ -1943,7 +1955,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          leeg-propagating. *)
       (match operand with
       | None -> ()
-      | Some (Constante { naam = Some n; _ }) when norm n = norm "de dag" -> ()
+      | Some (Bound_day _) -> ()
       | Some _ ->
           Value.fault
             "a nested day-kind test on a date other than the bound day is a recognised, \
@@ -2496,7 +2508,7 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
    open for the verifier). *)
 let kenmerkwaarde_constant_waar (r : resolved_regel) ~ot ~attr =
   match r.waarde with
-  | Some (Literal { waarde = Some "waar"; typ = Some Booleaan; _ }) -> ()
+  | Some (Literal { variant = Lv_boolean true; typ = Some Booleaan; _ }) -> ()
   | w ->
       let datatype_woord (t : datatype) =
         match t with
@@ -2511,11 +2523,11 @@ let kenmerkwaarde_constant_waar (r : resolved_regel) ~ot ~attr =
       in
       let waarde =
         match w with
-        | Some (Literal { waarde = Some lex; typ = Some t; _ }) ->
-            Printf.sprintf "the literal %S typed %s" lex (datatype_woord t)
-        | Some (Literal { waarde = Some lex; typ = None; _ }) ->
-            Printf.sprintf "the untyped literal %S" lex
-        | Some (Literal { waarde = None; _ }) -> "a literal without a value"
+        | Some (Literal { variant; typ = Some t; _ }) ->
+            Printf.sprintf "the literal %S typed %s" (Ir_v0.Loader.literal_lexeme variant)
+              (datatype_woord t)
+        | Some (Literal { variant; typ = None; _ }) ->
+            Printf.sprintf "the untyped literal %S" (Ir_v0.Loader.literal_lexeme variant)
         | Some _ -> "a computed value"
         | None -> "no value"
       in
@@ -2861,9 +2873,9 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
                   let m = req "Toekenning.attribuut" t.toe_attribuut in
                   if t.toe_kenmerk then (
                     match t.toe_waarde with
-                    | Some (Literal { waarde = Some "waar"; _ }) ->
+                    | Some (Literal { variant = Lv_boolean true; _ }) ->
                         fst (World.set_char w ~label ~char:m)
-                    | Some (Literal { waarde = Some "onwaar"; _ }) -> w
+                    | Some (Literal { variant = Lv_boolean false; _ }) -> w
                     | Some e -> (
                         (* Phase 5c (WF-027 relaxation): a characteristic
                            initialisation may also carry a boolean-typed
@@ -3284,7 +3296,7 @@ let vintage_read_params (doc : document) : string list =
     | Temporal_read { basis; datum; _ } ->
         expr basis;
         expr datum
-    | Literal _ | Attribuut_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _
+    | Literal _ | Attribuut_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Bound_day _
     | Expr_onopgelost _ | Binder_ref _ ->
         ()
     | Tekst_reeks { delen; _ } ->
@@ -3580,22 +3592,33 @@ let evaluate env world =
   Array.iteri (fun i (f : Ir_v0.Checks.dep_form) -> Hashtbl.replace stratum_by_at f.df_at i) arr;
   (* A form is found by the path the verifier's dep_forms record for it, and a
      form absent from the graph runs at stratum 0. A form recorded under a path
-     spelled otherwise than [at_of] spells it would therefore run at stratum 0
-     unnoticed, so every recorded path is held to one this lookup asks for: a
-     change of the verifier's spelling (the M1 wire nests the rule lists under
-     "rules") fails here instead of flattening the strata. *)
-  let at_of key i = Printf.sprintf "/%s/%d" key i in
+     this lookup does not ask for would therefore run at stratum 0 unnoticed,
+     so every recorded path is held to one it asks for: a change of the
+     verifier's spelling fails here instead of flattening the strata. A
+     version of the six named forms is asked for by the wire pointer the
+     loader set on its record, `/rules/<list>/<f>/versions/<v>` — never by
+     its in-memory index, which leaves the wire's as soon as a form carries
+     two versions; a defaults group by its index. The pointers must be
+     distinct, or two forms would share one stratum. *)
+  let group_at i = Printf.sprintf "/prioritizedDefaults/%d" i in
   let asked = Hashtbl.create 16 in
   List.iter
-    (fun (key, n) -> for i = 0 to n - 1 do Hashtbl.replace asked (at_of key i) () done)
-    [ ("resolvedRegels", List.length env.doc.resolved_regels);
-      ("verdelingen", List.length env.doc.verdelingen);
-      ("prioritizedDefaults", List.length env.doc.prioritized_defaults);
-      ("feitCreaties", List.length env.doc.feit_creaties);
-      ("objectCreaties", List.length env.doc.object_creaties);
-      ("consistenties", List.length env.doc.consistenties);
-      ("uniciteiten", List.length env.doc.uniciteiten);
-      ("uniciteitUnies", List.length env.doc.uniciteit_unies) ];
+    (fun at ->
+      if Hashtbl.mem asked at then
+        failwith
+          (Printf.sprintf
+             "ref/lib/eval.ml, strata: two forms carry the wire pointer %S, so their strata \
+              cannot be told apart"
+             at);
+      Hashtbl.replace asked at ())
+    (List.map (fun (r : resolved_regel) -> r.rr_pointer) env.doc.resolved_regels
+    @ List.map (fun (v : resolved_verdeling) -> v.vd_pointer) env.doc.verdelingen
+    @ List.mapi (fun i _ -> group_at i) env.doc.prioritized_defaults
+    @ List.map (fun (f : resolved_feit_creatie) -> f.fc_pointer) env.doc.feit_creaties
+    @ List.map (fun (o : resolved_object_creatie) -> o.oc_pointer) env.doc.object_creaties
+    @ List.map (fun (c : resolved_consistentie) -> c.cons_pointer) env.doc.consistenties
+    @ List.map (fun (u : resolved_uniciteit) -> u.uni_pointer) env.doc.uniciteiten
+    @ List.map (fun (u : resolved_uniciteit_unie) -> u.uu_pointer) env.doc.uniciteit_unies);
   Array.iter
     (fun (f : Ir_v0.Checks.dep_form) ->
       if not (Hashtbl.mem asked f.df_at) then
@@ -3607,14 +3630,14 @@ let evaluate env world =
     arr;
   let stratum_of at = match Hashtbl.find_opt stratum_by_at at with Some i -> strata.(i) | None -> 0 in
   let kmax = Array.fold_left max 0 strata in
-  let rule_stratum i = stratum_of (at_of "resolvedRegels" i) in
-  let verdeling_stratum i = stratum_of (at_of "verdelingen" i) in
-  let defaults_stratum i = stratum_of (at_of "prioritizedDefaults" i) in
-  let fc_stratum i = stratum_of (at_of "feitCreaties" i) in
-  let oc_stratum i = stratum_of (at_of "objectCreaties" i) in
-  let cons_stratum i = stratum_of (at_of "consistenties" i) in
-  let uni_stratum i = stratum_of (at_of "uniciteiten" i) in
-  let uu_stratum i = stratum_of (at_of "uniciteitUnies" i) in
+  let rule_stratum (r : resolved_regel) = stratum_of r.rr_pointer in
+  let verdeling_stratum (v : resolved_verdeling) = stratum_of v.vd_pointer in
+  let defaults_stratum i = stratum_of (group_at i) in
+  let fc_stratum (f : resolved_feit_creatie) = stratum_of f.fc_pointer in
+  let oc_stratum (o : resolved_object_creatie) = stratum_of o.oc_pointer in
+  let cons_stratum (c : resolved_consistentie) = stratum_of c.cons_pointer in
+  let uni_stratum (u : resolved_uniciteit) = stratum_of u.uni_pointer in
+  let uu_stratum (u : resolved_uniciteit_unie) = stratum_of u.uu_pointer in
   let indexed l = List.mapi (fun i x -> (i, x)) l in
   (* defaults groups (ch. 7.2): members share one (subject, target); a
      group runs at the max of its members' strata *)
@@ -3634,23 +3657,23 @@ let evaluate env world =
   let pass ~k world =
     let world, c1 =
       List.fold_left
-        (fun (w, ch) (i, r) ->
-          if rule_stratum i > k then (w, ch)
+        (fun (w, ch) r ->
+          if rule_stratum r > k then (w, ch)
           else
             let w, c = run_rule env w r in
             (w, ch || c))
         (world, false)
-        (indexed env.doc.resolved_regels)
+        env.doc.resolved_regels
     in
     let world, c2 =
       List.fold_left
-        (fun (w, ch) (i, v) ->
-          if verdeling_stratum i > k then (w, ch)
+        (fun (w, ch) v ->
+          if verdeling_stratum v > k then (w, ch)
           else
             let w, c = run_verdeling env w v in
             (w, ch || c))
         (world, false)
-        (indexed env.doc.verdelingen)
+        env.doc.verdelingen
     in
     let world, c3 =
       List.fold_left
@@ -3663,18 +3686,18 @@ let evaluate env world =
     in
     let world, c4 =
       List.fold_left
-        (fun (w, ch) (i, fc) ->
-          if fc_stratum i > k then (w, ch)
+        (fun (w, ch) fc ->
+          if fc_stratum fc > k then (w, ch)
           else
             let w, c = run_feit_creatie env w fc in
             (w, ch || c))
         (world, false)
-        (indexed env.doc.feit_creaties)
+        env.doc.feit_creaties
     in
     let world, c5 =
       List.fold_left
         (fun (w, ch) (i, oc) ->
-          if oc_stratum i > k then (w, ch)
+          if oc_stratum oc > k then (w, ch)
           else
             let w, c = run_object_creatie env ~world0 ~idx:i w oc in
             (w, ch || c))
@@ -3701,18 +3724,15 @@ let evaluate env world =
     world := fixpoint ~budget (pass ~k) !world;
     world :=
       List.fold_left
-        (fun w (i, c) -> if cons_stratum i = k then run_consistentie env w c else w)
-        !world
-        (indexed env.doc.consistenties);
+        (fun w c -> if cons_stratum c = k then run_consistentie env w c else w)
+        !world env.doc.consistenties;
     world :=
       List.fold_left
-        (fun w (i, u) -> if uni_stratum i = k then run_uniciteit env w u else w)
-        !world
-        (indexed env.doc.uniciteiten);
+        (fun w u -> if uni_stratum u = k then run_uniciteit env w u else w)
+        !world env.doc.uniciteiten;
     world :=
       List.fold_left
-        (fun w (i, u) -> if uu_stratum i = k then run_uniciteit_unie env w u else w)
-        !world
-        (indexed env.doc.uniciteit_unies)
+        (fun w u -> if uu_stratum u = k then run_uniciteit_unie env w u else w)
+        !world env.doc.uniciteit_unies
   done;
   !world
