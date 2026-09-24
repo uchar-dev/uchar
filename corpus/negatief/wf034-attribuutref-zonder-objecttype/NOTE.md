@@ -35,8 +35,9 @@ predates this card, measured), so the widening cannot over-reject. The same empt
 needed a clause of its own — see `wf034-foldbron-zonder-objecttype`, where
 all three executors play it.
 
-A hand-broken variant of `corpus/golden/jutterswet-aanvoergeld/ir.json`
-(one field emptied, one unit abbreviation and factor changed); the shape
+A hand-broken variant of `corpus/golden/jutterswet-aanvoergeld/ir.json`:
+one field emptied, a one-line diff since L2 (until L2 also one unit
+abbreviation and factor changed on the reference's own type); the shape
 is schema-valid — `AttribuutRef.objecttype` is `["string","null"]` on the
 v0 wire, like nearly every reference field — which is precisely why the
 verifier, not the schema, is the fence.

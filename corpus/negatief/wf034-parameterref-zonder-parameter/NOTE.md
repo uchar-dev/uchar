@@ -48,8 +48,9 @@ survivors before this clause (both refusals are WF-049 positions — a
 reference* and no longer recognises one without a name); over-rejection is
 therefore impossible by measurement.
 
-A hand-broken variant of `corpus/golden/jutterswet-aanvoergeld/ir.json` (one
-field emptied, one unit abbreviation and factor changed — a three-line diff);
+A hand-broken variant of `corpus/golden/jutterswet-aanvoergeld/ir.json`: one
+field emptied, a one-line diff since L2 (until L2 also one unit abbreviation
+and factor changed on the reference's own type, a three-line diff);
 the shape is schema-valid — `ParameterRef.parameter` is `["string","null"]` on
 the v0 wire — which is precisely why the verifier, not the schema, is the
 fence.
