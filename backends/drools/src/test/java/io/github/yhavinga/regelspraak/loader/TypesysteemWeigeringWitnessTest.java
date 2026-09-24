@@ -13,7 +13,6 @@ import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Granulariteit;
 
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,17 +28,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The loader on the type system of the wire (L3 of the v1 wire migration): what it refuses by name, and how it lays the
  * wire back onto the frontend records. Refused: the type-system nodes of the L2 shape and each of their fields, a
- * factor that is not an exact fraction {@code {num, den}} of two integers at least 1 in lowest terms, a number without
- * its sign or with a presentation tag other than "percentage" or at a type annotation, a date without its precision, a
- * spelling where a unit occurs or equal to its abbreviation, and a parameter without its datatype or with a timeline
- * name. Read: a number with the unit '%' as the record's percentage and any other as its number, a precision as the two
- * date records, a fraction as the record's decimal factor with the fraction itself kept in the unit system, a unit's
- * spellings as the system's aliases, a parameter's timeline facet as its granularity.
+ * factor that is not an exact fraction {@code {num, den}} of two integers at least 1, a number without its sign, a
+ * percentage with a sign, a presentation tag other than "percentage", on a number that is no percentage or at a type
+ * annotation, a date without its precision, a spelling where a unit occurs or an empty list of them, and a parameter
+ * without its datatype or with a timeline name — the new sentences in the words of the shared OCaml loader and the
+ * verifier. Read: a number with the unit '%' as the record's percentage and any other as its number, a precision as
+ * the two date records, a fraction as the record's decimal factor with the fraction itself kept in the unit system (a
+ * fraction not in lowest terms too, as the shared loader reads it; WF-092 is the verifier's), a unit's spellings as
+ * the system's aliases, a parameter's timeline facet as its granularity.
  *
  * <p>Every fixture is a corpus golden with ONE twist in memory; the corpus file is read and never written. Each
  * refusal of a malformed document is an {@link IrLoader.Documentfout} at a JSON pointer, never an
- * {@link IrLoader.Refusal}; the two forms this backend does not carry — a percentage with a sign, a parameter timeline
- * of more than one period — are Refusals, because those documents are well-formed.
+ * {@link IrLoader.Refusal}; the one form this backend does not carry — a parameter timeline of more than one period
+ * — is a Refusal, because that document is well-formed.
  */
 class TypesysteemWeigeringWitnessTest {
 
@@ -121,25 +122,23 @@ class TypesysteemWeigeringWitnessTest {
 
     // ---------------- the exact factor ----------------
 
-    @Test void de_factor_is_een_exacte_breuk_in_laagste_termen() throws Exception {
-        String[][] rijen = {
-                { "12", FACTOR, "expected an exact fraction {num, den}, got 12" },
-                { "\"12\"", FACTOR, "expected an exact fraction {num, den}, got \"12\"" },
-                { "{\"num\":1}", FACTOR, "missing field 'den'" },
-                { "{\"num\":1,\"den\":0}", FACTOR + "/den", "expected an integer of at least 1, got 0" },
-                { "{\"num\":0,\"den\":1}", FACTOR + "/num", "expected an integer of at least 1, got 0" },
-                { "{\"num\":-3,\"den\":1}", FACTOR + "/num", "expected an integer of at least 1, got -3" },
-                { "{\"num\":1.5,\"den\":1}", FACTOR + "/num", "expected an integer, got 1.5" },
-                { "{\"num\":\"1\",\"den\":1}", FACTOR + "/num", "expected an integer, got \"1\"" },
-                { "{\"num\":2,\"den\":4}", FACTOR, IrLoader.FACTOR_LAAGSTE_TERMEN },
-                { "{\"num\":1,\"den\":1,\"node\":\"Factor\"}", FACTOR + "/node", "unknown field" },
-                { "null", FACTOR, "null is neither" } };
-        for (String[] rij : rijen) {
+    @Test void de_factor_is_een_exacte_breuk() throws Exception {
+        // one sentence for every other form, the value quoted as written — the shared loader's
+        List<String> vormen = List.of("12", "\"12\"", "null", "{\"num\":1}", "{\"num\":1,\"den\":0}",
+                "{\"num\":0,\"den\":1}", "{\"num\":-3,\"den\":1}", "{\"num\":1.5,\"den\":1}",
+                "{\"num\":\"1\",\"den\":1}", "{\"num\":1,\"den\":1,\"node\":\"Factor\"}",
+                "{\"num\":4611686018427387904,\"den\":1}");
+        for (String vorm : vormen) {
             ObjectNode ir = golden(PENNINGJAAR);
-            ((ObjectNode) ir.at(EENHEID)).set("factorToCanonical", JSON.readTree(rij[0]));
-            IrLoader.Documentfout e = weigert(ir, rij[1]);
-            assertTrue(e.getMessage().contains(rij[2]), rij[0] + ": " + e.getMessage());
+            ((ObjectNode) ir.at(EENHEID)).set("factorToCanonical", JSON.readTree(vorm));
+            IrLoader.Documentfout e = weigert(ir, FACTOR);
+            assertTrue(e.getMessage().endsWith(": " + IrLoader.FACTOR_VORM + vorm), vorm + ": " + e.getMessage());
         }
+        // not in lowest terms is WF-092 (c), the verifier's: the loader reads the value
+        ObjectNode ir = golden(PENNINGJAAR);
+        ((ObjectNode) ir.at(EENHEID)).set("factorToCanonical", JSON.readTree("{\"num\":2,\"den\":4}"));
+        Eenheid half = ((Datatype.Numeriek) IrLoader.load(ir).parameters.get("penningbedrag").datatype()).eenheid();
+        assertEquals("0.5", half.factorNaarCanoniek().toPlainString());
     }
 
     @Test void een_breuk_wordt_de_decimale_factor_van_het_record_en_blijft_in_het_stelsel() throws Exception {
@@ -190,14 +189,16 @@ class TypesysteemWeigeringWitnessTest {
         ir = golden(VONDSTTARIEF);
         ((ObjectNode) ir.at(ANNOTATIE)).put("presentation", "percentage");
         assertTrue(weigert(ir, ANNOTATIE + "/presentation").getMessage().contains(IrLoader.TAG_OP_ANNOTATIE));
-    }
 
-    @Test void een_percentage_met_een_teken_draagt_deze_backend_niet() throws Exception {
-        // the record's percentage has no sign to hold one, so the well-formed document is a form not carried
-        ObjectNode ir = golden(VONDSTTARIEF);
+        // the tag presents a percentage: on a number without the unit '%' it presents nothing
+        ir = golden(PENNINGJAAR);
+        ((ObjectNode) ir.at(GETAL)).put("presentation", "percentage");
+        assertTrue(weigert(ir, GETAL + "/presentation").getMessage().contains(IrLoader.TAG_ZONDER_PROCENT));
+
+        // a percentage is written unsigned: the record has no sign to hold a restriction
+        ir = golden(VONDSTTARIEF);
         ((ObjectNode) ir.at(TARIEF)).put("sign", "POSITIEF");
-        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir));
-        assertEquals("Number.sign", r.form(), r.getMessage());
+        assertTrue(weigert(ir, TARIEF + "/sign").getMessage().contains(IrLoader.PROCENT_MET_TEKEN));
     }
 
     // ---------------- the date ----------------
@@ -215,7 +216,7 @@ class TypesysteemWeigeringWitnessTest {
 
     // ---------------- the spellings ----------------
 
-    @Test void spellingen_staan_alleen_op_de_declaratie_en_nooit_gelijk_aan_de_afkorting() throws Exception {
+    @Test void spellingen_staan_alleen_op_de_declaratie() throws Exception {
         ObjectNode ir = golden(PENNINGJAAR);
         ((ObjectNode) ir.at(EENHEID)).putArray("spellings").add("euro");
         onbekendVeld(ir, EENHEID + "/spellings", "Unit");
@@ -223,11 +224,7 @@ class TypesysteemWeigeringWitnessTest {
         String euro = STELSEL + "/units/0";
         ir = golden(PENNINGJAAR);
         ((ObjectNode) ir.at(euro)).putArray("spellings");
-        assertTrue(weigert(ir, euro + "/spellings").getMessage().contains("an empty list of spellings"));
-
-        ir = golden(PENNINGJAAR);
-        ((ObjectNode) ir.at(euro)).putArray("spellings").add("euro").add("EUR");
-        assertTrue(weigert(ir, euro + "/spellings/1").getMessage().contains(IrLoader.SPELLING_IS_AFKORTING));
+        assertTrue(weigert(ir, euro + "/spellings").getMessage().contains(IrLoader.SPELLINGEN_LEEG));
 
         ir = golden(PENNINGJAAR);
         ((ObjectNode) ir.at(euro)).putNull("spellings");

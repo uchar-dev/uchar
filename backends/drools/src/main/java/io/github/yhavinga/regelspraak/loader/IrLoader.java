@@ -924,9 +924,11 @@ public final class IrLoader {
     private Eenheid unit(JsonNode n, String pad) { return unit(n, pad, null); }
 
     /** A unit, with {@code stelsel} the unit system it is declared in, or null where it occurs. A declared unit may
-     *  carry its further spellings — at least one, none of them its abbreviation — and its exact factor lands in the
-     *  system. */
+     *  carry its further spellings, at least one; its exact factor lands in the system. */
     private Eenheid unit(JsonNode n, String pad, Eenheidstelsel stelsel) {
+        // a factor written null is a factor in no form, refused in the factor's own sentence
+        if (n.isObject() && n.has("factorToCanonical") && n.get("factorToCanonical").isNull())
+            throw new Documentfout(pad + "/factorToCanonical", FACTOR_VORM + "null");
         velden(n, pad, "Unit", List.of("node", "abbreviation"), stelsel == null
                 ? List.of("system", "canonical", "factorToCanonical", "denominator")
                 : List.of("system", "canonical", "factorToCanonical", "denominator", "spellings"));
@@ -934,46 +936,37 @@ public final class IrLoader {
         Eenheidstelsel.Factor factor = n.has("factorToCanonical")
                 ? factor(n.get("factorToCanonical"), pad + "/factorToCanonical") : null;
         Eenheid noemer = n.has("denominator") ? unit(n.get("denominator"), pad + "/denominator") : null;
-        if (stelsel != null && n.has("spellings")) {
-            List<String> spellingen = tekstLijst(n, pad, "spellings");
-            if (spellingen.isEmpty())
-                throw new Documentfout(pad + "/spellings", "an empty list of spellings: a unit without further"
-                        + " spellings leaves the field out");
-            for (int i = 0; i < spellingen.size(); i++)
-                if (spellingen.get(i).equals(afkorting))
-                    throw new Documentfout(pad + "/spellings/" + i, SPELLING_IS_AFKORTING);
-        }
+        if (stelsel != null && n.has("spellings") && tekstLijst(n, pad, "spellings").isEmpty())
+            throw new Documentfout(pad + "/spellings", SPELLINGEN_LEEG);
         if (stelsel != null && factor != null) stelsel.exacteFactoren.put(afkorting, factor);
         return new Eenheid(afkorting, optTekst(n, pad, "system"), optTekst(n, pad, "canonical"),
                 factor == null ? null : decimaal(factor), noemer);
     }
 
-    /** A spelling equal to its unit's abbreviation: the abbreviation is the unit's first spelling already. */
-    static final String SPELLING_IS_AFKORTING =
-            "a spelling equal to its unit's abbreviation: the abbreviation is its primary spelling";
+    /** The shared loader's sentence for an empty list of spellings. */
+    static final String SPELLINGEN_LEEG = "a unit's spellings are at least one spelling, or the field is absent";
 
     /** The exact factor (IR-SPEC ch. 2.5): an object of exactly the two integers {@code num} and {@code den}, each at
-     *  least 1, in lowest terms (WF-092). A number or a string there is no factor: the fraction it would stand for is
-     *  not written. */
+     *  least 1 and within the shared loader's native integer range (62 bits). Every other form — a JSON number, a
+     *  string, a missing or unknown key, a value below 1 — is refused in the shared loader's one sentence. That the
+     *  fraction is in lowest terms is the verifier's WF-092, not a load question, so {2, 4} is read as 1/2, as the
+     *  shared loader reads it for {@code ref} and the ASP backend. */
     private static Eenheidstelsel.Factor factor(JsonNode n, String pad) {
-        if (!n.isObject())
-            throw new Documentfout(pad, "expected an exact fraction {num, den}, got " + kort(n));
-        velden(n, pad, null, List.of("num", "den"), List.of());
-        BigInteger num = positief(n, pad, "num"), den = positief(n, pad, "den");
-        if (!num.gcd(den).equals(BigInteger.ONE)) throw new Documentfout(pad, FACTOR_LAAGSTE_TERMEN);
-        return new Eenheidstelsel.Factor(num, den);
+        if (n.isObject() && n.size() == 2 && n.has("num") && n.has("den")) {
+            BigInteger num = geheelVanAfEen(n.get("num")), den = geheelVanAfEen(n.get("den"));
+            if (num != null && den != null) return new Eenheidstelsel.Factor(num, den);
+        }
+        throw new Documentfout(pad, FACTOR_VORM + n);
     }
 
-    /** WF-092 (c) — the verifier's sentence. */
-    static final String FACTOR_LAAGSTE_TERMEN =
-            "a conversion factor is a positive rational in lowest terms (WF-092)";
+    /** The shared loader's sentence for a factor in any other form than {@code {num, den}}; the value follows. */
+    static final String FACTOR_VORM =
+            "a conversion factor is an exact rational {num, den} whose two integers are at least 1, got ";
 
-    private static BigInteger positief(JsonNode n, String pad, String veld) {
-        JsonNode c = n.get(veld);
-        if (!c.isIntegralNumber()) throw new Documentfout(pad + "/" + veld, "expected an integer, got " + kort(c));
+    private static BigInteger geheelVanAfEen(JsonNode c) {
+        if (!c.isIntegralNumber()) return null;
         BigInteger v = c.bigIntegerValue();
-        if (v.signum() <= 0) throw new Documentfout(pad + "/" + veld, "expected an integer of at least 1, got " + v);
-        return v;
+        return v.signum() > 0 && v.bitLength() <= 62 ? v : null;
     }
 
     /** The record's decimal factor of an exact fraction: a whole number exactly, any other fraction rounded to 16
@@ -1058,32 +1051,36 @@ public final class IrLoader {
     }
 
     /** IR-SPEC ch. 2.4: a number, its sign always written. One whose unit is '%' is a percentage, which the model
-     *  holds as a {@link Datatype.Percentage} — without a sign, so a percentage with a sign other than ONBEPAALD is a
-     *  form this backend does not carry. The presentation tag is legal at a declaration only and means nothing to
-     *  evaluation. */
+     *  holds as a {@link Datatype.Percentage}; that record has no sign, and the wire writes a percentage's sign
+     *  ONBEPAALD. The presentation tag presents a percentage, stands at a declaration only and means nothing to
+     *  evaluation. The four refusals here are the shared OCaml loader's and the verifier's, in their words. */
     private Datatype number(JsonNode n, String pad, boolean declaratie) {
         velden(n, pad, "Number", List.of("node", "whole", "decimals", "sign"), List.of("unit", "presentation"));
         boolean geheel = waarheid(n, pad, "whole");
         int decimalen = geheel(n, pad, "decimals", "Number.decimals");
         Datatype.Teken teken = enumOf(Datatype.Teken.class, tekst(n, pad, "sign"), pad + "/sign");
         Eenheid eenheid = n.has("unit") ? unit(n.get("unit"), pad + "/unit") : null;
-        if (n.has("presentation")) {
-            String presentatie = tekst(n, pad, "presentation");
-            if (!presentatie.equals("percentage"))
-                throw new Documentfout(pad + "/presentation", "'" + presentatie + "' is not one of [percentage]");
-            if (!declaratie) throw new Documentfout(pad + "/presentation", TAG_OP_ANNOTATIE);
-        }
-        if (eenheid == null || !eenheid.afkorting().equals("%"))
-            return new Datatype.Numeriek(geheel, decimalen, teken, eenheid);
-        if (teken != Datatype.Teken.ONBEPAALD)
-            throw new Refusal("Number.sign", "a percentage with the sign " + teken + " at '" + pad + "'; this"
-                    + " backend's percentage carries no sign");
-        return new Datatype.Percentage(geheel, decimalen, eenheid);
+        String presentatie = optTekst(n, pad, "presentation");
+        if (presentatie != null && !presentatie.equals("percentage"))
+            throw new Documentfout(pad + "/presentation", "'" + presentatie + "' is not one of [percentage]");
+        boolean procent = eenheid != null && eenheid.afkorting().equals("%");
+        if (procent && teken != Datatype.Teken.ONBEPAALD)
+            throw new Documentfout(pad + "/sign", PROCENT_MET_TEKEN);
+        if (!procent && presentatie != null) throw new Documentfout(pad + "/presentation", TAG_ZONDER_PROCENT);
+        if (presentatie != null && !declaratie)
+            throw new Documentfout(pad + "/presentation", TAG_OP_ANNOTATIE + " (WF-007)");
+        return procent ? new Datatype.Percentage(geheel, decimalen, eenheid)
+                : new Datatype.Numeriek(geheel, decimalen, teken, eenheid);
     }
 
-    /** WF-007 — the verifier's sentence for a presentation tag at a type annotation. */
-    static final String TAG_OP_ANNOTATIE =
-            "the presentation tag belongs to a declaration, never to a type annotation (WF-007)";
+    /** The shared loader's sentence: the percentage record has no sign, and the wire writes a percentage unsigned. */
+    static final String PROCENT_MET_TEKEN =
+            "a percentage carries no sign restriction: a number whose unit is '%' has the sign ONBEPAALD";
+    /** The shared loader's sentence: the tag presents a percentage, and a number without the unit '%' is none. */
+    static final String TAG_ZONDER_PROCENT = "the presentation \"percentage\" on a number whose unit is not '%'";
+    /** WF-007's presentation arm — the verifier's sentence. */
+    static final String TAG_OP_ANNOTATIE = "the presentation tag \"percentage\" on a type annotation: the tag is"
+            + " written only where a datatype is declared";
 
     /** The {@code node} of a datatype object, required: a switch on an absent one ended in a NullPointerException
      *  that named no place in the document. */
