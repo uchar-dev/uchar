@@ -247,8 +247,8 @@ let lexeme_zero s =
                                                   leading zero, never zero)
      digits   ::= [0-9]+
    A decimal comma is no spelling of a number since L4 (the author's spelling
-   stays in `bron`), and neither is a fraction without a leading digit.
-   Anything else — unit or currency tokens, whitespace, '+', exponents,
+   stays in the source snippet), and neither is a fraction without a leading
+   digit. Anything else — unit or currency tokens, whitespace, '+', exponents,
    grouping separators — is not a number; the executors fault on it, so the
    verifier refuses it up front. *)
 let lexeme_bare_number s =
@@ -309,8 +309,8 @@ let lexeme_iso_date s =
    schema-valid and verifier-clean (measured 2026-09-06). The day-first
    RegelSpraak source snippet was admitted as a second spelling only while
    the emitter still wrote it into `waarde`; since the emitter writes ISO
-   there (card p5-datumtijd-lexeem, 2026-09-22) the snippet belongs in `bron`
-   alone, as WF-084 already has it for a day-precision date. *)
+   there (card p5-datumtijd-lexeem, 2026-09-22) the snippet belongs in the
+   source record alone, as WF-084 already has it for a day-precision date. *)
 let lexeme_datum_tijd s =
   let n = String.length s in
   let digit i = i < n && s.[i] >= '0' && s.[i] <= '9' in
@@ -426,7 +426,7 @@ let date_time_lexeme_refusal w =
       ("millisecond-precision date literal lexeme '" ^ w
      ^ "' is not the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' \
         never a space, the seconds field written, no zone or offset, a fraction of exactly \
-        three digits; the day-first source snippet belongs in `bron` — ch. 4.1)")
+        three digits; the day-first source snippet belongs in `source` — ch. 4.1)")
 
 (* --- document context --------------------------------------------------- *)
 
@@ -8718,18 +8718,25 @@ let wf105 ctx =
 
    (b) Every Onopgelost node — the expression marker and the condition
    marker, at every expression and condition position of the document — is
-   accounted for: at least one diagnostic's message contains the marker's
-   `bron` verbatim (the decision of 2026-09-19 that every surviving marker
-   carries a WARNING, made checkable). Any diagnostic counts; that it is a
-   WARNING is (a)'s business, so each clause fails on its own witness. A
-   marker whose `bron` is null or blank is refused: blank counts as absent,
-   as it does for a named form's name (WF-107). The containment is literal,
-   so an empty `bron` would be contained in every message and a blank one in
-   nearly every message, and a message about another marker would account
-   for it.
+   accounted for: at least one diagnostic's message contains the snippet of
+   the marker's source record verbatim (the decision of 2026-09-19 that every
+   surviving marker carries a WARNING, made checkable). Any diagnostic counts;
+   that it is a WARNING is (a)'s business, so each clause fails on its own
+   witness. A marker without a source is refused, and so is one whose snippet
+   is blank: blank counts as absent, as it does for a named form's name
+   (WF-107). The containment is literal, so a blank snippet would be contained
+   in nearly every message, and a message about another marker would account
+   for it. An empty snippet never reaches this rule: every reader refuses it
+   at load. The schema requires the record on a marker, and the loader reads a
+   marker without one for this rule alone; every executor refuses it at load,
+   in the sentence below ([marker_without_source]).
 
    (c) — no consumer reads the list for evaluation — is a rule on consumers
    and has no document to reject. *)
+let marker_without_source =
+  "Unresolved marker without a source: no diagnostic message can contain it, so it cannot be \
+   accounted for"
+
 let rec markers_expr acc (e : expr) : string option list =
   let o acc = function Some e -> markers_expr acc e | None -> acc in
   let c acc = function Some x -> markers_cond acc x | None -> acc in
@@ -8879,17 +8886,13 @@ let wf113 ctx =
       (fun (at, brons) ->
         List.filter_map
           (function
-            | None ->
-                Some
-                  (v "WF-113" at
-                     "Onopgelost marker whose bron is null: no diagnostic message can contain \
-                      it, so it cannot be accounted for")
+            | None -> Some (v "WF-113" at marker_without_source)
             | Some b when blank b ->
                 Some
                   (v "WF-113" at
-                     "Onopgelost marker whose bron is blank: blank counts as absent, since \
-                      nearly every message contains it and a message about another marker \
-                      would account for this one")
+                     "Unresolved marker whose source snippet is blank: blank counts as absent, \
+                      since nearly every message contains it and a message about another \
+                      marker would account for this one")
             | Some b ->
                 if
                   List.exists
@@ -8903,8 +8906,8 @@ let wf113 ctx =
                   Some
                     (v "WF-113" at
                        (Printf.sprintf
-                          "Onopgelost marker '%s' is not accounted for: no diagnostic message \
-                           contains its bron verbatim"
+                          "Unresolved marker '%s' is not accounted for: no diagnostic message \
+                           contains its source snippet verbatim"
                           b)))
           brons)
       (marker_positions ctx)

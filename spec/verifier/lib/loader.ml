@@ -1,4 +1,5 @@
-(* Strict loader for the uchar-ir-v1 wire format in its L4 shape.
+(* Strict loader for the uchar-ir-v1 wire format in its L4 shape, with the
+   source record of L5.
 
    Strict means: every object must carry exactly the keys the format
    declares (the schema is additionalProperties:false with every property
@@ -64,7 +65,15 @@
    not the one the literal's type names (WF-114) and a context-value name
    outside the closed set (WF-098). The verifier loads all of these so the
    rule can cite them; every other reader refuses them here, in the rule's
-   own sentence ([reader]). *)
+   own sentence ([reader]).
+
+   The source record, the first step of L5 (delta B26), enforced here and in
+   the schema alike: a node's source text is the record `source` {snippet,
+   line?}, optional on every node and read onto the in-memory `bron` fields
+   ([source_record]); `bron` and a `line` beside the record are unknown fields,
+   and an empty snippet is refused in every stance. The schema requires the
+   record on an Onopgelost marker; the verifier loads a marker without one for
+   WF-113 (b), and every other reader refuses it here ([reader]). *)
 
 open Ast
 
@@ -433,6 +442,48 @@ let geheel_periode path j : geheel_periode =
     gp_niet = bool_ (path / "niet") (field path kvs "niet");
   }
 
+(* --- the source record ---------------------------------------------------- *)
+
+(* The source text of a node (delta B26, IR-SPEC ch. 4): the record under the
+   key `source`, {snippet, line?}, without a node discriminator. It is optional
+   on every node; its absence is what a null `bron` was before it. [snippet] is
+   the text, never empty; [line] a line of at least 1, admitted on every node.
+   The in-memory records keep their v0 fields ([Ast]): a node's [bron] holds the
+   snippet, [None] where the node carries no record, and the line field of a
+   consistency version and a rule group holds the record's line, 0 where it
+   carries none. A line on any other node is read and not kept: its record has
+   no line field. Every other shape is refused in both stances: a record that
+   is not an object, a missing or non-string snippet, a field beside snippet and
+   line (the positions file and column among them), a line that is not an
+   integer of at least 1, and an empty snippet, which no reader can give a
+   meaning: a node without source text carries no source. *)
+let empty_snippet_refusal =
+  "a source snippet is never empty: a node without source text carries no source"
+
+let source_line_refusal = "a source line is at least 1"
+
+let source_record path j : string * int option =
+  let kvs = obj path j in
+  check_keys path kvs ~ext:[ "line" ] [ "snippet" ];
+  let snippet = str (path / "snippet") (field path kvs "snippet") in
+  if snippet = "" then fail (path / "snippet") empty_snippet_refusal;
+  let line p j =
+    let n = int_ p j in
+    if n < 1 then fail p source_line_refusal;
+    n
+  in
+  (snippet, ext_field path kvs "line" line)
+
+(* The source text of a node that has no line field in memory. *)
+let source_text path kvs : string option =
+  Option.map fst (ext_field path kvs "source" source_record)
+
+(* The source text and line of a consistency version or a rule group. *)
+let source_with_line path kvs : string option * int =
+  match ext_field path kvs "source" source_record with
+  | Some (snippet, line) -> (Some snippet, Option.value ~default:0 line)
+  | None -> (None, 0)
+
 (* --- expr and conditie -------------------------------------------------- *)
 
 (* The value of a Literal (delta B22): exactly one variant of the case
@@ -480,7 +531,7 @@ let rec expr path j : expr =
   let kvs = obj path j in
   let f name = field path kvs name in
   let typ () = opt (path / "type") datatype (f "type") in
-  let bron () = str_opt (path / "bron") (f "bron") in
+  let bron () = source_text path kvs in
   let arguments () =
     List.mapi
       (fun i x -> expr (path / "arguments" / string_of_int i) x)
@@ -488,11 +539,11 @@ let rec expr path j : expr =
   in
   match node_kind path kvs with
   | "Literal" ->
-      check_keys path kvs [ "node"; "value"; "type"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "value"; "type" ];
       let variant = literal_variant (path / "value") (f "value") in
       Literal { variant; typ = typ (); bron = bron () }
   | "TekstReeks" ->
-      check_keys path kvs [ "node"; "delen"; "type"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "delen"; "type" ];
       Tekst_reeks
         {
           delen =
@@ -503,7 +554,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "Binair" ->
-      check_keys path kvs [ "node"; "op"; "links"; "rechts"; "type"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "op"; "links"; "rechts"; "type" ];
       Binair
         {
           op = bin_op (path / "op") (f "op");
@@ -517,8 +568,8 @@ let rec expr path j : expr =
          no granularity: that field is a builtin's and unknown here *)
       check_keys path kvs
         ~ext:[ "elementType"; "filter"; "emptyFallback"; "dimensionSelection"; "sourceRole";
-               "sourcePath" ]
-        [ "node"; "kind"; "arguments"; "type"; "bron" ];
+               "sourcePath"; "source" ]
+        [ "node"; "kind"; "arguments"; "type" ];
       let kind = aggregation_kind (path / "kind") (f "kind") in
       let argumenten = arguments () in
       let element_objecttype = ext_field path kvs "elementType" str in
@@ -558,8 +609,8 @@ let rec expr path j : expr =
       (* the seventeen other kinds (delta B21), with plain arguments: an
          element type, a range, a fallback or a selection is a fold's field
          and unknown here *)
-      check_keys path kvs ~ext:[ "filter"; "granularity" ]
-        [ "node"; "kind"; "arguments"; "type"; "bron" ];
+      check_keys path kvs ~ext:[ "filter"; "granularity"; "source" ]
+        [ "node"; "kind"; "arguments"; "type" ];
       let kind = builtin_kind (path / "kind") (f "kind") in
       Functie
         {
@@ -576,7 +627,7 @@ let rec expr path j : expr =
           bron_pad = None;
         }
   | "InstanceSetUnion" ->
-      check_keys path kvs [ "node"; "branches"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "branches" ];
       Instance_set_union
         {
           (* loaded verbatim, one branch and none included: WF-110 owns the
@@ -589,7 +640,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "Afgerond" ->
-      check_keys path kvs [ "node"; "basis"; "modus"; "decimalen"; "type"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "basis"; "modus"; "decimalen"; "type" ];
       Afgerond
         {
           basis = opt (path / "basis") expr (f "basis");
@@ -599,7 +650,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "Begrensd" ->
-      check_keys path kvs [ "node"; "basis"; "minimum"; "maximum"; "type"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "basis"; "minimum"; "maximum"; "type" ];
       Begrensd
         {
           basis = opt (path / "basis") expr (f "basis");
@@ -609,7 +660,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "AttribuutRef" ->
-      check_keys path kvs ~ext:[ "navigatieBindingen" ] [ "node"; "attribuut"; "objecttype"; "bron" ];
+      check_keys path kvs ~ext:[ "navigatieBindingen"; "source" ] [ "node"; "attribuut"; "objecttype" ];
       Attribuut_ref
         {
           attribuut = str_opt (path / "attribuut") (f "attribuut");
@@ -622,7 +673,7 @@ let rec expr path j : expr =
                 | hops -> hops);
         }
   | "DimensieCel" ->
-      check_keys path kvs [ "node"; "attribuut"; "labels"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "attribuut"; "labels" ];
       Dimensie_cel
         {
           attribuut = opt (path / "attribuut") expr (f "attribuut");
@@ -630,14 +681,14 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "ParameterRef" ->
-      check_keys path kvs [ "node"; "parameter"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "parameter" ];
       Parameter_ref { parameter = str_opt (path / "parameter") (f "parameter"); bron = bron () }
   | "VariabeleRef" ->
-      check_keys path kvs [ "node"; "naam"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "naam" ];
       Variabele_ref { naam = str_opt (path / "naam") (f "naam"); bron = bron () }
   | "TemporalRead" ->
       (* extension node (v1, row 11): all fields required, none nullable *)
-      check_keys path kvs [ "node"; "basis"; "datum"; "type"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "basis"; "datum"; "type" ];
       Temporal_read
         {
           basis = expr (path / "basis") (f "basis");
@@ -648,7 +699,7 @@ let rec expr path j : expr =
   | "Construct" ->
       (* extension node (v1, row 36): argument present (an expr) iff unary,
          explicit null for a nullary constructor; type required not-null *)
-      check_keys path kvs [ "node"; "type"; "constructor"; "argument"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "constructor"; "argument" ];
       Construct
         {
           typ = typ ();
@@ -657,7 +708,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "Match" ->
-      check_keys path kvs [ "node"; "type"; "scrutinee"; "arms"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "scrutinee"; "arms" ];
       Match
         {
           typ = typ ();
@@ -675,12 +726,12 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "BinderRef" ->
-      check_keys path kvs [ "node"; "name"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "name" ];
       Binder_ref { naam = str (path / "name") (f "name"); bron = bron () }
   | "StructLiteral" ->
       (* extension node (v1, Phase 5c): the fields map name to a value expr,
          in declaration order (WF-073); type required not-null *)
-      check_keys path kvs [ "node"; "type"; "fields"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "fields" ];
       Struct_literal
         {
           typ = typ ();
@@ -698,7 +749,7 @@ let rec expr path j : expr =
   | "FieldAccess" ->
       (* extension node (v1, Phase 5c): base struct-typed, field a plain
          string; type required not-null *)
-      check_keys path kvs [ "node"; "type"; "base"; "field"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "base"; "field" ];
       Field_access
         {
           typ = typ ();
@@ -709,7 +760,7 @@ let rec expr path j : expr =
   | "ListLiteral" ->
       (* extension node (v1, row 10): ordered element expressions, one shared
          element datatype (WF-066); type required not-null *)
-      check_keys path kvs [ "node"; "type"; "elements"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "elements" ];
       List_literal
         {
           typ = typ ();
@@ -724,7 +775,7 @@ let rec expr path j : expr =
          ill-formed (WF-069); it loads so the verifier can reject it citing
          the rule. As a Fold/MapList function operand it is a [fold_fn]
          instead, parsed below. *)
-      check_keys path kvs [ "node"; "parameters"; "body"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "parameters"; "body" ];
       Lambda
         {
           parameters = lambda_params (path / "parameters") (f "parameters");
@@ -732,7 +783,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "IfThenElse" ->
-      check_keys path kvs [ "node"; "type"; "condition"; "then"; "else"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "condition"; "then"; "else" ];
       If_then_else
         {
           typ = typ ();
@@ -742,7 +793,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "Invoke" ->
-      check_keys path kvs [ "node"; "type"; "function"; "arguments"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "function"; "arguments" ];
       Invoke
         {
           typ = typ ();
@@ -754,7 +805,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "Fold" ->
-      check_keys path kvs [ "node"; "type"; "list"; "function"; "init"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "list"; "function"; "init" ];
       Fold
         {
           typ = typ ();
@@ -764,7 +815,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "MapList" ->
-      check_keys path kvs [ "node"; "type"; "list"; "function"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "list"; "function" ];
       Map_list
         {
           typ = typ ();
@@ -773,7 +824,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "FilterList" ->
-      check_keys path kvs [ "node"; "type"; "list"; "binder"; "condition"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "list"; "binder"; "condition" ];
       Filter_list
         {
           typ = typ ();
@@ -783,13 +834,13 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "ListLength" ->
-      check_keys path kvs [ "node"; "type"; "list"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "list" ];
       List_length { typ = typ (); list = expr (path / "list") (f "list"); bron = bron () }
   | "Let" ->
       (* extension node (v1, Phase 5c). Strict, in this loader's sense of the
          word (never the Let's semantics — ch. 10.6 is call-by-need): type
          required not-null, binder a plain string, value/body non-null exprs *)
-      check_keys path kvs [ "node"; "type"; "binder"; "value"; "body"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "binder"; "value"; "body" ];
       Let
         {
           typ = typ ();
@@ -802,7 +853,7 @@ let rec expr path j : expr =
       (* a session value (delta B23): its name is a string whatever it
          spells — the closed set is WF-098's, crossed below for an executor
          ([reader]) — and its datatype is required *)
-      check_keys path kvs [ "node"; "name"; "type"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "name"; "type" ];
       let naam =
         match f "name" with
         | `String s -> s
@@ -815,7 +866,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "BoundDay" ->
-      check_keys path kvs [ "node"; "type"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type" ];
       Bound_day
         {
           typ = Some (context_type ~refusal:"a BoundDay carries its datatype" path kvs);
@@ -823,8 +874,11 @@ let rec expr path j : expr =
         }
   | "Onopgelost" ->
       (* the honest-marker node. Its type is written whole or not at all:
-         absent means unknown, and a null is a load error (D14) *)
-      check_keys path kvs ~ext:[ "type" ] [ "node"; "bron" ];
+         absent means unknown, and a null is a load error (D14). Its source
+         is optional here: a marker without one is WF-113's, which the verifier
+         loads it for, and an executor refuses it after the structural load
+         ([executor_refusals]) *)
+      check_keys path kvs ~ext:[ "type"; "source" ] [ "node" ];
       Expr_onopgelost { typ = ext_field path kvs "type" datatype; bron = bron () }
   | k -> fail (path / "node") ("unknown expr node \"" ^ k ^ "\"")
 
@@ -833,12 +887,12 @@ and instance_set_branch path j : instance_set_branch =
   let kvs = obj path j in
   let f name = field path kvs name in
   expect_node path kvs "InstanceSetBranch";
-  check_keys path kvs [ "node"; "elementType"; "sourceRole"; "filter"; "bron" ];
+  check_keys path kvs ~ext:[ "source" ] [ "node"; "elementType"; "sourceRole"; "filter" ];
   {
     isb_element_type = str_opt (path / "elementType") (f "elementType");
     isb_source_role = rol_binding (path / "sourceRole") (f "sourceRole");
     isb_filter = opt (path / "filter") conditie (f "filter");
-    isb_bron = str_opt (path / "bron") (f "bron");
+    isb_bron = source_text path kvs;
   }
 
 (* Lambda / FunctionDef parameters: each carries a name and a datatype (both
@@ -862,12 +916,12 @@ and fold_fn path j : fold_fn =
   | `Assoc _ ->
       let kvs = obj path j in
       expect_node path kvs "Lambda";
-      check_keys path kvs [ "node"; "parameters"; "body"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "parameters"; "body" ];
       Fn_lambda
         {
           parameters = lambda_params (path / "parameters") (field path kvs "parameters");
           body = expr (path / "body") (field path kvs "body");
-          bron = str_opt (path / "bron") (field path kvs "bron");
+          bron = source_text path kvs;
         }
   | j ->
       fail path
@@ -888,21 +942,21 @@ and tekst_deel path j : tekst_deel =
 and dimensie_selectie path j : dimensie_selectie =
   let kvs = obj path j in
   expect_node path kvs "DimensieSelectie";
-  check_keys path kvs [ "node"; "dimensie"; "labels"; "bron" ];
+  check_keys path kvs ~ext:[ "source" ] [ "node"; "dimensie"; "labels" ];
   {
     ds_dimensie = str_opt (path / "dimensie") (field path kvs "dimensie");
     ds_labels = str_opt_list (path / "labels") (field path kvs "labels");
-    ds_bron = str_opt (path / "bron") (field path kvs "bron");
+    ds_bron = source_text path kvs;
   }
 
 and conditie path j : conditie =
   let kvs = obj path j in
   let f name = field path kvs name in
-  let bron () = str_opt (path / "bron") (f "bron") in
+  let bron () = source_text path kvs in
   let periode () = opt (path / "periode") geheel_periode (f "periode") in
   match node_kind path kvs with
   | "Vergelijking" ->
-      check_keys path kvs [ "node"; "op"; "links"; "rechts"; "periode"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "op"; "links"; "rechts"; "periode" ];
       Vergelijking
         {
           op = vergelijk_op (path / "op") (f "op");
@@ -912,8 +966,8 @@ and conditie path j : conditie =
           bron = bron ();
         }
   | "Predicaat" ->
-      check_keys path kvs
-        [ "node"; "soort"; "operand"; "dagsoort"; "negatie"; "cijfers"; "periode"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ]
+        [ "node"; "soort"; "operand"; "dagsoort"; "negatie"; "cijfers"; "periode" ];
       Predicaat
         {
           soort = predicaat_soort (path / "soort") (f "soort");
@@ -925,8 +979,8 @@ and conditie path j : conditie =
           bron = bron ();
         }
   | "Kenmerk" ->
-      check_keys path kvs ~ext:[ "navigatieBinding" ]
-        [ "node"; "kenmerk"; "negatie"; "eigenaar"; "periode"; "bron" ];
+      check_keys path kvs ~ext:[ "navigatieBinding"; "source" ]
+        [ "node"; "kenmerk"; "negatie"; "eigenaar"; "periode" ];
       Kenmerk_check
         {
           kenmerk = str_opt (path / "kenmerk") (f "kenmerk");
@@ -937,7 +991,7 @@ and conditie path j : conditie =
           navigatie_binding = ext_field path kvs "navigatieBinding" rol_binding;
         }
   | "RoleMembership" ->
-      check_keys path kvs ~ext:[ "counterpartType" ] [ "node"; "factType"; "role"; "negated"; "bron" ];
+      check_keys path kvs ~ext:[ "counterpartType"; "source" ] [ "node"; "factType"; "role"; "negated" ];
       Role_membership
         {
           fact_type = str (path / "factType") (f "factType");
@@ -949,7 +1003,7 @@ and conditie path j : conditie =
           bron = bron ();
         }
   | "Periode" ->
-      check_keys path kvs [ "node"; "vanaf"; "tot"; "totInclusief"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "vanaf"; "tot"; "totInclusief" ];
       Periode_conditie
         {
           vanaf = opt (path / "vanaf") expr (f "vanaf");
@@ -958,7 +1012,7 @@ and conditie path j : conditie =
           bron = bron ();
         }
   | "Samengesteld" ->
-      check_keys path kvs [ "node"; "kwantor"; "drempel"; "onderdelen"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "kwantor"; "drempel"; "onderdelen" ];
       Samengesteld
         {
           kwantor = kwantor (path / "kwantor") (f "kwantor");
@@ -970,8 +1024,8 @@ and conditie path j : conditie =
           bron = bron ();
         }
   | "Kwantorvouw" ->
-      check_keys path kvs ~ext:[ "bronRol"; "bronPad"; "drempel" ]
-        [ "node"; "kwantor"; "elementObjecttype"; "filter"; "toets"; "bron" ];
+      check_keys path kvs ~ext:[ "bronRol"; "bronPad"; "drempel"; "source" ]
+        [ "node"; "kwantor"; "elementObjecttype"; "filter"; "toets" ];
       (* the range, exactly one spelling (B12, U2): written, never derived *)
       (match (List.mem_assoc "bronRol" kvs, List.mem_assoc "bronPad" kvs) with
       | true, true ->
@@ -1005,7 +1059,7 @@ and conditie path j : conditie =
                 List.mapi (fun i x -> rol_binding (p / string_of_int i) x) (list_ p j));
         }
   | "Regelversie" ->
-      check_keys path kvs [ "node"; "regel"; "inconsistent"; "bron" ];
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "regel"; "inconsistent" ];
       Regelversie
         {
           regel = str_opt (path / "regel") (f "regel");
@@ -1013,8 +1067,9 @@ and conditie path j : conditie =
           bron = bron ();
         }
   | "Onopgelost" ->
-      (* as with the expr marker: the emitter names it Onopgelost *)
-      check_keys path kvs [ "node"; "bron" ];
+      (* as with the expr marker: the emitter names it Onopgelost, and a
+         marker without a source loads for the verifier alone *)
+      check_keys path kvs ~ext:[ "source" ] [ "node" ];
       Conditie_onopgelost { bron = bron () }
   | k -> fail (path / "node") ("unknown conditie node \"" ^ k ^ "\"")
 
@@ -1395,14 +1450,15 @@ let consistency path j : resolved_consistentie list =
   List.map
     (fun (name, path, j) ->
       let kvs = obj path j in
-      check_keys path kvs [ "subject"; "assertion"; "validity"; "bron"; "line" ];
+      check_keys path kvs ~ext:[ "source" ] [ "subject"; "assertion"; "validity" ];
       let f name = field path kvs name in
+      let bron, line = source_with_line path kvs in
       {
         cons_naam = name;
         cons_subject = str_opt (path / "subject") (f "subject");
         assertie = Some (conditie (path / "assertion") (f "assertion"));
-        cons_bron = str_opt (path / "bron") (f "bron");
-        cons_line = int_ (path / "line") (f "line");
+        cons_bron = bron;
+        cons_line = line;
         cons_geldigheid = Some (geldigheid (path / "validity") (f "validity"));
         cons_pointer = path;
       })
@@ -1430,7 +1486,7 @@ let uniqueness path j : (resolved_uniciteit, resolved_uniciteit_unie) Either.t l
   List.map
     (fun (name, path, j) ->
       let kvs = obj path j in
-      check_keys path kvs ~ext:[ "scope" ] [ "sources"; "validity"; "bron" ];
+      check_keys path kvs ~ext:[ "scope"; "source" ] [ "sources"; "validity" ];
       let f name = field path kvs name in
       let spath = path / "sources" in
       let sources =
@@ -1439,7 +1495,7 @@ let uniqueness path j : (resolved_uniciteit, resolved_uniciteit_unie) Either.t l
         | xs -> List.mapi (fun i x -> source (spath / string_of_int i) x) xs
       in
       let validity = Some (geldigheid (path / "validity") (f "validity")) in
-      let bron = str_opt (path / "bron") (f "bron") in
+      let bron = source_text path kvs in
       match sources with
       | [ (subject, keys) ] ->
           Either.Left
@@ -1536,14 +1592,15 @@ let resolved_startpunt path j : resolved_startpunt =
 let resolved_regel_groep path j : resolved_regel_groep =
   let kvs = obj path j in
   expect_node path kvs "ResolvedRegelGroep";
-  check_keys path kvs [ "node"; "naam"; "recursief"; "leden"; "bron"; "line" ];
+  check_keys path kvs ~ext:[ "source" ] [ "node"; "naam"; "recursief"; "leden" ];
   let f name = field path kvs name in
+  let bron, line = source_with_line path kvs in
   {
     rgr_naam = str_opt (path / "naam") (f "naam");
     recursief = bool_ (path / "recursief") (f "recursief");
     leden = str_opt_list (path / "leden") (f "leden");
-    rgr_bron = str_opt (path / "bron") (f "bron");
-    rgr_line = int_ (path / "line") (f "line");
+    rgr_bron = bron;
+    rgr_line = line;
   }
 
 let diagnostic path j : diagnostic =
@@ -1563,8 +1620,8 @@ let diagnostic path j : diagnostic =
 let rec default path j : default =
   let kvs = obj path j in
   expect_node path kvs "Default";
-  check_keys path kvs ~ext:[ "consequentie"; "initialisatie"; "excepties" ]
-    [ "node"; "besluit"; "voorwaarde"; "bron" ];
+  check_keys path kvs ~ext:[ "consequentie"; "initialisatie"; "excepties"; "source" ]
+    [ "node"; "besluit"; "voorwaarde" ];
   let bool_opt path = function
     | `Bool b -> Some b
     | `Null -> None
@@ -1579,7 +1636,7 @@ let rec default path j : default =
       | Some b -> b
       | None -> false);
     default_excepties = ext_field path kvs "excepties" exception_groups;
-    default_bron = str_opt (path / "bron") (field path kvs "bron");
+    default_bron = source_text path kvs;
   }
 
 (* The nested exception groups riding [excepties] (v1, Phase 5c;
@@ -1600,20 +1657,20 @@ and exception_groups path j : exception_groups =
 and exception_group path j : exception_group =
   let kvs = obj path j in
   expect_node path kvs "ExceptionGroup";
-  check_keys path kvs [ "node"; "defaults"; "bron" ];
+  check_keys path kvs ~ext:[ "source" ] [ "node"; "defaults" ];
   {
     eg_defaults =
       List.mapi
         (fun i x -> default (path / "defaults" / string_of_int i) x)
         (list_ (path / "defaults") (field path kvs "defaults"));
-    eg_bron = str_opt (path / "bron") (field path kvs "bron");
+    eg_bron = source_text path kvs;
   }
 
 let prioritized_defaults path j : prioritized_defaults =
   let kvs = obj path j in
   expect_node path kvs "PrioritizedDefaults";
-  check_keys path kvs ~ext:[ "attribuut"; "ongeordend" ]
-    [ "node"; "naam"; "onderwerp"; "kenmerk"; "defaults"; "bron"; "geldigheid" ];
+  check_keys path kvs ~ext:[ "attribuut"; "ongeordend"; "source" ]
+    [ "node"; "naam"; "onderwerp"; "kenmerk"; "defaults"; "geldigheid" ];
   let f name = field path kvs name in
   {
     pd_naam = str_opt (path / "naam") (f "naam");
@@ -1628,7 +1685,7 @@ let prioritized_defaults path j : prioritized_defaults =
       (match ext_field path kvs "ongeordend" (fun p j -> bool_ p j) with
       | Some b -> b
       | None -> false);
-    pd_bron = str_opt (path / "bron") (f "bron");
+    pd_bron = source_text path kvs;
     pd_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
   }
 
@@ -1637,14 +1694,14 @@ let prioritized_defaults path j : prioritized_defaults =
 let function_def path j : function_def =
   let kvs = obj path j in
   expect_node path kvs "FunctionDef";
-  check_keys path kvs [ "node"; "name"; "parameters"; "result"; "body"; "bron" ];
+  check_keys path kvs ~ext:[ "source" ] [ "node"; "name"; "parameters"; "result"; "body" ];
   let f name = field path kvs name in
   {
     fd_naam = str (path / "name") (f "name");
     fd_parameters = lambda_params (path / "parameters") (f "parameters");
     fd_result = datatype (path / "result") (f "result");
     fd_body = expr (path / "body") (f "body");
-    fd_bron = str_opt (path / "bron") (f "bron");
+    fd_bron = source_text path kvs;
   }
 
 (* The JSON pointer of every presentation tag written inside a type
@@ -1685,14 +1742,18 @@ let presentatie_annotaties (j : json) : string list =
    WF-084, WF-095) is refused the same way ([Checks.number_lexeme_refusal],
    [Checks.date_lexeme_refusal], [Checks.date_time_lexeme_refusal]): an
    executor that met it only at evaluation would refuse the same document in
-   another phase and in other words than the verifier and the Drools loader. *)
+   another phase and in other words than the verifier and the Drools loader.
+   So is an Onopgelost marker without a source (WF-113 (b)): the verifier
+   loads it so that the rule names it, and an executor refuses it in the rule's
+   sentence ([Checks.marker_without_source]), since no report can account for
+   a marker that has no text to quote. *)
 type reader = Verifier | Executor
 
-(* The executor's refusals, after the structural load: every Literal and
-   ContextValue node of the document as written, in document order, a
-   literal's variant crossed against its type before its string is read. A
-   literal without a type is WF-034's typeless value node, with no type to
-   cross its variant against; its string is read all the same. *)
+(* The executor's refusals, after the structural load: every Literal,
+   ContextValue and Onopgelost node of the document as written, in document
+   order, a literal's variant crossed against its type before its string is
+   read. A literal without a type is WF-034's typeless value node, with no type
+   to cross its variant against; its string is read all the same. *)
 let executor_refusals (j : json) =
   let rec walk path = function
     | `Assoc kvs ->
@@ -1717,6 +1778,8 @@ let executor_refusals (j : json) =
             match Checks.context_value_refusal (str (path / "name") (field path kvs "name")) with
             | Some sentence -> fail (path / "name") sentence
             | None -> ())
+        | Some (`String "Onopgelost") ->
+            if not (List.mem_assoc "source" kvs) then fail path Checks.marker_without_source
         | _ -> ());
         List.iter (fun (k, x) -> walk (path / k) x) kvs
     | `List xs -> List.iteri (fun i x -> walk (path / string_of_int i) x) xs
