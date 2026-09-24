@@ -11,7 +11,7 @@ carries the same empty field in a plain value position: the fold source
 replaces the generic walk for that argument — and `aggregation_source_check`
 resolves only on `attribuut = Some a`. So the generic clause does not fence
 it, and this is not a guess: with the value-position arm in place and this one
-absent, a sweep emptying all 751 `attribuut` positions of the goldens one at a
+absent, a sweep emptying all 751 `attribute` positions of the goldens one at a
 time still left **43** verifier-clean survivors, every one of them a
 fold-/aggregation argument. With this arm too, **0**.
 
@@ -45,14 +45,14 @@ was played by all three.
 
 *Measured dracht:* zero outside this witness and its value-position sibling —
 152 golden + 22 rood + 30 parity documents and the 238 negatief cases that
-predate this card carry no `AttribuutRef` with `attribuut: null` anywhere.
+predate this card carry no `AttributeReference` with `attribute: null` anywhere.
 Over-rejection is therefore impossible by measurement.
 
 A hand-broken variant of `corpus/golden/jutterswet-vondsttelling/ir.json` (one
 field emptied, one unit abbreviation and factor changed — a three-line diff);
-the shape is schema-valid — `AttribuutRef.attribuut` is `["string","null"]` on
-the wire — which is precisely why the verifier, not the schema, is the
-fence.
+the shape is schema-valid — `AttributeReference.attribute` is
+`["string","null"]` on the wire — which is precisely why the verifier, not the
+schema, is the fence.
 
 Falsifiable, clause-exact: remove the `attribuut = None` arm from the
 aggregation branch of `walk_expr`'s `Functie` case and this case alone loses
@@ -92,9 +92,9 @@ lost its own `type` (B13), and with it the WF-091 line its unit lie drew
 beside this one; the source still names no attribute. The rule still fires on
 the same arm.
 
-Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
-with only its own fields — `arguments`, and on an aggregation `elementType`,
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each with
+only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
 builtin `granularity`; the report cites and names them. The report quoted from
-before L2 carries the pointer of that wire (`waarde`, since L4
-`versions/0/value`). `expect.txt` pins the arm.
+before L2 carries the pointer of that wire (`resolvedRegels`, since L5 `rules`;
+`waarde`, since L4 `versions/0/value`). `expect.txt` pins the arm.

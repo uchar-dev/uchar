@@ -1,7 +1,7 @@
 Violates WF-083 (c) (`spec/IR-SPEC.md` ch. 4.3), the anchor of a COUNT
-source: the `AANTAL` over the `Vondst`en of the subject `Jutter`, its range
+source: the `count` over the `Vondst`en of the subject `Jutter`, its range
 `vondstaanmelding`/`vondst`, names `vondsten` as its source — a count source
-— and spells the source's `objecttype` as `Vondst`, the element type. A
+— and spells the source's `subjectType` as `Vondst`, the element type. A
 count source is read on the fold subject: its written role name is the
 subject's relation.
 

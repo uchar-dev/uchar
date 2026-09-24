@@ -1,5 +1,5 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an `AttributeReference` that
-names no attribute. The pair `objecttype` + `attribuut` is what a reference
+names no attribute. The pair `subjectType` + `attribute` is what a reference
 resolves through; with the member name absent it lands on a declared object
 type and reads nothing there.
 
@@ -43,17 +43,17 @@ ill-formed on its own terms, not on its executors' mercy.
 
 *Measured dracht:* zero outside this witness — 152 golden + 22 rood + 30
 parity documents and the 238 negatief cases that predate this card carry no
-`AttribuutRef` with `attribuut: null` anywhere. A sweep emptying all 751
-`attribuut` positions of the goldens one at a time left **409** verifier-clean
+`AttributeReference` with `attribute: null` anywhere. A sweep emptying all 751
+`attribute` positions of the goldens one at a time left **409** verifier-clean
 survivors before this clause; over-rejection is therefore impossible by
 measurement.
 
 A hand-broken variant of `corpus/golden/jutterswet-aanvoergeld/ir.json`: one
-field emptied, a one-line diff since L2 (until L2 also one unit abbreviation
-and factor changed on the reference's own type, a three-line diff);
-the shape is schema-valid — `AttribuutRef.attribuut` is `["string","null"]` on
-the wire, like nearly every reference field — which is precisely why the
-verifier, not the schema, is the fence.
+field emptied, a one-line diff since L2 (until L2 also one unit abbreviation and
+factor changed on the reference's own type, a three-line diff); the shape is
+schema-valid — `AttributeReference.attribute` is `["string","null"]` on the
+wire, like nearly every reference field — which is precisely why the verifier,
+not the schema, is the fence.
 
 Falsifiable, clause-exact: restore the `| None -> []` arm of the member check
 in `walk_expr`'s `Attribuut_ref` case and this case alone turns clean, every

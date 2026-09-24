@@ -1,5 +1,5 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **fold-source**
-`AttributeReference` that names no object type. `objecttype` is the endpoint
+`AttributeReference` that names no object type. `subjectType` is the endpoint
 the attribute's value lives on (ch. 4.1a), so a source without one resolves
 against no declaration at all.
 
@@ -34,25 +34,25 @@ arm-exact:
 Since L2 the source carries no type of its own (B13), so that lie cannot be
 written any more; what remains is the missing object type.
 
-With the field emptied it was verifier-clean — and **every executor plays
-it**. Measured on this document against
-`corpus/golden/jutterswet-vondsttelling/case.json` before the closure:
-`ref` PASS (7 expectations), clingo PASS (7 expectations), Drools PLAYED.
-That is strictly worse than the sibling channel, where the two OCaml
-executors at least fault loudly and only Drools plays: here the tonne-typed
-sum answers in kilogrammes in all three, and no rule and no executor fences
-it. Corpus dracht of the shape is zero: 152 golden + 22 rood + 30 parity
-documents plus the 236 negatief cases that existed before this one were
-scanned for an `AttribuutRef` with `objecttype: null` in any position, and
-the only occurrence anywhere is the sibling negatief — in a value position,
-not a fold source. So the widening cannot over-reject. Confirmed the other
-way round after the fact: nulling all 718 `objecttype` fields of the goldens
-one at a time leaves 43 verifier-clean survivors before this clause and 0
-after, and gate 3 stays at 174 golden clean.
+With the field emptied it was verifier-clean — and **every executor plays it**.
+Measured on this document against
+`corpus/golden/jutterswet-vondsttelling/case.json` before the closure: `ref`
+PASS (7 expectations), clingo PASS (7 expectations), Drools PLAYED. That is
+strictly worse than the sibling channel, where the two OCaml executors at least
+fault loudly and only Drools plays: here the tonne-typed sum answers in
+kilogrammes in all three, and no rule and no executor fences it. Corpus dracht
+of the shape is zero: 152 golden + 22 rood + 30 parity documents plus the 236
+negatief cases that existed before this one were scanned for an
+`AttributeReference` with `subjectType: null` in any position, and the only
+occurrence anywhere is the sibling negatief — in a value position, not a fold
+source. So the widening cannot over-reject. Confirmed the other way round after
+the fact: nulling all 718 `subjectType` fields of the goldens one at a time
+leaves 43 verifier-clean survivors before this clause and 0 after, and gate 3
+stays at 174 golden clean.
 
 A hand-broken variant of `corpus/golden/jutterswet-vondsttelling/ir.json`
 (one field emptied, one unit abbreviation and factor changed); the shape is
-schema-valid — `AttribuutRef.objecttype` is `["string","null"]` on the
+schema-valid — `AttributeReference.subjectType` is `["string","null"]` on the
 wire, like nearly every reference field — which is precisely why the
 verifier, not the schema, is the fence.
 
@@ -95,9 +95,10 @@ lost its own `type` (B13), and with it the WF-091 line its unit lie drew
 beside this one; the source still names no object type. The rule still fires
 on the same arm.
 
-Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
-with only its own fields — `arguments`, and on an aggregation `elementType`,
+Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each with
+only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
-builtin `granularity`; the report cites and names them. The reports quoted
-from before L2 carry the pointers of that wire (`waarde` and `argumenten`,
-since L4 `versions/0/value` and `arguments`). `expect.txt` pins the arm.
+builtin `granularity`; the report cites and names them. The reports quoted from
+before L2 carry the pointers of that wire (`resolvedRegels`, since L5 `rules`;
+`waarde` and `argumenten`, since L4 `versions/0/value` and `arguments`).
+`expect.txt` pins the arm.

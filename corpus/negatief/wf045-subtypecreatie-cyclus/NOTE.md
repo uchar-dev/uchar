@@ -37,8 +37,9 @@ cycles, not subtype creation):
   removed from the graph by WF-045's own recursive-creation exemption, as
   every guarded recursive creation is.
 
-The variants were measured on the wire of that day; since L4 `nieuwType` is
-the version's `createdType` (delta B19).
+The variants were measured on the wire of that day; since L4 `nieuwType` is the
+version's `createdType` (delta B19), and since L5 the group is a `RuleGroup`
+whose flag is `recursive`.
 
 Falsifiable in one edit: drop `Wrakrecht`'s `supertype` and the two types
 become unrelated, the population write no longer reaches the subject's node,

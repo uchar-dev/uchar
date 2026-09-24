@@ -2,7 +2,7 @@
 
 Violates WF-083 (`spec/IR-SPEC.md` ch. 4.3), the **anchor cross**, in its set
 half: a set source reads each member of the `elementType`, so its
-`objecttype` must name that element type. Here it names the fold subject
+`subjectType` must name that element type. Here it names the fold subject
 instead, and the attribute it spells is declared there and nowhere near the
 members being folded.
 
@@ -12,10 +12,10 @@ members being folded.
     the anchor, never against this field, so the two spellings name different
     declarations
 
-The document. A Jutter-subject `TOTAAL` over the Jutter's finds —
+The document. A Jutter-subject `total` over the Jutter's finds —
 `elementType: "Vondst"`, `sourceRole` bound to the role `vondst` (which makes
 the operand the set source, IR-SPEC ch. 4.3), no navigation — whose operand
-names `kistgeld` with `objecttype: "Jutter"`. `Jutter` declares `kistgeld`;
+names `kistgeld` with `subjectType: "Jutter"`. `Jutter` declares `kistgeld`;
 `Vondst` does not. Every declaration cross in the document is satisfied, which
 is exactly why the form was verifier-clean.
 
@@ -27,7 +27,7 @@ executors DISAGREE under a well-formed document:
     Drools      : ERROR ConstraintEvaluationException
 
 `ref` folds each member, asks every `Vondst` for `kistgeld`, gets *leeg* from
-all of them, and totals 0 — silently, because 0 is what a `TOTAAL` over an
+all of them, and totals 0 — silently, because 0 is what a `total` over an
 empty contribution set is. The ASP backend looks the attribute up on the
 element type, the anchor it names in its own code, and refuses. The bean-model
 executor throws inside the accumulate. A silent number on one side and a loud
@@ -36,7 +36,7 @@ bug by definition, and the reason the fix belongs in the verifier and not in
 either executor: neither is wrong about its own anchor — the document is.
 
 The annotation is INERT in both OCaml executors for a set source: `ref`'s
-set-source arm binds no `objecttype` at all, and the ASP backend anchors every
+set-source arm binds no `subjectType` at all, and the ASP backend anchors every
 read at the element variable. That is not an argument for leaving the field
 free — it is the argument for pinning it, because a field nobody reads is a
 field that can say anything, and this document is what "anything" buys.
@@ -55,7 +55,7 @@ and so do the two self-denotation cases.
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the set source
 lost its own `type` and set reading (B11, B13); it is the set source because
 the fold carries a range (IR-SPEC ch. 4.3), so its anchor is the element type,
-and its `objecttype` still names the fold subject. The rule still fires on the
+and its `subjectType` still names the fold subject. The rule still fires on the
 same arm.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each

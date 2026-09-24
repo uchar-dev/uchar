@@ -1,6 +1,6 @@
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.6; the `arguments` row of the
 `Aggregation` table in ch. 4.3): a value fold with one operand — a listed
-`EERSTE` without `elementType` whose second operand is gone.
+`first` without `elementType` whose second operand is gone.
 
     WF-037 FAIL /rules/rules/0/versions/0/value: value fold with
     fewer than two operands
@@ -23,7 +23,7 @@ and the Drools backend excludes the rule at transpilation
 (`transpiler SKIP`).
 
 **The document.** `corpus/golden/jutterswet-hoogwaterpaar/ir.json` with the
-second operand (`zijn avondhoogwater`) of the `EERSTE` in its first rule's
+second operand (`zijn avondhoogwater`) of the `first` in its first rule's
 value removed.
 
 Falsifiable, arm-exact: emptying the value-fold arity clause in `walk_expr`

@@ -1,5 +1,5 @@
 Violates WF-079 (`spec/IR-SPEC.md` ch. 3.1; `RUNTIME-SEMANTICS.md` ch. 7.7):
-two unconditional computing rules (`BEREKENING`), each a form with one
+two unconditional computing rules (`calculation`), each a form with one
 always-valid version, write one attribute target without prioritized defaults
 — `Jutter.uitkomst` — with no explicit priority. `uitkomst bij grootgezin`
 computes `10.00` and `uitkomst bij kleine beurs` computes `20.00`; both fire
@@ -13,7 +13,7 @@ oscillates 10 ↔ 20 and faults on the fixpoint budget (ch. 5.7), clingo carries
 both values in one silent stable model, so ref ≢ clingo and no expectation
 makes the pair pass. WF-079 refuses it: at most one unconditional computing
 rule per target without defaults — priority is a defaults group (explicit)
-or `ongeordend` (explicitly absent), never implicit agenda order.
+or `unordered` (explicitly absent), never implicit agenda order.
 
 The exemptions the fence must respect stay clean corpus-wide: pairs of
 characteristic attributions, versions with neither `presentation` nor
@@ -28,5 +28,5 @@ Old verifier: `PASS`. New verifier: `WF-079 FAIL … two unconditional computing
 rules write target (jutter, uitkomst) with no prioritized defaults`.
 
 Since L4 the two writers are two forms of one version each, both tagged
-`presentation: "BEREKENING"` and without `condition` (deltas B19, B20); the
+`presentation: "calculation"` and without `condition` (deltas B19, B20); the
 rule reads "computing" from the tag. `expect.txt` pins the arm.

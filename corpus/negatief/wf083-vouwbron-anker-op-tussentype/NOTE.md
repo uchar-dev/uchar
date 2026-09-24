@@ -1,7 +1,7 @@
 # wf083-vouwbron-anker-op-tussentype
 
 Violates **WF-083 (c)** (`spec/IR-SPEC.md` ch. 4.3) at the position WF-102
-created: the fold source's `objecttype` names an INTERMEDIATE type of the
+created: the fold source's `subjectType` names an INTERMEDIATE type of the
 range instead of the fold's anchor.
 
     WF-083 FAIL /rules/rules/0/versions/0/value/arguments/0: fold-source
@@ -31,7 +31,7 @@ gate 3 keys on the directory's own rule, which fires first.
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the set source
 lost its own `type` and set reading (B11, B13); it is the set source because
 the fold carries a range (IR-SPEC ch. 4.3), so its anchor is the element type,
-and its `objecttype` still names the intermediate type of the path. The rule
+and its `subjectType` still names the intermediate type of the path. The rule
 still fires on the same arm.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each

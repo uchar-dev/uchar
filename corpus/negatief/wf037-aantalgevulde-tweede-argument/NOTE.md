@@ -1,7 +1,7 @@
 # wf037-aantalgevulde-tweede-argument
 
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in the filled count's
-ARITY arm: `AANTAL_GEVULDE` takes exactly one argument, its set source, and
+ARITY arm: `filledCount` takes exactly one argument, its set source, and
 this node carries two.
 
     WF-037 FAIL /rules/rules/0/versions/0/value: the filled count takes
@@ -21,7 +21,7 @@ admitted.
 The document. The same Jutterswet model as its siblings, written in the
 listed shape: two ordinary reads of the subject's own kg attributes
 (`vondstgewicht`, `wrakgewicht`), no `elementType`, no `sourceRole` —
-exactly how a `MINIMUM` over two operands is spelled. Every other clause
+exactly how a `minimum` over two operands is spelled. Every other clause
 holds; both operands resolve against their declarations, and the ordering
 family clause of WF-038 says nothing here because this kind hands no element
 through (it counts). The arity is the only defect and the verifier reports

@@ -41,19 +41,18 @@ anything says what is wrong with it.
 
 *Measured dracht:* zero outside this witness — 152 golden + 22 rood + 30
 parity documents and the 238 negatief cases that predate this card carry no
-`ParameterRef` with `parameter: null` anywhere. A sweep emptying all 37
+`ParameterReference` with `parameter: null` anywhere. A sweep emptying all 37
 `parameter` positions of the goldens one at a time left **35** verifier-clean
 survivors before this clause (both refusals are WF-049 positions — a
-`TemporalRead` basis, whose shape clause demands a *granular parameter
+`TemporalRead` base, whose shape clause demands a *granular parameter
 reference* and no longer recognises one without a name); over-rejection is
 therefore impossible by measurement.
 
 A hand-broken variant of `corpus/golden/jutterswet-aanvoergeld/ir.json`: one
-field emptied, a one-line diff since L2 (until L2 also one unit abbreviation
-and factor changed on the reference's own type, a three-line diff);
-the shape is schema-valid — `ParameterRef.parameter` is `["string","null"]` on
-the wire — which is precisely why the verifier, not the schema, is the
-fence.
+field emptied, a one-line diff since L2 (until L2 also one unit abbreviation and
+factor changed on the reference's own type, a three-line diff); the shape is
+schema-valid — `ParameterReference.parameter` is `["string","null"]` on the wire
+— which is precisely why the verifier, not the schema, is the fence.
 
 Falsifiable, clause-exact: restore the `| None -> []` arm of `Parameter_ref`
 in `walk_expr` and this case alone turns clean, every other `wf034-*` case

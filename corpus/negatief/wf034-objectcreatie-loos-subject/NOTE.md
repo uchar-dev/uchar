@@ -49,5 +49,5 @@ moved, no report elsewhere.
 
 Since L4 an object creation is an `ObjectCreation` with its versions (delta
 B19); the defect sits on the `ObjectCreationVersion`, whose fields are
-`createdType`, `subject`, `initialisations` (each a `Toekenning`) and
+`createdType`, `subject`, `initialisations` (each a `MemberInit`) and
 `connectingRole`. `expect.txt` pins the arm.

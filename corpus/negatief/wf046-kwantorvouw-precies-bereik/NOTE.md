@@ -2,7 +2,7 @@
 
 Violates **WF-046** (`spec/IR-SPEC.md` ch. 4.6 and 5.2,
 `RUNTIME-SEMANTICS.md` ch. 6.3) through one clause of the quantifier-fold
-decision of 2026-09-23: the RANGE of a PRECIES fold is a negative edge,
+decision of 2026-09-23: the RANGE of an `exactly` fold is a negative edge,
 because a growing range can take the count past the exact number.
 
 The model is `corpus/golden/jutterswet-opvolgerquorum` with another creation
@@ -16,7 +16,7 @@ kleur is ongelijk aan 7).
     a cycle: werf een opvolger reads what werf een opvolger produces while werf
     een opvolger is reachable from it (no strata exist)
 
-The case isolates that clause: read the PRECIES range positively and the
+The case isolates that clause: read the `exactly` range positively and the
 document is clean (mutation Kk, measured 2026-09-23).
 
 Measured before the quantifier-fold arm (2026-09-23), with W1 (rang 1)

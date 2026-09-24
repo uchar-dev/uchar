@@ -6,10 +6,10 @@ both polarities (maintainer decision 2026-09-23). Here the test sits in the
 matrix of a quantifier fold, and this case pins that the rule reaches it
 there.
 
-The recursive creation "werf de opvolger" (group "estafette") mints a
-successor Wachter while "de rang van alle opvolgers van de Wachter is leeg":
-a `Kwantorvouw` under ALLE over the `opvolging` successors whose matrix is a
-LEEG test on the member's rang. The creation writes the successor's rang, and
+The recursive creation "werf de opvolger" (group "estafette") mints a successor
+Wachter while "de rang van alle opvolgers van de Wachter is leeg": a
+`QuantifierFold` under `all` over the `opvolging` successors whose matrix is an
+`empty` test on the member's rang. The creation writes the successor's rang, and
 its own condition reads that rang under the test, so the creation depends
 negatively on itself.
 
@@ -19,7 +19,7 @@ negatively on itself.
 
 Measured before the arm (2026-09-23), with one input Wachter W1 of rang 1.
 The verifier said `verifier: PASS`. The reference interpreter minted W1 to
-W5: every creation fires while its subject has no successor yet (ALLE over an
+W5: every creation fires while its subject has no successor yet (`all` over an
 empty range holds), and the successor it mints carries a rang that falsifies
 the condition afterwards. The ASP backend without its conservative refusal
 found no stable model.

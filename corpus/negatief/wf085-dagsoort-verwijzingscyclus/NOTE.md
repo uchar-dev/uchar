@@ -1,6 +1,6 @@
 Violates WF-085 (`spec/IR-SPEC.md` par. 5 / ch. 3.7): the day-kind
 reference graph MUST be acyclic. A day-kind condition may reference other
-day kinds (a `Predicaat` of soort `DAGSOORT`), but mutually recursive
+day kinds (a `Predicate` of kind `dayKind`), but mutually recursive
 definitions have no fixpoint. Here `vloeddag` references `ebdag` and
 `ebdag` references `vloeddag` — a two-node cycle, refused loudly.
 

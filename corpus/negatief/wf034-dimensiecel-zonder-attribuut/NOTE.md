@@ -1,6 +1,6 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **dimension-cell read**
 (ch. 4.1) with no attribute reference in it. A cell read reads one cell of
-one dimensioned attribute; `attribuut` is where that attribute is named, so
+one dimensioned attribute; `attribute` is where that attribute is named, so
 an empty one resolves against no declaration.
 
     WF-034 FAIL /rules/rules/0/versions/0/value: dimension-cell read
@@ -18,7 +18,7 @@ comes from. Empty the field and both go away together, silently.
 That second half was what made the shape dangerous, and it was measured on
 the artifacts of the day rather than argued. **Four** of them lost their pin
 entirely under either spelling of this escape — measured with the verifier of
-the day before this card, replacing each document's cell `attribuut` with
+the day before this card, replacing each document's cell `attribute` with
 `null` and, separately, with a numeric literal:
 
     wf091-dimensiecel-eenheid   WF-091 unit lie             -> verifier: PASS
@@ -69,15 +69,15 @@ the identity family's silence above, not a divergence between two engines.
 Should an executor learn the form, the four artifacts above stay the
 measurement that carries the clause.
 
-*Measured dracht:* zero outside this witness and its non-reference sibling —
-no `DimensieCel` with a null `attribuut` occurs in the 153 golden + 22 rood +
+*Measured dracht:* zero outside this witness and its non-reference sibling — no
+`DimensionCellRead` with a null `attribute` occurs in the 153 golden + 22 rood +
 30 parity documents or in the 257 negatief cases that predate this card. Both
 golden cell positions stayed verifier-clean when emptied one at a time before
 this clause and neither does after; no document in any zone changes verdict.
 
 A hand-broken variant of `corpus/golden/jutterswet-seizoenvondst/ir.json` —
 one field emptied, a one-field diff. The shape is schema-valid:
-`DimensieCel.attribuut` is `anyOf [expression, null]` on the wire, which
+`DimensionCellRead.attribute` is `anyOf [expression, null]` on the wire, which
 is precisely why the verifier, not the schema, is the fence.
 
 Falsifiable, clause-exact: remove the `attribuut = None` arm from

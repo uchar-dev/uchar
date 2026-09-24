@@ -5,7 +5,7 @@ the maintainer decision of 2026-09-23 (option (a) of
 `backlog/done/20260920-aantal-zonder-bron.md`): a count is an instance
 fold and MUST carry an element type, the same sentence the filled count's
 element-type arm states. This is the arity-1 spelling with an ordinary own
-read: an `AANTAL` with no `elementType` and ONE argument that is no
+read: a `count` with no `elementType` and ONE argument that is no
 fold source.
 
     WF-037 FAIL /rules/rules/0/versions/0/value: the count is an
@@ -17,7 +17,7 @@ fold source.
 The document. A `Jutter` with two weighed posts of her own (`gewogen
 vangst`, `gewogen bijvangst`, kg with two decimals) and a count-typed
 target, `aantal gewogen posten` (whole, non-negative, unitless). The
-`AANTAL` carries one argument, the subject's own read of `gewogen vangst`,
+`count` carries one argument, the subject's own read of `gewogen vangst`,
 and no `elementType`. Every other clause holds: no facet, the node type is
 the count's own derived type; the verifier reports one fault.
 

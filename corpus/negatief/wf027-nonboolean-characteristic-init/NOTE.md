@@ -6,9 +6,9 @@ a boolean *constant*; the relaxed rule admits any boolean-*typed* expression
 (the constant stays the v0 form) but still refuses a statically non-boolean
 value. Here the created `Jutter`'s characteristic `penninggerechtigd` is
 initialised from the numeric literal `5` — the verifier types it `Number`,
-not `Booleaan`, and refuses it citing WF-027.
+not `Boolean`, and refuses it citing WF-027.
 
 Since L4 an object creation is an `ObjectCreation` with its versions (delta
 B19); the defect sits on the `ObjectCreationVersion`, whose fields are
-`createdType`, `subject`, `initialisations` (each a `Toekenning`) and
+`createdType`, `subject`, `initialisations` (each a `MemberInit`) and
 `connectingRole`. `expect.txt` pins the arm.

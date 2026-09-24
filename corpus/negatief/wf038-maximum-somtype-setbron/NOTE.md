@@ -12,7 +12,7 @@ Why it has to exist beside the other three: the four ordering kinds are
 one family in the rule but not in the executors, and the four cases
 cross the two wire forms with the two equality-only type families so
 that no cell of that square is left to be discovered later — this is the
-`MAXIMUM` cell of the set-source form. Measured: `ref` faults
+`maximum` cell of the set-source form. Measured: `ref` faults
 (`EVALUATION FAULT: unordered comparison: Vermist vs Geborgen(10)`); the
 ASP backend refuses with a different message than it gives the
 articulated sibling (`TRANSLATION FAULT: unscalable datatype in the ASP

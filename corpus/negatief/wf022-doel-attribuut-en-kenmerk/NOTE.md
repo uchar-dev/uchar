@@ -19,7 +19,7 @@ uses the verifier's name identity and the subject type with its supertypes.
 **The document.** `corpus/golden/anchor/jutterswet-toelagegronden/ir.json`,
 the one document in the four zones that declares such a name, and carries no
 rule writing it. The witness keeps its model, adds one rule
-`toelage van een jutter` (`GELIJKSTELLING`, value `10`) and drops the six
+`toelage van een jutter` (`equation`, value `10`) and drops the six
 defaults groups: a rule on a defaults target is WF-050's single-writer lift as
 well, so without them the report is the one line above. The anchor is the
 arm's golden.

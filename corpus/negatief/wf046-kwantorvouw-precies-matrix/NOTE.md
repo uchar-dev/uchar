@@ -2,7 +2,7 @@
 
 Violates **WF-046** (`spec/IR-SPEC.md` ch. 4.6 and 5.2,
 `RUNTIME-SEMANTICS.md` ch. 6.3) through one clause of the quantifier-fold
-decision of 2026-09-23: the MATRIX of a PRECIES fold is a negative edge,
+decision of 2026-09-23: the MATRIX of an `exactly` fold is a negative edge,
 comparisons included, because a member whose matrix turns true can take the
 count past the exact number.
 
@@ -18,7 +18,7 @@ the creation mints.
     a cycle: werf een opvolger reads what merk van een wachter produces while
     merk van een wachter is reachable from it (no strata exist)
 
-The case isolates that clause: read the PRECIES matrix positively and the
+The case isolates that clause: read the `exactly` matrix positively and the
 document is clean (mutation Ki, measured 2026-09-23).
 
 Measured before the quantifier-fold arm (2026-09-23), rang 1 everywhere: W1

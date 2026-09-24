@@ -1,7 +1,7 @@
 # wf031-dagsoortdefinitie-naamloos
 
 Violates **WF-031** (`spec/IR-SPEC.md` ch. 3.7): the first day-kind
-definition carries `naam: null`, so it defines no day kind at all — while
+definition carries `dayKind: null`, so it defines no day kind at all — while
 `schouwdag` is still declared and now has no definition.
 
     WF-031 FAIL /rules/dayKindDefinitions/0: day-kind definition without a name;

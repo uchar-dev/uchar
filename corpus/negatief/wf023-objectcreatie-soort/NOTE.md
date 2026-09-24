@@ -1,6 +1,6 @@
 Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) at its second write position
 on the FAMILY clause: the object creation initialises `vaarwater`
-(declared `Enumeratie` `Vaarwater`) with the numeric `Literal` `4`.
+(declared `Enumeration` `Vaarwater`) with the numeric `Literal` `4`.
 
     WF-023 FAIL /rules/objectCreations/0/versions/0/initialisations/0: a number
     value is assigned to a enumeration target

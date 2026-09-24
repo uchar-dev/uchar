@@ -1,5 +1,5 @@
 Violates WF-027 (`spec/IR-SPEC.md` ch. 3.3): a characteristic initialisation
-in an object creation carries an `AttribuutRef` value whose declaration is
+in an object creation carries an `AttributeReference` value whose declaration is
 numeric, where the value of a characteristic must be a boolean-typed
 expression.
 
@@ -26,5 +26,5 @@ in a boolean slot, refused by the same arm with the same message.
 
 Since L4 an object creation is an `ObjectCreation` with its versions (delta
 B19); the defect sits on the `ObjectCreationVersion`, whose fields are
-`createdType`, `subject`, `initialisations` (each a `Toekenning`) and
+`createdType`, `subject`, `initialisations` (each a `MemberInit`) and
 `connectingRole`. `expect.txt` pins the arm.

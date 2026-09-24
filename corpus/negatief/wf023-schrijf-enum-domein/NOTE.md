@@ -1,7 +1,7 @@
 Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) on its domain clause — the
 write half of the domain identity WF-089 reads: the rule target is the
-attribute `vaarwater` of `Berging`, declared `Enumeratie` of domain
-`Vaarwater`, and the value is a `Literal` `Noord` typed `Enumeratie` of
+attribute `vaarwater` of `Berging`, declared `Enumeration` of domain
+`Vaarwater`, and the value is a `Literal` `Noord` typed `Enumeration` of
 domain `Kust` — a second, internally consistent domain (the inline copy is
 faithful to `Kust`, so WF-088 is silent). A second rule reads `vaarwater`
 faithfully (scrutinee typed `Vaarwater`, arms `Wad`/`Zeegat`/`Ruimzee`),

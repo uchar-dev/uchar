@@ -1,13 +1,13 @@
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.6; the `BuiltinCall` table of
 ch. 4.3): a `granularity` facet on a builtin whose kind does not bucket — the
-`JAAR_UIT` call of a rule value carrying `"granularity": "JAAR"`.
+`yearOf` call of a rule value carrying `"granularity": "year"`.
 
     WF-037 FAIL /rules/rules/0/versions/0/value: granularity facet on
     a non-bucketing kind
 
 **Why the facet names nothing here.** A bucket is the period into which
-`TIJDSEVENREDIG_DEEL` and `AANTAL_DAGEN_IN` divide a timeline, and those two
-kinds are the only ones the facet is admitted on (ch. 4.3). `JAAR_UIT` reads
+`timeProportionalPart` and `dayCount` divide a timeline, and those two
+kinds are the only ones the facet is admitted on (ch. 4.3). `yearOf` reads
 the year of one date and divides nothing, so the facet states a bucket that no
 evaluation of this node uses. Since L4 `granularity` is a field of
 `BuiltinCall` alone (delta B21), so the arm is reached on the builtin kinds
@@ -27,8 +27,8 @@ ASP backend passed all five and the Drools backend played all five, both
 silently ignoring the facet.
 
 **The document.** `corpus/golden/jutterswet-paasvondst/ir.json` with one field
-added to the value of its first rule: `"granularity": "JAAR"` on the
-`JAAR_UIT` call, after `arguments`.
+added to the value of its first rule: `"granularity": "year"` on the
+`yearOf` call, after `arguments`.
 
 Falsifiable, arm-exact: emptying the arm `Some _, _` of the granularity match
 in `walk_expr` (`spec/verifier/lib/checks.ml`) turns this case clean and

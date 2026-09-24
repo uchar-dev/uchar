@@ -1,6 +1,6 @@
 Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) at its third write position on
 the FAMILY clause: the defaults consequence for `Berging.vaarwater`
-(declared `Enumeratie` `Vaarwater`) is the numeric `Literal` `4`.
+(declared `Enumeration` `Vaarwater`) is the numeric `Literal` `4`.
 
     WF-023 FAIL /rules/prioritizedDefaults/0/defaults/0/consequence: a number
     value is assigned to a enumeration target

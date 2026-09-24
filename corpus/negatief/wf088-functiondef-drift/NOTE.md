@@ -42,7 +42,7 @@ sum *declaration*'s payload copy would go unreported. That is the
 declaration-side half of the use-site≡declaration question — measured at
 the card `20260901-use-site-declaratie-identiteit`: for the enumeration
 it cannot arise, because WF-060 (sum payload), WF-071 (struct field) and
-WF-065 (list element) refuse a nested `Enumeratie` in every declaration
+WF-065 (list element) refuse a nested `Enumeration` in every declaration
 position before it could drift; the use-site half is WF-089 (ch. 2.4).
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the

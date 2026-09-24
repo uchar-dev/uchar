@@ -1,7 +1,7 @@
 # wf083-totaal-vreemd-elementtype
 
 Violates WF-083 (`spec/IR-SPEC.md` ch. 4.3), clause (c), at the **element
-type of the subject's own read**. A `TOTAAL` without a range (no `sourceRole`,
+type of the subject's own read**. A `total` without a range (no `sourceRole`,
 no `sourcePath`) is the subject's own read, so the type it folds over is the
 subject type, and its `elementType` must name that type (equality in the
 WF-001 form). Here it names another declared type.
@@ -30,7 +30,7 @@ backend both answered the golden's seven pinned expectations unchanged
 added in that round refuses it; before it, the document said something about
 the fold that no reader checked.
 
-Falsifiable, arm-exact: remove the `TOTAAL` element-type arm from the
+Falsifiable, arm-exact: remove the `total` element-type arm from the
 `Functie` case of `walk_expr` in `spec/verifier/lib/checks.ml` and this case
 turns clean; no other report over golden, rood, negatief and the parity zone
 changes (measured: the arm fires on this document alone).

@@ -2,7 +2,7 @@
 
 Violates WF-083 (`spec/IR-SPEC.md` ch. 4.3), the **anchor cross**, in its
 non-set half: a fold source that is not a set read is read on the fold
-SUBJECT, so its `objecttype` must name the subject. Here it names another
+SUBJECT, so its `subjectType` must name the subject. Here it names another
 declared type, and the annotation and the declaration the executors actually
 consult come apart.
 
@@ -14,9 +14,9 @@ consult come apart.
 
 The document. A Vondst-subject rule whose value is the ch. 3.6 temporal total,
 `elementType: "Vondst"` (the subject, the tag v0 stamps on an own temporal
-total), one operand: `bewaarvergoeding per maand` with `objecttype: "Jutter"`,
+total), one operand: `bewaarvergoeding per maand` with `subjectType: "Jutter"`,
 no range (so the subject's own read, IR-SPEC ch. 4.3), no navigation. `Jutter`
-really does declare that attribute, at MAAND granularity, so every other rule
+really does declare that attribute, at `month` granularity, so every other rule
 that crosses the reference against a declaration is satisfied — this is
 precisely why the shape stayed verifier-clean: nothing in the document is
 wrong except the type it says the fold is anchored at.
@@ -59,9 +59,9 @@ exactly one report changes, this one, which turns clean.
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the source
-lost its own `type` (B13); a `TOTAAL` without a range reads the subject's
+lost its own `type` (B13); a `total` without a range reads the subject's
 own attribute (IR-SPEC ch. 4.3), so its anchor is the fold subject, and its
-`objecttype` still names another type. The rule still fires on the same arm.
+`subjectType` still names another type. The rule still fires on the same arm.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,

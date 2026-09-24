@@ -1,7 +1,7 @@
 # wf046-kwantorvouw-geen-matrix
 
 Violates **WF-046** (`spec/IR-SPEC.md` ch. 4.6 and 5.2,
-`RUNTIME-SEMANTICS.md` ch. 6.3). Under GEEN the MATRIX of a quantifier fold
+`RUNTIME-SEMANTICS.md` ch. 6.3). Under `none` the MATRIX of a quantifier fold
 is a negative edge, comparisons included (maintainer decision 2026-09-23).
 This case isolates that clause: the fold's range is an input relation that
 no form writes, so only the matrix can close the cycle.

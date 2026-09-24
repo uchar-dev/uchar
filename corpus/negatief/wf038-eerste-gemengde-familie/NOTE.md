@@ -25,8 +25,8 @@ document-layer rule behind it until now; and the Drools backend
 class java.math.BigDecimal cannot be cast to class
 java.time.chrono.ChronoLocalDate`), a crash on verifier-clean input.
 The single-family cases stay legitimate and are pinned as goldens:
-`corpus/golden/jutterswet-hoogwaterpaar` (an articulated `EERSTE` and
-`LAATSTE` over two dates) and `corpus/golden/jutterswet-peildatum`
+`corpus/golden/jutterswet-hoogwaterpaar` (an articulated `first` and
+`last` over two dates) and `corpus/golden/jutterswet-peildatum`
 (which carries both a date pair and a numeric pair), all replayed by
 gates 5 and 6.
 

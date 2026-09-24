@@ -1,7 +1,7 @@
 # wf037-aantalgevulde-zonder-elementtype
 
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in the filled count's
-INSTANCE-FOLD arm: `AANTAL_GEVULDE` is an instance fold and must carry an
+INSTANCE-FOLD arm: `filledCount` is an instance fold and must carry an
 element type, and this node carries none.
 
     WF-037 FAIL /rules/rules/0/versions/0/value: the filled count is an

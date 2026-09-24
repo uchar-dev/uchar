@@ -1,5 +1,5 @@
 Violates WF-089 (`spec/IR-SPEC.md` ch. 2.4) at its **aggregation
-position**: `EERSTE(kust van alle schuiten van de Berging)` carries a
+position**: `first(kust van alle schuiten van de Berging)` carries a
 node `type` naming the enumeration domain `Vaarwater` while its operand —
 `kust` of `Schuit`, read faithfully as `Kust` — names `Kust`. The
 element-passing folds hand a contributor through unchanged, so the node
@@ -13,7 +13,7 @@ for it.
     domain 'Kust'
 
 Why it has to exist: the reference arms of WF-089 bind an
-`AttribuutRef`/`DimensieCel`/`ParameterRef`/`BinderRef` to the
+`AttributeReference`/`DimensionCellRead`/`ParameterReference`/`BinderRef` to the
 declaration it reads, and WF-023/WF-067 bind every value written into a
 declaration — but the fold sat between them, crossed by nothing. WF-037
 admits a one-argument value fold as soon as `elementType` is set;
@@ -35,7 +35,7 @@ return `[]` and the WF-089 line disappears here, on
 change and no other — while every other wf089 case, the reference arms
 and `wf089-foldbron-enum`, is untouched. Re-measured after the WF-038
 ordering-fold clause landed (2026-09-05): the three no longer turn
-*clean* under that mutant, because an `EERSTE` over an enumeration
+*clean* under that mutant, because a `first` over an enumeration
 contributor violates that clause on the very same operand. The
 falsification signal is the rule this document is filed under, which the
 gate reads: under the mutant it is rejected for WF-038 and no longer for

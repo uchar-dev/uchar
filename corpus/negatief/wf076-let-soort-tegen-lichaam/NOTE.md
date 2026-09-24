@@ -1,6 +1,6 @@
 Violates WF-076 (`spec/IR-SPEC.md` ch. 4.10): a `Let` binds `b` to a read of
 `Jutter.basis`, a `Number` attribute, and its body reads `b`, so the body
-is a number; the `Let` node is typed `Tekst`.
+is a number; the `Let` node is typed `Text`.
 
     WF-076 FAIL /rules/rules/0/versions/0/value/type: the let type
     (text) differs from its body type (number(0 decimals)) — the let type must

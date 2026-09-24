@@ -1,13 +1,13 @@
 Violates WF-080 (`spec/IR-SPEC.md` ch. 4.1): the value position an aggregation
-folds over resolves to a **characteristic** endpoint, not an attribute. The
-rule `penningtotaal van een jutter` sums over `Penning`, but its `SOM` source
-`AttribuutRef` names `uitgereikt` — a declared kenmerk of `Penning`, not an
-attribute — so each element carries no value to fold.
+folds over resolves to a **characteristic** endpoint, not an attribute. The rule
+`penningtotaal van een jutter` sums over `Penning`, but its `sum` source
+`AttributeReference` names `uitgereikt` — a declared kenmerk of `Penning`, not
+an attribute — so each element carries no value to fold.
 
 Pins the sibling of the `has_attr || has_kenmerk` leak: the aggregation source
 takes a separate path from the generic value walk (`aggregation_source_check`),
 which admitted an attribute, a characteristic, OR a role. A value-yielding fold
-(`SOM`/`TOTAAL`/`MINIMUM`/…) reads an attribute value; a count names a role
+(`sum`/`total`/`minimum`/…) reads an attribute value; a count names a role
 (`is_role_name`, kept legal — the count-over-role v0 encoding); a characteristic
 endpoint is ill-formed in neither shape. The walk_expr WF-080 branch already
 refuses a characteristic in a value slot; this case pins the fold source too.

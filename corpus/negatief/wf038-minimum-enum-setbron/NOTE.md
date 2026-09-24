@@ -30,7 +30,7 @@ java.lang.String`) — the accumulating min/max lowering assumes a number.
 A verifier-clean document that crashes an engine is exactly what the
 document layer is for. The faithful twin over an orderable element type
 is a standing golden (`corpus/golden/jutterswet-vondstpiek`, the same
-`MINIMUM`/`MAXIMUM` set fold over a numeric attribute), so the shape is
+`minimum`/`maximum` set fold over a numeric attribute), so the shape is
 legitimate; only the element type is not.
 
 Falsifiable, arm-exact: make the per-operand orderability arm of the

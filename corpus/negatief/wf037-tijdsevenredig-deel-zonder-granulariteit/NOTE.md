@@ -1,11 +1,11 @@
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.6; the `BuiltinCall` table of
-ch. 4.3): a bucketing builtin without its bucket — a `TIJDSEVENREDIG_DEEL`
+ch. 4.3): a bucketing builtin without its bucket — a `timeProportionalPart`
 call that carries no `granularity`.
 
     WF-037 FAIL /rules/rules/0/versions/0/value: bucketing builtin
     without a granularity
 
-**Why the facet is required.** `TIJDSEVENREDIG_DEEL` and `AANTAL_DAGEN_IN`
+**Why the facet is required.** `timeProportionalPart` and `dayCount`
 divide a timeline into buckets and compute per bucket
 (`RUNTIME-SEMANTICS.md` ch. 3.7 and 3.8). The call names the bucket, and
 ch. 4.3 requires the facet on exactly these two kinds; without it the node
@@ -23,7 +23,7 @@ more`), and the Drools backend excludes the rule at transpilation
 bucket.
 
 **The document.** `corpus/golden/jutterswet-bakenmeester/ir.json` with one field
-removed from the value of its rule: `"granularity": "MAAND"`.
+removed from the value of its rule: `"granularity": "month"`.
 
 Falsifiable, arm-exact: emptying the arm `None, (Tijdsevenredig_deel |
 Aantal_dagen_in)` of the granularity match in `walk_expr`

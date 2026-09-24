@@ -19,7 +19,7 @@ leeg, so the creation does not fire, so there is no successor, so merk stays
 leeg. Measured 2026-09-23 with one input Wachter W1 of rang 1: the reference
 interpreter leaves merk(W1) leeg and the ASP backend has exactly one stable
 model with the same answer. It is refused because the decision counts a
-leeg/gevuld test as negative whether it carries `negatie: false` or `true`:
+leeg/gevuld test as negative whether it carries `negated: false` or `true`:
 the test depends on absence in both readings.
 
 The case is what tells that decision apart from the narrower reading "only

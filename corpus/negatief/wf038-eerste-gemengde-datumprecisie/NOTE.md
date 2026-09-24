@@ -18,7 +18,7 @@ Both fold nodes are refused: the document declares one attribute at each
 precision and reads that same pair twice, once per ordering kind.
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-hoogwaterpaar`
-(an articulated `EERSTE`/`LAATSTE` pair over two millisecond-precision
+(an articulated `first`/`last` pair over two millisecond-precision
 operands). Three fields move and nothing else: the precision of the
 declaration of `Getijdendag.avondhoogwater` from `millisecond` to `day`, and
 the

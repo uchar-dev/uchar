@@ -2,7 +2,7 @@ Violates WF-087 (`spec/IR-SPEC.md` ch. 2.4) at its lower boundary: the
 `meldstatus` sum type declares exactly ONE constructor, `Gemeld`, with a
 null payload. "All nullary" is a universal quantification, so it holds of
 a one-alternative declaration too — a unit type is a nullary keuzetype
-and therefore an `Enumeratie` domain with a single value, never a
+and therefore an `Enumeration` domain with a single value, never a
 `SumType`.
 
 This case pins that boundary. Its sibling `wf087-all-nullary-sumtype`

@@ -1,6 +1,6 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **characteristic check**
-(ch. 4.5) that names no characteristic. `kenmerk` is the only field the check
-resolves through, so an empty one resolves against no declaration at all.
+(ch. 4.5) that names no characteristic. `characteristic` is the only field the
+check resolves through, so an empty one resolves against no declaration at all.
 
     WF-034 FAIL /rules/rules/1/versions/0/condition: characteristic
     check without a characteristic name: it resolves against no declaration
@@ -30,16 +30,17 @@ time, on a document the verifier had already called well-formed. That is the
 whole argument for the rule: "this reference resolves" is a document-layer
 property, not a discovery two evaluators are supposed to make separately.
 
-*Measured dracht:* zero outside this witness — no `Kenmerk` node with a null
-`kenmerk` occurs in the 153 golden + 22 rood + 30 parity documents or in the
-257 negatief cases that predate this card. Over-rejection is impossible by
-measurement, and the verifier's verdict over all 462 of those documents is
-unchanged by this clause.
+*Measured dracht:* zero outside this witness — no `CharacteristicCheck` with a
+null `characteristic` occurs in the 153 golden + 22 rood + 30 parity documents
+or in the 257 negatief cases that predate this card. Over-rejection is
+impossible by measurement, and the verifier's verdict over all 462 of those
+documents is unchanged by this clause.
 
-A hand-broken variant of `corpus/golden/jutterswet-keurmerk/ir.json` — one
-field emptied, a one-field diff. The shape is schema-valid: `Kenmerk.kenmerk`
-is `["string","null"]` on the wire, like nearly every reference field,
-which is precisely why the verifier, not the schema, is the fence.
+A hand-broken variant of `corpus/golden/jutterswet-keurmerk/ir.json` — one field
+emptied, a one-field diff. The shape is schema-valid:
+`CharacteristicCheck.characteristic` is `["string","null"]` on the wire, like
+nearly every reference field, which is precisely why the verifier, not the
+schema, is the fence.
 
 Falsifiable, clause-exact: remove the `kenmerk = None` arm from `walk_cond`'s
 `Kenmerk_check` case — a characteristic check is a CONDITION node, so the arm

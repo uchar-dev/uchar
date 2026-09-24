@@ -8,7 +8,7 @@ verifier's own WF-084 sentence (since the L4 fix round; until then the
 reference interpreter faulted at evaluation, the ASP backend at translation,
 and the Drools branches excluded the rule); WF-084 makes such a document
 ill-formed at verification time, ahead of any executor. The lexeme belongs in
-ISO form; the source snippet belongs in `bron`.
+ISO form; the source snippet belongs in `source`.
 
 Minimal own-authored document (Jutterswet vocabulary); the well-formed
 counterpart is the ISO date literal in

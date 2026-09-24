@@ -15,7 +15,7 @@ read as attributing a characteristic of the attribute's name, which the
 declaration does not have.
 
 **The document.** `corpus/golden/jutterswet-meldloon/ir.json` with one field
-removed from the first rule's version: `"presentation": "BEREKENING"`.
+removed from the first rule's version: `"presentation": "calculation"`.
 
 Falsifiable, arm-exact: emptying the arm `true, false when not computes` of the
 member match in `wf022` of `spec/verifier/lib/checks.ml` turns this case clean

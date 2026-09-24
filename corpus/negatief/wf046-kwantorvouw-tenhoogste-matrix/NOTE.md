@@ -2,7 +2,7 @@
 
 Violates **WF-046** (`spec/IR-SPEC.md` ch. 4.6 and 5.2,
 `RUNTIME-SEMANTICS.md` ch. 6.3) through one clause of the quantifier-fold
-decision of 2026-09-23: the MATRIX of a TEN_HOOGSTE fold is a negative edge,
+decision of 2026-09-23: the MATRIX of an `atMost` fold is a negative edge,
 comparisons included, because members whose matrix turns true can push the
 count over the threshold.
 
@@ -16,7 +16,7 @@ matrix reads the merk the rule derives from the creation's own product.
     a cycle: werf een opvolger reads what merk van een wachter produces while
     merk van een wachter is reachable from it (no strata exist)
 
-The case isolates that clause: read the TEN_HOOGSTE matrix positively and
+The case isolates that clause: read the `atMost` matrix positively and
 the document is clean (mutation Kl, measured 2026-09-23).
 
 Measured before the quantifier-fold arm (2026-09-23), with W1 (rang 1)

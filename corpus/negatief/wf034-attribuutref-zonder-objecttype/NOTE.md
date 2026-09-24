@@ -1,5 +1,5 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an `AttributeReference` that
-names no object type. `objecttype` is the endpoint the attribute's value
+names no object type. `subjectType` is the endpoint the attribute's value
 lives on (ch. 4.1a), so a reference without one resolves against no
 declaration at all.
 
@@ -8,7 +8,7 @@ declaration at all.
     no declaration
 
 Why it has to exist: the empty field is not one rule's deferral but a
-**generic exemption**. With `objecttype` absent, `resolved_attr_datatype`
+**generic exemption**. With `subjectType` null, `resolved_attr_datatype`
 yields `None` and the arm's whole `Some otn` branch is skipped, so the
 member check (WF-034), the navigation discipline (WF-053), the
 characteristic-in-a-value-position check (WF-080) and the entire identity
@@ -38,7 +38,7 @@ all three executors play it.
 A hand-broken variant of `corpus/golden/jutterswet-aanvoergeld/ir.json`:
 one field emptied, a one-line diff since L2 (until L2 also one unit
 abbreviation and factor changed on the reference's own type); the shape
-is schema-valid — `AttribuutRef.objecttype` is `["string","null"]` on the
+is schema-valid — `AttributeReference.subjectType` is `["string","null"]` on the
 wire, like nearly every reference field — which is precisely why the
 verifier, not the schema, is the fence.
 

@@ -1,6 +1,6 @@
 Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) on its domain clause with a
 GHOST domain: the value written into `vaarwater` (declared `Vaarwater`) is
-a `Literal` `Noord` typed `Enumeratie` of domain `Spook`, which `domeinen`
+a `Literal` `Noord` typed `Enumeration` of domain `Spook`, which `domains`
 does not declare. WF-088 is a repeat check and calls a use site naming no
 declared domain "not its business"; WF-003 covers the model layer only;
 WF-039 checks the label against the LOCAL list, which contains `Noord`.

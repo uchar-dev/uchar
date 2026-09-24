@@ -1,5 +1,5 @@
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in the filled count's
-source arm: an `AANTAL_GEVULDE` over the `Vondst`en of the subject, its
+source arm: a `filledCount` over the `Vondst`en of the subject, its
 range `vondstaanmelding`/`vondst` written, whose single argument is a
 literal. The filled count reads a VALUE on each contributor and tests it for
 presence; its source is the set source, an attribute reference read per
@@ -28,4 +28,4 @@ with only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
 builtin `granularity`; the report cites and names them. The L2 paragraph above
 names the fields as they were spelled then (`elementObjecttype` →
-`elementType`). `expect.txt` pins the arm.
+`elementType`; since L5 `TOTAAL` → `total`). `expect.txt` pins the arm.

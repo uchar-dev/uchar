@@ -2,7 +2,7 @@
 
 Violates **WF-046** (`spec/IR-SPEC.md` ch. 4.6 and 5.2,
 `RUNTIME-SEMANTICS.md` ch. 6.3) through one clause of the quantifier-fold
-decision of 2026-09-23: the RANGE of a TEN_HOOGSTE fold is a negative edge,
+decision of 2026-09-23: the RANGE of an `atMost` fold is a negative edge,
 because a growing range can push the count over the threshold.
 
 The model is `corpus/golden/jutterswet-opvolgerquorum` with another creation
@@ -17,7 +17,7 @@ aan 7 (ch. 1.2), so every minted opvolger counts.
     a cycle: werf een opvolger reads what werf een opvolger produces while werf
     een opvolger is reachable from it (no strata exist)
 
-The case isolates that clause: read the TEN_HOOGSTE range positively and the
+The case isolates that clause: read the `atMost` range positively and the
 document is clean (mutation Kj, measured 2026-09-23).
 
 Measured before the quantifier-fold arm (2026-09-23), with W1 (rang 1)

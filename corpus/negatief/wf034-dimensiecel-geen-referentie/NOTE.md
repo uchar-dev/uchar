@@ -25,7 +25,7 @@ spelling at all — the clause is a fence on the WIRE, where any conforming
 producer may write any expression node the schema admits.
 
 The consequence was the same and was measured on the artifacts of the day.
-**Four** of them lost their pin entirely when their cell `attribuut` was
+**Four** of them lost their pin entirely when their cell `attribute` was
 replaced by a literal — the same four, and the same result, as under the
 sibling's empty spelling (measured with the verifier of the day before this
 card):
@@ -64,7 +64,7 @@ than reporting the same defect twice under two wordings.
 today's executors decline a cell read as a FORM, so no golden carrying one
 has a case file. This is a verifier-only channel as things stand.
 
-*Measured dracht:* zero — no `DimensieCel` whose `attribuut` is a
+*Measured dracht:* zero — no `DimensionCellRead` whose `attribute` is a
 non-reference node occurs in the 153 golden + 22 rood + 30 parity documents
 or in the 257 negatief cases that predate this card. Both golden cell
 positions stayed verifier-clean when overwritten with a literal one at a time

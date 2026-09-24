@@ -27,8 +27,8 @@ renamed from `Noord`/`Zuid` to `noord`/`ZUID` would answer differently.
 One verifier-clean document, one executor faulting and another returning
 a value: a ref ≢ Drools divergence that is invisible today only because
 no corpus document carries the form. The same measurement holds for the
-other equality-only element types — an articulated `EERSTE` over two
-`Text` attributes and a `MAXIMUM` over two `Boolean` ones both had `ref`
+other equality-only element types — an articulated `first` over two
+`Text` attributes and a `maximum` over two `Boolean` ones both had `ref`
 fault (`unordered comparison: "noord" vs "zuid"`, `unordered comparison:
 onwaar vs waar`) while the Drools backend played and answered — which is
 why the clause is written over orderability, not over an enumerated list

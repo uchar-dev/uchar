@@ -1,6 +1,6 @@
 Violates WF-067 (`spec/IR-SPEC.md` ch. 2.11) on its body/result clause:
-the `FunctionDef` `Kies` declares the result `Enumeratie` `Vaarwater` and
-its body is a `Literal` `Noord` typed `Enumeratie` `Kust` — a second,
+the `FunctionDef` `Kies` declares the result `Enumeration` `Vaarwater` and
+its body is a `Literal` `Noord` typed `Enumeration` `Kust` — a second,
 internally consistent domain. The `Invoke` is truthful (typed `Vaarwater`,
 so WF-068 is clean) and feeds a `Match` whose arms cover `Vaarwater`.
 

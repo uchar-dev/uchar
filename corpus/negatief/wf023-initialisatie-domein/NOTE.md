@@ -9,7 +9,7 @@ document is `wf023-schrijf-enum-domein` with the rule kind swapped.
     domain 'Kust' is assigned to a target of the enumeration domain 'Vaarwater'
 
 Why it has to exist: write position 1 admits the two presentations
-`GELIJKSTELLING` and `BEREKENING` and the initialisation (a characteristic
+`equation` and `calculation` and the initialisation (a characteristic
 attribution, a version with neither, is WF-022's, whose value is the boolean
 constant), but every existing write case used one of the first two — dropping
 the initialisation from the rule-kind set left gate 3 green. ref faults at the
@@ -18,7 +18,7 @@ translation (`unscalable datatype`, the pre-existing enum fence).
 
 Falsifiable: drop `Initialisatie` from the rule-kind set of write
 position 1 in `wf023` and this case alone turns clean, while every
-`GELIJKSTELLING`/`BEREKENING` write case stays red.
+`equation`/`calculation` write case stays red.
 
 Since L4 the initialisation is a version with `initialisation: true` and no
 `presentation` (delta B20). `expect.txt` pins the arm.

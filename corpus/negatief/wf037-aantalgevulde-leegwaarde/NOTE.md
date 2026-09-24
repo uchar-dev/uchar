@@ -1,7 +1,7 @@
 # wf037-aantalgevulde-leegwaarde
 
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in its `emptyFallback`
-clause — "sum only". An `AANTAL_GEVULDE` carries an `emptyFallback`.
+clause — "sum only". A `filledCount` carries an `emptyFallback`.
 
     WF-037 FAIL /rules/rules/0/versions/0/value: empty-value fallback
     on a non-sum aggregation

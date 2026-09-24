@@ -1,10 +1,10 @@
 # wf046-kwantorvouw-geen-vergelijking
 
 Violates **WF-046** (`spec/IR-SPEC.md` ch. 4.6 and 5.2,
-`RUNTIME-SEMANTICS.md` ch. 6.3). Under GEEN both parts of a quantifier fold
+`RUNTIME-SEMANTICS.md` ch. 6.3). Under `none` both parts of a quantifier fold
 are negative edges (maintainer decision 2026-09-23): the RANGE, because a new
 member can falsify the verdict, and the MATRIX, comparisons included,
-because GEEN is the negation of the matrix.
+because `none` is the negation of the matrix.
 
 The recursive creation "werf de opvolger" (group "estafette") mints a
 successor Wachter while "de rang van de Wachter is kleiner dan 5 en geen van
