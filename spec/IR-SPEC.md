@@ -49,7 +49,13 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   (landing L2: the written navigation names, the bean fields of a fact
   creation and a scope, the reference's own `type` and the unknown-type
   node left the wire, and the bindings the extension fields carried became
-  required where a reader used to derive them). Current
+  required on the allocation, the quantifier fold, the union selection and
+  the single-argument fold with an `elementType` under every kind but
+  `TOTAAL`; the object creation's back-link binding stays optional,
+  ch. 3.3). The delta labels B1–B28 cited in this document are the entries
+  of that proposal's §3, and the decisions V1–V17 its §5–§6; a landing
+  decision that no delta states is recorded in the landing's card, for L2
+  `backlog/done/20260923-l2-referentielaag.md`. Current
   extension fields: `verbindendeRol` (ch. 3.2; and on object creation,
   ch. 3.3 — the back-link role), `bronRol` and `bronPad` (ch. 4.3 —
   the fold source's range, one relation or a path of them), the
@@ -1340,18 +1346,21 @@ Method) is the symbolic reference those chapters bind with:
   state which side is bound: ch. 3.2, 4.3), and where the node also
   carries a written role name — the COUNT source of an instance fold,
   whose `attribute` is the written name of the role its range binds
-  (ch. 4.3, D8 (ii)) — that name MUST denote the bound role, on declared
-  name or declared plural. **U11 (L2, 2026-09-24):** where the written
-  name on a count source denoted neither, the L2 migration and the
-  emitter write the declared name of the bound role in `attribute` and
-  keep the written spelling in `bron` (measured: two goldens,
-  `jutterswet-kaveltelling` and `jutterswet-muntpeiling`, and four
-  places in the parity zone); the rule stays "denotes on name or
-  plural". This is a normative question put to the maintainer, with this
-  as the default answer.
+  (ch. 4.3, the reading of the source, (ii)) — that name MUST denote the
+  bound role, on declared name or declared plural. **Since L2
+  (2026-09-24):** where the written name on a count source denoted
+  neither, the L2 migration and the emitter write the declared name of
+  the bound role in `attribute` and keep the written spelling in `bron`
+  (measured: two goldens, `jutterswet-kaveltelling` and
+  `jutterswet-muntpeiling`, and four places in the parity zone; recorded
+  in the L2 card, `backlog/done/20260923-l2-referentielaag.md`); the rule
+  stays "denotes on name or plural".
 - **WF-048** *(removed at L2, 2026-09-24 — history.)* Landed L2
-  2026-09-24: the binding is required wherever a reader used to derive
-  it. Until then a node could navigate the connecting relation *without* a binding — a
+  2026-09-24: the binding is required on the nodes this rule governed. The
+  object creation's back-link role was never among them: it stays
+  optional (`verbindendeRol`, ch. 3.3), and without it the executors still
+  derive the relation from the type pair (`RUNTIME-SEMANTICS.md`
+  ch. 5.5). Until then a node could navigate the connecting relation *without* a binding — a
   bindingless allocation (ch. 3.2) or instance fold (ch. 4.3) — and this
   rule made it well-formed only if **exactly one** fact type related its
   type pair (a two-role fact type over the pair, or — for a self-typed
@@ -1361,11 +1370,15 @@ Method) is the symbolic reference those chapters bind with:
   format bump (B12): an allocation carries its recipient role, a quantifier
   fold its range, a union selection its relation, and a single-argument
   fold with an `elementType` its range under every kind but `TOTAAL` —
-  the schema and every loader refuse the bindingless form, so nothing is
-  left to derive. The two witnesses (`wf048-ambiguous-connecting-relation`,
-  `wf048-telling-meerduidig`) were removed with reason; the migration
-  derived the binding of every other bindingless form with exactly this
-  derivation (`corpus/negatief/README.md`, L2).
+  the schema and every loader refuse the bindingless form, so no reader
+  derives the relation of these nodes. The two witnesses
+  (`wf048-ambiguous-connecting-relation`, `wf048-telling-meerduidig`) were
+  removed with reason. The migration derived the binding of the other
+  bindingless forms with exactly this derivation; where it found no single
+  candidate — five negatief documents, four allocations without a source
+  type and one count beside an instance-set union — the witness was
+  rewritten by hand with its binding written (`corpus/negatief/README.md`,
+  L2).
 
 Role-name matching is case-insensitive, over the declared name and the
 declared plural. *v0 mirror note:* when no plural is declared, v0 admits a
@@ -1379,8 +1392,9 @@ instance-fold source until L2: name resolution first (declared name or
 declared plural, ci); a name that resolved to no declared role stood
 only when exactly one fact type connected the subject type to the
 element type. Since L2 (2026-09-24) the count source carries its range,
-and its written name MUST denote the bound role (WF-047, with U11): the
-fallback has nothing left to stand in for.
+and its written name MUST denote the bound role (WF-047): no reader
+resolves a written name to a relation any more, so the fallback no
+longer exists.
 
 - **WF-011** A reciprocal fact type MUST have exactly one role; a
   non-reciprocal fact type MUST have at least two. Whether more than two
@@ -1406,21 +1420,48 @@ or a characteristic of an object type the same fact type relates. Such a
 document is **well-formed**, and no rule above narrows it. The reason is
 structural: a navigated read names its role hop and its attribute in
 *different* fields — the `navigatieBindingen` of ch. 4.1a against
-`attribuut` (in v1 the unified `path` against `attribute`, row 4) — so a
-role name and a member name never compete for one wire position. The reference interpreter and the ASP
-backend both answer such a document correctly today, with no special
-case. It is a REACHABLE but UNINHABITED shape: swept 2026-09-10 over
-every corpus zone — 555 documents — the collision occurs zero times, so
-no existing case pins this and the paragraph is what states it.
+`attribuut` (in v1 the unified `path` against `attribute`, row 4) — so at
+a read a role name and a member name do not compete for one wire
+position. The reference interpreter and the ASP backend both answer such
+a read correctly, with no special case. It is a REACHABLE but UNINHABITED
+shape: swept 2026-09-10 over every corpus zone — 555 documents — the
+collision occurs zero times, so no existing case pins this and the
+paragraph is what states it.
+
+**One wire position is shared, and there the collision has a
+consequence (since L2, 2026-09-24).** The COUNT source of an instance
+fold (ch. 4.3) writes the name of the role its range binds in
+`attribute`, the field in which a value fold's set source names the
+member it reads per contributor, and the two readings are told apart by
+that name alone: a name that is an attribute or a characteristic of the
+element type is a member read, any other name a count source (WF-093; the
+set flag and the unknown-type sentinel that used to mark the count source
+left the wire with B11 and B13). A role whose written name — its declared
+name or its declared plural, whichever the source writes (WF-047) — is
+also the name of a member of the element type therefore cannot be counted
+under that spelling: the source reads as the member, and WF-093 (b)
+refuses `AANTAL` over it. Where the other declared spelling does not
+collide, the count is written with that one; where every declared
+spelling collides, no count source can name the role.
 
 The neighbouring shape — one written name matching *several* reachable
-roles — is a different question and keeps its own answer: a loud executor
-fault, never a guess (ch. 4.3). Its two arms are pinned unevenly. The
-navigation arm is refused statically by WF-053. The case-input arm, where
-a case supplies links under a role key that resolves to two roles, is
-refused identically by both executors but while LOADING the case, which
-the red corpus's expected-fault contract does not reach; that gap is
-carded in `backlog/new/20260910-rood-zone-laadfouten.md`.
+roles — has no wire position since L2 (2026-09-24, B11, B12). A
+navigation and a fold range name their relation by a role binding (a
+fact type and a declared role name), so no reader resolves a written name
+to a relation: the binding decides which relation is walked, and the
+written name stays in `bron` — for the count source in `attribute`, where
+WF-047 requires only that it denote the bound role.
+`corpus/golden/ambiguous-fold-role-name` pins it: the count's written
+name `vriend` is the declared name of a role in two fact types the
+subject reaches, and the count answers through its `bronRol`.
+*(History until L2:)* a written name that resolved to several roles was a
+loud executor fault, never a guess (ch. 4.3), and the navigation arm was
+refused statically by WF-053. The case-input arm is not changed by L2: a
+case that supplies links under a role key that resolves to two roles is
+refused identically by both executors while LOADING the case, and the red
+corpus pins that refusal (`corpus/rood/ambiguous-case-role-key`; the
+red corpus's expected-fault contract admits a load fault since
+2026-09-19, `backlog/done/20260910-rood-zone-laadfouten.md`).
 
 *Consumer note, recorded rather than hidden.* A consumer that
 materialises each object type as a record with **one property per
