@@ -1,12 +1,12 @@
 # som-fallback-always-evaluated
 
 The **unconditional stand-in** witness of `RUNTIME-SEMANTICS.md` ch. 5.11:
-a som's `leegwaarde` is the node's LAST operand, and it is **evaluated**
+a som's `emptyFallback` is the node's LAST operand, and it is **evaluated**
 whether or not its value is ever **read**.
 
 ## Why it needs saying
 
-Ch. 5.11 orders the som as "the contributors, then the `leegwaarde`".
+Ch. 5.11 orders the som as "the contributors, then the `emptyFallback`".
 Read quickly, that suggests the stand-in only runs when the contributors
 leave nothing — which is when its *value* is used. That is not this
 witness's reading: the stand-in is an ordinary operand of the node and it

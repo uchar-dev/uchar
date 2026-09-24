@@ -6,7 +6,7 @@ document, same case, same two executors' refusals; the wire kind is
 
 It is a case of its own rather than a second case file because the two
 kinds part on exactly one clause — the empty set, where §5.8.2 gives the
-som its `leegwaarde` and §4.20 gives the totaal an unconditional 0 — and
+som its `emptyFallback` and §4.20 gives the totaal an unconditional 0 — and
 a witness that pins one kind's sentence says nothing about the other's.
 Both executors carry the two kinds in ONE arm, so a mutation that removes
 the refusal removes both; that is a property of the implementation and

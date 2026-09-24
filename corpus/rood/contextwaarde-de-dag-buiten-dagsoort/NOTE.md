@@ -1,9 +1,10 @@
 # contextwaarde-de-dag-buiten-dagsoort
 
-`de dag` **outside a day-kind definition**. The third context value
-(`IR-SPEC.md` ch. 4.1, WF-098) denotes the BOUND DAY of a day-kind
-voorwaarde — the day the defining predicate is being applied to. Anywhere
-else it denotes nothing, and this case is what makes that observable.
+`de dag` **outside a day-kind definition**. Since the L4 landing it is its
+own node, `BoundDay` (`IR-SPEC.md` ch. 4.1; until then the third context
+value under WF-098), and it denotes the BOUND DAY of a day-kind voorwaarde
+— the day the defining predicate is being applied to. Anywhere else it
+denotes nothing, and this case is what makes that observable.
 
 ## The shape
 
@@ -14,8 +15,9 @@ calculation:
 Het jaartal van een Baken moet berekend worden als het jaar uit de dag.
 ```
 
-The document is **verifier-clean**: WF-098 closes the NAME set and `de dag`
-is in it, and the clause is deliberately FLAT — it carries no position rule.
+The document is **verifier-clean**: a `BoundDay` node is well-formed wherever
+it stands (WF-098 governs the two session-value names, not the bound day),
+and the clause is deliberately FLAT — it carries no position rule.
 The position half that DID land with the day-kind semantics card is its
 mirror: WF-031 refuses a SESSION value *inside* a day-kind voorwaarde
 (negatief `wf031-sessiewaarde-in-dagsoort`). What `de dag` means outside one
