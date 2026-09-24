@@ -246,8 +246,10 @@ The repo's second CI gate. It performs three checks, and two self-tests:
      held against the schema directly, in both polarities: the date patterns
      against a lexeme table, and the positions the M1 and L2 shapes close
      against one small valid document per shape with one mutation per row.
-     The rows that must pass pin the three admissions above and the two
-     narrowings of the written ranges.
+     The rows that must pass pin the three admissions above, the two
+     narrowings of the written ranges, a `RoleMembership` carrying
+     `counterpartType`, and an `Onopgelost` without `type` (the unknown type
+     since L2).
 2. **Validation** — every `corpus/golden/**/ir.json` validates against the
    schema. The file count is reported; an empty corpus passes and says so.
 3. **Round-trip** — each such file is parsed (preserving the original number
