@@ -9,18 +9,21 @@ Why the existing WF-034 parameter arm does not cover it: that arm reports a
 name that resolves nowhere (`reference to undeclared parameter 'x'`), and it
 lives inside `match parameter with Some p`. The absent name walked past it
 through the `| None -> []` twin — the same shape as the object-type channel
-closed on 2026-09-04, one node kind over. Silent with it: the identity family,
-which crosses this reference's serialized `type` against the parameter's
-declared datatype (WF-089 domain, WF-090 struct domain, WF-091 the full type)
-and defers when the declaration does not resolve.
+closed on 2026-09-04, one node kind over. Silent with it, until L2: the
+identity family, which crossed this reference's serialized `type` against the
+parameter's declared datatype (WF-089 domain, WF-090 struct domain, WF-091 the
+full type) and deferred when the declaration did not resolve. Since L2 the
+reference carries no `type` (B13) and its type is its declaration's, so an
+unnamed parameter reference has no type at all.
 
-This document carries the measured **dangerous** shape, not a neutral one: the
-reference reads the parameter `aanvoerdrempel`, declared in `kg`, and is typed
-in `t` (same canonical unit, factor 1000 — the convertible class no
-compatibility cross reaches; comparison compatibility, WF-036, admits it by
-construction). With the name filled that lie is refused arm-exact
-(`WF-091 FAIL … unit mismatch: parameter reference 'aanvoerdrempel' is typed
-'t' …`); with the name emptied it was verifier-clean.
+Until L2 this document carried the measured **dangerous** shape, not a
+neutral one: the reference read the parameter `aanvoerdrempel`, declared in
+`kg`, and was typed in `t` (same canonical unit, factor 1000 — the
+convertible class no compatibility cross reaches; comparison compatibility,
+WF-036, admits it by construction). With the name filled that lie was refused
+arm-exact (`WF-091 FAIL … unit mismatch: parameter reference 'aanvoerdrempel'
+is typed 't' …`); with the name emptied it was verifier-clean. Since L2 the
+lie cannot be written; what remains is the empty name.
 
 Measured before the closure, on this document against
 `corpus/golden/jutterswet-aanvoergeld/case.json`:
@@ -53,4 +56,7 @@ fence.
 
 Falsifiable, clause-exact: restore the `| None -> []` arm of `Parameter_ref`
 in `walk_expr` and this case alone turns clean, every other `wf034-*` case
-staying red.
+staying red. Measured in the L2 fix round (2026-09-24), with the arm replaced by
+`| None -> []` in a copy of `spec/verifier/lib/checks.ml`: this document
+answers `verifier: PASS`, and over golden, rood, negatief and the parity
+zone (718 documents) no other report changes.

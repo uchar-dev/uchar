@@ -15,12 +15,15 @@ characteristic-in-a-value-position check (WF-080) and the entire identity
 family (WF-089/WF-090/WF-091, which defer on an unresolvable declaration)
 all fall silent together — one absent field disarms five rules.
 
-This document carries the measured **dangerous** shape, not a neutral one:
-the reference reads `Jutter.aangevoerd gewicht`, declared in `kg`, and is
-typed in `t` (same canonical unit, factor 1000 — the convertible class no
-compatibility cross reaches). With `objecttype` filled that lie is refused
-arm-exact (`WF-091 FAIL … unit mismatch: attribute reference 'aangevoerd
-gewicht' is typed 't' …`); with the field emptied it was verifier-clean.
+Until L2 this document carried the measured **dangerous** shape, not a
+neutral one: the reference read `Jutter.aangevoerd gewicht`, declared in
+`kg`, and was typed in `t` (same canonical unit, factor 1000 — the
+convertible class no compatibility cross reaches). With `objecttype` filled
+that lie was refused arm-exact (`WF-091 FAIL … unit mismatch: attribute
+reference 'aangevoerd gewicht' is typed 't' …`); with the field emptied it
+was verifier-clean. Since L2 the reference carries no type of its own (B13),
+so the lie cannot be written any more; what remains is the missing object
+type.
 The measured consequence of that silence, before the closure (card
 `20260903-identiteitsarmen-getuigen`): `ref` faults
 (`EVALUATION FAULT: missing AttribuutRef.objecttype in IR node`), clingo
@@ -40,4 +43,7 @@ verifier, not the schema, is the fence.
 
 Falsifiable, clause-exact: restore the `| None -> []` arm of
 `Attribuut_ref` in `walk_expr` and this case alone turns clean, every
-other `wf034-*` case staying red.
+other `wf034-*` case staying red. Measured in the L2 fix round (2026-09-24), with the arm replaced by
+`| None -> []` in a copy of `spec/verifier/lib/checks.ml`: this document
+answers `verifier: PASS`, and over golden, rood, negatief and the parity
+zone (718 documents) no other report changes.

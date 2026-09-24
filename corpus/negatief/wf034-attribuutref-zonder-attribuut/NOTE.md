@@ -16,13 +16,15 @@ characteristic-in-a-value-position check (WF-080) both sit behind
 absent field, four rules silent — the shape of the widening this rule already
 carries, on the second field of the same node.
 
-This document carries the measured **dangerous** shape, not a neutral one: it
-is the sibling case's `t`-for-`kg` lie moved onto the surviving field. The
-reference reads `Jutter.aangevoerd gewicht`, declared in `kg`, and is typed in
-`t` (same canonical unit, factor 1000 — the convertible class no compatibility
-cross reaches). With the name filled that lie is refused arm-exact
-(`WF-091 FAIL … unit mismatch: attribute reference 'aangevoerd gewicht' is
-typed 't' …`); with the name emptied it was verifier-clean.
+Until L2 this document carried the measured **dangerous** shape, not a
+neutral one: it was the sibling case's `t`-for-`kg` lie moved onto the
+surviving field. The reference read `Jutter.aangevoerd gewicht`, declared in
+`kg`, and was typed in `t` (same canonical unit, factor 1000 — the
+convertible class no compatibility cross reaches). With the name filled that
+lie was refused arm-exact (`WF-091 FAIL … unit mismatch: attribute reference
+'aangevoerd gewicht' is typed 't' …`); with the name emptied it was
+verifier-clean. Since L2 the reference carries no type of its own (B13), so
+the lie cannot be written any more; what remains is the empty name.
 
 Measured before the closure, on this document against
 `corpus/golden/jutterswet-aanvoergeld/case.json`:
@@ -53,4 +55,7 @@ verifier, not the schema, is the fence.
 
 Falsifiable, clause-exact: restore the `| None -> []` arm of the member check
 in `walk_expr`'s `Attribuut_ref` case and this case alone turns clean, every
-other `wf034-*` case staying red.
+other `wf034-*` case staying red. Measured in the L2 fix round (2026-09-24), with the arm replaced by
+`| None -> []` in a copy of `spec/verifier/lib/checks.ml`: this document
+answers `verifier: PASS`, and over golden, rood, negatief and the parity
+zone (718 documents) no other report changes.
