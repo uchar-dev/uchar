@@ -1766,7 +1766,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   in
   (* one declared subscope -> its synthesised fact type and object creation
      (PHASE5C-TUTORIAL §3.1): the call's args bind as member initialisations
-     (Toekenningen) on the callee's INPUT attributes, plus the verbindendeRol
+     (Toekenningen) on the callee's INPUT attributes, plus the connectingRole
      back-link. A subscope input is an unconditional caller value; a conditional
      target or one carrying a defaults group is out of scope (the WF-050 default
      route is deferred). *)

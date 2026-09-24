@@ -58,7 +58,7 @@ type env = {
 let req what = function Some x -> x | None -> Value.fault "missing %s in IR node" what
 
 (* The key the bound day of a day-kind definition rides on in [env.locals]
-   (ch. 3.7, the `de dag` context value). It carries a NUL so that no
+   (ch. 3.7, the BoundDay node of the wire). It carries a NUL so that no
    declared binder name can ever collide with it: every other key in that
    map is a [norm]-ed source name, and [norm] neither produces nor preserves
    a NUL. Its presence is also the marker that evaluation is INSIDE a
@@ -277,9 +277,10 @@ let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
    WF-109 / ch. 4.6 (q2), maintainer decision 2026-09-19: it is also the
    GASTHEER — it names the object type the check LIVES ON, and that object is
    the one read. The v0 producer sets it on exactly one shape, the
-   fact-creation guard that names a characteristic of the DOEL, so that the
-   constraint lands on the doel "and never the anker, even when the anker
-   declares a same-named kenmerk".
+   fact-creation guard that names a characteristic of the TARGET (the filler
+   of the created relation's target role), so that the constraint lands on
+   the target and never on the anchor, even when the anchor declares a
+   same-named characteristic.
 
    This helper is the fence for the one-object positions, which is every
    position except that guard: there the host must be a type the subject
@@ -309,8 +310,8 @@ let owner_hosts (doc : document) ~(otype : string) ~(kenmerk : string option)
   | _ -> ()
 
 (* RUNTIME-SEMANTICS ch. 5.5 / ch. 5.8b, WF-109: is this fact creation's guard
-   about the DOEL? The guard is the one condition position with two objects in
-   scope, and the host field is what names which.
+   about the TARGET? The guard is the one condition position with two objects
+   in scope, and the host field is what names which.
 
    The question is asked with the SAME two predicates the verifier uses, from
    the same shared module, so a document cannot be legal there and read
@@ -321,8 +322,9 @@ let owner_hosts (doc : document) ~(otype : string) ~(kenmerk : string option)
 
    Three answers, and each is the chapter's:
 
-   - DOEL — the satisfying binding is the doel. The guard filters the targets.
-   - ANKER (false) — the satisfying binding is the anker, the host is absent,
+   - TARGET — the satisfying binding is the target. The guard filters the
+     targets.
+   - ANCHOR (false) — the satisfying binding is the anchor, the host is absent,
      the check navigates or carries a whole-period qualifier, or the condition
      is anything else. Byte-identical to what this reader did before the rule.
      The whole-period fence is WF-109's third (ch. 4.6 (q2)) and is held here
@@ -331,32 +333,32 @@ let owner_hosts (doc : document) ~(otype : string) ~(kenmerk : string option)
      wire and this reader must not answer it from a route the others lack.
    - FAULT — the host designates more than one of the two. ch. 5.8b requires a
      fault there and, until 2026-09-19, this helper returned false instead and
-     let the anker answer: the one reading the decision rejects, delivered
+     let the anchor answer: the one reading the decision rejects, delivered
      silently. WF-109 makes that document unreachable through the verifier, so
      this arm is fail-fast on a non-conforming input; it is a NAMED arm about
      this construct and not a fall-through, because the sentence has to say
      which two objects one name reached.
 
    ZERO satisfying bindings is deliberately NOT a fault here: it falls to the
-   anker, where [owner_hosts] faults with its own named sentence one step
+   anchor, where [owner_hosts] faults with its own named sentence one step
    later. One refusal per defect. *)
 let guard_on_doel (doc : document) (fc : resolved_feit_creatie) =
   match (fc.anker, fc.fc_doel, fc.fc_voorwaarde) with
   | ( Some a,
       Some d,
       Some (Kenmerk_check { navigatie_binding = None; periode = None; eigenaar = Some e; kenmerk; _ }) ) -> (
-      let bound = [ ("anker", a); ("doel", d) ] in
+      let bound = [ ("anchor", a); ("target", d) ] in
       let hits = List.filter (fun (_, t) -> Ir_v0.Checks.subtype_of doc ~sub:t ~super:e) bound in
       let near = List.filter (fun (_, t) -> Ir_v0.Checks.populations_overlap doc t e) bound in
       let ambiguous () =
         Value.fault
           "characteristic check %S is hosted on %S, which reaches BOTH objects the fact creation \
-           binds (anker %S, doel %S): the host names exactly one (WF-109), and this reader will \
+           binds (anchor %S, target %S): the host names exactly one (WF-109), and this reader will \
            not pick for it"
           (Option.value kenmerk ~default:"?") e a d
       in
       match (hits, near) with
-      | [ (r, _) ], [ _ ] -> r = "doel"
+      | [ (r, _) ], [ _ ] -> r = "target"
       | [ _ ], _ -> ambiguous ()
       | _ :: _ :: _, _ -> ambiguous ()
       | [], _ -> false)
@@ -461,7 +463,7 @@ let connecting_pair env ~from_type ~to_type =
             (* a self-typed two-role fact type is role-ambiguous: it
                BLOCKS the derivation (the pinned runtime counts both
                roles as candidates and derives null) — the explicit
-               verbindendeRol binding is the unambiguous route
+               connectingRole binding is the unambiguous route
                (IR-SPEC ch. 3.3) *)
             if f from_type a && f from_type b then Some `Blocked else None
         | [ a; b ] ->
@@ -557,7 +559,7 @@ let linked_path env world (self : World.instance) ~path =
    ranges over { i : typeOf(i) ⊑ element }, so a linked instance the
    relation reaches but the declared element type does not cover is not a
    member of it. The two coincided while WF-047 demanded the bound role's
-   filler and elementObjecttype be the same name; since ch. 2.6 widened
+   filler and the fold's element type be the same name; since ch. 2.6 widened
    that to ⊑-compatibility the filler may be a STRICT SUPERTYPE, and the
    role then reaches instances the fold does not range over. Exactly the
    split ch. 4.1 makes for an allocation's recipients, and identity
@@ -1330,7 +1332,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
     ~dimensie_selectie ~granulariteit ~bron_rol ~bron_pad =
   (* the die/dat subselection executes on the instance folds below; the
      SAME wire field also carries the §7.1 gedurende timeline clip (a
-     filter on the temporal total, where elementObjecttype is the
+     filter on the temporal total, where elementType is the
      subject itself) — that form must never run as an instance
      subselection and faults in its own arm *)
   if dimensie_selectie <> None then Value.fault "dimension selection not implemented in this card";
@@ -1651,7 +1653,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
            decided by argument SHAPE, not element absence — but ONLY for
            v0's listed family MIN/MAX/EERSTE/LAATSTE (isGelisteFold: the
            scalar concatenatieFold path, where the resolver-stamped
-           elementObjecttype is vestigial). For SOM/TOTAAL/AANTAL the
+           elementType is vestigial). For SOM/TOTAAL/AANTAL the
            element is load-bearing: v0's accumulate consumes it (joins
            the element, reads only argument 0), so a multi-operand form
            keeps the loud fault below — never a silent list fold v0
@@ -1766,14 +1768,14 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
          WF-037 puts the same fence on the wire; the refusal here stays as
          the second line of defence.
          Never empty: [agg_aantal] over the empty list is 0, the identity
-         element of a rule over sets (ch. 1.3), and no `leegwaarde` is
+         element of a rule over sets (ch. 1.3), and no `emptyFallback` is
          consulted because WF-037 admits none. *)
       Arith.agg_aantal (Arith.filled (values ()))
   | Som ->
-      (* ch. 5.11, wire order: `argumenten` stands before `leegwaarde` in the
+      (* ch. 5.11, wire order: `arguments` stands before `emptyFallback` in the
          node, so the contributors evaluate first and the stand-in after them.
-         WF-037 confines a leegwaarde to the som, so this is the only arm that
-         ever evaluates one. *)
+         WF-037 confines an emptyFallback to the som, so this is the only arm
+         that ever evaluates one. *)
       let vs = values () in
       let fallback = Option.map (eval_expr env world self ~err) leegwaarde in
       Arith.agg_som ~fallback vs
@@ -2008,7 +2010,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       (* the navigated check (ch. 5.8): one to-one hop. The v0 asymmetry,
          mirrored deliberately: an ABSENT link makes the check false for
          the positive AND the negated form — unlike comparison and
-         leeg/gevuld, which treat the absent relation as a leegwaarde.
+         leeg/gevuld, which read the absent relation as leeg.
          Under a ch. 3.9 qualifier that asymmetry does NOT hold: the
          chapter lifts the ch. 1.2 leeg-navigation discipline there and
          gives the failed hop a null timeline, which passes vacuously. *)
@@ -2288,7 +2290,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
    name or its plural (trimmed, case-insensitive — IR-SPEC ch. 2.9), and
    the name names its definition in `resolvedDagsoorten`. Evaluation: the
    definition's voorwaarde is an ordinary condition, evaluated with the day
-   bound to `de dag` and with no other binder in scope — WF-031's purity
+   bound as the bound day (BoundDay) and with no other binder in scope — WF-031's purity
    clause is what makes that sound, since a pure condition never reaches the
    fact base and the `self` it is handed is never read. *)
 
@@ -2568,7 +2570,7 @@ let run_rule env world (r : resolved_regel) =
            [temporal_target] reads. That flag is keyed on the attribute side
            alone because the pro-rata dispatch below needs it so; reusing it
            here let the characteristic target through. Measured 2026-09-20 on
-           a verifier-clean KENMERKTOEKENNING whose target declares a JAAR
+           a verifier-clean characteristic assignment whose target declares a JAAR
            granularity and whose whole condition is the window: the ASP
            backend PLAYED the scalar gate on a timeline target (present
            inside the window, absent outside it) while both Drools branches
@@ -2764,7 +2766,7 @@ let run_verdeling env world (v : resolved_verdeling) =
   end
 
 (* ch. 5.5, relation creation: for each anchor whose condition holds,
-   navigate the join chain (anchor → tussenstappen → joinRol → target)
+   navigate the join chain (anchor → the hops of its path → target)
    over existing links, and link anchor and target in the created
    relation — both ends are written, so navigation from either side
    sees the link. Naturally idempotent: an already-present link is a

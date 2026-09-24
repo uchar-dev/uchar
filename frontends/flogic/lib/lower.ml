@@ -17,7 +17,7 @@
      WITHOUT further conditions it is the target's base; WITH them it is
      an exception above the base. A target that has only an unconditional
      rule is a bare rule (the standing norm, ch. 7.8) and lowers to a
-     ResolvedRegel; a target that has any exception lowers to a
+     Rule; a target that has any exception lowers to a
      PrioritizedDefaults group, exceptions first in source order, base
      last. That is the whole priority device: F-logic's own defeasible
      operators are refused, so nothing else in the slice can order two
@@ -839,7 +839,7 @@ let document (stmts : stmt list) : A.document =
          can be given, so two definitions of one characteristic target
          cannot conflict and the priority device has nothing to order. It
          therefore stays a standing norm (ch. 7.8) with its condition as the
-         rule's own voorwaarde, and never becomes a defaults stack. A second
+         rule's own condition, and never becomes a defaults stack. A second
          definition refuses for the same reason a second unconditional
          attribute definition does: nothing in the slice orders them. *)
       match here with

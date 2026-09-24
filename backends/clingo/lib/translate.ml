@@ -3156,7 +3156,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           ([], string_of_int v, pow10 d)
       | Some Datum_in_dagen -> (
           (* B2: a date literal in a term position is the civil day number,
-             scale 1 — the SAME representation the Rekendatum constant, a date
+             scale 1 — the SAME representation the Rekendatum context value, a date
              attribute read (val/3) and the point read use, so a date comparison
              harmonises day numbers directly (no second date encoding). ref
              faults date ARITHMETIC (numeric_ok ctx gates the additive/multiplicative
@@ -3487,14 +3487,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             (match kind with Som -> "SOM" | _ -> "TOTAAL")
             a el
       | _ -> ());
-      (* THE TEMPORALITY ANCHOR: [el], the elementObjecttype (see
+      (* THE TEMPORALITY ANCHOR: [el], the elementType (see
          [fold_operand_otype]). Every read below hangs on the element
          variable and every declaration is looked up on [el], so [el] is
          the type that decides whether the members carry timelines. *)
       let temporal = attr_temporal ctx ~otype:el ~attr:a in
       (* the empty set. TOTAAL is 0 UNCONDITIONALLY (§4.20, ref
          agg_totaal), which is exactly clingo's native #sum over no
-         tuples — so no presence guard, and a leegwaarde is ignored the
+         tuples — so no presence guard, and an emptyFallback is ignored the
          way ref ignores it (agg_totaal takes no fallback; the eager
          `let fallback = … leegwaarde` evaluates and discards it, the
          same convention the min/max arm below carries). SOM without a
@@ -3651,7 +3651,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              the Jutter side, so the walk finds no member — ref says 0
              and this arm must say 0 too. [fold_members] is the same
              helper the join uses, so the walk is ch. 2.2-scoped as well
-             (2026-09-16): a linked instance the elementObjecttype does
+             (2026-09-16): a linked instance the elementType does
              not cover is not a member either, and its missing timeline is
              not this fold's business — witnessed by
              `golden/jutterswet-muntbewaring`, which the older
@@ -3909,14 +3909,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          contributed value, already inside 2^31 by the load fence. Unlike the
          listed eerste/laatste fold there is no scale harmonisation (one
          attribute, one scale, one unit), so no per-operand multiplication and
-         no range guard. A leegwaarde on min/max is ignored
-         here: agg_max/agg_min take no fallback, so a BENIGN leegwaarde is
+         no range guard. An emptyFallback on min/max is ignored
+         here: agg_max/agg_min take no fallback, so a BENIGN emptyFallback is
          evaluated-and-discarded by ref (eval.ml's eager `let fallback = …
          leegwaarde`, computed before the kind match) and both agree. The one
-         residual asymmetry — a leegwaarde whose OWN evaluation would fault, so
+         residual asymmetry — an emptyFallback whose OWN evaluation would fault, so
          ref faults while this arm yields the extreme — has no v0 witness and no
          frontend path onto min/max; faulting-on-present would instead diverge
-         on a benign leegwaarde, so ignore is the ref-faithful default for the
+         on a benign emptyFallback, so ignore is the ref-faithful default for the
          representable case. The presence guard is MANDATORY: #max/#min over the
          empty set yields #inf/#sup, which must never escape into a value — ref
          derives Empty there.
@@ -3992,7 +3992,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
 
      THE COUNT KEY IS THE ELEMENT VARIABLE, not the value: #count counts
      DISTINCT tuples, so keying on [x] makes an element reached along two
-     intermediates of a bronPad contribute ONCE — the flat-union reading of
+     intermediates of a sourcePath contribute ONCE — the flat-union reading of
      ch. 3.4b, which the corpus pins in jutterswet-gevuldepad's second case.
      Keying on the value instead would collapse two members that happen to
      carry the same number, which is a different and wrong answer.
@@ -4051,7 +4051,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          set; the definedness atom keeps the fold's body underivable when
          NO operand derives — all-empty stays leeg as absence, never a
          #sup/#inf escaping into a value. Dispatch is by argument shape
-         (≥ 2 listed operands): the vestigial elementObjecttype v0 stamps
+         (≥ 2 listed operands): the vestigial elementType v0 stamps
          on a listed fold names no instance source (the ref mirror). *)
       if filter <> None then
         fault "a filter on a listed-operand fold has no v0 form (the subselection ranges \
@@ -4271,7 +4271,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   variable while [gb] (the bound's own atoms) speaks of the
                   CALLER's subject, so the fence grounded over a cross product
                   of every clip subject with every bound subject.
-               2. The clip is an EXPRESSION (a totalled Functie with a filter),
+               2. The clip is an EXPRESSION (a totalled Aggregation with a filter),
                   so it can sit in an operand of a member of some OTHER
                   composite — and then this fence must carry that composite's
                   prefix like every sibling does. ch. 5.10 boundary 2 exempts
@@ -5265,7 +5265,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* the LISTED-operand som (§5.8.3, RUNTIME-SEMANTICS ch. 5.11): the
          contributors are spelled out as operands and there is no instance
          source. ref carries it — its contributor arm reads the operand list
-         wherever elementObjecttype is ABSENT — and this backend does not:
+         wherever elementType is ABSENT — and this backend does not:
          every som arm above ranges a #sum over an instance join, and a listed
          fold hands it nothing to range over.
          The arm exists for its NAME. Without it the form fell into the
@@ -5274,18 +5274,18 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          exactly such a case — the untruth the WF-044 arm above had just
          cleared off the condition position, still live here. Naming the form
          puts that fall-through back on forms that really have no corpus case.
-         THE GUARD TAKES TWO FIELDS, because an absent elementObjecttype means
+         THE GUARD TAKES TWO FIELDS, because an absent elementType means
          listed OR dimension cell. Every som arm above demands the stamp
          PRESENT, so its absence rules the instance folds out — but WF-037
          grants the DIMENSION som an explicit arity exemption (a sum over the
          cells of one dimension is a single-operand fold with a
-         dimensieSelectie and no stamp), and that form is not listed and not
+         dimensionSelection and no stamp), and that form is not listed and not
          this arm's: ref refuses it earlier and by its own reason (`dimension
          selection not implemented in this card`), before it ever asks where
          the contributors come from. So this arm also demands an ABSENT
-         dimensieSelectie, and the dimension som keeps the fall-through, which
-         for it is still true — no corpus document carries a dimensieSelectie
-         on a Functie at all. The sibling KINDS keep it too, for their own
+         dimensionSelection, and the dimension som keeps the fall-through, which
+         for it is still true — no corpus document carries a dimensionSelection
+         on an Aggregation at all. The sibling KINDS keep it too, for their own
          reason: TOTAAL's temporal subject-own arms carry an absent stamp, so
          absence does not mean listed there, and AANTAL's listed form is no
          som. *)
@@ -6911,7 +6911,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          3.4b) and are gathered by the same machinery: [source_join] decides
          reach ∩ population in the one place it is decided anywhere in this
          file, and the filter is evaluated per contributor with the ELEMENT as
-         subject, exactly as Functie.filter is.
+         subject, exactly as an Aggregation's filter is.
 
          TWO routes, split on the quantifier. ALLE and GEEN are ONE negated
          helper: kvN(S) derives a WITNESS and the verdict is its absence —
@@ -9035,7 +9035,7 @@ let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
    semantics carries the per-(rule × subject) idempotence, exactly
    ref/'s deterministic label. Member initialisations become val/heeft
    heads on the term; the back-link relation (the explicit
-   verbindendeRol binding, else the uniquely-derivable pair) lands both
+   connectingRole binding, else the uniquely-derivable pair) lands both
    rol/3 ends. The 1:1 shape's linked-instance guard reads the INPUT
    links only (inputrol/3, the case facts) — the same input-snapshot
    narrowing ref/ records for its guard. A creation that is a member of
