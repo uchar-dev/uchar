@@ -254,19 +254,19 @@ class NietTemporeleKwantorvouwWitnessTest {
                 [ { "node": "Rule", "name": "uitgerust bij keuring", "versions": [ {
                       "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
                       "target": { "node": "AttribuutRef", "attribuut": "uitgerust", "objecttype": "Schouwploeg",
-                              "bron": "Een Schouwploeg is uitgerust" },
-                      "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "bron": "waar" },
+                              "source": { "snippet": "Een Schouwploeg is uitgerust" } },
+                      "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "source": { "snippet": "waar" } },
                       "condition": {
                       "node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Strandwacht",
                       "filter": null,
                       "toets": { "node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Uitrusting",
                                  "filter": null,
                                  "toets": { "node": "Kenmerk", "kenmerk": "gekeurd", "negatie": false, "eigenaar": null, "periode": null,
-                                            "bron": "het stuk gekeurd is" },
-                                 "bron": "alle stukken van de Strandwacht gekeurd zijn",
+                                            "source": { "snippet": "het stuk gekeurd is" } },
+                                 "source": { "snippet": "alle stukken van de Strandwacht gekeurd zijn" },
                                  "bronRol": { "node": "RolBinding", "feittype": "wachtuitrusting",
                                               "rol": "stuk" } },
-                      "bron": "alle wachten van de Schouwploeg alle stukken gekeurd hebben",
+                      "source": { "snippet": "alle wachten van de Schouwploeg alle stukken gekeurd hebben" },
                       "bronRol": { "node": "RolBinding", "feittype": "schouwindeling", "rol": "wacht" } },
                       "initialisation": false } ] } ]"""));
         Path p = tmp.resolve("genest-ir-" + (n++) + ".json");

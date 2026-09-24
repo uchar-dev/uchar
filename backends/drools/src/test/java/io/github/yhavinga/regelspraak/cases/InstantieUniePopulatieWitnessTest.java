@@ -74,7 +74,7 @@ class InstantieUniePopulatieWitnessTest {
     private static String tak(String elementType, String feittype, String rol) {
         return ("{\"node\":\"InstanceSetBranch\",\"elementType\":\"%s\","
                 + "\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"%s\",\"rol\":\"%s\"},"
-                + "\"filter\":null,\"bron\":\"een selectie\"}").formatted(elementType, feittype, rol);
+                + "\"filter\":null,\"source\":{\"snippet\":\"een selectie\"}}").formatted(elementType, feittype, rol);
     }
 
     private static final String DOC = ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":["
@@ -91,12 +91,12 @@ class InstantieUniePopulatieWitnessTest {
             + "\"versions\":[{\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null},"
             + "\"target\":{\"node\":\"AttribuutRef\","
             + "\"attribuut\":\"aantal strandvondsten\",\"objecttype\":\"Jutter\","
-            + "\"bron\":\"Het aantal strandvondsten van een Jutter\"},"
+            + "\"source\":{\"snippet\":\"Het aantal strandvondsten van een Jutter\"}},"
             + "\"value\":{\"node\":\"Aggregation\",\"kind\":\"AANTAL\",\"arguments\":["
             + "{\"node\":\"InstanceSetUnion\",\"branches\":["
             + tak("Vondst", "vondstaanmelding", "aangemelde vondst") + ","
             + tak("Kavel", "kaveltoewijzing", "duinkavel")
-            + "],\"bron\":\"de unie\"}],\"type\":" + HEEL + ",\"bron\":\"het aantal …\"},"
+            + "],\"source\":{\"snippet\":\"de unie\"}}],\"type\":" + HEEL + ",\"source\":{\"snippet\":\"het aantal …\"}},"
             + "\"initialisation\":false,\"presentation\":\"BEREKENING\"}]}],"
             + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
             + "\"uniciteiten\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
@@ -105,7 +105,7 @@ class InstantieUniePopulatieWitnessTest {
     /** The same model, with the union standing as the rule's WHOLE value — no count above it. */
     private static final String KALE_UNIE_DOC = DOC.replace(
             "\"value\":{\"node\":\"Aggregation\",\"kind\":\"AANTAL\",\"arguments\":[", "\"value\":")
-            .replace("],\"type\":" + HEEL + ",\"bron\":\"het aantal …\"}", "");
+            .replace("],\"type\":" + HEEL + ",\"source\":{\"snippet\":\"het aantal …\"}}", "");
 
     private static final String GEVAL = """
             { "format": "uchar-case-v0", "asOfDate": null,

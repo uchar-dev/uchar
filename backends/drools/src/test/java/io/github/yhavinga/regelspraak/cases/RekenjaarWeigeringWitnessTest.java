@@ -58,9 +58,9 @@ class RekenjaarWeigeringWitnessTest {
     private static final String GETAL = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"ONBEPAALD\"}";
     private static final String DAG = "{\"node\":\"Date\",\"precision\":\"day\"}";
     private static final String REKENJAAR =
-            "{\"node\":\"ContextValue\",\"name\":\"Rekenjaar\",\"type\":" + GETAL + ",\"bron\":\"het Rekenjaar\"}";
+            "{\"node\":\"ContextValue\",\"name\":\"Rekenjaar\",\"type\":" + GETAL + ",\"source\":{\"snippet\":\"het Rekenjaar\"}}";
     private static final String REKENDATUM =
-            "{\"node\":\"ContextValue\",\"name\":\"Rekendatum\",\"type\":" + DAG + ",\"bron\":\"de Rekendatum\"}";
+            "{\"node\":\"ContextValue\",\"name\":\"Rekendatum\",\"type\":" + DAG + ",\"source\":{\"snippet\":\"de Rekendatum\"}}";
 
     /** One object type and one rule, as the RegelSpraak frontend emits the source of each row. */
     private static final String DOCUMENT = """
@@ -149,23 +149,23 @@ class RekenjaarWeigeringWitnessTest {
     private static String rekenRegel() {
         return IrPad.regel("ouderdom", "BEREKENING", doel("ouderdom"),
                 "{\"node\":\"Binair\",\"op\":\"MIN\",\"links\":" + REKENJAAR + ",\"rechts\":" + lees("vondstjaar")
-                        + ",\"type\":" + GETAL + ",\"bron\":\"het Rekenjaar min zijn vondstjaar\"}", "null");
+                        + ",\"type\":" + GETAL + ",\"source\":{\"snippet\":\"het Rekenjaar min zijn vondstjaar\"}}", "null");
     }
 
     private static String vergelijkRegel() {
         return IrPad.regel("meldcode", "GELIJKSTELLING", doel("meldcode"), IrPad.literal("1", GETAL, "1"),
                 "{\"node\":\"Vergelijking\",\"op\":\"GROTER\",\"links\":" + REKENJAAR + ",\"rechts\":" + lees("vondstjaar")
-                        + ",\"periode\":null,\"bron\":\"het Rekenjaar groter is dan zijn vondstjaar\"}");
+                        + ",\"periode\":null,\"source\":{\"snippet\":\"het Rekenjaar groter is dan zijn vondstjaar\"}}");
     }
 
     private static String doel(String attribuut) {
-        return "{\"node\":\"AttribuutRef\",\"attribuut\":\"" + attribuut + "\",\"objecttype\":\"Vondst\",\"bron\":\"de "
-                + attribuut + " van een Vondst\"}";
+        return "{\"node\":\"AttribuutRef\",\"attribuut\":\"" + attribuut + "\",\"objecttype\":\"Vondst\","
+                + "\"source\":{\"snippet\":\"de " + attribuut + " van een Vondst\"}}";
     }
 
     private static String lees(String attribuut) {
-        return "{\"node\":\"AttribuutRef\",\"attribuut\":\"" + attribuut + "\",\"objecttype\":\"Vondst\",\"bron\":\"zijn "
-                + attribuut + "\"}";
+        return "{\"node\":\"AttribuutRef\",\"attribuut\":\"" + attribuut + "\",\"objecttype\":\"Vondst\","
+                + "\"source\":{\"snippet\":\"zijn " + attribuut + "\"}}";
     }
 
     private static Path document(String regel) throws Exception {

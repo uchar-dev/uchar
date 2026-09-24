@@ -73,7 +73,7 @@ class NavigatiebindingWitnessTest {
         ObjectNode ir = lees();
         ObjectNode k = regel(ir).putObject("condition");
         k.put("node", "Kenmerk").put("kenmerk", "veilig").put("negatie", false)
-         .putNull("eigenaar").putNull("periode").put("bron", "zijn vlaghaven veilig is");
+         .putNull("eigenaar").putNull("periode").set("source", IrPad.bronrecord("zijn vlaghaven veilig is"));
         k.set("navigatieBinding", binding("vlagvoering", "vlaghaven"));
         BeideTakken.groen(tijdelijk("nav-kenmerk", ir), casus(2), "untwisted navigated check plays");
         k.set("navigatieBinding", binding("winterberging", "winterhaven"));
@@ -117,8 +117,8 @@ class NavigatiebindingWitnessTest {
         ObjectNode dertig = v.putObject("rechts").put("node", "Literal");
         dertig.putObject("value").put("number", "30");
         dertig.set("type", IrPad.attribute(IrPad.objectType(ir, "Haven"), "kadegeld").get("datatype"));
-        dertig.put("bron", "30");
-        v.putNull("periode").put("bron", "het kadegeld van de vlaghaven van de Schuit groter is dan 30");
+        dertig.set("source", IrPad.bronrecord("30"));
+        v.putNull("periode").set("source", IrPad.bronrecord("het kadegeld van de vlaghaven van de Schuit groter is dan 30"));
         BeideTakken.groen(tijdelijk("nav-paar-voorwaarde", ir), casus(1), "the bound read in the guard walks to the Haven");
     }
 

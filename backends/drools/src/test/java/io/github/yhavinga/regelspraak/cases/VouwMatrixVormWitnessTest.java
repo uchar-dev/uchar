@@ -276,34 +276,34 @@ class VouwMatrixVormWitnessTest {
                         { "node": "Samengesteld", "kwantor": "GEEN", "drempel": 0, "onderdelen": [
                             { "node": "Vergelijking", "op": "GROTER",
                               "links": { "node": "AttribuutRef", "attribuut": "dienstjaren",
-                                         "objecttype": "Redder", "bron": "zijn dienstjaren" },
+                                         "objecttype": "Redder", "source": { "snippet": "zijn dienstjaren" } },
                               "rechts": { "node": "Literal", "value": { "number": "9" }, "type": { "node": "Number", "whole": true, "decimals": 0,
-                                                    "sign": "ONBEPAALD" }, "bron": "9" },
-                              "periode": null, "bron": "zijn dienstjaren groter zijn dan 9" },
+                                                    "sign": "ONBEPAALD" }, "source": { "snippet": "9" } },
+                              "periode": null, "source": { "snippet": "zijn dienstjaren groter zijn dan 9" } },
                             { "node": "Vergelijking", "op": "GROTER",
                               "links": { "node": "AttribuutRef", "attribuut": "conditie",
-                                         "objecttype": "Redder", "bron": "zijn conditie" },
+                                         "objecttype": "Redder", "source": { "snippet": "zijn conditie" } },
                               "rechts": { "node": "Literal", "value": { "number": "20" }, "type": { "node": "Number", "whole": true, "decimals": 0,
-                                                    "sign": "ONBEPAALD" }, "bron": "20" },
-                              "periode": null, "bron": "zijn conditie groter is dan 20" } ],
-                          "bron": "hij aan geen van de volgende voorwaarden voldoet" },
+                                                    "sign": "ONBEPAALD" }, "source": { "snippet": "20" } },
+                              "periode": null, "source": { "snippet": "zijn conditie groter is dan 20" } } ],
+                          "source": { "snippet": "hij aan geen van de volgende voorwaarden voldoet" } },
                         { "node": "Vergelijking", "op": "GROTER",
                           "links": { "node": "AttribuutRef", "attribuut": "conditie",
-                                     "objecttype": "Redder", "bron": "zijn conditie" },
+                                     "objecttype": "Redder", "source": { "snippet": "zijn conditie" } },
                           "rechts": { "node": "Literal", "value": { "number": "7" }, "type": { "node": "Number", "whole": true, "decimals": 0,
-                                                "sign": "ONBEPAALD" }, "bron": "7" },
-                          "periode": null, "bron": "zijn conditie groter is dan 7" } ],
-                      "bron": "hij aan alle volgende voorwaarden voldoet" },
+                                                "sign": "ONBEPAALD" }, "source": { "snippet": "7" } },
+                          "periode": null, "source": { "snippet": "zijn conditie groter is dan 7" } } ],
+                      "source": { "snippet": "hij aan alle volgende voorwaarden voldoet" } },
                     { "node": "Kenmerk", "kenmerk": "gediplomeerd", "negatie": false,
-                      "eigenaar": null, "periode": null, "bron": "hij gediplomeerd is" } ],
-                  "bron": "hij aan ten minste 1 van de volgende voorwaarden voldoet" },
+                      "eigenaar": null, "periode": null, "source": { "snippet": "hij gediplomeerd is" } } ],
+                  "source": { "snippet": "hij aan ten minste 1 van de volgende voorwaarden voldoet" } },
                 { "node": "Vergelijking", "op": "GROTER",
                   "links": { "node": "AttribuutRef", "attribuut": "dienstjaren", "objecttype": "Redder",
-                             "bron": "zijn dienstjaren" },
+                             "source": { "snippet": "zijn dienstjaren" } },
                   "rechts": { "node": "Literal", "value": { "number": "2" }, "type": { "node": "Number", "whole": true, "decimals": 0,
-                                        "sign": "ONBEPAALD" }, "bron": "2" },
-                  "periode": null, "bron": "zijn dienstjaren groter zijn dan 2" } ],
-              "bron": "hij aan alle volgende voorwaarden voldoet" }
+                                        "sign": "ONBEPAALD" }, "source": { "snippet": "2" } },
+                  "periode": null, "source": { "snippet": "zijn dienstjaren groter zijn dan 2" } } ],
+              "source": { "snippet": "hij aan alle volgende voorwaarden voldoet" } }
             """;
 
     /**
@@ -343,27 +343,27 @@ class VouwMatrixVormWitnessTest {
             { "node": "Samengesteld", "kwantor": "ALLE", "drempel": 0, "onderdelen": [
                 { "node": "Vergelijking", "op": "GROTER",
                   "links": { "node": "AttribuutRef", "attribuut": "ervaring", "objecttype": "Loods",
-                             "bron": "zijn ervaring" },
+                             "source": { "snippet": "zijn ervaring" } },
                   "rechts": { "node": "ParameterRef", "parameter": "keurgrens",
-                              "bron": "de keurgrens" },
-                  "periode": null, "bron": "zijn ervaring groter is dan de keurgrens" },
+                              "source": { "snippet": "de keurgrens" } },
+                  "periode": null, "source": { "snippet": "zijn ervaring groter is dan de keurgrens" } },
                 { "node": "Vergelijking", "op": "KLEINER",
                   "links": { "node": "AttribuutRef", "attribuut": "ervaring", "objecttype": "Loods",
-                             "bron": "zijn ervaring" },
+                             "source": { "snippet": "zijn ervaring" } },
                   "rechts": { "node": "ParameterRef", "parameter": "bovengrens",
-                              "bron": "de bovengrens" },
-                  "periode": null, "bron": "zijn ervaring kleiner is dan de bovengrens" } ],
-              "bron": "hij aan alle volgende voorwaarden voldoet" }
+                              "source": { "snippet": "de bovengrens" } },
+                  "periode": null, "source": { "snippet": "zijn ervaring kleiner is dan de bovengrens" } } ],
+              "source": { "snippet": "hij aan alle volgende voorwaarden voldoet" } }
             """;
 
     /** rang == keurrang — a NON-numeric parameter as the bound. */
     private static final String TEKST_PARAM_MATRIX = """
             { "node": "Vergelijking", "op": "GELIJK",
               "links": { "node": "AttribuutRef", "attribuut": "rang", "objecttype": "Loods",
-                         "bron": "zijn rang" },
+                         "source": { "snippet": "zijn rang" } },
               "rechts": { "node": "ParameterRef", "parameter": "keurrang",
-                          "bron": "de keurrang" },
-              "periode": null, "bron": "zijn rang gelijk is aan de keurrang" }
+                          "source": { "snippet": "de keurrang" } },
+              "periode": null, "source": { "snippet": "zijn rang gelijk is aan de keurrang" } }
             """;
 
     private static final String TEKST_PARAM_CASE = """

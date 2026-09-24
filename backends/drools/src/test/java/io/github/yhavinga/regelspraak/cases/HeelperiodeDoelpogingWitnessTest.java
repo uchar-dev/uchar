@@ -68,11 +68,11 @@ class HeelperiodeDoelpogingWitnessTest {
         guard(ir, JSON.readTree("""
                 { "node": "Vergelijking", "op": "GROTER",
                   "links": { "node": "AttribuutRef", "attribuut": "seinhoogte", "objecttype": "Sein",
-                             "bron": "de seinhoogte van het vlagsein",
+                             "source": { "snippet": "de seinhoogte van het vlagsein" },
                              "navigatieBindingen": [ { "node": "RolBinding", "feittype": "vlagvoering", "rol": "vlagsein" } ] },
-                  "rechts": { "node": "Literal", "value": { "number": "0" }, "type": %s, "bron": "0" },
+                  "rechts": { "node": "Literal", "value": { "number": "0" }, "type": %s, "source": { "snippet": "0" } },
                   "periode": { "node": "GeheelPeriode", "jaar": true, "niet": false },
-                  "bron": "de seinhoogte van het vlagsein gedurende het gehele jaar groter is dan 0" }
+                  "source": { "snippet": "de seinhoogte van het vlagsein gedurende het gehele jaar groter is dan 0" } }
                 """.formatted(getal())));
         String s1 = "\"attributes\": { \"seinhoogte\": { \"timeline\": " + metWaarde(JAAR) + " } }";
         String s2 = "\"attributes\": { \"seinhoogte\": { \"timeline\": " + metWaarde(HALF) + " } }";

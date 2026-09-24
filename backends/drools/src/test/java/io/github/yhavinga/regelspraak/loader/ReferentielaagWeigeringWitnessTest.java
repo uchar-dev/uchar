@@ -82,9 +82,9 @@ class ReferentielaagWeigeringWitnessTest {
         ObjectNode regel = IrPad.versie(ir, "resolvedRegels", 0, 0);
         String waarde = "/rules/resolvedRegels/0/versions/0/value";
         regel.set("value", JSON.readTree("{\"node\":\"DimensieCel\",\"attribuut\":" + regel.get("target")
-                + ",\"labels\":[\"noord\"],\"bron\":\"de cel noord\",\"type\":" + NUMERIEK + "}"));
+                + ",\"labels\":[\"noord\"],\"source\":{\"snippet\":\"de cel noord\"},\"type\":" + NUMERIEK + "}"));
         onbekendVeld(ir, waarde + "/type", "DimensieCel");
-        regel.set("value", JSON.readTree("{\"node\":\"VariabeleRef\",\"naam\":\"x\",\"bron\":\"x\",\"type\":"
+        regel.set("value", JSON.readTree("{\"node\":\"VariabeleRef\",\"naam\":\"x\",\"source\":{\"snippet\":\"x\"},\"type\":"
                 + NUMERIEK + "}"));
         onbekendVeld(ir, waarde + "/type", "VariabeleRef");
     }
@@ -95,12 +95,12 @@ class ReferentielaagWeigeringWitnessTest {
         String vw = "/rules/resolvedRegels/0/versions/0/condition";
         ObjectNode ir = golden(POSTBEZETTING);
         voorwaarde(ir, 0, "{\"node\":\"Rollidmaatschap\",\"rol\":\"wachtjutter\",\"anderTeFiller\":\"Jutter\","
-                + "\"negatie\":false,\"bron\":\"hij een wachtjutter heeft\"}");
+                + "\"negatie\":false,\"source\":{\"snippet\":\"hij een wachtjutter heeft\"}}");
         IrLoader.Documentfout e = weigert(ir, vw + "/node");
         assertTrue(e.getMessage().contains("unknown condition node \"Rollidmaatschap\""), e.getMessage());
 
         voorwaarde(ir, 0, "{\"node\":\"VerreRollidmaatschap\",\"filler\":\"Jutter\",\"backref\":"
-                + "\"toegewezen wachtpost\",\"negatie\":false,\"bron\":\"hij een wachtjutter heeft\"}");
+                + "\"toegewezen wachtpost\",\"negatie\":false,\"source\":{\"snippet\":\"hij een wachtjutter heeft\"}}");
         e = weigert(ir, vw + "/node");
         assertTrue(e.getMessage().contains("unknown condition node \"VerreRollidmaatschap\""), e.getMessage());
     }
@@ -165,7 +165,7 @@ class ReferentielaagWeigeringWitnessTest {
         // a marker's type: absent is the unknown one (IR-SPEC ch. 4.4), so no spelling of it is admitted
         ir = golden(BAKENMEESTER);
         IrPad.versie(ir, "resolvedRegels", 0, 0).set("value",
-                JSON.readTree("{\"node\":\"Onopgelost\",\"type\":" + ONBEKEND + ",\"bron\":\"iets onleesbaars\"}"));
+                JSON.readTree("{\"node\":\"Onopgelost\",\"type\":" + ONBEKEND + ",\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
         onbekendDatatype(ir, "/rules/resolvedRegels/0/versions/0/value/type");
     }
 
@@ -173,15 +173,15 @@ class ReferentielaagWeigeringWitnessTest {
         // rule 0 computes a value, so a marker may stand there (a characteristic assignment admits only waar)
         ObjectNode ir = golden(BAKENMEESTER);
         ObjectNode regel = IrPad.versie(ir, "resolvedRegels", 0, 0);
-        regel.set("value", JSON.readTree("{\"node\":\"Onopgelost\",\"bron\":\"iets onleesbaars\"}"));
+        regel.set("value", JSON.readTree("{\"node\":\"Onopgelost\",\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
         Expr w = IrLoader.loadAll(ir).model().resolvedRegels.get(0).waarde();
         assertTrue(w instanceof Expr.Onopgelost, String.valueOf(w));
         assertNull(w.type(), "een marker zonder type draagt geen type — nooit een gok");
 
-        regel.set("value", JSON.readTree("{\"node\":\"Onopgelost\",\"type\":" + NUMERIEK + ",\"bron\":\"x\"}"));
+        regel.set("value", JSON.readTree("{\"node\":\"Onopgelost\",\"type\":" + NUMERIEK + ",\"source\":{\"snippet\":\"x\"}}"));
         assertNotNull(IrLoader.loadAll(ir).model().resolvedRegels.get(0).waarde().type(), "een echt datatype blijft");
 
-        regel.set("value", JSON.readTree("{\"node\":\"Onopgelost\",\"type\":null,\"bron\":\"x\"}"));
+        regel.set("value", JSON.readTree("{\"node\":\"Onopgelost\",\"type\":null,\"source\":{\"snippet\":\"x\"}}"));
         IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/0/versions/0/value/type");
         assertTrue(e.getMessage().contains("null is neither"), e.getMessage());
     }
@@ -321,9 +321,9 @@ class ReferentielaagWeigeringWitnessTest {
         ObjectNode ir = golden(POSTBEZETTING);
         IrPad.versie(ir, "resolvedRegels", 1, 0).set("condition", JSON.readTree(
                 "{\"node\":\"Vergelijking\",\"op\":\"GELIJK\",\"links\":{\"node\":\"AttribuutRef\",\"attribuut\":"
-                + "\"bemand\",\"objecttype\":\"Wachtpost\",\"bron\":\"bemand\"},\"rechts\":{\"node\":\"Literal\","
-                + "\"value\":{\"boolean\":false},\"type\":{\"node\":\"Booleaan\"},\"bron\":\"onwaar\"},\"periode\":null,"
-                + "\"bron\":\"hij bemand gelijk is aan onwaar\"}"));
+                + "\"bemand\",\"objecttype\":\"Wachtpost\",\"source\":{\"snippet\":\"bemand\"}},\"rechts\":{\"node\":\"Literal\","
+                + "\"value\":{\"boolean\":false},\"type\":{\"node\":\"Booleaan\"},\"source\":{\"snippet\":\"onwaar\"}},\"periode\":null,"
+                + "\"source\":{\"snippet\":\"hij bemand gelijk is aan onwaar\"}}"));
         IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/1/versions/0/condition/links");
         assertTrue(e.getMessage().contains("'bemand' is a characteristic of 'Wachtpost', not an attribute — a"
                 + " characteristic endpoint is ill-formed in a value position (WF-080)"), e.getMessage());

@@ -195,7 +195,7 @@ class LetClusterWitnessTest {
 
     private static String attr(String naam, int dec, boolean geheel, String teken) {
         return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
-                + "\"bron\":\"het %s van de Jutter\"}")
+                + "\"source\":{\"snippet\":\"het %s van de Jutter\"}}")
                 .formatted(naam, naam);
     }
 
@@ -205,28 +205,28 @@ class LetClusterWitnessTest {
     private static String lit(String waarde, int dec) { return lit(waarde, dec, false); }
 
     private static String binair(String op, String links, String rechts, int dec) {
-        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"bron\":\"%s\"}"
+        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, num(dec), op.toLowerCase());
     }
 
     /** ch. 4.10 the value-level binding. Its {@code type} is the BODY's type (WF-076). */
     private static String let(String binder, String value, String body, int dec) {
-        return "{\"node\":\"Let\",\"type\":%s,\"binder\":\"%s\",\"value\":%s,\"body\":%s,\"bron\":\"%s is …\"}"
+        return "{\"node\":\"Let\",\"type\":%s,\"binder\":\"%s\",\"value\":%s,\"body\":%s,\"source\":{\"snippet\":\"%s is …\"}}"
                 .formatted(num(dec), binder, value, body, binder);
     }
 
     /** ch. 4.10 a read of the nearest enclosing binder. NB the wire field is {@code name}, not {@code naam}. */
     private static String bref(String naam, int dec) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"bron\":\"%s\"}".formatted(naam, naam);
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(naam, naam);
     }
 
     private static String ite(String conditie, String dan, String anders, int dec) {
         return ("{\"node\":\"IfThenElse\",\"type\":%s,\"condition\":%s,\"then\":%s,\"else\":%s,"
-                + "\"bron\":\"als … dan … anders …\"}").formatted(num(dec), conditie, dan, anders);
+                + "\"source\":{\"snippet\":\"als … dan … anders …\"}}").formatted(num(dec), conditie, dan, anders);
     }
 
     private static String verg(String op, String links, String rechts) {
-        return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"bron\":\"%s\"}"
+        return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, op.toLowerCase());
     }
 
@@ -301,11 +301,11 @@ class LetClusterWitnessTest {
                 binair("PLUS", bref("g", 2), lit("100.00", 2), 2), 2);
         String groep = (",\"prioritizedDefaults\":[{\"node\":\"PrioritizedDefaults\",\"naam\":\"toeslag\","
                 + "\"onderwerp\":\"Jutter\",\"kenmerk\":null,\"attribuut\":\"toeslag\",\"defaults\":["
-                + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":%s,\"consequentie\":%s,\"bron\":\"toeslag\"},"
+                + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":%s,\"consequentie\":%s,\"source\":{\"snippet\":\"toeslag\"}},"
                 + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":"
-                + "{\"node\":\"Samengesteld\",\"kwantor\":\"ALLE\",\"drempel\":0,\"onderdelen\":[],\"bron\":\"altijd\"},"
-                + "\"consequentie\":%s,\"bron\":\"toeslag\"}],"
-                + "\"bron\":\"toeslag\",\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}]")
+                + "{\"node\":\"Samengesteld\",\"kwantor\":\"ALLE\",\"drempel\":0,\"onderdelen\":[],\"source\":{\"snippet\":\"altijd\"}},"
+                + "\"consequentie\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
+                + "\"source\":{\"snippet\":\"toeslag\"},\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}]")
                 .formatted(verg("GROTER_OF_GELIJK", attr("kindertal", 0, true, "NIET_NEGATIEF"), lit("2", 0, true)),
                         consequentie, lit("0.00", 2));
         return model(String.join(",", attribuut("kindertal", num(0, true, "NIET_NEGATIEF")),
@@ -319,10 +319,10 @@ class LetClusterWitnessTest {
     private static String reactiviteitModel() {
         String inkomen = attr("inkomen", 2, false, "NIET_NEGATIEF");
         String vermistDoel = ("{\"node\":\"AttribuutRef\",\"attribuut\":\"vermist\",\"objecttype\":\"Jutter\","
-                + "\"bron\":\"Een Jutter is vermist\"}");
-        String waar = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Booleaan\"},\"bron\":\"waar\"}";
+                + "\"source\":{\"snippet\":\"Een Jutter is vermist\"}}");
+        String waar = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Booleaan\"},\"source\":{\"snippet\":\"waar\"}}";
         String nietVermist = ("{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"negatie\":true,"
-                + "\"eigenaar\":null,\"periode\":null,\"bron\":\"hij niet vermist is\"}");
+                + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"hij niet vermist is\"}}");
         String gewogen = let("x", inkomen,
                 binair("MAAL", bref("x", 2), attr("factor", 4, false, "ONBEPAALD"), 6), 6);
         return model(String.join(",", attribuut("inkomen", num(2, false, "NIET_NEGATIEF")),

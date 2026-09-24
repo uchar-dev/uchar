@@ -210,7 +210,7 @@ class DrlCreatieKoppelingWitnessTest {
         for (JsonNode t : IrPad.versie(ir, "objectCreaties", 0, 0).get("initialisations"))
             if (t.get("kenmerk").asBoolean())
                 ((ObjectNode) t).set("waarde", JSON.readTree("""
-                        { "node": "Literal", "value": { "number": "5" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "bron": "5" }"""));
+                        { "node": "Literal", "value": { "number": "5" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "source": { "snippet": "5" } }"""));
         return schrijf(ir, "kenmerk-getal");
     }
 

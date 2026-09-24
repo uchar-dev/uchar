@@ -109,6 +109,13 @@ import java.util.Map;
  * refusal here is the shared OCaml loader's or the verifier's, in their words, and a field or node of the L3 shape
  * is unknown by name.
  *
+ * <p><b>The source record (L5 of the v1 wire migration).</b> A node's source text is its record {@code source}: the
+ * {@code snippet}, and on a consistency version and a rule group the {@code line}, which those two records keep; an
+ * absent record is a node without source text, read as the records always held one. The record is read strictly —
+ * an empty snippet, a line below 1, a file, a column or any other field is refused at its pointer — and the field it
+ * replaced, {@code bron}, is unknown on every node, as is a {@code line} beside the record. A marker without a record
+ * is refused in WF-113 (b)'s sentence, as the shared loader refuses it for an executor.
+ *
  * The frontend records this loader fills keep their v0 components (they are the vendored slice the toolchain
  * compiles); what the wire no longer carries is filled with {@code null}, {@code false} or an empty list, and
  * what the records have no component for rides BESIDE the model in {@link Loaded} — the same side-channel
@@ -340,10 +347,9 @@ public final class IrLoader {
         });
         weigerGeerfdAnker();   // the §9.9 family: asked here, where BOTH the tijdlijnen and the determinations are read
         lijst(rules, "/rules", "regelGroepen", (p, n) -> {
-            velden(n, p, "ResolvedRegelGroep", List.of("node", "naam", "recursief", "leden", "bron", "line"),
-                    List.of());
+            velden(n, p, "ResolvedRegelGroep", List.of("node", "naam", "recursief", "leden"), List.of("source"));
             m.regelGroepen.add(new ResolvedRegelGroep(
-                    text(n, "naam"), bool(n, "recursief"), stringList(n.get("leden")), bron(n), intOf(n, "line")));
+                    text(n, "naam"), bool(n, "recursief"), stringList(n.get("leden")), bron(n), bronregel(n)));
         });
         lijst(root, "", "diagnostics", (p, n) -> m.diagnostics.add(diagnostic(p, n)));
         // §6.1 (Phase 4) the prioritized-defaults extension, parsed AFTER the declarations so a default's
@@ -672,8 +678,8 @@ public final class IrLoader {
     // --- prioritized-defaults extension (ch. 7) ----------------------------
 
     private PrioritizedDefaults prioritizedDefaults(JsonNode n) {
-        velden(n, padVan(n), "PrioritizedDefaults", List.of("node", "naam", "onderwerp", "kenmerk", "defaults", "bron",
-                "geldigheid"), List.of("attribuut", "ongeordend"));
+        velden(n, padVan(n), "PrioritizedDefaults", List.of("node", "naam", "onderwerp", "kenmerk", "defaults",
+                "geldigheid"), List.of("attribuut", "ongeordend", "source"));
         String onderwerp = text(n, "onderwerp");
         String kenmerk = text(n, "kenmerk");
         String attribuut = text(n, "attribuut");
@@ -683,16 +689,16 @@ public final class IrLoader {
         List<Default> defaults = new ArrayList<>();
         elementen(n, "defaults", r -> defaults.add(dflt(r)));
         return new PrioritizedDefaults(text(n, "naam"), onderwerp, kenmerk, attribuut, bool(n, "ongeordend"),
-                defaults, text(n, "bron"), geldigheid(n));
+                defaults, bronTekst(n), geldigheid(n));
     }
 
     private Default dflt(JsonNode n) {
-        velden(n, padVan(n), "Default", List.of("node", "besluit", "voorwaarde", "bron"),
-                List.of("consequentie", "initialisatie", "excepties"));
+        velden(n, padVan(n), "Default", List.of("node", "besluit", "voorwaarde"),
+                List.of("consequentie", "initialisatie", "excepties", "source"));
         JsonNode b = n.get("besluit");
         Boolean besluit = b == null || b.isNull() ? null : b.asBoolean();
         return new Default(besluit, conditie(knoopVeld(n, "voorwaarde")), expr(knoopVeld(n, "consequentie")),
-                bool(n, "initialisatie"), excepties(knoopVeld(n, "excepties")), text(n, "bron"));
+                bool(n, "initialisatie"), excepties(knoopVeld(n, "excepties")), bronTekst(n));
     }
 
     private Default.Excepties excepties(JsonNode n) {
@@ -704,10 +710,10 @@ public final class IrLoader {
     }
 
     private ExceptionGroup exceptionGroup(JsonNode n) {
-        velden(n, padVan(n), "ExceptionGroup", List.of("node", "defaults", "bron"), List.of());
+        velden(n, padVan(n), "ExceptionGroup", List.of("node", "defaults"), List.of("source"));
         List<Default> defaults = new ArrayList<>();
         elementen(n, "defaults", r -> defaults.add(dflt(r)));
-        return new ExceptionGroup(defaults, text(n, "bron"));
+        return new ExceptionGroup(defaults, bronTekst(n));
     }
 
     /** Bind every declared supertype reference, and refuse the two shapes this backend does not carry.
@@ -1133,41 +1139,41 @@ public final class IrLoader {
     /** Every expression node this loader reads, with the schema's keys. A node kind outside the table is a form this
      *  backend does not carry and reaches the dispatch's refusal; the union's selection is read inside its union. */
     private static final Map<String, Sleutels> EXPRESSIE = Map.ofEntries(
-            sleutels("Literal", List.of("node", "value", "type", "bron")),
-            sleutels("TekstReeks", List.of("node", "delen", "type", "bron")),
-            sleutels("Binair", List.of("node", "op", "links", "rechts", "type", "bron")),
-            sleutels("Aggregation", List.of("node", "kind", "arguments", "type", "bron"), "elementType", "filter",
-                    "emptyFallback", "dimensionSelection", "sourceRole", "sourcePath"),
-            sleutels("BuiltinCall", List.of("node", "kind", "arguments", "type", "bron"), "filter", "granularity"),
-            sleutels("Afgerond", List.of("node", "basis", "modus", "decimalen", "type", "bron")),
-            sleutels("Begrensd", List.of("node", "basis", "minimum", "maximum", "type", "bron")),
-            sleutels("AttribuutRef", List.of("node", "attribuut", "objecttype", "bron"), "navigatieBindingen"),
-            sleutels("DimensieCel", List.of("node", "attribuut", "labels", "bron")),
-            sleutels("ParameterRef", List.of("node", "parameter", "bron")),
-            sleutels("VariabeleRef", List.of("node", "naam", "bron")),
-            sleutels("BoundDay", List.of("node", "type", "bron")),
-            sleutels("ContextValue", List.of("node", "name", "type", "bron")),
-            sleutels("Onopgelost", List.of("node", "bron"), "type"),
-            sleutels("Let", List.of("node", "type", "binder", "value", "body", "bron")),
-            sleutels("BinderRef", List.of("node", "name", "bron")),
-            sleutels("IfThenElse", List.of("node", "type", "condition", "then", "else", "bron")),
-            sleutels("InstanceSetUnion", List.of("node", "branches", "bron")));
+            sleutels("Literal", List.of("node", "value", "type"), "source"),
+            sleutels("TekstReeks", List.of("node", "delen", "type"), "source"),
+            sleutels("Binair", List.of("node", "op", "links", "rechts", "type"), "source"),
+            sleutels("Aggregation", List.of("node", "kind", "arguments", "type"), "elementType", "filter",
+                    "emptyFallback", "dimensionSelection", "sourceRole", "sourcePath", "source"),
+            sleutels("BuiltinCall", List.of("node", "kind", "arguments", "type"), "filter", "granularity", "source"),
+            sleutels("Afgerond", List.of("node", "basis", "modus", "decimalen", "type"), "source"),
+            sleutels("Begrensd", List.of("node", "basis", "minimum", "maximum", "type"), "source"),
+            sleutels("AttribuutRef", List.of("node", "attribuut", "objecttype"), "navigatieBindingen", "source"),
+            sleutels("DimensieCel", List.of("node", "attribuut", "labels"), "source"),
+            sleutels("ParameterRef", List.of("node", "parameter"), "source"),
+            sleutels("VariabeleRef", List.of("node", "naam"), "source"),
+            sleutels("BoundDay", List.of("node", "type"), "source"),
+            sleutels("ContextValue", List.of("node", "name", "type"), "source"),
+            sleutels("Onopgelost", List.of("node"), "type", "source"),
+            sleutels("Let", List.of("node", "type", "binder", "value", "body"), "source"),
+            sleutels("BinderRef", List.of("node", "name"), "source"),
+            sleutels("IfThenElse", List.of("node", "type", "condition", "then", "else"), "source"),
+            sleutels("InstanceSetUnion", List.of("node", "branches"), "source"));
 
     /** Every condition node this loader reads, with the schema's keys. The condition marker carries no type: that
      *  field is the expression marker's alone. */
     private static final Map<String, Sleutels> CONDITIE = Map.ofEntries(
-            sleutels("Vergelijking", List.of("node", "op", "links", "rechts", "periode", "bron")),
-            sleutels("Predicaat", List.of("node", "soort", "operand", "dagsoort", "negatie", "cijfers", "periode",
-                    "bron")),
-            sleutels("Kenmerk", List.of("node", "kenmerk", "negatie", "eigenaar", "periode", "bron"),
-                    "navigatieBinding"),
-            sleutels("RoleMembership", List.of("node", "factType", "role", "negated", "bron"), "counterpartType"),
-            sleutels("Periode", List.of("node", "vanaf", "tot", "totInclusief", "bron")),
-            sleutels("Samengesteld", List.of("node", "kwantor", "drempel", "onderdelen", "bron")),
-            sleutels("Kwantorvouw", List.of("node", "kwantor", "elementObjecttype", "filter", "toets", "bron"),
-                    "drempel", "bronRol", "bronPad"),
-            sleutels("Regelversie", List.of("node", "regel", "inconsistent", "bron")),
-            sleutels("Onopgelost", List.of("node", "bron")));
+            sleutels("Vergelijking", List.of("node", "op", "links", "rechts", "periode"), "source"),
+            sleutels("Predicaat", List.of("node", "soort", "operand", "dagsoort", "negatie", "cijfers", "periode"),
+                    "source"),
+            sleutels("Kenmerk", List.of("node", "kenmerk", "negatie", "eigenaar", "periode"),
+                    "navigatieBinding", "source"),
+            sleutels("RoleMembership", List.of("node", "factType", "role", "negated"), "counterpartType", "source"),
+            sleutels("Periode", List.of("node", "vanaf", "tot", "totInclusief"), "source"),
+            sleutels("Samengesteld", List.of("node", "kwantor", "drempel", "onderdelen"), "source"),
+            sleutels("Kwantorvouw", List.of("node", "kwantor", "elementObjecttype", "filter", "toets"),
+                    "drempel", "bronRol", "bronPad", "source"),
+            sleutels("Regelversie", List.of("node", "regel", "inconsistent"), "source"),
+            sleutels("Onopgelost", List.of("node"), "source"));
 
     /** The two parts of a text sequence. */
     private static final Map<String, Sleutels> DEEL = Map.ofEntries(
@@ -1264,6 +1270,7 @@ public final class IrLoader {
             // ch. 4.4: an absent type is an unknown one, and the record holds null for it.
             case "Onopgelost" -> {
                 String p = padVan(n);
+                if (!n.has("source")) throw new Documentfout(p, MARKER_ZONDER_BRON);
                 yield new Expr.Onopgelost(n.has("type") ? datatype(n.get("type"), p + "/type", false) : null, bron(n),
                         null);
             }
@@ -1294,8 +1301,8 @@ public final class IrLoader {
                 List<Expr.InstanceSetUnion.Tak> takken = new ArrayList<>();
                 elementen(n, "branches", b -> {
                     String bp = padVan(b);
-                    velden(b, bp, "InstanceSetBranch", List.of("node", "elementType", "sourceRole", "filter", "bron"),
-                            List.of());
+                    velden(b, bp, "InstanceSetBranch", List.of("node", "elementType", "sourceRole", "filter"),
+                            List.of("source"));
                     RegelSpraakModel.Objecttype el = verplicht("InstanceSetBranch", "elementType",
                             ot(text(b, "elementType")));
                     // IR-SPEC ch. 4.3: every selection names its relation; nothing derives a missing one
@@ -1451,7 +1458,7 @@ public final class IrLoader {
             throw new Documentfout(p + "/value", "millisecond-precision date literal lexeme '" + lexeem + "' is not the"
                     + " canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' never a space, the seconds"
                     + " field written, no zone or offset, a fraction of exactly three digits; the day-first source"
-                    + " snippet belongs in `bron` — ch. 4.1)");
+                    + " snippet belongs in `source` — ch. 4.1)");
         return new Expr.Literal(lexeem, type, bron(n));
     }
 
@@ -1529,6 +1536,10 @@ public final class IrLoader {
     static final String CONTEXTWAARDE_NAAM = "a ContextValue carries its name as a string";
     static final String CONTEXTWAARDE_TYPE = "a ContextValue carries its datatype";
     static final String BOUNDDAY_TYPE = "a BoundDay carries its datatype";
+    /** WF-113 (b)'s arm for a marker without a source, the verifier's sentence: the executors refuse such a marker at
+     *  load, as the shared loader does when it reads for an executor. */
+    static final String MARKER_ZONDER_BRON = "Unresolved marker without a source: no diagnostic message can contain it,"
+            + " so it cannot be accounted for";
 
     /** The required datatype of a context node: anything but a datatype object is refused in the node's sentence. */
     private Datatype contextType(JsonNode n, String zin) {
@@ -1712,7 +1723,7 @@ public final class IrLoader {
 
     private Expr.DimensieSelectie dimensieSelectie(JsonNode n) {
         if (n == null || n.isNull()) return null;
-        velden(n, padVan(n), "DimensieSelectie", List.of("node", "dimensie", "labels", "bron"), List.of());
+        velden(n, padVan(n), "DimensieSelectie", List.of("node", "dimensie", "labels"), List.of("source"));
         return new Expr.DimensieSelectie(text(n, "dimensie"), stringList(n.get("labels")), bron(n));
     }
 
@@ -1829,7 +1840,10 @@ public final class IrLoader {
                         rolBinding(n, p, "bronRol"), List.of(), bron(n));
             }
             case "Regelversie" -> new Conditie.Regelversie(text(n, "regel"), bool(n, "inconsistent"), bron(n));
-            case "Onopgelost" -> new Conditie.Onopgelost(bron(n), null);   // frontend-internal field, absent from the wire
+            case "Onopgelost" -> {
+                if (!n.has("source")) throw new Documentfout(padVan(n), MARKER_ZONDER_BRON);
+                yield new Conditie.Onopgelost(bron(n), null);   // frontend-internal field, absent from the wire
+            }
             default -> throw new Refusal("Conditie:" + node, "unknown condition node");
         };
     }
@@ -2101,16 +2115,15 @@ public final class IrLoader {
         }
     }
 
-    /** IR-SPEC ch. 3.5: a consistency rule and its versions; the source and line stand on the version. */
+    /** IR-SPEC ch. 3.5: a consistency rule and its versions; the source record, with its line, stands on the
+     *  version. */
     private void consistency(String pad, JsonNode n) {
         for (Versie v : vorm(n, pad, "Consistency", List.of())) {
             JsonNode k = v.knoop();
             String p = v.pad();
-            versievelden(k, p, "ConsistencyVersion", List.of("subject", "assertion", "validity", "bron", "line"),
-                    List.of());
+            versievelden(k, p, "ConsistencyVersion", List.of("subject", "assertion", "validity"), List.of("source"));
             m.consistenties.add(new ResolvedConsistentie(v.naam(), ot(tekstOfNull(k, p, "subject")),
-                    conditie(knoop(k, p, "assertion")), bron(k), geheel(k, p, "line", "ConsistencyVersion.line"),
-                    validity(k, p)));
+                    conditie(knoop(k, p, "assertion")), bron(k), bronregel(k), validity(k, p)));
         }
     }
 
@@ -2122,7 +2135,7 @@ public final class IrLoader {
         for (Versie v : vorm(n, pad, "Uniqueness", List.of())) {
             JsonNode k = v.knoop();
             String p = v.pad();
-            versievelden(k, p, "UniquenessVersion", List.of("sources", "validity", "bron"), List.of("scope"));
+            versievelden(k, p, "UniquenessVersion", List.of("sources", "validity"), List.of("scope", "source"));
             List<ResolvedUniciteitUnie.Bron> bronnen = new ArrayList<>();
             lijst(k, p, "sources", (sp, s) -> {
                 velden(s, sp, "Source", List.of("node", "objectType", "keys"), List.of());
@@ -2305,9 +2318,54 @@ public final class IrLoader {
     private Objecttype ot(String naam) { return naam == null ? null : m.objecttypeOpNaam(naam); }
     private Parameter param(String naam) { return naam == null ? null : m.parameters.get(naam); }
 
+    /** IR-SPEC ch. 4 (B26): the source record of {@code n}, null where the node carries none. Present, it is an
+     *  object with its snippet — a string, never empty — and an optional line of at least 1, and nothing beside
+     *  them: a file or a column is an unknown field until a card writes positions. Every other form is refused at
+     *  its pointer. A line is read wherever it stands; the two records with a place for it keep it
+     *  ({@link #bronregel}), and every other node drops it. */
+    private Bronrecord bronrecord(JsonNode n) {
+        JsonNode s = n.get("source");
+        if (s == null) return null;
+        String p = padVan(n) + "/source";
+        velden(s, p, null, List.of("snippet"), List.of("line"));
+        String snippet = tekst(s, p, "snippet");
+        if (snippet.isEmpty()) throw new Documentfout(p + "/snippet", SNIPPET_LEEG);
+        int regel = 0;
+        if (s.has("line")) {
+            regel = geheel(s, p, "line", "source.line");
+            if (regel < 1) throw new Documentfout(p + "/line", BRONREGEL_ONDER_1);
+        }
+        return new Bronrecord(snippet, regel);
+    }
+
+    /** A source record as this loader holds it: the snippet, and the line or 0 where the record has none. */
+    private record Bronrecord(String snippet, int regel) {}
+
+    /** The shared loader's sentence: an empty snippet has no reading, as a node without source text carries no
+     *  record. */
+    static final String SNIPPET_LEEG = "a source snippet is never empty: a node without source text carries no source";
+    /** The shared loader's sentence for a line below 1, on every node. */
+    static final String BRONREGEL_ONDER_1 = "a source line is at least 1";
+
+    /** The anchor a node's record holds: its snippet, and "" where it carries no source record — the value the
+     *  record held for a node without source text before the source record landed. */
     private Bron bron(JsonNode n) {
-        JsonNode b = n.get("bron");
-        return Bron.synthetisch(b == null || b.isNull() ? "" : b.asText());
+        Bronrecord b = bronrecord(n);
+        return Bron.synthetisch(b == null ? "" : b.snippet());
+    }
+
+    /** The source text of a node of the defaults layer, whose records keep it as a string: null where it carries
+     *  no source record. */
+    private String bronTekst(JsonNode n) {
+        Bronrecord b = bronrecord(n);
+        return b == null ? null : b.snippet();
+    }
+
+    /** The source line of a consistency version or a rule group, the two records with a place for one: 0 where the
+     *  source record has none or the node carries no record, the records' value for "no line". */
+    private int bronregel(JsonNode n) {
+        Bronrecord b = bronrecord(n);
+        return b == null ? 0 : b.regel();
     }
 
     private static String text(JsonNode n, String field) {

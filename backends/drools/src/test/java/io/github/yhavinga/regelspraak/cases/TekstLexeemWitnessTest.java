@@ -290,7 +290,7 @@ class TekstLexeemWitnessTest {
         lit.put("node", "Literal");
         lit.putObject("value").put("text", waarde);
         lit.set("type", JSON.createObjectNode().put("node", "Tekst"));
-        lit.put("bron", waarde);
+        lit.set("source", IrPad.bronrecord(waarde));
         return lit;
     }
 
@@ -301,7 +301,7 @@ class TekstLexeemWitnessTest {
         v.set("links", keurmerkRef(ir));
         v.set("rechts", tekstLiteraal(literaal));
         v.putNull("periode");
-        v.put("bron", "haar keurmerk");
+        v.set("source", IrPad.bronrecord("haar keurmerk"));
         return v;
     }
 
@@ -311,7 +311,7 @@ class TekstLexeemWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(KEURMERK)));
         regel(ir, 0).set("condition", keurmerkVergelijking(ir, op, literaal));
         ((ObjectNode) regel(ir, 1).get("value")).putObject("value").put("text", gevolg);
-        ((ObjectNode) regel(ir, 1).get("value")).put("bron", gevolg);
+        ((ObjectNode) regel(ir, 1).get("value")).set("source", IrPad.bronrecord(gevolg));
         return ir;
     }
 
@@ -328,7 +328,7 @@ class TekstLexeemWitnessTest {
         sam.put("drempel", 1);
         ArrayNode onderdelen = sam.putArray("onderdelen");
         for (String l : literalen) onderdelen.add(keurmerkVergelijking(ir, "GELIJK", l));
-        sam.put("bron", "aan ten minste een van de volgende voorwaarden wordt voldaan");
+        sam.set("source", IrPad.bronrecord("aan ten minste een van de volgende voorwaarden wordt voldaan"));
         regel(ir, 0).set("condition", sam);
         return tijdelijk(naam, ir.toString());
     }

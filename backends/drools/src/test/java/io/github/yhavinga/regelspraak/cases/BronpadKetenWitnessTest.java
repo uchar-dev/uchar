@@ -187,12 +187,12 @@ class BronpadKetenWitnessTest {
                 { "node": "Rule", "name": "%s", "versions": [ {
                   "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
                   "target": { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Tolhuis",
-                              "bron": "De %s van een Tolhuis" },
+                              "source": { "snippet": "De %s van een Tolhuis" } },
                   "value": { "node": "Aggregation", "kind": "%s",
                     "arguments": [ { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s",
-                                     "bron": "de %s van alle %sen" } ],
+                                     "source": { "snippet": "de %s van alle %sen" } } ],
                     "elementType": "%s",%s
-                    "sourcePath": [ %s ], "type": %s, "bron": "de vouw over het pad" },
+                    "sourcePath": [ %s ], "type": %s, "source": { "snippet": "de vouw over het pad" } },
                   "initialisation": false, "presentation": "BEREKENING" } ] }"""
                 .formatted(naam, attribuut, attribuut, kind, arg, element, arg, element, element,
                         leegwaarde.equals("null") ? "" : " \"emptyFallback\": " + leegwaarde + ",", pad, NUM2);
@@ -265,10 +265,10 @@ class BronpadKetenWitnessTest {
                             regel("laagste vracht", "laagste vracht", "MINIMUM", "Praam", "vracht", "null", PAD_VRACHT),
                             regel("totale vracht", "totale vracht", "SOM", "Praam", "vracht",
                                     "{ \"node\": \"Literal\", \"value\": { \"number\": \"0\" }, \"type\": { \"node\": \"Number\","
-                                    + " \"whole\": true, \"decimals\": 0, \"sign\": \"ONBEPAALD\" }, \"bron\": \"0\" }", PAD_VRACHT),
+                                    + " \"whole\": true, \"decimals\": 0, \"sign\": \"ONBEPAALD\" }, \"source\": {\"snippet\": \"0\"} }", PAD_VRACHT),
                             regel("steenlast", "steenlast", "SOM", "Ankersteen", "steengewicht",
                                     "{ \"node\": \"Literal\", \"value\": { \"number\": \"0\" }, \"type\": { \"node\": \"Number\","
-                                    + " \"whole\": true, \"decimals\": 0, \"sign\": \"ONBEPAALD\" }, \"bron\": \"0\" }", PAD_STEEN),
+                                    + " \"whole\": true, \"decimals\": 0, \"sign\": \"ONBEPAALD\" }, \"source\": {\"snippet\": \"0\"} }", PAD_STEEN),
                             regel("laagste zegelvracht", "laagste zegelvracht", "MINIMUM", "Zegelpraam", "vracht",
                                     "null", PAD_VRACHT),
                             regel("laagste vatinhoud", "laagste vatinhoud", "MINIMUM", "Vat", "inhoud", "null", PAD_VAT)));

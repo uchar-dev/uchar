@@ -92,10 +92,10 @@ class VoorafgerondeFactorWitnessTest {
         String deelEenheid = eenheid(stelsel, deel, basis, noemer);
         String somType = getal(false, 2, basisEenheid);
         String optelling = ("{\"node\":\"Binair\",\"op\":\"PLUS\",\"links\":%s,\"rechts\":%s,\"type\":%s,"
-                + "\"bron\":\"de %s van de Jutter plus de %s van de Jutter\"}")
+                + "\"source\":{\"snippet\":\"de %s van de Jutter plus de %s van de Jutter\"}}")
                 .formatted(lezing(links), lezing(rechts), somType, links, rechts);
         String afronding = ("{\"node\":\"Afgerond\",\"basis\":%s,\"modus\":\"%s\",\"decimalen\":0,\"type\":%s,"
-                + "\"bron\":\"de %s van de Jutter plus de %s van de Jutter %s afgerond op 0 decimalen\"}")
+                + "\"source\":{\"snippet\":\"de %s van de Jutter plus de %s van de Jutter %s afgerond op 0 decimalen\"}}")
                 .formatted(optelling, modus, getal(true, 0, basisEenheid), links, rechts, modusbron);
         String objecttype = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
                 + "\"attributes\":[%s,%s,%s,%s],\"characteristics\":[]}").formatted(
@@ -136,13 +136,13 @@ class VoorafgerondeFactorWitnessTest {
     }
 
     private static String lezing(String attribuut) {
-        return "{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\",\"bron\":\"de %s van de Jutter\"}"
+        return "{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\",\"source\":{\"snippet\":\"de %s van de Jutter\"}}"
                 .formatted(attribuut, attribuut);
     }
 
     private static String regel(String doel, String waarde) {
         return IrPad.regel(doel, "BEREKENING", ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
-                + "\"bron\":\"De %s van een Jutter\"}").formatted(doel, doel), waarde, "null");
+                + "\"source\":{\"snippet\":\"De %s van een Jutter\"}}").formatted(doel, doel), waarde, "null");
     }
 
     /** One Jutter with the two addends, and the EXACT values of the sum and the rounded sum as expectations. */

@@ -416,10 +416,10 @@ class HerhaaldTypepaarWitnessTest {
         houdRegels(ir, "liggertal van een haven");
         ObjectNode fold = (ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("value");
         fold.remove("sourceRole");
-        fold.put("kind", "SOM").put("bron", "de som van de romplengte van alle liggers van de Haven");
+        fold.put("kind", "SOM").set("source", IrPad.bronrecord("de som van de romplengte van alle liggers van de Haven"));
         ObjectNode arg = (ObjectNode) fold.get("arguments").get(0);
         arg.put("attribuut", "romplengte").put("objecttype", "Schuit")
-           .put("bron", "de romplengte van alle liggers van de Haven");
+           .set("source", IrPad.bronrecord("de romplengte van alle liggers van de Haven"));
         return tijdelijk("dv-som", ir);
     }
 
@@ -441,14 +441,14 @@ class HerhaaldTypepaarWitnessTest {
     private static ObjectNode ankerKenmerk(String kenmerk) {
         return JSON.createObjectNode().put("node", "Kenmerk").put("kenmerk", kenmerk)
                 .put("negatie", false).putNull("eigenaar")
-                .putNull("periode").put("bron", "de Haven " + kenmerk + " is");
+                .putNull("periode").set("source", IrPad.bronrecord("de Haven " + kenmerk + " is"));
     }
 
     /** A §8.1.7 characteristic check HOSTED on the doel (the eigenaar field, WF-100). */
     private static ObjectNode doelKenmerk(String kenmerk) {
         return JSON.createObjectNode().put("node", "Kenmerk").put("kenmerk", kenmerk)
                 .put("negatie", false).put("eigenaar", "Schuit")
-                .putNull("periode").put("bron", "de ligger " + kenmerk + " is");
+                .putNull("periode").set("source", IrPad.bronrecord("de ligger " + kenmerk + " is"));
     }
 
     /** A comparison on an attribute of the DOEL — the shape the frontend leaves unresolved and the transpilers
@@ -456,16 +456,16 @@ class HerhaaldTypepaarWitnessTest {
     private static ObjectNode doelVergelijking(String attribuut, String grens) {
         ObjectNode links = JSON.createObjectNode();
         links.put("node", "AttribuutRef").put("attribuut", attribuut).put("objecttype", "Schuit");
-        links.put("bron", "de " + attribuut + " van de ligger");
+        links.set("source", IrPad.bronrecord("de " + attribuut + " van de ligger"));
         ObjectNode rechts = JSON.createObjectNode();
         rechts.put("node", "Literal").putObject("value").put("number", grens);
         rechts.set("type", numeriek());
-        rechts.put("bron", grens);
+        rechts.set("source", IrPad.bronrecord(grens));
         ObjectNode v = JSON.createObjectNode();
         v.put("node", "Vergelijking").put("op", "GROTER");
         v.set("links", links);
         v.set("rechts", rechts);
-        v.putNull("periode").put("bron", "de " + attribuut + " van de ligger groter is dan " + grens);
+        v.putNull("periode").set("source", IrPad.bronrecord("de " + attribuut + " van de ligger groter is dan " + grens));
         return v;
     }
 

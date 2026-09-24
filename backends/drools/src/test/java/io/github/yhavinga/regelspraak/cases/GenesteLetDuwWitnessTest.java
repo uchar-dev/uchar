@@ -237,7 +237,7 @@ class GenesteLetDuwWitnessTest {
 
     private static String attr(String naam) {
         return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
-                + "\"bron\":\"zijn %s\"}")
+                + "\"source\":{\"snippet\":\"zijn %s\"}}")
                 .formatted(naam, naam);
     }
 
@@ -246,29 +246,29 @@ class GenesteLetDuwWitnessTest {
     }
 
     private static String binair(String op, String links, String rechts) {
-        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"bron\":\"%s\"}"
+        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, num(), op.toLowerCase(java.util.Locale.ROOT));
     }
 
     private static String let(String binder, String value, String body) {
-        return "{\"node\":\"Let\",\"type\":%s,\"binder\":\"%s\",\"value\":%s,\"body\":%s,\"bron\":\"%s is …\"}"
+        return "{\"node\":\"Let\",\"type\":%s,\"binder\":\"%s\",\"value\":%s,\"body\":%s,\"source\":{\"snippet\":\"%s is …\"}}"
                 .formatted(num(), binder, value, body, binder);
     }
 
     /** NB the wire field is {@code name}, not {@code naam}. */
     private static String bref(String naam, String type) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"bron\":\"%s\"}".formatted(naam, naam);
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(naam, naam);
     }
 
     private static String ite(String conditie, String dan, String anders) {
         return ("{\"node\":\"IfThenElse\",\"type\":%s,\"condition\":%s,\"then\":%s,\"else\":%s,"
-                + "\"bron\":\"als … dan … anders …\"}").formatted(num(), conditie, dan, anders);
+                + "\"source\":{\"snippet\":\"als … dan … anders …\"}}").formatted(num(), conditie, dan, anders);
     }
 
     /** "&lt;binder&gt; groter dan 10,00" — the ch. 10.2 guard every branch shape below shares. */
     private static String boven(String binder) {
         return ("{\"node\":\"Vergelijking\",\"op\":\"GROTER\",\"links\":%s,\"rechts\":%s,"
-                + "\"periode\":null,\"bron\":\"boven de grens\"}").formatted(bref(binder, pos()), lit("10.00"));
+                + "\"periode\":null,\"source\":{\"snippet\":\"boven de grens\"}}").formatted(bref(binder, pos()), lit("10.00"));
     }
 
     private static final String NAAM = "uit van een jutter";
@@ -296,7 +296,7 @@ class GenesteLetDuwWitnessTest {
 
     private static String doel() {
         return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"uit\",\"objecttype\":\"Jutter\","
-                + "\"bron\":\"De uit van een Jutter\"}");
+                + "\"source\":{\"snippet\":\"De uit van een Jutter\"}}");
     }
 
     // ---------------- the models (each ref-replayed, and clingo-replayed, before its values were pinned) ----

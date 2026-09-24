@@ -190,7 +190,7 @@ class DatumTijdLexeemWitnessTest {
             assertTrue(e.getMessage().endsWith(": millisecond-precision date literal lexeme '" + lexeem + "' is not the"
                     + " canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' never a space, the seconds"
                     + " field written, no zone or offset, a fraction of exactly three digits; the day-first source"
-                    + " snippet belongs in `bron` — ch. 4.1)"), e.getMessage());
+                    + " snippet belongs in `source` — ch. 4.1)"), e.getMessage());
         }
     }
 
@@ -260,13 +260,13 @@ class DatumTijdLexeemWitnessTest {
                   "rules": { "resolvedRegels": [ { "node": "Rule", "name": "Kenmerktoekenning verjaard", "versions": [ {
                       "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
                       "target": { "node": "AttribuutRef", "attribuut": "verjaard", "objecttype": "Vondst",
-                      "bron": "Een Vondst is verjaard" },
-                      "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "bron": "waar" },
+                      "source": { "snippet": "Een Vondst is verjaard" } },
+                      "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "source": { "snippet": "waar" } },
                       "condition": { "node": "Vergelijking", "op": "EERDER",
                       "links": { "node": "AttribuutRef", "attribuut": "vondstmoment", "objecttype": "Vondst",
-                        "bron": "zijn vondstmoment" },
-                      "rechts": { "node": "Literal", "value": { "dateTime": "%s" }, "type": { "node": "Date", "precision": "millisecond" }, "bron": "31-01-2024 12:00:00" },
-                      "periode": null, "bron": "zijn vondstmoment eerder is dan 31-01-2024 12:00:00" },
+                        "source": { "snippet": "zijn vondstmoment" } },
+                      "rechts": { "node": "Literal", "value": { "dateTime": "%s" }, "type": { "node": "Date", "precision": "millisecond" }, "source": { "snippet": "31-01-2024 12:00:00" } },
+                      "periode": null, "source": { "snippet": "zijn vondstmoment eerder is dan 31-01-2024 12:00:00" } },
                       "initialisation": false } ] } ],
                   "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
                   "uniciteiten": [], "feitCreaties": [], "resolvedStartpunten": [],

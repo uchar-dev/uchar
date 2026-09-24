@@ -595,7 +595,7 @@ class HeelperiodeKwantorvouwWitnessTest {
 
     private static final String ZEEGAAND_FILTER = """
             { "node": "Kenmerk", "kenmerk": "zeegaand", "negatie": false,
-              "eigenaar": null, "periode": null, "bron": "zeegaand" }""";
+              "eigenaar": null, "periode": null, "source": { "snippet": "zeegaand" } }""";
 
     private static final String NUMERIEK =
             "{ \"node\": \"Number\", \"whole\": false, \"decimals\": 2, \"sign\": \"POSITIEF\" }";
@@ -625,12 +625,12 @@ class HeelperiodeKwantorvouwWitnessTest {
                   "toets": {
                     "node": "Vergelijking", "op": "GROTER",
                     "links": { "node": "AttribuutRef", "attribuut": "wachtwaarde", "objecttype": "Schuit",
-                               "bron": "zijn wachtwaarde" },
-                    "rechts": { "node": "Literal", "value": { "number": "10" }, "type": %s, "bron": "10" },
+                               "source": { "snippet": "zijn wachtwaarde" } },
+                    "rechts": { "node": "Literal", "value": { "number": "10" }, "type": %s, "source": { "snippet": "10" } },
                     "periode": { "node": "GeheelPeriode", "jaar": true, "niet": %s },
-                    "bron": "zijn wachtwaarde gedurende het gehele jaar groter is dan 10" },
+                    "source": { "snippet": "zijn wachtwaarde gedurende het gehele jaar groter is dan 10" } },
                   %s,
-                  "bron": "de wachtwaarde van %s schepen van de Vloot gedurende het gehele jaar groter is dan 10" }
+                  "source": { "snippet": "de wachtwaarde van %s schepen van de Vloot gedurende het gehele jaar groter is dan 10" } }
                 """.formatted(kwantor, drempel < 0 ? "" : ", \"drempel\": " + drempel,
                         filter, NUMERIEK, niet, bereik,
                         "GEEN".equals(kwantor) ? "geen van de" : "alle");
@@ -644,7 +644,7 @@ class HeelperiodeKwantorvouwWitnessTest {
         ObjectNode toets = (ObjectNode) IrPad.versie(doc, "resolvedRegels", 0, 0).get("condition").get("toets");
         toets.set("rechts", JSON.readTree("""
                 { "node": "AttribuutRef", "attribuut": "grenswaarde", "objecttype": "Schuit",
-                  "bron": "zijn grenswaarde" }"""));
+                  "source": { "snippet": "zijn grenswaarde" } }"""));
         return doc.toPrettyString();
     }
 
@@ -656,9 +656,9 @@ class HeelperiodeKwantorvouwWitnessTest {
                 { "node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Uitrusting",
                   "filter": null,
                   "toets": { "node": "Kenmerk", "kenmerk": "gekeurd", "negatie": false,
-                             "eigenaar": null, "periode": null, "bron": "het stuk gekeurd is" },
+                             "eigenaar": null, "periode": null, "source": { "snippet": "het stuk gekeurd is" } },
                   "bronRol": { "node": "RolBinding", "feittype": "schuituitrusting", "rol": "stuk" },
-                  "bron": "die al hun stukken gekeurd hebben" }""";
+                  "source": { "snippet": "die al hun stukken gekeurd hebben" } }""";
         ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("ALLE", nested, BRONROL)));
         IrPad.modelLijst(doc, "objectTypes").add(JSON.readTree("""
                 { "node": "ObjectType", "name": "Uitrusting", "animate": false, "plural": "Uitrustingen",
@@ -687,15 +687,15 @@ class HeelperiodeKwantorvouwWitnessTest {
         if (!heelperiode)   // de niet-temporele route: een kenmerkmatrix zonder heelperiodekwalificatie
             fold.set("toets", JSON.readTree("""
                     { "node": "Kenmerk", "kenmerk": "zeegaand", "negatie": false,
-                      "eigenaar": null, "periode": null, "bron": "het schip zeegaand is" }"""));
+                      "eigenaar": null, "periode": null, "source": { "snippet": "het schip zeegaand is" } }"""));
         ObjectNode compound = JSON.createObjectNode();
         compound.put("node", "Samengesteld");
         compound.put("kwantor", "TEN_MINSTE");
         compound.put("drempel", 1);
         compound.putArray("onderdelen").add(fold).add(JSON.readTree("""
                 { "node": "Kenmerk", "kenmerk": "vlaggend", "negatie": false,
-                  "eigenaar": null, "periode": null, "bron": "de Vloot vlaggend is" }"""));
-        compound.put("bron", "ten minste één van de volgende voorwaarden");
+                  "eigenaar": null, "periode": null, "source": { "snippet": "de Vloot vlaggend is" } }"""));
+        compound.set("source", IrPad.bronrecord("ten minste één van de volgende voorwaarden"));
         regel.set("condition", compound);
         return doc.toPrettyString();
     }
@@ -709,12 +709,12 @@ class HeelperiodeKwantorvouwWitnessTest {
                   "toets": {
                     "node": "Vergelijking", "op": "GROTER",
                     "links": { "node": "AttribuutRef", "attribuut": "wachtwaarde", "objecttype": "Schuit",
-                               "bron": "zijn wachtwaarde" },
-                    "rechts": { "node": "Literal", "value": { "number": "10" }, "type": %s, "bron": "10" },
+                               "source": { "snippet": "zijn wachtwaarde" } },
+                    "rechts": { "node": "Literal", "value": { "number": "10" }, "type": %s, "source": { "snippet": "10" } },
                     "periode": null,
-                    "bron": "zijn wachtwaarde groter is dan 10" },
+                    "source": { "snippet": "zijn wachtwaarde groter is dan 10" } },
                   %s,
-                  "bron": "de wachtwaarde van alle schepen van de Vloot groter is dan 10" }
+                  "source": { "snippet": "de wachtwaarde van alle schepen van de Vloot groter is dan 10" } }
                 """.formatted(NUMERIEK, BRONROL);
     }
 
@@ -746,8 +746,8 @@ class HeelperiodeKwantorvouwWitnessTest {
                       { "node": "Rule", "name": "Kenmerktoekenning zeewaardig", "versions": [ {
                           "validity": { "node": "Geldigheid", "vanaf": null, "tot": null },
                           "target": { "node": "AttribuutRef", "attribuut": "zeewaardig", "objecttype": "Vloot",
-                                  "bron": "Een Vloot is zeewaardig" },
-                          "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "bron": "waar" },
+                                  "source": { "snippet": "Een Vloot is zeewaardig" } },
+                          "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "source": { "snippet": "waar" } },
                           "condition": %s,
                           "initialisation": false } ] } ],
                     "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],

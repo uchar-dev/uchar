@@ -74,21 +74,21 @@ class CreatieguardPositieWitnessTest {
 
     private static final String GEHESEN_ANKER = """
             { "node": "Kenmerk", "kenmerk": "gehesen", "negatie": false, "eigenaar": null,
-              "periode": null, "bron": "het kustvak gehesen is" }""";
+              "periode": null, "source": { "snippet": "het kustvak gehesen is" } }""";
 
     private static final String GEHESEN_BAKEN = """
             { "node": "Kenmerk", "kenmerk": "gehesen", "negatie": false, "eigenaar": "Baken",
-              "periode": null, "bron": "het sein gehesen is" }""";
+              "periode": null, "source": { "snippet": "het sein gehesen is" } }""";
 
     private static final String VENSTER = """
             { "node": "Periode",
-              "vanaf": { "node": "Literal", "value": { "date": "2024-01-01" }, "type": { "node": "Date", "precision": "day" }, "bron": "2024-01-01" },
-              "tot": { "node": "Literal", "value": { "date": "2025-01-01" }, "type": { "node": "Date", "precision": "day" }, "bron": "2025-01-01" },
-              "totInclusief": false, "bron": "van 1 januari 2024 tot 1 januari 2025" }""";
+              "vanaf": { "node": "Literal", "value": { "date": "2024-01-01" }, "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "2024-01-01" } },
+              "tot": { "node": "Literal", "value": { "date": "2025-01-01" }, "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "2025-01-01" } },
+              "totInclusief": false, "source": { "snippet": "van 1 januari 2024 tot 1 januari 2025" } }""";
 
     private static String samen(String kwantor, String... delen) {
         return "{ \"node\": \"Samengesteld\", \"kwantor\": \"" + kwantor + "\", \"drempel\": 0, \"onderdelen\": [ "
-                + String.join(", ", delen) + " ], \"bron\": \"het kustvak aan de volgende voorwaarden voldoet\" }";
+                + String.join(", ", delen) + " ], \"source\": {\"snippet\": \"het kustvak aan de volgende voorwaarden voldoet\"} }";
     }
 
     /** The golden's document with its creation guard replaced by {@code guard}. */

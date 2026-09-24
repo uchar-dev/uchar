@@ -85,7 +85,7 @@ class InstantieUnieWitnessTest {
         IrLoader.Documentfout f = assertThrows(IrLoader.Documentfout.class,
                 () -> tellingVan(doc(unie(TAK_AANGEMELD,
                         "{\"node\":\"InstanceSetBranch\",\"elementType\":\"Vondst\",\"sourceRole\":null,"
-                                + "\"filter\":null,\"bron\":\"geborgen vondsten van de Jutter\"}"))));
+                                + "\"filter\":null,\"source\":{\"snippet\":\"geborgen vondsten van de Jutter\"}}"))));
         assertTrue(f.plek().endsWith("/branches/1/sourceRole"), f.plek());
         assertTrue(f.getMessage().contains("expected a RolBinding"), f.getMessage());
     }
@@ -113,28 +113,28 @@ class InstantieUnieWitnessTest {
         String bronrol = feittype == null ? "null"
                 : "{\"node\":\"RolBinding\",\"feittype\":\"%s\",\"rol\":\"%s\"}".formatted(feittype, rol);
         return ("{\"node\":\"InstanceSetBranch\",\"elementType\":%s,\"sourceRole\":%s,\"filter\":%s,"
-                + "\"bron\":\"een selectie\"}").formatted(elementType, bronrol, filter);
+                + "\"source\":{\"snippet\":\"een selectie\"}}").formatted(elementType, bronrol, filter);
     }
 
     private static final String TAK_AANGEMELD = tak("\"Vondst\"", "vondstaanmelding", "aangemelde vondst", "null");
     private static final String TAK_GEBORGEN = tak("\"Vondst\"", "vondstberging", "geborgen vondst", "null");
     private static final String TAK_ONOPGELOST = tak("\"Vondst\"", "vondstaanmelding", "aangemelde vondst",
-            "{\"node\":\"Onopgelost\",\"bron\":\"die onleesbaar zijn\"}");
+            "{\"node\":\"Onopgelost\",\"source\":{\"snippet\":\"die onleesbaar zijn\"}}");
     private static final String TAK_GEMERKT = tak("\"Vondst\"", "vondstaanmelding", "aangemelde vondst",
             "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemerkt\",\"negatie\":false,"
-                    + "\"eigenaar\":null,\"periode\":null,\"bron\":\"gemerkt zijn\"}");
+                    + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"gemerkt zijn\"}}");
 
     private static String unie(String... takken) {
-        return "{\"node\":\"InstanceSetUnion\",\"branches\":[%s],\"bron\":\"de unie\"}"
+        return "{\"node\":\"InstanceSetUnion\",\"branches\":[%s],\"source\":{\"snippet\":\"de unie\"}}"
                 .formatted(String.join(",", takken));
     }
 
     private static String doc(String unie) {
         String heel = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"NIET_NEGATIEF\"}";
-        String waarde = "{\"node\":\"Aggregation\",\"kind\":\"AANTAL\",\"arguments\":[%s],\"type\":%s,\"bron\":\"het aantal …\"}"
+        String waarde = "{\"node\":\"Aggregation\",\"kind\":\"AANTAL\",\"arguments\":[%s],\"type\":%s,\"source\":{\"snippet\":\"het aantal …\"}}"
                 .formatted(unie, heel);
         String doel = "{\"node\":\"AttribuutRef\",\"attribuut\":\"aantal strandvondsten\","
-                + "\"objecttype\":\"Jutter\",\"bron\":\"Het aantal strandvondsten van een Jutter\"}";
+                + "\"objecttype\":\"Jutter\",\"source\":{\"snippet\":\"Het aantal strandvondsten van een Jutter\"}}";
         String jutter = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
                 + "\"attributes\":[{\"node\":\"Attribute\",\"name\":\"aantal strandvondsten\",\"datatype\":%s}],"
                 + "\"characteristics\":[]}").formatted(heel);

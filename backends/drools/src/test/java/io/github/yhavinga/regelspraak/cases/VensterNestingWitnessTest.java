@@ -112,40 +112,40 @@ class VensterNestingWitnessTest {
 
     private static final String VENSTER = """
             { "node": "Periode",
-              "vanaf": { "node": "Literal", "value": { "date": "2024-01-01" }, "type": { "node": "Date", "precision": "day" }, "bron": "2024-01-01" },
-              "tot": { "node": "Literal", "value": { "date": "2025-01-01" }, "type": { "node": "Date", "precision": "day" }, "bron": "2025-01-01" },
-              "totInclusief": false, "bron": "van 1 januari 2024 tot 1 januari 2025" }""";
+              "vanaf": { "node": "Literal", "value": { "date": "2024-01-01" }, "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "2024-01-01" } },
+              "tot": { "node": "Literal", "value": { "date": "2025-01-01" }, "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "2025-01-01" } },
+              "totInclusief": false, "source": { "snippet": "van 1 januari 2024 tot 1 januari 2025" } }""";
 
     private static final String BREVET_VENSTER = """
             { "node": "Periode",
               "vanaf": { "node": "AttribuutRef", "attribuut": "afgifte", "objecttype": "Brevet",
-                         "bron": "de afgifte" },
-              "tot": null, "totInclusief": false, "bron": "vanaf de afgifte" }""";
+                         "source": { "snippet": "de afgifte" } },
+              "tot": null, "totInclusief": false, "source": { "snippet": "vanaf de afgifte" } }""";
 
     private static final String PARAMETERVENSTER = """
             { "node": "Periode",
-              "vanaf": { "node": "ParameterRef", "parameter": "peildatum", "bron": "de peildatum" },
-              "tot": null, "totInclusief": false, "bron": "vanaf de peildatum" }""";
+              "vanaf": { "node": "ParameterRef", "parameter": "peildatum", "source": { "snippet": "de peildatum" } },
+              "tot": null, "totInclusief": false, "source": { "snippet": "vanaf de peildatum" } }""";
 
     private static final String ERVAREN = """
             { "node": "Kenmerk", "kenmerk": "ervaren", "negatie": false, "eigenaar": null,
-              "periode": null, "bron": "hij ervaren is" }""";
+              "periode": null, "source": { "snippet": "hij ervaren is" } }""";
     private static final String NIET_ERVAREN = """
             { "node": "Kenmerk", "kenmerk": "ervaren", "negatie": true, "eigenaar": null,
-              "periode": null, "bron": "hij niet ervaren is" }""";
+              "periode": null, "source": { "snippet": "hij niet ervaren is" } }""";
     private static final String GEDIPLOMEERD = """
             { "node": "Kenmerk", "kenmerk": "gediplomeerd", "negatie": false, "eigenaar": null,
-              "periode": null, "bron": "hij gediplomeerd is" }""";
+              "periode": null, "source": { "snippet": "hij gediplomeerd is" } }""";
 
     private static String samen(String kwantor, String... delen) {
         return "{ \"node\": \"Samengesteld\", \"kwantor\": \"" + kwantor + "\", \"drempel\": 0, \"onderdelen\": [ "
-                + String.join(", ", delen) + " ], \"bron\": \"de volgende voorwaarden\" }";
+                + String.join(", ", delen) + " ], \"source\": {\"snippet\": \"de volgende voorwaarden\"} }";
     }
 
     private static String vouw(String kwantor, String elem, String rol, String filter, String toets) {
         return "{ \"node\": \"Kwantorvouw\", \"kwantor\": \"" + kwantor + "\", \"elementObjecttype\": \"" + elem + "\","
                 + " \"filter\": " + (filter == null ? "null" : filter) + ", \"toets\": " + toets + ","
-                + " \"bron\": \"de vouw over " + elem + "\", \"bronRol\": " + rol + " }";
+                + " \"source\": {\"snippet\": \"de vouw over " + elem + "\"}, \"bronRol\": " + rol + " }";
     }
 
     private static String geenVouw(String toets) {
@@ -155,15 +155,15 @@ class VensterNestingWitnessTest {
     private static String som(String filter) {
         return "{ \"node\": \"Aggregation\", \"kind\": \"SOM\", \"arguments\": [ { \"node\": \"AttribuutRef\","
                 + " \"attribuut\": \"dienstjaren\", \"objecttype\": \"Strandwacht\","
-                + " \"bron\": \"de dienstjaren van de wachten\" } ],"
+                + " \"source\": {\"snippet\": \"de dienstjaren van de wachten\"} } ],"
                 + " \"elementType\": \"Strandwacht\", \"filter\": " + filter + ", \"sourceRole\": " + WACHT + ","
-                + " \"type\": " + NUM + ", \"bron\": \"de som van de dienstjaren\" }";
+                + " \"type\": " + NUM + ", \"source\": {\"snippet\": \"de som van de dienstjaren\"} }";
     }
 
     private static String groter(String links, int n) {
         return "{ \"node\": \"Vergelijking\", \"op\": \"GROTER\", \"links\": " + links + ", \"rechts\": { \"node\":"
-                + " \"Literal\", \"value\": { \"number\": \"" + n + "\" }, \"type\": " + NUM + ", \"bron\": \"" + n + "\" },"
-                + " \"periode\": null, \"bron\": \"de som groter is dan " + n + "\" }";
+                + " \"Literal\", \"value\": { \"number\": \"" + n + "\" }, \"type\": " + NUM + ", \"source\": {\"snippet\": \""
+                + n + "\"} }, \"periode\": null, \"source\": {\"snippet\": \"de som groter is dan " + n + "\"} }";
     }
 
     /** The golden's document with the condition of "bevoegd bij diploma" replaced by {@code voorwaarde}. */

@@ -273,14 +273,14 @@ class LetDragerWandelingWitnessTest {
     }
 
     private static String attr(String objecttype, String naam, String type) {
-        return "{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"%s\",\"bron\":\"het %s van de %s\"}"
+        return "{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"%s\",\"source\":{\"snippet\":\"het %s van de %s\"}}"
                 .formatted(naam, objecttype, naam, objecttype);
     }
 
     /** A read across a role — the shape whose reactivity {@code navRefs} is responsible for. */
     private static String navAttr(String objecttype, String naam, String type, String feittype, String rol) {
         return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"%s\","
-                + "\"bron\":\"het %s van zijn %s\",\"navigatieBindingen\":[{\"node\":\"RolBinding\",\"feittype\":\"%s\","
+                + "\"source\":{\"snippet\":\"het %s van zijn %s\"},\"navigatieBindingen\":[{\"node\":\"RolBinding\",\"feittype\":\"%s\","
                 + "\"rol\":\"%s\"}]}").formatted(naam, objecttype, naam, rol, feittype, rol);
     }
 
@@ -289,50 +289,50 @@ class LetDragerWandelingWitnessTest {
     }
 
     private static String binair(String op, String links, String rechts, String type) {
-        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"bron\":\"%s\"}"
+        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, type, op.toLowerCase(java.util.Locale.ROOT));
     }
 
     private static String wortel(String argument, String type) {
-        return "{\"node\":\"BuiltinCall\",\"kind\":\"WORTEL\",\"arguments\":[%s],\"type\":%s,\"bron\":\"de wortel van\"}"
+        return "{\"node\":\"BuiltinCall\",\"kind\":\"WORTEL\",\"arguments\":[%s],\"type\":%s,\"source\":{\"snippet\":\"de wortel van\"}}"
                 .formatted(argument, type);
     }
 
     private static String let(String binder, String value, String body, String type) {
-        return "{\"node\":\"Let\",\"type\":%s,\"binder\":\"%s\",\"value\":%s,\"body\":%s,\"bron\":\"%s is …\"}"
+        return "{\"node\":\"Let\",\"type\":%s,\"binder\":\"%s\",\"value\":%s,\"body\":%s,\"source\":{\"snippet\":\"%s is …\"}}"
                 .formatted(type, binder, value, body, binder);
     }
 
     /** NB the wire field is {@code name}, not {@code naam}. */
     private static String bref(String naam, String type) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"bron\":\"%s\"}".formatted(naam, naam);
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(naam, naam);
     }
 
     private static String ite(String conditie, String dan, String anders, String type) {
         return ("{\"node\":\"IfThenElse\",\"type\":%s,\"condition\":%s,\"then\":%s,\"else\":%s,"
-                + "\"bron\":\"als … dan … anders …\"}").formatted(type, conditie, dan, anders);
+                + "\"source\":{\"snippet\":\"als … dan … anders …\"}}").formatted(type, conditie, dan, anders);
     }
 
     private static String verg(String op, String links, String rechts) {
-        return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"bron\":\"%s\"}"
+        return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, op.toLowerCase(java.util.Locale.ROOT));
     }
 
     private static final String ALTIJD =
-            "{\"node\":\"Samengesteld\",\"kwantor\":\"ALLE\",\"drempel\":0,\"onderdelen\":[],\"bron\":\"altijd\"}";
+            "{\"node\":\"Samengesteld\",\"kwantor\":\"ALLE\",\"drempel\":0,\"onderdelen\":[],\"source\":{\"snippet\":\"altijd\"}}";
 
     /** The §9.2 stratification lever both walk witnesses use: a NEGATED kenmerk read whose kenmerk has a
      *  producer sinks the reading rule's salience below that producer's, so the producer fires LAST. */
     private static final String NIET_VERMIST =
             "{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"negatie\":true,"
-                    + "\"eigenaar\":null,\"periode\":null,\"bron\":\"hij niet vermist is\"}";
+                    + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"hij niet vermist is\"}}";
     private static final String VERMIST_DOEL =
             "{\"node\":\"AttribuutRef\",\"attribuut\":\"vermist\",\"objecttype\":\"Jutter\","
-                    + "\"bron\":\"Een Jutter is vermist\"}";
+                    + "\"source\":{\"snippet\":\"Een Jutter is vermist\"}}";
     private static final String VERMIST_KENMERK =
             "{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"BIJVOEGLIJK\"}";
     private static final String WAAR =
-            "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":" + BOOLEAAN + ",\"bron\":\"waar\"}";
+            "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":" + BOOLEAAN + ",\"source\":{\"snippet\":\"waar\"}}";
 
     private static String regel(String naam, String doel, String waarde) {
         return regel(naam, "BEREKENING", doel, waarde, "null");
@@ -374,9 +374,9 @@ class LetDragerWandelingWitnessTest {
     private static String defaultsGroep(String consequentie, String nulWaarde, boolean ongeordend) {
         return ("{\"node\":\"PrioritizedDefaults\",\"naam\":\"toeslag\",\"onderwerp\":\"Jutter\",\"kenmerk\":null,"
                 + "\"attribuut\":\"toeslag\"%s,\"defaults\":["
-                + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":%s,\"consequentie\":%s,\"bron\":\"toeslag\"},"
-                + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":%s,\"consequentie\":%s,\"bron\":\"toeslag\"}],"
-                + "\"bron\":\"toeslag\",\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
+                + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":%s,\"consequentie\":%s,\"source\":{\"snippet\":\"toeslag\"}},"
+                + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":%s,\"consequentie\":%s,\"source\":{\"snippet\":\"toeslag\"}}],"
+                + "\"source\":{\"snippet\":\"toeslag\"},\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
                 .formatted(ongeordend ? ",\"ongeordend\":true" : "",
                         verg("GROTER_OF_GELIJK", attr("Jutter", "kindertal", GEHEEL_POS), lit("2", GEHEEL_POS)),
                         consequentie, ALTIJD, nulWaarde);

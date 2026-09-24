@@ -112,7 +112,7 @@ class EnumNaamIdentiteitWitnessTest {
         resolved.add(kenmerkRegel("ongave kavel", "kavelongaaf", "ONGELIJK",
                 navigeerdeKeur(keurtype), literal(keurtype, "gaaf")));
         ObjectNode normRef = JSON.createObjectNode();
-        normRef.put("node", "ParameterRef").put("parameter", "keurnorm").put("bron", "de keurnorm");
+        normRef.put("node", "ParameterRef").put("parameter", "keurnorm").set("source", IrPad.bronrecord("de keurnorm"));
         resolved.add(kenmerkRegel("keurnorm gehaald", "normconform", "GELIJK",
                 staat, normRef));
         IrPad.rules(ir).putArray("consistenties");
@@ -147,7 +147,7 @@ class EnumNaamIdentiteitWitnessTest {
                 [{ "node": "Uniqueness", "name": "eenmalig keuroordeel", "versions": [ {
                     "sources": [ { "node": "Source", "objectType": "Vondst", "keys": ["staat"] }, { "node": "Source", "objectType": "Vondst", "keys": ["herkeuring"] } ],
                     "validity": {"node": "Geldigheid", "vanaf": null, "tot": null},
-                    "bron": "Vondst verenigd met Vondst moeten uniek zijn." } ] }]
+                    "source": { "snippet": "Vondst verenigd met Vondst moeten uniek zijn." } } ] }]
                 """));
         Path doc = schrijf(ir, "unie.json");
         BeideTakken.groen(doc, JSON.readTree("""
@@ -230,7 +230,7 @@ class EnumNaamIdentiteitWitnessTest {
         l.put("node", "Literal").putObject("value").put("Tekst".equals(type.path("node").asText()) ? "text" : "enumeration",
                 label);
         l.set("type", type.deepCopy());
-        l.put("bron", "'" + label + "'");
+        l.set("source", IrPad.bronrecord("'" + label + "'"));
         return l;
     }
 
@@ -239,7 +239,7 @@ class EnumNaamIdentiteitWitnessTest {
     private static ObjectNode navigeerdeKeur(JsonNode type) {
         ObjectNode a = JSON.createObjectNode();
         a.put("node", "AttribuutRef").put("attribuut", "keur").put("objecttype", "Kavel");
-        a.put("bron", "de keur van zijn kavel");
+        a.set("source", IrPad.bronrecord("de keur van zijn kavel"));
         a.putArray("navigatieBindingen").addObject()
          .put("node", "RolBinding").put("feittype", "kavelindeling").put("rol", "kavel");
         return a;
@@ -257,18 +257,20 @@ class EnumNaamIdentiteitWitnessTest {
                 {"node": "Rule", "name": "", "versions": [ {
                  "validity": {"node": "Geldigheid", "vanaf": null, "tot": null},
                  "target": {"node": "AttribuutRef", "objecttype": "Vondst"},
-                 "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Booleaan"}, "bron": "waar"},
+                 "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Booleaan"}, "source": { "snippet": "waar" }},
                  "initialisation": false } ] }
                 """);
         r.put("name", naam);
         ObjectNode versie = (ObjectNode) r.get("versions").get(0);
-        ((ObjectNode) versie.get("target")).put("attribuut", kenmerk).put("bron", "Een Vondst is " + kenmerk);
+        ((ObjectNode) versie.get("target")).put("attribuut", kenmerk)
+                .set("source", IrPad.bronrecord("Een Vondst is " + kenmerk));
         ObjectNode v = JSON.createObjectNode();
         v.put("node", "Vergelijking").put("op", op);
         v.set("links", links);
         v.set("rechts", rechts);
         v.putNull("periode");
-        v.put("bron", links.path("bron").asText() + " " + op.toLowerCase() + " " + rechts.path("bron").asText());
+        v.set("source", IrPad.bronrecord(links.path("source").path("snippet").asText() + " " + op.toLowerCase() + " "
+                + rechts.path("source").path("snippet").asText()));
         versie.set("condition", v);
         assertTrue(versie.get("target").has("attribuut"));
         return r;

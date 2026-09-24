@@ -189,7 +189,7 @@ class ObjectCreatieWitnessTest {
         // a nullable attribute — the arms no case input can reach, so only a pin holds them. ref on this
         // mutated model: 1800 (800 + the overzeese arm's 1000).
         Path ir = kenmerkWaarde("""
-                { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "bron": "waar" }""", "lit-waar");
+                { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Booleaan" }, "source": { "snippet": "waar" } }""", "lit-waar");
         assertEquals(Boolean.TRUE, RegelSpraakRuntime.get(enigeMint(CaseRunner.naFire(ir, overzeeMetVerwachting("800", null, "1800"))), "overzees"));
         assertNull(CaseRunner.speelCase(ir, overzeeMetVerwachting("800", null, "1800")));
     }
@@ -198,7 +198,7 @@ class ObjectCreatieWitnessTest {
         // and its literal false — the arm a "write whatever the value is" lowering would set (the primitive
         // field would then hold false anyway, so ONLY the branch value separates the two). ref: 800.
         Path ir = kenmerkWaarde("""
-                { "node": "Literal", "value": { "boolean": false }, "type": { "node": "Booleaan" }, "bron": "onwaar" }""", "lit-onwaar");
+                { "node": "Literal", "value": { "boolean": false }, "type": { "node": "Booleaan" }, "source": { "snippet": "onwaar" } }""", "lit-onwaar");
         assertEquals(Boolean.FALSE, RegelSpraakRuntime.get(enigeMint(CaseRunner.naFire(ir, overzeeMetVerwachting("800", null, "800"))), "overzees"));
         assertNull(CaseRunner.speelCase(ir, overzeeMetVerwachting("800", null, "800")));
     }
@@ -208,7 +208,7 @@ class ObjectCreatieWitnessTest {
         // a FAULT, never a silently unset mark. ref on this mutated model faults too, with the same rule:
         // "EVALUATION FAULT: characteristic initialisation of "overzees" is not boolean: 5 (WF-027)".
         Path ir = kenmerkWaarde("""
-                { "node": "Literal", "value": { "number": "5" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "bron": "5" }""", "lit-getal");
+                { "node": "Literal", "value": { "number": "5" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }, "source": { "snippet": "5" } }""", "lit-getal");
         RuntimeException e = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
                 () -> CaseRunner.naFire(ir, overzeeMetVerwachting("800", null, "800")));
         String keten = oorzaken(e);
@@ -667,10 +667,10 @@ class ObjectCreatieWitnessTest {
                 .set("condition", JSON.readTree("""
                         { "node": "Vergelijking", "op": "GROTER",
                           "links": { "node": "AttribuutRef", "attribuut": "grondslag", "objecttype": "Jutter",
-                                     "bron": "de grondslag van de Jutter" },
+                                     "source": { "snippet": "de grondslag van de Jutter" } },
                           "rechts": { "node": "Literal", "value": { "number": "100" }, "type": { "node": "Number", "whole": true, "decimals": 0,
-                                                "sign": "ONBEPAALD" }, "bron": "100" },
-                          "periode": null, "bron": "de grondslag van de Jutter is groter dan 100" }
+                                                "sign": "ONBEPAALD" }, "source": { "snippet": "100" } },
+                          "periode": null, "source": { "snippet": "de grondslag van de Jutter is groter dan 100" } }
                         """));
         return schrijf(ir, "met-voorwaarde");
     }

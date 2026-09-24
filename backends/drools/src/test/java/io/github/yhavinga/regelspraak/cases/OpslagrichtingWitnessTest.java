@@ -447,7 +447,7 @@ class OpslagrichtingWitnessTest {
         houdRegel(ir, "premie van een schuit");
         ObjectNode keten = (ObjectNode) IrPad.versie(ir, "resolvedRegels", 0, 0).get("value").get("rechts");
         keten.put("attribuut", "havengeld").put("objecttype", "Haven")
-             .put("bron", "het havengeld van de thuishaven van de werf van de Schuit");
+             .set("source", IrPad.bronrecord("het havengeld van de thuishaven van de werf van de Schuit"));
         keten.putArray("navigatieBindingen")
              .add(JSON.createObjectNode().put("node", "RolBinding").put("feittype", "ligplaats").put("rol", "werf"))
              .add(JSON.createObjectNode().put("node", "RolBinding").put("feittype", "werfhaven")
@@ -465,14 +465,14 @@ class OpslagrichtingWitnessTest {
         ObjectNode regel = IrPad.versie(ir, "resolvedRegels", 0, 0);
         ObjectNode nav = JSON.createObjectNode();
         nav.put("node", "AttribuutRef").put("attribuut", "tarief").put("objecttype", "Werf");
-        nav.put("bron", "het tarief van de werf van de Schuit");
+        nav.set("source", IrPad.bronrecord("het tarief van de werf van de Schuit"));
         nav.putArray("navigatieBindingen").addObject()
            .put("node", "RolBinding").put("feittype", "ligplaats").put("rol", "werf");
         ((ObjectNode) regel.get("condition")).set("links", nav);
-        ((ObjectNode) regel.get("condition")).put("bron", "het tarief van de werf van de Schuit groter is dan 5");
+        ((ObjectNode) regel.get("condition")).set("source", IrPad.bronrecord("het tarief van de werf van de Schuit groter is dan 5"));
         ObjectNode eigen = JSON.createObjectNode();
         eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit");
-        eigen.put("bron", "de lengte van de Schuit");
+        eigen.set("source", IrPad.bronrecord("de lengte van de Schuit"));
         regel.set("value", eigen);
         regel.put("initialisation", false).put("presentation", "GELIJKSTELLING");
         return tijdelijk("schuit-naamdeling-vergelijking", ir);
@@ -489,11 +489,11 @@ class OpslagrichtingWitnessTest {
         ObjectNode regel = IrPad.versie(ir, "resolvedRegels", 0, 0);
         ObjectNode check = JSON.createObjectNode();
         check.put("node", "RoleMembership").put("factType", "ligplaats").put("role", "schuit")
-             .put("negated", false).put("bron", "de Schuit een schuit is");
+             .put("negated", false).set("source", IrPad.bronrecord("de Schuit een schuit is"));
         regel.set("condition", check);
         ObjectNode eigen = JSON.createObjectNode();
         eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit");
-        eigen.put("bron", "de lengte van de Schuit");
+        eigen.set("source", IrPad.bronrecord("de lengte van de Schuit"));
         regel.set("value", eigen);
         regel.put("initialisation", false).put("presentation", "GELIJKSTELLING");
         return tijdelijk("schuit-naamdeling-rolcheck", ir);

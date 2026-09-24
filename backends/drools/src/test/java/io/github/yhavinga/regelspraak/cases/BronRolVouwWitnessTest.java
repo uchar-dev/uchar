@@ -111,8 +111,7 @@ class BronRolVouwWitnessTest {
         // half of the leegwaarde law the three rows above pin on their leeg cells.
         ObjectNode ir = somModel();
         ((ObjectNode) vouwVan(ir)).set("emptyFallback", literal("0"));
-        ((ObjectNode) vouwVan(ir)).put("bron",
-                "de som van de romplengte van alle liggers van de Haven of 0 als die er niet zijn");
+        ((ObjectNode) vouwVan(ir)).set("source", IrPad.bronrecord("de som van de romplengte van alle liggers van de Haven of 0 als die er niet zijn"));
         BeideTakken.groen(tijdelijk("bronrol-leegwaarde", ir), JSON.readTree(zaak("liggertal", "19", "20", "0")),
                 "the empty H3 fold reads its leegwaarde 0, not leeg");
     }
@@ -297,14 +296,14 @@ class BronRolVouwWitnessTest {
     private static ObjectNode fold(String kind, String meervoud, String feittype, String rol) {
         ObjectNode arg = JSON.createObjectNode();
         arg.put("node", "AttribuutRef").put("attribuut", "romplengte").put("objecttype", "Schuit");
-        arg.put("bron", "de romplengte van alle " + meervoud + " van de Haven");
+        arg.set("source", IrPad.bronrecord("de romplengte van alle " + meervoud + " van de Haven"));
         ObjectNode f = JSON.createObjectNode();
         f.put("node", "Aggregation").put("kind", kind);
         f.putArray("arguments").add(arg);
         f.put("elementType", "Schuit");
         f.set("sourceRole", rolBinding(feittype, rol));
         f.set("type", numeriek());
-        f.put("bron", zin(kind) + " de romplengte van alle " + meervoud + " van de Haven");
+        f.set("source", IrPad.bronrecord(zin(kind) + " de romplengte van alle " + meervoud + " van de Haven"));
         return f;
     }
 
@@ -324,7 +323,7 @@ class BronRolVouwWitnessTest {
         ObjectNode l = JSON.createObjectNode().put("node", "Literal");
         l.putObject("value").put("number", waarde);
         l.set("type", numeriek());
-        return l.put("bron", waarde);
+        return l.set("source", IrPad.bronrecord(waarde));
     }
 
     private static ObjectNode numeriek() {

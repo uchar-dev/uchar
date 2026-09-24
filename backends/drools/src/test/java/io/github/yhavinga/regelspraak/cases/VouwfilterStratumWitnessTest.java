@@ -158,11 +158,11 @@ class VouwfilterStratumWitnessTest {
           "node": "AttribuutRef",
           "attribuut": "alarm",
           "objecttype": "Jutter",
-          "bron": "Een Jutter is alarm"
+          "source": { "snippet": "Een Jutter is alarm" }
         },
           "value": { "node": "Literal", "value": { "boolean": true }, "type": {
             "node": "Booleaan"
-          }, "bron": "waar" },
+          }, "source": { "snippet": "waar" } },
           "condition": {
           "node": "Vergelijking",
           "op": "GROTER",
@@ -184,9 +184,9 @@ class VouwfilterStratumWitnessTest {
                       "negatie": true,
                       "eigenaar": null,
                       "periode": null,
-                      "bron": "niet gemerkt zijn"
+                      "source": { "snippet": "niet gemerkt zijn" }
                     },
-                    "bron": "aangemelde vondsten van de Jutter die niet gemerkt zijn"
+                    "source": { "snippet": "aangemelde vondsten van de Jutter die niet gemerkt zijn" }
                   },
                   {
                     "node": "InstanceSetBranch",
@@ -202,27 +202,27 @@ class VouwfilterStratumWitnessTest {
                       "negatie": true,
                       "eigenaar": null,
                       "periode": null,
-                      "bron": "niet gemerkt zijn"
+                      "source": { "snippet": "niet gemerkt zijn" }
                     },
-                    "bron": "geborgen vondsten van de Jutter die niet gemerkt zijn"
+                    "source": { "snippet": "geborgen vondsten van de Jutter die niet gemerkt zijn" }
                   }
                 ],
-                "bron": "de unie van ongemerkte vondsten"
+                "source": { "snippet": "de unie van ongemerkte vondsten" }
               }
             ], "type": {
               "node": "Number",
               "whole": true,
               "decimals": 0,
               "sign": "NIET_NEGATIEF"
-            }, "bron": "het aantal ongemerkte vondsten" },
+            }, "source": { "snippet": "het aantal ongemerkte vondsten" } },
           "rechts": { "node": "Literal", "value": { "number": "0" }, "type": {
               "node": "Number",
               "whole": true,
               "decimals": 0,
               "sign": "ONBEPAALD"
-            }, "bron": "0" },
+            }, "source": { "snippet": "0" } },
           "periode": null,
-          "bron": "het aantal ongemerkte vondsten groter is dan 0"
+          "source": { "snippet": "het aantal ongemerkte vondsten groter is dan 0" }
         },
           "initialisation": false } ] },
       { "node": "Rule", "name": "gemerkt bij gewicht", "versions": [ {
@@ -235,11 +235,11 @@ class VouwfilterStratumWitnessTest {
           "node": "AttribuutRef",
           "attribuut": "gemerkt",
           "objecttype": "Vondst",
-          "bron": "Een Vondst is gemerkt"
+          "source": { "snippet": "Een Vondst is gemerkt" }
         },
           "value": { "node": "Literal", "value": { "boolean": true }, "type": {
             "node": "Booleaan"
-          }, "bron": "waar" },
+          }, "source": { "snippet": "waar" } },
           "condition": {
           "node": "Vergelijking",
           "op": "GROTER",
@@ -247,16 +247,16 @@ class VouwfilterStratumWitnessTest {
             "node": "AttribuutRef",
             "attribuut": "gewicht",
             "objecttype": "Vondst",
-            "bron": "het gewicht van de Vondst"
+            "source": { "snippet": "het gewicht van de Vondst" }
           },
           "rechts": { "node": "Literal", "value": { "number": "5" }, "type": {
               "node": "Number",
               "whole": true,
               "decimals": 0,
               "sign": "ONBEPAALD"
-            }, "bron": "5" },
+            }, "source": { "snippet": "5" } },
           "periode": null,
-          "bron": "het gewicht van de Vondst groter is dan 5"
+          "source": { "snippet": "het gewicht van de Vondst groter is dan 5" }
         },
           "initialisation": false } ] }
     ],
@@ -381,11 +381,11 @@ class VouwfilterStratumWitnessTest {
           "node": "AttribuutRef",
           "attribuut": "alarm",
           "objecttype": "Jutter",
-          "bron": "Een Jutter is alarm"
+          "source": { "snippet": "Een Jutter is alarm" }
         },
           "value": { "node": "Literal", "value": { "boolean": true }, "type": {
             "node": "Booleaan"
-          }, "bron": "waar" },
+          }, "source": { "snippet": "waar" } },
           "condition": {
           "node": "Vergelijking",
           "op": "GROTER",
@@ -394,7 +394,7 @@ class VouwfilterStratumWitnessTest {
                 "node": "AttribuutRef",
                 "attribuut": "aangemelde vondsten",
                 "objecttype": "Jutter",
-                "bron": "aangemelde vondsten van de Jutter"
+                "source": { "snippet": "aangemelde vondsten van de Jutter" }
               }
             ], "elementType": "Vondst", "filter": {
               "node": "Kenmerk",
@@ -402,7 +402,7 @@ class VouwfilterStratumWitnessTest {
               "negatie": true,
               "eigenaar": null,
               "periode": null,
-              "bron": "niet gemerkt zijn"
+              "source": { "snippet": "niet gemerkt zijn" }
             }, "sourceRole": {
               "node": "RolBinding",
               "feittype": "vondstaanmelding",
@@ -412,15 +412,15 @@ class VouwfilterStratumWitnessTest {
               "whole": true,
               "decimals": 0,
               "sign": "NIET_NEGATIEF"
-            }, "bron": "het aantal ongemerkte aangemelde vondsten" },
+            }, "source": { "snippet": "het aantal ongemerkte aangemelde vondsten" } },
           "rechts": { "node": "Literal", "value": { "number": "0" }, "type": {
               "node": "Number",
               "whole": true,
               "decimals": 0,
               "sign": "ONBEPAALD"
-            }, "bron": "0" },
+            }, "source": { "snippet": "0" } },
           "periode": null,
-          "bron": "het aantal ongemerkte vondsten groter is dan 0"
+          "source": { "snippet": "het aantal ongemerkte vondsten groter is dan 0" }
         },
           "initialisation": false } ] },
       { "node": "Rule", "name": "gemerkt bij gewicht", "versions": [ {
@@ -433,11 +433,11 @@ class VouwfilterStratumWitnessTest {
           "node": "AttribuutRef",
           "attribuut": "gemerkt",
           "objecttype": "Vondst",
-          "bron": "Een Vondst is gemerkt"
+          "source": { "snippet": "Een Vondst is gemerkt" }
         },
           "value": { "node": "Literal", "value": { "boolean": true }, "type": {
             "node": "Booleaan"
-          }, "bron": "waar" },
+          }, "source": { "snippet": "waar" } },
           "condition": {
           "node": "Vergelijking",
           "op": "GROTER",
@@ -445,16 +445,16 @@ class VouwfilterStratumWitnessTest {
             "node": "AttribuutRef",
             "attribuut": "gewicht",
             "objecttype": "Vondst",
-            "bron": "het gewicht van de Vondst"
+            "source": { "snippet": "het gewicht van de Vondst" }
           },
           "rechts": { "node": "Literal", "value": { "number": "5" }, "type": {
               "node": "Number",
               "whole": true,
               "decimals": 0,
               "sign": "ONBEPAALD"
-            }, "bron": "5" },
+            }, "source": { "snippet": "5" } },
           "periode": null,
-          "bron": "het gewicht van de Vondst groter is dan 5"
+          "source": { "snippet": "het gewicht van de Vondst groter is dan 5" }
         },
           "initialisation": false } ] }
     ],

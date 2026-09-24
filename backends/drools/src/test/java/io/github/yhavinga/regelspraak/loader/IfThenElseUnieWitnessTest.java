@@ -107,7 +107,7 @@ class IfThenElseUnieWitnessTest {
 
     private static String attr(String naam, String type) {
         return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
-                + "\"bron\":\"het %s van de Jutter\"}")
+                + "\"source\":{\"snippet\":\"het %s van de Jutter\"}}")
                 .formatted(naam, naam);
     }
 
@@ -116,12 +116,12 @@ class IfThenElseUnieWitnessTest {
     }
 
     private static String binair(String op, String links, String rechts, String type) {
-        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"bron\":\"%s\"}"
+        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, type, op.toLowerCase(Locale.ROOT));
     }
 
     private static String verg(String op, String links, String rechts) {
-        return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"bron\":\"%s\"}"
+        return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, op.toLowerCase(Locale.ROOT));
     }
 
@@ -129,16 +129,16 @@ class IfThenElseUnieWitnessTest {
      *  conditie / dan / anders. */
     private static String ite(String conditie, String dan, String anders, String type) {
         return ("{\"node\":\"IfThenElse\",\"type\":%s,\"condition\":%s,\"then\":%s,\"else\":%s,"
-                + "\"bron\":\"als … dan … anders …\"}").formatted(type, conditie, dan, anders);
+                + "\"source\":{\"snippet\":\"als … dan … anders …\"}}").formatted(type, conditie, dan, anders);
     }
 
     private static String let(String binder, String value, String body, String type) {
-        return "{\"node\":\"Let\",\"type\":%s,\"binder\":\"%s\",\"value\":%s,\"body\":%s,\"bron\":\"%s is …\"}"
+        return "{\"node\":\"Let\",\"type\":%s,\"binder\":\"%s\",\"value\":%s,\"body\":%s,\"source\":{\"snippet\":\"%s is …\"}}"
                 .formatted(type, binder, value, body, binder);
     }
 
     private static String bref(String naam, String type) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"bron\":\"%s\"}".formatted(naam, naam);
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(naam, naam);
     }
 
     /** The ch. 10.2 node as the LEFT operand of an ordinary Binair — so the walk must pass an ordinary node

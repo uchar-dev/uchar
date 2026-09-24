@@ -341,8 +341,8 @@ class LaderWeigeringWitnessTest {
             ((ObjectNode) twist.get("diagnostics").get(diagnoses.size() - 1)).putNull(veld);
             weigert(twist, d + "/" + veld);
         }
-        diagnose.put("bron", "een melding");
-        IrLoader.Documentfout e = weigert(ir, d + "/bron");
+        diagnose.set("source", IrPad.bronrecord("een melding"));
+        IrLoader.Documentfout e = weigert(ir, d + "/source");
         assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
     }
 

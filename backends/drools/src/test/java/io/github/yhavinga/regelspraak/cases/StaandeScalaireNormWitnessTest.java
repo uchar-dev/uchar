@@ -161,13 +161,13 @@ class StaandeScalaireNormWitnessTest {
         groep.put("naam", "geschatte waarde default (witness)");
         groep.put("onderwerp", "Vondst");
         groep.put("attribuut", "geschatte waarde");
-        groep.put("bron", "witness: gemeld geeft 12.00");
+        groep.set("source", IrPad.bronrecord("witness: gemeld geeft 12.00"));
         ObjectNode d = ((ObjectNode) groep.get("defaults").get(0)).deepCopy();
         d.set("voorwaarde", JSON.readTree(
                 "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemeld\",\"negatie\":false,"
-                        + "\"eigenaar\":null,\"periode\":null,\"bron\":\"hij gemeld is\"}"));
+                        + "\"eigenaar\":null,\"periode\":null,\"source\":{\"snippet\":\"hij gemeld is\"}}"));
         ((ObjectNode) d.get("consequentie")).putObject("value").put("number", "12.00");
-        d.put("bron", "gemeld: 12.00");
+        d.set("source", IrPad.bronrecord("gemeld: 12.00"));
         d.remove("excepties");   // absent, not null/[] — the only wire shape a childless Default carries
         ArrayNode defaults = JSON.createArrayNode();
         defaults.add(d);
@@ -288,7 +288,7 @@ class StaandeScalaireNormWitnessTest {
         tweede.put("name", "Waardestelling tweede");
         ObjectNode bron = (ObjectNode) tweede.get("versions").get(0).get("value");
         bron.put("attribuut", "tweede taxatie")
-                .put("bron", "de tweede taxatie van de Vondst");
+                .set("source", IrPad.bronrecord("de tweede taxatie van de Vondst"));
         regels.add(tweede);
 
         Path uit = Files.createTempFile("tweede-schrijver", ".json");

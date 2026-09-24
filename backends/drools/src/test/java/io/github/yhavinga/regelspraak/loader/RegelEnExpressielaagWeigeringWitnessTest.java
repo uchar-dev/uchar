@@ -321,7 +321,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
             assertTrue(weigert(ir, WAARDE + "/value").getMessage().endsWith(": millisecond-precision date literal lexeme '"
                     + lexeem + "' is not the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' never"
                     + " a space, the seconds field written, no zone or offset, a fraction of exactly three digits; the"
-                    + " day-first source snippet belongs in `bron` — ch. 4.1)"), lexeem);
+                    + " day-first source snippet belongs in `source` — ch. 4.1)"), lexeem);
         }
         for (String lexeem : List.of("2026-03-15T12:00:00", "2026-03-15T12:00:00.000", "2024-02-29T23:59:59.999")) {
             ObjectNode ir = golden(PREMIEVENSTER);
@@ -454,8 +454,8 @@ class RegelEnExpressielaagWeigeringWitnessTest {
     // ---------------- a rule version's target and kind ----------------
 
     @Test void het_doel_is_een_attribuutreferentie() throws Exception {
-        List<String> doelen = List.of("null", "{\"node\":\"ParameterRef\",\"parameter\":\"x\",\"bron\":\"x\"}",
-                "{\"node\":\"Literal\",\"value\":{\"number\":\"1\"},\"type\":" + NUMBER + ",\"bron\":\"1\"}");
+        List<String> doelen = List.of("null", "{\"node\":\"ParameterRef\",\"parameter\":\"x\",\"source\":{\"snippet\":\"x\"}}",
+                "{\"node\":\"Literal\",\"value\":{\"number\":\"1\"},\"type\":" + NUMBER + ",\"source\":{\"snippet\":\"1\"}}");
         for (String doel : doelen) {
             ObjectNode ir = golden(PREMIEVENSTER);
             zet(ir, VERSIE + "/target", doel);
@@ -652,17 +652,17 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         assertEquals("gaaf", ((Expr.Literal) IrLoader.load(golden(KEURSTAAT)).resolvedRegels.get(3).waarde()).waarde());
         ObjectNode ir = golden(PREMIEVENSTER);
         zet(ir, WAARDE, "{\"node\":\"Literal\",\"value\":{\"boolean\":false},\"type\":{\"node\":\"Booleaan\"},"
-                + "\"bron\":\"onwaar\"}");
+                + "\"source\":{\"snippet\":\"onwaar\"}}");
         assertEquals("onwaar", ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
         // the text variant admits the empty string: its spelling is the case format's
         ir = golden(PREMIEVENSTER);
-        zet(ir, WAARDE, "{\"node\":\"Literal\",\"value\":{\"text\":\"\"},\"type\":{\"node\":\"Tekst\"},\"bron\":\"''\"}");
+        zet(ir, WAARDE, "{\"node\":\"Literal\",\"value\":{\"text\":\"\"},\"type\":{\"node\":\"Tekst\"},\"source\":{\"snippet\":\"''\"}}");
         assertEquals("", ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
     }
 
     @Test void de_gebonden_dag_is_de_constante_de_dag() throws Exception {
         ObjectNode ir = golden(PREMIEVENSTER);
-        zet(ir, WAARDE, "{\"node\":\"BoundDay\",\"type\":" + DAG + ",\"bron\":\"de dag\"}");
+        zet(ir, WAARDE, "{\"node\":\"BoundDay\",\"type\":" + DAG + ",\"source\":{\"snippet\":\"de dag\"}}");
         Expr.Constante c = assertInstanceOf(Expr.Constante.class, IrLoader.load(ir).resolvedRegels.get(0).waarde());
         assertEquals("de dag", c.naam());
         assertInstanceOf(Datatype.DatumInDagen.class, c.type());
@@ -675,7 +675,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         ObjectNode c = JSON.createObjectNode();
         c.put("node", "ContextValue").put("name", naam);
         c.set("type", leesJson(DAG));
-        c.put("bron", "de " + naam);
+        c.set("source", IrPad.bronrecord("de " + naam));
         return c;
     }
 

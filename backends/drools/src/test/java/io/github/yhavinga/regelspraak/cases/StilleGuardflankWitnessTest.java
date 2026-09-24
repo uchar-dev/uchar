@@ -155,13 +155,13 @@ class StilleGuardflankWitnessTest {
     }
 
     private static ObjectNode onopgelost() {
-        return JSON.createObjectNode().put("node", "Onopgelost").put("bron", "het sein het sein is");
+        return JSON.createObjectNode().put("node", "Onopgelost").set("source", IrPad.bronrecord("het sein het sein is"));
     }
 
     private static ObjectNode kenmerkGuard(String kenmerk, String eigenaar, String bron) {
         ObjectNode k = JSON.createObjectNode().put("node", "Kenmerk").put("kenmerk", kenmerk);
         k.put("negatie", false).put("eigenaar", eigenaar);
-        k.putNull("periode").put("bron", bron);
+        k.putNull("periode").set("source", IrPad.bronrecord(bron));
         return k;
     }
 

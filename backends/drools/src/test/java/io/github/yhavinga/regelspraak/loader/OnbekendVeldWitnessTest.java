@@ -77,27 +77,27 @@ class OnbekendVeldWitnessTest {
      *  node only has to be well-formed. */
     @Test void de_knoopsoorten_zonder_golden_weigeren_een_onbekend_veld_ook() throws Exception {
         String w = "/rules/resolvedRegels/0/versions/0/value", v = "/rules/resolvedRegels/0/versions/0/condition";
-        String literal = "{\"node\":\"Literal\",\"value\":{\"text\":\"x\"},\"type\":{\"node\":\"Tekst\"},\"bron\":\"x\"}";
+        String literal = "{\"node\":\"Literal\",\"value\":{\"text\":\"x\"},\"type\":{\"node\":\"Tekst\"},\"source\":{\"snippet\":\"x\"}}";
         Map<String, String[]> rijen = new java.util.LinkedHashMap<>();
         rijen.put("TekstReeks", new String[] { w, "{\"node\":\"TekstReeks\",\"delen\":[],\"type\":{\"node\":\"Tekst\"},"
-                + "\"bron\":\"x\",\"" + VREEMD + "\":1}", w });
+                + "\"source\":{\"snippet\":\"x\"},\"" + VREEMD + "\":1}", w });
         rijen.put("Letterlijk", new String[] { w, "{\"node\":\"TekstReeks\",\"delen\":[{\"node\":\"Letterlijk\","
-                + "\"tekst\":\"x\",\"" + VREEMD + "\":1}],\"type\":{\"node\":\"Tekst\"},\"bron\":\"x\"}",
+                + "\"tekst\":\"x\",\"" + VREEMD + "\":1}],\"type\":{\"node\":\"Tekst\"},\"source\":{\"snippet\":\"x\"}}",
                 w + "/delen/0" });
         rijen.put("Ingevoegd", new String[] { w, "{\"node\":\"TekstReeks\",\"delen\":[{\"node\":\"Ingevoegd\",\"expr\":"
-                + literal + ",\"" + VREEMD + "\":1}],\"type\":{\"node\":\"Tekst\"},\"bron\":\"x\"}", w + "/delen/0" });
-        rijen.put("VariabeleRef", new String[] { w, "{\"node\":\"VariabeleRef\",\"naam\":\"x\",\"bron\":\"x\",\""
+                + literal + ",\"" + VREEMD + "\":1}],\"type\":{\"node\":\"Tekst\"},\"source\":{\"snippet\":\"x\"}}", w + "/delen/0" });
+        rijen.put("VariabeleRef", new String[] { w, "{\"node\":\"VariabeleRef\",\"naam\":\"x\",\"source\":{\"snippet\":\"x\"},\""
                 + VREEMD + "\":1}", w });
-        rijen.put("Onopgelost (expressie)", new String[] { w, "{\"node\":\"Onopgelost\",\"bron\":\"x\",\"" + VREEMD
+        rijen.put("Onopgelost (expressie)", new String[] { w, "{\"node\":\"Onopgelost\",\"source\":{\"snippet\":\"x\"},\"" + VREEMD
                 + "\":1}", w });
         rijen.put("DimensieSelectie", new String[] { w, "{\"node\":\"Aggregation\",\"kind\":\"SOM\",\"arguments\":[],"
                 + "\"dimensionSelection\":{\"node\":\"DimensieSelectie\",\"dimensie\":\"d\",\"labels\":[],"
-                + "\"bron\":\"x\",\"" + VREEMD + "\":1},\"type\":null,\"bron\":\"x\"}", w + "/dimensionSelection" });
+                + "\"source\":{\"snippet\":\"x\"},\"" + VREEMD + "\":1},\"type\":null,\"source\":{\"snippet\":\"x\"}}", w + "/dimensionSelection" });
         rijen.put("ContextValue", new String[] { w, "{\"node\":\"ContextValue\",\"name\":\"Rekendatum\",\"type\":"
-                + "{\"node\":\"Date\",\"precision\":\"day\"},\"bron\":\"de Rekendatum\",\"" + VREEMD + "\":1}", w });
+                + "{\"node\":\"Date\",\"precision\":\"day\"},\"source\":{\"snippet\":\"de Rekendatum\"},\"" + VREEMD + "\":1}", w });
         rijen.put("Regelversie", new String[] { v, "{\"node\":\"Regelversie\",\"regel\":\"x\",\"inconsistent\":false,"
-                + "\"bron\":\"x\",\"" + VREEMD + "\":1}", v });
-        rijen.put("Onopgelost (conditie)", new String[] { v, "{\"node\":\"Onopgelost\",\"bron\":\"x\",\"" + VREEMD
+                + "\"source\":{\"snippet\":\"x\"},\"" + VREEMD + "\":1}", v });
+        rijen.put("Onopgelost (conditie)", new String[] { v, "{\"node\":\"Onopgelost\",\"source\":{\"snippet\":\"x\"},\"" + VREEMD
                 + "\":1}", v });
         for (Map.Entry<String, String[]> r : rijen.entrySet()) {
             JsonNode doc = golden(PENNINGDREMPEL);
@@ -117,7 +117,7 @@ class OnbekendVeldWitnessTest {
     @Test void een_conditiemarker_met_type_en_een_lege_terugkoppeling_weigeren() throws Exception {
         JsonNode doc = golden(PENNINGDREMPEL);
         ((ObjectNode) doc.at("/rules/resolvedRegels/0/versions/0")).set("condition", JSON.readTree(
-                "{\"node\":\"Onopgelost\",\"type\":{\"node\":\"Booleaan\"},\"bron\":\"iets onleesbaars\"}"));
+                "{\"node\":\"Onopgelost\",\"type\":{\"node\":\"Booleaan\"},\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
         IrLoader.Documentfout f = weigert(doc, "conditiemarker met type");
         assertEquals("/rules/resolvedRegels/0/versions/0/condition/type", f.plek(), f.getMessage());
         assertTrue(f.getMessage().contains("unknown field on Onopgelost"), f.getMessage());
@@ -135,14 +135,14 @@ class OnbekendVeldWitnessTest {
     @Test void een_onbekend_type_op_een_afgeleide_positie_weigert() throws Exception {
         String w = "/rules/resolvedRegels/0/versions/0/value";
         String literal = "{\"node\":\"Literal\",\"value\":{\"number\":\"2\"},\"type\":{\"node\":\"Number\",\"whole\":true,"
-                + "\"decimals\":0,\"sign\":\"ONBEPAALD\"},\"bron\":\"2\"}";
+                + "\"decimals\":0,\"sign\":\"ONBEPAALD\"},\"source\":{\"snippet\":\"2\"}}";
         String onbekend = "{\"node\":\"Onbekend\",\"reden\":\"niet opgelost\"}";
         Map<String, String> rijen = new java.util.LinkedHashMap<>();
         rijen.put("Afgerond", "{\"node\":\"Afgerond\",\"basis\":" + literal + ",\"modus\":\"REKENKUNDIG\","
-                + "\"decimalen\":0,\"type\":" + onbekend + ",\"bron\":\"x\"}");
+                + "\"decimalen\":0,\"type\":" + onbekend + ",\"source\":{\"snippet\":\"x\"}}");
         rijen.put("Begrensd", "{\"node\":\"Begrensd\",\"basis\":" + literal + ",\"minimum\":null,"
-                + "\"maximum\":null,\"type\":" + onbekend + ",\"bron\":\"x\"}");
-        rijen.put("TekstReeks", "{\"node\":\"TekstReeks\",\"delen\":[],\"type\":" + onbekend + ",\"bron\":\"x\"}");
+                + "\"maximum\":null,\"type\":" + onbekend + ",\"source\":{\"snippet\":\"x\"}}");
+        rijen.put("TekstReeks", "{\"node\":\"TekstReeks\",\"delen\":[],\"type\":" + onbekend + ",\"source\":{\"snippet\":\"x\"}}");
         for (Map.Entry<String, String> r : rijen.entrySet()) {
             JsonNode doc = golden(PENNINGDREMPEL);
             ((ObjectNode) doc.at("/rules/resolvedRegels/0/versions/0")).set("value", JSON.readTree(r.getValue()));
@@ -172,7 +172,7 @@ class OnbekendVeldWitnessTest {
         // ...and an entry of a node list, at its index
         JsonNode doc = golden(PENNINGDREMPEL);
         ((ObjectNode) doc.at("/rules/resolvedRegels/0/versions/0")).set("value", JSON.readTree("{\"node\":\"Aggregation\","
-                + "\"kind\":\"SOM\",\"arguments\":[1],\"type\":null,\"bron\":\"x\"}"));
+                + "\"kind\":\"SOM\",\"arguments\":[1],\"type\":null,\"source\":{\"snippet\":\"x\"}}"));
         IrLoader.Documentfout f = weigert(doc, "arguments");
         assertEquals("/rules/resolvedRegels/0/versions/0/value/arguments/0", f.plek(), f.getMessage());
     }

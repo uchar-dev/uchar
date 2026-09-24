@@ -2,6 +2,7 @@ package io.github.yhavinga.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
@@ -99,7 +100,13 @@ public final class IrPad {
                     default -> throw new AssertionError("no boolean lexeme: " + lexeem);
                 };
         return "{\"node\":\"Literal\",\"value\":{\"" + variant + "\":" + waarde + "},\"type\":" + type
-                + ",\"bron\":\"" + bron + "\"}";
+                + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+    }
+
+    /** A source record in the wire's shape (IR-SPEC ch. 4, B26): its snippet, without a line — a line stands in the
+     *  record of a consistency version and a rule group alone. A builder sets it with {@code set("source", …)}. */
+    public static ObjectNode bronrecord(String snippet) {
+        return JsonNodeFactory.instance.objectNode().put("snippet", snippet);
     }
 
     /** A Rule of one always-valid version in the wire's shape (IR-SPEC ch. 3.1): {@code soort} names the kind the way

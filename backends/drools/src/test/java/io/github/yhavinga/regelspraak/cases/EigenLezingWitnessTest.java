@@ -79,9 +79,9 @@ class EigenLezingWitnessTest {
         ObjectNode regel = vorm.putArray("versions").addObject();
         regel.putObject("validity").put("node", "Geldigheid").putNull("vanaf").putNull("tot");
         regel.putObject("target").put("node", "AttribuutRef").put("attribuut", "muntwaarde").put("objecttype", "Munt")
-             .put("bron", "De muntwaarde van een Munt");
+             .set("source", IrPad.bronrecord("De muntwaarde van een Munt"));
         regel.putObject("value").put("node", "AttribuutRef").put("attribuut", "gewicht").put("objecttype", objecttype)
-             .put("bron", "het gewicht");
+             .set("source", IrPad.bronrecord("het gewicht"));
         regel.put("initialisation", false).put("presentation", "BEREKENING");
         return ir;
     }

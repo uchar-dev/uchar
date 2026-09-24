@@ -480,31 +480,31 @@ class LetResultaatTakWitnessTest {
 
     private static String attr(String naam, int dec, boolean geheel, String teken) {
         return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
-                + "\"bron\":\"het %s van de Jutter\"}")
+                + "\"source\":{\"snippet\":\"het %s van de Jutter\"}}")
                 .formatted(naam, naam);
     }
 
     private static String lit(String waarde, int dec, boolean geheel) {
-        return "{\"node\":\"Literal\",\"value\":{\"number\":\"%s\"},\"type\":%s,\"bron\":\"%s\"}"
+        return "{\"node\":\"Literal\",\"value\":{\"number\":\"%s\"},\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(waarde, num(dec, geheel, ONBEPAALD), waarde);
     }
 
     private static String binair(String op, String links, String rechts) {
-        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"bron\":\"%s\"}"
+        return "{\"node\":\"Binair\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"type\":%s,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, num(2, false, ONBEPAALD), op.toLowerCase());
     }
 
     /** ch. 4.10 the value-level binding; WF-076 makes its {@code type} the BODY's, which {@code teken} included
      *  is what the verifier checks — so the body's sign is spelled at each call site. */
     private static String let(String binder, String value, String body, String bodyTeken) {
-        return "{\"node\":\"Let\",\"type\":%s,\"binder\":\"%s\",\"value\":%s,\"body\":%s,\"bron\":\"de %s is …\"}"
+        return "{\"node\":\"Let\",\"type\":%s,\"binder\":\"%s\",\"value\":%s,\"body\":%s,\"source\":{\"snippet\":\"de %s is …\"}}"
                 .formatted(num(2, false, bodyTeken), binder, value, body, binder);
     }
 
     /** ch. 4.10 a read of the nearest enclosing binder. NB the wire field is {@code name}, not {@code naam};
      *  WF-091 makes the read's sign that of the value it is bound to, so it rides along. */
     private static String bref(String naam, String teken) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"bron\":\"de %s\"}"
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"de %s\"}}"
                 .formatted(naam, naam);
     }
 
@@ -512,11 +512,11 @@ class LetResultaatTakWitnessTest {
      *  included, which the verifier checks — so the arms' shared sign is spelled at each call site. */
     private static String ite(String conditie, String dan, String anders, String teken) {
         return ("{\"node\":\"IfThenElse\",\"type\":%s,\"condition\":%s,\"then\":%s,\"else\":%s,"
-                + "\"bron\":\"als … dan … anders …\"}").formatted(num(2, false, teken), conditie, dan, anders);
+                + "\"source\":{\"snippet\":\"als … dan … anders …\"}}").formatted(num(2, false, teken), conditie, dan, anders);
     }
 
     private static String verg(String op, String links, String rechts) {
-        return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"bron\":\"%s\"}"
+        return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"source\":{\"snippet\":\"%s\"}}"
                 .formatted(op, links, rechts, op.toLowerCase());
     }
 
