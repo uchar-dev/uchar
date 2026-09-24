@@ -1,4 +1,4 @@
-(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L2 shape.
+(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L3 shape.
 
    The lowering builds typed [Ir_v0.Ast] values and hands them to exactly
    one serialiser — this module — so schema conformity is structural
@@ -60,16 +60,19 @@ let functie_kind_s = function
   | Som -> "SOM" | Aantal -> "AANTAL"
   | _ -> failwith "Emit: aggregation kind not produced by the F-logic slice"
 
+(* The type system in its L3 shape: a Number always carries its sign (a sign
+   the in-memory form leaves open is ONBEPAALD) and, since the slice declares
+   no units, no unit; a day date is a Date at day precision. *)
 let datatype (d : datatype) : json =
   match d with
   | Numeriek { geheel; decimalen; teken; eenheid } ->
       if eenheid <> None then failwith "Emit: the slice declares no units";
-      node "Numeriek"
-        [ ("geheel", b geheel); ("decimalen", i decimalen);
-          ("teken", opt (fun t -> s (teken_s t)) teken); ("eenheid", `Null) ]
+      node "Number"
+        [ ("whole", b geheel); ("decimals", i decimalen);
+          ("sign", s (teken_s (Option.value teken ~default:Onbepaald))) ]
   | Booleaan -> node "Booleaan" []
   | Tekst -> node "Tekst" []
-  | Datum_in_dagen -> node "DatumInDagen" []
+  | Datum_in_dagen -> node "Date" [ ("precision", s "day") ]
   | _ -> failwith "Emit: datatype not produced by the F-logic slice"
 
 let rol_binding (rb : rol_binding) : json =
@@ -290,7 +293,6 @@ let document (d : document) : json =
   unfilled "dimensions" d.dimensies;
   unfilled "timelines" d.tijdlijnen;
   unfilled "dayKinds" d.dagsoorten;
-  unfilled "dagsoortPerEenheid" d.dagsoort_per_eenheid;
   unfilled "functionDefs" d.function_defs;
   unfilled "resolvedDagsoorten" d.resolved_dagsoorten;
   unfilled "objectCreaties" d.object_creaties;
@@ -319,8 +321,7 @@ let document (d : document) : json =
            ("unitSystems", `List []);
            ("dimensions", `List []);
            ("timelines", `List []);
-           ("dayKinds", `List []);
-           ("dagsoortPerEenheid", `Assoc []) ]);
+           ("dayKinds", `List []) ]);
       ("rules",
        `Assoc
          [ ("resolvedRegels", `List (List.map resolved_regel d.resolved_regels));

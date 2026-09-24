@@ -100,7 +100,7 @@ let slot_of_ty ~line (t : ty) : slot =
   | Ty_prim "\\date" -> Attribute A.Datum_in_dagen
   | Ty_prim "\\decimal" ->
       refuse ~line
-        "the primitive type \\decimal: uchar's Numeriek carries a DECLARED decimal scale and \
+        "the primitive type \\decimal: uchar's Number carries a DECLARED decimal scale and \
          sign, which \\decimal does not state — write numeriek(onbepaald, 2)"
   | Ty_prim p -> refuse ~line "the primitive type %s" p
   | Ty_name c -> Filler c
@@ -925,11 +925,11 @@ let document (stmts : stmt list) : A.document =
       m.ftypes
   in
   { A.objecttypen; domeinen = []; parameters = []; eenheidstelsels = []; feittypen;
-    dimensies = []; tijdlijnen = []; dagsoorten = []; dagsoort_per_eenheid = [];
+    dimensies = []; tijdlijnen = []; dagsoorten = [];
     resolved_regels = !resolved; resolved_dagsoorten = []; object_creaties = [];
     verdelingen = []; consistenties = []; uniciteiten = []; uniciteit_unies = [];
     feit_creaties = []; resolved_startpunten = []; regel_groepen = []; diagnostics = [];
-    prioritized_defaults = !groups; function_defs = [] }
+    prioritized_defaults = !groups; function_defs = []; presentatie_annotaties = [] }
 
 let of_string (src : string) : A.document = document (Parse.parse src)
 

@@ -267,7 +267,7 @@ the reason and the citation.
    interchangeable.
 7. **everything else outside the slice**, each by name where the form has
    one: the Flora-1 arrow `*->` (which Flora-2 2.2 also rejects), `\decimal`
-   (it states no decimal scale where uchar's `Numeriek` declares one), a
+   (it states no decimal scale where uchar's `Number` declares one), a
    predicate `p(…)` (the wire format has no predicate channel), an
    aggregate other than `sum`/`count`, a reference signature between object
    types (a reference is a role and belongs on a fact type), a role filled

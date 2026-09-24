@@ -421,8 +421,7 @@ let () =
     Printf.sprintf
       {|{ "format": "uchar-ir-v1",
   "model": { "objectTypes": [], "factTypes": [], "parameters": [%s], "domains": [],
-    "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [],
-    "dagsoortPerEenheid": {} },
+    "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [] },
   "rules": { "resolvedRegels": [%s], "resolvedDagsoorten": [], "objectCreaties": [],
     "verdelingen": [], "consistenties": [], "uniciteiten": [], "uniciteitUnies": [],
     "feitCreaties": [], "resolvedStartpunten": [], "regelGroepen": [] },
@@ -459,9 +458,8 @@ let () =
       ("a filled parameters list",
        m1_doc
          ~parameters:
-           {|{ "node": "Parameter", "naam": "drempel",
-  "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
-  "granulariteit": null }|}
+           {|{ "node": "Parameter", "name": "drempel",
+  "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" } }|}
          (),
        "fills parameters") ]
   in

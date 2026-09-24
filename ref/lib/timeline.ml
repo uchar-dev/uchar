@@ -417,14 +417,16 @@ let grid_unit (doc : Ir_v0.Ast.document) (g : Ir_v0.Ast.granulariteit) :
   let want = granularity_time_unit g in
   let candidates =
     List.concat_map
-      (fun (_, (es : Ir_v0.Ast.eenheidstelsel)) -> es.eenheden @ es.aliassen)
+      (fun (_, (es : Ir_v0.Ast.eenheidstelsel)) ->
+        List.map (fun (d : Ir_v0.Ast.gedeclareerde_eenheid) -> d.ge_eenheid) es.eenheden)
       doc.eenheidstelsels
-    |> List.filter_map (fun (_, e) -> e)
     |> List.filter (fun (e : Ir_v0.Ast.eenheid) ->
            e.noemer = None && Ir_v0.Checks.time_unit_of_eenheid e = Some want)
   in
+  (* the factor as the rational it is, so two spellings of one value are
+     one grid *)
   let key (e : Ir_v0.Ast.eenheid) =
-    (Option.map Ir_v0.Checks.norm e.canoniek, e.factor_naar_canoniek)
+    (Option.map Ir_v0.Checks.norm e.canoniek, Option.map Arith.rational e.factor_naar_canoniek)
   in
   match (candidates, List.sort_uniq compare (List.map key candidates)) with
   | e :: _, [ _ ] -> Ok e

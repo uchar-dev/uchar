@@ -2268,8 +2268,8 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------
    Two steps stand between a unit SPELLING on a duration node and a verdict
-   about one calendar day. Resolution: the spelling names a day kind through
-   `dagsoortPerEenheid` (trimmed, case-insensitive — IR-SPEC ch. 2.9), and
+   about one calendar day. Resolution: the spelling names a day kind as its
+   name or its plural (trimmed, case-insensitive — IR-SPEC ch. 2.9), and
    the name names its definition in `resolvedDagsoorten`. Evaluation: the
    definition's voorwaarde is an ordinary condition, evaluated with the day
    bound to `de dag` and with no other binder in scope — WF-031's purity
@@ -2307,15 +2307,20 @@ and day_kind_matches env world self ~err (name : string) (day : int) : bool =
       in
       eval_cond env world self ~err c)
 
-(* the day kind a duration UNIT spelling names, or None when the spelling is
-   not registered as one (then it is a calendar unit, or ill-formed) *)
+(* the day kind a duration UNIT spelling names — its name or its plural,
+   trimmed and case-insensitive (IR-SPEC ch. 2.9) — or None when no day kind
+   is spelled so (then it is a calendar unit, or ill-formed) *)
 and day_kind_of_unit env (u : eenheid) : string option =
   match u.afkorting with
   | None -> None
-  | Some a -> (
-      match Ir_v0.Checks.find_ci env.doc.dagsoort_per_eenheid a with
-      | Some (Some k) when String.trim k <> "" -> Some k
-      | _ -> None)
+  | Some a ->
+      List.find_map
+        (fun (d : dagsoort) ->
+          if String.trim d.dk_naam <> ""
+             && List.exists (fun s -> norm s = norm a) (Ir_v0.Checks.dagsoort_spellingen d)
+          then Some d.dk_naam
+          else None)
+        env.doc.dagsoorten
 
 and day_kind_pred env world self ~err (name : string) : int -> bool =
   fun day -> day_kind_matches env world self ~err name day
@@ -2497,10 +2502,8 @@ let kenmerkwaarde_constant_waar (r : resolved_regel) ~ot ~attr =
         match t with
         | Booleaan -> "Booleaan"
         | Tekst -> "Tekst"
-        | Numeriek _ -> "Numeriek"
-        | Percentage _ -> "Percentage"
-        | Datum_in_dagen -> "DatumInDagen"
-        | Datum_tijd -> "DatumTijd"
+        | Numeriek _ | Percentage _ -> "Number"
+        | Datum_in_dagen | Datum_tijd -> "Date"
         | Enumeratie _ -> "Enumeratie"
         | Sum_type _ -> "SumType"
         | List_type _ -> "ListType"
@@ -3445,6 +3448,17 @@ let validate_input_precision env world =
     env.param_tls
 
 let evaluate env world =
+  (* WF-007: a presentation tag inside a type annotation. The loader lists
+     where one stands (the in-memory datatype does not carry the tag), and
+     this interpreter refuses the document in the verifier's sentence rather
+     than evaluate a form the verifier rejects *)
+  (match env.doc.presentatie_annotaties with
+  | [] -> ()
+  | at :: _ ->
+      Value.fault
+        "%s: the presentation tag \"percentage\" on a type annotation: the tag is written only \
+         where a datatype is declared (WF-007)"
+        at);
   (* fail fast on unverified input: the cycle-tolerant strata below are
      sound only on WF-045/046-clean documents (every cycle then passes
      through a recursive-group creation and carries no negative edge) —

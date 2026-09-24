@@ -1,4 +1,4 @@
-(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L2 shape.
+(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L3 shape.
 
    ARCHITECTURE. The plugin builds typed [Ir_v0.Ast] values and hands
    them to exactly one serialiser — this module — so schema conformity is
@@ -71,21 +71,33 @@ let afrond_modus_s = function
   | Rekenkundig -> "REKENKUNDIG" | Richting_nul -> "RICHTING_NUL"
   | Weg_van_nul -> "WEG_VAN_NUL"
 
-let rec datatype (d : datatype) : json =
+(* the built-in '%' of a percentage that names no unit of its own *)
+let builtin_percent : eenheid =
+  { afkorting = Some "%"; stelsel = None; canoniek = Some "%";
+    factor_naar_canoniek = Some { num = 1; den = 1 }; noemer = None }
+
+(* The type system in its L3 shape: a Number always carries its sign (a sign
+   the in-memory form leaves open is ONBEPAALD) and its unit only when it has
+   one; a Percentage is a Number with the unit '%' — the built-in one when the
+   in-memory form carries none — and the presentation tag at a declaration
+   position only ([~decl]; an expression's own type is an annotation, where
+   the tag is never written); a date is one Date node with its precision. *)
+let rec datatype ?(decl = true) (d : datatype) : json =
   match d with
   | Numeriek { geheel; decimalen; teken; eenheid } ->
-      node "Numeriek"
-        [ ("geheel", b geheel); ("decimalen", i decimalen);
-          ("teken", opt (fun t -> s (teken_s t)) teken);
-          ("eenheid", opt eenheid_j eenheid) ]
+      node "Number"
+        ([ ("whole", b geheel); ("decimals", i decimalen);
+           ("sign", s (teken_s (Option.value teken ~default:Onbepaald))) ]
+        @ match eenheid with None -> [] | Some e -> [ ("unit", unit_j e) ])
   | Booleaan -> node "Booleaan" []
-  | Datum_in_dagen -> node "DatumInDagen" []
-  | Datum_tijd -> node "DatumTijd" []
+  | Datum_in_dagen -> node "Date" [ ("precision", s "day") ]
+  | Datum_tijd -> node "Date" [ ("precision", s "millisecond") ]
   | Tekst -> node "Tekst" []
   | Percentage { geheel; decimalen; eenheid } ->
-      node "Percentage"
-        [ ("geheel", b geheel); ("decimalen", i decimalen);
-          ("eenheid", opt eenheid_j eenheid) ]
+      node "Number"
+        ([ ("whole", b geheel); ("decimals", i decimalen); ("sign", s "ONBEPAALD");
+           ("unit", unit_j (Option.value eenheid ~default:builtin_percent)) ]
+        @ if decl then [ ("presentation", s "percentage") ] else [])
   | Enumeratie { domein; waarden } ->
       node "Enumeratie" [ ("domein", so domein); ("waarden", str_opt_list waarden) ]
   | Sum_type { domein; constructoren } ->
@@ -95,25 +107,35 @@ let rec datatype (d : datatype) : json =
            `List
              (List.map
                 (fun (nm, payload) ->
-                  `Assoc [ ("name", s nm); ("payload", opt datatype payload) ])
+                  `Assoc [ ("name", s nm); ("payload", opt (datatype ~decl) payload) ])
                 constructoren)) ]
-  | List_type { element } -> node "ListType" [ ("element", datatype element) ]
+  | List_type { element } -> node "ListType" [ ("element", datatype ~decl element) ]
   | Struct_type { domein; velden } ->
       node "StructType"
         [ ("domain", s domein);
           ("fields",
            `List
              (List.map
-                (fun (nm, dt) -> `Assoc [ ("name", s nm); ("datatype", datatype dt) ])
+                (fun (nm, dt) -> `Assoc [ ("name", s nm); ("datatype", datatype ~decl dt) ])
                 velden)) ]
 
-and eenheid_j (e : eenheid) : json =
-  node "Eenheid"
-    [ ("afkorting", so e.afkorting); ("stelsel", so e.stelsel);
-      ("canoniek", so e.canoniek);
-      ("factorNaarCanoniek",
-       (match e.factor_naar_canoniek with None -> `Null | Some f -> `Float f));
-      ("noemer", opt eenheid_j e.noemer) ]
+(* a Unit where it occurs: absent is the one spelling of a field not given,
+   and the factor is the exact rational {num, den} *)
+and unit_j (e : eenheid) : json =
+  let abbreviation =
+    match e.afkorting with Some a -> a | None -> failwith "Emit: a unit without an abbreviation"
+  in
+  node "Unit"
+    ([ ("abbreviation", s abbreviation) ]
+    @ (match e.stelsel with Some x -> [ ("system", s x) ] | None -> [])
+    @ (match e.canoniek with Some x -> [ ("canonical", s x) ] | None -> [])
+    @ (match e.factor_naar_canoniek with
+      | Some { num; den } -> [ ("factorToCanonical", `Assoc [ ("num", i num); ("den", i den) ]) ]
+      | None -> [])
+    @ match e.noemer with Some n -> [ ("denominator", unit_j n) ] | None -> [])
+
+(* an expression's own type: never a declaration position *)
+let annotation (d : datatype) : json = datatype ~decl:false d
 
 let geheel_periode (g : geheel_periode) : json =
   node "GeheelPeriode" [ ("jaar", b g.gp_jaar); ("niet", b g.gp_niet) ]
@@ -125,7 +147,7 @@ let rol_binding (rb : rol_binding) : json =
   node "RolBinding" [ ("feittype", s rb.rb_feittype); ("rol", s rb.rb_rol) ]
 
 let rec expr (e : expr) : json =
-  let typ t = ("type", opt datatype t) in
+  let typ t = ("type", opt annotation t) in
   let bron br = ("bron", so br) in
   match e with
   | Literal { waarde; typ = t; bron = br } ->
@@ -161,11 +183,11 @@ let rec expr (e : expr) : json =
   | Expr_onopgelost _ -> failwith "Emit.expr: node not produced by the skeleton: Onopgelost"
   | Construct { typ = t; constructor_; argument; bron = br } ->
       node "Construct"
-        [ ("type", opt datatype t); ("constructor", s constructor_);
+        [ ("type", opt annotation t); ("constructor", s constructor_);
           ("argument", opt expr argument); bron br ]
   | Match { typ = t; scrutinee; arms; bron = br } ->
       node "Match"
-        [ ("type", opt datatype t); ("scrutinee", expr scrutinee);
+        [ ("type", opt annotation t); ("scrutinee", expr scrutinee);
           ("arms",
            `List
              (List.map
@@ -178,32 +200,32 @@ let rec expr (e : expr) : json =
   | Binder_ref { naam; bron = br } -> node "BinderRef" [ ("name", s naam); bron br ]
   | List_literal { typ = t; elements; bron = br } ->
       node "ListLiteral"
-        [ ("type", opt datatype t); ("elements", `List (List.map expr elements)); bron br ]
+        [ ("type", opt annotation t); ("elements", `List (List.map expr elements)); bron br ]
   | If_then_else { typ = t; condition; then_; else_; bron = br } ->
       node "IfThenElse"
-        [ ("type", opt datatype t); ("condition", conditie condition);
+        [ ("type", opt annotation t); ("condition", conditie condition);
           ("then", expr then_); ("else", expr else_); bron br ]
   | Invoke { typ = t; functie; arguments; bron = br } ->
       node "Invoke"
-        [ ("type", opt datatype t); ("function", s functie);
+        [ ("type", opt annotation t); ("function", s functie);
           ("arguments", `List (List.map expr arguments)); bron br ]
   | Fold { typ = t; list; functie; init; bron = br } ->
       node "Fold"
-        [ ("type", opt datatype t); ("list", expr list);
+        [ ("type", opt annotation t); ("list", expr list);
           ("function", fold_fn functie); ("init", expr init); bron br ]
   | Map_list { typ = t; list; functie; bron = br } ->
       node "MapList"
-        [ ("type", opt datatype t); ("list", expr list);
+        [ ("type", opt annotation t); ("list", expr list);
           ("function", fold_fn functie); bron br ]
   | Filter_list { typ = t; list; binder; condition; bron = br } ->
       node "FilterList"
-        [ ("type", opt datatype t); ("list", expr list); ("binder", s binder);
+        [ ("type", opt annotation t); ("list", expr list); ("binder", s binder);
           ("condition", conditie condition); bron br ]
   | List_length { typ = t; list; bron = br } ->
-      node "ListLength" [ ("type", opt datatype t); ("list", expr list); bron br ]
+      node "ListLength" [ ("type", opt annotation t); ("list", expr list); bron br ]
   | Struct_literal { typ = t; velden; bron = br } ->
       node "StructLiteral"
-        [ ("type", opt datatype t);
+        [ ("type", opt annotation t);
           ("fields",
            `List
              (List.map
@@ -212,12 +234,12 @@ let rec expr (e : expr) : json =
           bron br ]
   | Field_access { typ = t; base; veld; bron = br } ->
       node "FieldAccess"
-        [ ("type", opt datatype t); ("base", expr base); ("field", s veld); bron br ]
+        [ ("type", opt annotation t); ("base", expr base); ("field", s veld); bron br ]
   | Let { typ = t; binder; value; body; bron = br } ->
       (* the value-level binding (IR-SPEC ch. 4.10): [type] is non-null on the wire and
          equals the body type (WF-076); [binder] joins the WF-064 regime *)
       node "Let"
-        [ ("type", opt datatype t); ("binder", s binder);
+        [ ("type", opt annotation t); ("binder", s binder);
           ("value", expr value); ("body", expr body); bron br ]
   | other ->
       failwith
@@ -476,7 +498,6 @@ let document (d : document) : json =
   unfilled "dimensions" d.dimensies;
   unfilled "timelines" d.tijdlijnen;
   unfilled "dayKinds" d.dagsoorten;
-  unfilled "dagsoortPerEenheid" d.dagsoort_per_eenheid;
   unfilled "resolvedDagsoorten" d.resolved_dagsoorten;
   unfilled "verdelingen" d.verdelingen;
   unfilled "uniciteiten" d.uniciteiten;
@@ -505,8 +526,7 @@ let document (d : document) : json =
             ("unitSystems", `List []);
             ("dimensions", `List []);
             ("timelines", `List []);
-            ("dayKinds", `List []);
-            ("dagsoortPerEenheid", `Assoc []) ]
+            ("dayKinds", `List []) ]
          @ function_defs));
       ("rules",
        `Assoc

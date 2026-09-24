@@ -15,9 +15,9 @@
    - scope variable (non-boolean)   -> attribute of that object type
    - scope variable (boolean)       -> characteristic (kenmerk)
    - input variable                 -> attribute filled by the case (no rule)
-   - integer                        -> Numeriek, geheel, 0 decimals
-   - money                          -> Numeriek, 2 decimals (row 34: no money type)
-   - date                           -> DatumInDagen
+   - integer                        -> Number, whole, 0 decimals
+   - money                          -> Number, 2 decimals (row 34: no money type)
+   - date                           -> Date at day precision
    - boolean                        -> Booleaan as a characteristic
    - decimal (rational)             -> REFUSED (no declared decimals)
    - single unconditional numeric definition -> a Berekening rule
@@ -119,7 +119,7 @@ let geldig : I.geldigheid = { geld_vanaf = None; geld_tot = None }
 let num_int : I.datatype = Numeriek { geheel = true; decimalen = 0; teken = Some Onbepaald; eenheid = None }
 let num_money : I.datatype = Numeriek { geheel = false; decimalen = 2; teken = Some Onbepaald; eenheid = None }
 (* the pinned Catala-decimal scale (PHASE5C-TUTORIAL §5, vraag 4-A): S = 4.
-   A Catala decimal is an exact rational; it lands as a bounded Numeriek at
+   A Catala decimal is an exact rational; it lands as a bounded Number at
    four decimals, and a value that does not terminate at four decimals faults
    loudly and consistently in both executors (ref's bounded-write gate,
    clingo's does-not-fit fence). *)
@@ -214,8 +214,9 @@ and keuzetype_of (enums : enum_ctx) (structs : struct_ctx) (name : EnumName.t) :
 (* A struct -> its StructType datatype: fields in declaration order
    (StructField ids are generative, so the map folds declaration-first). Field
    datatypes recurse through [catala_dt] and must be WF-071-admissible
-   (Numeriek / DatumInDagen / SumType / StructType) — an inadmissible field
-   type (Tekst, Booleaan, Enumeratie, DatumTijd, a list) refuses loudly. *)
+   (Number / Date at day precision / SumType / StructType) — an inadmissible
+   field type (Tekst, Booleaan, Enumeratie, Date at millisecond precision, a
+   list) refuses loudly. *)
 and struct_type_of (enums : enum_ctx) (structs : struct_ctx) (name : StructName.t) : I.datatype =
   used_structs := StructName.Set.add name !used_structs;
   let sig_ =
@@ -2478,11 +2479,11 @@ let file_to_document (input : string) : I.document =
   in
   { objecttypen = List.rev !objecttypen;
     domeinen; parameters = []; eenheidstelsels = []; feittypen = !feittypen;
-    dimensies = []; tijdlijnen = []; dagsoorten = []; dagsoort_per_eenheid = [];
+    dimensies = []; tijdlijnen = []; dagsoorten = [];
     resolved_regels = !regels; resolved_dagsoorten = [];
     object_creaties = !creaties; verdelingen = []; consistenties = !cons;
     uniciteiten = []; uniciteit_unies = []; feit_creaties = [];
     resolved_startpunten = []; regel_groepen = []; diagnostics = [];
-    prioritized_defaults = defaults_groups; function_defs }
+    prioritized_defaults = defaults_groups; function_defs; presentatie_annotaties = [] }
 
 let run ~input ~output = Emit.to_file output (file_to_document input)

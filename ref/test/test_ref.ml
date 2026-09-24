@@ -295,18 +295,18 @@ let () =
 
 (* --- ch. 2.6: unit algebra ---------------------------------------------- *)
 
-let unit_ ?noemer ?(factor = 1.0) ~canoniek afk : Ir_v0.Ast.eenheid =
+let unit_ ?noemer ?(factor = (1, 1)) ~canoniek afk : Ir_v0.Ast.eenheid =
   {
     afkorting = Some afk;
     stelsel = Some "test";
     canoniek = Some canoniek;
-    factor_naar_canoniek = Some factor;
+    factor_naar_canoniek = Some { num = fst factor; den = snd factor };
     noemer;
   }
 
 let mnd = unit_ ~canoniek:"mnd" "mnd"
-let jr = unit_ ~canoniek:"mnd" ~factor:12.0 "jr"
-let kw = unit_ ~canoniek:"mnd" ~factor:3.0 "kw"
+let jr = unit_ ~canoniek:"mnd" ~factor:(12, 1) "jr"
+let kw = unit_ ~canoniek:"mnd" ~factor:(3, 1) "kw"
 
 (* a declared month-sized unit that is NOT spelled as a calendar unit: the
    ch. 3.6 integration cancels it through the declared factor, never
@@ -318,7 +318,7 @@ let bm = unit_ ~canoniek:"mnd" "bm"
 let dg = unit_ ~canoniek:"dg" "dg"
 let kg = unit_ ~canoniek:"kg" "kg"
 let eur = unit_ ~canoniek:"EUR" "€"
-let cent = unit_ ~canoniek:"EUR" ~factor:0.01 "ct"
+let cent = unit_ ~canoniek:"EUR" ~factor:(1, 100) "ct"
 let meter = unit_ ~canoniek:"m" "m"
 let eur_per_jr = { eur with noemer = Some jr }
 let nu u s = Value.Num (Value.q_of_lexeme s, Value.Unit u)
@@ -352,6 +352,18 @@ let () =
   | exception Value.Fault m ->
       check "verify-show-unit-in-fault" (m = "incompatible units: € vs €/jr")
   | _ -> check "verify-show-unit-in-fault" false)
+
+(* IR-SPEC ch. 2.5, the conversion algebra's worked examples verbatim: the
+   factor is the exact rational the wire writes, a restatement multiplies by
+   factor(u)/factor(v) as a rational, and nothing is rounded on the way —
+   `18 mnd` is `3/2 jr`, not 1.4999… or 1.5000…1 *)
+let () =
+  let restate ~into v from = Arith.restate_into (Value.Unit into) (q v) (Value.Unit from) in
+  check "WV-2.5-3jr-is-36mnd" (Q.equal (restate ~into:mnd "3" jr) (q "36"));
+  check "WV-2.5-18mnd-is-3/2jr" (Q.equal (restate ~into:jr "18" mnd) (q "3/2"));
+  check "WV-2.5-factor-mnd-jr-1/12" (Q.equal (Arith.conv_factor mnd jr) (q "1/12"));
+  check "WV-2.5-100eur/mnd-is-1200eur/jr"
+    (Q.equal (restate ~into:eur_per_jr "100" { eur with noemer = Some mnd }) (q "1200"))
 
 (* WF-092, the executor's half: the canonical unit and the factor are one
    fact in two fields, and the factor question refuses to guess.
@@ -586,9 +598,11 @@ let () =
   expect_fault "verify-lexeme-empty" (fun () -> Value.q_of_lexeme "");
   expect_fault "verify-lexeme-junk" (fun () -> Value.q_of_lexeme "abc");
   check "verify-lexeme-neg-dec" (Q.equal (Value.q_of_lexeme "-0.5") (q "-1/2"));
-  (* unit factors read as the intended decimal, not the nearest double *)
-  check "verify-wire-factor-cent" (Q.equal (Arith.q_of_wire_number 0.01) (q "1/100"));
-  check "verify-wire-factor-int" (Q.equal (Arith.q_of_wire_number 1000.0) (q "1000"));
+  (* a unit factor reads as the exact rational the wire writes, never
+     through a double: {1, 100} is 1/100 exactly and {1000, 1} is 1000 *)
+  check "verify-wire-factor-cent" (Q.equal (Arith.factor cent) (q "1/100"));
+  check "verify-wire-factor-int"
+    (Q.equal (Arith.factor (unit_ ~canoniek:"g" ~factor:(1000, 1) "kg")) (q "1000"));
   (* an astronomic exponent faults instead of escaping as Z.Overflow *)
   expect_fault "verify-pow-overflow" (fun () ->
       Arith.pow_ (n "2") (Value.Num (Q.of_string "100000000000000000000", Value.Unitless)))
@@ -605,7 +619,6 @@ let empty_doc : Ir_v0.Ast.document =
     dimensies = [];
     tijdlijnen = [];
     dagsoorten = [];
-    dagsoort_per_eenheid = [];
     resolved_regels = [];
     resolved_dagsoorten = [];
     object_creaties = [];
@@ -619,6 +632,7 @@ let empty_doc : Ir_v0.Ast.document =
     diagnostics = [];
     prioritized_defaults = [];
     function_defs = [];
+    presentatie_annotaties = [];
   }
 
 let ot name attrs kenmerken : string * Ir_v0.Ast.objecttype =
@@ -1376,11 +1390,7 @@ let () =
   let stelsel name eenheden : string * Ir_v0.Ast.eenheidstelsel =
     ( name,
       { es_naam = Some name;
-        eenheden =
-          List.map
-            (fun (e : Ir_v0.Ast.eenheid) -> (Option.value e.afkorting ~default:"?", Some e))
-            eenheden;
-        aliassen = [] } )
+        eenheden = List.map (fun e -> { Ir_v0.Ast.ge_eenheid = e; ge_spellingen = [] }) eenheden } )
   in
   let doc_of stelsels = { empty_doc with eenheidstelsels = stelsels } in
   (match Timeline.grid_unit (doc_of [ stelsel "Munt" [ eur ]; stelsel "Tijd" [ mnd; jr ] ]) Maand with
@@ -1394,7 +1404,7 @@ let () =
   | Ok _ -> check "WV-3.6-rooster-ongedeclareerd" false);
   (* two systems spelling the same grid unit with different canonical
      chains: no single grid, so the lookup refuses instead of picking *)
-  let mnd_in_dagen = unit_ ~canoniek:"dg" ~factor:30.0 "mnd" in
+  let mnd_in_dagen = unit_ ~canoniek:"dg" ~factor:(30, 1) "mnd" in
   (match Timeline.grid_unit (doc_of [ stelsel "A" [ mnd ]; stelsel "B" [ mnd_in_dagen ] ]) Maand with
   | Error _ -> check "WV-3.6-rooster-ambigu" true
   | Ok _ -> check "WV-3.6-rooster-ambigu" false)
@@ -1426,8 +1436,8 @@ let () =
     (nm, { o with attribuut_granulariteit = [ ("bewaartarief", Some Ir_v0.Ast.Jaar) ] })
   in
   let stelsels : (string * Ir_v0.Ast.eenheidstelsel) list =
-    [ ("Munt", { es_naam = Some "Munt"; eenheden = [ ("€", Some eur) ]; aliassen = [] });
-      ("Tijd", { es_naam = Some "Tijd"; eenheden = [ ("mnd", Some mnd) ]; aliassen = [] }) ]
+    [ ("Munt", { es_naam = Some "Munt"; eenheden = [ { ge_eenheid = eur; ge_spellingen = [] } ] });
+      ("Tijd", { es_naam = Some "Tijd"; eenheden = [ { ge_eenheid = mnd; ge_spellingen = [] } ] }) ]
   in
   let doc =
     {
@@ -1712,7 +1722,7 @@ let () =
    nothing (the empirically observed divergence this test pins shut). *)
 let () =
   let param name dt : Ir_v0.Ast.parameter =
-    { par_naam = Some name; par_datatype = Some dt; par_granulariteit = None }
+    { par_naam = Some name; par_datatype = Some dt; par_granulariteit = None; par_tijdlijn_aantal = None }
   in
   let doc =
     {
@@ -2262,9 +2272,10 @@ let () =
       Arith.tijdsduur_day_kind ~matches:kerst (dtk "2024-12-20T10:00:00") leeg)
 
 (* --- ch. 3.8 through Eval: resolving a day kind and binding `de dag` -----
-   The half the kernel block cannot see: a unit SPELLING resolved through
-   `dagsoortPerEenheid` (trimmed, case-insensitive), the definition found by
-   name, and the voorwaarde evaluated with `de dag` bound to the walked day.
+   The half the kernel block cannot see: a unit SPELLING resolved through a
+   day kind's name or plural (trimmed, case-insensitive), the definition
+   found by name, and the voorwaarde evaluated with `de dag` bound to the
+   walked day.
    The `de dag` context value outside that binding faults by name. *)
 
 let () =
@@ -2308,10 +2319,9 @@ let () =
       empty_doc with
       objecttypen =
         [ ot "Post" [ ("aanvang", Some Datum_in_dagen); ("sluiting", Some Datum_in_dagen) ] [] ];
-      dagsoorten = [ Some "kerstdag" ];
-      (* the registry couples a SPELLING to the day kind; the lookup is
-         trimmed and case-insensitive, which the odd key here exercises *)
-      dagsoort_per_eenheid = [ ("  KERSTDAGEN  ", Some "Kerstdag") ];
+      (* the plural is the day kind's duration-unit SPELLING; the lookup is
+         trimmed and case-insensitive, which the odd plural here exercises *)
+      dagsoorten = [ { dk_naam = "kerstdag"; dk_meervoud = Some "  KERSTDAGEN  " } ];
       resolved_dagsoorten = [ kerstdag ];
     }
   in
@@ -2342,11 +2352,11 @@ let () =
   (* `de dag` has no value outside a day-kind evaluation — a fault that
      names the form, never a fall-through and never leeg *)
   expect_fault "WV-3.8-dk-eval-de-dag-buiten" (fun () -> ev de_dag);
-  (* an unregistered spelling is neither a calendar unit nor a day kind *)
-  let doc_leeg = { doc with dagsoort_per_eenheid = [] } in
+  (* a spelling no day kind carries is neither a calendar unit nor a day kind *)
+  let doc_leeg = { doc with dagsoorten = [ { dk_naam = "kerstdag"; dk_meervoud = None } ] } in
   expect_fault "WV-3.8-dk-eval-onbekende-eenheid" (fun () ->
       Eval.eval_expr (env_of doc_leeg) w self ~err:no_err (stap "2"));
-  (* a registry entry naming an undeclared day kind faults at resolution *)
+  (* a day kind without a definition faults at resolution *)
   let doc_zoek = { doc with resolved_dagsoorten = [] } in
   expect_fault "WV-3.8-dk-eval-geen-definitie" (fun () ->
       Eval.eval_expr (env_of doc_zoek) w self ~err:no_err (stap "2"));
@@ -2897,7 +2907,7 @@ let () =
       { geheel = false; decimalen = 2; teken = None;
         eenheid =
           Some { afkorting = Some "kg"; stelsel = Some "Gewicht"; canoniek = Some "kg";
-                 factor_naar_canoniek = Some 1.0; noemer = None } }
+                 factor_naar_canoniek = Some { num = 1; den = 1 }; noemer = None } }
   in
   let kustvak : Ir_v0.Ast.datatype =
     Enumeratie { domein = Some "kustvakken"; waarden = [ Some "noord"; Some "zuid" ] }
@@ -3257,7 +3267,7 @@ let () =
       { geheel = false; decimalen = 2; teken = None;
         eenheid =
           Some { afkorting = Some "kg"; stelsel = Some "Gewicht"; canoniek = Some "kg";
-                 factor_naar_canoniek = Some 1.0; noemer = None } }
+                 factor_naar_canoniek = Some { num = 1; den = 1 }; noemer = None } }
   in
   let doc =
     { empty_doc with
@@ -5721,7 +5731,8 @@ let () =
         kenmerk_granulariteit = [ ("dienstdoend", Some Ir_v0.Ast.Dag) ] } )
   in
   let par naam dt gran =
-    (naam, { Ir_v0.Ast.par_naam = Some naam; par_datatype = Some dt; par_granulariteit = gran })
+    (naam, { Ir_v0.Ast.par_naam = Some naam; par_datatype = Some dt; par_granulariteit = gran;
+             par_tijdlijn_aantal = Option.map (fun _ -> 1) gran })
   in
   let doc =
     { empty_doc with

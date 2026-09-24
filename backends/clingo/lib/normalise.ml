@@ -44,9 +44,9 @@
    refusal, with its reason named, precisely as a same-system pair does.
 
    PROOF OBLIGATIONS, discharged in [finest_of_units] and fault-loud:
-     1. every declared factor has an exact short-decimal reading
-        (Arith.q_of_wire_number — the same recovery ref/ uses; a factor with no
-        short reading faults, never a silent binary-double tail);
+     1. every declared factor is the exact rational the wire writes
+        (Arith.factor reads {num, den} as that rational, the reading ref/ uses;
+        no binary double stands between the declaration and the scale);
      2. every unit of the table restates into the finest by a positive INTEGER
         (a table that admits no such finest — e.g. sibling factors 2 and 3 —
         faults, keeping the refusal rather than silently picking a divide-down
@@ -83,14 +83,13 @@ let fault = Value.fault
 
 let unit_abbr (u : eenheid) = Option.value u.afkorting ~default:"?"
 
-(* the plain (non-rate) declared units of a stelsel — its base and derived
-   spellings plus the alias table; a rate (noemer set) never enters stelsel
-   normalisation (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3: its numerator/denominator
-   normalise per their own stelsels, out of scope here and left to the existing
-   refusal). *)
+(* the plain (non-rate) declared units of a unit system — each declared unit
+   once, its spellings being names of that one unit; a rate (denominator set)
+   never enters normalisation (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3: its
+   numerator/denominator normalise per their own systems, out of scope here and
+   left to the existing refusal). *)
 let plain_units (s : eenheidstelsel) : eenheid list =
-  List.filter_map (fun (_, u) -> u) (s.eenheden @ s.aliassen)
-  |> List.filter (fun (u : eenheid) -> u.noemer = None)
+  List.map (fun d -> d.ge_eenheid) s.eenheden |> List.filter (fun (u : eenheid) -> u.noemer = None)
 
 (* proof obligation 3: a unit that NAMES the canonical it converts into, with a
    complete WF-092 conversion pair (so [Arith.factor] reads it rather than
@@ -226,8 +225,8 @@ let restate_lit ~tu ~to_finest (e : expr) : expr =
    pass must perform? Mirrors [norm_expr]'s traversal. This is the gate that
    keeps the pass the identity: a rule that already translates does so with
    units identical to the target, so it carries no such literal and the finest
-   derivation (which reads every factor of the table, and would fault on a
-   factor with no short-decimal reading) is NEVER invoked for it. A
+   derivation (which reads every factor of the table, and faults on a table that
+   admits no finest base unit) is NEVER invoked for it. A
    differing-record literal in a restating position would otherwise have tripped
    [Translate.units_identical_ok] already, so a passing rule cannot hold one. *)
 let rec has_restatable ~tu (e : expr) : bool =
@@ -286,9 +285,8 @@ let norm_regel (doc : document) (r : resolved_regel) : resolved_regel =
                 | Some s -> Checks.find_ci doc.eenheidstelsels s <> None
                 | None -> false)
              (* the identity gate: no restatable literal ⇒ leave the rule
-                untouched and NEVER read the table's factors (so a factor with
-                no short decimal reading the pass does not exercise never
-                faults). *)
+                untouched and NEVER read the table's factors (so a table the
+                pass does not exercise never faults, whatever its factors). *)
              && has_restatable ~tu waarde ->
           let where, units = table_for_target doc tu in
           let finest, to_finest = finest_of_units ~where units in

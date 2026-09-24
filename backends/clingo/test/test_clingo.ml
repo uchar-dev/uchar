@@ -42,41 +42,35 @@ let translate doc case =
 (* the frontend-faithful pure-% spelling (jutterswet-vondsttarief) *)
 let pct_eenheid =
   {|{
-              "node": "Eenheid",
-              "afkorting": "%",
-              "stelsel": null,
-              "canoniek": "%",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+              "node": "Unit",
+              "abbreviation": "%",
+              "canonical": "%",
+              "factorToCanonical": { "num": 1, "den": 1 }
             }|}
 
 (* a genuine sibling unit — not %-space, must stay refused *)
 let km_eenheid =
   {|{
-              "node": "Eenheid",
-              "afkorting": "km",
-              "stelsel": null,
-              "canoniek": "km",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+              "node": "Unit",
+              "abbreviation": "km",
+              "canonical": "km",
+              "factorToCanonical": { "num": 1, "den": 1 }
             }|}
 
 (* a %-spelled unit whose factor is not 1 — not provably pure-%, the ÷100
    scale fold would be wrong, so it must stay refused *)
 let pct_factor2_eenheid =
   {|{
-              "node": "Eenheid",
-              "afkorting": "%",
-              "stelsel": null,
-              "canoniek": "%",
-              "factorNaarCanoniek": 2,
-              "noemer": null
+              "node": "Unit",
+              "abbreviation": "%",
+              "canonical": "%",
+              "factorToCanonical": { "num": 2, "den": 1 }
             }|}
 
 (* the smallest document translate can consume: one Vondst with an integer
    opbrengst and a 2-decimal vindersloon, computed as 20<left-unit>
    PERCENTAGE_VAN de opbrengst. [left_eenheid] is the JSON for the left
-   literal's eenheid. *)
+   literal's unit. *)
 let doc_json left_eenheid =
   Printf.sprintf
     {|{
@@ -93,22 +87,20 @@ let doc_json left_eenheid =
             "node": "Attribute",
             "name": "opbrengst",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "vindersloon",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -121,8 +113,7 @@ let doc_json left_eenheid =
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -143,10 +134,11 @@ let doc_json left_eenheid =
             "node": "Literal",
             "waarde": "20",
             "type": {
-              "node": "Percentage",
-              "geheel": true,
-              "decimalen": 0,
-              "eenheid": %s
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": %s
             },
             "bron": "20%%"
           },
@@ -157,11 +149,10 @@ let doc_json left_eenheid =
             "bron": "de opbrengst van de Vondst"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "bron": "20%% van de opbrengst van de Vondst"
         },
@@ -285,10 +276,10 @@ let () =
 
 let eenh ~stelsel ~canoniek afk factor : Ir_v0.Ast.eenheid =
   { afkorting = Some afk; stelsel = Some stelsel; canoniek = Some canoniek;
-    factor_naar_canoniek = factor; noemer = None }
+    factor_naar_canoniek = Option.map (fun (num, den) -> { Ir_v0.Ast.num; den }) factor; noemer = None }
 
 let stelsel ~naam units : Ir_v0.Ast.eenheidstelsel =
-  { es_naam = Some naam; eenheden = units; aliassen = [] }
+  { es_naam = Some naam; eenheden = List.map (fun u -> { Ir_v0.Ast.ge_eenheid = u; ge_spellingen = [] }) units }
 
 (* FINEST-UNIT DERIVATION picks the smallest-factor unit, and every declared
    unit restates INTO it by an exact positive INTEGER — the multiply-only
@@ -297,14 +288,14 @@ let stelsel ~naam units : Ir_v0.Ast.eenheidstelsel =
 let () =
   let afstand =
     stelsel ~naam:"Afstand"
-      [ ("m", Some (eenh ~stelsel:"Afstand" ~canoniek:"m" "m" (Some 1.0)));
-        ("km", Some (eenh ~stelsel:"Afstand" ~canoniek:"m" "km" (Some 1000.0))) ]
+      [ eenh ~stelsel:"Afstand" ~canoniek:"m" "m" (Some (1, 1));
+        eenh ~stelsel:"Afstand" ~canoniek:"m" "km" (Some (1000, 1)) ]
   in
-  (match Normalise.(finest_of_units ~where:"unit stelsel \"Afstand\"" (plain_units afstand)) with
+  (match Normalise.(finest_of_units ~where:"unit system \"Afstand\"" (plain_units afstand)) with
   | finest, to_finest ->
       check "finest(Afstand) = m" (finest.Ir_v0.Ast.afkorting = Some "m");
-      let km = eenh ~stelsel:"Afstand" ~canoniek:"m" "km" (Some 1000.0) in
-      let m = eenh ~stelsel:"Afstand" ~canoniek:"m" "m" (Some 1.0) in
+      let km = eenh ~stelsel:"Afstand" ~canoniek:"m" "km" (Some (1000, 1)) in
+      let m = eenh ~stelsel:"Afstand" ~canoniek:"m" "m" (Some (1, 1)) in
       let rkm = to_finest km and rm = to_finest m in
       check "km -> m is x1000 (multiply-only integer)" (Q.equal rkm (Q.of_int 1000));
       check "m -> m is x1 (finest maps to itself)" (Q.equal rm Q.one);
@@ -313,46 +304,46 @@ let () =
   | exception Uchar_ref.Value.Fault m -> check ("finest(Afstand) unexpected fault: " ^ m) false);
   let termijn =
     stelsel ~naam:"Termijn"
-      [ ("maand", Some (eenh ~stelsel:"Termijn" ~canoniek:"maand" "maand" (Some 1.0)));
-        ("jaar", Some (eenh ~stelsel:"Termijn" ~canoniek:"maand" "jaar" (Some 12.0))) ]
+      [ eenh ~stelsel:"Termijn" ~canoniek:"maand" "maand" (Some (1, 1));
+        eenh ~stelsel:"Termijn" ~canoniek:"maand" "jaar" (Some (12, 1)) ]
   in
-  match Normalise.(finest_of_units ~where:"unit stelsel \"Termijn\"" (plain_units termijn)) with
+  match Normalise.(finest_of_units ~where:"unit system \"Termijn\"" (plain_units termijn)) with
   | finest, to_finest ->
       check "finest(Termijn) = maand" (finest.Ir_v0.Ast.afkorting = Some "maand");
-      let jaar = eenh ~stelsel:"Termijn" ~canoniek:"maand" "jaar" (Some 12.0) in
+      let jaar = eenh ~stelsel:"Termijn" ~canoniek:"maand" "jaar" (Some (12, 1)) in
       check "jaar -> maand is x12 (non-power-of-ten multiply-only integer)"
         (Q.equal (to_finest jaar) (Q.of_int 12))
   | exception Uchar_ref.Value.Fault m -> check ("finest(Termijn) unexpected fault: " ^ m) false
 
-(* a stelsel whose sibling factors (2 and 3) share no integer-finest faults —
+(* a unit system whose sibling factors (2 and 3) share no integer-finest faults —
    never a silent divide-down canonical *)
 let () =
   let broken =
     stelsel ~naam:"Broken"
-      [ ("a", Some (eenh ~stelsel:"Broken" ~canoniek:"a" "a" (Some 2.0)));
-        ("b", Some (eenh ~stelsel:"Broken" ~canoniek:"a" "b" (Some 3.0))) ]
+      [ eenh ~stelsel:"Broken" ~canoniek:"a" "a" (Some (2, 1));
+        eenh ~stelsel:"Broken" ~canoniek:"a" "b" (Some (3, 1)) ]
   in
-  match Normalise.(finest_of_units ~where:"unit stelsel \"Broken\"" (plain_units broken)) with
-  | _ -> check "no-finest stelsel must fault, not silently pick" false
+  match Normalise.(finest_of_units ~where:"unit system \"Broken\"" (plain_units broken)) with
+  | _ -> check "no-finest unit system must fault, not silently pick" false
   | exception Uchar_ref.Value.Fault m ->
       check ("no-finest faults loudly (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle:"admits no finest base unit" m)
 
-(* a factor with no exact short-decimal reading faults (the q_of_wire_number
-   discipline), never a silent binary-double tail *)
+(* a factor with no decimal reading at all is carried exactly: the wire writes
+   one third as {1, 3}, so the finest is `third` and `base` restates into it by
+   exactly 3 — a table a double factor could only refuse (a factor written as
+   a JSON number is refused at load, in the load table below) *)
 let () =
-  let inexact =
-    stelsel ~naam:"Inexact"
-      [ ("base", Some (eenh ~stelsel:"Inexact" ~canoniek:"base" "base" (Some 1.0)));
-        ("third", Some (eenh ~stelsel:"Inexact" ~canoniek:"base" "third" (Some (1.0 /. 3.0)))) ]
-  in
-  match Normalise.(finest_of_units ~where:"unit stelsel \"Inexact\"" (plain_units inexact)) with
-  | _ -> check "inexact-factor stelsel must fault" false
-  | exception Uchar_ref.Value.Fault m ->
-      check ("inexact factor faults loudly (" ^ m ^ ")")
-        (Uchar_ref.Case.contains ~needle:"no short decimal reading" m)
+  let base = eenh ~stelsel:"Exact" ~canoniek:"base" "base" (Some (1, 1)) in
+  let exact = stelsel ~naam:"Exact" [ base; eenh ~stelsel:"Exact" ~canoniek:"base" "third" (Some (1, 3)) ] in
+  match Normalise.(finest_of_units ~where:"unit system \"Exact\"" (plain_units exact)) with
+  | finest, to_finest ->
+      check "an exact 1/3 factor: the finest is third" (finest.Ir_v0.Ast.afkorting = Some "third");
+      check "an exact 1/3 factor: base restates into third by exactly 3"
+        (Q.equal (to_finest base) (Q.of_int 3))
+  | exception Uchar_ref.Value.Fault m -> check ("an exact 1/3 factor faulted: " ^ m) false
 
-(* the jaar/maand document (Termijn stelsel): looptijd (maand) = 2 jaar +
+(* the jaar/maand document (unit system Termijn): looptijd (maand) = 2 jaar +
    basisduur (maand). Before the pass clingo refuses the km/m-style factor≠1
    join+write; the pass restates 2 jaar -> 24 maand so it translates and ref
    pins looptijd = 27 (24 + 3), the value clingo now reproduces. *)
@@ -368,17 +359,17 @@ let duur_doc =
           {
             "node": "Attribute", "name": "basisduur",
             "datatype": {
-              "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF",
-              "eenheid": { "node": "Eenheid", "afkorting": "maand", "stelsel": "Termijn",
-                "canoniek": "maand", "factorNaarCanoniek": 1, "noemer": null }
+              "node": "Number", "whole": true, "decimals": 0, "sign": "NIET_NEGATIEF",
+              "unit": { "node": "Unit", "abbreviation": "maand", "system": "Termijn",
+                "canonical": "maand", "factorToCanonical": { "num": 1, "den": 1 } }
             }
           },
           {
             "node": "Attribute", "name": "looptijd",
             "datatype": {
-              "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF",
-              "eenheid": { "node": "Eenheid", "afkorting": "maand", "stelsel": "Termijn",
-                "canoniek": "maand", "factorNaarCanoniek": 1, "noemer": null }
+              "node": "Number", "whole": true, "decimals": 0, "sign": "NIET_NEGATIEF",
+              "unit": { "node": "Unit", "abbreviation": "maand", "system": "Termijn",
+                "canonical": "maand", "factorToCanonical": { "num": 1, "den": 1 } }
             }
           }
         ],
@@ -388,17 +379,16 @@ let duur_doc =
     "factTypes": [], "parameters": [], "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel", "naam": "Termijn",
-        "eenheden": {
-          "maand": { "node": "Eenheid", "afkorting": "maand", "stelsel": "Termijn",
-            "canoniek": "maand", "factorNaarCanoniek": 1, "noemer": null },
-          "jaar": { "node": "Eenheid", "afkorting": "jaar", "stelsel": "Termijn",
-            "canoniek": "maand", "factorNaarCanoniek": 12, "noemer": null }
-        },
-        "aliassen": {}
+        "node": "UnitSystem", "name": "Termijn",
+        "units": [
+          { "node": "Unit", "abbreviation": "maand", "system": "Termijn",
+            "canonical": "maand", "factorToCanonical": { "num": 1, "den": 1 } },
+          { "node": "Unit", "abbreviation": "jaar", "system": "Termijn",
+            "canonical": "maand", "factorToCanonical": { "num": 12, "den": 1 } }
+        ]
       }
     ],
-    "dimensions": [], "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
+    "dimensions": [], "timelines": [], "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -413,18 +403,18 @@ let duur_doc =
           "node": "Binair", "op": "PLUS",
           "links": {
             "node": "Literal", "waarde": "2",
-            "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
-              "eenheid": { "node": "Eenheid", "afkorting": "jaar", "stelsel": "Termijn",
-                "canoniek": "maand", "factorNaarCanoniek": 12, "noemer": null } },
+            "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD",
+              "unit": { "node": "Unit", "abbreviation": "jaar", "system": "Termijn",
+                "canonical": "maand", "factorToCanonical": { "num": 12, "den": 1 } } },
             "bron": "2 jaar"
           },
           "rechts": {
             "node": "AttribuutRef", "attribuut": "basisduur", "objecttype": "Bergingsvergunning",
             "bron": "de basisduur van de Bergingsvergunning"
           },
-          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
-            "eenheid": { "node": "Eenheid", "afkorting": "jaar", "stelsel": "Termijn",
-              "canoniek": "maand", "factorNaarCanoniek": 12, "noemer": null } },
+          "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD",
+            "unit": { "node": "Unit", "abbreviation": "jaar", "system": "Termijn",
+              "canonical": "maand", "factorToCanonical": { "num": 12, "den": 1 } } },
           "bron": "2 jaar plus de basisduur van de Bergingsvergunning"
         },
         "voorwaarde": null,
@@ -483,8 +473,8 @@ let () =
    Convertibility in this IR is a canonical-NAME law and says nothing about the
    unit system that DECLARES a unit, so two declared systems may share a
    canonical name and a conforming document may cross them. This backend used to
-   read `stelsel` as a fence and refused such a document at ALL FOUR unit
-   positions, while the verifier admitted it and ref and the Drools backend both
+   read the unit's `system` as a fence and refused such a document at ALL FOUR
+   unit positions, while the verifier admitted it and ref and the Drools backend both
    computed it. `golden/jutterswet-stelselweging` is the corpus witness of the
    four positions in the full square; what the suite adds is what a green corpus
    zone cannot carry — the two MUTATIONS that must turn the witnesses red, and
@@ -519,9 +509,9 @@ let () =
     | (_ : string) -> false
     | exception Failure _ -> true)
 
-let kg_gewicht : Ir_v0.Ast.eenheid = eenh ~stelsel:"Gewicht" ~canoniek:"kg" "kg" (Some 1.0)
-let kg_massa : Ir_v0.Ast.eenheid = eenh ~stelsel:"Massa" ~canoniek:"kg" "kg" (Some 1.0)
-let ton_massa : Ir_v0.Ast.eenheid = eenh ~stelsel:"Massa" ~canoniek:"kg" "t" (Some 1000.0)
+let kg_gewicht : Ir_v0.Ast.eenheid = eenh ~stelsel:"Gewicht" ~canoniek:"kg" "kg" (Some (1, 1))
+let kg_massa : Ir_v0.Ast.eenheid = eenh ~stelsel:"Massa" ~canoniek:"kg" "kg" (Some (1, 1))
+let ton_massa : Ir_v0.Ast.eenheid = eenh ~stelsel:"Massa" ~canoniek:"kg" "t" (Some (1000, 1))
 
 (* THE PREDICATE. [same_quantity] is what [Translate.units_identical_ok] reads
    instead of record equality: the same canonical quantity at exact factor 1.
@@ -535,7 +525,7 @@ let () =
   check "kg@Gewicht and t@Massa are NOT one quantity (factor 1000 must be restated)"
     (not (Normalise.same_quantity kg_gewicht ton_massa));
   check "a different canonical name is never one quantity, whatever the system"
-    (not (Normalise.same_quantity kg_gewicht (eenh ~stelsel:"Massa" ~canoniek:"EUR" "EUR" (Some 1.0))));
+    (not (Normalise.same_quantity kg_gewicht (eenh ~stelsel:"Massa" ~canoniek:"EUR" "EUR" (Some (1, 1)))));
   (* proof obligation 3: units_convertible calls an UNNAMED unit (ch. 2.5's
      opaque product) compatible with everything; reading that as a licence to
      relabel would be a silent lie, so the naming demand refuses it. *)
@@ -563,7 +553,7 @@ let () =
       check ("cross-system finest unexpected fault: " ^ m) false);
   (* and the multiply-only invariant is NOT relaxed by crossing systems: a
      cross-system ratio that is not a positive integer keeps the loud refusal *)
-  let half_ton : Ir_v0.Ast.eenheid = eenh ~stelsel:"Massa" ~canoniek:"kg" "ht" (Some 1.5) in
+  let half_ton : Ir_v0.Ast.eenheid = eenh ~stelsel:"Massa" ~canoniek:"kg" "ht" (Some (3, 2)) in
   match Normalise.finest_of_units ~where [ kg_gewicht; half_ton ] with
   | _ -> check "a non-integer CROSS-SYSTEM ratio must fault, not silently pick" false
   | exception Uchar_ref.Value.Fault m ->
@@ -591,55 +581,55 @@ let kruis_doc ~mcanon ~tonf =
             "node": "Attribute",
             "name": "ruwgewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD",
+              "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
             }
           },
           {
             "node": "Attribute",
             "name": "ondergewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD",
+              "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
             }
           },
           {
             "node": "Attribute",
             "name": "spiegelgewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null}
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD",
+              "unit": {"node": "Unit", "abbreviation": "kg", "system": "Massa", "canonical": "@MCANON@", "factorToCanonical": {"num": 1, "den": 1}}
             }
           },
           {
             "node": "Attribute",
             "name": "somgewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD",
+              "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
             }
           },
           {
             "node": "Attribute",
             "name": "keurgewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD",
+              "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
             }
           }
         ],
@@ -651,36 +641,24 @@ let kruis_doc ~mcanon ~tonf =
     "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "Gewicht",
-        "eenheden": {
-          "kg": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
-        },
-        "aliassen": {
-          "kilogram": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null},
-          "kilogrammen": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
-        }
+        "node": "UnitSystem",
+        "name": "Gewicht",
+        "units": [
+          {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}, "spellings": ["kilogram", "kilogrammen"]}
+        ]
       },
       {
-        "node": "Eenheidstelsel",
-        "naam": "Massa",
-        "eenheden": {
-          "kg": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
-          "kgm": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
-          "t": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null}
-        },
-        "aliassen": {
-          "kilogram": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
-          "kilogrammen": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
-          "ton": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null},
-          "tonnen": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null}
-        }
+        "node": "UnitSystem",
+        "name": "Massa",
+        "units": [
+          {"node": "Unit", "abbreviation": "kg", "system": "Massa", "canonical": "@MCANON@", "factorToCanonical": {"num": 1, "den": 1}, "spellings": ["kgm", "kilogram", "kilogrammen"]},
+          {"node": "Unit", "abbreviation": "t", "system": "Massa", "canonical": "@MCANON@", "factorToCanonical": {"num": @TONF@, "den": 1}, "spellings": ["ton", "tonnen"]}
+        ]
       }
     ],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -706,21 +684,21 @@ let kruis_doc ~mcanon ~tonf =
             "node": "Literal",
             "waarde": "1",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null}
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {"node": "Unit", "abbreviation": "t", "system": "Massa", "canonical": "@MCANON@", "factorToCanonical": {"num": @TONF@, "den": 1}}
             },
             "bron": "1 t"
           },
           "maximum": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD",
+            "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
           },
           "bron": "het ruwgewicht van de Weging, met een minimum van 1 t"
         },
@@ -780,11 +758,11 @@ let kruis_doc ~mcanon ~tonf =
             "bron": "het spiegelgewicht van de Weging"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD",
+            "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
           },
           "bron": "het ruwgewicht van de Weging plus het spiegelgewicht van de Weging"
         },
@@ -824,11 +802,11 @@ let kruis_doc ~mcanon ~tonf =
             "node": "Literal",
             "waarde": "1000",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
             },
             "bron": "1000 kg"
           },
@@ -980,26 +958,26 @@ let onbekend_binair_doc =
         "attributes": [
           {
             "node": "Attribute", "name": "tarief",
-            "datatype": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null }
+            "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "ONBEPAALD" }
           },
           {
             "node": "Attribute", "name": "hoeveelheid",
-            "datatype": { "node": "Numeriek", "geheel": true,  "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }
+            "datatype": { "node": "Number", "whole": true,  "decimals": 0, "sign": "ONBEPAALD" }
           },
           {
             "node": "Attribute", "name": "basis",
-            "datatype": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null }
+            "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "ONBEPAALD" }
           },
           {
             "node": "Attribute", "name": "kosten",
-            "datatype": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null }
+            "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "ONBEPAALD" }
           }
         ],
         "characteristics": []
       }
     ],
     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
+    "timelines": [], "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -1081,7 +1059,7 @@ let () =
    here instead. A changed text or a changed behaviour fails this suite. *)
 
 let num0 =
-  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+  {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }|}
 
 (* the constructor lists are shared because a domain is spelled twice: at its
    declaration (the M1 Domain wrapper, whose datatype carries no self-name) and
@@ -1126,7 +1104,7 @@ let door_doc ~attributen ~parameters ~regel =
       { "node": "Domain", "name": "gebeurtenis",
         "datatype": { "node": "SumType", "constructors": |} ^ gebeurtenis_constructors
   ^ {| } } ],
-    "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+    "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [] },
   "rules": {
     "resolvedRegels": [ |} ^ regel
   ^ {| ],
@@ -1183,9 +1161,9 @@ let plist_init_doc =
   door_doc
     ~attributen:(attribuut "termijn" num0 ^ ", " ^ attribuut "meldpositie" meldstatus)
     ~parameters:
-      ({|{ "node": "Parameter", "naam": "meldreeks",
+      ({|{ "node": "Parameter", "name": "meldreeks",
           "datatype": { "node": "ListType", "element": |} ^ gebeurtenis
-     ^ {| }, "granulariteit": null }|})
+     ^ {| } }|})
     ~regel:
       ({|{ "node": "ResolvedRegel", "naam": "meldpositie van een meldplicht", "soort": "BEREKENING",
       "doel": |} ^ doel_meldpositie
@@ -1224,8 +1202,8 @@ let param_payload_doc =
   door_doc
     ~attributen:(attribuut "meldpositie" meldstatus)
     ~parameters:
-      ({|{ "node": "Parameter", "naam": "volle termijn",
-          "datatype": |} ^ num0 ^ {|, "granulariteit": null }|})
+      ({|{ "node": "Parameter", "name": "volle termijn",
+          "datatype": |} ^ num0 ^ {| }|})
     ~regel:
       ({|{ "node": "ResolvedRegel", "naam": "meldpositie van een meldplicht", "soort": "BEREKENING",
       "doel": |} ^ doel_meldpositie
@@ -1427,7 +1405,7 @@ let () =
    divisor into the program — `((T)/sn)` — with sn the duration operand's
    scale. Until L2 the counted unit came from the reference's wire `type` and
    the scale from the DECLARATION, so a sum-typed attribute annotated
-   Numeriek{dag} (resp. {uur}) walked in as a duration and grounded as
+   as a number in dag (resp. uur) walked in as a duration and grounded as
    `.../0`. Since L2 a reference carries no type (B13): the declaration is
    the one source, and the sum-typed duration meets the same fence.
 
@@ -1440,8 +1418,8 @@ let () =
    exception, no exit 2, no fault: a SILENT ref != clingo — worse than the
    crash the fold arm gave, because nothing at all reports it. *)
 
-let datum_t = {|{ "node": "DatumInDagen" }|}
-let datumtijd_t = {|{ "node": "DatumTijd" }|}
+let datum_t = {|{ "node": "Date", "precision": "day" }|}
+let datumtijd_t = {|{ "node": "Date", "precision": "millisecond" }|}
 
 (* day precision: <peildatum> + <meldpositie, declared sum-typed> *)
 let dagduur_lie_doc =
@@ -1536,7 +1514,7 @@ let () =
    them, so an over-narrowing fails here too and not only in gate 6. *)
 
 let jaar_num =
-  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+  {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }|}
 
 (* [vondst_attribuut] is the Vondst-side temporal attribute: spelling it
    "bewaartarief" shares the name with the Jutter's (the wrong-value form),
@@ -1569,7 +1547,7 @@ let totaal_doc ?(bron_rol = false) ~vondst_attribuut ~operand () =
     "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
     "timelines": [ { "node": "Tijdlijn", "naam": "het penningjaar", "variabelStartpunt": false,
       "granulariteit": "JAAR", "aantal": 1 } ],
-    "dayKinds": [], "dagsoortPerEenheid": {} },
+    "dayKinds": [] },
   "rules": {
     "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "bewaarlast van een vondst",
       "soort": "BEREKENING",
@@ -1800,20 +1778,25 @@ let () =
    calendar facts, which only the temporal route emits. *)
 
 let mnd_eenheid =
-  {|{ "node": "Eenheid", "afkorting": "mnd", "stelsel": "Bewaartijd", "canoniek": "mnd",
-      "factorNaarCanoniek": 1, "noemer": null }|}
+  {|{ "node": "Unit", "abbreviation": "mnd", "system": "Bewaartijd", "canonical": "mnd",
+      "factorToCanonical": { "num": 1, "den": 1 } }|}
 
 let jr_eenheid =
-  {|{ "node": "Eenheid", "afkorting": "jr", "stelsel": "Bewaartijd", "canoniek": "mnd",
-      "factorNaarCanoniek": 12, "noemer": null }|}
+  {|{ "node": "Unit", "abbreviation": "jr", "system": "Bewaartijd", "canonical": "mnd",
+      "factorToCanonical": { "num": 12, "den": 1 } }|}
 
+(* [noemer] and [eenheid] are a unit's JSON or "null", which the wire writes
+   by leaving the field out *)
 let eur noemer =
-  {|{ "node": "Eenheid", "afkorting": "EUR", "stelsel": "Munt", "canoniek": "EUR",
-      "factorNaarCanoniek": 1, "noemer": |} ^ noemer ^ {| }|}
+  {|{ "node": "Unit", "abbreviation": "EUR", "system": "Munt", "canonical": "EUR",
+      "factorToCanonical": { "num": 1, "den": 1 }|}
+  ^ (if noemer = "null" then "" else {|, "denominator": |} ^ noemer)
+  ^ {| }|}
 
 let euro_num eenheid =
-  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": |}
-  ^ eenheid ^ {| }|}
+  {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD"|}
+  ^ (if eenheid = "null" then "" else {|, "unit": |} ^ eenheid)
+  ^ {| }|}
 
 (* [operand_ot] is the operand's objecttype ANNOTATION: "Vondst" (the
    element type, temporal) or "Kist" (a third type declaring the same
@@ -1850,15 +1833,15 @@ let setvouw_doc ~kind ~operand_ot ~tarief_eenheid ~doel_eenheid =
             "meervoud": "vondsten", "meervoudig": true } ] } ],
     "parameters": [], "domains": [],
     "unitSystems": [
-      { "node": "Eenheidstelsel", "naam": "Munt",
-        "eenheden": { "EUR": |}
+      { "node": "UnitSystem", "name": "Munt",
+        "units": [ |}
   ^ eur "null"
-  ^ {| }, "aliassen": {} },
-      { "node": "Eenheidstelsel", "naam": "Bewaartijd",
-        "eenheden": { "mnd": |}
-  ^ mnd_eenheid ^ {|, "jr": |} ^ jr_eenheid
-  ^ {| }, "aliassen": {} } ],
-    "dimensions": [], "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+  ^ {| ] },
+      { "node": "UnitSystem", "name": "Bewaartijd",
+        "units": [ |}
+  ^ mnd_eenheid ^ {|, |} ^ jr_eenheid
+  ^ {| ] } ],
+    "dimensions": [], "timelines": [], "dayKinds": [] },
   "rules": {
     "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "bewaarlast van een jutter",
       "soort": "BEREKENING",
@@ -2312,7 +2295,7 @@ let clip_doc ~aangesteld_gran ~filter =
           { "node": "Characteristic", "name": "aangesteld", "kind": "BIJVOEGLIJK"|} ^ aangesteld_gran
   ^ {| } ] } ],
     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+    "timelines": [], "dayKinds": [] },
   "rules": {
     "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "dubbelwachtsom van een jutter",
       "soort": "BEREKENING",
@@ -2416,9 +2399,9 @@ let () =
 (* --- the datum-tijd ORDERING (S6a, 2026-09-06) ---------------------------
    Golden `jutterswet-meldstip` pins the ordering against a LITERAL, which is
    the shape a producer writes. Two neighbours of it cannot be corpus
-   documents and are pinned here: the LITERAL-FREE ordering (two DatumTijd
-   attributes, the document that used to fault `unscalable datatype` while
-   ref replayed it exactly), and the loud flanks — a mixed-precision pair and
+   documents and are pinned here: the LITERAL-FREE ordering (two Date
+   attributes at millisecond precision, the document that used to fault
+   `unscalable datatype` while ref replayed it exactly), and the loud flanks — a mixed-precision pair and
    datum-tijd equality — which WF-036 and the arm's own reason keep out of
    the golden zone. *)
 
@@ -2435,7 +2418,7 @@ let dt_doc ~attributen ~kenmerken ~regels =
       }
     ],
     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
+    "timelines": [], "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [ %s ],
@@ -2461,7 +2444,7 @@ let dag_attr naam =
 
 let dt_lit lex =
   Printf.sprintf
-    {|{ "node": "Literal", "waarde": "%s", "type": { "node": "DatumTijd" }, "bron": "%s" }|}
+    {|{ "node": "Literal", "waarde": "%s", "type": { "node": "Date", "precision": "millisecond" }, "bron": "%s" }|}
     lex lex
 
 let dt_regel ~op ~links ~rechts =
@@ -2486,10 +2469,10 @@ let dt_case ~attrs ~expected =
 
 let () =
   let paar_attributen =
-    attribuut "aanvangstip" {|{ "node": "DatumTijd" }|} ^ ", "
-    ^ attribuut "sluitingstip" {|{ "node": "DatumTijd" }|}
+    attribuut "aanvangstip" {|{ "node": "Date", "precision": "millisecond" }|} ^ ", "
+    ^ attribuut "sluitingstip" {|{ "node": "Date", "precision": "millisecond" }|}
   in
-  (* 1. the LITERAL-FREE ordering: two DatumTijd attributes under EERDER.
+  (* 1. the LITERAL-FREE ordering: two millisecond-precision Date attributes under EERDER.
      Before the pair-term ordering arm this document faulted
      `unscalable datatype in the ASP translation` while ref replayed it
      exactly (measured 2026-09-06) — a one-executor answer, which is no
@@ -2547,7 +2530,7 @@ let () =
      literal enters as a GROUND pair term, never as an absolute ms integer
      (which gringo would wrap at 32 bits, silently) *)
   let lit_ir =
-    dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "DatumTijd" }|})
+    dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "Date", "precision": "millisecond" }|})
       ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
       ~regels:
         (dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip")
@@ -2584,7 +2567,7 @@ let () =
   List.iter
     (fun (op, wat) ->
       let ir =
-        dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "DatumTijd" }|})
+        dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "Date", "precision": "millisecond" }|})
           ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
           ~regels:
             (dt_regel ~op ~links:(dt_attr "aanvangstip")
@@ -2604,8 +2587,8 @@ let () =
   let gemengd_ir =
     dt_doc
       ~attributen:
-        (attribuut "aanvangstip" {|{ "node": "DatumTijd" }|} ^ ", "
-        ^ attribuut "ijkdag" {|{ "node": "DatumInDagen" }|})
+        (attribuut "aanvangstip" {|{ "node": "Date", "precision": "millisecond" }|} ^ ", "
+        ^ attribuut "ijkdag" {|{ "node": "Date", "precision": "day" }|})
       ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
       ~regels:(dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip") ~rechts:(dag_attr "ijkdag"))
   in
@@ -2628,7 +2611,7 @@ let () =
      verifier is bypassed (WF-095 refuses the document); the arm must still
      refuse it by name rather than answer some other instant *)
   let stuk_ir =
-    dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "DatumTijd" }|})
+    dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "Date", "precision": "millisecond" }|})
       ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
       ~regels:
         (dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip")
@@ -2645,7 +2628,7 @@ let () =
      p5-datumtijd-lexeem; the snippet is now refused here, quoted, before
      any program is grounded (card datumtijd-lezers-versmalling). *)
   let snippet_ir =
-    dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "DatumTijd" }|})
+    dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "Date", "precision": "millisecond" }|})
       ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
       ~regels:
         (dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip")
@@ -2687,8 +2670,8 @@ let kenmerklevering_doc =
         "attributes": [
           {
             "node": "Attribute", "name": "bezetting",
-            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                          "teken": "ONBEPAALD", "eenheid": null }
+            "datatype": { "node": "Number", "whole": true, "decimals": 0,
+                          "sign": "ONBEPAALD" }
           }
         ],
         "characteristics": [
@@ -2699,7 +2682,7 @@ let kenmerklevering_doc =
       }
     ],
     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
+    "timelines": [], "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [], "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [],
@@ -2786,15 +2769,15 @@ let attribuutlevering_doc ~granulariteit =
         "attributes": [
           {
             "node": "Attribute", "name": "wachtvergoeding",
-            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                          "teken": "ONBEPAALD", "eenheid": null }%s
+            "datatype": { "node": "Number", "whole": true, "decimals": 0,
+                          "sign": "ONBEPAALD" }%s
           }
         ],
         "characteristics": []
       }
     ],
     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
+    "timelines": [], "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [], "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [],
@@ -2894,7 +2877,7 @@ let kenmerkgranulariteit_doc ~granulariteit =
       }
     ],
     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
+    "timelines": [], "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [], "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [],
@@ -2965,7 +2948,7 @@ let eigenaar_doc ?(navigeert = false) ~eigenaar () =
           { "node": "Characteristic", "name": "gekeurd", "kind": "BIJVOEGLIJK" } ] }
     ],
     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
+    "timelines": [], "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -3078,8 +3061,8 @@ let gastheer_doc ?(extra_type = "") ?(kustvak_eigen = vlak) ?(sein_eigen = vlak)
       { "node": "ObjectType", "name": "Kustvak", %s"animate": false, "plural": "Kustvakken",
         "attributes": [
           { "node": "Attribute", "name": "vakseinaantal",
-            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-              "teken": "ONBEPAALD", "eenheid": null } } ],
+            "datatype": { "node": "Number", "whole": true, "decimals": 0,
+              "sign": "ONBEPAALD" } } ],
         "characteristics": [ %s ] },
       { "node": "ObjectType", "name": "Post", "animate": false, "plural": "Posten",
         "attributes": [],
@@ -3099,7 +3082,7 @@ let gastheer_doc ?(extra_type = "") ?(kustvak_eigen = vlak) ?(sein_eigen = vlak)
         { "node": "Rol", "naam": "seinvak", "objecttypeNaam": "Kustvak", "meervoud": null, "meervoudig": false },
         { "node": "Rol", "naam": "vaksein", "objecttypeNaam": "Sein", "meervoud": "vakseinen", "meervoudig": true } ] } ],
     "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
-    "dayKinds": [], "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -3110,7 +3093,7 @@ let gastheer_doc ?(extra_type = "") ?(kustvak_eigen = vlak) ?(sein_eigen = vlak)
             { "node": "AttribuutRef", "attribuut": "vakseinen", "objecttype": "Kustvak",
               "bron": "vakseinen van het kustvak" } ],
           "elementObjecttype": "Sein", "leegwaarde": null, "filter": null, "dimensieSelectie": null,
-          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null },
+          "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "NIET_NEGATIEF" },
           "bron": "het aantal vakseinen van het kustvak", "granulariteit": null,
           "bronRol": { "node": "RolBinding", "feittype": "vakbeseining", "rol": "vaksein" } },
         "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
@@ -3293,9 +3276,9 @@ let gp_doc ?(jaar = "true") ?(niet = "false") ?(negatie = "false")
       { "node": "ObjectType", "name": "Schuit", "animate": false, "plural": "Schuiten",
         "attributes": [
           { "node": "Attribute", "name": "lengte",
-            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null } },
+            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" } },
           { "node": "Attribute", "name": "toeslag",
-            "datatype": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null } } ],
+            "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "ONBEPAALD" } } ],
         "characteristics": [] }
     ],
     "factTypes": [
@@ -3305,7 +3288,7 @@ let gp_doc ?(jaar = "true") ?(niet = "false") ?(negatie = "false")
           { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true }
         ] } ],
     "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
-    "dayKinds": [], "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -3369,15 +3352,15 @@ let gp_eigen_doc =
       { "node": "ObjectType", "name": "Werf", "animate": false, "plural": "Werven",
         "attributes": [
           { "node": "Attribute", "name": "opslag",
-            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null } },
+            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" } },
           { "node": "Attribute", "name": "aftrek",
-            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null } } ],
+            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" } } ],
         "characteristics": [
           { "node": "Characteristic", "name": "bedrijvig", "kind": "BIJVOEGLIJK",
             "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } } ] }
     ],
     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
+    "timelines": [], "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -3385,7 +3368,7 @@ let gp_eigen_doc =
         "doel": { "node": "AttribuutRef", "attribuut": "opslag", "objecttype": "Werf",
           "bron": "De opslag van een Werf" },
         "waarde": { "node": "Literal", "waarde": "7",
-          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+          "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" },
           "bron": "7" },
         "voorwaarde": { "node": "Kenmerk", "kenmerk": "bedrijvig", "negatie": false, "eigenaar": null,
           "periode": { "node": "GeheelPeriode", "jaar": true, "niet": false },
@@ -3395,7 +3378,7 @@ let gp_eigen_doc =
         "doel": { "node": "AttribuutRef", "attribuut": "aftrek", "objecttype": "Werf",
           "bron": "De aftrek van een Werf" },
         "waarde": { "node": "Literal", "waarde": "7",
-          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+          "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" },
           "bron": "7" },
         "voorwaarde": { "node": "Kenmerk", "kenmerk": "bedrijvig", "negatie": false, "eigenaar": null,
           "periode": { "node": "GeheelPeriode", "jaar": true, "niet": true },
@@ -3513,11 +3496,10 @@ let bp_doc =
             "node": "Attribute",
             "name": "laagste vondstgewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -3541,11 +3523,10 @@ let bp_doc =
             "node": "Attribute",
             "name": "gewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -3601,8 +3582,7 @@ let bp_doc =
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -3632,11 +3612,10 @@ let bp_doc =
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "bron": "de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
           "granulariteit": null,
@@ -3856,8 +3835,8 @@ let () =
               "links": { "node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst",
                          "bron": "zijn gewicht" },
               "rechts": { "node": "Literal", "waarde": "4.00",
-                          "type": { "node": "Numeriek", "geheel": false, "decimalen": 2,
-                                    "teken": "ONBEPAALD", "eenheid": null }, "bron": "4,00" },
+                          "type": { "node": "Number", "whole": false, "decimals": 2,
+                                    "sign": "ONBEPAALD" }, "bron": "4,00" },
               "periode": null, "bron": "zijn gewicht groter is dan 4,00" }|})
     ~case_text:bp_case ~needle:"a count's range is one step, spelled bronRol (WF-102)"
 
@@ -3892,11 +3871,10 @@ let bp_toone_doc =
             "node": "Attribute",
             "name": "laagste vondstgewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -3920,11 +3898,10 @@ let bp_toone_doc =
             "node": "Attribute",
             "name": "gewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -4001,8 +3978,7 @@ let bp_toone_doc =
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -4032,11 +4008,10 @@ let bp_toone_doc =
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "bron": "de minimale waarde van het gewicht van alle vondsten van de boot van de Jutter",
           "granulariteit": null,
@@ -4128,7 +4103,7 @@ let () =
    fails. *)
 
 let kv_num0 =
-  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+  {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }|}
 
 let kv_objecttypen =
   {|{ "node": "ObjectType", "name": "Werf", "animate": false, "plural": "Werven",
@@ -4186,7 +4161,7 @@ let kv_doc ?(kwantor = "ALLE") ?drempel ?(toets = kv_geheel ()) ?(filter = "null
     "objectTypes": [ %s ],
     "factTypes": %s,
     "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
-    "dayKinds": [], "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -4218,7 +4193,7 @@ let gpv_doc ?(toets = kv_geheel ()) () =
     "objectTypes": [ %s ],
     "factTypes": %s,
     "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
-    "dayKinds": [], "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -4693,12 +4668,10 @@ let () =
    groen maken. *)
 
 let tak_ob =
-  {|{ "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD",
-      "eenheid": null }|}
+  {|{ "node": "Number", "whole": false, "decimals": 2, "sign": "ONBEPAALD" }|}
 
 let tak_nn =
-  {|{ "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "NIET_NEGATIEF",
-      "eenheid": null }|}
+  {|{ "node": "Number", "whole": false, "decimals": 2, "sign": "NIET_NEGATIEF" }|}
 
 let tak_attr naam =
   Printf.sprintf
@@ -4744,8 +4717,7 @@ let tak_doc ~attributen ~parameters ~waarde =
     ],
     "factTypes": [],
     "parameters": [ %s ],
-    "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -4765,8 +4737,7 @@ let tak_doc ~attributen ~parameters ~waarde =
     attributen parameters waarde
 
 let tak_param naam =
-  Printf.sprintf {|{ "node": "Parameter", "naam": "%s", "datatype": %s,
-                    "granulariteit": null }|} naam tak_ob
+  Printf.sprintf {|{ "node": "Parameter", "name": "%s", "datatype": %s }|} naam tak_ob
 
 (* de deling waarvan §6.5 de lege deler meldt en de numerieke nul-deler
    afbreekt — in de ANDERS-arm van de knoop hieronder *)
@@ -5051,7 +5022,7 @@ let () =
 
 let cb_num ?(geheel = true) ?(dec = 0) ?(teken = "NIET_NEGATIEF") () =
   Printf.sprintf
-    {|{ "node": "Numeriek", "geheel": %b, "decimalen": %d, "teken": "%s", "eenheid": null }|}
+    {|{ "node": "Number", "whole": %b, "decimals": %d, "sign": "%s" }|}
     geheel dec teken
 
 let cb_tel = cb_num ()
@@ -5086,12 +5057,10 @@ let cb_doc ~drempel ~lambda_body =
         "characteristics": [] } ],
     "factTypes": [],
     "parameters": [
-      { "node": "Parameter", "naam": "grondslag", "datatype": %s,
-        "granulariteit": null },
-      { "node": "Parameter", "naam": "kindertallen",
-        "datatype": { "node": "ListType", "element": %s }, "granulariteit": null } ],
-    "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [],
-    "dagsoortPerEenheid": {} },
+      { "node": "Parameter", "name": "grondslag", "datatype": %s },
+      { "node": "Parameter", "name": "kindertallen",
+        "datatype": { "node": "ListType", "element": %s } } ],
+    "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [] },
   "rules": {
     "resolvedRegels": [
       { "node": "ResolvedRegel", "naam": "delertotaal van een jutter", "soort": "BEREKENING",
@@ -5772,9 +5741,8 @@ let tak_vouw =
     ~parameters:
       (tak_param "drempel" ^ ", " ^ tak_param "basisheffing"
       ^ Printf.sprintf
-          {|, { "node": "Parameter", "naam": "reeks",
-                "datatype": { "node": "ListType", "element": %s },
-                "granulariteit": null }|} tak_ob)
+          {|, { "node": "Parameter", "name": "reeks",
+                "datatype": { "node": "ListType", "element": %s } }|} tak_ob)
     ~waarde:
       (tak_let ~typ:tak_ob ~binder:"k" ~value:(tak_attr "inkomen")
          ~body:
@@ -5913,11 +5881,11 @@ let venster_doc ~kind ~attribuut ~doel =
     "objectTypes": [
       { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
         "attributes": [
-          { "node": "Attribute", "name": "%s", "datatype": { "node": "DatumInDagen" } } ],
+          { "node": "Attribute", "name": "%s", "datatype": { "node": "Date", "precision": "day" } } ],
         "characteristics": [] },
       { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
         "attributes": [
-          { "node": "Attribute", "name": "vondstdatum", "datatype": { "node": "DatumInDagen" },
+          { "node": "Attribute", "name": "vondstdatum", "datatype": { "node": "Date", "precision": "day" },
             "plural": "vondstdata" } ],
         "characteristics": [] } ],
     "factTypes": [
@@ -5929,7 +5897,7 @@ let venster_doc ~kind ~attribuut ~doel =
           { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
             "meervoud": "vondsten", "meervoudig": true } ] } ],
     "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
-    "dayKinds": [], "dagsoortPerEenheid": {} },
+    "dayKinds": [] },
   "rules": {
     "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "%s van een jutter",
       "soort": "BEREKENING",
@@ -5939,7 +5907,7 @@ let venster_doc ~kind ~attribuut ~doel =
         { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Vondst",
           "bron": "de %s van alle vondsten van de Jutter" } ],
         "elementObjecttype": "Vondst", "leegwaarde": null, "filter": null,
-        "dimensieSelectie": null, "type": { "node": "DatumInDagen" },
+        "dimensieSelectie": null, "type": { "node": "Date", "precision": "day" },
         "bron": "de vouw van de %s van alle vondsten van de Jutter",
         "granulariteit": null,
         "bronRol": { "node": "RolBinding", "feittype": "vondstaanmelding", "rol": "vondst" } },
@@ -6173,15 +6141,15 @@ let onopgelost_voorwaarde_doc =
         "attributes": [
           {
             "node": "Attribute", "name": "waardering",
-            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                          "teken": "ONBEPAALD", "eenheid": null }
+            "datatype": { "node": "Number", "whole": true, "decimals": 0,
+                          "sign": "ONBEPAALD" }
           }
         ],
         "characteristics": []
       }
     ],
     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
+    "timelines": [], "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -6189,8 +6157,8 @@ let onopgelost_voorwaarde_doc =
         "doel": { "node": "AttribuutRef", "attribuut": "waardering", "objecttype": "Vondst",
                   "bron": "De waardering van een Vondst" },
         "waarde": { "node": "Literal", "waarde": "1",
-                    "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                              "teken": "ONBEPAALD", "eenheid": null }, "bron": "1" },
+                    "type": { "node": "Number", "whole": true, "decimals": 0,
+                              "sign": "ONBEPAALD" }, "bron": "1" },
         "voorwaarde": { "node": "Onopgelost",
                         "bron": "de taxatie volgens het niet-gemodelleerde protocol" },
         "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
@@ -6258,8 +6226,7 @@ let () =
    invaller. *)
 
 let som_num0 =
-  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
-      "eenheid": null }|}
+  {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }|}
 
 let som_operand naam =
   Printf.sprintf
@@ -6296,7 +6263,7 @@ let gelijste_vouw_doc ?(dimensies = "") ?(attribuut_dimensies = "")
           { "node": "Attribute", "name": "vangstsom", "datatype": %s } ],
         "characteristics": [] } ],
     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [ %s ],
-    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+    "timelines": [], "dayKinds": [] },
   "rules": {
     "resolvedRegels": [
       { "node": "ResolvedRegel", "naam": "vangstsom van een vangst", "soort": "BEREKENING",
@@ -6371,13 +6338,14 @@ let () =
    lives here — the composite arms no golden spells, the §9.8 nested
    composition, and the four refusals a green corpus cannot hold. *)
 
-let dk_doc ?(registry = {|"nevelsdagen": "nevelsdag"|}) ?(dagsoorten = {|"nevelsdag"|})
-    ?(dagsoorten_defs = "") ?(voorwaarde = "") ?(datum_type = {|{ "node": "DatumInDagen" }|})
+(* [dagsoorten] is the DayKind list; the default day kind carries the
+   plural the duration unit spells *)
+let dk_doc ?(dagsoorten = {|{ "node": "DayKind", "name": "nevelsdag", "plural": "nevelsdagen" }|})
+    ?(dagsoorten_defs = "") ?(voorwaarde = "") ?(datum_type = {|{ "node": "Date", "precision": "day" }|})
     ?doel_type ?(parameters = "") ~waarde () =
   let doel_type = match doel_type with Some t -> t | None -> datum_type in
   let dk_unit =
-    {|{ "node": "Eenheid", "afkorting": "nevelsdagen", "stelsel": null,
-        "canoniek": "nevelsdagen", "factorNaarCanoniek": 1, "noemer": null }|}
+    {|{ "node": "Unit", "abbreviation": "nevelsdagen", "canonical": "nevelsdagen", "factorToCanonical": { "num": 1, "den": 1 } }|}
   in
   let defs =
     if dagsoorten_defs <> "" then dagsoorten_defs
@@ -6396,14 +6364,13 @@ let dk_doc ?(registry = {|"nevelsdagen": "nevelsdag"|}) ?(dagsoorten = {|"nevels
         "attributes": [
           { "node": "Attribute", "name": "peildatum", "datatype": %s },
           { "node": "Attribute", "name": "termijn",
-            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": %s } },
+            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD", "unit": %s } },
           { "node": "Attribute", "name": "uitkomst", "datatype": %s } ],
         "characteristics": [] }
     ],
     "factTypes": [], "parameters": [ %s ], "domains": [], "unitSystems": [], "dimensions": [],
     "timelines": [],
-    "dayKinds": [ %s ],
-    "dagsoortPerEenheid": { %s }
+    "dayKinds": [ %s ]
   },
   "rules": {
     "resolvedRegels": [
@@ -6421,13 +6388,17 @@ let dk_doc ?(registry = {|"nevelsdagen": "nevelsdag"|}) ?(dagsoorten = {|"nevels
   "diagnostics": []
 }
 |}
-    datum_type dk_unit doel_type parameters dagsoorten registry waarde defs
+    datum_type dk_unit doel_type parameters dagsoorten waarde defs
+
+(* two day kinds, the second without a plural: only nevelsdag is a unit *)
+let twee_dagsoorten =
+  {|{ "node": "DayKind", "name": "nevelsdag", "plural": "nevelsdagen" }, { "node": "DayKind", "name": "mistdag" }|}
 
 (* the wire shape of "de dag", of a date-part extractor over it, and of a
    comparison of that extractor against a whole literal *)
-let de_dag = {|{ "node": "Constante", "naam": "de dag", "type": { "node": "DatumInDagen" }, "bron": "de dag" }|}
+let de_dag = {|{ "node": "Constante", "naam": "de dag", "type": { "node": "Date", "precision": "day" }, "bron": "de dag" }|}
 
-let heel = {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+let heel = {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }|}
 
 let deel_uit kind =
   Printf.sprintf
@@ -6458,7 +6429,7 @@ let termijn =
   {|{ "node": "AttribuutRef", "attribuut": "termijn", "objecttype": "Baken",
       "bron": "zijn termijn" }|}
 
-let stap ?(typ = {|{ "node": "DatumInDagen" }|}) () =
+let stap ?(typ = {|{ "node": "Date", "precision": "day" }|}) () =
   Printf.sprintf
     {|{ "node": "Binair", "op": "PLUS", "links": %s, "rechts": %s, "type": %s,
         "bron": "zijn peildatum plus zijn termijn" }|}
@@ -6520,7 +6491,7 @@ let () =
       dk_translates
         ~name:("geneste dagsoortverwijzing " ^ naam)
         ~ir:
-          (dk_doc ~dagsoorten:{|"nevelsdag", "mistdag"|} ~dagsoorten_defs:(twee_defs neg)
+          (dk_doc ~dagsoorten:twee_dagsoorten ~dagsoorten_defs:(twee_defs neg)
              ~waarde:(stap ()) ()))
     [ ("positief", false); ("ontkend", true) ];
   (* the four refusals, each named rather than fallen through to *)
@@ -6530,7 +6501,7 @@ let () =
          ~waarde:
            (Printf.sprintf
               {|{ "node": "Binair", "op": "PLUS", "links": %s, "rechts": %s,
-                  "type": { "node": "DatumInDagen" }, "bron": "de dag plus zijn termijn" }|}
+                  "type": { "node": "Date", "precision": "day" }, "bron": "de dag plus zijn termijn" }|}
               de_dag termijn)
          ())
     ~case_text:dk_case ~needle:"the bound day of a day-kind definition";
@@ -6546,7 +6517,9 @@ let () =
          ~waarde:(stap ()) ())
     ~case_text:dk_case ~needle:"day-kind reference cycle";
   faults_with ~name:"eenheidsspelling die geen dagsoort en geen kalendereenheid is"
-    ~ir:(dk_doc ~registry:"" ~voorwaarde:(deel_gelijk "DAG_UIT" "1") ~waarde:(stap ()) ())
+    ~ir:
+      (dk_doc ~dagsoorten:{|{ "node": "DayKind", "name": "nevelsdag" }|}
+         ~voorwaarde:(deel_gelijk "DAG_UIT" "1") ~waarde:(stap ()) ())
     ~case_text:dk_case
     ~needle:"neither a recognised time unit nor a declared day kind";
   faults_with ~name:"geregistreerde eenheid zonder dagsoortdefinitie (WF-031)"
@@ -6563,8 +6536,8 @@ let () =
 |}
   in
   let irf = write_temp ".ir.json"
-      (dk_doc ~datum_type:{|{ "node": "DatumTijd" }|} ~voorwaarde:(deel_gelijk "DAG_UIT" "1")
-         ~waarde:(stap ~typ:{|{ "node": "DatumTijd" }|} ()) ())
+      (dk_doc ~datum_type:{|{ "node": "Date", "precision": "millisecond" }|} ~voorwaarde:(deel_gelijk "DAG_UIT" "1")
+         ~waarde:(stap ~typ:{|{ "node": "Date", "precision": "millisecond" }|} ()) ())
   in
   let casef = write_temp ".case.json" dt_case in
   let doc = Ir_v0.Loader.load_file irf in
@@ -6578,20 +6551,18 @@ let () =
   (* the §6.10 twin stays refused by name, in ref's words *)
   faults_with ~name:"dagsoorttijdsduur over datum-tijd-operanden blijft een erkende flank"
     ~ir:
-      (dk_doc ~datum_type:{|{ "node": "DatumTijd" }|}
+      (dk_doc ~datum_type:{|{ "node": "Date", "precision": "millisecond" }|}
          ~doel_type:
-           {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
-               "eenheid": { "node": "Eenheid", "afkorting": "nevelsdagen", "stelsel": null,
-                            "canoniek": "nevelsdagen", "factorNaarCanoniek": 1, "noemer": null } }|}
+           {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD",
+               "unit": { "node": "Unit", "abbreviation": "nevelsdagen", "canonical": "nevelsdagen", "factorToCanonical": { "num": 1, "den": 1 } } }|}
          ~voorwaarde:(deel_gelijk "DAG_UIT" "1")
          ~waarde:
            (Printf.sprintf
               {|{ "node": "Functie", "kind": "TIJDSDUUR",
                   "argumenten": [ %s, %s ], "elementObjecttype": null, "leegwaarde": null,
                   "filter": null, "dimensieSelectie": null,
-                  "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
-                            "eenheid": { "node": "Eenheid", "afkorting": "nevelsdagen", "stelsel": null,
-                                         "canoniek": "nevelsdagen", "factorNaarCanoniek": 1, "noemer": null } },
+                  "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD",
+                            "unit": { "node": "Unit", "abbreviation": "nevelsdagen", "canonical": "nevelsdagen", "factorToCanonical": { "num": 1, "den": 1 } } },
                   "bron": "de tijdsduur", "granulariteit": null }|}
               (peildatum ())
               (peildatum ()))
@@ -6613,8 +6584,8 @@ let () =
                   "periode": null, "bron": "de dag later is dan de grensdatum" }|}
               de_dag)
          ~parameters:
-           {|{ "node": "Parameter", "naam": "grensdatum",
-               "datatype": { "node": "DatumInDagen" }, "granulariteit": null }|}
+           {|{ "node": "Parameter", "name": "grensdatum",
+               "datatype": { "node": "Date", "precision": "day" } }|}
          ~waarde:(stap ()) ())
     ~case_text:dk_case ~needle:"is unbound in this case";
   (* F4/F5: the two fences say ONE thing each. Every reach rule this backend
@@ -6652,13 +6623,13 @@ let () =
      route, refused here and in ref in the same words *)
   faults_with ~name:"geneste dagsoorttoets op een andere dag dan de gebonden dag"
     ~ir:
-      (dk_doc ~dagsoorten:{|"nevelsdag", "mistdag"|}
+      (dk_doc ~dagsoorten:twee_dagsoorten
          ~dagsoorten_defs:
            (Printf.sprintf
               {|{ "node": "ResolvedDagsoort", "naam": "nevelsdag",
                   "voorwaarde": { "node": "Predicaat", "soort": "DAGSOORT",
                                   "operand": { "node": "Literal", "waarde": "2026-03-15",
-                                               "type": { "node": "DatumInDagen" }, "bron": "15-03-2026" },
+                                               "type": { "node": "Date", "precision": "day" }, "bron": "15-03-2026" },
                                   "dagsoort": "mistdag", "negatie": false, "cijfers": 0,
                                   "periode": null, "bron": "15-03-2026 een mistdag is" },
                   "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } },
@@ -6709,8 +6680,8 @@ let aantalgevulde_doc ~vondst_granulariteit =
       { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
         "attributes": [
           { "node": "Attribute", "name": "gewicht",
-            "datatype": { "node": "Numeriek", "geheel": false, "decimalen": 2,
-                          "teken": "ONBEPAALD", "eenheid": null }|} ^ vondst_granulariteit
+            "datatype": { "node": "Number", "whole": false, "decimals": 2,
+                          "sign": "ONBEPAALD" }|} ^ vondst_granulariteit
   ^ {| } ],
         "characteristics": [] } ],
     "factTypes": [
@@ -6721,7 +6692,7 @@ let aantalgevulde_doc ~vondst_granulariteit =
           { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
             "meervoud": "vondsten", "meervoudig": true } ] } ],
     "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
-    "dayKinds": [], "dagsoortPerEenheid": {} },
+    "dayKinds": [] },
   "rules": {
     "resolvedRegels": [
       { "node": "ResolvedRegel", "naam": "aantal gevulde vondstgewichten", "soort": "BEREKENING",
@@ -6844,7 +6815,7 @@ let tegenpartij_doc ?(counterpart = "Strandjutter") () =
         { "node": "Rol", "naam": "toegewezen wachtpost", "objecttypeNaam": "Wachtpost",
           "meervoud": null, "meervoudig": false } ] } ],
     "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
-    "dayKinds": [], "dagsoortPerEenheid": {} },
+    "dayKinds": [] },
   "rules": {
     "resolvedRegels": [ |} ^ tegenpartij_regel ~naam:"bemand" ()
   ^ {|, |} ^ tegenpartij_regel ~naam:"strandbemand" ~counterpart ()
@@ -6998,9 +6969,9 @@ let gemiddelde_kg_doc =
       { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
         "attributes": [
           { "node": "Attribute", "name": "gewicht",
-            "datatype": { "node": "Numeriek", "geheel": false, "decimalen": 2,
-                "teken": "ONBEPAALD", "eenheid": { "node": "Eenheid", "afkorting": "kg",
-                  "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null } } } ],
+            "datatype": { "node": "Number", "whole": false, "decimals": 2,
+                "sign": "ONBEPAALD", "unit": { "node": "Unit", "abbreviation": "kg",
+                  "system": "Gewicht", "canonical": "kg", "factorToCanonical": { "num": 1, "den": 1 } } } } ],
         "characteristics": [] } ],
     "factTypes": [
       { "node": "Feittype", "naam": "vondstaanmelding",
@@ -7011,10 +6982,10 @@ let gemiddelde_kg_doc =
             "meervoud": "vondsten", "meervoudig": true } ] } ],
     "parameters": [], "domains": [],
     "unitSystems": [
-      { "node": "Eenheidstelsel", "naam": "Gewicht",
-        "eenheden": { "kg": { "node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht",
-          "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null } }, "aliassen": {} } ],
-    "dimensions": [], "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+      { "node": "UnitSystem", "name": "Gewicht",
+        "units": [ { "node": "Unit", "abbreviation": "kg", "system": "Gewicht",
+          "canonical": "kg", "factorToCanonical": { "num": 1, "den": 1 } } ] } ],
+    "dimensions": [], "timelines": [], "dayKinds": [] },
   "rules": {
     "resolvedRegels": [
       { "node": "ResolvedRegel", "naam": "aantal gewogen vondsten", "soort": "BEREKENING",
@@ -7109,8 +7080,7 @@ let venster_doc ~attributen ~parameters ~regel =
     "factTypes": [],
     "parameters": [ |} ^ parameters
   ^ {| ],
-    "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [],
-    "dagsoortPerEenheid": {} },
+    "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [] },
   "rules": {
     "resolvedRegels": [ |} ^ regel
   ^ {| ],
@@ -7133,7 +7103,7 @@ let venster_case =
 |}
 
 let num_geheel =
-  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+  {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }|}
 
 let () =
   let doel =
@@ -7156,8 +7126,8 @@ let () =
   let ir =
     venster_doc ~attributen:(attribuut "vondstpremie" num_geheel)
       ~parameters:
-        {|{ "node": "Parameter", "naam": "peildatum",
-            "datatype": { "node": "DatumInDagen" }, "granulariteit": null }|}
+        {|{ "node": "Parameter", "name": "peildatum",
+            "datatype": { "node": "Date", "precision": "day" } }|}
       ~regel:(regel parametergrens)
   in
   faults_with ~name:"ch3.10 een parametergrens is de uitgestelde grensvorm" ~ir
@@ -7193,7 +7163,7 @@ let clip_doc voorwaarde =
           { "node": "Characteristic", "name": "actief", "kind": "BIJVOEGLIJK",
             "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } } ] } ],
     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+    "timelines": [], "dayKinds": [] },
   "rules": {
     "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "vergoeding van een vondst",
         "soort": "GELIJKSTELLING",
@@ -7220,9 +7190,9 @@ let clip_doc voorwaarde =
 let clip_venster =
   {|{ "node": "Periode",
         "vanaf": { "node": "Literal", "waarde": "2025-03-15",
-                   "type": { "node": "DatumInDagen" }, "bron": "15 maart 2025" },
+                   "type": { "node": "Date", "precision": "day" }, "bron": "15 maart 2025" },
         "tot": { "node": "Literal", "waarde": "2025-06-30",
-                 "type": { "node": "DatumInDagen" }, "bron": "30 juni 2025" },
+                 "type": { "node": "Date", "precision": "day" }, "bron": "30 juni 2025" },
         "totInclusief": true, "bron": "van 15 maart 2025 tot en met 30 juni 2025" }|}
 
 let clip_case =
@@ -7292,7 +7262,7 @@ let () =
   let vanaf_2025 =
     {|{ "node": "Periode",
         "vanaf": { "node": "Literal", "waarde": "2025-01-01",
-                   "type": { "node": "DatumInDagen" }, "bron": "1 januari 2025" },
+                   "type": { "node": "Date", "precision": "day" }, "bron": "1 januari 2025" },
         "tot": null, "totInclusief": false, "bron": "vanaf 1 januari 2025" }|}
   in
   ref_matches ~name:"ch3.10 een niet-exacte bucket buiten het venster wordt weggeknipt"
@@ -7321,7 +7291,7 @@ let () =
           { "node": "Characteristic", "name": "geborgen", "kind": "BIJVOEGLIJK",
             "timeline": { "node": "TimelineFacet", "granularity": "JAAR", "count": 1 } } ] } ],
     "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
-    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+    "timelines": [], "dayKinds": [] },
   "rules": {
     "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "berging van een vondst",
         "soort": "KENMERKTOEKENNING",
@@ -7363,7 +7333,7 @@ let unie_body ~waarde =
       { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
         "attributes": [
           { "node": "Attribute", "name": "aantal strandvondsten",
-            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null } } ],
+            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "NIET_NEGATIEF" } } ],
         "characteristics": [] },
       { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
         "attributes": [], "characteristics": [] } ],
@@ -7375,7 +7345,7 @@ let unie_body ~waarde =
         "rollen": [ { "node": "Rol", "naam": "berger", "objecttypeNaam": "Jutter", "meervoud": null, "meervoudig": false },
                     { "node": "Rol", "naam": "geborgen vondst", "objecttypeNaam": "Vondst", "meervoud": "geborgen vondsten", "meervoudig": true } ] } ],
     "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
-    "dayKinds": [], "dagsoortPerEenheid": {} },
+    "dayKinds": [] },
   "rules": {
     "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "aantal strandvondsten", "soort": "BEREKENING",
       "doel": { "node": "AttribuutRef", "attribuut": "aantal strandvondsten", "objecttype": "Jutter",
@@ -7398,7 +7368,7 @@ let telling_over unie =
   Printf.sprintf
     {|{ "node": "Functie", "kind": "AANTAL", "argumenten": [ %s ],
       "elementObjecttype": null, "leegwaarde": null, "filter": null, "dimensieSelectie": null,
-      "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null },
+      "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "NIET_NEGATIEF" },
       "bron": "het aantal ...", "granulariteit": null }|}
     unie
 
@@ -7508,7 +7478,7 @@ let () =
    Navigated operand (het tarief van de werf): S1, S2 on W1 (tarief 312), S3
    without a werf, S4 on W2 (no tarief) — filled {S1,S2}; an absent werf
    reads leeg (ch. 1.2). *)
-let leeg_num = {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+let leeg_num = {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }|}
 
 let leeg_doc_vol ~parameters ~consistenties ~werf_attrs ~regels =
   let lijf = String.concat ", " (List.map snd regels) in
@@ -7529,7 +7499,7 @@ let leeg_doc_vol ~parameters ~consistenties ~werf_attrs ~regels =
           { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten",
             "meervoudig": true } ] } ],
     "parameters": [ |} ^ parameters ^ {| ], "domains": [], "unitSystems": [], "dimensions": [],
-    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+    "timelines": [], "dayKinds": [] },
   "rules": {
     "resolvedRegels": [ |} ^ lijf ^ {| ],
     "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [],
@@ -7859,8 +7829,8 @@ let () =
   let param_doc ~negatie =
     leeg_doc_vol ~consistenties:"" ~werf_attrs:""
       ~parameters:
-        ({|{ "node": "Parameter", "naam": "drempel", "datatype": |} ^ leeg_num
-        ^ {|, "granulariteit": null }|})
+        ({|{ "node": "Parameter", "name": "drempel", "datatype": |} ^ leeg_num
+        ^ {| }|})
       ~regels:
         [ leeg_regel ~naam:"meldpremie" ~ot:"Schuit" ~doel:"meldpremie" ~waarde:"40"
             (leeg_pred ~soort:"LEEG" ~negatie
@@ -7888,18 +7858,18 @@ let () =
   (* the recursive creation group *)
   let r_ir ~rsoort ~csoort ~cneg =
     {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Wachter","animate":true,
-"plural":"Wachters","attributes":[{"node":"Attribute","name":"rang","datatype":{"node":"Numeriek",
-"geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null}},{"node":"Attribute","name":"opvolgerrang",
-"datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null}},
-{"node":"Attribute","name":"merk","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,
-"teken":"ONBEPAALD","eenheid":null}}],"characteristics":[]}],"factTypes":[{"node":"Feittype",
+"plural":"Wachters","attributes":[{"node":"Attribute","name":"rang","datatype":{"node":"Number",
+"whole":true,"decimals":0,"sign":"ONBEPAALD"}},{"node":"Attribute","name":"opvolgerrang",
+"datatype":{"node":"Number","whole":true,"decimals":0,"sign":"ONBEPAALD"}},
+{"node":"Attribute","name":"merk","datatype":{"node":"Number","whole":true,"decimals":0,
+"sign":"ONBEPAALD"}}],"characteristics":[]}],"factTypes":[{"node":"Feittype",
 "naam":"opvolging","wederkerig":false,"rollen":[{"node":"Rol","naam":"voorganger","objecttypeNaam":"Wachter",
 "meervoud":null,"meervoudig":false},{"node":"Rol","naam":"opvolger","objecttypeNaam":"Wachter",
 "meervoud":"opvolgers","meervoudig":false}]}],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],
-"timelines":[],"dayKinds":[],"dagsoortPerEenheid":{}},"rules":{"resolvedRegels":[{"node":"ResolvedRegel",
+"timelines":[],"dayKinds":[]},"rules":{"resolvedRegels":[{"node":"ResolvedRegel",
 "naam":"merk van een wachter","soort":"BEREKENING",
 "doel":{"node":"AttribuutRef","attribuut":"merk","objecttype":"Wachter","bron":"merk"},"waarde":{"node":"Literal","waarde":"1",
-"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"1"},
+"type":{"node":"Number","whole":true,"decimals":0,"sign":"ONBEPAALD"},"bron":"1"},
 "voorwaarde":{"node":"Predicaat","soort":"@RSOORT@","operand":{"node":"AttribuutRef","attribuut":"rang",
 "objecttype":"Wachter","bron":"rang",
 "navigatieBindingen":[{"node":"RolBinding","feittype":"opvolging","rol":"opvolger"}]},"dagsoort":null,
@@ -7908,12 +7878,12 @@ let () =
 "nieuwType":"Wachter","subject":"Wachter","toekenningen":[{"node":"Toekenning","attribuut":"rang",
 "waarde":{"node":"Binair","op":"PLUS","links":{"node":"AttribuutRef","attribuut":"rang","objecttype":"Wachter",
 "bron":"de rang van de Wachter"},
-"rechts":{"node":"Literal","waarde":"1","type":{"node":"Numeriek","geheel":true,"decimalen":0,
-"teken":"ONBEPAALD","eenheid":null},"bron":"1"},"type":{"node":"Numeriek","geheel":true,"decimalen":0,
-"teken":"ONBEPAALD","eenheid":null},"bron":"de rang van de Wachter plus 1"},"kenmerk":false}],
+"rechts":{"node":"Literal","waarde":"1","type":{"node":"Number","whole":true,"decimals":0,
+"sign":"ONBEPAALD"},"bron":"1"},"type":{"node":"Number","whole":true,"decimals":0,
+"sign":"ONBEPAALD"},"bron":"de rang van de Wachter plus 1"},"kenmerk":false}],
 "voorwaarde":{"node":"Samengesteld","kwantor":"ALLE","drempel":0,"onderdelen":[{"node":"Vergelijking",
 "op":"KLEINER","links":{"node":"AttribuutRef","attribuut":"rang","objecttype":"Wachter","bron":"de rang van de Wachter"},"rechts":{"node":"Literal",
-"waarde":"5","type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},
+"waarde":"5","type":{"node":"Number","whole":true,"decimals":0,"sign":"ONBEPAALD"},
 "bron":"98"},"periode":null,"bron":"de rang van de Wachter is kleiner dan 98"},{"node":"Predicaat",
 "soort":"@CSOORT@","operand":{"node":"AttribuutRef","attribuut":"merk","objecttype":"Wachter",
 "bron":"merk"},"dagsoort":null,
@@ -7921,8 +7891,8 @@ let () =
 "vanaf":null,"tot":null},"verbindendeRol":{"node":"RolBinding","feittype":"opvolging","rol":"opvolger"}}],
 "verdelingen":[],"consistenties":[{"node":"ResolvedConsistentie","naam":"rangdetector","subject":"Wachter",
 "assertie":{"node":"Vergelijking","op":"KLEINER","links":{"node":"AttribuutRef","attribuut":"rang",
-"objecttype":"Wachter","bron":"de rang van de Wachter"},"rechts":{"node":"Literal","waarde":"99","type":{"node":"Numeriek",
-"geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"99"},"periode":null,
+"objecttype":"Wachter","bron":"de rang van de Wachter"},"rechts":{"node":"Literal","waarde":"99","type":{"node":"Number",
+"whole":true,"decimals":0,"sign":"ONBEPAALD"},"bron":"99"},"periode":null,
 "bron":"de rang van de Wachter is kleiner dan 99"},"bron":"Er moet worden voldaan aan: de rang van elke Wachter is kleiner dan 99",
 "line":1,"geldigheid":{"node":"Geldigheid","vanaf":null,"tot":null}}],"uniciteiten":[],"uniciteitUnies":[],
 "feitCreaties":[],"resolvedStartpunten":[],"regelGroepen":[{"node":"ResolvedRegelGroep","naam":"estafette",
@@ -7952,7 +7922,7 @@ let () =
    reader's reason included, as ref's suite does: one refusal for both. *)
 let () =
   let venster_ir vanaf tot =
-    dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "DatumTijd" }|})
+    dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "Date", "precision": "millisecond" }|})
       ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
       ~regels:
         (Printf.sprintf
@@ -8018,12 +7988,12 @@ let () =
    Base document: one Jutter J1 with inkomen 20,00 and a leeg restpost; the
    bound parameter value is 10,00 unless a frame says otherwise. *)
 let pf_n2 =
-  {|{ "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null }|}
+  {|{ "node": "Number", "whole": false, "decimals": 2, "sign": "ONBEPAALD" }|}
 
 let pf_n0 =
-  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+  {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD" }|}
 
-let pf_datum = {|{ "node": "DatumInDagen" }|}
+let pf_datum = {|{ "node": "Date", "precision": "day" }|}
 
 let pf_ot ?(naam = "Jutter") ?(meervoud = "Jutters") ?(granulariteit = []) ?(kenmerken = [])
     attributen =
@@ -8079,7 +8049,7 @@ let pf_comp ?(drempel = 0) k parts =
     k drempel (String.concat ", " parts)
 
 let pf_decl ?(typ = pf_n2) n =
-  Printf.sprintf {|{ "node": "Parameter", "naam": "%s", "datatype": %s, "granulariteit": null }|} n typ
+  Printf.sprintf {|{ "node": "Parameter", "name": "%s", "datatype": %s }|} n typ
 
 let pf_regel ?(ot = "Jutter") ?(doel = "heffing") ?(soort = "BEREKENING") ?(voorwaarde = "null")
     waarde =
@@ -8098,7 +8068,7 @@ let pf_doc ?(objecttypen = [ pf_jutter ]) ?(domeinen = "") ?(feittypen = "") ?(p
   Printf.sprintf
     {|{ "format": "uchar-ir-v1",
   "model": { "objectTypes": [ %s ], "factTypes": [ %s ], "parameters": [ %s ], "domains": [ %s ],
-    "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+    "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [] },
   "rules": { "resolvedRegels": [ %s ], "resolvedDagsoorten": [], "objectCreaties": [ %s ],
     "verdelingen": [ %s ], "consistenties": [ %s ], "uniciteiten": [], "uniciteitUnies": [],
     "feitCreaties": [ %s ], "resolvedStartpunten": [], "regelGroepen": []%s },
@@ -8403,8 +8373,8 @@ let () =
 (* the temporal positions *)
 let () =
   let dagen =
-    {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": null, "eenheid": { "node": "Eenheid",
-      "afkorting": "dagen", "stelsel": null, "canoniek": null, "factorNaarCanoniek": null, "noemer": null } }|}
+    {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD", "unit": { "node": "Unit",
+      "abbreviation": "dagen" } }|}
   in
   (* datum plus a duration parameter: 10 januari plus 14 dagen *)
   let datum_doc =
@@ -8707,7 +8677,7 @@ let () =
    plays. Unbound, the read happens in translation, so it refuses there, in
    the shared sentence. *)
 let () =
-  let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"keurlast","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}}}],"characteristics":[]},{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"keurtarief","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}},"plural":"keurtarieven","timeline":{"node":"TimelineFacet","granularity":"MAAND","count":1}},{"node":"Attribute","name":"gewicht","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null}}],"characteristics":[{"node":"Characteristic","name":"gekeurd","kind":"BIJVOEGLIJK"}]}],"factTypes":[{"node":"Feittype","naam":"keuring","wederkerig":false,"rollen":[{"node":"Rol","naam":"keurende jutter","objecttypeNaam":"Jutter","meervoud":null,"meervoudig":false},{"node":"Rol","naam":"vondst","objecttypeNaam":"Vondst","meervoud":"vondsten","meervoudig":true}]}],"parameters":[{"node":"Parameter","naam":"minimumgewicht","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"granulariteit":null}],"domains":[],"unitSystems":[{"node":"Eenheidstelsel","naam":"Munt","eenheden":{"EUR":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null},"€":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"aliassen":{"euro":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null},"euros":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}}},{"node":"Eenheidstelsel","naam":"Keurtijd","eenheden":{"mnd":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}},"aliassen":{"maand":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}}],"dimensions":[],"timelines":[],"dayKinds":[],"dagsoortPerEenheid":{}},"rules":{"resolvedRegels":[{"node":"ResolvedRegel","naam":"keurlast van een jutter","soort":"BEREKENING","doel":{"node":"AttribuutRef","attribuut":"keurlast","objecttype":"Jutter","bron":"De keurlast van een Jutter"},"waarde":{"node":"Functie","kind":"TOTAAL","argumenten":[{"node":"AttribuutRef","attribuut":"keurtarief","objecttype":"Vondst","bron":"het keurtarief van alle vondsten van de Jutter die gekeurd zijn"}],"elementObjecttype":"Vondst","leegwaarde":null,"filter":{"node":"Vergelijking","op":"GROTER","links":{"node":"AttribuutRef","attribuut":"gewicht","objecttype":"Vondst","bron":"gewicht"},"rechts":{"node":"ParameterRef","parameter":"minimumgewicht","bron":"het minimumgewicht"},"periode":null,"bron":"zwaarder dan het minimumgewicht"},"dimensieSelectie":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"bron":"het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn","granulariteit":null,"bronRol":{"node":"RolBinding","feittype":"keuring","rol":"vondst"}},"voorwaarde":null,"geldigheid":{"node":"Geldigheid","vanaf":null,"tot":null}}],"resolvedDagsoorten":[],"objectCreaties":[],"verdelingen":[],"consistenties":[],"uniciteiten":[],"uniciteitUnies":[],"feitCreaties":[],"resolvedStartpunten":[],"regelGroepen":[]},"diagnostics":[]}|} in
+  let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"keurlast","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"ONBEPAALD","unit":{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1}}}}],"characteristics":[]},{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"keurtarief","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"ONBEPAALD","unit":{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1},"denominator":{"node":"Unit","abbreviation":"mnd","system":"Keurtijd","canonical":"mnd","factorToCanonical":{"num":1,"den":1}}}},"plural":"keurtarieven","timeline":{"node":"TimelineFacet","granularity":"MAAND","count":1}},{"node":"Attribute","name":"gewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"ONBEPAALD"}}],"characteristics":[{"node":"Characteristic","name":"gekeurd","kind":"BIJVOEGLIJK"}]}],"factTypes":[{"node":"Feittype","naam":"keuring","wederkerig":false,"rollen":[{"node":"Rol","naam":"keurende jutter","objecttypeNaam":"Jutter","meervoud":null,"meervoudig":false},{"node":"Rol","naam":"vondst","objecttypeNaam":"Vondst","meervoud":"vondsten","meervoudig":true}]}],"parameters":[{"node":"Parameter","name":"minimumgewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"ONBEPAALD"}}],"domains":[],"unitSystems":[{"node":"UnitSystem","name":"Munt","units":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1},"spellings":["€","euro","euros"]}]},{"node":"UnitSystem","name":"Keurtijd","units":[{"node":"Unit","abbreviation":"mnd","system":"Keurtijd","canonical":"mnd","factorToCanonical":{"num":1,"den":1},"spellings":["maand"]}]}],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"resolvedRegels":[{"node":"ResolvedRegel","naam":"keurlast van een jutter","soort":"BEREKENING","doel":{"node":"AttribuutRef","attribuut":"keurlast","objecttype":"Jutter","bron":"De keurlast van een Jutter"},"waarde":{"node":"Functie","kind":"TOTAAL","argumenten":[{"node":"AttribuutRef","attribuut":"keurtarief","objecttype":"Vondst","bron":"het keurtarief van alle vondsten van de Jutter die gekeurd zijn"}],"elementObjecttype":"Vondst","leegwaarde":null,"filter":{"node":"Vergelijking","op":"GROTER","links":{"node":"AttribuutRef","attribuut":"gewicht","objecttype":"Vondst","bron":"gewicht"},"rechts":{"node":"ParameterRef","parameter":"minimumgewicht","bron":"het minimumgewicht"},"periode":null,"bron":"zwaarder dan het minimumgewicht"},"dimensieSelectie":null,"type":{"node":"Number","whole":true,"decimals":0,"sign":"ONBEPAALD","unit":{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1}}},"bron":"het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn","granulariteit":null,"bronRol":{"node":"RolBinding","feittype":"keuring","rol":"vondst"}},"voorwaarde":null,"geldigheid":{"node":"Geldigheid","vanaf":null,"tot":null}}],"resolvedDagsoorten":[],"objectCreaties":[],"verdelingen":[],"consistenties":[],"uniciteiten":[],"uniciteitUnies":[],"feitCreaties":[],"resolvedStartpunten":[],"regelGroepen":[]},"diagnostics":[]}|} in
   let case_text params rows =
     Printf.sprintf
       {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15", "input": { "instances": [
@@ -10315,7 +10285,7 @@ let () =
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
       { "node": "Rol", "naam": "rapport", "objecttypeNaam": "Rapport", "meervoud": null, "meervoudig": false } ] }|}
   in
-  let nn = {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null }|} in
+  let nn = {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "NIET_NEGATIEF" }|} in
   let aantal =
     Printf.sprintf
       {|{ "node": "Functie", "kind": "AANTAL",
@@ -10625,8 +10595,8 @@ let () =
                "periode": null, "bron": "de dag later is dan de grensdatum" }|}
            de_dag)
       ~parameters:
-        {|{ "node": "Parameter", "naam": "grensdatum",
-            "datatype": { "node": "DatumInDagen" }, "granulariteit": null }|}
+        {|{ "node": "Parameter", "name": "grensdatum",
+            "datatype": { "node": "Date", "precision": "day" } }|}
       ~waarde:(stap ()) ()
     |> replace_first ~needle:{|"voorwaarde": null,|}
          ~by:(Printf.sprintf {|"voorwaarde": %s,|} (pf_cmp "GROTER" (pf_l ~typ:pf_n0 "1") (pf_l ~typ:pf_n0 "2")))
@@ -10893,6 +10863,205 @@ let () =
     (fun (vorm, base, (waar, door), needle) ->
       refused_at_load ~name:("L2-laadtabel: " ^ vorm) ~ir:(vervang base ~waar ~door) ~needle)
     rows
+
+(* THE L3 LOAD TABLE. The type system of the wire in its L3 shape: a number
+   with its unit and, at a declaration, the percentage tag; a date with its
+   precision; a unit system as a list of units with their spellings; a
+   parameter's timeline facet; a day kind with its plural; the exact factor
+   {num, den}. The base document carries every one of them and loads. Every
+   row puts one form back that left the wire at L3, or writes a new position
+   wrongly, and the loader this backend shares with ref and the verifier
+   refuses it by name — none is read and dropped. *)
+let () =
+  let km = {|{ "node": "Unit", "abbreviation": "km", "system": "Afstand", "canonical": "m", "factorToCanonical": { "num": 1000, "den": 1 } }|} in
+  let base =
+    Printf.sprintf
+      {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [
+          { "node": "Attribute", "name": "aandeel",
+            "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "ONBEPAALD",
+              "unit": { "node": "Unit", "abbreviation": "%%", "canonical": "%%", "factorToCanonical": { "num": 1, "den": 1 } },
+              "presentation": "percentage" } },
+          { "node": "Attribute", "name": "afstand",
+            "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "NIET_NEGATIEF", "unit": %s } },
+          { "node": "Attribute", "name": "melddatum", "datatype": { "node": "Date", "precision": "day" } },
+          { "node": "Attribute", "name": "meldmoment", "datatype": { "node": "Date", "precision": "millisecond" } } ],
+        "characteristics": [] } ],
+    "factTypes": [],
+    "parameters": [
+      { "node": "Parameter", "name": "tarief",
+        "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "POSITIEF" },
+        "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } } ],
+    "domains": [],
+    "unitSystems": [
+      { "node": "UnitSystem", "name": "Afstand",
+        "units": [
+          { "node": "Unit", "abbreviation": "m", "system": "Afstand", "canonical": "m", "factorToCanonical": { "num": 1, "den": 1 }, "spellings": [ "meter", "meters" ] },
+          { "node": "Unit", "abbreviation": "km", "system": "Afstand", "canonical": "m", "factorToCanonical": { "num": 1000, "den": 1 }, "spellings": [ "kilometer" ] } ] } ],
+    "dimensions": [], "timelines": [],
+    "dayKinds": [ { "node": "DayKind", "name": "nevelsdag", "plural": "nevelsdagen" } ] },
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "afstand van een jutter", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "afstand", "objecttype": "Jutter", "bron": "De afstand van een Jutter" },
+        "waarde": { "node": "Literal", "waarde": "3", "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD", "unit": %s }, "bron": "3 km" },
+        "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [], "regelGroepen": [] },
+  "diagnostics": [] }|}
+      km km
+  in
+  (match
+     let irf = write_temp ".ir.json" base in
+     let r = try Ok (Ir_v0.Loader.load_file irf) with Ir_v0.Loader.Error (path, m) -> Error (path ^ ": " ^ m) in
+     Sys.remove irf;
+     r
+   with
+  | Ok doc ->
+      (* and it reads what it carries: the tag, the rational, the spellings,
+         the facet and the plural are the in-memory shape, not dropped *)
+      let jutter = List.assoc "Jutter" doc.objecttypen in
+      check "L3-laadtabel: het basisdocument laadt" true;
+      check "L3-laadtabel: Number met % en het label is een percentage"
+        (match List.assoc "aandeel" jutter.attributen with
+         | Some (Percentage { decimalen = 2; eenheid = Some { afkorting = Some "%"; _ }; _ }) -> true
+         | _ -> false);
+      check "L3-laadtabel: de factor is de rationaal {1000, 1}"
+        (match List.assoc "afstand" jutter.attributen with
+         | Some (Numeriek { teken = Some Niet_negatief; eenheid = Some { factor_naar_canoniek = Some { num = 1000; den = 1 }; _ }; _ }) -> true
+         | _ -> false);
+      check "L3-laadtabel: de twee precisies"
+        (List.assoc "melddatum" jutter.attributen = Some Datum_in_dagen
+        && List.assoc "meldmoment" jutter.attributen = Some Datum_tijd);
+      check "L3-laadtabel: de parameterfacet"
+        (match List.assoc "tarief" doc.parameters with
+         | { par_granulariteit = Some Maand; par_tijdlijn_aantal = Some 1; _ } -> true
+         | _ -> false);
+      check "L3-laadtabel: de spellingen per eenheid"
+        (List.map (fun (d : Ir_v0.Ast.gedeclareerde_eenheid) -> (d.ge_eenheid.afkorting, d.ge_spellingen))
+           (List.assoc "Afstand" doc.eenheidstelsels).eenheden
+        = [ (Some "m", [ "meter"; "meters" ]); (Some "km", [ "kilometer" ]) ]);
+      check "L3-laadtabel: de dagsoort met haar meervoud"
+        (doc.dagsoorten = [ { dk_naam = "nevelsdag"; dk_meervoud = Some "nevelsdagen" } ]);
+      check "L3-laadtabel: geen presentatietag in een annotatie" (doc.presentatie_annotaties = [])
+  | Error e -> check ("L3-laadtabel: het basisdocument laadt, maar werd geweigerd (" ^ e ^ ")") false);
+  let getal = {|{ "node": "Number", "whole": false, "decimals": 2, "sign": "NIET_NEGATIEF",|} in
+  let erbij waar extra = (waar, waar ^ " " ^ extra) in
+  let factor = {|"factorToCanonical": { "num": 1000, "den": 1 }|} in
+  let rationaal got =
+    "a conversion factor is an exact rational {num, den} whose two integers are at least 1, got "
+    ^ got
+  in
+  let rows =
+    [ ( "Numeriek als knoop", ({|"node": "Number", "whole": false, "decimals": 2, "sign": "NIET_NEGATIEF"|},
+          {|"node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "NIET_NEGATIEF"|}),
+        {|unknown datatype node "Numeriek"|} );
+      ( "Percentage als knoop",
+        ({|{ "node": "Number", "whole": false, "decimals": 2, "sign": "ONBEPAALD",
+              "unit": { "node": "Unit", "abbreviation": "%", "canonical": "%", "factorToCanonical": { "num": 1, "den": 1 } },
+              "presentation": "percentage" }|},
+         {|{ "node": "Percentage", "geheel": false, "decimalen": 2, "eenheid": null }|}),
+        {|unknown datatype node "Percentage"|} );
+      ( "DatumInDagen als knoop", ({|{ "node": "Date", "precision": "day" }|}, {|{ "node": "DatumInDagen" }|}),
+        {|unknown datatype node "DatumInDagen"|} );
+      ( "DatumTijd als knoop", ({|{ "node": "Date", "precision": "millisecond" }|}, {|{ "node": "DatumTijd" }|}),
+        {|unknown datatype node "DatumTijd"|} );
+      ( "Eenheid als knoop", ({|"unit": { "node": "Unit",|}, {|"unit": { "node": "Eenheid",|}),
+        {|expected "Unit", got "Eenheid"|} );
+      ( "Eenheidstelsel als knoop", ({|{ "node": "UnitSystem",|}, {|{ "node": "Eenheidstelsel",|}),
+        {|expected "UnitSystem", got "Eenheidstelsel"|} );
+      ("Number.geheel", erbij getal {|"geheel": false,|}, "unknown field 'geheel'");
+      ("Number.decimalen", erbij getal {|"decimalen": 2,|}, "unknown field 'decimalen'");
+      ("Number.teken", erbij getal {|"teken": "NIET_NEGATIEF",|}, "unknown field 'teken'");
+      ("Number.eenheid", erbij getal {|"eenheid": null,|}, "unknown field 'eenheid'");
+      ("Unit.afkorting", erbij {|"abbreviation": "km",|} {|"afkorting": "km",|}, "unknown field 'afkorting'");
+      ("Unit.stelsel", erbij {|"abbreviation": "km",|} {|"stelsel": "Afstand",|}, "unknown field 'stelsel'");
+      ("Unit.canoniek", erbij {|"abbreviation": "km",|} {|"canoniek": "m",|}, "unknown field 'canoniek'");
+      ( "Unit.factorNaarCanoniek", erbij {|"abbreviation": "km",|} {|"factorNaarCanoniek": 1000,|},
+        "unknown field 'factorNaarCanoniek'" );
+      ("Unit.noemer", erbij {|"abbreviation": "km",|} {|"noemer": null,|}, "unknown field 'noemer'");
+      ( "Parameter.granulariteit", erbij {|"name": "tarief",|} {|"granulariteit": "MAAND",|},
+        "unknown field 'granulariteit'" );
+      ("Parameter.naam", ({|"name": "tarief",|}, {|"naam": "tarief",|}), "unknown field 'naam'");
+      ( "dagsoortPerEenheid", erbij {|"dimensions": [], "timelines": [],|} {|"dagsoortPerEenheid": {},|},
+        "unknown field 'dagsoortPerEenheid'" );
+      ( "UnitSystem.aliassen", erbij {|{ "node": "UnitSystem", "name": "Afstand",|} {|"aliassen": {},|},
+        "unknown field 'aliassen'" );
+      ( "UnitSystem.eenheden", erbij {|{ "node": "UnitSystem", "name": "Afstand",|} {|"eenheden": {},|},
+        "unknown field 'eenheden'" );
+      ("een dagsoort als naam", ({|[ { "node": "DayKind", "name": "nevelsdag", "plural": "nevelsdagen" } ]|},
+         {|[ "nevelsdag" ]|}), {|expected object, got "nevelsdag"|});
+      ("de factor als JSON-getal", (factor, {|"factorToCanonical": 1000|}), rationaal "1000");
+      ("de factor als string", (factor, {|"factorToCanonical": "1000"|}), rationaal {|"1000"|});
+      ("de factor zonder den", (factor, {|"factorToCanonical": { "num": 1000 }|}), rationaal {|{"num":1000}|});
+      ( "de factor met den 0", (factor, {|"factorToCanonical": { "num": 1000, "den": 0 }|}),
+        rationaal {|{"num":1000,"den":0}|} );
+      ( "de factor met num 0", (factor, {|"factorToCanonical": { "num": 0, "den": 1 }|}),
+        rationaal {|{"num":0,"den":1}|} );
+      ( "de factor als breuk in één getal", (factor, {|"factorToCanonical": { "num": 0.5, "den": 1 }|}),
+        rationaal {|{"num":0.5,"den":1}|} );
+      ("sign null", ({|"sign": "NIET_NEGATIEF"|}, {|"sign": null|}), "expected string, got null");
+      ("Date zonder precision", ({|{ "node": "Date", "precision": "day" }|}, {|{ "node": "Date" }|}),
+        "missing field 'precision'");
+      ( "een vreemde precision", ({|"precision": "day"|}, {|"precision": "dag"|}),
+        {|unknown precision value "dag"|} );
+      ( "een vreemde presentation", ({|"presentation": "percentage"|}, {|"presentation": "procent"|}),
+        {|unknown presentation value "procent"|} );
+      ( "de presentatietag op een getal zonder %",
+        ({|"sign": "NIET_NEGATIEF", "unit": |}, {|"sign": "NIET_NEGATIEF", "presentation": "percentage", "unit": |}),
+        {|the presentation "percentage" on a number whose unit is not '%'|} );
+      ( "een percentage met een teken", ({|"decimals": 2, "sign": "ONBEPAALD"|}, {|"decimals": 2, "sign": "POSITIEF"|}),
+        "a percentage carries no sign restriction: a number whose unit is '%' has the sign ONBEPAALD" );
+      ( "spellingen op een voorkomen",
+        ({|"sign": "NIET_NEGATIEF", "unit": { "node": "Unit", "abbreviation": "km",|},
+         {|"sign": "NIET_NEGATIEF", "unit": { "node": "Unit", "abbreviation": "km", "spellings": [ "kilometer" ],|}),
+        "unknown field 'spellings'" );
+      ( "een lege spellingenlijst", ({|"spellings": [ "kilometer" ]|}, {|"spellings": []|}),
+        "a unit's spellings are at least one spelling, or the field is absent" ) ]
+  in
+  List.iter
+    (fun (vorm, (waar, door), needle) ->
+      refused_at_load ~name:("L3-laadtabel: " ^ vorm) ~ir:(vervang base ~waar ~door) ~needle)
+    rows;
+  (* the tag inside a type annotation loads — the in-memory datatype drops
+     it — and the loader lists where it stands; the verifier refuses it
+     there (WF-007), and ref and clingo refuse the document in the same
+     sentence before they evaluate or translate anything *)
+  let ir =
+    vervang base
+      ~waar:({|"type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD", "unit": |} ^ km)
+      ~door:
+        {|"type": { "node": "Number", "whole": true, "decimals": 0, "sign": "ONBEPAALD",
+          "unit": { "node": "Unit", "abbreviation": "%", "canonical": "%", "factorToCanonical": { "num": 1, "den": 1 } },
+          "presentation": "percentage"|}
+  in
+  let case_text =
+    {|{ "format": "uchar-case-v0", "asOfDate": null, "input": { "instances": [], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+  in
+  let zin =
+    {|the presentation tag "percentage" on a type annotation: the tag is written only where a datatype is declared|}
+  in
+  let doc, case = load_pair ~ir ~case_text in
+  check "L3-laadtabel: de presentatietag in een annotatie staat op de lijst"
+    (doc.presentatie_annotaties = [ "/rules/resolvedRegels/0/waarde/type/presentation" ]);
+  let env =
+    { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
+      locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None }
+  in
+  (match Uchar_ref.Eval.evaluate env case.world with
+  | _ -> check "L3-laadtabel: ref weigert de presentatietag in een annotatie (kreeg een wereld)" false
+  | exception Uchar_ref.Value.Fault m ->
+      check ("L3-laadtabel: ref weigert de presentatietag in een annotatie (" ^ m ^ ")")
+        (Uchar_ref.Case.contains ~needle:zin m));
+  match translate doc case with
+  | (_ : string) -> check "L3-laadtabel: clingo weigert de presentatietag in een annotatie (kreeg een programma)" false
+  | exception Uchar_ref.Value.Fault m ->
+      check ("L3-laadtabel: clingo weigert de presentatietag in een annotatie (" ^ m ^ ")")
+        (Uchar_ref.Case.contains ~needle:zin m)
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

@@ -134,7 +134,7 @@ let max_int31 = 2147483647
 let pow10 n =
   (* [go] counts n DOWN to 0, so a NEGATIVE n never terminates: measured as a
      hang with no output at all (killed at 10 s), where 10^12 faults cleanly one
-     line below. The schema puts no lower bound on `decimalen`, so the floor is
+     line below. The schema puts no lower bound on `decimals`, so the floor is
      this executor's to state. *)
   if n < 0 then fault "a negative decimal count reaches a scale (10^%d)" n;
   if n > 9 then fault "a scale of 10^%d exceeds clingo's integer range" n;
@@ -1842,16 +1842,23 @@ let dk_tables :
     (string, string * string * string * string * (int * int)) Hashtbl.t =
   Hashtbl.create 4
 
-(* is this unit SPELLING registered as a day kind? (IR-SPEC ch. 2.9: the
-   lookup is trimmed and case-insensitive). The document-level form, for the
-   refusal sites that run before the translation context exists. *)
-let day_kind_of_unit_doc (doc : document) (u : eenheid) =
+(* the day kind a unit SPELLING names — its name or its plural (IR-SPEC
+   ch. 2.9: the lookup is trimmed and case-insensitive) — or None *)
+let day_kind_spelt (doc : document) (u : eenheid) : string option =
   match u.afkorting with
-  | None -> false
-  | Some a -> (
-      match Ir_v0.Checks.find_ci doc.dagsoort_per_eenheid a with
-      | Some (Some k) -> String.trim k <> ""
-      | _ -> false)
+  | None -> None
+  | Some a ->
+      List.find_map
+        (fun (d : dagsoort) ->
+          if String.trim d.dk_naam <> ""
+             && List.exists (fun s -> norm s = norm a) (Ir_v0.Checks.dagsoort_spellingen d)
+          then Some d.dk_naam
+          else None)
+        doc.dagsoorten
+
+(* is this unit SPELLING a day kind's? The document-level form, for the
+   refusal sites that run before the translation context exists. *)
+let day_kind_of_unit_doc (doc : document) (u : eenheid) = day_kind_spelt doc u <> None
 
 let day_time_unit_of ~what (t : datatype option) =
   match t with
@@ -2133,22 +2140,22 @@ let units_identical_ok ~what (l : eenheid option) (r : eenheid option) =
    eff_unit merely cannot analyse (a Let, a field/dimension access, a division,
    a declaration that resolves nowhere), mirroring eff_unit's resolved forms but
    proving the ABSENCE of a unit rather than reading one. A declaration counts
-   as proven unit-free only when its datatype is explicitly Numeriek/Percentage
-   with eenheid null — an unresolved or non-numeric declaration is NOT proven
+   as proven unit-free only when its datatype is explicitly a number without a
+   unit — an unresolved or non-numeric declaration is NOT proven
    (its unit is unknown, possibly a composite the frontend could not name). *)
 let rec provably_unitless ctx (e : expr) : bool =
   match e with
   | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } -> (
       match Ir_v0.Checks.find_ci (objecttype ctx ot).attributen a with
-      | Some (Some (Numeriek { eenheid = None; _ } | Percentage { eenheid = None; _ })) -> true
+      | Some (Some (Numeriek { eenheid = None; _ })) -> true
       | _ -> false)
   | Parameter_ref { parameter = Some p; _ } -> (
       match Ir_v0.Checks.find_ci ctx.doc.parameters p with
-      | Some { par_datatype = Some (Numeriek { eenheid = None; _ } | Percentage { eenheid = None; _ }); _ }
+      | Some { par_datatype = Some (Numeriek { eenheid = None; _ }); _ }
         ->
           true
       | _ -> false)
-  | Literal { typ = Some (Numeriek { eenheid = None; _ } | Percentage { eenheid = None; _ }); _ } -> true
+  | Literal { typ = Some (Numeriek { eenheid = None; _ }); _ } -> true
   | Binair { op = Plus | Min | Verminderd_met | Maal; links = Some l; rechts = Some r; _ } ->
       (* a sum/difference/product is unit-free only when BOTH operands are *)
       provably_unitless ctx l && provably_unitless ctx r
@@ -2158,13 +2165,13 @@ let rec provably_unitless ctx (e : expr) : bool =
       provably_unitless ctx arg
   | _ -> false
 
-(* the singleton %-unit: afkorting % / canoniek %, factor exactly 1, no
+(* the singleton %-unit: abbreviation % / canonical %, factor exactly 1, no
    denominator — the one convertibility class %-space ever inhabits
    (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3). A hidden or unknown unit is never
    this; a rate (%/jr) or a factor≠1 spelling is not pure-% either. *)
 let is_pure_pct (u : eenheid) : bool =
   u.afkorting = Some "%" && u.canoniek = Some "%" && u.noemer = None
-  && match u.factor_naar_canoniek with Some f -> f = 1.0 | None -> false
+  && match u.factor_naar_canoniek with Some { num; den } -> num = den | None -> false
 
 (* PROVABLY pure-%: the effective unit is decidably the singleton %-unit.
    Mirrors provably_unitless's resolved leaf and unit-preserving forms but
@@ -5845,16 +5852,10 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~(gp : geheel
    executors implement the semantics separately and the corpus differential
    is what says they agree. *)
 
-and day_kind_of_unit ctx (u : eenheid) : string option =
-  match u.afkorting with
-  | None -> None
-  | Some a -> (
-      match Ir_v0.Checks.find_ci ctx.doc.dagsoort_per_eenheid a with
-      | Some (Some k) when String.trim k <> "" -> Some k
-      | _ -> None)
+and day_kind_of_unit ctx (u : eenheid) : string option = day_kind_spelt ctx.doc u
 
 (* the day kind a duration position's static type names, if any: a spelling
-   the shared calendar table does NOT know, registered as a day-kind unit *)
+   the shared calendar table does NOT know, spelt as a day kind *)
 and day_kind_unit_of ctx (t : datatype option) : string option =
   match t with
   | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ })
@@ -10359,6 +10360,16 @@ let translate_case ctx (case : Case.t) =
 (* --- the program --------------------------------------------------------- *)
 
 let translate (doc : document) (case : Case.t) : string =
+  (* WF-007: a presentation tag inside a type annotation, listed by the
+     loader, is refused in the verifier's sentence — the same refusal ref
+     makes — before anything is translated *)
+  (match doc.presentatie_annotaties with
+  | [] -> ()
+  | at :: _ ->
+      fault
+        "%s: the presentation tag \"percentage\" on a type annotation: the tag is written only \
+         where a datatype is declared (WF-007)"
+        at);
   (* the day-kind extension tables are per DOCUMENT+CASE (their window is
      read off the case's dates), so the store starts empty at every call —
      a suite that translates twice must not inherit the first window *)
@@ -10371,7 +10382,7 @@ let translate (doc : document) (case : Case.t) : string =
      and fault below like before. *)
   (* the unit-normalisation lowering (PRIORITIZED-DEFAULTS-EVOLUTIE §8;
      Normalise): source units stay on the wire, but the clingo leg
-     canonicalises each declared stelsel to its finest base unit
+     canonicalises each declared unit system to its finest base unit
      (multiply-only, integer-encodable) so the factor≠1 unit fences below
      translate. Run before the desugaring — the two are orthogonal
      (units/literals vs prioritized-defaults structure). *)

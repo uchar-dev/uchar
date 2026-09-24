@@ -26,17 +26,12 @@ let show_unit = function
   | Unit e -> show_eenheid e
   | Product (a, b) -> show_eenheid a ^ "*" ^ show_eenheid b
 
-(* The wire carries the canonical factor as a JSON number, which the
-   loader hands us as a float. The intended value is the *decimal* the
-   author wrote (0.01, 1000), not the nearest binary double — Q.of_float
-   of 0.01 would poison every conversion with a 2^-n tail. Recover the
-   decimal via the shortest round-tripping decimal form; a factor with no
-   short decimal reading faults rather than degrading silently. *)
-let q_of_wire_number f =
-  let s = Printf.sprintf "%.15g" f in
-  if String.exists (fun c -> c = 'e' || c = 'E') s || float_of_string s <> f then
-    fault "unit conversion factor %h has no short decimal reading" f
-  else Value.q_of_lexeme s
+(* The wire carries the canonical factor as the exact rational {num, den}
+   (IR-SPEC ch. 2.5; the loader hands it over as the pair), so it is read as
+   that rational and nothing else: no binary double stands between the
+   declaration and the arithmetic, and the one rounding a restatement takes
+   is the one at the end (ch. 2.5, Restatement). *)
+let rational ({ num; den } : Ir_v0.Ast.rationaal) = Q.make (Z.of_int num) (Z.of_int den)
 
 (* A unit's conversion pair is ONE fact in two fields: the canonical unit
    it converts into and the factor that does the converting (WF-092).
@@ -68,10 +63,10 @@ let q_of_wire_number f =
    a shape the verifier rejects. *)
 let factor (e : Ir_v0.Ast.eenheid) =
   match (e.factor_naar_canoniek, e.canoniek) with
-  | Some f, Some _ -> q_of_wire_number f
+  | Some f, Some _ -> rational f
   | Some f, None ->
-      fault "unit %s carries conversion factor %g but names no canonical unit to convert into (WF-092)"
-        (show_eenheid e) f
+      fault "unit %s carries conversion factor %s but names no canonical unit to convert into (WF-092)"
+        (show_eenheid e) (Ir_v0.Checks.rationaal_render f)
   | None, None -> Q.one
   | None, Some c ->
       fault "unit %s names canonical unit %S but carries no conversion factor into it (WF-092)"
@@ -542,7 +537,7 @@ let eerste_paasdag = function
    time, built on the civil helpers of Value (days_from_civil /
    civil_from_days). The counted unit arrives resolved through the shared
    spelling table (Ir_v0.Checks.time_unit_of_spelling) — declared factors
-   and stelsel are irrelevant to calendar arithmetic. *)
+   and unit systems are irrelevant to calendar arithmetic. *)
 
 let leap y = (y mod 4 = 0 && y mod 100 <> 0) || y mod 400 = 0
 
