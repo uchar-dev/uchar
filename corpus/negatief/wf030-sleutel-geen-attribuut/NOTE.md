@@ -16,8 +16,10 @@ zijn."), is not among them.
 2026-09-24 against the three cases of the source golden: the reference
 interpreter and the ASP backend pass the two cases without a duplicate and
 both miss the duplicate of the third (`MISMATCH: expected inconsistent …`),
-without a fault; the Drools backend fails at evaluation (`ERROR
-ConstraintEvaluationException`).
+without a fault; the Drools backend's exec-model branch fails at evaluation
+(`ERROR ConstraintEvaluationException`) and its DRL-text branch fails at DRL
+compilation — the Drools loader carries no WF-030 arm, an open point of the
+L4 landing.
 
 **The document.** `corpus/golden/jutterswet-vondstnummer/ir.json` with one
 value changed: the source's key `vondstnummer` → `vondstnummers`.

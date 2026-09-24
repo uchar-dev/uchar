@@ -17,8 +17,11 @@ cases of the source golden: the reference interpreter passes the two cases
 without a duplicate and misses the duplicate of the third (`MISMATCH: expected
 inconsistent (a channel fact from rule "eenmalig vondstnummer" on "V1"), but
 the channel carries: (empty)`); the ASP backend refuses every case
-(`TRANSLATION FAULT: unknown object type "Vondsten"`); the Drools backend
-excludes the uniqueness at transpilation (`transpiler SKIP`).
+(`TRANSLATION FAULT: unknown object type "Vondsten"`); the Drools backend's
+exec-model branch excludes the uniqueness at transpilation (`transpiler
+SKIP`) while its DRL-text branch crashes (`NullPointerException …
+ResolvedUniciteit.subject() is null`) — the Drools loader carries no WF-030
+arm, an open point of the L4 landing.
 
 **The document.** `corpus/golden/jutterswet-vondstnummer/ir.json` with one
 value changed: the source's `objectType` `Vondst` → `Vondsten`.

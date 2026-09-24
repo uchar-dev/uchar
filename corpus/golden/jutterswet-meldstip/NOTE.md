@@ -93,6 +93,7 @@ instead, which is a `bron.rgs` golden.
 The snippet `15-03-2026 12:00:00.000` in this document's `bron` is no
 longer a wire lexeme: written into `value`
 (`{"dateTime": "15-03-2026 12:00:00.000"}`) it is refused by WF-095
-(`corpus/negatief/wf095-bronsnippet`). The executors' readers still read
-it as the same instant as the canonical one (measured 2026-09-06), which
-is tolerance behind the fence and not a second spelling.
+(`corpus/negatief/wf095-bronsnippet`). Every executor refuses it at load
+with the verifier's own WF-095 sentence (since the L4 fix round; until
+2026-09-23 the readers still read it as the same instant, tolerance behind
+the fence and not a second spelling).

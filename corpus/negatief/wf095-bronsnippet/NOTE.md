@@ -15,8 +15,9 @@ before the narrowing), which is what makes it the witness: the other five
 `wf095-*` documents each carry a defect the old rule refused too, so
 readmitting the snippet would silence none of them and only this one.
 
-The executors' readers still read this lexeme as the same instant as the
-canonical one; the refusal is the wire's, not a reader's.
+Every executor refuses this lexeme at load with the verifier's own WF-095
+sentence (since the L4 fix round; the readers' tolerance for the snippet ended
+2026-09-23, and their own sentences went with the fix round).
 
 Minimal own-authored document (Jutterswet vocabulary); the well-formed
 counterpart is the canonical-lexeme literal in

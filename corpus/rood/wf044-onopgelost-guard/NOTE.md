@@ -10,7 +10,8 @@ resolve a doel-hosted guard against, so the anker's unresolved condition
 is passed through unchanged.
 
 The document is `jutterswet-postwacht`'s golden with **exactly one field
-changed** — the creation's `voorwaarde`, from `null` to the marker — and
+changed** — the creation version's `condition`, absent in the golden, set to
+the marker — and
 the case carries the same population that golden replays. Everything a
 green run needs is therefore present and correct; the only reason this
 case is red is the marker itself. Verifier-clean, as an honest marker

@@ -15,11 +15,16 @@ only. Its witness until L4, `wf037-aantalgevulde-granulariteit`, carried the
 facet on an aggregation, which cannot be written since, and was removed with
 reason (`corpus/negatief/README.md`, L4).
 
-**The executors do not agree on it.** Measured 2026-09-24 against the five
-cases of the source golden: the reference interpreter faults on every case
-(`EVALUATION FAULT: granularity-bucketed aggregation not implemented in this
-card`), while the ASP backend passes all five and the Drools backend plays all
-five, both on the expectations the golden pins without the facet.
+**Every executor refuses it in the verifier's words.** Measured 2026-09-24,
+after the L4 fix round, against the five cases of the source golden: the
+reference interpreter faults on every case (`EVALUATION FAULT: granularity
+facet on a non-bucketing kind`), the ASP backend refuses the translation with
+the same sentence, and the Drools loader refuses the document on the node with
+the same sentence, on both transpiler branches. Until that fix round the three
+disagreed: the reference interpreter faulted with a sentence of its own
+(`granularity-bucketed aggregation not implemented in this card`), while the
+ASP backend passed all five and the Drools backend played all five, both
+silently ignoring the facet.
 
 **The document.** `corpus/golden/jutterswet-paasvondst/ir.json` with one field
 added to the value of its first rule: `"granularity": "JAAR"` on the

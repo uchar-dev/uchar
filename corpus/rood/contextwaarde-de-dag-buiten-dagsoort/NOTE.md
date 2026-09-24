@@ -8,7 +8,7 @@ denotes nothing, and this case is what makes that observable.
 
 ## The shape
 
-No day kind at all. One rule reads the context value in an ordinary
+No day kind at all. One rule reads the bound day (`BoundDay`) in an ordinary
 calculation:
 
 ```
