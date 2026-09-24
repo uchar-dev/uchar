@@ -687,7 +687,7 @@ let aref attr otn : Ir_v0.Ast.expr =
   Attribuut_ref { attribuut = Some attr; objecttype = Some otn; bron = None; navigatie_bindingen = None }
 
 (* a literal as the loader reads it off the wire (Ir_v0.Loader): the value
-   variant its type names, and the lexeme the in-memory node keeps beside it *)
+   variant its type names *)
 let litv lex typ : Ir_v0.Ast.expr =
   let variant : Ir_v0.Ast.literal_variant =
     match typ with
@@ -704,8 +704,7 @@ let litv lex typ : Ir_v0.Ast.expr =
     | Sum_type _ -> Lv_constructor lex
     | List_type _ | Struct_type _ -> invalid_arg "litv: a list or struct type names no literal variant"
   in
-  Literal
-    { waarde = Some (Ir_v0.Loader.literal_lexeme variant); variant; typ = Some typ; bron = None }
+  Literal { variant; typ = Some typ; bron = None }
 
 let rr name soort doel waarde cond : Ir_v0.Ast.resolved_regel =
   { rr_naam = Some name; rr_soort = Some soort; doel; waarde; rr_voorwaarde = cond; rr_geldigheid = None;
@@ -6460,8 +6459,7 @@ let () =
   weigert "WF-022-kenmerk-waar-als-tekst-weigert" (litv "waar" Ir_v0.Ast.Tekst)
     (zin {|the literal {"text": "waar"} typed Tekst|});
   weigert "WF-022-kenmerk-booleaanse-variant-als-tekst-weigert"
-    (Literal
-       { waarde = Some "waar"; variant = Lv_boolean true; typ = Some Ir_v0.Ast.Tekst; bron = None })
+    (Literal { variant = Lv_boolean true; typ = Some Ir_v0.Ast.Tekst; bron = None })
     (zin {|the literal {"boolean": true} typed Tekst|});
   (* the control: the constant itself still attributes, on the condition *)
   let w = Eval.evaluate (env_of (doc (litv "waar" Ir_v0.Ast.Booleaan))) wereld in
@@ -6597,7 +6595,7 @@ let () =
   in
   expect_fault_msg "WV-4.1-literaalvariant-tegen-type-faalt"
     (fun () ->
-      run (Literal { waarde = Some "5"; variant = Lv_text "5"; typ = Some num0; bron = None }))
+      run (Literal { variant = Lv_text "5"; typ = Some num0; bron = None }))
     "literal value is a text value but its type is a Number: the variant is the one the type names";
   expect_fault_msg "WV-4.1-getal-met-komma-faalt"
     (fun () -> run (litv "12,5" num0))

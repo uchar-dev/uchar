@@ -504,7 +504,7 @@ let () =
     Attribuut_ref { attribuut = Some a; objecttype = Some "Zaak"; bron = Some a; navigatie_bindingen = None }
   in
   let lit v t : A.expr =
-    Literal { waarde = Some (Ir_v0.Loader.literal_lexeme v); variant = v; typ = Some t; bron = Some "proef" }
+    Literal { variant = v; typ = Some t; bron = Some "proef" }
   in
   let regel naam soort doel waarde cond : A.resolved_regel =
     { rr_naam = Some naam; rr_soort = Some soort; doel = Some (aref doel); waarde = Some waarde;

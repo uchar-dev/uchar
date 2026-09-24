@@ -211,7 +211,6 @@ let restate_lit ~tu ~to_finest (e : expr) : expr =
         let d = decimals_of_lexeme lex' in
         Literal
           { lit with
-            waarde = Some lex';
             variant = Lv_number lex';
             typ =
               Some

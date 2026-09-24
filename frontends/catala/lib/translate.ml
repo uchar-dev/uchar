@@ -310,9 +310,9 @@ let rat_str (q : Q.t) : string =
     (Z.to_int (Z.rem a scale))
 
 (* a Literal as the wire carries it (IR-SPEC ch. 4.1): the value variant its
-   type names, beside the lexeme the in-memory node keeps (Ir_v0.Ast) *)
+   type names *)
 let literal (variant : I.literal_variant) (typ : I.datatype) ~bron : I.expr =
-  Literal { waarde = Some (Ir_v0.Loader.literal_lexeme variant); variant; typ = Some typ; bron }
+  Literal { variant; typ = Some typ; bron }
 
 let literal_expr (l : lit) : I.expr =
   match l with

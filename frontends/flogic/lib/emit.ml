@@ -88,7 +88,7 @@ let rec expr (e : expr) : json =
   let typ t = ("type", opt datatype t) in
   let bron br = ("bron", so br) in
   match e with
-  | Literal { variant; typ = t; bron = br; waarde = _ } ->
+  | Literal { variant; typ = t; bron = br } ->
       node "Literal" [ ("value", literal_value variant); typ t; bron br ]
   | Binair { op; links; rechts; typ = t; bron = br } ->
       node "Binair"

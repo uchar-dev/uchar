@@ -460,7 +460,8 @@ let literal_variant path j : literal_variant =
       | _ -> refuse ())
   | _ -> refuse ()
 
-(* The v0 lexeme the in-memory Literal keeps beside its variant ([Ast]). *)
+(* The v0 lexeme of a literal's variant: the variant's string, and `waar` or
+   `onwaar` for a boolean. *)
 let literal_lexeme = function
   | Lv_number s | Lv_text s | Lv_date s | Lv_date_time s | Lv_enumeration s | Lv_constructor s
     ->
@@ -489,7 +490,7 @@ let rec expr path j : expr =
   | "Literal" ->
       check_keys path kvs [ "node"; "value"; "type"; "bron" ];
       let variant = literal_variant (path / "value") (f "value") in
-      Literal { waarde = Some (literal_lexeme variant); variant; typ = typ (); bron = bron () }
+      Literal { variant; typ = typ (); bron = bron () }
   | "TekstReeks" ->
       check_keys path kvs [ "node"; "delen"; "type"; "bron" ];
       Tekst_reeks

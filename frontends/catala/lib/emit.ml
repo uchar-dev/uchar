@@ -143,8 +143,7 @@ let rol_binding (rb : rol_binding) : json =
   node "RolBinding" [ ("feittype", s rb.rb_feittype); ("rol", s rb.rb_rol) ]
 
 (* The typed value of a Literal (IR-SPEC ch. 4.1, delta B22): one key, the
-   variant the literal's type names; the in-memory lexeme beside it is not
-   written. *)
+   variant the literal's type names. *)
 let literal_value (v : literal_variant) : json =
   match v with
   | Lv_number x -> `Assoc [ ("number", s x) ]
@@ -159,7 +158,7 @@ let rec expr (e : expr) : json =
   let typ t = ("type", opt annotation t) in
   let bron br = ("bron", so br) in
   match e with
-  | Literal { variant; typ = t; bron = br; waarde = _ } ->
+  | Literal { variant; typ = t; bron = br } ->
       node "Literal" [ ("value", literal_value variant); typ t; bron br ]
   | Binair { op; links; rechts; typ = t; bron = br } ->
       node "Binair"

@@ -329,8 +329,7 @@ type ctx = { c_subject : string; c_var : string; c_binds : (string * expr) list 
 let rec low_expr m (ctx : ctx) ~line (e : expr) : A.expr =
   match e with
   | E_num lex ->
-      A.Literal
-        { waarde = Some lex; variant = A.Lv_number lex; typ = Some (literal_type lex); bron = Some lex }
+      A.Literal { variant = A.Lv_number lex; typ = Some (literal_type lex); bron = Some lex }
   | E_var v -> (
       match List.assoc_opt v ctx.c_binds with
       | Some e' -> low_expr m ctx ~line e'
@@ -426,8 +425,7 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
           leegwaarde =
             Some
               (A.Literal
-                 { waarde = Some zero; variant = A.Lv_number zero; typ = Some (literal_type zero);
-                   bron = Some zero });
+                 { variant = A.Lv_number zero; typ = Some (literal_type zero); bron = Some zero });
           filter = None; dimensie_selectie = None; typ = Some dt;
           bron = Some (show_expr whole); granulariteit = None;
           bron_rol = Some { rb_feittype = f.f_name; rb_rol = role }; bron_pad = None }
@@ -721,8 +719,7 @@ let low_rule m (r : rule) : definition =
            not write it — the slice does not invent a lexeme for it either,
            so the literal's [bron] stays null *)
         ( k,
-          A.Literal
-            { waarde = Some "waar"; variant = A.Lv_boolean true; typ = Some A.Booleaan; bron = None },
+          A.Literal { variant = A.Lv_boolean true; typ = Some A.Booleaan; bron = None },
           true )
     | H_attr (attr, e) ->
         if find_kenmerk m subject attr then

@@ -173,15 +173,9 @@ type literal_variant =
   | Lv_constructor of string
 
 type expr =
-  | Literal of {
-      waarde : string option;
-          (* the v0 lexeme, which the loader derives from [variant] and which
-             is therefore always [Some]: the variant's string, and `waar` or
-             `onwaar` for a boolean *)
-      variant : literal_variant;
-      typ : datatype option;
-      bron : string option;
-    }
+  | Literal of { variant : literal_variant; typ : datatype option; bron : string option }
+      (* the variant is the one value a literal carries in memory: a reader
+         that needs the v0 lexeme derives it ([Loader.literal_lexeme]) *)
   | Tekst_reeks of { delen : tekst_deel list; typ : datatype option; bron : string option }
   | Binair of {
       op : bin_op;
