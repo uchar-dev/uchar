@@ -3,7 +3,7 @@
    (Gelijkstelling/Berekening) plus at most one unconditional,
    version-free Initialisatie read as one attribute defaults group — the
    computing rule's condition becomes the default justification (an
-   unconditional rule gets the vacuously true empty-ALLE), the
+   unconditional rule gets the vacuously true empty all), the
    initialisation becomes the ch. 7.3 init default. Forms outside the
    domain are left untouched; a caller that needs totality checks
    [remainder] and faults, never guesses.
@@ -20,7 +20,7 @@ let norm = Checks.norm
 let version_free (g : geldigheid option) =
   match g with None | Some { geld_vanaf = None; geld_tot = None } -> true | _ -> false
 
-(* the vacuously true justification: ALLE over zero parts *)
+(* the vacuously true justification: all over zero parts *)
 let always_true : conditie =
   Samengesteld { kwantor = Alle; drempel = 0; onderdelen = []; bron = Some "altijd" }
 
@@ -580,7 +580,7 @@ let absorbed_on (doc : document) ~otype ~attr : string list =
 (* The temporal standing domain (RS ch. 7.8, the timeline arm): a
    temporal target carried by exactly one version-free computing rule
    (in practice the ch. 3.7 pro-rata fold) as its only writer. The rule
-   decides only when its result timeline is GEVULD (>= 1 segment) — an
+   decides only when its result timeline is filled (>= 1 segment) — an
    empty result is the temporal leeg (empty == never-written, ch. 3.1) and
    writes nothing, so a case-supplied input timeline stands whole: the
    defaults reading is per target, never per bucket (a default decides once;
