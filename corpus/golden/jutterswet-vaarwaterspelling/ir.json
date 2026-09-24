@@ -71,7 +71,9 @@
               "node": "AttribuutRef",
               "attribuut": "kadegeld",
               "objecttype": "Kadeplaats",
-              "bron": "de kadegeld"
+              "source": {
+                "snippet": "de kadegeld"
+              }
             },
             "value": {
               "node": "Match",
@@ -85,7 +87,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vaarwater",
                 "objecttype": "Kadeplaats",
-                "bron": "de vaarwater"
+                "source": {
+                  "snippet": "de vaarwater"
+                }
               },
               "arms": [
                 {
@@ -102,7 +106,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "2"
+                    "source": {
+                      "snippet": "2"
+                    }
                   }
                 },
                 {
@@ -119,7 +125,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "5"
+                    "source": {
+                      "snippet": "5"
+                    }
                   }
                 },
                 {
@@ -136,11 +144,15 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "9"
+                    "source": {
+                      "snippet": "9"
+                    }
                   }
                 }
               ],
-              "bron": "match VAARWATER"
+              "source": {
+                "snippet": "match VAARWATER"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

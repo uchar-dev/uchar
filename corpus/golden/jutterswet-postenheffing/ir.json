@@ -59,7 +59,9 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Jutter",
-              "bron": "De heffing over de posten van een Jutter"
+              "source": {
+                "snippet": "De heffing over de posten van een Jutter"
+              }
             },
             "value": {
               "node": "Let",
@@ -76,9 +78,13 @@
                   "node": "AttribuutRef",
                   "attribuut": "posten",
                   "objecttype": "Jutter",
-                  "bron": "zijn posten"
+                  "source": {
+                    "snippet": "zijn posten"
+                  }
                 },
-                "bron": "het aantal posten"
+                "source": {
+                  "snippet": "het aantal posten"
+                }
               },
               "body": {
                 "node": "Binair",
@@ -94,7 +100,9 @@
                     "decimals": 2,
                     "sign": "NIET_NEGATIEF"
                   },
-                  "bron": "500.00"
+                  "source": {
+                    "snippet": "500.00"
+                  }
                 },
                 "rechts": {
                   "node": "Binair",
@@ -102,7 +110,9 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "aantal_posten",
-                    "bron": "aantal_posten"
+                    "source": {
+                      "snippet": "aantal_posten"
+                    }
                   },
                   "rechts": {
                     "node": "ListLength",
@@ -116,9 +126,13 @@
                       "node": "AttribuutRef",
                       "attribuut": "posten",
                       "objecttype": "Jutter",
-                      "bron": "zijn posten"
+                      "source": {
+                        "snippet": "zijn posten"
+                      }
                     },
-                    "bron": "het aantal posten"
+                    "source": {
+                      "snippet": "het aantal posten"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -126,7 +140,9 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "e"
+                  "source": {
+                    "snippet": "e"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -134,7 +150,9 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "e"
+                "source": {
+                  "snippet": "e"
+                }
               },
               "type": {
                 "node": "Number",
@@ -142,7 +160,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de heffing over de posten"
+              "source": {
+                "snippet": "de heffing over de posten"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

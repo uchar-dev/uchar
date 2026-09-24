@@ -71,7 +71,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "hardheid_toegepast"
+                  "source": {
+                    "snippet": "hardheid_toegepast"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -80,7 +82,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "aantal_aangemelde_vondsten",
                     "objecttype": "Penningrecht",
-                    "bron": "de aantal_aangemelde_vondsten"
+                    "source": {
+                      "snippet": "de aantal_aangemelde_vondsten"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -93,15 +97,20 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "6"
+                    "source": {
+                      "snippet": "6"
+                    }
                   },
-                  "periode": null,
-                  "bron": null
+                  "periode": null
                 }
               ],
-              "bron": "en"
+              "source": {
+                "snippet": "en"
+              }
             },
-            "bron": "penninggerechtigd"
+            "source": {
+              "snippet": "penninggerechtigd"
+            }
           },
           {
             "node": "Default",
@@ -113,7 +122,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "aantal_aangemelde_vondsten",
                 "objecttype": "Penningrecht",
-                "bron": "de aantal_aangemelde_vondsten"
+                "source": {
+                  "snippet": "de aantal_aangemelde_vondsten"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -126,12 +137,15 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "12"
+                "source": {
+                  "snippet": "12"
+                }
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
-            "bron": "penninggerechtigd"
+            "source": {
+              "snippet": "penninggerechtigd"
+            }
           },
           {
             "node": "Default",
@@ -141,12 +155,18 @@
               "kwantor": "ALLE",
               "drempel": 0,
               "onderdelen": [],
-              "bron": "altijd"
+              "source": {
+                "snippet": "altijd"
+              }
             },
-            "bron": "penninggerechtigd"
+            "source": {
+              "snippet": "penninggerechtigd"
+            }
           }
         ],
-        "bron": "penninggerechtigd",
+        "source": {
+          "snippet": "penninggerechtigd"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

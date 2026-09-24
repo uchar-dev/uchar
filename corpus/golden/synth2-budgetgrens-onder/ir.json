@@ -78,7 +78,9 @@
               "node": "AttribuutRef",
               "attribuut": "opvolgerrang",
               "objecttype": "Wachter",
-              "bron": "De opvolgerrang van een Wachter"
+              "source": {
+                "snippet": "De opvolgerrang van een Wachter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -88,7 +90,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "rang",
                   "objecttype": "Wachter",
-                  "bron": "de rang van alle opvolgers van de Wachter"
+                  "source": {
+                    "snippet": "de rang van alle opvolgers van de Wachter"
+                  }
                 }
               ],
               "elementType": "Wachter",
@@ -103,7 +107,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -116,7 +122,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van de rang van alle opvolgers van de Wachter of 0 als die er niet zijn"
+              "source": {
+                "snippet": "de som van de rang van alle opvolgers van de Wachter of 0 als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -144,7 +152,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "rang",
                     "objecttype": "Wachter",
-                    "bron": "de rang van de Wachter"
+                    "source": {
+                      "snippet": "de rang van de Wachter"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -157,7 +167,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "1"
+                    "source": {
+                      "snippet": "1"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -165,7 +177,9 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "de rang van de Wachter plus 1"
+                  "source": {
+                    "snippet": "de rang van de Wachter plus 1"
+                  }
                 },
                 "kenmerk": false
               }
@@ -177,7 +191,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "rang",
                 "objecttype": "Wachter",
-                "bron": "de rang van de Wachter"
+                "source": {
+                  "snippet": "de rang van de Wachter"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -190,10 +206,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "98"
+                "source": {
+                  "snippet": "98"
+                }
               },
               "periode": null,
-              "bron": "de rang van de Wachter is kleiner dan 98"
+              "source": {
+                "snippet": "de rang van de Wachter is kleiner dan 98"
+              }
             },
             "validity": {
               "node": "Geldigheid",
@@ -224,7 +244,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "rang",
                 "objecttype": "Wachter",
-                "bron": "de rang van de Wachter"
+                "source": {
+                  "snippet": "de rang van de Wachter"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -237,18 +259,24 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "99"
+                "source": {
+                  "snippet": "99"
+                }
               },
               "periode": null,
-              "bron": "de rang van de Wachter is kleiner dan 99"
+              "source": {
+                "snippet": "de rang van de Wachter is kleiner dan 99"
+              }
             },
             "validity": {
               "node": "Geldigheid",
               "vanaf": null,
               "tot": null
             },
-            "bron": "Er moet worden voldaan aan: de rang van elke Wachter is kleiner dan 99",
-            "line": 1
+            "source": {
+              "snippet": "Er moet worden voldaan aan: de rang van elke Wachter is kleiner dan 99",
+              "line": 1
+            }
           }
         ]
       }
@@ -263,9 +291,7 @@
         "recursief": true,
         "leden": [
           "werf de opvolger"
-        ],
-        "bron": null,
-        "line": 1
+        ]
       }
     ]
   },

@@ -114,7 +114,9 @@
               "node": "AttribuutRef",
               "attribuut": "resterende sleepafstand",
               "objecttype": "Berging",
-              "bron": "De resterende sleepafstand van een Berging"
+              "source": {
+                "snippet": "De resterende sleepafstand van een Berging"
+              }
             },
             "value": {
               "node": "Binair",
@@ -130,7 +132,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "50"
+                "source": {
+                  "snippet": "50"
+                }
               },
               "rechts": {
                 "node": "Binair",
@@ -138,13 +142,17 @@
                 "links": {
                   "node": "ParameterRef",
                   "parameter": "bergingsfactor",
-                  "bron": "de bergingsfactor"
+                  "source": {
+                    "snippet": "de bergingsfactor"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "sleepafstand",
                   "objecttype": "Berging",
-                  "bron": "de sleepafstand van de Berging"
+                  "source": {
+                    "snippet": "de sleepafstand van de Berging"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -162,7 +170,9 @@
                     }
                   }
                 },
-                "bron": "de bergingsfactor maal de sleepafstand van de Berging"
+                "source": {
+                  "snippet": "de bergingsfactor maal de sleepafstand van de Berging"
+                }
               },
               "type": {
                 "node": "Number",
@@ -180,7 +190,9 @@
                   }
                 }
               },
-              "bron": "50 min de bergingsfactor maal de sleepafstand van de Berging"
+              "source": {
+                "snippet": "50 min de bergingsfactor maal de sleepafstand van de Berging"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

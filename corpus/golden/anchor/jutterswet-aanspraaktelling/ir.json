@@ -133,7 +133,9 @@
           "scrutinee": {
             "node": "BinderRef",
             "name": "a",
-            "bron": "de aanspraak"
+            "source": {
+              "snippet": "de aanspraak"
+            }
           },
           "arms": [
             {
@@ -142,7 +144,9 @@
               "body": {
                 "node": "BinderRef",
                 "name": "b",
-                "bron": "het erkende bedrag"
+                "source": {
+                  "snippet": "het erkende bedrag"
+                }
               }
             },
             {
@@ -159,13 +163,19 @@
                   "decimals": 2,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               }
             }
           ],
-          "bron": "de waarde van de aanspraak"
+          "source": {
+            "snippet": "de waarde van de aanspraak"
+          }
         },
-        "bron": "de waarde van een aanspraak"
+        "source": {
+          "snippet": "de waarde van een aanspraak"
+        }
       }
     ]
   },
@@ -185,7 +195,9 @@
               "node": "AttribuutRef",
               "attribuut": "erkende som",
               "objecttype": "Jutter",
-              "bron": "De erkende som van een Jutter"
+              "source": {
+                "snippet": "De erkende som van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -210,7 +222,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "aanspraken",
                   "objecttype": "Jutter",
-                  "bron": "zijn aanspraken"
+                  "source": {
+                    "snippet": "zijn aanspraken"
+                  }
                 },
                 "function": {
                   "node": "Lambda",
@@ -251,14 +265,22 @@
                       {
                         "node": "BinderRef",
                         "name": "a",
-                        "bron": "de aanspraak"
+                        "source": {
+                          "snippet": "de aanspraak"
+                        }
                       }
                     ],
-                    "bron": "de waarde van de aanspraak"
+                    "source": {
+                      "snippet": "de waarde van de aanspraak"
+                    }
                   },
-                  "bron": "de waarde per aanspraak"
+                  "source": {
+                    "snippet": "de waarde per aanspraak"
+                  }
                 },
-                "bron": "de waarden van zijn aanspraken"
+                "source": {
+                  "snippet": "de waarden van zijn aanspraken"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -288,12 +310,16 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "de opgetelde som"
+                    "source": {
+                      "snippet": "de opgetelde som"
+                    }
                   },
                   "rechts": {
                     "node": "BinderRef",
                     "name": "x",
-                    "bron": "de aanspraakwaarde"
+                    "source": {
+                      "snippet": "de aanspraakwaarde"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -301,9 +327,13 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "de opgetelde som plus de aanspraakwaarde"
+                  "source": {
+                    "snippet": "de opgetelde som plus de aanspraakwaarde"
+                  }
                 },
-                "bron": "de som van de aanspraakwaarden"
+                "source": {
+                  "snippet": "de som van de aanspraakwaarden"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -316,9 +346,13 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               },
-              "bron": "de aanspraakwaarden opgeteld"
+              "source": {
+                "snippet": "de aanspraakwaarden opgeteld"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -339,7 +373,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal erkend",
               "objecttype": "Jutter",
-              "bron": "Het aantal erkend van een Jutter"
+              "source": {
+                "snippet": "Het aantal erkend van een Jutter"
+              }
             },
             "value": {
               "node": "ListLength",
@@ -377,7 +413,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "aanspraken",
                   "objecttype": "Jutter",
-                  "bron": "zijn aanspraken"
+                  "source": {
+                    "snippet": "zijn aanspraken"
+                  }
                 },
                 "binder": "a",
                 "condition": {
@@ -386,7 +424,9 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "a",
-                    "bron": "de aanspraak"
+                    "source": {
+                      "snippet": "de aanspraak"
+                    }
                   },
                   "rechts": {
                     "node": "Construct",
@@ -411,14 +451,22 @@
                     },
                     "constructor": "Vervallen",
                     "argument": null,
-                    "bron": "vervallen"
+                    "source": {
+                      "snippet": "vervallen"
+                    }
                   },
                   "periode": null,
-                  "bron": "de aanspraak ongelijk is aan vervallen"
+                  "source": {
+                    "snippet": "de aanspraak ongelijk is aan vervallen"
+                  }
                 },
-                "bron": "zijn erkende aanspraken"
+                "source": {
+                  "snippet": "zijn erkende aanspraken"
+                }
               },
-              "bron": "het aantal erkende aanspraken"
+              "source": {
+                "snippet": "het aantal erkende aanspraken"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

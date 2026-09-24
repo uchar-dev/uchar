@@ -60,7 +60,9 @@
               "node": "AttribuutRef",
               "attribuut": "kwartheffing",
               "objecttype": "Jutter",
-              "bron": "De kwartheffing van een Jutter"
+              "source": {
+                "snippet": "De kwartheffing van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -73,7 +75,9 @@
               "list": {
                 "node": "ParameterRef",
                 "parameter": "kindertallen",
-                "bron": "de kindertallen"
+                "source": {
+                  "snippet": "de kindertallen"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -103,7 +107,9 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "de opgetelde kwartheffing"
+                    "source": {
+                      "snippet": "de opgetelde kwartheffing"
+                    }
                   },
                   "rechts": {
                     "node": "Binair",
@@ -111,7 +117,9 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "x",
-                      "bron": "het kindertal"
+                      "source": {
+                        "snippet": "het kindertal"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -124,7 +132,9 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "4"
+                      "source": {
+                        "snippet": "4"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -132,7 +142,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "het kindertal gedeeld door 4"
+                    "source": {
+                      "snippet": "het kindertal gedeeld door 4"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -140,9 +152,13 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "de opgetelde kwartheffing plus het kinddeel"
+                  "source": {
+                    "snippet": "de opgetelde kwartheffing plus het kinddeel"
+                  }
                 },
-                "bron": "de kinddelen opgeteld"
+                "source": {
+                  "snippet": "de kinddelen opgeteld"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -155,9 +171,13 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               },
-              "bron": "de kindertallen gevouwen tot de kwartheffing"
+              "source": {
+                "snippet": "de kindertallen gevouwen tot de kwartheffing"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

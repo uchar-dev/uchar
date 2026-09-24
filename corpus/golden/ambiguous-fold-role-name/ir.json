@@ -105,7 +105,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal vrienden",
               "objecttype": "Jutter",
-              "bron": "Het aantal vrienden van een Jutter"
+              "source": {
+                "snippet": "Het aantal vrienden van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -115,7 +117,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vriend",
                   "objecttype": "Jutter",
-                  "bron": "vriend van de Jutter"
+                  "source": {
+                    "snippet": "vriend van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -130,7 +134,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal vriend van de Jutter"
+              "source": {
+                "snippet": "het aantal vriend van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

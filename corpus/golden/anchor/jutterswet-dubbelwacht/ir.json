@@ -82,7 +82,9 @@
               "node": "AttribuutRef",
               "attribuut": "dubbelwachtsom",
               "objecttype": "Jutter",
-              "bron": "De dubbelwachtsom van een Jutter"
+              "source": {
+                "snippet": "De dubbelwachtsom van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -92,7 +94,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "wachtvergoeding per maand",
                   "objecttype": "Jutter",
-                  "bron": "zijn wachtvergoeding per maand"
+                  "source": {
+                    "snippet": "zijn wachtvergoeding per maand"
+                  }
                 }
               ],
               "elementType": "Jutter",
@@ -107,7 +111,9 @@
                     "negatie": false,
                     "eigenaar": null,
                     "periode": null,
-                    "bron": "gedurende de tijd dat hij borgplichtig is"
+                    "source": {
+                      "snippet": "gedurende de tijd dat hij borgplichtig is"
+                    }
                   },
                   {
                     "node": "Kenmerk",
@@ -115,10 +121,14 @@
                     "negatie": false,
                     "eigenaar": null,
                     "periode": null,
-                    "bron": "gedurende de tijd dat hij aangesteld is"
+                    "source": {
+                      "snippet": "gedurende de tijd dat hij aangesteld is"
+                    }
                   }
                 ],
-                "bron": "gedurende de tijd dat hij borgplichtig en aangesteld is"
+                "source": {
+                  "snippet": "gedurende de tijd dat hij borgplichtig en aangesteld is"
+                }
               },
               "type": {
                 "node": "Number",
@@ -126,7 +136,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij borgplichtig en aangesteld is"
+              "source": {
+                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij borgplichtig en aangesteld is"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

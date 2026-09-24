@@ -159,7 +159,9 @@
               "node": "AttribuutRef",
               "attribuut": "uitkering",
               "objecttype": "Jutter",
-              "bron": "De uitkering van een Jutter"
+              "source": {
+                "snippet": "De uitkering van een Jutter"
+              }
             },
             "value": {
               "node": "Match",
@@ -173,7 +175,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "beschikking",
                 "objecttype": "Jutter",
-                "bron": "zijn beschikking"
+                "source": {
+                  "snippet": "zijn beschikking"
+                }
               },
               "arms": [
                 {
@@ -185,12 +189,16 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "bedrag",
-                      "bron": "het toegekende bedrag"
+                      "source": {
+                        "snippet": "het toegekende bedrag"
+                      }
                     },
                     "rechts": {
                       "node": "ParameterRef",
                       "parameter": "vaste voet",
-                      "bron": "de vaste voet"
+                      "source": {
+                        "snippet": "de vaste voet"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -198,7 +206,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "het toegekende bedrag plus de vaste voet"
+                    "source": {
+                      "snippet": "het toegekende bedrag plus de vaste voet"
+                    }
                   }
                 },
                 {
@@ -215,7 +225,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0.00"
+                    "source": {
+                      "snippet": "0.00"
+                    }
                   }
                 },
                 {
@@ -232,11 +244,15 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "12.00"
+                    "source": {
+                      "snippet": "12.00"
+                    }
                   }
                 }
               ],
-              "bron": "afhankelijk van zijn beschikking"
+              "source": {
+                "snippet": "afhankelijk van zijn beschikking"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -257,7 +273,9 @@
               "node": "AttribuutRef",
               "attribuut": "bevoorschot",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is bevoorschot"
+              "source": {
+                "snippet": "Een Jutter is bevoorschot"
+              }
             },
             "value": {
               "node": "Literal",
@@ -267,7 +285,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -276,7 +296,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "beschikking",
                 "objecttype": "Jutter",
-                "bron": "zijn beschikking"
+                "source": {
+                  "snippet": "zijn beschikking"
+                }
               },
               "rechts": {
                 "node": "Construct",
@@ -305,10 +327,14 @@
                 },
                 "constructor": "Aangehouden",
                 "argument": null,
-                "bron": "aangehouden"
+                "source": {
+                  "snippet": "aangehouden"
+                }
               },
               "periode": null,
-              "bron": "zijn beschikking gelijk is aan aangehouden"
+              "source": {
+                "snippet": "zijn beschikking gelijk is aan aangehouden"
+              }
             },
             "initialisation": false
           }
@@ -328,7 +354,9 @@
               "node": "AttribuutRef",
               "attribuut": "afgehandeld",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is afgehandeld"
+              "source": {
+                "snippet": "Een Jutter is afgehandeld"
+              }
             },
             "value": {
               "node": "Literal",
@@ -338,7 +366,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -347,7 +377,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "beschikking",
                 "objecttype": "Jutter",
-                "bron": "zijn beschikking"
+                "source": {
+                  "snippet": "zijn beschikking"
+                }
               },
               "rechts": {
                 "node": "Construct",
@@ -376,10 +408,14 @@
                 },
                 "constructor": "Aangehouden",
                 "argument": null,
-                "bron": "aangehouden"
+                "source": {
+                  "snippet": "aangehouden"
+                }
               },
               "periode": null,
-              "bron": "zijn beschikking ongelijk is aan aangehouden"
+              "source": {
+                "snippet": "zijn beschikking ongelijk is aan aangehouden"
+              }
             },
             "initialisation": false
           }
@@ -399,7 +435,9 @@
               "node": "AttribuutRef",
               "attribuut": "herbeschikking",
               "objecttype": "Jutter",
-              "bron": "De herbeschikking van een Jutter"
+              "source": {
+                "snippet": "De herbeschikking van een Jutter"
+              }
             },
             "value": {
               "node": "Construct",
@@ -431,9 +469,13 @@
                 "node": "AttribuutRef",
                 "attribuut": "borg",
                 "objecttype": "Jutter",
-                "bron": "zijn borg"
+                "source": {
+                  "snippet": "zijn borg"
+                }
               },
-              "bron": "toegekend zijn borg"
+              "source": {
+                "snippet": "toegekend zijn borg"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

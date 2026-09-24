@@ -68,7 +68,9 @@
               "node": "AttribuutRef",
               "attribuut": "midzomers",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is midzomers"
+              "source": {
+                "snippet": "Een Vondst is midzomers"
+              }
             },
             "value": {
               "node": "Literal",
@@ -78,7 +80,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -87,7 +91,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vondstdatum",
                 "objecttype": "Vondst",
-                "bron": "de vondstdatum van de Vondst"
+                "source": {
+                  "snippet": "de vondstdatum van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -98,10 +104,14 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "21-06-2026"
+                "source": {
+                  "snippet": "21-06-2026"
+                }
               },
               "periode": null,
-              "bron": "haar vondstdatum gelijk is aan 21-06-2026"
+              "source": {
+                "snippet": "haar vondstdatum gelijk is aan 21-06-2026"
+              }
             },
             "initialisation": false
           }
@@ -121,7 +131,9 @@
               "node": "AttribuutRef",
               "attribuut": "nagekomen",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is nagekomen"
+              "source": {
+                "snippet": "Een Vondst is nagekomen"
+              }
             },
             "value": {
               "node": "Literal",
@@ -131,7 +143,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -140,7 +154,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vondstdatum",
                 "objecttype": "Vondst",
-                "bron": "de vondstdatum van de Vondst"
+                "source": {
+                  "snippet": "de vondstdatum van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -151,10 +167,14 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "21-06-2026"
+                "source": {
+                  "snippet": "21-06-2026"
+                }
               },
               "periode": null,
-              "bron": "haar vondstdatum ongelijk is aan 21-06-2026"
+              "source": {
+                "snippet": "haar vondstdatum ongelijk is aan 21-06-2026"
+              }
             },
             "initialisation": false
           }
@@ -174,7 +194,9 @@
               "node": "AttribuutRef",
               "attribuut": "vroeg",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is vroeg"
+              "source": {
+                "snippet": "Een Vondst is vroeg"
+              }
             },
             "value": {
               "node": "Literal",
@@ -184,7 +206,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -193,7 +217,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vondstdatum",
                 "objecttype": "Vondst",
-                "bron": "de vondstdatum van de Vondst"
+                "source": {
+                  "snippet": "de vondstdatum van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -204,10 +230,14 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "01-06-2026"
+                "source": {
+                  "snippet": "01-06-2026"
+                }
               },
               "periode": null,
-              "bron": "haar vondstdatum eerder is dan 01-06-2026"
+              "source": {
+                "snippet": "haar vondstdatum eerder is dan 01-06-2026"
+              }
             },
             "initialisation": false
           }
@@ -227,13 +257,17 @@
               "node": "AttribuutRef",
               "attribuut": "keurdatum",
               "objecttype": "Vondst",
-              "bron": "De keurdatum van een Vondst"
+              "source": {
+                "snippet": "De keurdatum van een Vondst"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "vondstdatum",
               "objecttype": "Vondst",
-              "bron": "de vondstdatum van de Vondst"
+              "source": {
+                "snippet": "de vondstdatum van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

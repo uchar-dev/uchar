@@ -60,7 +60,9 @@
               "node": "AttribuutRef",
               "attribuut": "kaptotaal",
               "objecttype": "Jutter",
-              "bron": "Het kaptotaal van een Jutter"
+              "source": {
+                "snippet": "Het kaptotaal van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -73,7 +75,9 @@
               "list": {
                 "node": "ParameterRef",
                 "parameter": "kindertallen",
-                "bron": "de kindertallen"
+                "source": {
+                  "snippet": "de kindertallen"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -103,7 +107,9 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "het opgetelde kapdeel"
+                    "source": {
+                      "snippet": "het opgetelde kapdeel"
+                    }
                   },
                   "rechts": {
                     "node": "Binair",
@@ -111,7 +117,9 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "x",
-                      "bron": "het kindertal"
+                      "source": {
+                        "snippet": "het kindertal"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -124,7 +132,9 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "3"
+                      "source": {
+                        "snippet": "3"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -132,7 +142,9 @@
                       "decimals": 5,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "het kindertal absoluut gedeeld door 3"
+                    "source": {
+                      "snippet": "het kindertal absoluut gedeeld door 3"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -140,9 +152,13 @@
                     "decimals": 5,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "het opgetelde kapdeel plus het kapdeel"
+                  "source": {
+                    "snippet": "het opgetelde kapdeel plus het kapdeel"
+                  }
                 },
-                "bron": "de kapdelen opgeteld"
+                "source": {
+                  "snippet": "de kapdelen opgeteld"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -155,9 +171,13 @@
                   "decimals": 5,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00000"
+                "source": {
+                  "snippet": "0.00000"
+                }
               },
-              "bron": "de kindertallen gevouwen tot het kaptotaal"
+              "source": {
+                "snippet": "de kindertallen gevouwen tot het kaptotaal"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

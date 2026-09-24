@@ -102,7 +102,9 @@
               "node": "AttribuutRef",
               "attribuut": "borgdeel",
               "objecttype": "Jutter",
-              "bron": "Het borgdeel"
+              "source": {
+                "snippet": "Het borgdeel"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -112,7 +114,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "borgtarief",
                   "objecttype": "Jutter",
-                  "bron": "zijn borgtarief"
+                  "source": {
+                    "snippet": "zijn borgtarief"
+                  }
                 }
               ],
               "filter": {
@@ -121,7 +125,9 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "gedurende de tijd dat hij borgplichtig is"
+                "source": {
+                  "snippet": "gedurende de tijd dat hij borgplichtig is"
+                }
               },
               "granularity": "MAAND",
               "type": {
@@ -130,7 +136,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "tijdsevenredig deel"
+              "source": {
+                "snippet": "tijdsevenredig deel"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -151,7 +159,9 @@
               "node": "AttribuutRef",
               "attribuut": "wachtsom",
               "objecttype": "Jutter",
-              "bron": "De wachtsom"
+              "source": {
+                "snippet": "De wachtsom"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -161,7 +171,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bedrag",
                   "objecttype": "Jutter",
-                  "bron": "zijn bedrag"
+                  "source": {
+                    "snippet": "zijn bedrag"
+                  }
                 }
               ],
               "elementType": "Jutter",
@@ -172,7 +184,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "borgdeel",
                   "objecttype": "Jutter",
-                  "bron": "zijn borgdeel"
+                  "source": {
+                    "snippet": "zijn borgdeel"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -185,10 +199,14 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "5.00"
+                  "source": {
+                    "snippet": "5.00"
+                  }
                 },
                 "periode": null,
-                "bron": "gedurende de tijd dat zijn borgdeel groter is dan 5"
+                "source": {
+                  "snippet": "gedurende de tijd dat zijn borgdeel groter is dan 5"
+                }
               },
               "type": {
                 "node": "Number",
@@ -196,7 +214,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "totaal van bedrag gedurende borgdeel>5"
+              "source": {
+                "snippet": "totaal van bedrag gedurende borgdeel>5"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

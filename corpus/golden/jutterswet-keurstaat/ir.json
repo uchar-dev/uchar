@@ -99,7 +99,9 @@
               "node": "AttribuutRef",
               "attribuut": "veilbaar",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is veilbaar"
+              "source": {
+                "snippet": "Een Vondst is veilbaar"
+              }
             },
             "value": {
               "node": "Literal",
@@ -109,7 +111,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -118,7 +122,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "staat",
                 "objecttype": "Vondst",
-                "bron": "de staat van de Vondst"
+                "source": {
+                  "snippet": "de staat van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -134,10 +140,14 @@
                     "wrakhout"
                   ]
                 },
-                "bron": "'gaaf'"
+                "source": {
+                  "snippet": "'gaaf'"
+                }
               },
               "periode": null,
-              "bron": "haar staat gelijk is aan 'gaaf'"
+              "source": {
+                "snippet": "haar staat gelijk is aan 'gaaf'"
+              }
             },
             "initialisation": false
           }
@@ -157,7 +167,9 @@
               "node": "AttribuutRef",
               "attribuut": "afgekeurd",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is afgekeurd"
+              "source": {
+                "snippet": "Een Vondst is afgekeurd"
+              }
             },
             "value": {
               "node": "Literal",
@@ -167,7 +179,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -176,7 +190,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "staat",
                 "objecttype": "Vondst",
-                "bron": "de staat van de Vondst"
+                "source": {
+                  "snippet": "de staat van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -192,10 +208,14 @@
                     "wrakhout"
                   ]
                 },
-                "bron": "'gaaf'"
+                "source": {
+                  "snippet": "'gaaf'"
+                }
               },
               "periode": null,
-              "bron": "haar staat ongelijk is aan 'gaaf'"
+              "source": {
+                "snippet": "haar staat ongelijk is aan 'gaaf'"
+              }
             },
             "initialisation": false
           }
@@ -215,13 +235,17 @@
               "node": "AttribuutRef",
               "attribuut": "oordeel",
               "objecttype": "Vondst",
-              "bron": "Het oordeel van een Vondst"
+              "source": {
+                "snippet": "Het oordeel van een Vondst"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "staat",
               "objecttype": "Vondst",
-              "bron": "de staat van de Vondst"
+              "source": {
+                "snippet": "de staat van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -242,7 +266,9 @@
               "node": "AttribuutRef",
               "attribuut": "stempel",
               "objecttype": "Vondst",
-              "bron": "Het stempel van een Vondst"
+              "source": {
+                "snippet": "Het stempel van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -258,7 +284,9 @@
                   "wrakhout"
                 ]
               },
-              "bron": "'gaaf'"
+              "source": {
+                "snippet": "'gaaf'"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -266,7 +294,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "de Vondst is veilbaar"
+              "source": {
+                "snippet": "de Vondst is veilbaar"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

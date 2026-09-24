@@ -232,7 +232,9 @@
               "node": "AttribuutRef",
               "attribuut": "ondergewicht",
               "objecttype": "Vangst",
-              "bron": "Het ondergewicht van een Vangst"
+              "source": {
+                "snippet": "Het ondergewicht van een Vangst"
+              }
             },
             "value": {
               "node": "Begrensd",
@@ -240,7 +242,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "ruwgewicht",
                 "objecttype": "Vangst",
-                "bron": "het ruwgewicht van de Vangst"
+                "source": {
+                  "snippet": "het ruwgewicht van de Vangst"
+                }
               },
               "minimum": {
                 "node": "Literal",
@@ -263,7 +267,9 @@
                     }
                   }
                 },
-                "bron": "1 t"
+                "source": {
+                  "snippet": "1 t"
+                }
               },
               "maximum": null,
               "type": {
@@ -282,7 +288,9 @@
                   }
                 }
               },
-              "bron": "het ruwgewicht van de Vangst, met een minimum van 1 t"
+              "source": {
+                "snippet": "het ruwgewicht van de Vangst, met een minimum van 1 t"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -303,13 +311,17 @@
               "node": "AttribuutRef",
               "attribuut": "spiegelgewicht",
               "objecttype": "Vangst",
-              "bron": "Het spiegelgewicht van een Vangst"
+              "source": {
+                "snippet": "Het spiegelgewicht van een Vangst"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "ruwgewicht",
               "objecttype": "Vangst",
-              "bron": "het ruwgewicht van de Vangst"
+              "source": {
+                "snippet": "het ruwgewicht van de Vangst"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -330,7 +342,9 @@
               "node": "AttribuutRef",
               "attribuut": "somgewicht",
               "objecttype": "Vangst",
-              "bron": "Het somgewicht van een Vangst"
+              "source": {
+                "snippet": "Het somgewicht van een Vangst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -339,13 +353,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "ruwgewicht",
                 "objecttype": "Vangst",
-                "bron": "het ruwgewicht van de Vangst"
+                "source": {
+                  "snippet": "het ruwgewicht van de Vangst"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "spiegelgewicht",
                 "objecttype": "Vangst",
-                "bron": "het spiegelgewicht van de Vangst"
+                "source": {
+                  "snippet": "het spiegelgewicht van de Vangst"
+                }
               },
               "type": {
                 "node": "Number",
@@ -363,7 +381,9 @@
                   }
                 }
               },
-              "bron": "het ruwgewicht van de Vangst plus het spiegelgewicht van de Vangst"
+              "source": {
+                "snippet": "het ruwgewicht van de Vangst plus het spiegelgewicht van de Vangst"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -384,7 +404,9 @@
               "node": "AttribuutRef",
               "attribuut": "toeslaggewicht",
               "objecttype": "Vangst",
-              "bron": "Het toeslaggewicht van een Vangst"
+              "source": {
+                "snippet": "Het toeslaggewicht van een Vangst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -393,7 +415,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "ruwgewicht",
                 "objecttype": "Vangst",
-                "bron": "het ruwgewicht van de Vangst"
+                "source": {
+                  "snippet": "het ruwgewicht van de Vangst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -416,7 +440,9 @@
                     }
                   }
                 },
-                "bron": "1 t"
+                "source": {
+                  "snippet": "1 t"
+                }
               },
               "type": {
                 "node": "Number",
@@ -434,7 +460,9 @@
                   }
                 }
               },
-              "bron": "het ruwgewicht van de Vangst plus 1 t"
+              "source": {
+                "snippet": "het ruwgewicht van de Vangst plus 1 t"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -455,7 +483,9 @@
               "node": "AttribuutRef",
               "attribuut": "lastgewicht",
               "objecttype": "Vangst",
-              "bron": "Het lastgewicht van een Vangst"
+              "source": {
+                "snippet": "Het lastgewicht van een Vangst"
+              }
             },
             "value": {
               "node": "Begrensd",
@@ -463,7 +493,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "ruwgewicht",
                 "objecttype": "Vangst",
-                "bron": "het ruwgewicht van de Vangst"
+                "source": {
+                  "snippet": "het ruwgewicht van de Vangst"
+                }
               },
               "minimum": null,
               "maximum": {
@@ -487,7 +519,9 @@
                     }
                   }
                 },
-                "bron": "2 t"
+                "source": {
+                  "snippet": "2 t"
+                }
               },
               "type": {
                 "node": "Number",
@@ -505,7 +539,9 @@
                   }
                 }
               },
-              "bron": "het ruwgewicht van de Vangst, met een maximum van 2 t"
+              "source": {
+                "snippet": "het ruwgewicht van de Vangst, met een maximum van 2 t"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -526,13 +562,17 @@
               "node": "AttribuutRef",
               "attribuut": "keurgewicht",
               "objecttype": "Vangst",
-              "bron": "Het keurgewicht van een Vangst"
+              "source": {
+                "snippet": "Het keurgewicht van een Vangst"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "ruwgewicht",
               "objecttype": "Vangst",
-              "bron": "het ruwgewicht van de Vangst"
+              "source": {
+                "snippet": "het ruwgewicht van de Vangst"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -541,7 +581,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "spiegelgewicht",
                 "objecttype": "Vangst",
-                "bron": "het spiegelgewicht van de Vangst"
+                "source": {
+                  "snippet": "het spiegelgewicht van de Vangst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -564,10 +606,14 @@
                     }
                   }
                 },
-                "bron": "1000 kg"
+                "source": {
+                  "snippet": "1000 kg"
+                }
               },
               "periode": null,
-              "bron": "het spiegelgewicht van de Vangst groter is dan 1000 kg"
+              "source": {
+                "snippet": "het spiegelgewicht van de Vangst groter is dan 1000 kg"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

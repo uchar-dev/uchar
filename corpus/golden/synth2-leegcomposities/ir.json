@@ -162,7 +162,9 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Meting",
-              "bron": "De heffing van een Meting"
+              "source": {
+                "snippet": "De heffing van een Meting"
+              }
             },
             "value": {
               "node": "Binair",
@@ -174,13 +176,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "grondslag",
                   "objecttype": "Meting",
-                  "bron": "de grondslag van de Meting"
+                  "source": {
+                    "snippet": "de grondslag van de Meting"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "factor",
                   "objecttype": "Meting",
-                  "bron": "de factor van de Meting"
+                  "source": {
+                    "snippet": "de factor van de Meting"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -188,13 +194,17 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de grondslag van de Meting maal de factor van de Meting"
+                "source": {
+                  "snippet": "de grondslag van de Meting maal de factor van de Meting"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "korting",
                 "objecttype": "Meting",
-                "bron": "de korting van de Meting"
+                "source": {
+                  "snippet": "de korting van de Meting"
+                }
               },
               "type": {
                 "node": "Number",
@@ -202,7 +212,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de grondslag van de Meting maal de factor van de Meting verminderd met de korting van de Meting"
+              "source": {
+                "snippet": "de grondslag van de Meting maal de factor van de Meting verminderd met de korting van de Meting"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -223,7 +235,9 @@
               "node": "AttribuutRef",
               "attribuut": "rest",
               "objecttype": "Meting",
-              "bron": "De rest van een Meting"
+              "source": {
+                "snippet": "De rest van een Meting"
+              }
             },
             "value": {
               "node": "Binair",
@@ -232,7 +246,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "aftrek",
                 "objecttype": "Meting",
-                "bron": "de aftrek van de Meting"
+                "source": {
+                  "snippet": "de aftrek van de Meting"
+                }
               },
               "rechts": {
                 "node": "Binair",
@@ -241,13 +257,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "tarief",
                   "objecttype": "Meting",
-                  "bron": "het tarief van de Meting"
+                  "source": {
+                    "snippet": "het tarief van de Meting"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "aantal",
                   "objecttype": "Meting",
-                  "bron": "het aantal van de Meting"
+                  "source": {
+                    "snippet": "het aantal van de Meting"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -255,7 +275,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "het tarief van de Meting maal het aantal van de Meting"
+                "source": {
+                  "snippet": "het tarief van de Meting maal het aantal van de Meting"
+                }
               },
               "type": {
                 "node": "Number",
@@ -263,7 +285,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de aftrek van de Meting verminderd met het tarief van de Meting maal het aantal van de Meting"
+              "source": {
+                "snippet": "de aftrek van de Meting verminderd met het tarief van de Meting maal het aantal van de Meting"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -284,7 +308,9 @@
               "node": "AttribuutRef",
               "attribuut": "uitkomst",
               "objecttype": "Meting",
-              "bron": "De uitkomst van een Meting"
+              "source": {
+                "snippet": "De uitkomst van een Meting"
+              }
             },
             "value": {
               "node": "Binair",
@@ -296,13 +322,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "som",
                   "objecttype": "Meting",
-                  "bron": "de som van de Meting"
+                  "source": {
+                    "snippet": "de som van de Meting"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "deler",
                   "objecttype": "Meting",
-                  "bron": "de deler van de Meting"
+                  "source": {
+                    "snippet": "de deler van de Meting"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -310,13 +340,17 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de som van de Meting gedeeld door de deler van de Meting"
+                "source": {
+                  "snippet": "de som van de Meting gedeeld door de deler van de Meting"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "toeslag",
                 "objecttype": "Meting",
-                "bron": "de toeslag van de Meting"
+                "source": {
+                  "snippet": "de toeslag van de Meting"
+                }
               },
               "type": {
                 "node": "Number",
@@ -324,7 +358,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van de Meting gedeeld door de deler van de Meting plus de toeslag van de Meting"
+              "source": {
+                "snippet": "de som van de Meting gedeeld door de deler van de Meting plus de toeslag van de Meting"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -332,7 +368,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "de Meting is actief"
+              "source": {
+                "snippet": "de Meting is actief"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -110,7 +110,9 @@
               "node": "AttribuutRef",
               "attribuut": "penningrecht",
               "objecttype": "Penningbeschikking",
-              "bron": "de penningrecht"
+              "source": {
+                "snippet": "de penningrecht"
+              }
             },
             "value": {
               "node": "Match",
@@ -124,7 +126,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "penningstatus",
                 "objecttype": "Penningbeschikking",
-                "bron": "de penningstatus"
+                "source": {
+                  "snippet": "de penningstatus"
+                }
               },
               "arms": [
                 {
@@ -136,7 +140,9 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "bedrag",
-                      "bron": "bedrag"
+                      "source": {
+                        "snippet": "bedrag"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -149,15 +155,16 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "30.00"
+                      "source": {
+                        "snippet": "30.00"
+                      }
                     },
                     "type": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
                       "sign": "ONBEPAALD"
-                    },
-                    "bron": null
+                    }
                   }
                 },
                 {
@@ -174,7 +181,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0.00"
+                    "source": {
+                      "snippet": "0.00"
+                    }
                   }
                 },
                 {
@@ -191,11 +200,15 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "15.00"
+                    "source": {
+                      "snippet": "15.00"
+                    }
                   }
                 }
               ],
-              "bron": "match Penningstatus"
+              "source": {
+                "snippet": "match Penningstatus"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -216,7 +229,9 @@
               "node": "AttribuutRef",
               "attribuut": "voorlopig",
               "objecttype": "Penningbeschikking",
-              "bron": "de voorlopig"
+              "source": {
+                "snippet": "de voorlopig"
+              }
             },
             "value": {
               "node": "Literal",
@@ -226,7 +241,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -235,7 +252,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "penningstatus",
                 "objecttype": "Penningbeschikking",
-                "bron": "de penningstatus"
+                "source": {
+                  "snippet": "de penningstatus"
+                }
               },
               "rechts": {
                 "node": "Construct",
@@ -264,10 +283,11 @@
                 },
                 "constructor": "Aangehouden",
                 "argument": null,
-                "bron": "Aangehouden"
+                "source": {
+                  "snippet": "Aangehouden"
+                }
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "initialisation": false
           }
@@ -287,7 +307,9 @@
               "node": "AttribuutRef",
               "attribuut": "beslist",
               "objecttype": "Penningbeschikking",
-              "bron": "de beslist"
+              "source": {
+                "snippet": "de beslist"
+              }
             },
             "value": {
               "node": "Literal",
@@ -297,7 +319,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -306,7 +330,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "penningstatus",
                 "objecttype": "Penningbeschikking",
-                "bron": "de penningstatus"
+                "source": {
+                  "snippet": "de penningstatus"
+                }
               },
               "rechts": {
                 "node": "Construct",
@@ -335,10 +361,11 @@
                 },
                 "constructor": "Aangehouden",
                 "argument": null,
-                "bron": "Aangehouden"
+                "source": {
+                  "snippet": "Aangehouden"
+                }
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "initialisation": false
           }

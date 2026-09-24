@@ -77,7 +77,9 @@
               "node": "AttribuutRef",
               "attribuut": "onderhoudsbijdrage",
               "objecttype": "Bakenmeester",
-              "bron": "De onderhoudsbijdrage van een Bakenmeester"
+              "source": {
+                "snippet": "De onderhoudsbijdrage van een Bakenmeester"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -87,7 +89,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "onderhoudstarief",
                   "objecttype": "Bakenmeester",
-                  "bron": "zijn onderhoudstarief"
+                  "source": {
+                    "snippet": "zijn onderhoudstarief"
+                  }
                 }
               ],
               "filter": {
@@ -96,7 +100,9 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "gedurende de tijd dat hij dienstdoend is"
+                "source": {
+                  "snippet": "gedurende de tijd dat hij dienstdoend is"
+                }
               },
               "granularity": "MAAND",
               "type": {
@@ -105,7 +111,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het tijdsevenredig deel per maand van zijn onderhoudstarief gedurende de tijd dat hij dienstdoend is"
+              "source": {
+                "snippet": "het tijdsevenredig deel per maand van zijn onderhoudstarief gedurende de tijd dat hij dienstdoend is"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

@@ -83,7 +83,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij grondX heeft"
+              "source": {
+                "snippet": "hij grondX heeft"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -96,9 +98,13 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "40.00"
+              "source": {
+                "snippet": "40.00"
+              }
             },
-            "bron": "grondX: 40.00, tenzij een geneste uitzonderingsgrond geldt",
+            "source": {
+              "snippet": "grondX: 40.00, tenzij een geneste uitzonderingsgrond geldt"
+            },
             "excepties": {
               "ongeordend": true,
               "leden": [
@@ -114,7 +120,9 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij grondY heeft"
+                        "source": {
+                          "snippet": "hij grondY heeft"
+                        }
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -127,12 +135,18 @@
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "10.00"
+                        "source": {
+                          "snippet": "10.00"
+                        }
                       },
-                      "bron": "grondY: 10.00"
+                      "source": {
+                        "snippet": "grondY: 10.00"
+                      }
                     }
                   ],
-                  "bron": "tak Y"
+                  "source": {
+                    "snippet": "tak Y"
+                  }
                 },
                 {
                   "node": "ExceptionGroup",
@@ -146,7 +160,9 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij grondP heeft"
+                        "source": {
+                          "snippet": "hij grondP heeft"
+                        }
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -159,9 +175,13 @@
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "30.00"
+                        "source": {
+                          "snippet": "30.00"
+                        }
                       },
-                      "bron": "grondP: 30.00, tenzij een diepere grond geldt",
+                      "source": {
+                        "snippet": "grondP: 30.00, tenzij een diepere grond geldt"
+                      },
                       "excepties": {
                         "ongeordend": true,
                         "leden": [
@@ -177,7 +197,9 @@
                                   "negatie": false,
                                   "eigenaar": null,
                                   "periode": null,
-                                  "bron": "hij grondQ heeft"
+                                  "source": {
+                                    "snippet": "hij grondQ heeft"
+                                  }
                                 },
                                 "consequentie": {
                                   "node": "Literal",
@@ -190,12 +212,18 @@
                                     "decimals": 2,
                                     "sign": "ONBEPAALD"
                                   },
-                                  "bron": "5.00"
+                                  "source": {
+                                    "snippet": "5.00"
+                                  }
                                 },
-                                "bron": "grondQ: 5.00"
+                                "source": {
+                                  "snippet": "grondQ: 5.00"
+                                }
                               }
                             ],
-                            "bron": "diepste tak Q"
+                            "source": {
+                              "snippet": "diepste tak Q"
+                            }
                           },
                           {
                             "node": "ExceptionGroup",
@@ -209,7 +237,9 @@
                                   "negatie": false,
                                   "eigenaar": null,
                                   "periode": null,
-                                  "bron": "hij grondR heeft"
+                                  "source": {
+                                    "snippet": "hij grondR heeft"
+                                  }
                                 },
                                 "consequentie": {
                                   "node": "Literal",
@@ -222,24 +252,34 @@
                                     "decimals": 2,
                                     "sign": "ONBEPAALD"
                                   },
-                                  "bron": "25.00"
+                                  "source": {
+                                    "snippet": "25.00"
+                                  }
                                 },
-                                "bron": "grondR: 25.00"
+                                "source": {
+                                  "snippet": "grondR: 25.00"
+                                }
                               }
                             ],
-                            "bron": "diepste tak R"
+                            "source": {
+                              "snippet": "diepste tak R"
+                            }
                           }
                         ]
                       }
                     }
                   ],
-                  "bron": "tak P (met eigen excepties)"
+                  "source": {
+                    "snippet": "tak P (met eigen excepties)"
+                  }
                 }
               ]
             }
           }
         ],
-        "bron": "art. 6a: de heffing met drielaags geneste uitzonderingsgronden",
+        "source": {
+          "snippet": "art. 6a: de heffing met drielaags geneste uitzonderingsgronden"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

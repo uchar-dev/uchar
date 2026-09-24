@@ -134,7 +134,9 @@
               "node": "AttribuutRef",
               "attribuut": "vakcijfer",
               "objecttype": "Schouwveld",
-              "bron": "Het vakcijfer van een Schouwveld"
+              "source": {
+                "snippet": "Het vakcijfer van een Schouwveld"
+              }
             },
             "value": {
               "node": "DimensieCel",
@@ -142,12 +144,16 @@
                 "node": "AttribuutRef",
                 "attribuut": "opbrengst",
                 "objecttype": "Schouwveld",
-                "bron": "de opbrengst in het voorjaar"
+                "source": {
+                  "snippet": "de opbrengst in het voorjaar"
+                }
               },
               "labels": [
                 "voorjaar"
               ],
-              "bron": "de opbrengst in het voorjaar"
+              "source": {
+                "snippet": "de opbrengst in het voorjaar"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -168,7 +174,9 @@
               "node": "AttribuutRef",
               "attribuut": "peiling",
               "objecttype": "Schouwveld",
-              "bron": "De peiling van een Schouwveld"
+              "source": {
+                "snippet": "De peiling van een Schouwveld"
+              }
             },
             "value": {
               "node": "Literal",
@@ -181,7 +189,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "1"
+              "source": {
+                "snippet": "1"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -194,7 +204,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "het Schouwveld bewaakt is"
+                  "source": {
+                    "snippet": "het Schouwveld bewaakt is"
+                  }
                 },
                 {
                   "node": "Kenmerk",
@@ -202,7 +214,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "het Schouwveld omheind is"
+                  "source": {
+                    "snippet": "het Schouwveld omheind is"
+                  }
                 },
                 {
                   "node": "Periode",
@@ -215,14 +229,20 @@
                       "node": "Date",
                       "precision": "day"
                     },
-                    "bron": "2026-01-01"
+                    "source": {
+                      "snippet": "2026-01-01"
+                    }
                   },
                   "tot": null,
                   "totInclusief": false,
-                  "bron": "vanaf 1 januari 2026"
+                  "source": {
+                    "snippet": "vanaf 1 januari 2026"
+                  }
                 }
               ],
-              "bron": "bewaakt, omheind, en vanaf 1 januari 2026"
+              "source": {
+                "snippet": "bewaakt, omheind, en vanaf 1 januari 2026"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

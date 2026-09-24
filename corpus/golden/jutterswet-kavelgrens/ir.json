@@ -88,13 +88,17 @@
               "node": "AttribuutRef",
               "attribuut": "noordbuurbreedte",
               "objecttype": "Duinkavel",
-              "bron": "De noordbuurbreedte van een Duinkavel"
+              "source": {
+                "snippet": "De noordbuurbreedte van een Duinkavel"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "kavelbreedte",
               "objecttype": "Duinkavel",
-              "bron": "de kavelbreedte van de noordbuur van het Duinkavel",
+              "source": {
+                "snippet": "de kavelbreedte van de noordbuur van het Duinkavel"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -122,13 +126,17 @@
               "node": "AttribuutRef",
               "attribuut": "zuidbuurbreedte",
               "objecttype": "Duinkavel",
-              "bron": "De zuidbuurbreedte van een Duinkavel"
+              "source": {
+                "snippet": "De zuidbuurbreedte van een Duinkavel"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "kavelbreedte",
               "objecttype": "Duinkavel",
-              "bron": "de kavelbreedte van de zuidbuur van het Duinkavel",
+              "source": {
+                "snippet": "de kavelbreedte van de zuidbuur van het Duinkavel"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",

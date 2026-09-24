@@ -103,7 +103,9 @@
               "node": "AttribuutRef",
               "attribuut": "looptijd",
               "objecttype": "Bergingsvergunning",
-              "bron": "De looptijd van een Bergingsvergunning"
+              "source": {
+                "snippet": "De looptijd van een Bergingsvergunning"
+              }
             },
             "value": {
               "node": "Binair",
@@ -129,13 +131,17 @@
                     }
                   }
                 },
-                "bron": "2 jaar"
+                "source": {
+                  "snippet": "2 jaar"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "basisduur",
                 "objecttype": "Bergingsvergunning",
-                "bron": "de basisduur van de Bergingsvergunning"
+                "source": {
+                  "snippet": "de basisduur van de Bergingsvergunning"
+                }
               },
               "type": {
                 "node": "Number",
@@ -153,7 +159,9 @@
                   }
                 }
               },
-              "bron": "2 jaar plus de basisduur van de Bergingsvergunning"
+              "source": {
+                "snippet": "2 jaar plus de basisduur van de Bergingsvergunning"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

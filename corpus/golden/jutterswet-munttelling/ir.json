@@ -159,7 +159,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal munten",
               "objecttype": "Jutter",
-              "bron": "Het aantal munten van een Jutter"
+              "source": {
+                "snippet": "Het aantal munten van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -169,7 +171,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vondsten",
                   "objecttype": "Jutter",
-                  "bron": "vondsten van de Jutter"
+                  "source": {
+                    "snippet": "vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Munt",
@@ -184,7 +188,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal munten van de Jutter"
+              "source": {
+                "snippet": "het aantal munten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -205,7 +211,9 @@
               "node": "AttribuutRef",
               "attribuut": "muntgewicht",
               "objecttype": "Jutter",
-              "bron": "Het muntgewicht van een Jutter"
+              "source": {
+                "snippet": "Het muntgewicht van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -215,7 +223,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Munt",
-                  "bron": "het gewicht van alle munten van de Jutter"
+                  "source": {
+                    "snippet": "het gewicht van alle munten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Munt",
@@ -230,7 +240,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -253,7 +265,9 @@
                   }
                 }
               },
-              "bron": "de som van het gewicht van alle munten van de Jutter"
+              "source": {
+                "snippet": "de som van het gewicht van alle munten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

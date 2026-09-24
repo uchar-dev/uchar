@@ -86,7 +86,9 @@
               "node": "AttribuutRef",
               "attribuut": "muntaantal",
               "objecttype": "Jutter",
-              "bron": "Het muntaantal van een Jutter"
+              "source": {
+                "snippet": "Het muntaantal van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -96,7 +98,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gevonden munt",
                   "objecttype": "Jutter",
-                  "bron": "Munten van de Jutter"
+                  "source": {
+                    "snippet": "Munten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Munt",
@@ -111,7 +115,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal Munten van de Jutter"
+              "source": {
+                "snippet": "het aantal Munten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -132,7 +138,9 @@
               "node": "AttribuutRef",
               "attribuut": "gecontroleerde muntaantal",
               "objecttype": "Jutter",
-              "bron": "Het gecontroleerde muntaantal van een Jutter"
+              "source": {
+                "snippet": "Het gecontroleerde muntaantal van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -142,7 +150,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gevonden munten",
                   "objecttype": "Jutter",
-                  "bron": "gevonden munten van de Jutter"
+                  "source": {
+                    "snippet": "gevonden munten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Munt",
@@ -157,7 +167,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal gevonden munten van de Jutter"
+              "source": {
+                "snippet": "het aantal gevonden munten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

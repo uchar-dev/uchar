@@ -133,7 +133,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantalAfgekeurd",
               "objecttype": "Jutter",
-              "bron": "Het aantalAfgekeurd van een Jutter"
+              "source": {
+                "snippet": "Het aantalAfgekeurd van een Jutter"
+              }
             },
             "value": {
               "node": "ListLength",
@@ -180,7 +182,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "keuringen",
                   "objecttype": "Jutter",
-                  "bron": "zijn keuringen"
+                  "source": {
+                    "snippet": "zijn keuringen"
+                  }
                 },
                 "binder": "k",
                 "condition": {
@@ -189,7 +193,9 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "k",
-                    "bron": "de keuring"
+                    "source": {
+                      "snippet": "de keuring"
+                    }
                   },
                   "rechts": {
                     "node": "Construct",
@@ -223,14 +229,22 @@
                     },
                     "constructor": "Afgekeurd",
                     "argument": null,
-                    "bron": "afgekeurd"
+                    "source": {
+                      "snippet": "afgekeurd"
+                    }
                   },
                   "periode": null,
-                  "bron": "de keuring gelijk is aan afgekeurd"
+                  "source": {
+                    "snippet": "de keuring gelijk is aan afgekeurd"
+                  }
                 },
-                "bron": "zijn afgekeurde keuringen"
+                "source": {
+                  "snippet": "zijn afgekeurde keuringen"
+                }
               },
-              "bron": "het aantal afgekeurde keuringen"
+              "source": {
+                "snippet": "het aantal afgekeurde keuringen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -251,7 +265,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantalNietAfgekeurd",
               "objecttype": "Jutter",
-              "bron": "Het aantalNietAfgekeurd van een Jutter"
+              "source": {
+                "snippet": "Het aantalNietAfgekeurd van een Jutter"
+              }
             },
             "value": {
               "node": "ListLength",
@@ -298,7 +314,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "keuringen",
                   "objecttype": "Jutter",
-                  "bron": "zijn keuringen"
+                  "source": {
+                    "snippet": "zijn keuringen"
+                  }
                 },
                 "binder": "k",
                 "condition": {
@@ -307,7 +325,9 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "k",
-                    "bron": "de keuring"
+                    "source": {
+                      "snippet": "de keuring"
+                    }
                   },
                   "rechts": {
                     "node": "Construct",
@@ -341,14 +361,22 @@
                     },
                     "constructor": "Afgekeurd",
                     "argument": null,
-                    "bron": "afgekeurd"
+                    "source": {
+                      "snippet": "afgekeurd"
+                    }
                   },
                   "periode": null,
-                  "bron": "de keuring ongelijk is aan afgekeurd"
+                  "source": {
+                    "snippet": "de keuring ongelijk is aan afgekeurd"
+                  }
                 },
-                "bron": "zijn niet-afgekeurde keuringen"
+                "source": {
+                  "snippet": "zijn niet-afgekeurde keuringen"
+                }
               },
-              "bron": "het aantal niet-afgekeurde keuringen"
+              "source": {
+                "snippet": "het aantal niet-afgekeurde keuringen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -369,7 +397,9 @@
               "node": "AttribuutRef",
               "attribuut": "totaalKeuringen",
               "objecttype": "Jutter",
-              "bron": "Het totaalKeuringen van een Jutter"
+              "source": {
+                "snippet": "Het totaalKeuringen van een Jutter"
+              }
             },
             "value": {
               "node": "ListLength",
@@ -383,9 +413,13 @@
                 "node": "AttribuutRef",
                 "attribuut": "keuringen",
                 "objecttype": "Jutter",
-                "bron": "zijn keuringen"
+                "source": {
+                  "snippet": "zijn keuringen"
+                }
               },
-              "bron": "het aantal keuringen"
+              "source": {
+                "snippet": "het aantal keuringen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

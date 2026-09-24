@@ -75,7 +75,9 @@
               "node": "AttribuutRef",
               "attribuut": "aanslag",
               "objecttype": "Penningplichtige",
-              "bron": "de aanslag"
+              "source": {
+                "snippet": "de aanslag"
+              }
             },
             "value": {
               "node": "Let",
@@ -102,21 +104,24 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "250.00"
+                    "source": {
+                      "snippet": "250.00"
+                    }
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "kindertal",
                     "objecttype": "Penningplichtige",
-                    "bron": "de kindertal"
+                    "source": {
+                      "snippet": "de kindertal"
+                    }
                   },
                   "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
-                  },
-                  "bron": null
+                  }
                 },
                 "modus": "REKENKUNDIG",
                 "decimalen": 2,
@@ -125,8 +130,7 @@
                   "whole": false,
                   "decimals": 2,
                   "sign": "ONBEPAALD"
-                },
-                "bron": null
+                }
               },
               "body": {
                 "node": "Let",
@@ -146,21 +150,24 @@
                       "node": "AttribuutRef",
                       "attribuut": "inkomen",
                       "objecttype": "Penningplichtige",
-                      "bron": "de inkomen"
+                      "source": {
+                        "snippet": "de inkomen"
+                      }
                     },
                     "rechts": {
                       "node": "AttribuutRef",
                       "attribuut": "tarief",
                       "objecttype": "Penningplichtige",
-                      "bron": "de tarief"
+                      "source": {
+                        "snippet": "de tarief"
+                      }
                     },
                     "type": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
                       "sign": "ONBEPAALD"
-                    },
-                    "bron": null
+                    }
                   },
                   "modus": "REKENKUNDIG",
                   "decimalen": 2,
@@ -169,8 +176,7 @@
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
-                  },
-                  "bron": null
+                  }
                 },
                 "body": {
                   "node": "IfThenElse",
@@ -186,15 +192,18 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "aftrek",
-                      "bron": "aftrek"
+                      "source": {
+                        "snippet": "aftrek"
+                      }
                     },
                     "rechts": {
                       "node": "BinderRef",
                       "name": "belasting",
-                      "bron": "belasting"
+                      "source": {
+                        "snippet": "belasting"
+                      }
                     },
-                    "periode": null,
-                    "bron": null
+                    "periode": null
                   },
                   "then": {
                     "node": "Literal",
@@ -207,7 +216,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0.00"
+                    "source": {
+                      "snippet": "0.00"
+                    }
                   },
                   "else": {
                     "node": "Binair",
@@ -215,26 +226,32 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "belasting",
-                      "bron": "belasting"
+                      "source": {
+                        "snippet": "belasting"
+                      }
                     },
                     "rechts": {
                       "node": "BinderRef",
                       "name": "aftrek",
-                      "bron": "aftrek"
+                      "source": {
+                        "snippet": "aftrek"
+                      }
                     },
                     "type": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
                       "sign": "ONBEPAALD"
-                    },
-                    "bron": null
-                  },
-                  "bron": null
+                    }
+                  }
                 },
-                "bron": "belasting"
+                "source": {
+                  "snippet": "belasting"
+                }
               },
-              "bron": "aftrek"
+              "source": {
+                "snippet": "aftrek"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -268,7 +285,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "kindertal",
                 "objecttype": "Penningplichtige",
-                "bron": "de kindertal"
+                "source": {
+                  "snippet": "de kindertal"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -281,10 +300,11 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "2"
+                "source": {
+                  "snippet": "2"
+                }
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "consequentie": {
               "node": "Literal",
@@ -297,9 +317,13 @@
                 "decimals": 4,
                 "sign": "ONBEPAALD"
               },
-              "bron": "0.1500"
+              "source": {
+                "snippet": "0.1500"
+              }
             },
-            "bron": "tarief",
+            "source": {
+              "snippet": "tarief"
+            },
             "excepties": {
               "ongeordend": true,
               "leden": [
@@ -316,7 +340,9 @@
                           "node": "AttribuutRef",
                           "attribuut": "kindertal",
                           "objecttype": "Penningplichtige",
-                          "bron": "de kindertal"
+                          "source": {
+                            "snippet": "de kindertal"
+                          }
                         },
                         "rechts": {
                           "node": "Literal",
@@ -329,10 +355,11 @@
                             "decimals": 0,
                             "sign": "ONBEPAALD"
                           },
-                          "bron": "4"
+                          "source": {
+                            "snippet": "4"
+                          }
                         },
-                        "periode": null,
-                        "bron": null
+                        "periode": null
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -345,12 +372,18 @@
                           "decimals": 4,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "0.1000"
+                        "source": {
+                          "snippet": "0.1000"
+                        }
                       },
-                      "bron": "tarief"
+                      "source": {
+                        "snippet": "tarief"
+                      }
                     }
                   ],
-                  "bron": "tarief"
+                  "source": {
+                    "snippet": "tarief"
+                  }
                 },
                 {
                   "node": "ExceptionGroup",
@@ -365,7 +398,9 @@
                           "node": "AttribuutRef",
                           "attribuut": "inkomen",
                           "objecttype": "Penningplichtige",
-                          "bron": "de inkomen"
+                          "source": {
+                            "snippet": "de inkomen"
+                          }
                         },
                         "rechts": {
                           "node": "Literal",
@@ -378,10 +413,11 @@
                             "decimals": 2,
                             "sign": "ONBEPAALD"
                           },
-                          "bron": "10000.00"
+                          "source": {
+                            "snippet": "10000.00"
+                          }
                         },
-                        "periode": null,
-                        "bron": null
+                        "periode": null
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -394,12 +430,18 @@
                           "decimals": 4,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "0.0000"
+                        "source": {
+                          "snippet": "0.0000"
+                        }
                       },
-                      "bron": "tarief"
+                      "source": {
+                        "snippet": "tarief"
+                      }
                     }
                   ],
-                  "bron": "tarief"
+                  "source": {
+                    "snippet": "tarief"
+                  }
                 }
               ]
             }
@@ -412,7 +454,9 @@
               "kwantor": "ALLE",
               "drempel": 0,
               "onderdelen": [],
-              "bron": "altijd"
+              "source": {
+                "snippet": "altijd"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -425,12 +469,18 @@
                 "decimals": 4,
                 "sign": "ONBEPAALD"
               },
-              "bron": "0.2000"
+              "source": {
+                "snippet": "0.2000"
+              }
             },
-            "bron": "tarief"
+            "source": {
+              "snippet": "tarief"
+            }
           }
         ],
-        "bron": "tarief",
+        "source": {
+          "snippet": "tarief"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

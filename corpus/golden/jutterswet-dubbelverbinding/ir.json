@@ -222,7 +222,9 @@
               "node": "AttribuutRef",
               "attribuut": "liggertal",
               "objecttype": "Haven",
-              "bron": "Het liggertal van een Haven"
+              "source": {
+                "snippet": "Het liggertal van een Haven"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -232,7 +234,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "liggers",
                   "objecttype": "Haven",
-                  "bron": "liggers van de Haven"
+                  "source": {
+                    "snippet": "liggers van de Haven"
+                  }
                 }
               ],
               "elementType": "Schuit",
@@ -247,7 +251,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal liggers van de Haven"
+              "source": {
+                "snippet": "het aantal liggers van de Haven"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -268,7 +274,9 @@
               "node": "AttribuutRef",
               "attribuut": "wintertal",
               "objecttype": "Haven",
-              "bron": "Het wintertal van een Haven"
+              "source": {
+                "snippet": "Het wintertal van een Haven"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -278,7 +286,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "winterschuiten",
                   "objecttype": "Haven",
-                  "bron": "winterschuiten van de Haven"
+                  "source": {
+                    "snippet": "winterschuiten van de Haven"
+                  }
                 }
               ],
               "elementType": "Schuit",
@@ -293,7 +303,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal winterschuiten van de Haven"
+              "source": {
+                "snippet": "het aantal winterschuiten van de Haven"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -314,7 +326,9 @@
               "node": "AttribuutRef",
               "attribuut": "keurtal",
               "objecttype": "Haven",
-              "bron": "Het keurtal van een Haven"
+              "source": {
+                "snippet": "Het keurtal van een Haven"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -324,7 +338,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "keurschuiten",
                   "objecttype": "Haven",
-                  "bron": "keurschuiten van de Haven"
+                  "source": {
+                    "snippet": "keurschuiten van de Haven"
+                  }
                 }
               ],
               "elementType": "Schuit",
@@ -339,7 +355,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal keurschuiten van de Haven"
+              "source": {
+                "snippet": "het aantal keurschuiten van de Haven"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -360,13 +378,17 @@
               "node": "AttribuutRef",
               "attribuut": "ligprijs",
               "objecttype": "Schuit",
-              "bron": "De ligprijs van een Schuit"
+              "source": {
+                "snippet": "De ligprijs van een Schuit"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "kadegeld",
               "objecttype": "Haven",
-              "bron": "het kadegeld van de winterhaven van de Schuit",
+              "source": {
+                "snippet": "het kadegeld van de winterhaven van de Schuit"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -381,7 +403,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "de Schuit gekeurd is"
+              "source": {
+                "snippet": "de Schuit gekeurd is"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -402,13 +426,17 @@
               "node": "AttribuutRef",
               "attribuut": "vlagprijs",
               "objecttype": "Schuit",
-              "bron": "De vlagprijs van een Schuit"
+              "source": {
+                "snippet": "De vlagprijs van een Schuit"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "kadegeld",
               "objecttype": "Haven",
-              "bron": "het kadegeld van de vlaghaven van de Schuit",
+              "source": {
+                "snippet": "het kadegeld van de vlaghaven van de Schuit"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -436,13 +464,17 @@
               "node": "AttribuutRef",
               "attribuut": "vlaglengte",
               "objecttype": "Haven",
-              "bron": "De vlaglengte van een Haven"
+              "source": {
+                "snippet": "De vlaglengte van een Haven"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "romplengte",
               "objecttype": "Schuit",
-              "bron": "de romplengte van het vlaggenschip van de Haven",
+              "source": {
+                "snippet": "de romplengte van het vlaggenschip van de Haven"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -485,7 +517,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "de Haven veilig is"
+              "source": {
+                "snippet": "de Haven veilig is"
+              }
             },
             "validity": {
               "node": "Geldigheid",
@@ -518,7 +552,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "kadegeld",
                 "objecttype": "Haven",
-                "bron": "het kadegeld van de Haven"
+                "source": {
+                  "snippet": "het kadegeld van de Haven"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -531,10 +567,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "30"
+                "source": {
+                  "snippet": "30"
+                }
               },
               "periode": null,
-              "bron": "het kadegeld van de Haven groter is dan 30"
+              "source": {
+                "snippet": "het kadegeld van de Haven groter is dan 30"
+              }
             },
             "validity": {
               "node": "Geldigheid",

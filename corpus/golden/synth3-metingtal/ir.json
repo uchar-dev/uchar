@@ -80,7 +80,9 @@
               "node": "AttribuutRef",
               "attribuut": "bovental",
               "objecttype": "Jutter",
-              "bron": "Het bovental van een Jutter"
+              "source": {
+                "snippet": "Het bovental van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -105,7 +107,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "metingen",
                   "objecttype": "Jutter",
-                  "bron": "zijn metingen"
+                  "source": {
+                    "snippet": "zijn metingen"
+                  }
                 },
                 "function": {
                   "node": "Lambda",
@@ -134,15 +138,21 @@
                       "links": {
                         "node": "BinderRef",
                         "name": "m",
-                        "bron": "de meting"
+                        "source": {
+                          "snippet": "de meting"
+                        }
                       },
                       "rechts": {
                         "node": "ParameterRef",
                         "parameter": "drempel",
-                        "bron": "de drempel"
+                        "source": {
+                          "snippet": "de drempel"
+                        }
                       },
                       "periode": null,
-                      "bron": "de meting groter dan de drempel"
+                      "source": {
+                        "snippet": "de meting groter dan de drempel"
+                      }
                     },
                     "then": {
                       "node": "Literal",
@@ -155,7 +165,9 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "1"
+                      "source": {
+                        "snippet": "1"
+                      }
                     },
                     "else": {
                       "node": "Literal",
@@ -168,13 +180,18 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "0"
+                      "source": {
+                        "snippet": "0"
+                      }
                     },
-                    "bron": "1 als de meting boven de drempel ligt anders 0"
+                    "source": {
+                      "snippet": "1 als de meting boven de drempel ligt anders 0"
+                    }
                   },
-                  "bron": "de indicatoren per meting"
-                },
-                "bron": null
+                  "source": {
+                    "snippet": "de indicatoren per meting"
+                  }
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -204,12 +221,16 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "het opgetelde aantal"
+                    "source": {
+                      "snippet": "het opgetelde aantal"
+                    }
                   },
                   "rechts": {
                     "node": "BinderRef",
                     "name": "x",
-                    "bron": "de indicator"
+                    "source": {
+                      "snippet": "de indicator"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -217,9 +238,13 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "het opgetelde aantal plus de indicator"
+                  "source": {
+                    "snippet": "het opgetelde aantal plus de indicator"
+                  }
                 },
-                "bron": "de indicatoren opgeteld"
+                "source": {
+                  "snippet": "de indicatoren opgeteld"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -232,9 +257,13 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
-              "bron": "het aantal metingen boven de drempel"
+              "source": {
+                "snippet": "het aantal metingen boven de drempel"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -255,7 +284,9 @@
               "node": "AttribuutRef",
               "attribuut": "somverhoogd",
               "objecttype": "Jutter",
-              "bron": "De somverhoogd van een Jutter"
+              "source": {
+                "snippet": "De somverhoogd van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -280,7 +311,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "metingen",
                   "objecttype": "Jutter",
-                  "bron": "zijn metingen"
+                  "source": {
+                    "snippet": "zijn metingen"
+                  }
                 },
                 "function": {
                   "node": "Lambda",
@@ -301,7 +334,9 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "m",
-                      "bron": "de meting"
+                      "source": {
+                        "snippet": "de meting"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -314,7 +349,9 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "1.00"
+                      "source": {
+                        "snippet": "1.00"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -322,11 +359,14 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de meting plus 1.00"
+                    "source": {
+                      "snippet": "de meting plus 1.00"
+                    }
                   },
-                  "bron": "de opgehoogde metingen"
-                },
-                "bron": null
+                  "source": {
+                    "snippet": "de opgehoogde metingen"
+                  }
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -356,12 +396,16 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "de opgetelde som"
+                    "source": {
+                      "snippet": "de opgetelde som"
+                    }
                   },
                   "rechts": {
                     "node": "BinderRef",
                     "name": "x",
-                    "bron": "de opgehoogde meting"
+                    "source": {
+                      "snippet": "de opgehoogde meting"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -369,9 +413,13 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "de opgetelde som plus de opgehoogde meting"
+                  "source": {
+                    "snippet": "de opgetelde som plus de opgehoogde meting"
+                  }
                 },
-                "bron": "de opgehoogde metingen opgeteld"
+                "source": {
+                  "snippet": "de opgehoogde metingen opgeteld"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -384,9 +432,13 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               },
-              "bron": "de som van de opgehoogde metingen"
+              "source": {
+                "snippet": "de som van de opgehoogde metingen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

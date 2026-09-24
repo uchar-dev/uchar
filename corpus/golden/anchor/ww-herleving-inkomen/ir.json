@@ -143,7 +143,9 @@
               "node": "AttribuutRef",
               "attribuut": "inkomensgrens",
               "objecttype": "Werknemer",
-              "bron": "De inkomensgrens van een Werknemer"
+              "source": {
+                "snippet": "De inkomensgrens van een Werknemer"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -154,7 +156,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "maandloon",
                   "objecttype": "Werknemer",
-                  "bron": "het maandloon van de Werknemer"
+                  "source": {
+                    "snippet": "het maandloon van de Werknemer"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -167,7 +171,9 @@
                     "decimals": 4,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "0,8750"
+                  "source": {
+                    "snippet": "0,8750"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -175,7 +181,9 @@
                   "decimals": 6,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "het maandloon van de Werknemer maal 0,8750"
+                "source": {
+                  "snippet": "het maandloon van de Werknemer maal 0,8750"
+                }
               },
               "modus": "REKENKUNDIG",
               "decimalen": 2,
@@ -185,7 +193,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het maandloon van de Werknemer maal 0,8750 rekenkundig afgerond op 2 decimalen"
+              "source": {
+                "snippet": "het maandloon van de Werknemer maal 0,8750 rekenkundig afgerond op 2 decimalen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -206,7 +216,9 @@
               "node": "AttribuutRef",
               "attribuut": "verstreken periode",
               "objecttype": "Werknemer",
-              "bron": "De verstreken periode van een Werknemer"
+              "source": {
+                "snippet": "De verstreken periode van een Werknemer"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -216,13 +228,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "eindigingsdatum",
                   "objecttype": "Werknemer",
-                  "bron": "zijn eindigingsdatum"
+                  "source": {
+                    "snippet": "zijn eindigingsdatum"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "vervaldatum",
                   "objecttype": "Werknemer",
-                  "bron": "zijn vervaldatum"
+                  "source": {
+                    "snippet": "zijn vervaldatum"
+                  }
                 }
               ],
               "type": {
@@ -235,7 +251,9 @@
                   "abbreviation": "dag"
                 }
               },
-              "bron": "de tijdsduur van zijn eindigingsdatum tot zijn vervaldatum in hele dagen"
+              "source": {
+                "snippet": "de tijdsduur van zijn eindigingsdatum tot zijn vervaldatum in hele dagen"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -256,7 +274,9 @@
               "node": "AttribuutRef",
               "attribuut": "nieuwe maxdatum",
               "objecttype": "Werknemer",
-              "bron": "De nieuwe maxdatum van een Werknemer"
+              "source": {
+                "snippet": "De nieuwe maxdatum van een Werknemer"
+              }
             },
             "value": {
               "node": "Binair",
@@ -265,19 +285,25 @@
                 "node": "AttribuutRef",
                 "attribuut": "maxdatum",
                 "objecttype": "Werknemer",
-                "bron": "zijn maxdatum"
+                "source": {
+                  "snippet": "zijn maxdatum"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "verstreken periode",
                 "objecttype": "Werknemer",
-                "bron": "zijn verstreken periode"
+                "source": {
+                  "snippet": "zijn verstreken periode"
+                }
               },
               "type": {
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "zijn maxdatum plus zijn verstreken periode"
+              "source": {
+                "snippet": "zijn maxdatum plus zijn verstreken periode"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -309,9 +335,13 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij werkloos is"
+              "source": {
+                "snippet": "hij werkloos is"
+              }
             },
-            "bron": "art. 15: de werknemer die werkloos is heeft recht op uitkering",
+            "source": {
+              "snippet": "art. 15: de werknemer die werkloos is heeft recht op uitkering"
+            },
             "excepties": {
               "ongeordend": false,
               "leden": [
@@ -332,7 +362,9 @@
                             "negatie": false,
                             "eigenaar": null,
                             "periode": null,
-                            "bron": "hij werkloos is"
+                            "source": {
+                              "snippet": "hij werkloos is"
+                            }
                           },
                           {
                             "node": "Vergelijking",
@@ -341,21 +373,31 @@
                               "node": "AttribuutRef",
                               "attribuut": "maandinkomen",
                               "objecttype": "Werknemer",
-                              "bron": "zijn maandinkomen"
+                              "source": {
+                                "snippet": "zijn maandinkomen"
+                              }
                             },
                             "rechts": {
                               "node": "AttribuutRef",
                               "attribuut": "inkomensgrens",
                               "objecttype": "Werknemer",
-                              "bron": "zijn inkomensgrens"
+                              "source": {
+                                "snippet": "zijn inkomensgrens"
+                              }
                             },
                             "periode": null,
-                            "bron": "zijn maandinkomen groter is dan zijn inkomensgrens"
+                            "source": {
+                              "snippet": "zijn maandinkomen groter is dan zijn inkomensgrens"
+                            }
                           }
                         ],
-                        "bron": "hij werkloos is en zijn maandinkomen groter is dan zijn inkomensgrens"
+                        "source": {
+                          "snippet": "hij werkloos is en zijn maandinkomen groter is dan zijn inkomensgrens"
+                        }
                       },
-                      "bron": "art. 20 lid 1 onderdeel c: het recht eindigt bij inkomen boven de grens",
+                      "source": {
+                        "snippet": "art. 20 lid 1 onderdeel c: het recht eindigt bij inkomen boven de grens"
+                      },
                       "excepties": {
                         "ongeordend": false,
                         "leden": [
@@ -376,7 +418,9 @@
                                       "negatie": false,
                                       "eigenaar": null,
                                       "periode": null,
-                                      "bron": "hij werkloos is"
+                                      "source": {
+                                        "snippet": "hij werkloos is"
+                                      }
                                     },
                                     {
                                       "node": "Vergelijking",
@@ -385,16 +429,22 @@
                                         "node": "AttribuutRef",
                                         "attribuut": "maandinkomen",
                                         "objecttype": "Werknemer",
-                                        "bron": "zijn maandinkomen"
+                                        "source": {
+                                          "snippet": "zijn maandinkomen"
+                                        }
                                       },
                                       "rechts": {
                                         "node": "AttribuutRef",
                                         "attribuut": "inkomensgrens",
                                         "objecttype": "Werknemer",
-                                        "bron": "zijn inkomensgrens"
+                                        "source": {
+                                          "snippet": "zijn inkomensgrens"
+                                        }
                                       },
                                       "periode": null,
-                                      "bron": "zijn maandinkomen groter is dan zijn inkomensgrens"
+                                      "source": {
+                                        "snippet": "zijn maandinkomen groter is dan zijn inkomensgrens"
+                                      }
                                     },
                                     {
                                       "node": "Kenmerk",
@@ -402,12 +452,18 @@
                                       "negatie": false,
                                       "eigenaar": null,
                                       "periode": null,
-                                      "bron": "de omstandigheid die tot het eindigen heeft geleid is vervallen"
+                                      "source": {
+                                        "snippet": "de omstandigheid die tot het eindigen heeft geleid is vervallen"
+                                      }
                                     }
                                   ],
-                                  "bron": "hij werkloos is, zijn maandinkomen groter is dan zijn inkomensgrens en de omstandigheid die tot het eindigen heeft geleid is vervallen"
+                                  "source": {
+                                    "snippet": "hij werkloos is, zijn maandinkomen groter is dan zijn inkomensgrens en de omstandigheid die tot het eindigen heeft geleid is vervallen"
+                                  }
                                 },
-                                "bron": "art. 21 lid 1: het recht herleeft als de omstandigheid is vervallen",
+                                "source": {
+                                  "snippet": "art. 21 lid 1: het recht herleeft als de omstandigheid is vervallen"
+                                },
                                 "excepties": {
                                   "ongeordend": false,
                                   "leden": [
@@ -428,7 +484,9 @@
                                                 "negatie": false,
                                                 "eigenaar": null,
                                                 "periode": null,
-                                                "bron": "hij werkloos is"
+                                                "source": {
+                                                  "snippet": "hij werkloos is"
+                                                }
                                               },
                                               {
                                                 "node": "Vergelijking",
@@ -437,16 +495,22 @@
                                                   "node": "AttribuutRef",
                                                   "attribuut": "maandinkomen",
                                                   "objecttype": "Werknemer",
-                                                  "bron": "zijn maandinkomen"
+                                                  "source": {
+                                                    "snippet": "zijn maandinkomen"
+                                                  }
                                                 },
                                                 "rechts": {
                                                   "node": "AttribuutRef",
                                                   "attribuut": "inkomensgrens",
                                                   "objecttype": "Werknemer",
-                                                  "bron": "zijn inkomensgrens"
+                                                  "source": {
+                                                    "snippet": "zijn inkomensgrens"
+                                                  }
                                                 },
                                                 "periode": null,
-                                                "bron": "zijn maandinkomen groter is dan zijn inkomensgrens"
+                                                "source": {
+                                                  "snippet": "zijn maandinkomen groter is dan zijn inkomensgrens"
+                                                }
                                               },
                                               {
                                                 "node": "Kenmerk",
@@ -454,7 +518,9 @@
                                                 "negatie": false,
                                                 "eigenaar": null,
                                                 "periode": null,
-                                                "bron": "de omstandigheid die tot het eindigen heeft geleid is vervallen"
+                                                "source": {
+                                                  "snippet": "de omstandigheid die tot het eindigen heeft geleid is vervallen"
+                                                }
                                               },
                                               {
                                                 "node": "Kenmerk",
@@ -462,7 +528,9 @@
                                                 "negatie": false,
                                                 "eigenaar": null,
                                                 "periode": null,
-                                                "bron": "hij een nieuw recht op uitkering heeft"
+                                                "source": {
+                                                  "snippet": "hij een nieuw recht op uitkering heeft"
+                                                }
                                               },
                                               {
                                                 "node": "Vergelijking",
@@ -471,42 +539,60 @@
                                                   "node": "AttribuutRef",
                                                   "attribuut": "nieuw maandloon",
                                                   "objecttype": "Werknemer",
-                                                  "bron": "zijn nieuw maandloon"
+                                                  "source": {
+                                                    "snippet": "zijn nieuw maandloon"
+                                                  }
                                                 },
                                                 "rechts": {
                                                   "node": "AttribuutRef",
                                                   "attribuut": "inkomensgrens",
                                                   "objecttype": "Werknemer",
-                                                  "bron": "zijn inkomensgrens"
+                                                  "source": {
+                                                    "snippet": "zijn inkomensgrens"
+                                                  }
                                                 },
                                                 "periode": null,
-                                                "bron": "zijn nieuw maandloon groter is dan zijn inkomensgrens"
+                                                "source": {
+                                                  "snippet": "zijn nieuw maandloon groter is dan zijn inkomensgrens"
+                                                }
                                               }
                                             ],
-                                            "bron": "hij werkloos is, zijn maandinkomen groter is dan zijn inkomensgrens, de omstandigheid die tot het eindigen heeft geleid is vervallen en hij een nieuw recht heeft waarvan het maandloon boven de grens ligt"
+                                            "source": {
+                                              "snippet": "hij werkloos is, zijn maandinkomen groter is dan zijn inkomensgrens, de omstandigheid die tot het eindigen heeft geleid is vervallen en hij een nieuw recht heeft waarvan het maandloon boven de grens ligt"
+                                            }
                                           },
-                                          "bron": "art. 21 lid 2 onderdeel a: geen herleving bij een nieuw recht boven de grens"
+                                          "source": {
+                                            "snippet": "art. 21 lid 2 onderdeel a: geen herleving bij een nieuw recht boven de grens"
+                                          }
                                         }
                                       ],
-                                      "bron": "art. 21 lid 2 onderdeel a: het nieuwe recht boven de grens"
+                                      "source": {
+                                        "snippet": "art. 21 lid 2 onderdeel a: het nieuwe recht boven de grens"
+                                      }
                                     }
                                   ]
                                 }
                               }
                             ],
-                            "bron": "art. 21 lid 1: de herleving van het recht"
+                            "source": {
+                              "snippet": "art. 21 lid 1: de herleving van het recht"
+                            }
                           }
                         ]
                       }
                     }
                   ],
-                  "bron": "art. 20 en 21: einde van het recht en de herleving"
+                  "source": {
+                    "snippet": "art. 20 en 21: einde van het recht en de herleving"
+                  }
                 }
               ]
             }
           }
         ],
-        "bron": "art. 15 tot en met 21: de grondtoekenning met einde, herleving en blokkade",
+        "source": {
+          "snippet": "art. 15 tot en met 21: de grondtoekenning met einde, herleving en blokkade"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

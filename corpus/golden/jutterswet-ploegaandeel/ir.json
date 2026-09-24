@@ -66,7 +66,9 @@
               "node": "AttribuutRef",
               "attribuut": "bergingsaandeel",
               "objecttype": "Jutter",
-              "bron": "Het bergingsaandeel van een Jutter"
+              "source": {
+                "snippet": "Het bergingsaandeel van een Jutter"
+              }
             },
             "value": {
               "node": "Literal",
@@ -79,7 +81,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "1"
+              "source": {
+                "snippet": "1"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -93,7 +97,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "ploegomvang",
                     "objecttype": "Jutter",
-                    "bron": "zijn ploegomvang"
+                    "source": {
+                      "snippet": "zijn ploegomvang"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -106,10 +112,14 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0"
+                    "source": {
+                      "snippet": "0"
+                    }
                   },
                   "periode": null,
-                  "bron": "zijn ploegomvang is ongelijk aan 0"
+                  "source": {
+                    "snippet": "zijn ploegomvang is ongelijk aan 0"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -123,13 +133,17 @@
                         "node": "AttribuutRef",
                         "attribuut": "vangstwaarde",
                         "objecttype": "Jutter",
-                        "bron": "de vangstwaarde van de Jutter"
+                        "source": {
+                          "snippet": "de vangstwaarde van de Jutter"
+                        }
                       },
                       "rechts": {
                         "node": "AttribuutRef",
                         "attribuut": "ploegomvang",
                         "objecttype": "Jutter",
-                        "bron": "de ploegomvang van de Jutter"
+                        "source": {
+                          "snippet": "de ploegomvang van de Jutter"
+                        }
                       },
                       "type": {
                         "node": "Number",
@@ -137,7 +151,9 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "de vangstwaarde van de Jutter gedeeld door de ploegomvang van de Jutter"
+                      "source": {
+                        "snippet": "de vangstwaarde van de Jutter gedeeld door de ploegomvang van de Jutter"
+                      }
                     },
                     "modus": "NAAR_BENEDEN",
                     "decimalen": 0,
@@ -147,7 +163,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de vangstwaarde van de Jutter gedeeld door de ploegomvang van de Jutter naar beneden afgerond op 0 decimalen"
+                    "source": {
+                      "snippet": "de vangstwaarde van de Jutter gedeeld door de ploegomvang van de Jutter naar beneden afgerond op 0 decimalen"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -160,13 +178,19 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0"
+                    "source": {
+                      "snippet": "0"
+                    }
                   },
                   "periode": null,
-                  "bron": "het aandeel is groter dan 0"
+                  "source": {
+                    "snippet": "het aandeel is groter dan 0"
+                  }
                 }
               ],
-              "bron": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - het aandeel is groter dan 0."
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - het aandeel is groter dan 0."
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

@@ -76,7 +76,9 @@
               "node": "AttribuutRef",
               "attribuut": "rubriek",
               "objecttype": "Aanspoelsel",
-              "bron": "De rubriek van een Aanspoelsel"
+              "source": {
+                "snippet": "De rubriek van een Aanspoelsel"
+              }
             },
             "value": {
               "node": "Literal",
@@ -86,7 +88,9 @@
               "type": {
                 "node": "Tekst"
               },
-              "bron": "'organisch'"
+              "source": {
+                "snippet": "'organisch'"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -100,7 +104,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "soort",
                     "objecttype": "Aanspoelsel",
-                    "bron": "de soort van het Aanspoelsel"
+                    "source": {
+                      "snippet": "de soort van het Aanspoelsel"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -110,10 +116,14 @@
                     "type": {
                       "node": "Tekst"
                     },
-                    "bron": "'zeewier'"
+                    "source": {
+                      "snippet": "'zeewier'"
+                    }
                   },
                   "periode": null,
-                  "bron": "zijn soort gelijk is aan 'zeewier'"
+                  "source": {
+                    "snippet": "zijn soort gelijk is aan 'zeewier'"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -122,7 +132,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "soort",
                     "objecttype": "Aanspoelsel",
-                    "bron": "de soort van het Aanspoelsel"
+                    "source": {
+                      "snippet": "de soort van het Aanspoelsel"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -132,13 +144,19 @@
                     "type": {
                       "node": "Tekst"
                     },
-                    "bron": "'wrakhout'"
+                    "source": {
+                      "snippet": "'wrakhout'"
+                    }
                   },
                   "periode": null,
-                  "bron": "zijn soort gelijk is aan 'wrakhout'"
+                  "source": {
+                    "snippet": "zijn soort gelijk is aan 'wrakhout'"
+                  }
                 }
               ],
-              "bron": "ten minste \u00e9\u00e9n van: soort 'zeewier', soort 'wrakhout'"
+              "source": {
+                "snippet": "ten minste \u00e9\u00e9n van: soort 'zeewier', soort 'wrakhout'"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -159,7 +177,9 @@
               "node": "AttribuutRef",
               "attribuut": "rubriek",
               "objecttype": "Aanspoelsel",
-              "bron": "De rubriek van een Aanspoelsel"
+              "source": {
+                "snippet": "De rubriek van een Aanspoelsel"
+              }
             },
             "value": {
               "node": "Literal",
@@ -169,7 +189,9 @@
               "type": {
                 "node": "Tekst"
               },
-              "bron": "'overig'"
+              "source": {
+                "snippet": "'overig'"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -183,7 +205,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "soort",
                     "objecttype": "Aanspoelsel",
-                    "bron": "de soort van het Aanspoelsel"
+                    "source": {
+                      "snippet": "de soort van het Aanspoelsel"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -193,10 +217,14 @@
                     "type": {
                       "node": "Tekst"
                     },
-                    "bron": "'zeewier'"
+                    "source": {
+                      "snippet": "'zeewier'"
+                    }
                   },
                   "periode": null,
-                  "bron": "zijn soort ongelijk is aan 'zeewier'"
+                  "source": {
+                    "snippet": "zijn soort ongelijk is aan 'zeewier'"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -205,7 +233,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "soort",
                     "objecttype": "Aanspoelsel",
-                    "bron": "de soort van het Aanspoelsel"
+                    "source": {
+                      "snippet": "de soort van het Aanspoelsel"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -215,13 +245,19 @@
                     "type": {
                       "node": "Tekst"
                     },
-                    "bron": "'wrakhout'"
+                    "source": {
+                      "snippet": "'wrakhout'"
+                    }
                   },
                   "periode": null,
-                  "bron": "zijn soort ongelijk is aan 'wrakhout'"
+                  "source": {
+                    "snippet": "zijn soort ongelijk is aan 'wrakhout'"
+                  }
                 }
               ],
-              "bron": "alle van: soort niet 'zeewier', soort niet 'wrakhout'"
+              "source": {
+                "snippet": "alle van: soort niet 'zeewier', soort niet 'wrakhout'"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -242,7 +278,9 @@
               "node": "AttribuutRef",
               "attribuut": "weegplichtig",
               "objecttype": "Aanspoelsel",
-              "bron": "Een Aanspoelsel is weegplichtig"
+              "source": {
+                "snippet": "Een Aanspoelsel is weegplichtig"
+              }
             },
             "value": {
               "node": "Literal",
@@ -252,7 +290,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -265,7 +305,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "het Aanspoelsel gekeurd is"
+                  "source": {
+                    "snippet": "het Aanspoelsel gekeurd is"
+                  }
                 },
                 {
                   "node": "Kenmerk",
@@ -273,7 +315,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "het Aanspoelsel geborgen is"
+                  "source": {
+                    "snippet": "het Aanspoelsel geborgen is"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -282,7 +326,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "stuks",
                     "objecttype": "Aanspoelsel",
-                    "bron": "het stuks van het Aanspoelsel"
+                    "source": {
+                      "snippet": "het stuks van het Aanspoelsel"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -295,13 +341,19 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "10"
+                    "source": {
+                      "snippet": "10"
+                    }
                   },
                   "periode": null,
-                  "bron": "het stuks groter of gelijk is aan 10"
+                  "source": {
+                    "snippet": "het stuks groter of gelijk is aan 10"
+                  }
                 }
               ],
-              "bron": "ten minste twee van: gekeurd, geborgen, stuks vanaf 10"
+              "source": {
+                "snippet": "ten minste twee van: gekeurd, geborgen, stuks vanaf 10"
+              }
             },
             "initialisation": false
           }

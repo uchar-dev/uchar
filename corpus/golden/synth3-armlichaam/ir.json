@@ -70,7 +70,9 @@
               "node": "AttribuutRef",
               "attribuut": "lichaamtotaal",
               "objecttype": "Jutter",
-              "bron": "Het lichaamtotaal van een Jutter"
+              "source": {
+                "snippet": "Het lichaamtotaal van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -83,7 +85,9 @@
               "list": {
                 "node": "ParameterRef",
                 "parameter": "kindertallen",
-                "bron": "de kindertallen"
+                "source": {
+                  "snippet": "de kindertallen"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -122,12 +126,16 @@
                     "links": {
                       "node": "ParameterRef",
                       "parameter": "grondslag",
-                      "bron": "de grondslag"
+                      "source": {
+                        "snippet": "de grondslag"
+                      }
                     },
                     "rechts": {
                       "node": "BinderRef",
                       "name": "x",
-                      "bron": "het kindertal"
+                      "source": {
+                        "snippet": "het kindertal"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -135,7 +143,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de grondslag gedeeld door het kindertal"
+                    "source": {
+                      "snippet": "de grondslag gedeeld door het kindertal"
+                    }
                   },
                   "body": {
                     "node": "IfThenElse",
@@ -151,7 +161,9 @@
                       "links": {
                         "node": "BinderRef",
                         "name": "x",
-                        "bron": "het kindertal"
+                        "source": {
+                          "snippet": "het kindertal"
+                        }
                       },
                       "rechts": {
                         "node": "Literal",
@@ -164,10 +176,14 @@
                           "decimals": 0,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "0"
+                        "source": {
+                          "snippet": "0"
+                        }
                       },
                       "periode": null,
-                      "bron": "het kindertal niet onder nul"
+                      "source": {
+                        "snippet": "het kindertal niet onder nul"
+                      }
                     },
                     "then": {
                       "node": "Binair",
@@ -175,7 +191,9 @@
                       "links": {
                         "node": "BinderRef",
                         "name": "acc",
-                        "bron": "het opgetelde deel"
+                        "source": {
+                          "snippet": "het opgetelde deel"
+                        }
                       },
                       "rechts": {
                         "node": "Literal",
@@ -188,7 +206,9 @@
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "1.00"
+                        "source": {
+                          "snippet": "1.00"
+                        }
                       },
                       "type": {
                         "node": "Number",
@@ -196,7 +216,9 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "het opgetelde deel plus het vaste deel"
+                      "source": {
+                        "snippet": "het opgetelde deel plus het vaste deel"
+                      }
                     },
                     "else": {
                       "node": "Binair",
@@ -204,12 +226,16 @@
                       "links": {
                         "node": "BinderRef",
                         "name": "acc",
-                        "bron": "het opgetelde deel"
+                        "source": {
+                          "snippet": "het opgetelde deel"
+                        }
                       },
                       "rechts": {
                         "node": "BinderRef",
                         "name": "m",
-                        "bron": "het maatdeel"
+                        "source": {
+                          "snippet": "het maatdeel"
+                        }
                       },
                       "type": {
                         "node": "Number",
@@ -217,13 +243,21 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "het opgetelde deel plus het maatdeel"
+                      "source": {
+                        "snippet": "het opgetelde deel plus het maatdeel"
+                      }
                     },
-                    "bron": "boven nul het vaste deel, daaronder het maatdeel"
+                    "source": {
+                      "snippet": "boven nul het vaste deel, daaronder het maatdeel"
+                    }
                   },
-                  "bron": "het maatdeel is de grondslag gedeeld door het kindertal"
+                  "source": {
+                    "snippet": "het maatdeel is de grondslag gedeeld door het kindertal"
+                  }
                 },
-                "bron": "de kinddelen opgeteld"
+                "source": {
+                  "snippet": "de kinddelen opgeteld"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -236,9 +270,13 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               },
-              "bron": "de kindertallen gevouwen tot het lichaamtotaal"
+              "source": {
+                "snippet": "de kindertallen gevouwen tot het lichaamtotaal"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

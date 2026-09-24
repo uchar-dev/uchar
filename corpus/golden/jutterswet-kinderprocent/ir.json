@@ -70,7 +70,9 @@
               "node": "AttribuutRef",
               "attribuut": "premie",
               "objecttype": "Jutter",
-              "bron": "De premie van een Jutter"
+              "source": {
+                "snippet": "De premie van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -83,7 +85,9 @@
               "list": {
                 "node": "ParameterRef",
                 "parameter": "kindertallen",
-                "bron": "de kindertallen"
+                "source": {
+                  "snippet": "de kindertallen"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -113,7 +117,9 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "de opgetelde premie"
+                    "source": {
+                      "snippet": "de opgetelde premie"
+                    }
                   },
                   "rechts": {
                     "node": "Binair",
@@ -121,12 +127,16 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "x",
-                      "bron": "het kindertal"
+                      "source": {
+                        "snippet": "het kindertal"
+                      }
                     },
                     "rechts": {
                       "node": "ParameterRef",
                       "parameter": "grondslag",
-                      "bron": "de grondslag"
+                      "source": {
+                        "snippet": "de grondslag"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -134,7 +144,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "het kindertal procent van de grondslag"
+                    "source": {
+                      "snippet": "het kindertal procent van de grondslag"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -142,9 +154,13 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "de opgetelde premie plus het kinddeel"
+                  "source": {
+                    "snippet": "de opgetelde premie plus het kinddeel"
+                  }
                 },
-                "bron": "de kinddelen opgeteld"
+                "source": {
+                  "snippet": "de kinddelen opgeteld"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -157,9 +173,13 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               },
-              "bron": "de kindertallen gevouwen tot de premie"
+              "source": {
+                "snippet": "de kindertallen gevouwen tot de premie"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

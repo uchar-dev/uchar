@@ -107,13 +107,17 @@
               "node": "AttribuutRef",
               "attribuut": "toeslag",
               "objecttype": "Schuit",
-              "bron": "De toeslag van een Schuit"
+              "source": {
+                "snippet": "De toeslag van een Schuit"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "lengte",
               "objecttype": "Schuit",
-              "bron": "de lengte van de Schuit"
+              "source": {
+                "snippet": "de lengte van de Schuit"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -125,7 +129,9 @@
                 "jaar": true,
                 "niet": false
               },
-              "bron": "de werf van de Schuit gedurende het gehele jaar bedrijvig is",
+              "source": {
+                "snippet": "de werf van de Schuit gedurende het gehele jaar bedrijvig is"
+              },
               "navigatieBinding": {
                 "node": "RolBinding",
                 "feittype": "ligplaats",
@@ -151,13 +157,17 @@
               "node": "AttribuutRef",
               "attribuut": "korting",
               "objecttype": "Schuit",
-              "bron": "De korting van een Schuit"
+              "source": {
+                "snippet": "De korting van een Schuit"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "lengte",
               "objecttype": "Schuit",
-              "bron": "de lengte van de Schuit"
+              "source": {
+                "snippet": "de lengte van de Schuit"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -169,7 +179,9 @@
                 "jaar": true,
                 "niet": true
               },
-              "bron": "de werf van de Schuit niet gedurende het gehele jaar bedrijvig is",
+              "source": {
+                "snippet": "de werf van de Schuit niet gedurende het gehele jaar bedrijvig is"
+              },
               "navigatieBinding": {
                 "node": "RolBinding",
                 "feittype": "ligplaats",

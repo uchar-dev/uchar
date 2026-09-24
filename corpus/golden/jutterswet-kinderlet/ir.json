@@ -70,7 +70,9 @@
               "node": "AttribuutRef",
               "attribuut": "lettotaal",
               "objecttype": "Jutter",
-              "bron": "Het lettotaal van een Jutter"
+              "source": {
+                "snippet": "Het lettotaal van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -83,7 +85,9 @@
               "list": {
                 "node": "ParameterRef",
                 "parameter": "kindertallen",
-                "bron": "de kindertallen"
+                "source": {
+                  "snippet": "de kindertallen"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -113,7 +117,9 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "de opgetelde bijdrage"
+                    "source": {
+                      "snippet": "de opgetelde bijdrage"
+                    }
                   },
                   "rechts": {
                     "node": "Let",
@@ -130,12 +136,16 @@
                       "links": {
                         "node": "ParameterRef",
                         "parameter": "grondslag",
-                        "bron": "de grondslag"
+                        "source": {
+                          "snippet": "de grondslag"
+                        }
                       },
                       "rechts": {
                         "node": "BinderRef",
                         "name": "x",
-                        "bron": "het kindertal"
+                        "source": {
+                          "snippet": "het kindertal"
+                        }
                       },
                       "type": {
                         "node": "Number",
@@ -143,14 +153,20 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "de grondslag maal het kindertal"
+                      "source": {
+                        "snippet": "de grondslag maal het kindertal"
+                      }
                     },
                     "body": {
                       "node": "BinderRef",
                       "name": "bijdrage",
-                      "bron": "de bijdrage"
+                      "source": {
+                        "snippet": "de bijdrage"
+                      }
                     },
-                    "bron": "bijdrage is de grondslag maal het kindertal"
+                    "source": {
+                      "snippet": "bijdrage is de grondslag maal het kindertal"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -158,9 +174,13 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "de opgetelde bijdrage plus de bijdrage"
+                  "source": {
+                    "snippet": "de opgetelde bijdrage plus de bijdrage"
+                  }
                 },
-                "bron": "de kinddelen opgeteld"
+                "source": {
+                  "snippet": "de kinddelen opgeteld"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -173,9 +193,13 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               },
-              "bron": "de kindertallen gevouwen tot het lettotaal"
+              "source": {
+                "snippet": "de kindertallen gevouwen tot het lettotaal"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

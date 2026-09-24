@@ -71,7 +71,9 @@
               "node": "AttribuutRef",
               "attribuut": "bemand",
               "objecttype": "Wachtpost",
-              "bron": "Een Wachtpost is bemand"
+              "source": {
+                "snippet": "Een Wachtpost is bemand"
+              }
             },
             "value": {
               "node": "Literal",
@@ -81,14 +83,18 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "RoleMembership",
               "factType": "wachtindeling",
               "role": "toegewezen wachtpost",
               "negated": false,
-              "bron": "hij een toegewezen wachtpost is"
+              "source": {
+                "snippet": "hij een toegewezen wachtpost is"
+              }
             },
             "initialisation": false
           }

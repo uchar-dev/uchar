@@ -56,7 +56,9 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Jutter",
-              "bron": "De heffing van een Jutter"
+              "source": {
+                "snippet": "De heffing van een Jutter"
+              }
             },
             "value": {
               "node": "Let",
@@ -71,7 +73,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "grondslag",
                 "objecttype": "Jutter",
-                "bron": "zijn grondslag"
+                "source": {
+                  "snippet": "zijn grondslag"
+                }
               },
               "body": {
                 "node": "Binair",
@@ -91,7 +95,9 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "grondslag",
-                      "bron": "de grondslag"
+                      "source": {
+                        "snippet": "de grondslag"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -104,7 +110,9 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "1,00"
+                      "source": {
+                        "snippet": "1,00"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -112,14 +120,20 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de grondslag plus 1,00"
+                    "source": {
+                      "snippet": "de grondslag plus 1,00"
+                    }
                   },
                   "body": {
                     "node": "BinderRef",
                     "name": "opgehoogd",
-                    "bron": "het opgehoogde"
+                    "source": {
+                      "snippet": "het opgehoogde"
+                    }
                   },
-                  "bron": "het opgehoogde is de grondslag plus 1,00"
+                  "source": {
+                    "snippet": "het opgehoogde is de grondslag plus 1,00"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -132,7 +146,9 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "100,00"
+                  "source": {
+                    "snippet": "100,00"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -140,9 +156,13 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "het opgehoogde plus 100,00"
+                "source": {
+                  "snippet": "het opgehoogde plus 100,00"
+                }
               },
-              "bron": "de grondslag is zijn grondslag"
+              "source": {
+                "snippet": "de grondslag is zijn grondslag"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

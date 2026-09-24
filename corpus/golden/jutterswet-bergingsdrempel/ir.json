@@ -72,7 +72,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "hij is noodweer verklaard"
+                  "source": {
+                    "snippet": "hij is noodweer verklaard"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -81,7 +83,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "aantal geborgen wrakken",
                     "objecttype": "Jutter",
-                    "bron": "zijn aantal geborgen wrakken"
+                    "source": {
+                      "snippet": "zijn aantal geborgen wrakken"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -94,15 +98,20 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "8"
+                    "source": {
+                      "snippet": "8"
+                    }
                   },
                   "periode": null,
-                  "bron": "zijn aantal geborgen wrakken is groter of gelijk aan 8"
+                  "source": {
+                    "snippet": "zijn aantal geborgen wrakken is groter of gelijk aan 8"
+                  }
                 }
               ],
-              "bron": "hij aan alle volgende voorwaarden voldoet: - hij is noodweer verklaard - zijn aantal geborgen wrakken is groter of gelijk aan 8."
-            },
-            "bron": null
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - hij is noodweer verklaard - zijn aantal geborgen wrakken is groter of gelijk aan 8."
+              }
+            }
           },
           {
             "node": "Default",
@@ -114,7 +123,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "aantal geborgen wrakken",
                 "objecttype": "Jutter",
-                "bron": "zijn aantal geborgen wrakken"
+                "source": {
+                  "snippet": "zijn aantal geborgen wrakken"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -127,15 +138,17 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "20"
+                "source": {
+                  "snippet": "20"
+                }
               },
               "periode": null,
-              "bron": "zijn aantal geborgen wrakken groter of gelijk is aan 20"
-            },
-            "bron": null
+              "source": {
+                "snippet": "zijn aantal geborgen wrakken groter of gelijk is aan 20"
+              }
+            }
           }
         ],
-        "bron": null,
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

@@ -76,7 +76,9 @@
               "node": "AttribuutRef",
               "attribuut": "gemengd",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is gemengd"
+              "source": {
+                "snippet": "Een Jutter is gemengd"
+              }
             },
             "value": {
               "node": "Literal",
@@ -86,7 +88,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -98,14 +102,18 @@
                   "factType": "wachtindeling",
                   "role": "wachtjutter",
                   "negated": false,
-                  "bron": "hij een wachtjutter is"
+                  "source": {
+                    "snippet": "hij een wachtjutter is"
+                  }
                 },
                 {
                   "node": "RoleMembership",
                   "factType": "wachtindeling",
                   "role": "wachtjutter",
                   "negated": true,
-                  "bron": "hij geen wachtjutter is"
+                  "source": {
+                    "snippet": "hij geen wachtjutter is"
+                  }
                 },
                 {
                   "node": "Kenmerk",
@@ -113,10 +121,14 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "hij actief is"
+                  "source": {
+                    "snippet": "hij actief is"
+                  }
                 }
               ],
-              "bron": "ten minste 2 van de volgende gelden"
+              "source": {
+                "snippet": "ten minste 2 van de volgende gelden"
+              }
             },
             "initialisation": false
           }

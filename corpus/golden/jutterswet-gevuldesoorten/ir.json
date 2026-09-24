@@ -167,7 +167,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal aangemelde vondsten",
               "objecttype": "Jutter",
-              "bron": "Het aantal aangemelde vondsten van een Jutter"
+              "source": {
+                "snippet": "Het aantal aangemelde vondsten van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -177,7 +179,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vondsten",
                   "objecttype": "Jutter",
-                  "bron": "vondsten van de Jutter"
+                  "source": {
+                    "snippet": "vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -192,7 +196,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal vondsten van de Jutter"
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -213,7 +219,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal gevulde vindplaatsen",
               "objecttype": "Jutter",
-              "bron": "Het aantal gevulde vindplaatsen van een Jutter"
+              "source": {
+                "snippet": "Het aantal gevulde vindplaatsen van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -223,7 +231,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vindplaats",
                   "objecttype": "Vondst",
-                  "bron": "de vindplaats van alle vondsten van de Jutter"
+                  "source": {
+                    "snippet": "de vindplaats van alle vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -238,7 +248,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal gevulde waarden van de vindplaats van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "het aantal gevulde waarden van de vindplaats van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -259,7 +271,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal gevulde vondstdagen",
               "objecttype": "Jutter",
-              "bron": "Het aantal gevulde vondstdagen van een Jutter"
+              "source": {
+                "snippet": "Het aantal gevulde vondstdagen van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -269,7 +283,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vondstdag",
                   "objecttype": "Vondst",
-                  "bron": "de vondstdag van alle vondsten van de Jutter"
+                  "source": {
+                    "snippet": "de vondstdag van alle vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -284,7 +300,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal gevulde waarden van de vondstdag van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "het aantal gevulde waarden van de vondstdag van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -305,7 +323,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal gevulde kustvakken",
               "objecttype": "Jutter",
-              "bron": "Het aantal gevulde kustvakken van een Jutter"
+              "source": {
+                "snippet": "Het aantal gevulde kustvakken van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -315,7 +335,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "kustvak",
                   "objecttype": "Vondst",
-                  "bron": "het kustvak van alle vondsten van de Jutter"
+                  "source": {
+                    "snippet": "het kustvak van alle vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -330,7 +352,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal gevulde waarden van het kustvak van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "het aantal gevulde waarden van het kustvak van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -351,7 +375,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal gevulde bergingsvlaggen",
               "objecttype": "Jutter",
-              "bron": "Het aantal gevulde bergingsvlaggen van een Jutter"
+              "source": {
+                "snippet": "Het aantal gevulde bergingsvlaggen van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -361,7 +387,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "geborgen",
                   "objecttype": "Vondst",
-                  "bron": "geborgen van alle vondsten van de Jutter"
+                  "source": {
+                    "snippet": "geborgen van alle vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -376,7 +404,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal gevulde waarden van geborgen van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "het aantal gevulde waarden van geborgen van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

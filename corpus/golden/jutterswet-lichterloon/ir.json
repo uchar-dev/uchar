@@ -118,7 +118,9 @@
               "node": "AttribuutRef",
               "attribuut": "lichterloon",
               "objecttype": "Lichterbeurt",
-              "bron": "Het lichterloon van een Lichterbeurt"
+              "source": {
+                "snippet": "Het lichterloon van een Lichterbeurt"
+              }
             },
             "value": {
               "node": "Let",
@@ -146,13 +148,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "vrachttal",
                   "objecttype": "Lichterbeurt",
-                  "bron": "het vrachttal van de Lichterbeurt"
+                  "source": {
+                    "snippet": "het vrachttal van de Lichterbeurt"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "eenheidsloon",
                   "objecttype": "Lichterbeurt",
-                  "bron": "het eenheidsloon van de Lichterbeurt"
+                  "source": {
+                    "snippet": "het eenheidsloon van de Lichterbeurt"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -170,7 +176,9 @@
                     }
                   }
                 },
-                "bron": "het vrachttal van de Lichterbeurt maal het eenheidsloon van de Lichterbeurt"
+                "source": {
+                  "snippet": "het vrachttal van de Lichterbeurt maal het eenheidsloon van de Lichterbeurt"
+                }
               },
               "body": {
                 "node": "Binair",
@@ -178,7 +186,9 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "grondloon",
-                  "bron": "het grondloon"
+                  "source": {
+                    "snippet": "het grondloon"
+                  }
                 },
                 "rechts": {
                   "node": "Binair",
@@ -186,13 +196,17 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "grondloon",
-                    "bron": "het grondloon"
+                    "source": {
+                      "snippet": "het grondloon"
+                    }
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "spoedtal",
                     "objecttype": "Lichterbeurt",
-                    "bron": "het spoedtal van de Lichterbeurt"
+                    "source": {
+                      "snippet": "het spoedtal van de Lichterbeurt"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -210,7 +224,9 @@
                       }
                     }
                   },
-                  "bron": "het grondloon maal het spoedtal van de Lichterbeurt"
+                  "source": {
+                    "snippet": "het grondloon maal het spoedtal van de Lichterbeurt"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -228,9 +244,13 @@
                     }
                   }
                 },
-                "bron": "het grondloon plus het grondloon maal het spoedtal van de Lichterbeurt"
+                "source": {
+                  "snippet": "het grondloon plus het grondloon maal het spoedtal van de Lichterbeurt"
+                }
               },
-              "bron": "het grondloon is het vrachttal van de Lichterbeurt maal het eenheidsloon van de Lichterbeurt."
+              "source": {
+                "snippet": "het grondloon is het vrachttal van de Lichterbeurt maal het eenheidsloon van de Lichterbeurt."
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

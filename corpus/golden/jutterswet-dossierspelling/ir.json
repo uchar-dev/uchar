@@ -129,8 +129,7 @@
             "target": {
               "node": "AttribuutRef",
               "attribuut": "waardekopie",
-              "objecttype": "Jutter",
-              "bron": null
+              "objecttype": "Jutter"
             },
             "value": {
               "node": "FieldAccess",
@@ -143,11 +142,9 @@
               "base": {
                 "node": "AttribuutRef",
                 "attribuut": "dossier",
-                "objecttype": "Jutter",
-                "bron": null
+                "objecttype": "Jutter"
               },
-              "field": "waarde",
-              "bron": null
+              "field": "waarde"
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -167,8 +164,7 @@
             "target": {
               "node": "AttribuutRef",
               "attribuut": "spiegel",
-              "objecttype": "Jutter",
-              "bron": null
+              "objecttype": "Jutter"
             },
             "value": {
               "node": "StructLiteral",
@@ -210,11 +206,9 @@
                     "base": {
                       "node": "AttribuutRef",
                       "attribuut": "dossier",
-                      "objecttype": "Jutter",
-                      "bron": null
+                      "objecttype": "Jutter"
                     },
-                    "field": "waarde",
-                    "bron": null
+                    "field": "waarde"
                   }
                 },
                 {
@@ -230,15 +224,12 @@
                     "base": {
                       "node": "AttribuutRef",
                       "attribuut": "dossier",
-                      "objecttype": "Jutter",
-                      "bron": null
+                      "objecttype": "Jutter"
                     },
-                    "field": "telling",
-                    "bron": null
+                    "field": "telling"
                   }
                 }
-              ],
-              "bron": null
+              ]
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

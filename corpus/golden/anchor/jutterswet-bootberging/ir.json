@@ -261,7 +261,9 @@
               "node": "AttribuutRef",
               "attribuut": "laagste vondstgewicht",
               "objecttype": "Jutter",
-              "bron": "Het laagste vondstgewicht van een Jutter"
+              "source": {
+                "snippet": "Het laagste vondstgewicht van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -271,7 +273,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Vondst",
-                  "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+                  "source": {
+                    "snippet": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -303,7 +307,9 @@
                   }
                 }
               },
-              "bron": "de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+              "source": {
+                "snippet": "de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -324,7 +330,9 @@
               "node": "AttribuutRef",
               "attribuut": "totaal vondstgewicht",
               "objecttype": "Jutter",
-              "bron": "Het totaal vondstgewicht van een Jutter"
+              "source": {
+                "snippet": "Het totaal vondstgewicht van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -334,7 +342,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Vondst",
-                  "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+                  "source": {
+                    "snippet": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -349,7 +359,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "sourcePath": [
                 {
@@ -379,7 +391,9 @@
                   }
                 }
               },
-              "bron": "de som van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter of 0 als die er niet zijn"
+              "source": {
+                "snippet": "de som van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter of 0 als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -400,7 +414,9 @@
               "node": "AttribuutRef",
               "attribuut": "laagste kistgewicht",
               "objecttype": "Jutter",
-              "bron": "Het laagste kistgewicht van een Jutter"
+              "source": {
+                "snippet": "Het laagste kistgewicht van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -410,7 +426,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "inhoudsgewicht",
                   "objecttype": "Kist",
-                  "bron": "het inhoudsgewicht van alle ingepakte kisten van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+                  "source": {
+                    "snippet": "het inhoudsgewicht van alle ingepakte kisten van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Kist",
@@ -447,7 +465,9 @@
                   }
                 }
               },
-              "bron": "de minimale waarde van het inhoudsgewicht van alle ingepakte kisten van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+              "source": {
+                "snippet": "de minimale waarde van het inhoudsgewicht van alle ingepakte kisten van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

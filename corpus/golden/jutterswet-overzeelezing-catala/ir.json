@@ -111,7 +111,9 @@
               "node": "AttribuutRef",
               "attribuut": "overzees",
               "objecttype": "Eigenaar",
-              "bron": "de overzees"
+              "source": {
+                "snippet": "de overzees"
+              }
             },
             "value": {
               "node": "Literal",
@@ -121,7 +123,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -130,7 +134,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "registratiezone",
                 "objecttype": "Eigenaar",
-                "bron": "de registratiezone"
+                "source": {
+                  "snippet": "de registratiezone"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -143,10 +149,11 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "100"
+                "source": {
+                  "snippet": "100"
+                }
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "initialisation": false
           }
@@ -170,7 +177,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "registratiezone",
                   "objecttype": "Vondstaanslag",
-                  "bron": "de registratiezone"
+                  "source": {
+                    "snippet": "de registratiezone"
+                  }
                 },
                 "kenmerk": false
               }
@@ -212,7 +221,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "de eigenaar is overzees",
+              "source": {
+                "snippet": "de eigenaar is overzees"
+              },
               "navigatieBinding": {
                 "node": "RolBinding",
                 "feittype": "Vondstaanslag_eigenaar",
@@ -226,7 +237,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vondstwaarde",
                 "objecttype": "Vondstaanslag",
-                "bron": "de vondstwaarde"
+                "source": {
+                  "snippet": "de vondstwaarde"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -239,17 +252,20 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "2"
+                "source": {
+                  "snippet": "2"
+                }
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
                 "sign": "ONBEPAALD"
-              },
-              "bron": null
+              }
             },
-            "bron": "heffing"
+            "source": {
+              "snippet": "heffing"
+            }
           },
           {
             "node": "Default",
@@ -259,18 +275,26 @@
               "kwantor": "ALLE",
               "drempel": 0,
               "onderdelen": [],
-              "bron": "altijd"
+              "source": {
+                "snippet": "altijd"
+              }
             },
             "consequentie": {
               "node": "AttribuutRef",
               "attribuut": "vondstwaarde",
               "objecttype": "Vondstaanslag",
-              "bron": "de vondstwaarde"
+              "source": {
+                "snippet": "de vondstwaarde"
+              }
             },
-            "bron": "heffing"
+            "source": {
+              "snippet": "heffing"
+            }
           }
         ],
-        "bron": "heffing",
+        "source": {
+          "snippet": "heffing"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

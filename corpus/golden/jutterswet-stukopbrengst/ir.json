@@ -128,7 +128,9 @@
               "node": "AttribuutRef",
               "attribuut": "opbrengst",
               "objecttype": "Vondst",
-              "bron": "De opbrengst van een Vondst"
+              "source": {
+                "snippet": "De opbrengst van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -137,7 +139,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "basisbedrag",
                 "objecttype": "Vondst",
-                "bron": "het basisbedrag van de Vondst"
+                "source": {
+                  "snippet": "het basisbedrag van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Binair",
@@ -146,13 +150,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "stuktal",
                   "objecttype": "Vondst",
-                  "bron": "het stuktal van de Vondst"
+                  "source": {
+                    "snippet": "het stuktal van de Vondst"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "stukprijs",
                   "objecttype": "Vondst",
-                  "bron": "de stukprijs van de Vondst"
+                  "source": {
+                    "snippet": "de stukprijs van de Vondst"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -170,7 +178,9 @@
                     }
                   }
                 },
-                "bron": "het stuktal van de Vondst maal de stukprijs van de Vondst"
+                "source": {
+                  "snippet": "het stuktal van de Vondst maal de stukprijs van de Vondst"
+                }
               },
               "type": {
                 "node": "Number",
@@ -188,7 +198,9 @@
                   }
                 }
               },
-              "bron": "het basisbedrag van de Vondst plus het stuktal van de Vondst maal de stukprijs van de Vondst"
+              "source": {
+                "snippet": "het basisbedrag van de Vondst plus het stuktal van de Vondst maal de stukprijs van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

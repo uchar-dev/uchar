@@ -113,7 +113,9 @@
               "node": "AttribuutRef",
               "attribuut": "streefdatum",
               "objecttype": "Havenmeester",
-              "bron": "De streefdatum van een Havenmeester"
+              "source": {
+                "snippet": "De streefdatum van een Havenmeester"
+              }
             },
             "value": {
               "node": "Binair",
@@ -122,19 +124,25 @@
                 "node": "AttribuutRef",
                 "attribuut": "aanvraagdatum",
                 "objecttype": "Havenmeester",
-                "bron": "zijn aanvraagdatum"
+                "source": {
+                  "snippet": "zijn aanvraagdatum"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "doorlooptijd",
                 "objecttype": "Havenmeester",
-                "bron": "zijn doorlooptijd"
+                "source": {
+                  "snippet": "zijn doorlooptijd"
+                }
               },
               "type": {
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "zijn aanvraagdatum plus zijn doorlooptijd"
+              "source": {
+                "snippet": "zijn aanvraagdatum plus zijn doorlooptijd"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -155,7 +163,9 @@
               "node": "AttribuutRef",
               "attribuut": "havenspanne",
               "objecttype": "Havenmeester",
-              "bron": "De havenspanne van een Havenmeester"
+              "source": {
+                "snippet": "De havenspanne van een Havenmeester"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -165,13 +175,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "aanvraagdatum",
                   "objecttype": "Havenmeester",
-                  "bron": "zijn aanvraagdatum"
+                  "source": {
+                    "snippet": "zijn aanvraagdatum"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "sluitdatum",
                   "objecttype": "Havenmeester",
-                  "bron": "zijn sluitdatum"
+                  "source": {
+                    "snippet": "zijn sluitdatum"
+                  }
                 }
               ],
               "type": {
@@ -189,7 +203,9 @@
                   }
                 }
               },
-              "bron": "de tijdsduur van zijn aanvraagdatum tot zijn sluitdatum in hele havendagen"
+              "source": {
+                "snippet": "de tijdsduur van zijn aanvraagdatum tot zijn sluitdatum in hele havendagen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -215,15 +231,21 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "de dag"
+                "source": {
+                  "snippet": "de dag"
+                }
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "openingsdatum",
-                "bron": "de openingsdatum"
+                "source": {
+                  "snippet": "de openingsdatum"
+                }
               },
               "periode": null,
-              "bron": "de dag later is dan de openingsdatum"
+              "source": {
+                "snippet": "de dag later is dan de openingsdatum"
+              }
             },
             {
               "node": "Vergelijking",
@@ -238,7 +260,9 @@
                       "node": "Date",
                       "precision": "day"
                     },
-                    "bron": "de dag"
+                    "source": {
+                      "snippet": "de dag"
+                    }
                   }
                 ],
                 "type": {
@@ -247,7 +271,9 @@
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "de dag uit de dag"
+                "source": {
+                  "snippet": "de dag uit de dag"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -260,13 +286,19 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "1"
+                "source": {
+                  "snippet": "1"
+                }
               },
               "periode": null,
-              "bron": "de dag uit de dag gelijk is aan 1"
+              "source": {
+                "snippet": "de dag uit de dag gelijk is aan 1"
+              }
             }
           ],
-          "bron": "er aan alle volgende voorwaarden wordt voldaan: - de dag later is dan de openingsdatum - de dag uit de dag gelijk is aan 1."
+          "source": {
+            "snippet": "er aan alle volgende voorwaarden wordt voldaan: - de dag later is dan de openingsdatum - de dag uit de dag gelijk is aan 1."
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",

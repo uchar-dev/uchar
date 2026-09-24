@@ -88,13 +88,17 @@
               "node": "AttribuutRef",
               "attribuut": "bergingsvergoeding",
               "objecttype": "Wrakrecht",
-              "bron": "de bergingsvergoeding van een Wrakrecht"
+              "source": {
+                "snippet": "de bergingsvergoeding van een Wrakrecht"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "grondslag",
               "objecttype": "Wrakrecht",
-              "bron": "zijn grondslag"
+              "source": {
+                "snippet": "zijn grondslag"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -119,7 +123,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bergingsvergoeding",
                   "objecttype": "Wrakrecht",
-                  "bron": "zijn bergingsvergoeding"
+                  "source": {
+                    "snippet": "zijn bergingsvergoeding"
+                  }
                 },
                 "kenmerk": false
               }

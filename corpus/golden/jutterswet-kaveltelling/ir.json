@@ -115,7 +115,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal duinkavels",
               "objecttype": "Jutter",
-              "bron": "Het aantal duinkavels van een Jutter"
+              "source": {
+                "snippet": "Het aantal duinkavels van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -125,7 +127,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "duinkavel",
                   "objecttype": "Jutter",
-                  "bron": "duinkavels van de Jutter"
+                  "source": {
+                    "snippet": "duinkavels van de Jutter"
+                  }
                 }
               ],
               "elementType": "Duinkavel",
@@ -140,7 +144,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal duinkavels van de Jutter"
+              "source": {
+                "snippet": "het aantal duinkavels van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -161,7 +167,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal geborgen vaten",
               "objecttype": "Jutter",
-              "bron": "Het aantal geborgen vaten van een Jutter"
+              "source": {
+                "snippet": "Het aantal geborgen vaten van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -171,7 +179,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vat",
                   "objecttype": "Jutter",
-                  "bron": "vat van de Jutter"
+                  "source": {
+                    "snippet": "vat van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vat",
@@ -186,7 +196,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal vat van de Jutter"
+              "source": {
+                "snippet": "het aantal vat van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -127,7 +127,9 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Rekenkamer",
-              "bron": "De heffing van een Rekenkamer"
+              "source": {
+                "snippet": "De heffing van een Rekenkamer"
+              }
             },
             "value": {
               "node": "Binair",
@@ -136,13 +138,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "grondslag",
                 "objecttype": "Rekenkamer",
-                "bron": "de grondslag van de Rekenkamer"
+                "source": {
+                  "snippet": "de grondslag van de Rekenkamer"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "aftrek",
                 "objecttype": "Rekenkamer",
-                "bron": "de aftrek van de Rekenkamer"
+                "source": {
+                  "snippet": "de aftrek van de Rekenkamer"
+                }
               },
               "type": {
                 "node": "Number",
@@ -150,7 +156,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de grondslag van de Rekenkamer verminderd met de aftrek van de Rekenkamer"
+              "source": {
+                "snippet": "de grondslag van de Rekenkamer verminderd met de aftrek van de Rekenkamer"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -171,13 +179,17 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Jutter",
-              "bron": "De heffing van een Jutter"
+              "source": {
+                "snippet": "De heffing van een Jutter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Rekenkamer",
-              "bron": "de heffing van haar rekenkamer",
+              "source": {
+                "snippet": "de heffing van haar rekenkamer"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -209,7 +221,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "grondslag",
                   "objecttype": "Jutter",
-                  "bron": "de grondslag van de Jutter"
+                  "source": {
+                    "snippet": "de grondslag van de Jutter"
+                  }
                 },
                 "kenmerk": false
               },
@@ -220,7 +234,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "aftrek",
                   "objecttype": "Jutter",
-                  "bron": "de aftrek van de Jutter"
+                  "source": {
+                    "snippet": "de aftrek van de Jutter"
+                  }
                 },
                 "kenmerk": false
               }

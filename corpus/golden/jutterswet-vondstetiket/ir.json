@@ -68,7 +68,9 @@
               "node": "AttribuutRef",
               "attribuut": "erkend",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is erkend"
+              "source": {
+                "snippet": "Een Vondst is erkend"
+              }
             },
             "value": {
               "node": "Literal",
@@ -78,7 +80,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -87,7 +91,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "etiket",
                 "objecttype": "Vondst",
-                "bron": "het etiket van de Vondst"
+                "source": {
+                  "snippet": "het etiket van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -97,10 +103,14 @@
                 "type": {
                   "node": "Tekst"
                 },
-                "bron": "'zeevondst'"
+                "source": {
+                  "snippet": "'zeevondst'"
+                }
               },
               "periode": null,
-              "bron": "haar etiket gelijk is aan 'zeevondst'"
+              "source": {
+                "snippet": "haar etiket gelijk is aan 'zeevondst'"
+              }
             },
             "initialisation": false
           }
@@ -120,7 +130,9 @@
               "node": "AttribuutRef",
               "attribuut": "omstreden",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is omstreden"
+              "source": {
+                "snippet": "Een Vondst is omstreden"
+              }
             },
             "value": {
               "node": "Literal",
@@ -130,7 +142,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -139,7 +153,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "etiket",
                 "objecttype": "Vondst",
-                "bron": "het etiket van de Vondst"
+                "source": {
+                  "snippet": "het etiket van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -149,10 +165,14 @@
                 "type": {
                   "node": "Tekst"
                 },
-                "bron": "'zeevondst'"
+                "source": {
+                  "snippet": "'zeevondst'"
+                }
               },
               "periode": null,
-              "bron": "haar etiket ongelijk is aan 'zeevondst'"
+              "source": {
+                "snippet": "haar etiket ongelijk is aan 'zeevondst'"
+              }
             },
             "initialisation": false
           }
@@ -172,7 +192,9 @@
               "node": "AttribuutRef",
               "attribuut": "rubriek",
               "objecttype": "Vondst",
-              "bron": "De rubriek van een Vondst"
+              "source": {
+                "snippet": "De rubriek van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -182,7 +204,9 @@
               "type": {
                 "node": "Tekst"
               },
-              "bron": "'strandgoed'"
+              "source": {
+                "snippet": "'strandgoed'"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -190,7 +214,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "de Vondst is erkend"
+              "source": {
+                "snippet": "de Vondst is erkend"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -211,13 +237,17 @@
               "node": "AttribuutRef",
               "attribuut": "afschrift",
               "objecttype": "Vondst",
-              "bron": "Het afschrift van een Vondst"
+              "source": {
+                "snippet": "Het afschrift van een Vondst"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "etiket",
               "objecttype": "Vondst",
-              "bron": "het etiket van de Vondst"
+              "source": {
+                "snippet": "het etiket van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

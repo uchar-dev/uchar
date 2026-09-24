@@ -96,13 +96,17 @@
               "node": "AttribuutRef",
               "attribuut": "vergoeding",
               "objecttype": "Strandvondst",
-              "bron": "De vergoeding van een Strandvondst"
+              "source": {
+                "snippet": "De vergoeding van een Strandvondst"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "grondwaarde",
               "objecttype": "Strandvondst",
-              "bron": "zijn grondwaarde"
+              "source": {
+                "snippet": "zijn grondwaarde"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -123,7 +127,9 @@
               "node": "AttribuutRef",
               "attribuut": "toeslag",
               "objecttype": "Wrakstuk",
-              "bron": "De toeslag van een Wrakstuk"
+              "source": {
+                "snippet": "De toeslag van een Wrakstuk"
+              }
             },
             "value": {
               "node": "Literal",
@@ -136,7 +142,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "12.50"
+              "source": {
+                "snippet": "12.50"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -157,7 +165,9 @@
               "node": "AttribuutRef",
               "attribuut": "toeslag",
               "objecttype": "Drijfhout",
-              "bron": "De toeslag van een Drijfhout"
+              "source": {
+                "snippet": "De toeslag van een Drijfhout"
+              }
             },
             "value": {
               "node": "Literal",
@@ -170,7 +180,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "3"
+              "source": {
+                "snippet": "3"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

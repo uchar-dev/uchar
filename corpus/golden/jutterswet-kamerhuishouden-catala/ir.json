@@ -299,7 +299,9 @@
             "links": {
               "node": "BinderRef",
               "name": "kinderen",
-              "bron": "kinderen"
+              "source": {
+                "snippet": "kinderen"
+              }
             },
             "rechts": {
               "node": "Literal",
@@ -312,10 +314,11 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "2"
+              "source": {
+                "snippet": "2"
+              }
             },
-            "periode": null,
-            "bron": null
+            "periode": null
           },
           "then": {
             "node": "Afgerond",
@@ -325,7 +328,9 @@
               "links": {
                 "node": "BinderRef",
                 "name": "vangst",
-                "bron": "vangst"
+                "source": {
+                  "snippet": "vangst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -338,15 +343,16 @@
                   "decimals": 4,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.1500"
+                "source": {
+                  "snippet": "0.1500"
+                }
               },
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
                 "sign": "ONBEPAALD"
-              },
-              "bron": null
+              }
             },
             "modus": "REKENKUNDIG",
             "decimalen": 2,
@@ -355,8 +361,7 @@
               "whole": false,
               "decimals": 2,
               "sign": "ONBEPAALD"
-            },
-            "bron": null
+            }
           },
           "else": {
             "node": "Afgerond",
@@ -366,7 +371,9 @@
               "links": {
                 "node": "BinderRef",
                 "name": "vangst",
-                "bron": "vangst"
+                "source": {
+                  "snippet": "vangst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -379,15 +386,16 @@
                   "decimals": 4,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.2000"
+                "source": {
+                  "snippet": "0.2000"
+                }
               },
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
                 "sign": "ONBEPAALD"
-              },
-              "bron": null
+              }
             },
             "modus": "REKENKUNDIG",
             "decimalen": 2,
@@ -396,12 +404,12 @@
               "whole": false,
               "decimals": 2,
               "sign": "ONBEPAALD"
-            },
-            "bron": null
-          },
-          "bron": null
+            }
+          }
         },
-        "bron": "Vangstheffing"
+        "source": {
+          "snippet": "Vangstheffing"
+        }
       },
       {
         "node": "FunctionDef",
@@ -462,10 +470,11 @@
               "base": {
                 "node": "BinderRef",
                 "name": "jutter",
-                "bron": "jutter"
+                "source": {
+                  "snippet": "jutter"
+                }
               },
-              "field": "vangst",
-              "bron": null
+              "field": "vangst"
             },
             {
               "node": "FieldAccess",
@@ -478,15 +487,20 @@
               "base": {
                 "node": "BinderRef",
                 "name": "jutter",
-                "bron": "jutter"
+                "source": {
+                  "snippet": "jutter"
+                }
               },
-              "field": "kinderen",
-              "bron": null
+              "field": "kinderen"
             }
           ],
-          "bron": "Vangstheffing"
+          "source": {
+            "snippet": "Vangstheffing"
+          }
         },
-        "bron": "JutterAandeel aftrek"
+        "source": {
+          "snippet": "JutterAandeel aftrek"
+        }
       },
       {
         "node": "FunctionDef",
@@ -542,7 +556,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "1000.00"
+              "source": {
+                "snippet": "1000.00"
+              }
             },
             "rechts": {
               "node": "Binair",
@@ -558,7 +574,9 @@
                   "decimals": 4,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "1.0000"
+                "source": {
+                  "snippet": "1.0000"
+                }
               },
               "rechts": {
                 "node": "Binair",
@@ -574,10 +592,11 @@
                   "base": {
                     "node": "BinderRef",
                     "name": "jutter",
-                    "bron": "jutter"
+                    "source": {
+                      "snippet": "jutter"
+                    }
                   },
-                  "field": "kinderen",
-                  "bron": null
+                  "field": "kinderen"
                 },
                 "rechts": {
                   "node": "Literal",
@@ -590,31 +609,30 @@
                     "decimals": 4,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "4.0000"
+                  "source": {
+                    "snippet": "4.0000"
+                  }
                 },
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 4,
                   "sign": "ONBEPAALD"
-                },
-                "bron": null
+                }
               },
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 4,
                 "sign": "ONBEPAALD"
-              },
-              "bron": null
+              }
             },
             "type": {
               "node": "Number",
               "whole": false,
               "decimals": 2,
               "sign": "ONBEPAALD"
-            },
-            "bron": null
+            }
           },
           "modus": "REKENKUNDIG",
           "decimalen": 2,
@@ -623,10 +641,11 @@
             "whole": false,
             "decimals": 2,
             "sign": "ONBEPAALD"
-          },
-          "bron": null
+          }
         },
-        "bron": "JutterAandeel kamerbedrag"
+        "source": {
+          "snippet": "JutterAandeel kamerbedrag"
+        }
       }
     ]
   },
@@ -646,7 +665,9 @@
               "node": "AttribuutRef",
               "attribuut": "kamerbedrag",
               "objecttype": "JutterAandeel",
-              "bron": "de kamerbedrag"
+              "source": {
+                "snippet": "de kamerbedrag"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -664,7 +685,9 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "1000.00"
+                  "source": {
+                    "snippet": "1000.00"
+                  }
                 },
                 "rechts": {
                   "node": "Binair",
@@ -680,7 +703,9 @@
                       "decimals": 4,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "1.0000"
+                    "source": {
+                      "snippet": "1.0000"
+                    }
                   },
                   "rechts": {
                     "node": "Binair",
@@ -697,10 +722,11 @@
                         "node": "AttribuutRef",
                         "attribuut": "jutter",
                         "objecttype": "JutterAandeel",
-                        "bron": "de jutter"
+                        "source": {
+                          "snippet": "de jutter"
+                        }
                       },
-                      "field": "kinderen",
-                      "bron": null
+                      "field": "kinderen"
                     },
                     "rechts": {
                       "node": "Literal",
@@ -713,31 +739,30 @@
                         "decimals": 4,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "4.0000"
+                      "source": {
+                        "snippet": "4.0000"
+                      }
                     },
                     "type": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 4,
                       "sign": "ONBEPAALD"
-                    },
-                    "bron": null
+                    }
                   },
                   "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 4,
                     "sign": "ONBEPAALD"
-                  },
-                  "bron": null
+                  }
                 },
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
                   "sign": "ONBEPAALD"
-                },
-                "bron": null
+                }
               },
               "modus": "REKENKUNDIG",
               "decimalen": 2,
@@ -746,8 +771,7 @@
                 "whole": false,
                 "decimals": 2,
                 "sign": "ONBEPAALD"
-              },
-              "bron": null
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -768,13 +792,17 @@
               "node": "AttribuutRef",
               "attribuut": "aftrek",
               "objecttype": "JutterAandeel",
-              "bron": "de aftrek"
+              "source": {
+                "snippet": "de aftrek"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "bedrag",
               "objecttype": "Vangstheffing",
-              "bron": "de bedrag van de heffing",
+              "source": {
+                "snippet": "de bedrag van de heffing"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -802,7 +830,9 @@
               "node": "AttribuutRef",
               "attribuut": "totale_aftrek basis",
               "objecttype": "Kamerheffing",
-              "bron": "de totale_aftrek basis"
+              "source": {
+                "snippet": "de totale_aftrek basis"
+              }
             },
             "value": {
               "node": "Match",
@@ -848,7 +878,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "jutters",
                     "objecttype": "Kamerheffing",
-                    "bron": "de jutters"
+                    "source": {
+                      "snippet": "de jutters"
+                    }
                   },
                   "function": {
                     "node": "Lambda",
@@ -894,14 +926,19 @@
                         {
                           "node": "BinderRef",
                           "name": "jutter",
-                          "bron": "jutter"
+                          "source": {
+                            "snippet": "jutter"
+                          }
                         }
                       ],
-                      "bron": "JutterAandeel aftrek"
+                      "source": {
+                        "snippet": "JutterAandeel aftrek"
+                      }
                     },
-                    "bron": "jutter"
-                  },
-                  "bron": null
+                    "source": {
+                      "snippet": "jutter"
+                    }
+                  }
                 },
                 "function": {
                   "node": "Lambda",
@@ -962,7 +999,9 @@
                     "scrutinee": {
                       "node": "BinderRef",
                       "name": "geaccumuleerde optie",
-                      "bron": "geaccumuleerde optie"
+                      "source": {
+                        "snippet": "geaccumuleerde optie"
+                      }
                     },
                     "arms": [
                       {
@@ -993,9 +1032,13 @@
                           "argument": {
                             "node": "BinderRef",
                             "name": "sum2",
-                            "bron": "sum2"
+                            "source": {
+                              "snippet": "sum2"
+                            }
                           },
-                          "bron": "Present"
+                          "source": {
+                            "snippet": "Present"
+                          }
                         }
                       },
                       {
@@ -1029,28 +1072,37 @@
                             "links": {
                               "node": "BinderRef",
                               "name": "sum1",
-                              "bron": "sum1"
+                              "source": {
+                                "snippet": "sum1"
+                              }
                             },
                             "rechts": {
                               "node": "BinderRef",
                               "name": "sum2",
-                              "bron": "sum2"
+                              "source": {
+                                "snippet": "sum2"
+                              }
                             },
                             "type": {
                               "node": "Number",
                               "whole": false,
                               "decimals": 2,
                               "sign": "ONBEPAALD"
-                            },
-                            "bron": null
+                            }
                           },
-                          "bron": "Present"
+                          "source": {
+                            "snippet": "Present"
+                          }
                         }
                       }
                     ],
-                    "bron": "de volgende vouwstap"
+                    "source": {
+                      "snippet": "de volgende vouwstap"
+                    }
                   },
-                  "bron": "de vouwstap"
+                  "source": {
+                    "snippet": "de vouwstap"
+                  }
                 },
                 "init": {
                   "node": "Construct",
@@ -1075,9 +1127,13 @@
                   },
                   "constructor": "Absent",
                   "argument": null,
-                  "bron": "Absent"
+                  "source": {
+                    "snippet": "Absent"
+                  }
                 },
-                "bron": "gevouwen tot een optionele waarde"
+                "source": {
+                  "snippet": "gevouwen tot een optionele waarde"
+                }
               },
               "arms": [
                 {
@@ -1094,7 +1150,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0.00"
+                    "source": {
+                      "snippet": "0.00"
+                    }
                   }
                 },
                 {
@@ -1103,11 +1161,15 @@
                   "body": {
                     "node": "BinderRef",
                     "name": "x",
-                    "bron": "x"
+                    "source": {
+                      "snippet": "x"
+                    }
                   }
                 }
               ],
-              "bron": "de gevouwen waarde uitgepakt"
+              "source": {
+                "snippet": "de gevouwen waarde uitgepakt"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -1128,7 +1190,9 @@
               "node": "AttribuutRef",
               "attribuut": "totale_aftrek begrensd",
               "objecttype": "Kamerheffing",
-              "bron": "de totale_aftrek begrensd"
+              "source": {
+                "snippet": "de totale_aftrek begrensd"
+              }
             },
             "value": {
               "node": "Let",
@@ -1150,7 +1214,9 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "500.00"
+                "source": {
+                  "snippet": "500.00"
+                }
               },
               "body": {
                 "node": "Let",
@@ -1165,7 +1231,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "totale_aftrek basis",
                   "objecttype": "Kamerheffing",
-                  "bron": "de totale_aftrek basis"
+                  "source": {
+                    "snippet": "de totale_aftrek basis"
+                  }
                 },
                 "body": {
                   "node": "IfThenElse",
@@ -1181,31 +1249,41 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "raw",
-                      "bron": "raw"
+                      "source": {
+                        "snippet": "raw"
+                      }
                     },
                     "rechts": {
                       "node": "BinderRef",
                       "name": "cap",
-                      "bron": "cap"
+                      "source": {
+                        "snippet": "cap"
+                      }
                     },
-                    "periode": null,
-                    "bron": null
+                    "periode": null
                   },
                   "then": {
                     "node": "BinderRef",
                     "name": "cap",
-                    "bron": "cap"
+                    "source": {
+                      "snippet": "cap"
+                    }
                   },
                   "else": {
                     "node": "BinderRef",
                     "name": "raw",
-                    "bron": "raw"
-                  },
-                  "bron": null
+                    "source": {
+                      "snippet": "raw"
+                    }
+                  }
                 },
-                "bron": "raw"
+                "source": {
+                  "snippet": "raw"
+                }
               },
-              "bron": "cap"
+              "source": {
+                "snippet": "cap"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -1226,7 +1304,9 @@
               "node": "AttribuutRef",
               "attribuut": "heffing basis",
               "objecttype": "Kamerheffing",
-              "bron": "de heffing basis"
+              "source": {
+                "snippet": "de heffing basis"
+              }
             },
             "value": {
               "node": "Match",
@@ -1272,7 +1352,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "jutters",
                     "objecttype": "Kamerheffing",
-                    "bron": "de jutters"
+                    "source": {
+                      "snippet": "de jutters"
+                    }
                   },
                   "function": {
                     "node": "Lambda",
@@ -1318,14 +1400,19 @@
                         {
                           "node": "BinderRef",
                           "name": "jutter",
-                          "bron": "jutter"
+                          "source": {
+                            "snippet": "jutter"
+                          }
                         }
                       ],
-                      "bron": "JutterAandeel kamerbedrag"
+                      "source": {
+                        "snippet": "JutterAandeel kamerbedrag"
+                      }
                     },
-                    "bron": "jutter"
-                  },
-                  "bron": null
+                    "source": {
+                      "snippet": "jutter"
+                    }
+                  }
                 },
                 "function": {
                   "node": "Lambda",
@@ -1386,7 +1473,9 @@
                     "scrutinee": {
                       "node": "BinderRef",
                       "name": "geaccumuleerde optie",
-                      "bron": "geaccumuleerde optie"
+                      "source": {
+                        "snippet": "geaccumuleerde optie"
+                      }
                     },
                     "arms": [
                       {
@@ -1417,9 +1506,13 @@
                           "argument": {
                             "node": "BinderRef",
                             "name": "sum2",
-                            "bron": "sum2"
+                            "source": {
+                              "snippet": "sum2"
+                            }
                           },
-                          "bron": "Present"
+                          "source": {
+                            "snippet": "Present"
+                          }
                         }
                       },
                       {
@@ -1453,28 +1546,37 @@
                             "links": {
                               "node": "BinderRef",
                               "name": "sum1",
-                              "bron": "sum1"
+                              "source": {
+                                "snippet": "sum1"
+                              }
                             },
                             "rechts": {
                               "node": "BinderRef",
                               "name": "sum2",
-                              "bron": "sum2"
+                              "source": {
+                                "snippet": "sum2"
+                              }
                             },
                             "type": {
                               "node": "Number",
                               "whole": false,
                               "decimals": 2,
                               "sign": "ONBEPAALD"
-                            },
-                            "bron": null
+                            }
                           },
-                          "bron": "Present"
+                          "source": {
+                            "snippet": "Present"
+                          }
                         }
                       }
                     ],
-                    "bron": "de volgende vouwstap"
+                    "source": {
+                      "snippet": "de volgende vouwstap"
+                    }
                   },
-                  "bron": "de vouwstap"
+                  "source": {
+                    "snippet": "de vouwstap"
+                  }
                 },
                 "init": {
                   "node": "Construct",
@@ -1499,9 +1601,13 @@
                   },
                   "constructor": "Absent",
                   "argument": null,
-                  "bron": "Absent"
+                  "source": {
+                    "snippet": "Absent"
+                  }
                 },
-                "bron": "gevouwen tot een optionele waarde"
+                "source": {
+                  "snippet": "gevouwen tot een optionele waarde"
+                }
               },
               "arms": [
                 {
@@ -1518,7 +1624,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0.00"
+                    "source": {
+                      "snippet": "0.00"
+                    }
                   }
                 },
                 {
@@ -1527,11 +1635,15 @@
                   "body": {
                     "node": "BinderRef",
                     "name": "x",
-                    "bron": "x"
+                    "source": {
+                      "snippet": "x"
+                    }
                   }
                 }
               ],
-              "bron": "de gevouwen waarde uitgepakt"
+              "source": {
+                "snippet": "de gevouwen waarde uitgepakt"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -1552,7 +1664,9 @@
               "node": "AttribuutRef",
               "attribuut": "heffing na_aftrek",
               "objecttype": "Kamerheffing",
-              "bron": "de heffing na_aftrek"
+              "source": {
+                "snippet": "de heffing na_aftrek"
+              }
             },
             "value": {
               "node": "Let",
@@ -1567,7 +1681,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "heffing basis",
                 "objecttype": "Kamerheffing",
-                "bron": "de heffing basis"
+                "source": {
+                  "snippet": "de heffing basis"
+                }
               },
               "body": {
                 "node": "Let",
@@ -1582,7 +1698,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "totale_aftrek begrensd",
                   "objecttype": "Kamerheffing",
-                  "bron": "de totale_aftrek begrensd"
+                  "source": {
+                    "snippet": "de totale_aftrek begrensd"
+                  }
                 },
                 "body": {
                   "node": "IfThenElse",
@@ -1598,15 +1716,18 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "afgetrokken",
-                      "bron": "afgetrokken"
+                      "source": {
+                        "snippet": "afgetrokken"
+                      }
                     },
                     "rechts": {
                       "node": "BinderRef",
                       "name": "basis",
-                      "bron": "basis"
+                      "source": {
+                        "snippet": "basis"
+                      }
                     },
-                    "periode": null,
-                    "bron": null
+                    "periode": null
                   },
                   "then": {
                     "node": "Literal",
@@ -1619,7 +1740,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0.00"
+                    "source": {
+                      "snippet": "0.00"
+                    }
                   },
                   "else": {
                     "node": "Binair",
@@ -1627,26 +1750,32 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "basis",
-                      "bron": "basis"
+                      "source": {
+                        "snippet": "basis"
+                      }
                     },
                     "rechts": {
                       "node": "BinderRef",
                       "name": "afgetrokken",
-                      "bron": "afgetrokken"
+                      "source": {
+                        "snippet": "afgetrokken"
+                      }
                     },
                     "type": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
                       "sign": "ONBEPAALD"
-                    },
-                    "bron": null
-                  },
-                  "bron": null
+                    }
+                  }
                 },
-                "bron": "afgetrokken"
+                "source": {
+                  "snippet": "afgetrokken"
+                }
               },
-              "bron": "basis"
+              "source": {
+                "snippet": "basis"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -1679,10 +1808,11 @@
                     "node": "AttribuutRef",
                     "attribuut": "jutter",
                     "objecttype": "JutterAandeel",
-                    "bron": "de jutter"
+                    "source": {
+                      "snippet": "de jutter"
+                    }
                   },
-                  "field": "vangst",
-                  "bron": null
+                  "field": "vangst"
                 },
                 "kenmerk": false
               },
@@ -1701,10 +1831,11 @@
                     "node": "AttribuutRef",
                     "attribuut": "jutter",
                     "objecttype": "JutterAandeel",
-                    "bron": "de jutter"
+                    "source": {
+                      "snippet": "de jutter"
+                    }
                   },
-                  "field": "kinderen",
-                  "bron": null
+                  "field": "kinderen"
                 },
                 "kenmerk": false
               }
@@ -1747,7 +1878,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "kinderen",
                 "objecttype": "Vangstheffing",
-                "bron": "de kinderen"
+                "source": {
+                  "snippet": "de kinderen"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -1760,10 +1893,11 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "2"
+                "source": {
+                  "snippet": "2"
+                }
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "consequentie": {
               "node": "Afgerond",
@@ -1774,7 +1908,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vangst",
                   "objecttype": "Vangstheffing",
-                  "bron": "de vangst"
+                  "source": {
+                    "snippet": "de vangst"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -1787,15 +1923,16 @@
                     "decimals": 4,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "0.1500"
+                  "source": {
+                    "snippet": "0.1500"
+                  }
                 },
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
                   "sign": "ONBEPAALD"
-                },
-                "bron": null
+                }
               },
               "modus": "REKENKUNDIG",
               "decimalen": 2,
@@ -1804,10 +1941,11 @@
                 "whole": false,
                 "decimals": 2,
                 "sign": "ONBEPAALD"
-              },
-              "bron": null
+              }
             },
-            "bron": "bedrag"
+            "source": {
+              "snippet": "bedrag"
+            }
           },
           {
             "node": "Default",
@@ -1817,7 +1955,9 @@
               "kwantor": "ALLE",
               "drempel": 0,
               "onderdelen": [],
-              "bron": "altijd"
+              "source": {
+                "snippet": "altijd"
+              }
             },
             "consequentie": {
               "node": "Afgerond",
@@ -1828,7 +1968,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vangst",
                   "objecttype": "Vangstheffing",
-                  "bron": "de vangst"
+                  "source": {
+                    "snippet": "de vangst"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -1841,15 +1983,16 @@
                     "decimals": 4,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "0.2000"
+                  "source": {
+                    "snippet": "0.2000"
+                  }
                 },
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
                   "sign": "ONBEPAALD"
-                },
-                "bron": null
+                }
               },
               "modus": "REKENKUNDIG",
               "decimalen": 2,
@@ -1858,13 +2001,16 @@
                 "whole": false,
                 "decimals": 2,
                 "sign": "ONBEPAALD"
-              },
-              "bron": null
+              }
             },
-            "bron": "bedrag"
+            "source": {
+              "snippet": "bedrag"
+            }
           }
         ],
-        "bron": "bedrag",
+        "source": {
+          "snippet": "bedrag"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

@@ -96,7 +96,9 @@
               "node": "AttribuutRef",
               "attribuut": "bruto",
               "objecttype": "Vondst",
-              "bron": "De bruto van een Vondst"
+              "source": {
+                "snippet": "De bruto van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -105,7 +107,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "gewicht",
                 "objecttype": "Vondst",
-                "bron": "het gewicht"
+                "source": {
+                  "snippet": "het gewicht"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -118,7 +122,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "5"
+                "source": {
+                  "snippet": "5"
+                }
               },
               "type": {
                 "node": "Number",
@@ -126,7 +132,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het gewicht van de Vondst plus 5"
+              "source": {
+                "snippet": "het gewicht van de Vondst plus 5"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -147,7 +155,9 @@
               "node": "AttribuutRef",
               "attribuut": "marge",
               "objecttype": "Vondst",
-              "bron": "De marge van een Vondst"
+              "source": {
+                "snippet": "De marge van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -156,13 +166,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "gewicht",
                 "objecttype": "Vondst",
-                "bron": "het gewicht"
+                "source": {
+                  "snippet": "het gewicht"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "korting",
                 "objecttype": "Vondst",
-                "bron": "de korting"
+                "source": {
+                  "snippet": "de korting"
+                }
               },
               "type": {
                 "node": "Number",
@@ -170,7 +184,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het gewicht van de Vondst min de korting"
+              "source": {
+                "snippet": "het gewicht van de Vondst min de korting"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -191,7 +207,9 @@
               "node": "AttribuutRef",
               "attribuut": "netto",
               "objecttype": "Vondst",
-              "bron": "De netto van een Vondst"
+              "source": {
+                "snippet": "De netto van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -200,13 +218,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "gewicht",
                 "objecttype": "Vondst",
-                "bron": "het gewicht"
+                "source": {
+                  "snippet": "het gewicht"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "korting",
                 "objecttype": "Vondst",
-                "bron": "de korting"
+                "source": {
+                  "snippet": "de korting"
+                }
               },
               "type": {
                 "node": "Number",
@@ -214,7 +236,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het gewicht van de Vondst verminderd met de korting"
+              "source": {
+                "snippet": "het gewicht van de Vondst verminderd met de korting"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -235,7 +259,9 @@
               "node": "AttribuutRef",
               "attribuut": "som",
               "objecttype": "Vondst",
-              "bron": "De som van een Vondst"
+              "source": {
+                "snippet": "De som van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -251,13 +277,17 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "5"
+                "source": {
+                  "snippet": "5"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "korting",
                 "objecttype": "Vondst",
-                "bron": "de korting"
+                "source": {
+                  "snippet": "de korting"
+                }
               },
               "type": {
                 "node": "Number",
@@ -265,7 +295,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "5 plus de korting van de Vondst"
+              "source": {
+                "snippet": "5 plus de korting van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

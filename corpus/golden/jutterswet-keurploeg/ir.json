@@ -109,7 +109,9 @@
               "node": "AttribuutRef",
               "attribuut": "premiewaardig",
               "objecttype": "Keurploeg",
-              "bron": "Een Keurploeg is premiewaardig"
+              "source": {
+                "snippet": "Een Keurploeg is premiewaardig"
+              }
             },
             "value": {
               "node": "Literal",
@@ -119,7 +121,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -131,7 +135,9 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "aangemeld zijn"
+                "source": {
+                  "snippet": "aangemeld zijn"
+                }
               },
               "toets": {
                 "node": "Vergelijking",
@@ -140,7 +146,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "keurvergoeding",
                   "objecttype": "Keurmeester",
-                  "bron": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn"
+                  "source": {
+                    "snippet": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -153,16 +161,22 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "40"
+                  "source": {
+                    "snippet": "40"
+                  }
                 },
                 "periode": {
                   "node": "GeheelPeriode",
                   "jaar": true,
                   "niet": false
                 },
-                "bron": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40"
+                "source": {
+                  "snippet": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40"
+                }
               },
-              "bron": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40",
+              "source": {
+                "snippet": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "keurindeling",
@@ -187,7 +201,9 @@
               "node": "AttribuutRef",
               "attribuut": "stilliggend",
               "objecttype": "Keurploeg",
-              "bron": "Een Keurploeg is stilliggend"
+              "source": {
+                "snippet": "Een Keurploeg is stilliggend"
+              }
             },
             "value": {
               "node": "Literal",
@@ -197,7 +213,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -209,7 +227,9 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "aangemeld zijn"
+                "source": {
+                  "snippet": "aangemeld zijn"
+                }
               },
               "toets": {
                 "node": "Vergelijking",
@@ -218,7 +238,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "keurvergoeding",
                   "objecttype": "Keurmeester",
-                  "bron": "de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn"
+                  "source": {
+                    "snippet": "de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -231,16 +253,22 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "40"
+                  "source": {
+                    "snippet": "40"
+                  }
                 },
                 "periode": {
                   "node": "GeheelPeriode",
                   "jaar": true,
                   "niet": false
                 },
-                "bron": "de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40"
+                "source": {
+                  "snippet": "de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40"
+                }
               },
-              "bron": "de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40",
+              "source": {
+                "snippet": "de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "keurindeling",
@@ -265,7 +293,9 @@
               "node": "AttribuutRef",
               "attribuut": "keurtal",
               "objecttype": "Keurploeg",
-              "bron": "Het keurtal van een Keurploeg"
+              "source": {
+                "snippet": "Het keurtal van een Keurploeg"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -275,7 +305,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "keurmeesters",
                   "objecttype": "Keurploeg",
-                  "bron": "keurmeesters van de Keurploeg"
+                  "source": {
+                    "snippet": "keurmeesters van de Keurploeg"
+                  }
                 }
               ],
               "elementType": "Keurmeester",
@@ -290,7 +322,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal keurmeesters van de Keurploeg"
+              "source": {
+                "snippet": "het aantal keurmeesters van de Keurploeg"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

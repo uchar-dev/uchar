@@ -71,7 +71,9 @@
               "node": "AttribuutRef",
               "attribuut": "uitkering",
               "objecttype": "Strandrecht",
-              "bron": "De uitkering van een Strandrecht"
+              "source": {
+                "snippet": "De uitkering van een Strandrecht"
+              }
             },
             "value": {
               "node": "Binair",
@@ -80,7 +82,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "grondslag",
                 "objecttype": "Strandrecht",
-                "bron": "zijn grondslag"
+                "source": {
+                  "snippet": "zijn grondslag"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -93,7 +97,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "2"
+                "source": {
+                  "snippet": "2"
+                }
               },
               "type": {
                 "node": "Number",
@@ -101,7 +107,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "zijn grondslag maal 2"
+              "source": {
+                "snippet": "zijn grondslag maal 2"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -134,7 +142,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "het Wrakrecht betwist is"
+              "source": {
+                "snippet": "het Wrakrecht betwist is"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -147,9 +157,13 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "99.00"
+              "source": {
+                "snippet": "99.00"
+              }
             },
-            "bron": "99,00 indien het Wrakrecht betwist is"
+            "source": {
+              "snippet": "99,00 indien het Wrakrecht betwist is"
+            }
           },
           {
             "node": "Default",
@@ -159,18 +173,26 @@
               "kwantor": "ALLE",
               "drempel": 0,
               "onderdelen": [],
-              "bron": "altijd"
+              "source": {
+                "snippet": "altijd"
+              }
             },
             "consequentie": {
               "node": "AttribuutRef",
               "attribuut": "grondslag",
               "objecttype": "Wrakrecht",
-              "bron": "zijn grondslag"
+              "source": {
+                "snippet": "zijn grondslag"
+              }
             },
-            "bron": "de grondslag"
+            "source": {
+              "snippet": "de grondslag"
+            }
           }
         ],
-        "bron": "art. 4: de uitkering van een Wrakrecht",
+        "source": {
+          "snippet": "art. 4: de uitkering van een Wrakrecht"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

@@ -94,7 +94,9 @@
               "node": "AttribuutRef",
               "attribuut": "jutleeftijd",
               "objecttype": "Jutter",
-              "bron": "De jutleeftijd van een Jutter"
+              "source": {
+                "snippet": "De jutleeftijd van een Jutter"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -104,13 +106,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "geboortedatum",
                   "objecttype": "Jutter",
-                  "bron": "zijn geboortedatum"
+                  "source": {
+                    "snippet": "zijn geboortedatum"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "peildatum",
                   "objecttype": "Jutter",
-                  "bron": "zijn peildatum"
+                  "source": {
+                    "snippet": "zijn peildatum"
+                  }
                 }
               ],
               "type": {
@@ -123,7 +129,9 @@
                   "abbreviation": "jr"
                 }
               },
-              "bron": "de tijdsduur van zijn geboortedatum tot zijn peildatum in hele jaren"
+              "source": {
+                "snippet": "de tijdsduur van zijn geboortedatum tot zijn peildatum in hele jaren"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -144,7 +152,9 @@
               "node": "AttribuutRef",
               "attribuut": "kwartaalspan",
               "objecttype": "Jutter",
-              "bron": "De kwartaalspan van een Jutter"
+              "source": {
+                "snippet": "De kwartaalspan van een Jutter"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -154,13 +164,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "geboortedatum",
                   "objecttype": "Jutter",
-                  "bron": "zijn geboortedatum"
+                  "source": {
+                    "snippet": "zijn geboortedatum"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "peildatum",
                   "objecttype": "Jutter",
-                  "bron": "zijn peildatum"
+                  "source": {
+                    "snippet": "zijn peildatum"
+                  }
                 }
               ],
               "type": {
@@ -173,7 +187,9 @@
                   "abbreviation": "kw"
                 }
               },
-              "bron": "de tijdsduur van zijn geboortedatum tot zijn peildatum in hele kwartalen"
+              "source": {
+                "snippet": "de tijdsduur van zijn geboortedatum tot zijn peildatum in hele kwartalen"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -194,7 +210,9 @@
               "node": "AttribuutRef",
               "attribuut": "maandafstand",
               "objecttype": "Jutter",
-              "bron": "De maandafstand van een Jutter"
+              "source": {
+                "snippet": "De maandafstand van een Jutter"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -204,13 +222,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "geboortedatum",
                   "objecttype": "Jutter",
-                  "bron": "zijn geboortedatum"
+                  "source": {
+                    "snippet": "zijn geboortedatum"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "peildatum",
                   "objecttype": "Jutter",
-                  "bron": "zijn peildatum"
+                  "source": {
+                    "snippet": "zijn peildatum"
+                  }
                 }
               ],
               "type": {
@@ -223,7 +245,9 @@
                   "abbreviation": "mnd"
                 }
               },
-              "bron": "de absolute tijdsduur van zijn geboortedatum tot zijn peildatum in hele maanden"
+              "source": {
+                "snippet": "de absolute tijdsduur van zijn geboortedatum tot zijn peildatum in hele maanden"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

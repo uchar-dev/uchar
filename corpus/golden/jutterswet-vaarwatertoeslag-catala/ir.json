@@ -97,7 +97,9 @@
               "node": "AttribuutRef",
               "attribuut": "vaarwatertarief",
               "objecttype": "Bergingstoeslag",
-              "bron": "de vaarwatertarief"
+              "source": {
+                "snippet": "de vaarwatertarief"
+              }
             },
             "value": {
               "node": "Match",
@@ -111,7 +113,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vaarwater",
                 "objecttype": "Bergingstoeslag",
-                "bron": "de vaarwater"
+                "source": {
+                  "snippet": "de vaarwater"
+                }
               },
               "arms": [
                 {
@@ -128,7 +132,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "3"
+                    "source": {
+                      "snippet": "3"
+                    }
                   }
                 },
                 {
@@ -145,7 +151,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "7"
+                    "source": {
+                      "snippet": "7"
+                    }
                   }
                 },
                 {
@@ -162,11 +170,15 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "12"
+                    "source": {
+                      "snippet": "12"
+                    }
                   }
                 }
               ],
-              "bron": "match Vaarwater"
+              "source": {
+                "snippet": "match Vaarwater"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -187,7 +199,9 @@
               "node": "AttribuutRef",
               "attribuut": "bergingstoeslag",
               "objecttype": "Bergingstoeslag",
-              "bron": "de bergingstoeslag"
+              "source": {
+                "snippet": "de bergingstoeslag"
+              }
             },
             "value": {
               "node": "Binair",
@@ -199,21 +213,24 @@
                   "node": "AttribuutRef",
                   "attribuut": "vaarwatertarief",
                   "objecttype": "Bergingstoeslag",
-                  "bron": "de vaarwatertarief"
+                  "source": {
+                    "snippet": "de vaarwatertarief"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "geborgen_tonnage",
                   "objecttype": "Bergingstoeslag",
-                  "bron": "de geborgen_tonnage"
+                  "source": {
+                    "snippet": "de geborgen_tonnage"
+                  }
                 },
                 "type": {
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
                   "sign": "ONBEPAALD"
-                },
-                "bron": null
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -226,15 +243,16 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "15"
+                "source": {
+                  "snippet": "15"
+                }
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
                 "sign": "ONBEPAALD"
-              },
-              "bron": null
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -255,7 +273,9 @@
               "node": "AttribuutRef",
               "attribuut": "zeewaardige_berging",
               "objecttype": "Bergingstoeslag",
-              "bron": "de zeewaardige_berging"
+              "source": {
+                "snippet": "de zeewaardige_berging"
+              }
             },
             "value": {
               "node": "Literal",
@@ -265,7 +285,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -274,7 +296,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vaarwater",
                 "objecttype": "Bergingstoeslag",
-                "bron": "de vaarwater"
+                "source": {
+                  "snippet": "de vaarwater"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -290,10 +314,11 @@
                     "Ruimzee"
                   ]
                 },
-                "bron": "Ruimzee"
+                "source": {
+                  "snippet": "Ruimzee"
+                }
               },
-              "periode": null,
-              "bron": null
+              "periode": null
             },
             "initialisation": false
           }

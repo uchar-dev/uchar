@@ -164,7 +164,9 @@
               "node": "AttribuutRef",
               "attribuut": "kavelaantal",
               "objecttype": "Gemeente",
-              "bron": "Het kavelaantal van een Gemeente"
+              "source": {
+                "snippet": "Het kavelaantal van een Gemeente"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -174,7 +176,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "kavels",
                   "objecttype": "Gemeente",
-                  "bron": "alle kavels van de Gemeente"
+                  "source": {
+                    "snippet": "alle kavels van de Gemeente"
+                  }
                 }
               ],
               "elementType": "Kavel",
@@ -189,7 +193,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het aantal kavels van de Gemeente"
+              "source": {
+                "snippet": "het aantal kavels van de Gemeente"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -226,7 +232,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "De etiket van alle Kavel van de gemeente moeten uniek zijn."
+            "source": {
+              "snippet": "De etiket van alle Kavel van de gemeente moeten uniek zijn."
+            }
           }
         ]
       },
@@ -254,7 +262,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "De sectiecode van alle Kavel van de gemeente moeten uniek zijn."
+            "source": {
+              "snippet": "De sectiecode van alle Kavel van de gemeente moeten uniek zijn."
+            }
           }
         ]
       },
@@ -284,7 +294,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "Strandvondst verenigd met Wrakvondst moeten uniek zijn."
+            "source": {
+              "snippet": "Strandvondst verenigd met Wrakvondst moeten uniek zijn."
+            }
           }
         ]
       },
@@ -314,7 +326,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "Baken verenigd met Baken moeten uniek zijn."
+            "source": {
+              "snippet": "Baken verenigd met Baken moeten uniek zijn."
+            }
           }
         ]
       }

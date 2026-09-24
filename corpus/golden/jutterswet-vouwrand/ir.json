@@ -76,7 +76,9 @@
               "node": "AttribuutRef",
               "attribuut": "vouwteken",
               "objecttype": "Randwacht",
-              "bron": "Het vouwteken van een Randwacht"
+              "source": {
+                "snippet": "Het vouwteken van een Randwacht"
+              }
             },
             "value": {
               "node": "Literal",
@@ -89,7 +91,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "1"
+              "source": {
+                "snippet": "1"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -103,7 +107,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "ploegomvang",
                     "objecttype": "Randwacht",
-                    "bron": "zijn ploegomvang"
+                    "source": {
+                      "snippet": "zijn ploegomvang"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -116,10 +122,14 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0"
+                    "source": {
+                      "snippet": "0"
+                    }
                   },
                   "periode": null,
-                  "bron": "zijn ploegomvang is gelijk aan 0"
+                  "source": {
+                    "snippet": "zijn ploegomvang is gelijk aan 0"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -132,13 +142,17 @@
                         "node": "AttribuutRef",
                         "attribuut": "grootgetal",
                         "objecttype": "Randwacht",
-                        "bron": "zijn grootgetal"
+                        "source": {
+                          "snippet": "zijn grootgetal"
+                        }
                       },
                       {
                         "node": "AttribuutRef",
                         "attribuut": "bedrag",
                         "objecttype": "Randwacht",
-                        "bron": "zijn bedrag"
+                        "source": {
+                          "snippet": "zijn bedrag"
+                        }
                       }
                     ],
                     "type": {
@@ -147,7 +161,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de eerste van zijn grootgetal en zijn bedrag"
+                    "source": {
+                      "snippet": "de eerste van zijn grootgetal en zijn bedrag"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -160,13 +176,19 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0"
+                    "source": {
+                      "snippet": "0"
+                    }
                   },
                   "periode": null,
-                  "bron": "de eerste van zijn grootgetal en zijn bedrag is groter dan 0"
+                  "source": {
+                    "snippet": "de eerste van zijn grootgetal en zijn bedrag is groter dan 0"
+                  }
                 }
               ],
-              "bron": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is groter dan zijn bedrag."
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is groter dan zijn bedrag."
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

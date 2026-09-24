@@ -72,7 +72,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "de strandvoogd hardheid heeft toegepast"
+                  "source": {
+                    "snippet": "de strandvoogd hardheid heeft toegepast"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -81,7 +83,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "aantal aangemelde vondsten",
                     "objecttype": "Jutter",
-                    "bron": "zijn aantal aangemelde vondsten"
+                    "source": {
+                      "snippet": "zijn aantal aangemelde vondsten"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -94,15 +98,23 @@
                       "decimals": 0,
                       "sign": "NIET_NEGATIEF"
                     },
-                    "bron": "6"
+                    "source": {
+                      "snippet": "6"
+                    }
                   },
                   "periode": null,
-                  "bron": "ten minste zes vondsten heeft aangemeld"
+                  "source": {
+                    "snippet": "ten minste zes vondsten heeft aangemeld"
+                  }
                 }
               ],
-              "bron": "art. 5: artikel 3 als ware twaalf vervangen door zes"
+              "source": {
+                "snippet": "art. 5: artikel 3 als ware twaalf vervangen door zes"
+              }
             },
-            "bron": "art. 5"
+            "source": {
+              "snippet": "art. 5"
+            }
           },
           {
             "node": "Default",
@@ -114,7 +126,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "aantal aangemelde vondsten",
                 "objecttype": "Jutter",
-                "bron": "zijn aantal aangemelde vondsten"
+                "source": {
+                  "snippet": "zijn aantal aangemelde vondsten"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -127,15 +141,23 @@
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "12"
+                "source": {
+                  "snippet": "12"
+                }
               },
               "periode": null,
-              "bron": "ten minste twaalf vondsten heeft aangemeld"
+              "source": {
+                "snippet": "ten minste twaalf vondsten heeft aangemeld"
+              }
             },
-            "bron": "art. 3"
+            "source": {
+              "snippet": "art. 3"
+            }
           }
         ],
-        "bron": "art. 3 en 5",
+        "source": {
+          "snippet": "art. 3 en 5"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

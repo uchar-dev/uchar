@@ -131,7 +131,9 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Rekenkamer",
-              "bron": "de heffing"
+              "source": {
+                "snippet": "de heffing"
+              }
             },
             "value": {
               "node": "Binair",
@@ -140,21 +142,24 @@
                 "node": "AttribuutRef",
                 "attribuut": "bergingswaarde",
                 "objecttype": "Rekenkamer",
-                "bron": "de bergingswaarde"
+                "source": {
+                  "snippet": "de bergingswaarde"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "aftrek",
                 "objecttype": "Rekenkamer",
-                "bron": "de aftrek"
+                "source": {
+                  "snippet": "de aftrek"
+                }
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
                 "sign": "ONBEPAALD"
-              },
-              "bron": null
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -175,13 +180,17 @@
               "node": "AttribuutRef",
               "attribuut": "verschuldigd",
               "objecttype": "Bergingsaanslag",
-              "bron": "de verschuldigd"
+              "source": {
+                "snippet": "de verschuldigd"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Rekenkamer",
-              "bron": "de heffing van de rekenkamer",
+              "source": {
+                "snippet": "de heffing van de rekenkamer"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -213,7 +222,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bergingswaarde",
                   "objecttype": "Bergingsaanslag",
-                  "bron": "de bergingswaarde"
+                  "source": {
+                    "snippet": "de bergingswaarde"
+                  }
                 },
                 "kenmerk": false
               }
@@ -255,7 +266,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hardheid",
+              "source": {
+                "snippet": "hardheid"
+              },
               "navigatieBinding": {
                 "node": "RolBinding",
                 "feittype": "Bergingsaanslag_rekenkamer",
@@ -266,7 +279,9 @@
               "node": "AttribuutRef",
               "attribuut": "hardheidsaftrek",
               "objecttype": "Bergingsaanslag",
-              "bron": "de hardheidsaftrek",
+              "source": {
+                "snippet": "de hardheidsaftrek"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -275,7 +290,9 @@
                 }
               ]
             },
-            "bron": "context-override aftrek"
+            "source": {
+              "snippet": "context-override aftrek"
+            }
           },
           {
             "node": "Default",
@@ -285,7 +302,9 @@
               "kwantor": "ALLE",
               "drempel": 0,
               "onderdelen": [],
-              "bron": "altijd"
+              "source": {
+                "snippet": "altijd"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -298,12 +317,18 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "100"
+              "source": {
+                "snippet": "100"
+              }
             },
-            "bron": "aftrek"
+            "source": {
+              "snippet": "aftrek"
+            }
           }
         ],
-        "bron": "aftrek",
+        "source": {
+          "snippet": "aftrek"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

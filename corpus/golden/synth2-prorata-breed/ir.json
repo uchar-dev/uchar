@@ -147,7 +147,9 @@
               "node": "AttribuutRef",
               "attribuut": "ligdeel",
               "objecttype": "Ligplaats",
-              "bron": "Het ligdeel van een Ligplaats"
+              "source": {
+                "snippet": "Het ligdeel van een Ligplaats"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -157,7 +159,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "jaarforfait",
                   "objecttype": "Ligplaats",
-                  "bron": "haar jaarforfait"
+                  "source": {
+                    "snippet": "haar jaarforfait"
+                  }
                 }
               ],
               "filter": {
@@ -166,7 +170,9 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "gedurende de tijd dat zij bezet is"
+                "source": {
+                  "snippet": "gedurende de tijd dat zij bezet is"
+                }
               },
               "granularity": "MAAND",
               "type": {
@@ -175,7 +181,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het tijdsevenredig deel per maand van haar jaarforfait gedurende de tijd dat zij bezet is"
+              "source": {
+                "snippet": "het tijdsevenredig deel per maand van haar jaarforfait gedurende de tijd dat zij bezet is"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -196,7 +204,9 @@
               "node": "AttribuutRef",
               "attribuut": "heffingdeel",
               "objecttype": "Ligplaats",
-              "bron": "Het heffingdeel van een Ligplaats"
+              "source": {
+                "snippet": "Het heffingdeel van een Ligplaats"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -206,7 +216,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "staffelbasis",
                   "objecttype": "Ligplaats",
-                  "bron": "haar staffelbasis"
+                  "source": {
+                    "snippet": "haar staffelbasis"
+                  }
                 }
               ],
               "filter": {
@@ -215,7 +227,9 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "gedurende de tijd dat zij bezet is"
+                "source": {
+                  "snippet": "gedurende de tijd dat zij bezet is"
+                }
               },
               "granularity": "MAAND",
               "type": {
@@ -224,7 +238,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het tijdsevenredig deel per maand van haar staffelbasis gedurende de tijd dat zij bezet is"
+              "source": {
+                "snippet": "het tijdsevenredig deel per maand van haar staffelbasis gedurende de tijd dat zij bezet is"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -245,7 +261,9 @@
               "node": "AttribuutRef",
               "attribuut": "toeslagdeel",
               "objecttype": "Ligplaats",
-              "bron": "Het toeslagdeel van een Ligplaats"
+              "source": {
+                "snippet": "Het toeslagdeel van een Ligplaats"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -255,7 +273,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "seizoenbasis",
                   "objecttype": "Ligplaats",
-                  "bron": "haar seizoenbasis"
+                  "source": {
+                    "snippet": "haar seizoenbasis"
+                  }
                 }
               ],
               "filter": {
@@ -264,7 +284,9 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "gedurende de tijd dat zij bezet is"
+                "source": {
+                  "snippet": "gedurende de tijd dat zij bezet is"
+                }
               },
               "granularity": "MAAND",
               "type": {
@@ -273,7 +295,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het tijdsevenredig deel per maand van haar seizoenbasis gedurende de tijd dat zij bezet is"
+              "source": {
+                "snippet": "het tijdsevenredig deel per maand van haar seizoenbasis gedurende de tijd dat zij bezet is"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -282,7 +306,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "lengte",
                 "objecttype": "Ligplaats",
-                "bron": "de lengte van de Ligplaats"
+                "source": {
+                  "snippet": "de lengte van de Ligplaats"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -295,10 +321,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "15"
+                "source": {
+                  "snippet": "15"
+                }
               },
               "periode": null,
-              "bron": "de lengte van de Ligplaats is groter of gelijk aan 15"
+              "source": {
+                "snippet": "de lengte van de Ligplaats is groter of gelijk aan 15"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

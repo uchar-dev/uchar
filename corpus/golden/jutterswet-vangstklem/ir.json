@@ -151,7 +151,9 @@
               "node": "AttribuutRef",
               "attribuut": "ondergewicht",
               "objecttype": "Vangst",
-              "bron": "Het ondergewicht van een Vangst"
+              "source": {
+                "snippet": "Het ondergewicht van een Vangst"
+              }
             },
             "value": {
               "node": "Begrensd",
@@ -159,7 +161,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "ruwgewicht",
                 "objecttype": "Vangst",
-                "bron": "het ruwgewicht van de Vangst"
+                "source": {
+                  "snippet": "het ruwgewicht van de Vangst"
+                }
               },
               "minimum": {
                 "node": "Literal",
@@ -182,7 +186,9 @@
                     }
                   }
                 },
-                "bron": "1 t"
+                "source": {
+                  "snippet": "1 t"
+                }
               },
               "maximum": null,
               "type": {
@@ -201,7 +207,9 @@
                   }
                 }
               },
-              "bron": "het ruwgewicht van de Vangst, met een minimum van 1 t"
+              "source": {
+                "snippet": "het ruwgewicht van de Vangst, met een minimum van 1 t"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -222,7 +230,9 @@
               "node": "AttribuutRef",
               "attribuut": "bovengewicht",
               "objecttype": "Vangst",
-              "bron": "Het bovengewicht van een Vangst"
+              "source": {
+                "snippet": "Het bovengewicht van een Vangst"
+              }
             },
             "value": {
               "node": "Begrensd",
@@ -230,7 +240,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "ruwgewicht",
                 "objecttype": "Vangst",
-                "bron": "het ruwgewicht van de Vangst"
+                "source": {
+                  "snippet": "het ruwgewicht van de Vangst"
+                }
               },
               "minimum": null,
               "maximum": {
@@ -254,7 +266,9 @@
                     }
                   }
                 },
-                "bron": "2,50 t"
+                "source": {
+                  "snippet": "2,50 t"
+                }
               },
               "type": {
                 "node": "Number",
@@ -272,7 +286,9 @@
                   }
                 }
               },
-              "bron": "het ruwgewicht van de Vangst, met een maximum van 2,50 t"
+              "source": {
+                "snippet": "het ruwgewicht van de Vangst, met een maximum van 2,50 t"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -293,7 +309,9 @@
               "node": "AttribuutRef",
               "attribuut": "bandgewicht",
               "objecttype": "Vangst",
-              "bron": "Het bandgewicht van een Vangst"
+              "source": {
+                "snippet": "Het bandgewicht van een Vangst"
+              }
             },
             "value": {
               "node": "Begrensd",
@@ -301,7 +319,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "ruwgewicht",
                 "objecttype": "Vangst",
-                "bron": "het ruwgewicht van de Vangst"
+                "source": {
+                  "snippet": "het ruwgewicht van de Vangst"
+                }
               },
               "minimum": {
                 "node": "Literal",
@@ -324,7 +344,9 @@
                     }
                   }
                 },
-                "bron": "1 t"
+                "source": {
+                  "snippet": "1 t"
+                }
               },
               "maximum": {
                 "node": "Literal",
@@ -347,7 +369,9 @@
                     }
                   }
                 },
-                "bron": "2500 kg"
+                "source": {
+                  "snippet": "2500 kg"
+                }
               },
               "type": {
                 "node": "Number",
@@ -365,7 +389,9 @@
                   }
                 }
               },
-              "bron": "het ruwgewicht van de Vangst, met een minimum van 1 t en een maximum van 2500 kg"
+              "source": {
+                "snippet": "het ruwgewicht van de Vangst, met een minimum van 1 t en een maximum van 2500 kg"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

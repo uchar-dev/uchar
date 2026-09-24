@@ -56,7 +56,9 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Jutter",
-              "bron": "De heffing van een Jutter"
+              "source": {
+                "snippet": "De heffing van een Jutter"
+              }
             },
             "value": {
               "node": "Let",
@@ -71,7 +73,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "grondslag",
                 "objecttype": "Jutter",
-                "bron": "zijn grondslag"
+                "source": {
+                  "snippet": "zijn grondslag"
+                }
               },
               "body": {
                 "node": "IfThenElse",
@@ -90,7 +94,9 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "grondslag",
-                      "bron": "de grondslag"
+                      "source": {
+                        "snippet": "de grondslag"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -103,7 +109,9 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "1,00"
+                      "source": {
+                        "snippet": "1,00"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -111,7 +119,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de grondslag maal 1,00"
+                    "source": {
+                      "snippet": "de grondslag maal 1,00"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -124,10 +134,14 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0,00"
+                    "source": {
+                      "snippet": "0,00"
+                    }
                   },
                   "periode": null,
-                  "bron": "de grondslag maal 1,00 groter dan 0,00"
+                  "source": {
+                    "snippet": "de grondslag maal 1,00 groter dan 0,00"
+                  }
                 },
                 "then": {
                   "node": "Literal",
@@ -140,7 +154,9 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "5,00"
+                  "source": {
+                    "snippet": "5,00"
+                  }
                 },
                 "else": {
                   "node": "Literal",
@@ -153,11 +169,17 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "9,00"
+                  "source": {
+                    "snippet": "9,00"
+                  }
                 },
-                "bron": "5,00 boven nul en 9,00 daaronder"
+                "source": {
+                  "snippet": "5,00 boven nul en 9,00 daaronder"
+                }
               },
-              "bron": "de grondslag is zijn grondslag"
+              "source": {
+                "snippet": "de grondslag is zijn grondslag"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

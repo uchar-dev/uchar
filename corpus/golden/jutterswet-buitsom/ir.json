@@ -87,7 +87,9 @@
               "node": "AttribuutRef",
               "attribuut": "buitsom",
               "objecttype": "Jutter",
-              "bron": "De buitsom van een Jutter"
+              "source": {
+                "snippet": "De buitsom van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -97,7 +99,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "waarde",
                   "objecttype": "Vondst",
-                  "bron": "de waarde van alle vondsten van de Jutter"
+                  "source": {
+                    "snippet": "de waarde van alle vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -112,7 +116,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van de waarde van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "de som van de waarde van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

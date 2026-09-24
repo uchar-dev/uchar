@@ -121,7 +121,9 @@
               "node": "AttribuutRef",
               "attribuut": "meldkrediet",
               "objecttype": "Jutter",
-              "bron": "Het meldkrediet van een Jutter"
+              "source": {
+                "snippet": "Het meldkrediet van een Jutter"
+              }
             },
             "value": {
               "node": "Binair",
@@ -130,7 +132,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "strandtegoed",
                 "objecttype": "Jutter",
-                "bron": "het strandtegoed van de aanmelder"
+                "source": {
+                  "snippet": "het strandtegoed van de aanmelder"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -143,7 +147,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "2"
+                "source": {
+                  "snippet": "2"
+                }
               },
               "type": {
                 "node": "Number",
@@ -151,7 +157,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het strandtegoed van de aanmelder plus 2"
+              "source": {
+                "snippet": "het strandtegoed van de aanmelder plus 2"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -172,13 +180,17 @@
               "node": "AttribuutRef",
               "attribuut": "maatdeling",
               "objecttype": "Jutter",
-              "bron": "De maatdeling van een Jutter"
+              "source": {
+                "snippet": "De maatdeling van een Jutter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "strandtegoed",
               "objecttype": "Jutter",
-              "bron": "het strandtegoed van zijn strandmaat",
+              "source": {
+                "snippet": "het strandtegoed van zijn strandmaat"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",

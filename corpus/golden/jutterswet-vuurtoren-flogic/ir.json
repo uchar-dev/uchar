@@ -112,7 +112,9 @@
               "node": "AttribuutRef",
               "attribuut": "helder",
               "objecttype": "Vuurtoren",
-              "bron": "?T : helder"
+              "source": {
+                "snippet": "?T : helder"
+              }
             },
             "value": {
               "node": "Literal",
@@ -121,8 +123,7 @@
               },
               "type": {
                 "node": "Booleaan"
-              },
-              "bron": null
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -137,7 +138,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "sterkte",
                   "objecttype": "Lamp",
-                  "bron": "?V.sterkte"
+                  "source": {
+                    "snippet": "?V.sterkte"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -150,12 +153,18 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "5"
+                  "source": {
+                    "snippet": "5"
+                  }
                 },
                 "periode": null,
-                "bron": "?V.sterkte > 5"
+                "source": {
+                  "snippet": "?V.sterkte > 5"
+                }
               },
-              "bron": "count{?V | ?V = ?T.lampen, ?V.sterkte > 5} >= 2",
+              "source": {
+                "snippet": "count{?V | ?V = ?T.lampen, ?V.sterkte > 5} >= 2"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "torenindeling",
@@ -180,7 +189,9 @@
               "node": "AttribuutRef",
               "attribuut": "zuinig",
               "objecttype": "Vuurtoren",
-              "bron": "?T : zuinig"
+              "source": {
+                "snippet": "?T : zuinig"
+              }
             },
             "value": {
               "node": "Literal",
@@ -189,8 +200,7 @@
               },
               "type": {
                 "node": "Booleaan"
-              },
-              "bron": null
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -205,7 +215,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "sterkte",
                   "objecttype": "Lamp",
-                  "bron": "?V.sterkte"
+                  "source": {
+                    "snippet": "?V.sterkte"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -218,12 +230,18 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "5"
+                  "source": {
+                    "snippet": "5"
+                  }
                 },
                 "periode": null,
-                "bron": "?V.sterkte > 5"
+                "source": {
+                  "snippet": "?V.sterkte > 5"
+                }
               },
-              "bron": "count{?V | ?V = ?T.lampen, ?V.sterkte > 5} <= 1",
+              "source": {
+                "snippet": "count{?V | ?V = ?T.lampen, ?V.sterkte > 5} <= 1"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "torenindeling",
@@ -248,7 +266,9 @@
               "node": "AttribuutRef",
               "attribuut": "enkelvoudig",
               "objecttype": "Vuurtoren",
-              "bron": "?T : enkelvoudig"
+              "source": {
+                "snippet": "?T : enkelvoudig"
+              }
             },
             "value": {
               "node": "Literal",
@@ -257,8 +277,7 @@
               },
               "type": {
                 "node": "Booleaan"
-              },
-              "bron": null
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -273,7 +292,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "sterkte",
                   "objecttype": "Lamp",
-                  "bron": "?V.sterkte"
+                  "source": {
+                    "snippet": "?V.sterkte"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -286,12 +307,18 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "5"
+                  "source": {
+                    "snippet": "5"
+                  }
                 },
                 "periode": null,
-                "bron": "?V.sterkte > 5"
+                "source": {
+                  "snippet": "?V.sterkte > 5"
+                }
               },
-              "bron": "count{?V | ?V = ?T.lampen, ?V.sterkte > 5} = 1",
+              "source": {
+                "snippet": "count{?V | ?V = ?T.lampen, ?V.sterkte > 5} = 1"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "torenindeling",
@@ -316,7 +343,9 @@
               "node": "AttribuutRef",
               "attribuut": "keurig",
               "objecttype": "Vuurtoren",
-              "bron": "?T : keurig"
+              "source": {
+                "snippet": "?T : keurig"
+              }
             },
             "value": {
               "node": "Literal",
@@ -325,8 +354,7 @@
               },
               "type": {
                 "node": "Booleaan"
-              },
-              "bron": null
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -339,7 +367,9 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "?V : gekeurd"
+                "source": {
+                  "snippet": "?V : gekeurd"
+                }
               },
               "toets": {
                 "node": "Vergelijking",
@@ -348,7 +378,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "sterkte",
                   "objecttype": "Lamp",
-                  "bron": "?V.sterkte"
+                  "source": {
+                    "snippet": "?V.sterkte"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -361,12 +393,18 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "5"
+                  "source": {
+                    "snippet": "5"
+                  }
                 },
                 "periode": null,
-                "bron": "?V.sterkte > 5"
+                "source": {
+                  "snippet": "?V.sterkte > 5"
+                }
               },
-              "bron": "count{?V | ?V = ?T.lampen, ?V : gekeurd, ?V.sterkte > 5} >= 2",
+              "source": {
+                "snippet": "count{?V | ?V = ?T.lampen, ?V : gekeurd, ?V.sterkte > 5} >= 2"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "torenindeling",
@@ -391,7 +429,9 @@
               "node": "AttribuutRef",
               "attribuut": "lampental",
               "objecttype": "Vuurtoren",
-              "bron": "?T.lampental"
+              "source": {
+                "snippet": "?T.lampental"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -401,7 +441,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "lampen",
                   "objecttype": "Vuurtoren",
-                  "bron": "?T.lampen"
+                  "source": {
+                    "snippet": "?T.lampen"
+                  }
                 }
               ],
               "elementType": "Lamp",
@@ -416,7 +458,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "count{?V | ?V = ?T.lampen}"
+              "source": {
+                "snippet": "count{?V | ?V = ?T.lampen}"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

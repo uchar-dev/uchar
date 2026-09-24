@@ -97,7 +97,9 @@
               "node": "AttribuutRef",
               "attribuut": "zwaarste",
               "objecttype": "Jutter",
-              "bron": "Het zwaarste van een Jutter"
+              "source": {
+                "snippet": "Het zwaarste van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -107,7 +109,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Vondst",
-                  "bron": "het gewicht van alle vondsten van de Jutter"
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -122,7 +126,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het maximum van het gewicht van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "het maximum van het gewicht van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -143,7 +149,9 @@
               "node": "AttribuutRef",
               "attribuut": "lichtste",
               "objecttype": "Jutter",
-              "bron": "Het lichtste van een Jutter"
+              "source": {
+                "snippet": "Het lichtste van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -153,7 +161,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Vondst",
-                  "bron": "het gewicht van alle vondsten van de Jutter"
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -168,7 +178,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het minimum van het gewicht van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "het minimum van het gewicht van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

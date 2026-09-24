@@ -148,7 +148,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal gevulde bergplaatsen",
               "objecttype": "Jutter",
-              "bron": "Het aantal gevulde bergplaatsen van een Jutter"
+              "source": {
+                "snippet": "Het aantal gevulde bergplaatsen van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -158,7 +160,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vangstgewicht",
                   "objecttype": "Bergplaats",
-                  "bron": "het vangstgewicht van alle losplaatsen van alle gevoerde boten van de Jutter"
+                  "source": {
+                    "snippet": "het vangstgewicht van alle losplaatsen van alle gevoerde boten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Bergplaats",
@@ -180,7 +184,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal gevulde waarden van het vangstgewicht van alle losplaatsen van alle gevoerde boten van de Jutter"
+              "source": {
+                "snippet": "het aantal gevulde waarden van het vangstgewicht van alle losplaatsen van alle gevoerde boten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

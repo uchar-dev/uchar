@@ -92,7 +92,9 @@
               "node": "AttribuutRef",
               "attribuut": "vroegste vondstdag",
               "objecttype": "Jutter",
-              "bron": "De vroegste vondstdag van een Jutter"
+              "source": {
+                "snippet": "De vroegste vondstdag van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -102,7 +104,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vondstdatum",
                   "objecttype": "Vondst",
-                  "bron": "de vondstdatum van alle vondsten van de Jutter"
+                  "source": {
+                    "snippet": "de vondstdatum van alle vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -115,7 +119,9 @@
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "de minimale waarde van de vondstdatum van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "de minimale waarde van de vondstdatum van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -136,7 +142,9 @@
               "node": "AttribuutRef",
               "attribuut": "jongste vondstdag",
               "objecttype": "Jutter",
-              "bron": "De jongste vondstdag van een Jutter"
+              "source": {
+                "snippet": "De jongste vondstdag van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -146,7 +154,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vondstdatum",
                   "objecttype": "Vondst",
-                  "bron": "de vondstdatum van alle vondsten van de Jutter"
+                  "source": {
+                    "snippet": "de vondstdatum van alle vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -159,7 +169,9 @@
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "de maximale waarde van de vondstdatum van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "de maximale waarde van de vondstdatum van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

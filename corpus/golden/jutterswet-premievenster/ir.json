@@ -120,7 +120,9 @@
               "node": "AttribuutRef",
               "attribuut": "basispremie",
               "objecttype": "Vondst",
-              "bron": "De basispremie van een Vondst"
+              "source": {
+                "snippet": "De basispremie van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -133,7 +135,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "1"
+              "source": {
+                "snippet": "1"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -154,7 +158,9 @@
               "node": "AttribuutRef",
               "attribuut": "vondstpremie",
               "objecttype": "Vondst",
-              "bron": "De vondstpremie van een Vondst"
+              "source": {
+                "snippet": "De vondstpremie van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -167,7 +173,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "50"
+              "source": {
+                "snippet": "50"
+              }
             },
             "condition": {
               "node": "Periode",
@@ -180,7 +188,9 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "2024-01-01"
+                "source": {
+                  "snippet": "2024-01-01"
+                }
               },
               "tot": {
                 "node": "Literal",
@@ -191,10 +201,14 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "2025-01-01"
+                "source": {
+                  "snippet": "2025-01-01"
+                }
               },
               "totInclusief": false,
-              "bron": "van 1 januari 2024 tot 1 januari 2025"
+              "source": {
+                "snippet": "van 1 januari 2024 tot 1 januari 2025"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -215,7 +229,9 @@
               "node": "AttribuutRef",
               "attribuut": "naseizoenpremie",
               "objecttype": "Vondst",
-              "bron": "De naseizoenpremie van een Vondst"
+              "source": {
+                "snippet": "De naseizoenpremie van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -228,7 +244,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "20"
+              "source": {
+                "snippet": "20"
+              }
             },
             "condition": {
               "node": "Periode",
@@ -241,7 +259,9 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "2024-01-01"
+                "source": {
+                  "snippet": "2024-01-01"
+                }
               },
               "tot": {
                 "node": "Literal",
@@ -252,10 +272,14 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "2024-12-31"
+                "source": {
+                  "snippet": "2024-12-31"
+                }
               },
               "totInclusief": true,
-              "bron": "van 1 januari 2024 tot en met 31 december 2024"
+              "source": {
+                "snippet": "van 1 januari 2024 tot en met 31 december 2024"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -276,7 +300,9 @@
               "node": "AttribuutRef",
               "attribuut": "overgangspremie",
               "objecttype": "Vondst",
-              "bron": "De overgangspremie van een Vondst"
+              "source": {
+                "snippet": "De overgangspremie van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -289,7 +315,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "30"
+              "source": {
+                "snippet": "30"
+              }
             },
             "condition": {
               "node": "Periode",
@@ -302,11 +330,15 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "2025-01-01"
+                "source": {
+                  "snippet": "2025-01-01"
+                }
               },
               "tot": null,
               "totInclusief": false,
-              "bron": "vanaf 1 januari 2025"
+              "source": {
+                "snippet": "vanaf 1 januari 2025"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -327,7 +359,9 @@
               "node": "AttribuutRef",
               "attribuut": "aanlooppremie",
               "objecttype": "Vondst",
-              "bron": "De aanlooppremie van een Vondst"
+              "source": {
+                "snippet": "De aanlooppremie van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -340,7 +374,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "10"
+              "source": {
+                "snippet": "10"
+              }
             },
             "condition": {
               "node": "Periode",
@@ -354,10 +390,14 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "2024-01-01"
+                "source": {
+                  "snippet": "2024-01-01"
+                }
               },
               "totInclusief": false,
-              "bron": "tot 1 januari 2024"
+              "source": {
+                "snippet": "tot 1 januari 2024"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -378,7 +418,9 @@
               "node": "AttribuutRef",
               "attribuut": "bergloon",
               "objecttype": "Vondst",
-              "bron": "Het bergloon van een Vondst"
+              "source": {
+                "snippet": "Het bergloon van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -391,7 +433,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "5"
+              "source": {
+                "snippet": "5"
+              }
             },
             "condition": {
               "node": "Periode",
@@ -399,11 +443,15 @@
                 "node": "AttribuutRef",
                 "attribuut": "meldatum",
                 "objecttype": "Vondst",
-                "bron": "de meldatum van de Vondst"
+                "source": {
+                  "snippet": "de meldatum van de Vondst"
+                }
               },
               "tot": null,
               "totInclusief": false,
-              "bron": "vanaf de meldatum van de Vondst"
+              "source": {
+                "snippet": "vanaf de meldatum van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -424,7 +472,9 @@
               "node": "AttribuutRef",
               "attribuut": "borgpremie",
               "objecttype": "Vondst",
-              "bron": "De borgpremie van een Vondst"
+              "source": {
+                "snippet": "De borgpremie van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -437,7 +487,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "15"
+              "source": {
+                "snippet": "15"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -450,7 +502,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "de Vondst geborgen is"
+                  "source": {
+                    "snippet": "de Vondst geborgen is"
+                  }
                 },
                 {
                   "node": "Periode",
@@ -463,7 +517,9 @@
                       "node": "Date",
                       "precision": "day"
                     },
-                    "bron": "2024-01-01"
+                    "source": {
+                      "snippet": "2024-01-01"
+                    }
                   },
                   "tot": {
                     "node": "Literal",
@@ -474,13 +530,19 @@
                       "node": "Date",
                       "precision": "day"
                     },
-                    "bron": "2025-01-01"
+                    "source": {
+                      "snippet": "2025-01-01"
+                    }
                   },
                   "totInclusief": false,
-                  "bron": "van 1 januari 2024 tot 1 januari 2025"
+                  "source": {
+                    "snippet": "van 1 januari 2024 tot 1 januari 2025"
+                  }
                 }
               ],
-              "bron": "de Vondst geborgen is, en van 1 januari 2024 tot 1 januari 2025"
+              "source": {
+                "snippet": "de Vondst geborgen is, en van 1 januari 2024 tot 1 januari 2025"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

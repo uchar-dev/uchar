@@ -113,7 +113,9 @@
               "node": "AttribuutRef",
               "attribuut": "meldpremie",
               "objecttype": "Schuit",
-              "bron": "De meldpremie van een Schuit"
+              "source": {
+                "snippet": "De meldpremie van een Schuit"
+              }
             },
             "value": {
               "node": "Literal",
@@ -126,7 +128,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "40"
+              "source": {
+                "snippet": "40"
+              }
             },
             "condition": {
               "node": "Predicaat",
@@ -135,13 +139,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "lengte",
                 "objecttype": "Schuit",
-                "bron": "de lengte van de Schuit"
+                "source": {
+                  "snippet": "de lengte van de Schuit"
+                }
               },
               "dagsoort": null,
               "negatie": true,
               "cijfers": 0,
               "periode": null,
-              "bron": "de lengte van de Schuit niet leeg is"
+              "source": {
+                "snippet": "de lengte van de Schuit niet leeg is"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -162,7 +170,9 @@
               "node": "AttribuutRef",
               "attribuut": "ongemeten",
               "objecttype": "Schuit",
-              "bron": "Een Schuit is ongemeten"
+              "source": {
+                "snippet": "Een Schuit is ongemeten"
+              }
             },
             "value": {
               "node": "Literal",
@@ -172,7 +182,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Predicaat",
@@ -181,13 +193,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "lengte",
                 "objecttype": "Schuit",
-                "bron": "de lengte van de Schuit"
+                "source": {
+                  "snippet": "de lengte van de Schuit"
+                }
               },
               "dagsoort": null,
               "negatie": true,
               "cijfers": 0,
               "periode": null,
-              "bron": "de lengte van de Schuit niet gevuld is"
+              "source": {
+                "snippet": "de lengte van de Schuit niet gevuld is"
+              }
             },
             "initialisation": false
           }
@@ -207,7 +223,9 @@
               "node": "AttribuutRef",
               "attribuut": "werfpremie",
               "objecttype": "Schuit",
-              "bron": "De werfpremie van een Schuit"
+              "source": {
+                "snippet": "De werfpremie van een Schuit"
+              }
             },
             "value": {
               "node": "Literal",
@@ -220,7 +238,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "25"
+              "source": {
+                "snippet": "25"
+              }
             },
             "condition": {
               "node": "Predicaat",
@@ -229,7 +249,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "tarief",
                 "objecttype": "Werf",
-                "bron": "het tarief van de werf van de Schuit",
+                "source": {
+                  "snippet": "het tarief van de werf van de Schuit"
+                },
                 "navigatieBindingen": [
                   {
                     "node": "RolBinding",
@@ -242,7 +264,9 @@
               "negatie": true,
               "cijfers": 0,
               "periode": null,
-              "bron": "het tarief van de werf van de Schuit niet leeg is"
+              "source": {
+                "snippet": "het tarief van de werf van de Schuit niet leeg is"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

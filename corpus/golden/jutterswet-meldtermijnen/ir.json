@@ -186,7 +186,9 @@
               "node": "AttribuutRef",
               "attribuut": "meldpositie",
               "objecttype": "Meldplicht",
-              "bron": "De meldpositie van een Meldplicht"
+              "source": {
+                "snippet": "De meldpositie van een Meldplicht"
+              }
             },
             "value": {
               "node": "Fold",
@@ -217,7 +219,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "meldreeks",
                 "objecttype": "Meldplicht",
-                "bron": "de meldreeks van de meldplicht"
+                "source": {
+                  "snippet": "de meldreeks van de meldplicht"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -299,7 +303,9 @@
                   "scrutinee": {
                     "node": "BinderRef",
                     "name": "stand",
-                    "bron": "de stand van de meldplicht"
+                    "source": {
+                      "snippet": "de stand van de meldplicht"
+                    }
                   },
                   "arms": [
                     {
@@ -333,7 +339,9 @@
                         "scrutinee": {
                           "node": "BinderRef",
                           "name": "gebeurtenis",
-                          "bron": "de gebeurtenis"
+                          "source": {
+                            "snippet": "de gebeurtenis"
+                          }
                         },
                         "arms": [
                           {
@@ -370,15 +378,21 @@
                                 "links": {
                                   "node": "BinderRef",
                                   "name": "dagen",
-                                  "bron": "het aantal verstreken dagen"
+                                  "source": {
+                                    "snippet": "het aantal verstreken dagen"
+                                  }
                                 },
                                 "rechts": {
                                   "node": "BinderRef",
                                   "name": "resterend",
-                                  "bron": "de resterende termijn"
+                                  "source": {
+                                    "snippet": "de resterende termijn"
+                                  }
                                 },
                                 "periode": null,
-                                "bron": "het aantal verstreken dagen kleiner of gelijk aan de resterende termijn"
+                                "source": {
+                                  "snippet": "het aantal verstreken dagen kleiner of gelijk aan de resterende termijn"
+                                }
                               },
                               "then": {
                                 "node": "Construct",
@@ -412,12 +426,16 @@
                                   "links": {
                                     "node": "BinderRef",
                                     "name": "resterend",
-                                    "bron": "de resterende termijn"
+                                    "source": {
+                                      "snippet": "de resterende termijn"
+                                    }
                                   },
                                   "rechts": {
                                     "node": "BinderRef",
                                     "name": "dagen",
-                                    "bron": "het aantal verstreken dagen"
+                                    "source": {
+                                      "snippet": "het aantal verstreken dagen"
+                                    }
                                   },
                                   "type": {
                                     "node": "Number",
@@ -425,9 +443,13 @@
                                     "decimals": 0,
                                     "sign": "ONBEPAALD"
                                   },
-                                  "bron": "de resterende termijn min het aantal verstreken dagen"
+                                  "source": {
+                                    "snippet": "de resterende termijn min het aantal verstreken dagen"
+                                  }
                                 },
-                                "bron": "Openstaand met de verminderde termijn"
+                                "source": {
+                                  "snippet": "Openstaand met de verminderde termijn"
+                                }
                               },
                               "else": {
                                 "node": "Construct",
@@ -456,9 +478,13 @@
                                 },
                                 "constructor": "Geschonden",
                                 "argument": null,
-                                "bron": "Geschonden"
+                                "source": {
+                                  "snippet": "Geschonden"
+                                }
                               },
-                              "bron": "de termijn verminderd of geschonden"
+                              "source": {
+                                "snippet": "de termijn verminderd of geschonden"
+                              }
                             }
                           },
                           {
@@ -491,11 +517,15 @@
                               },
                               "constructor": "Vervuld",
                               "argument": null,
-                              "bron": "Vervuld"
+                              "source": {
+                                "snippet": "Vervuld"
+                              }
                             }
                           }
                         ],
-                        "bron": "de gebeurtenis toegepast op een openstaande meldplicht"
+                        "source": {
+                          "snippet": "de gebeurtenis toegepast op een openstaande meldplicht"
+                        }
                       }
                     },
                     {
@@ -528,7 +558,9 @@
                         },
                         "constructor": "Vervuld",
                         "argument": null,
-                        "bron": "Vervuld"
+                        "source": {
+                          "snippet": "Vervuld"
+                        }
                       }
                     },
                     {
@@ -561,13 +593,19 @@
                         },
                         "constructor": "Geschonden",
                         "argument": null,
-                        "bron": "Geschonden"
+                        "source": {
+                          "snippet": "Geschonden"
+                        }
                       }
                     }
                   ],
-                  "bron": "de stand van de meldplicht bijgewerkt"
+                  "source": {
+                    "snippet": "de stand van de meldplicht bijgewerkt"
+                  }
                 },
-                "bron": "de vouwstap over een gebeurtenis"
+                "source": {
+                  "snippet": "de vouwstap over een gebeurtenis"
+                }
               },
               "init": {
                 "node": "Construct",
@@ -599,11 +637,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "termijn",
                   "objecttype": "Meldplicht",
-                  "bron": "de termijn van de meldplicht"
+                  "source": {
+                    "snippet": "de termijn van de meldplicht"
+                  }
                 },
-                "bron": "Openstaand met de eigen termijn"
+                "source": {
+                  "snippet": "Openstaand met de eigen termijn"
+                }
               },
-              "bron": "de meldreeks van de meldplicht gevouwen tot haar meldpositie"
+              "source": {
+                "snippet": "de meldreeks van de meldplicht gevouwen tot haar meldpositie"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -624,7 +668,9 @@
               "node": "AttribuutRef",
               "attribuut": "standaardpositie",
               "objecttype": "Meldplicht",
-              "bron": "De standaardpositie van een Meldplicht"
+              "source": {
+                "snippet": "De standaardpositie van een Meldplicht"
+              }
             },
             "value": {
               "node": "Fold",
@@ -655,7 +701,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "meldreeks",
                 "objecttype": "Meldplicht",
-                "bron": "de meldreeks van de meldplicht"
+                "source": {
+                  "snippet": "de meldreeks van de meldplicht"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -737,7 +785,9 @@
                   "scrutinee": {
                     "node": "BinderRef",
                     "name": "stand",
-                    "bron": "de stand van de meldplicht"
+                    "source": {
+                      "snippet": "de stand van de meldplicht"
+                    }
                   },
                   "arms": [
                     {
@@ -771,7 +821,9 @@
                         "scrutinee": {
                           "node": "BinderRef",
                           "name": "gebeurtenis",
-                          "bron": "de gebeurtenis"
+                          "source": {
+                            "snippet": "de gebeurtenis"
+                          }
                         },
                         "arms": [
                           {
@@ -808,15 +860,21 @@
                                 "links": {
                                   "node": "BinderRef",
                                   "name": "dagen",
-                                  "bron": "het aantal verstreken dagen"
+                                  "source": {
+                                    "snippet": "het aantal verstreken dagen"
+                                  }
                                 },
                                 "rechts": {
                                   "node": "BinderRef",
                                   "name": "resterend",
-                                  "bron": "de resterende termijn"
+                                  "source": {
+                                    "snippet": "de resterende termijn"
+                                  }
                                 },
                                 "periode": null,
-                                "bron": "het aantal verstreken dagen kleiner of gelijk aan de resterende termijn"
+                                "source": {
+                                  "snippet": "het aantal verstreken dagen kleiner of gelijk aan de resterende termijn"
+                                }
                               },
                               "then": {
                                 "node": "Construct",
@@ -850,12 +908,16 @@
                                   "links": {
                                     "node": "BinderRef",
                                     "name": "resterend",
-                                    "bron": "de resterende termijn"
+                                    "source": {
+                                      "snippet": "de resterende termijn"
+                                    }
                                   },
                                   "rechts": {
                                     "node": "BinderRef",
                                     "name": "dagen",
-                                    "bron": "het aantal verstreken dagen"
+                                    "source": {
+                                      "snippet": "het aantal verstreken dagen"
+                                    }
                                   },
                                   "type": {
                                     "node": "Number",
@@ -863,9 +925,13 @@
                                     "decimals": 0,
                                     "sign": "ONBEPAALD"
                                   },
-                                  "bron": "de resterende termijn min het aantal verstreken dagen"
+                                  "source": {
+                                    "snippet": "de resterende termijn min het aantal verstreken dagen"
+                                  }
                                 },
-                                "bron": "Openstaand met de verminderde termijn"
+                                "source": {
+                                  "snippet": "Openstaand met de verminderde termijn"
+                                }
                               },
                               "else": {
                                 "node": "Construct",
@@ -894,9 +960,13 @@
                                 },
                                 "constructor": "Geschonden",
                                 "argument": null,
-                                "bron": "Geschonden"
+                                "source": {
+                                  "snippet": "Geschonden"
+                                }
                               },
-                              "bron": "de termijn verminderd of geschonden"
+                              "source": {
+                                "snippet": "de termijn verminderd of geschonden"
+                              }
                             }
                           },
                           {
@@ -929,11 +999,15 @@
                               },
                               "constructor": "Vervuld",
                               "argument": null,
-                              "bron": "Vervuld"
+                              "source": {
+                                "snippet": "Vervuld"
+                              }
                             }
                           }
                         ],
-                        "bron": "de gebeurtenis toegepast op een openstaande meldplicht"
+                        "source": {
+                          "snippet": "de gebeurtenis toegepast op een openstaande meldplicht"
+                        }
                       }
                     },
                     {
@@ -966,7 +1040,9 @@
                         },
                         "constructor": "Vervuld",
                         "argument": null,
-                        "bron": "Vervuld"
+                        "source": {
+                          "snippet": "Vervuld"
+                        }
                       }
                     },
                     {
@@ -999,13 +1075,19 @@
                         },
                         "constructor": "Geschonden",
                         "argument": null,
-                        "bron": "Geschonden"
+                        "source": {
+                          "snippet": "Geschonden"
+                        }
                       }
                     }
                   ],
-                  "bron": "de stand van de meldplicht bijgewerkt"
+                  "source": {
+                    "snippet": "de stand van de meldplicht bijgewerkt"
+                  }
                 },
-                "bron": "de vouwstap over een gebeurtenis"
+                "source": {
+                  "snippet": "de vouwstap over een gebeurtenis"
+                }
               },
               "init": {
                 "node": "Construct",
@@ -1036,11 +1118,17 @@
                 "argument": {
                   "node": "ParameterRef",
                   "parameter": "standaardtermijn",
-                  "bron": "de standaardtermijn"
+                  "source": {
+                    "snippet": "de standaardtermijn"
+                  }
                 },
-                "bron": "Openstaand met de standaardtermijn"
+                "source": {
+                  "snippet": "Openstaand met de standaardtermijn"
+                }
               },
-              "bron": "de meldreeks van de meldplicht gevouwen tot haar standaardpositie"
+              "source": {
+                "snippet": "de meldreeks van de meldplicht gevouwen tot haar standaardpositie"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

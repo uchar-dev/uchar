@@ -162,7 +162,9 @@
               "node": "AttribuutRef",
               "attribuut": "dossierpenning",
               "objecttype": "Dossierrecht",
-              "bron": "de dossierpenning"
+              "source": {
+                "snippet": "de dossierpenning"
+              }
             },
             "value": {
               "node": "Binair",
@@ -179,24 +181,26 @@
                   "node": "AttribuutRef",
                   "attribuut": "dossier",
                   "objecttype": "Dossierrecht",
-                  "bron": "de dossier"
+                  "source": {
+                    "snippet": "de dossier"
+                  }
                 },
-                "field": "waarde",
-                "bron": null
+                "field": "waarde"
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "opslag",
                 "objecttype": "Dossierrecht",
-                "bron": "de opslag"
+                "source": {
+                  "snippet": "de opslag"
+                }
               },
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
                 "sign": "ONBEPAALD"
-              },
-              "bron": null
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -217,7 +221,9 @@
               "node": "AttribuutRef",
               "attribuut": "totaalwaarde",
               "objecttype": "Dossierrecht",
-              "bron": "de totaalwaarde"
+              "source": {
+                "snippet": "de totaalwaarde"
+              }
             },
             "value": {
               "node": "Fold",
@@ -242,7 +248,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "dossiers",
                   "objecttype": "Dossierrecht",
-                  "bron": "de dossiers"
+                  "source": {
+                    "snippet": "de dossiers"
+                  }
                 },
                 "function": {
                   "node": "Lambda",
@@ -286,14 +294,16 @@
                     "base": {
                       "node": "BinderRef",
                       "name": "d",
-                      "bron": "d"
+                      "source": {
+                        "snippet": "d"
+                      }
                     },
-                    "field": "waarde",
-                    "bron": null
+                    "field": "waarde"
                   },
-                  "bron": "d"
-                },
-                "bron": null
+                  "source": {
+                    "snippet": "d"
+                  }
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -323,22 +333,24 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "acc"
+                    "source": {
+                      "snippet": "acc"
+                    }
                   },
                   "rechts": {
                     "node": "BinderRef",
                     "name": "w",
-                    "bron": "w"
+                    "source": {
+                      "snippet": "w"
+                    }
                   },
                   "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
-                  },
-                  "bron": null
-                },
-                "bron": null
+                  }
+                }
               },
               "init": {
                 "node": "Literal",
@@ -351,9 +363,10 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
-              },
-              "bron": null
+                "source": {
+                  "snippet": "0.00"
+                }
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -374,7 +387,9 @@
               "node": "AttribuutRef",
               "attribuut": "vondstaantal",
               "objecttype": "Dossierrecht",
-              "bron": "de vondstaantal"
+              "source": {
+                "snippet": "de vondstaantal"
+              }
             },
             "value": {
               "node": "FieldAccess",
@@ -388,10 +403,11 @@
                 "node": "AttribuutRef",
                 "attribuut": "dossier",
                 "objecttype": "Dossierrecht",
-                "bron": "de dossier"
+                "source": {
+                  "snippet": "de dossier"
+                }
               },
-              "field": "telling",
-              "bron": null
+              "field": "telling"
             },
             "initialisation": false,
             "presentation": "BEREKENING"

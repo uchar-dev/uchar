@@ -86,7 +86,9 @@
               "node": "AttribuutRef",
               "attribuut": "aanslag",
               "objecttype": "Jutter",
-              "bron": "De aanslag van een Jutter"
+              "source": {
+                "snippet": "De aanslag van een Jutter"
+              }
             },
             "value": {
               "node": "Let",
@@ -101,7 +103,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "inkomen",
                 "objecttype": "Jutter",
-                "bron": "het inkomen van de Jutter"
+                "source": {
+                  "snippet": "het inkomen van de Jutter"
+                }
               },
               "body": {
                 "node": "Let",
@@ -119,7 +123,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "kindertal",
                     "objecttype": "Jutter",
-                    "bron": "het kindertal van de Jutter"
+                    "source": {
+                      "snippet": "het kindertal van de Jutter"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -132,7 +138,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "250,00"
+                    "source": {
+                      "snippet": "250,00"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -140,7 +148,9 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "het kindertal van de Jutter maal 250,00"
+                  "source": {
+                    "snippet": "het kindertal van de Jutter maal 250,00"
+                  }
                 },
                 "body": {
                   "node": "Let",
@@ -159,7 +169,9 @@
                       "links": {
                         "node": "BinderRef",
                         "name": "ink",
-                        "bron": "ink"
+                        "source": {
+                          "snippet": "ink"
+                        }
                       },
                       "rechts": {
                         "node": "Literal",
@@ -172,7 +184,9 @@
                           "decimals": 4,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "0,2100"
+                        "source": {
+                          "snippet": "0,2100"
+                        }
                       },
                       "type": {
                         "node": "Number",
@@ -180,7 +194,9 @@
                         "decimals": 6,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "ink maal 0,2100"
+                      "source": {
+                        "snippet": "ink maal 0,2100"
+                      }
                     },
                     "modus": "REKENKUNDIG",
                     "decimalen": 2,
@@ -190,7 +206,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "ink maal 0,2100 rekenkundig afgerond op 2 decimalen"
+                    "source": {
+                      "snippet": "ink maal 0,2100 rekenkundig afgerond op 2 decimalen"
+                    }
                   },
                   "body": {
                     "node": "IfThenElse",
@@ -206,15 +224,21 @@
                       "links": {
                         "node": "BinderRef",
                         "name": "aftrek",
-                        "bron": "aftrek"
+                        "source": {
+                          "snippet": "aftrek"
+                        }
                       },
                       "rechts": {
                         "node": "BinderRef",
                         "name": "belasting",
-                        "bron": "belasting"
+                        "source": {
+                          "snippet": "belasting"
+                        }
                       },
                       "periode": null,
-                      "bron": "aftrek groter dan belasting"
+                      "source": {
+                        "snippet": "aftrek groter dan belasting"
+                      }
                     },
                     "then": {
                       "node": "Literal",
@@ -227,7 +251,9 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "0,00"
+                      "source": {
+                        "snippet": "0,00"
+                      }
                     },
                     "else": {
                       "node": "Binair",
@@ -235,12 +261,16 @@
                       "links": {
                         "node": "BinderRef",
                         "name": "belasting",
-                        "bron": "belasting"
+                        "source": {
+                          "snippet": "belasting"
+                        }
                       },
                       "rechts": {
                         "node": "BinderRef",
                         "name": "aftrek",
-                        "bron": "aftrek"
+                        "source": {
+                          "snippet": "aftrek"
+                        }
                       },
                       "type": {
                         "node": "Number",
@@ -248,15 +278,25 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "belasting min aftrek"
+                      "source": {
+                        "snippet": "belasting min aftrek"
+                      }
                     },
-                    "bron": "als aftrek groter dan belasting dan 0,00 anders belasting min aftrek"
+                    "source": {
+                      "snippet": "als aftrek groter dan belasting dan 0,00 anders belasting min aftrek"
+                    }
                   },
-                  "bron": "belasting is ink maal 0,2100 rekenkundig afgerond op 2 decimalen"
+                  "source": {
+                    "snippet": "belasting is ink maal 0,2100 rekenkundig afgerond op 2 decimalen"
+                  }
                 },
-                "bron": "aftrek is het kindertal van de Jutter maal 250,00"
+                "source": {
+                  "snippet": "aftrek is het kindertal van de Jutter maal 250,00"
+                }
               },
-              "bron": "ink is het inkomen van de Jutter"
+              "source": {
+                "snippet": "ink is het inkomen van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -277,7 +317,9 @@
               "node": "AttribuutRef",
               "attribuut": "factor",
               "objecttype": "Jutter",
-              "bron": "De factor van een Jutter"
+              "source": {
+                "snippet": "De factor van een Jutter"
+              }
             },
             "value": {
               "node": "Binair",
@@ -293,7 +335,9 @@
                   "decimals": 4,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "1,0000"
+                "source": {
+                  "snippet": "1,0000"
+                }
               },
               "rechts": {
                 "node": "Binair",
@@ -302,7 +346,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "kindertal",
                   "objecttype": "Jutter",
-                  "bron": "het kindertal van de Jutter"
+                  "source": {
+                    "snippet": "het kindertal van de Jutter"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -315,7 +361,9 @@
                     "decimals": 4,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "2,0000"
+                  "source": {
+                    "snippet": "2,0000"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -323,7 +371,9 @@
                   "decimals": 4,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "het kindertal van de Jutter gedeeld door 2,0000"
+                "source": {
+                  "snippet": "het kindertal van de Jutter gedeeld door 2,0000"
+                }
               },
               "type": {
                 "node": "Number",
@@ -331,7 +381,9 @@
                 "decimals": 4,
                 "sign": "ONBEPAALD"
               },
-              "bron": "1,0000 plus het kindertal van de Jutter gedeeld door 2,0000"
+              "source": {
+                "snippet": "1,0000 plus het kindertal van de Jutter gedeeld door 2,0000"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -352,7 +404,9 @@
               "node": "AttribuutRef",
               "attribuut": "gewogen",
               "objecttype": "Jutter",
-              "bron": "Het gewogen inkomen van een Jutter"
+              "source": {
+                "snippet": "Het gewogen inkomen van een Jutter"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -369,7 +423,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "inkomen",
                   "objecttype": "Jutter",
-                  "bron": "het inkomen van de Jutter"
+                  "source": {
+                    "snippet": "het inkomen van de Jutter"
+                  }
                 },
                 "body": {
                   "node": "Binair",
@@ -377,13 +433,17 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "ink2",
-                    "bron": "ink2"
+                    "source": {
+                      "snippet": "ink2"
+                    }
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "factor",
                     "objecttype": "Jutter",
-                    "bron": "de factor van de Jutter"
+                    "source": {
+                      "snippet": "de factor van de Jutter"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -391,9 +451,13 @@
                     "decimals": 6,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "ink2 maal de factor van de Jutter"
+                  "source": {
+                    "snippet": "ink2 maal de factor van de Jutter"
+                  }
                 },
-                "bron": "ink2 is het inkomen van de Jutter"
+                "source": {
+                  "snippet": "ink2 is het inkomen van de Jutter"
+                }
               },
               "modus": "REKENKUNDIG",
               "decimalen": 2,
@@ -403,7 +467,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "ink2 maal de factor van de Jutter rekenkundig afgerond op 2 decimalen"
+              "source": {
+                "snippet": "ink2 maal de factor van de Jutter rekenkundig afgerond op 2 decimalen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

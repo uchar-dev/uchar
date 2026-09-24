@@ -97,7 +97,9 @@
               "node": "AttribuutRef",
               "attribuut": "drempelgewicht",
               "objecttype": "Jutter",
-              "bron": "Het drempelgewicht van een Jutter"
+              "source": {
+                "snippet": "Het drempelgewicht van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -107,7 +109,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Vondst",
-                  "bron": "het gewicht van alle vondsten van de Jutter die groter zijn dan de drempel"
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die groter zijn dan de drempel"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -118,7 +122,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Vondst",
-                  "bron": "groter zijn dan de drempel"
+                  "source": {
+                    "snippet": "groter zijn dan de drempel"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -131,10 +137,14 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "5"
+                  "source": {
+                    "snippet": "5"
+                  }
                 },
                 "periode": null,
-                "bron": "groter zijn dan de drempel"
+                "source": {
+                  "snippet": "groter zijn dan de drempel"
+                }
               },
               "emptyFallback": {
                 "node": "Literal",
@@ -147,7 +157,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -160,7 +172,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van het gewicht van alle vondsten van de Jutter die groter zijn dan de drempel of 0 als die er niet zijn"
+              "source": {
+                "snippet": "de som van het gewicht van alle vondsten van de Jutter die groter zijn dan de drempel of 0 als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -181,7 +195,9 @@
               "node": "AttribuutRef",
               "attribuut": "drempelaandeel",
               "objecttype": "Jutter",
-              "bron": "Het drempelaandeel van een Jutter"
+              "source": {
+                "snippet": "Het drempelaandeel van een Jutter"
+              }
             },
             "value": {
               "node": "Let",
@@ -196,7 +212,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "drempelgewicht",
                 "objecttype": "Jutter",
-                "bron": "het drempelgewicht van de Jutter"
+                "source": {
+                  "snippet": "het drempelgewicht van de Jutter"
+                }
               },
               "body": {
                 "node": "Binair",
@@ -204,12 +222,16 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "vangst",
-                  "bron": "de vangst"
+                  "source": {
+                    "snippet": "de vangst"
+                  }
                 },
                 "rechts": {
                   "node": "BinderRef",
                   "name": "vangst",
-                  "bron": "de vangst"
+                  "source": {
+                    "snippet": "de vangst"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -217,9 +239,13 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de vangst plus de vangst"
+                "source": {
+                  "snippet": "de vangst plus de vangst"
+                }
               },
-              "bron": "de vangst is het drempelgewicht van de Jutter."
+              "source": {
+                "snippet": "de vangst is het drempelgewicht van de Jutter."
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

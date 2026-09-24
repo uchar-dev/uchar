@@ -59,7 +59,9 @@
               "node": "AttribuutRef",
               "attribuut": "afgehandeld",
               "objecttype": "Berging",
-              "bron": "Een Berging is afgehandeld"
+              "source": {
+                "snippet": "Een Berging is afgehandeld"
+              }
             },
             "value": {
               "node": "Literal",
@@ -69,7 +71,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -78,7 +82,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "geborgd",
                 "objecttype": "Berging",
-                "bron": "de geborgd van de Berging"
+                "source": {
+                  "snippet": "de geborgd van de Berging"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -88,10 +94,14 @@
                 "type": {
                   "node": "Booleaan"
                 },
-                "bron": "waar"
+                "source": {
+                  "snippet": "waar"
+                }
               },
               "periode": null,
-              "bron": "haar geborgd gelijk is aan waar"
+              "source": {
+                "snippet": "haar geborgd gelijk is aan waar"
+              }
             },
             "initialisation": false
           }
@@ -111,7 +121,9 @@
               "node": "AttribuutRef",
               "attribuut": "openstaand",
               "objecttype": "Berging",
-              "bron": "Een Berging is openstaand"
+              "source": {
+                "snippet": "Een Berging is openstaand"
+              }
             },
             "value": {
               "node": "Literal",
@@ -121,7 +133,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -130,7 +144,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "geborgd",
                 "objecttype": "Berging",
-                "bron": "de geborgd van de Berging"
+                "source": {
+                  "snippet": "de geborgd van de Berging"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -140,10 +156,14 @@
                 "type": {
                   "node": "Booleaan"
                 },
-                "bron": "onwaar"
+                "source": {
+                  "snippet": "onwaar"
+                }
               },
               "periode": null,
-              "bron": "haar geborgd gelijk is aan onwaar"
+              "source": {
+                "snippet": "haar geborgd gelijk is aan onwaar"
+              }
             },
             "initialisation": false
           }
@@ -163,7 +183,9 @@
               "node": "AttribuutRef",
               "attribuut": "betwist",
               "objecttype": "Berging",
-              "bron": "Een Berging is betwist"
+              "source": {
+                "snippet": "Een Berging is betwist"
+              }
             },
             "value": {
               "node": "Literal",
@@ -173,7 +195,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -182,7 +206,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "geborgd",
                 "objecttype": "Berging",
-                "bron": "de geborgd van de Berging"
+                "source": {
+                  "snippet": "de geborgd van de Berging"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -192,10 +218,14 @@
                 "type": {
                   "node": "Booleaan"
                 },
-                "bron": "waar"
+                "source": {
+                  "snippet": "waar"
+                }
               },
               "periode": null,
-              "bron": "haar geborgd ongelijk is aan waar"
+              "source": {
+                "snippet": "haar geborgd ongelijk is aan waar"
+              }
             },
             "initialisation": false
           }

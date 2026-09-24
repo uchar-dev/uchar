@@ -76,7 +76,9 @@
               "node": "AttribuutRef",
               "attribuut": "ondergrens",
               "objecttype": "Jutter",
-              "bron": "De ondergrens van een Jutter"
+              "source": {
+                "snippet": "De ondergrens van een Jutter"
+              }
             },
             "value": {
               "node": "Begrensd",
@@ -84,7 +86,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "ruwbedrag",
                 "objecttype": "Jutter",
-                "bron": "het ruwbedrag van de Jutter"
+                "source": {
+                  "snippet": "het ruwbedrag van de Jutter"
+                }
               },
               "minimum": {
                 "node": "Literal",
@@ -97,7 +101,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "10"
+                "source": {
+                  "snippet": "10"
+                }
               },
               "maximum": null,
               "type": {
@@ -106,7 +112,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het ruwbedrag van de Jutter begrensd op minimaal 10"
+              "source": {
+                "snippet": "het ruwbedrag van de Jutter begrensd op minimaal 10"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -127,7 +135,9 @@
               "node": "AttribuutRef",
               "attribuut": "bovengrens",
               "objecttype": "Jutter",
-              "bron": "De bovengrens van een Jutter"
+              "source": {
+                "snippet": "De bovengrens van een Jutter"
+              }
             },
             "value": {
               "node": "Begrensd",
@@ -135,7 +145,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "ruwbedrag",
                 "objecttype": "Jutter",
-                "bron": "het ruwbedrag van de Jutter"
+                "source": {
+                  "snippet": "het ruwbedrag van de Jutter"
+                }
               },
               "minimum": null,
               "maximum": {
@@ -149,7 +161,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "100"
+                "source": {
+                  "snippet": "100"
+                }
               },
               "type": {
                 "node": "Number",
@@ -157,7 +171,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het ruwbedrag van de Jutter begrensd op maximaal 100"
+              "source": {
+                "snippet": "het ruwbedrag van de Jutter begrensd op maximaal 100"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -178,7 +194,9 @@
               "node": "AttribuutRef",
               "attribuut": "bandbreedte",
               "objecttype": "Jutter",
-              "bron": "De bandbreedte van een Jutter"
+              "source": {
+                "snippet": "De bandbreedte van een Jutter"
+              }
             },
             "value": {
               "node": "Begrensd",
@@ -186,7 +204,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "ruwbedrag",
                 "objecttype": "Jutter",
-                "bron": "het ruwbedrag van de Jutter"
+                "source": {
+                  "snippet": "het ruwbedrag van de Jutter"
+                }
               },
               "minimum": {
                 "node": "Literal",
@@ -199,7 +219,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "10"
+                "source": {
+                  "snippet": "10"
+                }
               },
               "maximum": {
                 "node": "Literal",
@@ -212,7 +234,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "100"
+                "source": {
+                  "snippet": "100"
+                }
               },
               "type": {
                 "node": "Number",
@@ -220,7 +244,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het ruwbedrag van de Jutter begrensd op minimaal 10 en maximaal 100"
+              "source": {
+                "snippet": "het ruwbedrag van de Jutter begrensd op minimaal 10 en maximaal 100"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

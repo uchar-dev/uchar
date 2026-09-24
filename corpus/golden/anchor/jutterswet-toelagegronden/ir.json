@@ -88,7 +88,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij visser is"
+              "source": {
+                "snippet": "hij visser is"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -101,13 +103,19 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "10"
+              "source": {
+                "snippet": "10"
+              }
             },
-            "bron": "visser: 10"
+            "source": {
+              "snippet": "visser: 10"
+            }
           }
         ],
         "ongeordend": true,
-        "bron": "grond A",
+        "source": {
+          "snippet": "grond A"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,
@@ -130,7 +138,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij wachter is"
+              "source": {
+                "snippet": "hij wachter is"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -143,13 +153,19 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "20"
+              "source": {
+                "snippet": "20"
+              }
             },
-            "bron": "wachter: 20"
+            "source": {
+              "snippet": "wachter: 20"
+            }
           }
         ],
         "ongeordend": true,
-        "bron": "grond B",
+        "source": {
+          "snippet": "grond B"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,
@@ -172,7 +188,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij duinwachter is"
+              "source": {
+                "snippet": "hij duinwachter is"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -185,13 +203,19 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "10"
+              "source": {
+                "snippet": "10"
+              }
             },
-            "bron": "duinwachter: 10"
+            "source": {
+              "snippet": "duinwachter: 10"
+            }
           }
         ],
         "ongeordend": true,
-        "bron": "grond C",
+        "source": {
+          "snippet": "grond C"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,
@@ -213,13 +237,19 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij visser is"
+              "source": {
+                "snippet": "hij visser is"
+              }
             },
-            "bron": "visser"
+            "source": {
+              "snippet": "visser"
+            }
           }
         ],
         "ongeordend": true,
-        "bron": "grond D",
+        "source": {
+          "snippet": "grond D"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,
@@ -241,13 +271,19 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij geschorst is"
+              "source": {
+                "snippet": "hij geschorst is"
+              }
             },
-            "bron": "geschorst"
+            "source": {
+              "snippet": "geschorst"
+            }
           }
         ],
         "ongeordend": true,
-        "bron": "grond E",
+        "source": {
+          "snippet": "grond E"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,
@@ -269,12 +305,18 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij visser is"
+              "source": {
+                "snippet": "hij visser is"
+              }
             },
-            "bron": "visser"
+            "source": {
+              "snippet": "visser"
+            }
           }
         ],
-        "bron": "naamdeling-getuige: kenmerk 'toelage' naast attribuut 'toelage'",
+        "source": {
+          "snippet": "naamdeling-getuige: kenmerk 'toelage' naast attribuut 'toelage'"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

@@ -142,7 +142,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "Strandvondst verenigd met Wrakvondst moeten uniek zijn."
+            "source": {
+              "snippet": "Strandvondst verenigd met Wrakvondst moeten uniek zijn."
+            }
           }
         ]
       },
@@ -174,7 +176,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "De reekscode met het volgnummer van Strandvondst verenigd met Wrakvondst moeten uniek zijn."
+            "source": {
+              "snippet": "De reekscode met het volgnummer van Strandvondst verenigd met Wrakvondst moeten uniek zijn."
+            }
           }
         ]
       }

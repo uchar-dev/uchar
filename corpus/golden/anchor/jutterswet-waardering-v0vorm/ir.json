@@ -62,13 +62,17 @@
               "node": "AttribuutRef",
               "attribuut": "waardering",
               "objecttype": "Jutter",
-              "bron": "De waardering van een Jutter"
+              "source": {
+                "snippet": "De waardering van een Jutter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "basisbedrag",
               "objecttype": "Jutter",
-              "bron": "zijn basisbedrag"
+              "source": {
+                "snippet": "zijn basisbedrag"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -76,7 +80,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij erkend is"
+              "source": {
+                "snippet": "hij erkend is"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -97,7 +103,9 @@
               "node": "AttribuutRef",
               "attribuut": "waardering",
               "objecttype": "Jutter",
-              "bron": "De waardering van een Jutter"
+              "source": {
+                "snippet": "De waardering van een Jutter"
+              }
             },
             "value": {
               "node": "Literal",
@@ -110,7 +118,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "25"
+              "source": {
+                "snippet": "25"
+              }
             },
             "initialisation": true
           }

@@ -87,7 +87,9 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Jutter",
-              "bron": "De heffing van een Jutter"
+              "source": {
+                "snippet": "De heffing van een Jutter"
+              }
             },
             "value": {
               "node": "Let",
@@ -102,7 +104,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "inkomen",
                 "objecttype": "Jutter",
-                "bron": "zijn inkomen"
+                "source": {
+                  "snippet": "zijn inkomen"
+                }
               },
               "body": {
                 "node": "Let",
@@ -119,13 +123,17 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "k",
-                    "bron": "de k"
+                    "source": {
+                      "snippet": "de k"
+                    }
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "restpost",
                     "objecttype": "Jutter",
-                    "bron": "zijn restpost"
+                    "source": {
+                      "snippet": "zijn restpost"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -133,7 +141,9 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "de grondslag gedeeld door zijn restpost"
+                  "source": {
+                    "snippet": "de grondslag gedeeld door zijn restpost"
+                  }
                 },
                 "body": {
                   "node": "Let",
@@ -147,7 +157,9 @@
                   "value": {
                     "node": "BinderRef",
                     "name": "k",
-                    "bron": "de k"
+                    "source": {
+                      "snippet": "de k"
+                    }
                   },
                   "body": {
                     "node": "IfThenElse",
@@ -163,15 +175,21 @@
                       "links": {
                         "node": "BinderRef",
                         "name": "w",
-                        "bron": "de w"
+                        "source": {
+                          "snippet": "de w"
+                        }
                       },
                       "rechts": {
                         "node": "ParameterRef",
                         "parameter": "drempel",
-                        "bron": "de drempel"
+                        "source": {
+                          "snippet": "de drempel"
+                        }
                       },
                       "periode": null,
-                      "bron": "de grondslag boven de grens"
+                      "source": {
+                        "snippet": "de grondslag boven de grens"
+                      }
                     },
                     "then": {
                       "node": "Literal",
@@ -184,20 +202,32 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "0,00"
+                      "source": {
+                        "snippet": "0,00"
+                      }
                     },
                     "else": {
                       "node": "BinderRef",
                       "name": "z",
-                      "bron": "de z"
+                      "source": {
+                        "snippet": "de z"
+                      }
                     },
-                    "bron": "boven de grens het een, daaronder het ander"
+                    "source": {
+                      "snippet": "boven de grens het een, daaronder het ander"
+                    }
                   },
-                  "bron": "de w is w"
+                  "source": {
+                    "snippet": "de w is w"
+                  }
                 },
-                "bron": "de z is z"
+                "source": {
+                  "snippet": "de z is z"
+                }
               },
-              "bron": "de k is k"
+              "source": {
+                "snippet": "de k is k"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -116,7 +116,9 @@
               "node": "AttribuutRef",
               "attribuut": "premie",
               "objecttype": "Berging",
-              "bron": "De premie van een Berging"
+              "source": {
+                "snippet": "De premie van een Berging"
+              }
             },
             "value": {
               "node": "Binair",
@@ -132,13 +134,17 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "20"
+                "source": {
+                  "snippet": "20"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "opbrengst",
                 "objecttype": "Berging",
-                "bron": "de opbrengst van de Berging"
+                "source": {
+                  "snippet": "de opbrengst van de Berging"
+                }
               },
               "type": {
                 "node": "Number",
@@ -146,7 +152,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "20% van de opbrengst van de Berging"
+              "source": {
+                "snippet": "20% van de opbrengst van de Berging"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -167,7 +175,9 @@
               "node": "AttribuutRef",
               "attribuut": "helpersdeel",
               "objecttype": "Berging",
-              "bron": "Het helpersdeel van een Berging"
+              "source": {
+                "snippet": "Het helpersdeel van een Berging"
+              }
             },
             "value": {
               "node": "Binair",
@@ -176,13 +186,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "opbrengst",
                 "objecttype": "Berging",
-                "bron": "de opbrengst van de Berging"
+                "source": {
+                  "snippet": "de opbrengst van de Berging"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "helpersaantal",
                 "objecttype": "Berging",
-                "bron": "het helpersaantal van de Berging"
+                "source": {
+                  "snippet": "het helpersaantal van de Berging"
+                }
               },
               "type": {
                 "node": "Number",
@@ -190,7 +204,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de opbrengst van de Berging gedeeld door het helpersaantal van de Berging"
+              "source": {
+                "snippet": "de opbrengst van de Berging gedeeld door het helpersaantal van de Berging"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -211,7 +227,9 @@
               "node": "AttribuutRef",
               "attribuut": "dagdeel",
               "objecttype": "Berging",
-              "bron": "Het dagdeel van een Berging"
+              "source": {
+                "snippet": "Het dagdeel van een Berging"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -222,13 +240,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "opbrengst",
                   "objecttype": "Berging",
-                  "bron": "de opbrengst van de Berging"
+                  "source": {
+                    "snippet": "de opbrengst van de Berging"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "vermenigvuldiger",
                   "objecttype": "Berging",
-                  "bron": "de vermenigvuldiger van de Berging"
+                  "source": {
+                    "snippet": "de vermenigvuldiger van de Berging"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -236,7 +258,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de opbrengst van de Berging gedeeld door de vermenigvuldiger van de Berging"
+                "source": {
+                  "snippet": "de opbrengst van de Berging gedeeld door de vermenigvuldiger van de Berging"
+                }
               },
               "modus": "NAAR_BENEDEN",
               "decimalen": 0,
@@ -246,7 +270,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de opbrengst van de Berging gedeeld door de vermenigvuldiger van de Berging naar beneden afgerond op 0 decimalen"
+              "source": {
+                "snippet": "de opbrengst van de Berging gedeeld door de vermenigvuldiger van de Berging naar beneden afgerond op 0 decimalen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -267,7 +293,9 @@
               "node": "AttribuutRef",
               "attribuut": "product",
               "objecttype": "Berging",
-              "bron": "Het product van een Berging"
+              "source": {
+                "snippet": "Het product van een Berging"
+              }
             },
             "value": {
               "node": "Binair",
@@ -276,13 +304,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "waarde",
                 "objecttype": "Berging",
-                "bron": "de waarde van de Berging"
+                "source": {
+                  "snippet": "de waarde van de Berging"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "vermenigvuldiger",
                 "objecttype": "Berging",
-                "bron": "de vermenigvuldiger van de Berging"
+                "source": {
+                  "snippet": "de vermenigvuldiger van de Berging"
+                }
               },
               "type": {
                 "node": "Number",
@@ -290,7 +322,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de waarde van de Berging maal de vermenigvuldiger van de Berging"
+              "source": {
+                "snippet": "de waarde van de Berging maal de vermenigvuldiger van de Berging"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

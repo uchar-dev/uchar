@@ -74,7 +74,9 @@
               "node": "AttribuutRef",
               "attribuut": "oordeel",
               "objecttype": "Keurstuk",
-              "bron": "Het oordeel van een Keurstuk"
+              "source": {
+                "snippet": "Het oordeel van een Keurstuk"
+              }
             },
             "value": {
               "node": "Literal",
@@ -84,7 +86,9 @@
               "type": {
                 "node": "Tekst"
               },
-              "bron": "'tweevoudig'"
+              "source": {
+                "snippet": "'tweevoudig'"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -97,7 +101,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "het Keurstuk gemerkt is"
+                  "source": {
+                    "snippet": "het Keurstuk gemerkt is"
+                  }
                 },
                 {
                   "node": "Kenmerk",
@@ -105,7 +111,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "het Keurstuk gewogen is"
+                  "source": {
+                    "snippet": "het Keurstuk gewogen is"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -114,7 +122,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "zegels",
                     "objecttype": "Keurstuk",
-                    "bron": "de zegels van het Keurstuk"
+                    "source": {
+                      "snippet": "de zegels van het Keurstuk"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -127,13 +137,19 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "2"
+                    "source": {
+                      "snippet": "2"
+                    }
                   },
                   "periode": null,
-                  "bron": "zijn zegels groter of gelijk zijn aan 2"
+                  "source": {
+                    "snippet": "zijn zegels groter of gelijk zijn aan 2"
+                  }
                 }
               ],
-              "bron": "precies twee van: gemerkt, gewogen, zegels vanaf 2"
+              "source": {
+                "snippet": "precies twee van: gemerkt, gewogen, zegels vanaf 2"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -154,13 +170,17 @@
               "node": "AttribuutRef",
               "attribuut": "zegelafschrift",
               "objecttype": "Keurstuk",
-              "bron": "Het zegelafschrift van een Keurstuk"
+              "source": {
+                "snippet": "Het zegelafschrift van een Keurstuk"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "zegels",
               "objecttype": "Keurstuk",
-              "bron": "de zegels van het Keurstuk"
+              "source": {
+                "snippet": "de zegels van het Keurstuk"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

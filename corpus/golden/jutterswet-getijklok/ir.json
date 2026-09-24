@@ -85,7 +85,9 @@
               "node": "AttribuutRef",
               "attribuut": "sluittijdstip",
               "objecttype": "Getijpost",
-              "bron": "Het sluittijdstip van een Getijpost"
+              "source": {
+                "snippet": "Het sluittijdstip van een Getijpost"
+              }
             },
             "value": {
               "node": "Binair",
@@ -94,19 +96,25 @@
                 "node": "AttribuutRef",
                 "attribuut": "meldtijdstip",
                 "objecttype": "Getijpost",
-                "bron": "zijn meldtijdstip"
+                "source": {
+                  "snippet": "zijn meldtijdstip"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "wachttermijn",
                 "objecttype": "Getijpost",
-                "bron": "zijn wachttermijn"
+                "source": {
+                  "snippet": "zijn wachttermijn"
+                }
               },
               "type": {
                 "node": "Date",
                 "precision": "millisecond"
               },
-              "bron": "zijn meldtijdstip plus zijn wachttermijn"
+              "source": {
+                "snippet": "zijn meldtijdstip plus zijn wachttermijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -127,7 +135,9 @@
               "node": "AttribuutRef",
               "attribuut": "openingstijdstip",
               "objecttype": "Getijpost",
-              "bron": "Het openingstijdstip van een Getijpost"
+              "source": {
+                "snippet": "Het openingstijdstip van een Getijpost"
+              }
             },
             "value": {
               "node": "Binair",
@@ -136,19 +146,25 @@
                 "node": "AttribuutRef",
                 "attribuut": "meldtijdstip",
                 "objecttype": "Getijpost",
-                "bron": "zijn meldtijdstip"
+                "source": {
+                  "snippet": "zijn meldtijdstip"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "wachttermijn",
                 "objecttype": "Getijpost",
-                "bron": "zijn wachttermijn"
+                "source": {
+                  "snippet": "zijn wachttermijn"
+                }
               },
               "type": {
                 "node": "Date",
                 "precision": "millisecond"
               },
-              "bron": "zijn meldtijdstip min zijn wachttermijn"
+              "source": {
+                "snippet": "zijn meldtijdstip min zijn wachttermijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -178,7 +194,9 @@
                       "node": "Date",
                       "precision": "day"
                     },
-                    "bron": "de dag"
+                    "source": {
+                      "snippet": "de dag"
+                    }
                   }
                 ],
                 "type": {
@@ -187,7 +205,9 @@
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "de dag uit de dag"
+                "source": {
+                  "snippet": "de dag uit de dag"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -200,10 +220,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "1"
+                "source": {
+                  "snippet": "1"
+                }
               },
               "periode": null,
-              "bron": "de dag uit de dag gelijk is aan 1"
+              "source": {
+                "snippet": "de dag uit de dag gelijk is aan 1"
+              }
             },
             {
               "node": "Vergelijking",
@@ -218,7 +242,9 @@
                       "node": "Date",
                       "precision": "day"
                     },
-                    "bron": "de dag"
+                    "source": {
+                      "snippet": "de dag"
+                    }
                   }
                 ],
                 "type": {
@@ -227,7 +253,9 @@
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "de dag uit de dag"
+                "source": {
+                  "snippet": "de dag uit de dag"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -240,13 +268,19 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "15"
+                "source": {
+                  "snippet": "15"
+                }
               },
               "periode": null,
-              "bron": "de dag uit de dag gelijk is aan 15"
+              "source": {
+                "snippet": "de dag uit de dag gelijk is aan 15"
+              }
             }
           ],
-          "bron": "er aan ten minste 1 van de volgende voorwaarden wordt voldaan: - de dag uit de dag gelijk is aan 1 - de dag uit de dag gelijk is aan 15."
+          "source": {
+            "snippet": "er aan ten minste 1 van de volgende voorwaarden wordt voldaan: - de dag uit de dag gelijk is aan 1 - de dag uit de dag gelijk is aan 15."
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",

@@ -250,13 +250,17 @@
               "node": "AttribuutRef",
               "attribuut": "uitkijkbonus",
               "objecttype": "Wachter",
-              "bron": "De uitkijkbonus van een Wachter"
+              "source": {
+                "snippet": "De uitkijkbonus van een Wachter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "hoogte",
               "objecttype": "Post",
-              "bron": "de hoogte van zijn post",
+              "source": {
+                "snippet": "de hoogte van zijn post"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -284,13 +288,17 @@
               "node": "AttribuutRef",
               "attribuut": "gevarenrang",
               "objecttype": "Wachter",
-              "bron": "De gevarenrang van een Wachter"
+              "source": {
+                "snippet": "De gevarenrang van een Wachter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "gevarenklasse",
               "objecttype": "Kustvak",
-              "bron": "de gevarenklasse van het kustvak van zijn post",
+              "source": {
+                "snippet": "de gevarenklasse van het kustvak van zijn post"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -323,7 +331,9 @@
               "node": "AttribuutRef",
               "attribuut": "seingerechtigd",
               "objecttype": "Wachter",
-              "bron": "Een Wachter is seingerechtigd"
+              "source": {
+                "snippet": "Een Wachter is seingerechtigd"
+              }
             },
             "value": {
               "node": "Literal",
@@ -333,7 +343,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -341,7 +353,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "zijn post risicopost is",
+              "source": {
+                "snippet": "zijn post risicopost is"
+              },
               "navigatieBinding": {
                 "node": "RolBinding",
                 "feittype": "postbezetting",
@@ -366,7 +380,9 @@
               "node": "AttribuutRef",
               "attribuut": "seinaantal",
               "objecttype": "Post",
-              "bron": "Het seinaantal van een Post"
+              "source": {
+                "snippet": "Het seinaantal van een Post"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -376,7 +392,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "seinen",
                   "objecttype": "Post",
-                  "bron": "seinen van de post"
+                  "source": {
+                    "snippet": "seinen van de post"
+                  }
                 }
               ],
               "elementType": "Sein",
@@ -391,7 +409,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal seinen van de post"
+              "source": {
+                "snippet": "het aantal seinen van de post"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -412,7 +432,9 @@
               "node": "AttribuutRef",
               "attribuut": "seingewicht",
               "objecttype": "Post",
-              "bron": "Het seingewicht van een Post"
+              "source": {
+                "snippet": "Het seingewicht van een Post"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -422,7 +444,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Sein",
-                  "bron": "het gewicht van alle seinen van de post"
+                  "source": {
+                    "snippet": "het gewicht van alle seinen van de post"
+                  }
                 }
               ],
               "elementType": "Sein",
@@ -437,7 +461,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -450,7 +476,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van het gewicht van alle seinen van de post of 0 als die er niet zijn"
+              "source": {
+                "snippet": "de som van het gewicht van alle seinen van de post of 0 als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -471,7 +499,9 @@
               "node": "AttribuutRef",
               "attribuut": "vakseinaantal",
               "objecttype": "Kustvak",
-              "bron": "Het vakseinaantal van een Kustvak"
+              "source": {
+                "snippet": "Het vakseinaantal van een Kustvak"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -481,7 +511,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vakseinen",
                   "objecttype": "Kustvak",
-                  "bron": "vakseinen van het kustvak"
+                  "source": {
+                    "snippet": "vakseinen van het kustvak"
+                  }
                 }
               ],
               "elementType": "Sein",
@@ -496,7 +528,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal vakseinen van het kustvak"
+              "source": {
+                "snippet": "het aantal vakseinen van het kustvak"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -533,7 +567,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "De wachtnummer van alle Wachter van de post moeten uniek zijn."
+            "source": {
+              "snippet": "De wachtnummer van alle Wachter van de post moeten uniek zijn."
+            }
           }
         ]
       }

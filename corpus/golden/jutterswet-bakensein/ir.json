@@ -164,7 +164,9 @@
               "node": "AttribuutRef",
               "attribuut": "seinaantal",
               "objecttype": "Post",
-              "bron": "Het seinaantal van een Post"
+              "source": {
+                "snippet": "Het seinaantal van een Post"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -174,7 +176,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "seinen",
                   "objecttype": "Post",
-                  "bron": "seinen van de post"
+                  "source": {
+                    "snippet": "seinen van de post"
+                  }
                 }
               ],
               "elementType": "Sein",
@@ -189,7 +193,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal seinen van de post"
+              "source": {
+                "snippet": "het aantal seinen van de post"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -210,7 +216,9 @@
               "node": "AttribuutRef",
               "attribuut": "vakseinaantal",
               "objecttype": "Kustvak",
-              "bron": "Het vakseinaantal van een Kustvak"
+              "source": {
+                "snippet": "Het vakseinaantal van een Kustvak"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -220,7 +228,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vakseinen",
                   "objecttype": "Kustvak",
-                  "bron": "vakseinen van het kustvak"
+                  "source": {
+                    "snippet": "vakseinen van het kustvak"
+                  }
                 }
               ],
               "elementType": "Sein",
@@ -235,7 +245,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal vakseinen van het kustvak"
+              "source": {
+                "snippet": "het aantal vakseinen van het kustvak"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -276,7 +288,9 @@
               "negatie": false,
               "eigenaar": "Baken",
               "periode": null,
-              "bron": "het sein gehesen is"
+              "source": {
+                "snippet": "het sein gehesen is"
+              }
             },
             "validity": {
               "node": "Geldigheid",

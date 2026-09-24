@@ -116,7 +116,9 @@
               "node": "AttribuutRef",
               "attribuut": "prijsBenedenaf",
               "objecttype": "Veilingronde",
-              "bron": "De prijs benedenaf van een Veilingronde"
+              "source": {
+                "snippet": "De prijs benedenaf van een Veilingronde"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -127,13 +129,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "opbrengst",
                   "objecttype": "Veilingronde",
-                  "bron": "de opbrengst van de Veilingronde"
+                  "source": {
+                    "snippet": "de opbrengst van de Veilingronde"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "kavels",
                   "objecttype": "Veilingronde",
-                  "bron": "de kavels van de Veilingronde"
+                  "source": {
+                    "snippet": "de kavels van de Veilingronde"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -141,7 +147,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+                "source": {
+                  "snippet": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+                }
               },
               "modus": "NAAR_BENEDEN",
               "decimalen": 0,
@@ -151,7 +159,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar beneden afgerond op 0 decimalen"
+              "source": {
+                "snippet": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar beneden afgerond op 0 decimalen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -172,7 +182,9 @@
               "node": "AttribuutRef",
               "attribuut": "prijsBovenaf",
               "objecttype": "Veilingronde",
-              "bron": "De prijs bovenaf van een Veilingronde"
+              "source": {
+                "snippet": "De prijs bovenaf van een Veilingronde"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -183,13 +195,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "opbrengst",
                   "objecttype": "Veilingronde",
-                  "bron": "de opbrengst van de Veilingronde"
+                  "source": {
+                    "snippet": "de opbrengst van de Veilingronde"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "kavels",
                   "objecttype": "Veilingronde",
-                  "bron": "de kavels van de Veilingronde"
+                  "source": {
+                    "snippet": "de kavels van de Veilingronde"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -197,7 +213,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+                "source": {
+                  "snippet": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+                }
               },
               "modus": "NAAR_BOVEN",
               "decimalen": 0,
@@ -207,7 +225,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar boven afgerond op 0 decimalen"
+              "source": {
+                "snippet": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar boven afgerond op 0 decimalen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -228,7 +248,9 @@
               "node": "AttribuutRef",
               "attribuut": "prijsRekenkundig",
               "objecttype": "Veilingronde",
-              "bron": "De prijs rekenkundig van een Veilingronde"
+              "source": {
+                "snippet": "De prijs rekenkundig van een Veilingronde"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -239,13 +261,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "opbrengst",
                   "objecttype": "Veilingronde",
-                  "bron": "de opbrengst van de Veilingronde"
+                  "source": {
+                    "snippet": "de opbrengst van de Veilingronde"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "kavels",
                   "objecttype": "Veilingronde",
-                  "bron": "de kavels van de Veilingronde"
+                  "source": {
+                    "snippet": "de kavels van de Veilingronde"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -253,7 +279,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+                "source": {
+                  "snippet": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+                }
               },
               "modus": "REKENKUNDIG",
               "decimalen": 0,
@@ -263,7 +291,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 0 decimalen"
+              "source": {
+                "snippet": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 0 decimalen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -284,7 +314,9 @@
               "node": "AttribuutRef",
               "attribuut": "prijsNaarNul",
               "objecttype": "Veilingronde",
-              "bron": "De prijs naar nul van een Veilingronde"
+              "source": {
+                "snippet": "De prijs naar nul van een Veilingronde"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -295,13 +327,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "opbrengst",
                   "objecttype": "Veilingronde",
-                  "bron": "de opbrengst van de Veilingronde"
+                  "source": {
+                    "snippet": "de opbrengst van de Veilingronde"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "kavels",
                   "objecttype": "Veilingronde",
-                  "bron": "de kavels van de Veilingronde"
+                  "source": {
+                    "snippet": "de kavels van de Veilingronde"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -309,7 +345,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+                "source": {
+                  "snippet": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+                }
               },
               "modus": "RICHTING_NUL",
               "decimalen": 0,
@@ -319,7 +357,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde richting nul afgerond op 0 decimalen"
+              "source": {
+                "snippet": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde richting nul afgerond op 0 decimalen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -340,7 +380,9 @@
               "node": "AttribuutRef",
               "attribuut": "prijsVanNul",
               "objecttype": "Veilingronde",
-              "bron": "De prijs van nul van een Veilingronde"
+              "source": {
+                "snippet": "De prijs van nul van een Veilingronde"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -351,13 +393,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "opbrengst",
                   "objecttype": "Veilingronde",
-                  "bron": "de opbrengst van de Veilingronde"
+                  "source": {
+                    "snippet": "de opbrengst van de Veilingronde"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "kavels",
                   "objecttype": "Veilingronde",
-                  "bron": "de kavels van de Veilingronde"
+                  "source": {
+                    "snippet": "de kavels van de Veilingronde"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -365,7 +411,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+                "source": {
+                  "snippet": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+                }
               },
               "modus": "WEG_VAN_NUL",
               "decimalen": 0,
@@ -375,7 +423,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde weg van nul afgerond op 0 decimalen"
+              "source": {
+                "snippet": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde weg van nul afgerond op 0 decimalen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -396,7 +446,9 @@
               "node": "AttribuutRef",
               "attribuut": "prijsFijn",
               "objecttype": "Veilingronde",
-              "bron": "De prijs fijn van een Veilingronde"
+              "source": {
+                "snippet": "De prijs fijn van een Veilingronde"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -407,13 +459,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "opbrengst",
                   "objecttype": "Veilingronde",
-                  "bron": "de opbrengst van de Veilingronde"
+                  "source": {
+                    "snippet": "de opbrengst van de Veilingronde"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "kavels",
                   "objecttype": "Veilingronde",
-                  "bron": "de kavels van de Veilingronde"
+                  "source": {
+                    "snippet": "de kavels van de Veilingronde"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -421,7 +477,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+                "source": {
+                  "snippet": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+                }
               },
               "modus": "REKENKUNDIG",
               "decimalen": 1,
@@ -431,7 +489,9 @@
                 "decimals": 1,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 1 decimaal"
+              "source": {
+                "snippet": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 1 decimaal"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

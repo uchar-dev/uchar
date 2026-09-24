@@ -88,7 +88,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "aantal geborgen wrakken",
                 "objecttype": "Jutter",
-                "bron": "zijn aantal geborgen wrakken"
+                "source": {
+                  "snippet": "zijn aantal geborgen wrakken"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -101,10 +103,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "2"
+                "source": {
+                  "snippet": "2"
+                }
               },
               "periode": null,
-              "bron": "zijn aantal geborgen wrakken groter of gelijk is aan 2"
+              "source": {
+                "snippet": "zijn aantal geborgen wrakken groter of gelijk is aan 2"
+              }
             },
             "consequentie": {
               "node": "Let",
@@ -119,7 +125,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "bergingsgrondslag",
                 "objecttype": "Jutter",
-                "bron": "zijn bergingsgrondslag"
+                "source": {
+                  "snippet": "zijn bergingsgrondslag"
+                }
               },
               "body": {
                 "node": "Binair",
@@ -127,7 +135,9 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "bergingsgrond",
-                  "bron": "bergingsgrond"
+                  "source": {
+                    "snippet": "bergingsgrond"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -140,7 +150,9 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "100.00"
+                  "source": {
+                    "snippet": "100.00"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -148,11 +160,17 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de bergingsgrond plus 100,00"
+                "source": {
+                  "snippet": "de bergingsgrond plus 100,00"
+                }
               },
-              "bron": "de bergingsgrond is zijn bergingsgrondslag"
+              "source": {
+                "snippet": "de bergingsgrond is zijn bergingsgrondslag"
+              }
             },
-            "bron": "de bergingsgrond plus 100,00, indien hij ten minste twee wrakken heeft geborgen"
+            "source": {
+              "snippet": "de bergingsgrond plus 100,00, indien hij ten minste twee wrakken heeft geborgen"
+            }
           },
           {
             "node": "Default",
@@ -162,7 +180,9 @@
               "kwantor": "ALLE",
               "drempel": 0,
               "onderdelen": [],
-              "bron": "altijd"
+              "source": {
+                "snippet": "altijd"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -175,12 +195,15 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "0.00"
+              "source": {
+                "snippet": "0.00"
+              }
             },
-            "bron": "0,00 (het bodembedrag)"
+            "source": {
+              "snippet": "0,00 (het bodembedrag)"
+            }
           }
         ],
-        "bron": null,
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,
@@ -202,7 +225,9 @@
               "kwantor": "ALLE",
               "drempel": 0,
               "onderdelen": [],
-              "bron": "altijd"
+              "source": {
+                "snippet": "altijd"
+              }
             },
             "consequentie": {
               "node": "Let",
@@ -217,7 +242,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "bergingsgrondslag",
                 "objecttype": "Jutter",
-                "bron": "zijn bergingsgrondslag"
+                "source": {
+                  "snippet": "zijn bergingsgrondslag"
+                }
               },
               "body": {
                 "node": "Literal",
@@ -230,11 +257,17 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "42,00"
+                "source": {
+                  "snippet": "42,00"
+                }
               },
-              "bron": "de bergingsgrond is zijn bergingsgrondslag"
+              "source": {
+                "snippet": "de bergingsgrond is zijn bergingsgrondslag"
+              }
             },
-            "bron": "42,00 (het forfait, ongeacht de bergingsgrond)"
+            "source": {
+              "snippet": "42,00 (het forfait, ongeacht de bergingsgrond)"
+            }
           },
           {
             "node": "Default",
@@ -244,7 +277,9 @@
               "kwantor": "ALLE",
               "drempel": 0,
               "onderdelen": [],
-              "bron": "altijd"
+              "source": {
+                "snippet": "altijd"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -257,12 +292,15 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "0.00"
+              "source": {
+                "snippet": "0.00"
+              }
             },
-            "bron": "0,00 (het bodembedrag)"
+            "source": {
+              "snippet": "0,00 (het bodembedrag)"
+            }
           }
         ],
-        "bron": null,
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

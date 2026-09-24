@@ -88,13 +88,17 @@
               "node": "AttribuutRef",
               "attribuut": "voorliggerrang",
               "objecttype": "Wachter",
-              "bron": "De voorliggerrang van een Wachter"
+              "source": {
+                "snippet": "De voorliggerrang van een Wachter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "rangnummer",
               "objecttype": "Wachter",
-              "bron": "het rangnummer van de voorligger van de Wachter",
+              "source": {
+                "snippet": "het rangnummer van de voorligger van de Wachter"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -122,7 +126,9 @@
               "node": "AttribuutRef",
               "attribuut": "opvolgeraantal",
               "objecttype": "Wachter",
-              "bron": "Het opvolgeraantal van een Wachter"
+              "source": {
+                "snippet": "Het opvolgeraantal van een Wachter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -132,7 +138,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "opvolgers",
                   "objecttype": "Wachter",
-                  "bron": "opvolgers van de Wachter"
+                  "source": {
+                    "snippet": "opvolgers van de Wachter"
+                  }
                 }
               ],
               "elementType": "Wachter",
@@ -147,7 +155,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal opvolgers van de Wachter"
+              "source": {
+                "snippet": "het aantal opvolgers van de Wachter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

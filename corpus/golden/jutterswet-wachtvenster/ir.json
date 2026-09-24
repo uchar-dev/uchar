@@ -120,7 +120,9 @@
               "node": "AttribuutRef",
               "attribuut": "paraat",
               "objecttype": "Schouwploeg",
-              "bron": "Een Schouwploeg is paraat"
+              "source": {
+                "snippet": "Een Schouwploeg is paraat"
+              }
             },
             "value": {
               "node": "Literal",
@@ -130,7 +132,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -143,13 +147,19 @@
                   "node": "AttribuutRef",
                   "attribuut": "aanstelling",
                   "objecttype": "Strandwacht",
-                  "bron": "hun aanstelling"
+                  "source": {
+                    "snippet": "hun aanstelling"
+                  }
                 },
                 "tot": null,
                 "totInclusief": false,
-                "bron": "vanaf hun aanstelling"
+                "source": {
+                  "snippet": "vanaf hun aanstelling"
+                }
               },
-              "bron": "alle wachten van de Schouwploeg vanaf hun aanstelling in dienst zijn",
+              "source": {
+                "snippet": "alle wachten van de Schouwploeg vanaf hun aanstelling in dienst zijn"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "schouwindeling",
@@ -174,7 +184,9 @@
               "node": "AttribuutRef",
               "attribuut": "bevoegd",
               "objecttype": "Schouwploeg",
-              "bron": "Een Schouwploeg is bevoegd"
+              "source": {
+                "snippet": "Een Schouwploeg is bevoegd"
+              }
             },
             "value": {
               "node": "Literal",
@@ -184,7 +196,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -196,11 +210,15 @@
                   "node": "AttribuutRef",
                   "attribuut": "aanstelling",
                   "objecttype": "Strandwacht",
-                  "bron": "hun aanstelling"
+                  "source": {
+                    "snippet": "hun aanstelling"
+                  }
                 },
                 "tot": null,
                 "totInclusief": false,
-                "bron": "vanaf hun aanstelling"
+                "source": {
+                  "snippet": "vanaf hun aanstelling"
+                }
               },
               "toets": {
                 "node": "Kenmerk",
@@ -208,9 +226,13 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "gediplomeerd zijn"
+                "source": {
+                  "snippet": "gediplomeerd zijn"
+                }
               },
-              "bron": "alle wachten van de Schouwploeg die vanaf hun aanstelling in dienst zijn, gediplomeerd zijn",
+              "source": {
+                "snippet": "alle wachten van de Schouwploeg die vanaf hun aanstelling in dienst zijn, gediplomeerd zijn"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "schouwindeling",
@@ -235,7 +257,9 @@
               "node": "AttribuutRef",
               "attribuut": "dienstwachttal",
               "objecttype": "Schouwploeg",
-              "bron": "Het dienstwachttal van een Schouwploeg"
+              "source": {
+                "snippet": "Het dienstwachttal van een Schouwploeg"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -245,7 +269,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "wachten",
                   "objecttype": "Schouwploeg",
-                  "bron": "wachten van de Schouwploeg"
+                  "source": {
+                    "snippet": "wachten van de Schouwploeg"
+                  }
                 }
               ],
               "elementType": "Strandwacht",
@@ -255,11 +281,15 @@
                   "node": "AttribuutRef",
                   "attribuut": "aanstelling",
                   "objecttype": "Strandwacht",
-                  "bron": "hun aanstelling"
+                  "source": {
+                    "snippet": "hun aanstelling"
+                  }
                 },
                 "tot": null,
                 "totInclusief": false,
-                "bron": "vanaf hun aanstelling"
+                "source": {
+                  "snippet": "vanaf hun aanstelling"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -272,7 +302,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal wachten van de Schouwploeg die vanaf hun aanstelling in dienst zijn"
+              "source": {
+                "snippet": "het aantal wachten van de Schouwploeg die vanaf hun aanstelling in dienst zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -293,7 +325,9 @@
               "node": "AttribuutRef",
               "attribuut": "wachttal",
               "objecttype": "Schouwploeg",
-              "bron": "Het wachttal van een Schouwploeg"
+              "source": {
+                "snippet": "Het wachttal van een Schouwploeg"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -303,7 +337,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "wachten",
                   "objecttype": "Schouwploeg",
-                  "bron": "wachten van de Schouwploeg"
+                  "source": {
+                    "snippet": "wachten van de Schouwploeg"
+                  }
                 }
               ],
               "elementType": "Strandwacht",
@@ -318,7 +354,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal wachten van de Schouwploeg"
+              "source": {
+                "snippet": "het aantal wachten van de Schouwploeg"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

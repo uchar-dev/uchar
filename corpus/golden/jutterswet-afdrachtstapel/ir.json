@@ -87,7 +87,9 @@
               "node": "AttribuutRef",
               "attribuut": "overbelast",
               "objecttype": "Wrakstuk",
-              "bron": "Een Wrakstuk is overbelast"
+              "source": {
+                "snippet": "Een Wrakstuk is overbelast"
+              }
             },
             "value": {
               "node": "Literal",
@@ -97,7 +99,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -109,13 +113,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "bergloonpercentage",
                   "objecttype": "Wrakstuk",
-                  "bron": "het bergloonpercentage van het Wrakstuk"
+                  "source": {
+                    "snippet": "het bergloonpercentage van het Wrakstuk"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "havengeldpercentage",
                   "objecttype": "Wrakstuk",
-                  "bron": "het havengeldpercentage van het Wrakstuk"
+                  "source": {
+                    "snippet": "het havengeldpercentage van het Wrakstuk"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -132,7 +140,9 @@
                     }
                   }
                 },
-                "bron": "het bergloonpercentage van het Wrakstuk plus het havengeldpercentage van het Wrakstuk"
+                "source": {
+                  "snippet": "het bergloonpercentage van het Wrakstuk plus het havengeldpercentage van het Wrakstuk"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -154,10 +164,14 @@
                     }
                   }
                 },
-                "bron": "50%"
+                "source": {
+                  "snippet": "50%"
+                }
               },
               "periode": null,
-              "bron": "het bergloonpercentage van het Wrakstuk plus het havengeldpercentage van het Wrakstuk groter is dan 50%"
+              "source": {
+                "snippet": "het bergloonpercentage van het Wrakstuk plus het havengeldpercentage van het Wrakstuk groter is dan 50%"
+              }
             },
             "initialisation": false
           }
@@ -177,7 +191,9 @@
               "node": "AttribuutRef",
               "attribuut": "bergergunstig",
               "objecttype": "Wrakstuk",
-              "bron": "Een Wrakstuk is bergergunstig"
+              "source": {
+                "snippet": "Een Wrakstuk is bergergunstig"
+              }
             },
             "value": {
               "node": "Literal",
@@ -187,7 +203,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -199,13 +217,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "bergloonpercentage",
                   "objecttype": "Wrakstuk",
-                  "bron": "het bergloonpercentage van het Wrakstuk"
+                  "source": {
+                    "snippet": "het bergloonpercentage van het Wrakstuk"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "havengeldpercentage",
                   "objecttype": "Wrakstuk",
-                  "bron": "het havengeldpercentage van het Wrakstuk"
+                  "source": {
+                    "snippet": "het havengeldpercentage van het Wrakstuk"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -222,7 +244,9 @@
                     }
                   }
                 },
-                "bron": "het bergloonpercentage van het Wrakstuk min het havengeldpercentage van het Wrakstuk"
+                "source": {
+                  "snippet": "het bergloonpercentage van het Wrakstuk min het havengeldpercentage van het Wrakstuk"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -244,10 +268,14 @@
                     }
                   }
                 },
-                "bron": "20%"
+                "source": {
+                  "snippet": "20%"
+                }
               },
               "periode": null,
-              "bron": "het bergloonpercentage van het Wrakstuk min het havengeldpercentage van het Wrakstuk groter is dan 20%"
+              "source": {
+                "snippet": "het bergloonpercentage van het Wrakstuk min het havengeldpercentage van het Wrakstuk groter is dan 20%"
+              }
             },
             "initialisation": false
           }

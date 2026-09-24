@@ -212,7 +212,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "De rangen van alle Hoofdbergers van de berging moeten uniek zijn."
+            "source": {
+              "snippet": "De rangen van alle Hoofdbergers van de berging moeten uniek zijn."
+            }
           }
         ]
       }

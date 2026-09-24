@@ -76,7 +76,9 @@
               "node": "AttribuutRef",
               "attribuut": "factor",
               "objecttype": "Jutter",
-              "bron": "De factor van een Jutter"
+              "source": {
+                "snippet": "De factor van een Jutter"
+              }
             },
             "value": {
               "node": "Binair",
@@ -92,7 +94,9 @@
                   "decimals": 4,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "1,0000"
+                "source": {
+                  "snippet": "1,0000"
+                }
               },
               "rechts": {
                 "node": "Binair",
@@ -101,7 +105,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "kindertal",
                   "objecttype": "Jutter",
-                  "bron": "het kindertal van de Jutter"
+                  "source": {
+                    "snippet": "het kindertal van de Jutter"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -114,7 +120,9 @@
                     "decimals": 4,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "2,0000"
+                  "source": {
+                    "snippet": "2,0000"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -122,7 +130,9 @@
                   "decimals": 4,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "het kindertal van de Jutter gedeeld door 2,0000"
+                "source": {
+                  "snippet": "het kindertal van de Jutter gedeeld door 2,0000"
+                }
               },
               "type": {
                 "node": "Number",
@@ -130,7 +140,9 @@
                 "decimals": 4,
                 "sign": "ONBEPAALD"
               },
-              "bron": "1,0000 plus het kindertal van de Jutter gedeeld door 2,0000"
+              "source": {
+                "snippet": "1,0000 plus het kindertal van de Jutter gedeeld door 2,0000"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -151,7 +163,9 @@
               "node": "AttribuutRef",
               "attribuut": "gewogen",
               "objecttype": "Jutter",
-              "bron": "Het gewogen inkomen van een Jutter"
+              "source": {
+                "snippet": "Het gewogen inkomen van een Jutter"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -168,7 +182,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "inkomen",
                   "objecttype": "Jutter",
-                  "bron": "het inkomen van de Jutter"
+                  "source": {
+                    "snippet": "het inkomen van de Jutter"
+                  }
                 },
                 "body": {
                   "node": "Binair",
@@ -176,13 +192,17 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "ink2",
-                    "bron": "ink2"
+                    "source": {
+                      "snippet": "ink2"
+                    }
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "factor",
                     "objecttype": "Jutter",
-                    "bron": "de factor van de Jutter"
+                    "source": {
+                      "snippet": "de factor van de Jutter"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -190,9 +210,13 @@
                     "decimals": 6,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "ink2 maal de factor van de Jutter"
+                  "source": {
+                    "snippet": "ink2 maal de factor van de Jutter"
+                  }
                 },
-                "bron": "ink2 is het inkomen van de Jutter"
+                "source": {
+                  "snippet": "ink2 is het inkomen van de Jutter"
+                }
               },
               "modus": "REKENKUNDIG",
               "decimalen": 2,
@@ -202,7 +226,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "ink2 maal de factor van de Jutter rekenkundig afgerond op 2 decimalen"
+              "source": {
+                "snippet": "ink2 maal de factor van de Jutter rekenkundig afgerond op 2 decimalen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

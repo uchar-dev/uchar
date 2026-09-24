@@ -57,7 +57,9 @@
               "node": "AttribuutRef",
               "attribuut": "penninggerechtigd",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is penninggerechtigd"
+              "source": {
+                "snippet": "Een Jutter is penninggerechtigd"
+              }
             },
             "value": {
               "node": "Literal",
@@ -67,7 +69,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -76,7 +80,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "aantal aangemelde vondsten",
                 "objecttype": "Jutter",
-                "bron": "zijn aantal aangemelde vondsten"
+                "source": {
+                  "snippet": "zijn aantal aangemelde vondsten"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -89,10 +95,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "12"
+                "source": {
+                  "snippet": "12"
+                }
               },
               "periode": null,
-              "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan 12"
+              "source": {
+                "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan 12"
+              }
             },
             "initialisation": false
           }
@@ -112,7 +122,9 @@
               "node": "AttribuutRef",
               "attribuut": "penninggerechtigd",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is penninggerechtigd"
+              "source": {
+                "snippet": "Een Jutter is penninggerechtigd"
+              }
             },
             "value": {
               "node": "Literal",
@@ -122,7 +134,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -135,7 +149,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "hij is hardheid toegepast"
+                  "source": {
+                    "snippet": "hij is hardheid toegepast"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -144,7 +160,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "aantal aangemelde vondsten",
                     "objecttype": "Jutter",
-                    "bron": "zijn aantal aangemelde vondsten"
+                    "source": {
+                      "snippet": "zijn aantal aangemelde vondsten"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -157,13 +175,19 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "6"
+                    "source": {
+                      "snippet": "6"
+                    }
                   },
                   "periode": null,
-                  "bron": "zijn aantal aangemelde vondsten is groter of gelijk aan 6"
+                  "source": {
+                    "snippet": "zijn aantal aangemelde vondsten is groter of gelijk aan 6"
+                  }
                 }
               ],
-              "bron": "hij aan alle volgende voorwaarden voldoet: - hij is hardheid toegepast - zijn aantal aangemelde vondsten is groter of gelijk aan 6."
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - hij is hardheid toegepast - zijn aantal aangemelde vondsten is groter of gelijk aan 6."
+              }
             },
             "initialisation": false
           }

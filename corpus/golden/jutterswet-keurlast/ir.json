@@ -170,7 +170,9 @@
               "node": "AttribuutRef",
               "attribuut": "keurlast",
               "objecttype": "Jutter",
-              "bron": "De keurlast van een Jutter"
+              "source": {
+                "snippet": "De keurlast van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -180,7 +182,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "keurtarief",
                   "objecttype": "Vondst",
-                  "bron": "het keurtarief van alle vondsten van de Jutter die gekeurd zijn"
+                  "source": {
+                    "snippet": "het keurtarief van alle vondsten van de Jutter die gekeurd zijn"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -190,7 +194,9 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "gekeurd zijn"
+                "source": {
+                  "snippet": "gekeurd zijn"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -213,7 +219,9 @@
                   }
                 }
               },
-              "bron": "het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn"
+              "source": {
+                "snippet": "het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

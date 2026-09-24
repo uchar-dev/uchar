@@ -91,7 +91,9 @@
               "node": "AttribuutRef",
               "attribuut": "hoogste",
               "objecttype": "Penningstaffel",
-              "bron": "de hoogste"
+              "source": {
+                "snippet": "de hoogste"
+              }
             },
             "value": {
               "node": "Match",
@@ -126,7 +128,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bedragen",
                   "objecttype": "Penningstaffel",
-                  "bron": "de bedragen"
+                  "source": {
+                    "snippet": "de bedragen"
+                  }
                 },
                 "function": {
                   "node": "Lambda",
@@ -187,7 +191,9 @@
                     "scrutinee": {
                       "node": "BinderRef",
                       "name": "geaccumuleerde optie",
-                      "bron": "geaccumuleerde optie"
+                      "source": {
+                        "snippet": "geaccumuleerde optie"
+                      }
                     },
                     "arms": [
                       {
@@ -218,9 +224,13 @@
                           "argument": {
                             "node": "BinderRef",
                             "name": "y",
-                            "bron": "y"
+                            "source": {
+                              "snippet": "y"
+                            }
                           },
-                          "bron": "Present"
+                          "source": {
+                            "snippet": "Present"
+                          }
                         }
                       },
                       {
@@ -262,35 +272,47 @@
                               "links": {
                                 "node": "BinderRef",
                                 "name": "x",
-                                "bron": "x"
+                                "source": {
+                                  "snippet": "x"
+                                }
                               },
                               "rechts": {
                                 "node": "BinderRef",
                                 "name": "y",
-                                "bron": "y"
+                                "source": {
+                                  "snippet": "y"
+                                }
                               },
-                              "periode": null,
-                              "bron": null
+                              "periode": null
                             },
                             "then": {
                               "node": "BinderRef",
                               "name": "x",
-                              "bron": "x"
+                              "source": {
+                                "snippet": "x"
+                              }
                             },
                             "else": {
                               "node": "BinderRef",
                               "name": "y",
-                              "bron": "y"
-                            },
-                            "bron": null
+                              "source": {
+                                "snippet": "y"
+                              }
+                            }
                           },
-                          "bron": "Present"
+                          "source": {
+                            "snippet": "Present"
+                          }
                         }
                       }
                     ],
-                    "bron": "de volgende vouwstap"
+                    "source": {
+                      "snippet": "de volgende vouwstap"
+                    }
                   },
-                  "bron": "de vouwstap"
+                  "source": {
+                    "snippet": "de vouwstap"
+                  }
                 },
                 "init": {
                   "node": "Construct",
@@ -315,9 +337,13 @@
                   },
                   "constructor": "Absent",
                   "argument": null,
-                  "bron": "Absent"
+                  "source": {
+                    "snippet": "Absent"
+                  }
                 },
-                "bron": "gevouwen tot een optionele waarde"
+                "source": {
+                  "snippet": "gevouwen tot een optionele waarde"
+                }
               },
               "arms": [
                 {
@@ -334,7 +360,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0.00"
+                    "source": {
+                      "snippet": "0.00"
+                    }
                   }
                 },
                 {
@@ -343,11 +371,15 @@
                   "body": {
                     "node": "BinderRef",
                     "name": "x",
-                    "bron": "x"
+                    "source": {
+                      "snippet": "x"
+                    }
                   }
                 }
               ],
-              "bron": "de gevouwen waarde uitgepakt"
+              "source": {
+                "snippet": "de gevouwen waarde uitgepakt"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -368,7 +400,9 @@
               "node": "AttribuutRef",
               "attribuut": "totaal",
               "objecttype": "Penningstaffel",
-              "bron": "de totaal"
+              "source": {
+                "snippet": "de totaal"
+              }
             },
             "value": {
               "node": "Fold",
@@ -382,7 +416,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "bedragen",
                 "objecttype": "Penningstaffel",
-                "bron": "de bedragen"
+                "source": {
+                  "snippet": "de bedragen"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -412,22 +448,24 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "acc"
+                    "source": {
+                      "snippet": "acc"
+                    }
                   },
                   "rechts": {
                     "node": "BinderRef",
                     "name": "b",
-                    "bron": "b"
+                    "source": {
+                      "snippet": "b"
+                    }
                   },
                   "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
-                  },
-                  "bron": null
-                },
-                "bron": null
+                  }
+                }
               },
               "init": {
                 "node": "Literal",
@@ -440,9 +478,10 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
-              },
-              "bron": null
+                "source": {
+                  "snippet": "0.00"
+                }
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

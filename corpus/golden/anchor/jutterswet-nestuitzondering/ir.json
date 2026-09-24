@@ -88,7 +88,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "hij grondX heeft"
+              "source": {
+                "snippet": "hij grondX heeft"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -101,9 +103,13 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "40.00"
+              "source": {
+                "snippet": "40.00"
+              }
             },
-            "bron": "grondX: 40.00, tenzij een uitzonderingsgrond geldt",
+            "source": {
+              "snippet": "grondX: 40.00, tenzij een uitzonderingsgrond geldt"
+            },
             "excepties": {
               "ongeordend": true,
               "leden": [
@@ -119,7 +125,9 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij grondY heeft"
+                        "source": {
+                          "snippet": "hij grondY heeft"
+                        }
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -132,12 +140,18 @@
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "10.00"
+                        "source": {
+                          "snippet": "10.00"
+                        }
                       },
-                      "bron": "grondY: 10.00"
+                      "source": {
+                        "snippet": "grondY: 10.00"
+                      }
                     }
                   ],
-                  "bron": "uitzondering Y"
+                  "source": {
+                    "snippet": "uitzondering Y"
+                  }
                 },
                 {
                   "node": "ExceptionGroup",
@@ -151,7 +165,9 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij grondZ heeft"
+                        "source": {
+                          "snippet": "hij grondZ heeft"
+                        }
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -164,12 +180,18 @@
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "20.00"
+                        "source": {
+                          "snippet": "20.00"
+                        }
                       },
-                      "bron": "grondZ: 20.00"
+                      "source": {
+                        "snippet": "grondZ: 20.00"
+                      }
                     }
                   ],
-                  "bron": "uitzondering Z"
+                  "source": {
+                    "snippet": "uitzondering Z"
+                  }
                 },
                 {
                   "node": "ExceptionGroup",
@@ -183,7 +205,9 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij grondW heeft"
+                        "source": {
+                          "snippet": "hij grondW heeft"
+                        }
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -196,12 +220,18 @@
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "10.00"
+                        "source": {
+                          "snippet": "10.00"
+                        }
                       },
-                      "bron": "grondW: 10.00"
+                      "source": {
+                        "snippet": "grondW: 10.00"
+                      }
                     }
                   ],
-                  "bron": "uitzondering W"
+                  "source": {
+                    "snippet": "uitzondering W"
+                  }
                 }
               ]
             }
@@ -210,7 +240,9 @@
             "node": "Default",
             "besluit": null,
             "voorwaarde": null,
-            "bron": "basisgrond: B1 of B2",
+            "source": {
+              "snippet": "basisgrond: B1 of B2"
+            },
             "excepties": {
               "ongeordend": true,
               "leden": [
@@ -226,7 +258,9 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij grondB1 heeft"
+                        "source": {
+                          "snippet": "hij grondB1 heeft"
+                        }
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -239,12 +273,18 @@
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "15.00"
+                        "source": {
+                          "snippet": "15.00"
+                        }
                       },
-                      "bron": "grondB1: 15.00"
+                      "source": {
+                        "snippet": "grondB1: 15.00"
+                      }
                     }
                   ],
-                  "bron": "basis B1"
+                  "source": {
+                    "snippet": "basis B1"
+                  }
                 },
                 {
                   "node": "ExceptionGroup",
@@ -258,7 +298,9 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij grondB2 heeft"
+                        "source": {
+                          "snippet": "hij grondB2 heeft"
+                        }
                       },
                       "consequentie": {
                         "node": "Literal",
@@ -271,18 +313,26 @@
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "25.00"
+                        "source": {
+                          "snippet": "25.00"
+                        }
                       },
-                      "bron": "grondB2: 25.00"
+                      "source": {
+                        "snippet": "grondB2: 25.00"
+                      }
                     }
                   ],
-                  "bron": "basis B2"
+                  "source": {
+                    "snippet": "basis B2"
+                  }
                 }
               ]
             }
           }
         ],
-        "bron": "art. 6: de heffing met geneste uitzonderingsgronden",
+        "source": {
+          "snippet": "art. 6: de heffing met geneste uitzonderingsgronden"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

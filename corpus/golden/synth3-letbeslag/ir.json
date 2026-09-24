@@ -102,7 +102,9 @@
               "node": "AttribuutRef",
               "attribuut": "beslag",
               "objecttype": "Jutter",
-              "bron": "Het beslag van een Jutter"
+              "source": {
+                "snippet": "Het beslag van een Jutter"
+              }
             },
             "value": {
               "node": "Let",
@@ -117,7 +119,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "grondslag",
                 "objecttype": "Jutter",
-                "bron": "zijn grondslag"
+                "source": {
+                  "snippet": "zijn grondslag"
+                }
               },
               "body": {
                 "node": "Match",
@@ -131,7 +135,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "regime",
                   "objecttype": "Jutter",
-                  "bron": "zijn regime"
+                  "source": {
+                    "snippet": "zijn regime"
+                  }
                 },
                 "arms": [
                   {
@@ -143,12 +149,16 @@
                       "links": {
                         "node": "BinderRef",
                         "name": "g",
-                        "bron": "de grondslag"
+                        "source": {
+                          "snippet": "de grondslag"
+                        }
                       },
                       "rechts": {
                         "node": "BinderRef",
                         "name": "v",
-                        "bron": "het vaste bedrag"
+                        "source": {
+                          "snippet": "het vaste bedrag"
+                        }
                       },
                       "type": {
                         "node": "Number",
@@ -156,7 +166,9 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "de grondslag plus het vaste bedrag"
+                      "source": {
+                        "snippet": "de grondslag plus het vaste bedrag"
+                      }
                     }
                   },
                   {
@@ -170,7 +182,9 @@
                         "links": {
                           "node": "BinderRef",
                           "name": "g",
-                          "bron": "de grondslag"
+                          "source": {
+                            "snippet": "de grondslag"
+                          }
                         },
                         "rechts": {
                           "node": "Literal",
@@ -183,7 +197,9 @@
                             "decimals": 2,
                             "sign": "ONBEPAALD"
                           },
-                          "bron": "0.10"
+                          "source": {
+                            "snippet": "0.10"
+                          }
                         },
                         "type": {
                           "node": "Number",
@@ -191,7 +207,9 @@
                           "decimals": 4,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "de grondslag maal 0.10"
+                        "source": {
+                          "snippet": "de grondslag maal 0.10"
+                        }
                       },
                       "modus": "REKENKUNDIG",
                       "decimalen": 2,
@@ -201,13 +219,19 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "de grondslag maal 0.10 rekenkundig afgerond op 2 decimalen"
+                      "source": {
+                        "snippet": "de grondslag maal 0.10 rekenkundig afgerond op 2 decimalen"
+                      }
                     }
                   }
                 ],
-                "bron": "het beslag afhankelijk van zijn regime"
+                "source": {
+                  "snippet": "het beslag afhankelijk van zijn regime"
+                }
               },
-              "bron": "g is de grondslag van de Jutter"
+              "source": {
+                "snippet": "g is de grondslag van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

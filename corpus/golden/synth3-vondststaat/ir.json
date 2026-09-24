@@ -128,7 +128,9 @@
               "node": "AttribuutRef",
               "attribuut": "staat",
               "objecttype": "Jutter",
-              "bron": "De staat van een Jutter"
+              "source": {
+                "snippet": "De staat van een Jutter"
+              }
             },
             "value": {
               "node": "StructLiteral",
@@ -163,7 +165,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "omvang",
                     "objecttype": "Jutter",
-                    "bron": "zijn omvang"
+                    "source": {
+                      "snippet": "zijn omvang"
+                    }
                   }
                 },
                 {
@@ -172,11 +176,15 @@
                     "node": "AttribuutRef",
                     "attribuut": "waarde",
                     "objecttype": "Jutter",
-                    "bron": "zijn waarde"
+                    "source": {
+                      "snippet": "zijn waarde"
+                    }
                   }
                 }
               ],
-              "bron": "zijn staat"
+              "source": {
+                "snippet": "zijn staat"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -197,7 +205,9 @@
               "node": "AttribuutRef",
               "attribuut": "kernwaarde",
               "objecttype": "Jutter",
-              "bron": "De kernwaarde van een Jutter"
+              "source": {
+                "snippet": "De kernwaarde van een Jutter"
+              }
             },
             "value": {
               "node": "FieldAccess",
@@ -211,10 +221,14 @@
                 "node": "AttribuutRef",
                 "attribuut": "staat",
                 "objecttype": "Jutter",
-                "bron": "zijn staat"
+                "source": {
+                  "snippet": "zijn staat"
+                }
               },
               "field": "waarde",
-              "bron": "de waarde van zijn staat"
+              "source": {
+                "snippet": "de waarde van zijn staat"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -235,7 +249,9 @@
               "node": "AttribuutRef",
               "attribuut": "groot",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is groot"
+              "source": {
+                "snippet": "Een Jutter is groot"
+              }
             },
             "value": {
               "node": "Literal",
@@ -245,7 +261,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -254,7 +272,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "staat",
                 "objecttype": "Jutter",
-                "bron": "zijn staat"
+                "source": {
+                  "snippet": "zijn staat"
+                }
               },
               "rechts": {
                 "node": "StructLiteral",
@@ -296,7 +316,9 @@
                         "decimals": 0,
                         "sign": "NIET_NEGATIEF"
                       },
-                      "bron": "5"
+                      "source": {
+                        "snippet": "5"
+                      }
                     }
                   },
                   {
@@ -312,14 +334,20 @@
                         "decimals": 2,
                         "sign": "NIET_NEGATIEF"
                       },
-                      "bron": "100.00"
+                      "source": {
+                        "snippet": "100.00"
+                      }
                     }
                   }
                 ],
-                "bron": "de standaardstaat"
+                "source": {
+                  "snippet": "de standaardstaat"
+                }
               },
               "periode": null,
-              "bron": "zijn staat gelijk is aan de standaardstaat"
+              "source": {
+                "snippet": "zijn staat gelijk is aan de standaardstaat"
+              }
             },
             "initialisation": false
           }

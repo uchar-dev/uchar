@@ -196,7 +196,9 @@
               "node": "AttribuutRef",
               "attribuut": "toeslag",
               "objecttype": "Hoofdberger",
-              "bron": "De toeslag van een Hoofdberger"
+              "source": {
+                "snippet": "De toeslag van een Hoofdberger"
+              }
             },
             "value": {
               "node": "Literal",
@@ -219,7 +221,9 @@
                   }
                 }
               },
-              "bron": "25 \u20ac"
+              "source": {
+                "snippet": "25 \u20ac"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -227,7 +231,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "de Hoofdberger gemachtigd is"
+              "source": {
+                "snippet": "de Hoofdberger gemachtigd is"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

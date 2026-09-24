@@ -153,7 +153,9 @@
               "node": "AttribuutRef",
               "attribuut": "grensproduct",
               "objecttype": "Meting",
-              "bron": "Het grensproduct van een Meting"
+              "source": {
+                "snippet": "Het grensproduct van een Meting"
+              }
             },
             "value": {
               "node": "Binair",
@@ -162,13 +164,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "factorEen",
                 "objecttype": "Meting",
-                "bron": "de factorEen van de Meting"
+                "source": {
+                  "snippet": "de factorEen van de Meting"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "factorTwee",
                 "objecttype": "Meting",
-                "bron": "de factorTwee van de Meting"
+                "source": {
+                  "snippet": "de factorTwee van de Meting"
+                }
               },
               "type": {
                 "node": "Number",
@@ -176,7 +182,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de factorEen van de Meting maal de factorTwee van de Meting"
+              "source": {
+                "snippet": "de factorEen van de Meting maal de factorTwee van de Meting"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -197,7 +205,9 @@
               "node": "AttribuutRef",
               "attribuut": "totaal",
               "objecttype": "Meting",
-              "bron": "Het totaal van een Meting"
+              "source": {
+                "snippet": "Het totaal van een Meting"
+              }
             },
             "value": {
               "node": "Binair",
@@ -206,13 +216,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "lengteA",
                 "objecttype": "Meting",
-                "bron": "de lengteA van de Meting"
+                "source": {
+                  "snippet": "de lengteA van de Meting"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "lengteB",
                 "objecttype": "Meting",
-                "bron": "de lengteB van de Meting"
+                "source": {
+                  "snippet": "de lengteB van de Meting"
+                }
               },
               "type": {
                 "node": "Number",
@@ -230,7 +244,9 @@
                   }
                 }
               },
-              "bron": "de lengteA van de Meting plus de lengteB van de Meting"
+              "source": {
+                "snippet": "de lengteA van de Meting plus de lengteB van de Meting"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -251,7 +267,9 @@
               "node": "AttribuutRef",
               "attribuut": "indicatie",
               "objecttype": "Meting",
-              "bron": "De indicatie van een Meting"
+              "source": {
+                "snippet": "De indicatie van een Meting"
+              }
             },
             "value": {
               "node": "Literal",
@@ -264,7 +282,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "1"
+              "source": {
+                "snippet": "1"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -273,16 +293,22 @@
                 "node": "AttribuutRef",
                 "attribuut": "lengteA",
                 "objecttype": "Meting",
-                "bron": "de lengteA van de Meting"
+                "source": {
+                  "snippet": "de lengteA van de Meting"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "lengteB",
                 "objecttype": "Meting",
-                "bron": "de lengteB van de Meting"
+                "source": {
+                  "snippet": "de lengteB van de Meting"
+                }
               },
               "periode": null,
-              "bron": "de lengteA van de Meting is groter of gelijk aan de lengteB van de Meting"
+              "source": {
+                "snippet": "de lengteA van de Meting is groter of gelijk aan de lengteB van de Meting"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -204,8 +204,7 @@
             "target": {
               "node": "AttribuutRef",
               "attribuut": "waardering",
-              "objecttype": "Vangst",
-              "bron": null
+              "objecttype": "Vangst"
             },
             "value": {
               "node": "StructLiteral",
@@ -257,8 +256,7 @@
                   "value": {
                     "node": "AttribuutRef",
                     "attribuut": "toeslagbedrag",
-                    "objecttype": "Vangst",
-                    "bron": null
+                    "objecttype": "Vangst"
                   }
                 },
                 {
@@ -295,8 +293,7 @@
                         "value": {
                           "node": "AttribuutRef",
                           "attribuut": "stuks",
-                          "objecttype": "Vangst",
-                          "bron": null
+                          "objecttype": "Vangst"
                         }
                       },
                       {
@@ -304,16 +301,13 @@
                         "value": {
                           "node": "AttribuutRef",
                           "attribuut": "grondbedrag",
-                          "objecttype": "Vangst",
-                          "bron": null
+                          "objecttype": "Vangst"
                         }
                       }
-                    ],
-                    "bron": null
+                    ]
                   }
                 }
-              ],
-              "bron": null
+              ]
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -333,8 +327,7 @@
             "target": {
               "node": "AttribuutRef",
               "attribuut": "heffing",
-              "objecttype": "Vangst",
-              "bron": null
+              "objecttype": "Vangst"
             },
             "value": {
               "node": "Binair",
@@ -376,14 +369,11 @@
                   "base": {
                     "node": "AttribuutRef",
                     "attribuut": "waardering",
-                    "objecttype": "Vangst",
-                    "bron": null
+                    "objecttype": "Vangst"
                   },
-                  "field": "kern",
-                  "bron": null
+                  "field": "kern"
                 },
-                "field": "grondslag",
-                "bron": null
+                "field": "grondslag"
               },
               "rechts": {
                 "node": "FieldAccess",
@@ -396,19 +386,16 @@
                 "base": {
                   "node": "AttribuutRef",
                   "attribuut": "waardering",
-                  "objecttype": "Vangst",
-                  "bron": null
+                  "objecttype": "Vangst"
                 },
-                "field": "toeslag",
-                "bron": null
+                "field": "toeslag"
               },
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
                 "sign": "NIET_NEGATIEF"
-              },
-              "bron": null
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -428,8 +415,7 @@
             "target": {
               "node": "AttribuutRef",
               "attribuut": "grondslagkopie",
-              "objecttype": "Vangst",
-              "bron": null
+              "objecttype": "Vangst"
             },
             "value": {
               "node": "FieldAccess",
@@ -468,14 +454,11 @@
                 "base": {
                   "node": "AttribuutRef",
                   "attribuut": "waardering",
-                  "objecttype": "Vangst",
-                  "bron": null
+                  "objecttype": "Vangst"
                 },
-                "field": "kern",
-                "bron": null
+                "field": "kern"
               },
-              "field": "grondslag",
-              "bron": null
+              "field": "grondslag"
             },
             "initialisation": false,
             "presentation": "BEREKENING"

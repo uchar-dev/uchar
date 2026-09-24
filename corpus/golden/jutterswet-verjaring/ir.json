@@ -55,7 +55,9 @@
               "node": "AttribuutRef",
               "attribuut": "verjaard",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is verjaard"
+              "source": {
+                "snippet": "Een Jutter is verjaard"
+              }
             },
             "value": {
               "node": "Literal",
@@ -65,7 +67,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -74,7 +78,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "peildatum",
                 "objecttype": "Jutter",
-                "bron": "zijn peildatum"
+                "source": {
+                  "snippet": "zijn peildatum"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -85,10 +91,14 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "2000-01-01"
+                "source": {
+                  "snippet": "2000-01-01"
+                }
               },
               "periode": null,
-              "bron": "zijn peildatum eerder is dan 2000-01-01"
+              "source": {
+                "snippet": "zijn peildatum eerder is dan 2000-01-01"
+              }
             },
             "initialisation": false
           }
@@ -108,7 +118,9 @@
               "node": "AttribuutRef",
               "attribuut": "actueel",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is actueel"
+              "source": {
+                "snippet": "Een Jutter is actueel"
+              }
             },
             "value": {
               "node": "Literal",
@@ -118,7 +130,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -127,7 +141,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "peildatum",
                 "objecttype": "Jutter",
-                "bron": "zijn peildatum"
+                "source": {
+                  "snippet": "zijn peildatum"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -138,10 +154,14 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "2000-01-01"
+                "source": {
+                  "snippet": "2000-01-01"
+                }
               },
               "periode": null,
-              "bron": "zijn peildatum niet eerder is dan 2000-01-01"
+              "source": {
+                "snippet": "zijn peildatum niet eerder is dan 2000-01-01"
+              }
             },
             "initialisation": false
           }

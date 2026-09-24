@@ -106,7 +106,9 @@
               "node": "AttribuutRef",
               "attribuut": "totaal",
               "objecttype": "Jutter",
-              "bron": "Het totaal van een Jutter"
+              "source": {
+                "snippet": "Het totaal van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -120,7 +122,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vangsten",
                 "objecttype": "Jutter",
-                "bron": "zijn vangsten"
+                "source": {
+                  "snippet": "zijn vangsten"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -168,7 +172,9 @@
                   "scrutinee": {
                     "node": "BinderRef",
                     "name": "x",
-                    "bron": "de vangst"
+                    "source": {
+                      "snippet": "de vangst"
+                    }
                   },
                   "arms": [
                     {
@@ -191,12 +197,16 @@
                             "links": {
                               "node": "BinderRef",
                               "name": "acc",
-                              "bron": "de opgetelde vangst"
+                              "source": {
+                                "snippet": "de opgetelde vangst"
+                              }
                             },
                             "rechts": {
                               "node": "BinderRef",
                               "name": "b",
-                              "bron": "de vangstwaarde"
+                              "source": {
+                                "snippet": "de vangstwaarde"
+                              }
                             },
                             "type": {
                               "node": "Number",
@@ -204,15 +214,21 @@
                               "decimals": 2,
                               "sign": "ONBEPAALD"
                             },
-                            "bron": "de opgetelde vangst plus de vangstwaarde"
+                            "source": {
+                              "snippet": "de opgetelde vangst plus de vangstwaarde"
+                            }
                           },
                           "rechts": {
                             "node": "ParameterRef",
                             "parameter": "plafond",
-                            "bron": "het plafond"
+                            "source": {
+                              "snippet": "het plafond"
+                            }
                           },
                           "periode": null,
-                          "bron": "de opgetelde vangst plus de vangstwaarde kleiner dan of gelijk aan het plafond"
+                          "source": {
+                            "snippet": "de opgetelde vangst plus de vangstwaarde kleiner dan of gelijk aan het plafond"
+                          }
                         },
                         "then": {
                           "node": "Binair",
@@ -220,12 +236,16 @@
                           "links": {
                             "node": "BinderRef",
                             "name": "acc",
-                            "bron": "de opgetelde vangst"
+                            "source": {
+                              "snippet": "de opgetelde vangst"
+                            }
                           },
                           "rechts": {
                             "node": "BinderRef",
                             "name": "b",
-                            "bron": "de vangstwaarde"
+                            "source": {
+                              "snippet": "de vangstwaarde"
+                            }
                           },
                           "type": {
                             "node": "Number",
@@ -233,14 +253,20 @@
                             "decimals": 2,
                             "sign": "ONBEPAALD"
                           },
-                          "bron": "de opgetelde vangst plus de vangstwaarde"
+                          "source": {
+                            "snippet": "de opgetelde vangst plus de vangstwaarde"
+                          }
                         },
                         "else": {
                           "node": "BinderRef",
                           "name": "acc",
-                          "bron": "de opgetelde vangst"
+                          "source": {
+                            "snippet": "de opgetelde vangst"
+                          }
                         },
-                        "bron": "de opgetelde vangst met de vangstwaarde erbij zolang het plafond niet wordt overschreden"
+                        "source": {
+                          "snippet": "de opgetelde vangst met de vangstwaarde erbij zolang het plafond niet wordt overschreden"
+                        }
                       }
                     },
                     {
@@ -249,13 +275,19 @@
                       "body": {
                         "node": "BinderRef",
                         "name": "acc",
-                        "bron": "de opgetelde vangst"
+                        "source": {
+                          "snippet": "de opgetelde vangst"
+                        }
                       }
                     }
                   ],
-                  "bron": "de opgetelde vangst afhankelijk van de vangst"
+                  "source": {
+                    "snippet": "de opgetelde vangst afhankelijk van de vangst"
+                  }
                 },
-                "bron": "de vangsten opgeteld tot het plafond"
+                "source": {
+                  "snippet": "de vangsten opgeteld tot het plafond"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -268,9 +300,13 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               },
-              "bron": "de vangsten gevouwen tot het plafond"
+              "source": {
+                "snippet": "de vangsten gevouwen tot het plafond"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

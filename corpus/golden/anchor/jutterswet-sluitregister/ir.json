@@ -67,7 +67,9 @@
               "node": "AttribuutRef",
               "attribuut": "sluitend",
               "objecttype": "Register",
-              "bron": "Een Register is sluitend"
+              "source": {
+                "snippet": "Een Register is sluitend"
+              }
             },
             "value": {
               "node": "Literal",
@@ -77,7 +79,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -86,16 +90,22 @@
                 "node": "AttribuutRef",
                 "attribuut": "telling",
                 "objecttype": "Register",
-                "bron": "de telling van het Register"
+                "source": {
+                  "snippet": "de telling van het Register"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "opgave",
                 "objecttype": "Register",
-                "bron": "de opgave van het Register"
+                "source": {
+                  "snippet": "de opgave van het Register"
+                }
               },
               "periode": null,
-              "bron": "zijn telling gelijk is aan zijn opgave"
+              "source": {
+                "snippet": "zijn telling gelijk is aan zijn opgave"
+              }
             },
             "initialisation": false
           }
@@ -115,7 +125,9 @@
               "node": "AttribuutRef",
               "attribuut": "afwijkend",
               "objecttype": "Register",
-              "bron": "Een Register is afwijkend"
+              "source": {
+                "snippet": "Een Register is afwijkend"
+              }
             },
             "value": {
               "node": "Literal",
@@ -125,7 +137,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -134,16 +148,22 @@
                 "node": "AttribuutRef",
                 "attribuut": "telling",
                 "objecttype": "Register",
-                "bron": "de telling van het Register"
+                "source": {
+                  "snippet": "de telling van het Register"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "opgave",
                 "objecttype": "Register",
-                "bron": "de opgave van het Register"
+                "source": {
+                  "snippet": "de opgave van het Register"
+                }
               },
               "periode": null,
-              "bron": "zijn telling ongelijk is aan zijn opgave"
+              "source": {
+                "snippet": "zijn telling ongelijk is aan zijn opgave"
+              }
             },
             "initialisation": false
           }

@@ -166,7 +166,9 @@
               "node": "AttribuutRef",
               "attribuut": "oppervlak",
               "objecttype": "Zeil",
-              "bron": "Het oppervlak van een Zeil"
+              "source": {
+                "snippet": "Het oppervlak van een Zeil"
+              }
             },
             "value": {
               "node": "Binair",
@@ -175,13 +177,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "hoogte",
                 "objecttype": "Zeil",
-                "bron": "de hoogte van het Zeil"
+                "source": {
+                  "snippet": "de hoogte van het Zeil"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "breedte",
                 "objecttype": "Zeil",
-                "bron": "de breedte van het Zeil"
+                "source": {
+                  "snippet": "de breedte van het Zeil"
+                }
               },
               "type": {
                 "node": "Number",
@@ -189,7 +195,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de hoogte van het Zeil maal de breedte van het Zeil"
+              "source": {
+                "snippet": "de hoogte van het Zeil maal de breedte van het Zeil"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -210,7 +218,9 @@
               "node": "AttribuutRef",
               "attribuut": "zoomlengte",
               "objecttype": "Zeil",
-              "bron": "De zoomlengte van een Zeil"
+              "source": {
+                "snippet": "De zoomlengte van een Zeil"
+              }
             },
             "value": {
               "node": "Binair",
@@ -219,13 +229,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "naadtoeslag",
                 "objecttype": "Zeil",
-                "bron": "de naadtoeslag van het Zeil"
+                "source": {
+                  "snippet": "de naadtoeslag van het Zeil"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "basiszoom",
                 "objecttype": "Zeil",
-                "bron": "de basiszoom van het Zeil"
+                "source": {
+                  "snippet": "de basiszoom van het Zeil"
+                }
               },
               "type": {
                 "node": "Number",
@@ -233,7 +247,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de naadtoeslag van het Zeil plus de basiszoom van het Zeil"
+              "source": {
+                "snippet": "de naadtoeslag van het Zeil plus de basiszoom van het Zeil"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -254,7 +270,9 @@
               "node": "AttribuutRef",
               "attribuut": "stukprijs",
               "objecttype": "Zeil",
-              "bron": "De stukprijs van een Zeil"
+              "source": {
+                "snippet": "De stukprijs van een Zeil"
+              }
             },
             "value": {
               "node": "Binair",
@@ -263,13 +281,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "materiaalkosten",
                 "objecttype": "Zeil",
-                "bron": "de materiaalkosten van het Zeil"
+                "source": {
+                  "snippet": "de materiaalkosten van het Zeil"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "panelen",
                 "objecttype": "Zeil",
-                "bron": "de panelen van het Zeil"
+                "source": {
+                  "snippet": "de panelen van het Zeil"
+                }
               },
               "type": {
                 "node": "Number",
@@ -277,7 +299,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de materiaalkosten van het Zeil gedeeld door de panelen van het Zeil"
+              "source": {
+                "snippet": "de materiaalkosten van het Zeil gedeeld door de panelen van het Zeil"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -298,7 +322,9 @@
               "node": "AttribuutRef",
               "attribuut": "restlengte",
               "objecttype": "Zeil",
-              "bron": "De restlengte van een Zeil"
+              "source": {
+                "snippet": "De restlengte van een Zeil"
+              }
             },
             "value": {
               "node": "Binair",
@@ -307,7 +333,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "rollengte",
                 "objecttype": "Zeil",
-                "bron": "de rollengte van het Zeil"
+                "source": {
+                  "snippet": "de rollengte van het Zeil"
+                }
               },
               "rechts": {
                 "node": "Binair",
@@ -316,13 +344,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "baanlengte",
                   "objecttype": "Zeil",
-                  "bron": "de baanlengte van het Zeil"
+                  "source": {
+                    "snippet": "de baanlengte van het Zeil"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "aantalBanen",
                   "objecttype": "Zeil",
-                  "bron": "het aantalBanen van het Zeil"
+                  "source": {
+                    "snippet": "het aantalBanen van het Zeil"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -330,7 +362,9 @@
                   "decimals": 1,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de baanlengte van het Zeil maal het aantalBanen van het Zeil"
+                "source": {
+                  "snippet": "de baanlengte van het Zeil maal het aantalBanen van het Zeil"
+                }
               },
               "type": {
                 "node": "Number",
@@ -338,7 +372,9 @@
                 "decimals": 1,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de rollengte van het Zeil verminderd met de baanlengte van het Zeil maal het aantalBanen van het Zeil"
+              "source": {
+                "snippet": "de rollengte van het Zeil verminderd met de baanlengte van het Zeil maal het aantalBanen van het Zeil"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

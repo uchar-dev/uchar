@@ -76,7 +76,9 @@
               "node": "AttribuutRef",
               "attribuut": "drempeloverschot",
               "objecttype": "Jutter",
-              "bron": "Het drempeloverschot van een Jutter"
+              "source": {
+                "snippet": "Het drempeloverschot van een Jutter"
+              }
             },
             "value": {
               "node": "Binair",
@@ -85,7 +87,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vondstteller",
                 "objecttype": "Jutter",
-                "bron": "de vondstteller van de Jutter"
+                "source": {
+                  "snippet": "de vondstteller van de Jutter"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -98,7 +102,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "12"
+                "source": {
+                  "snippet": "12"
+                }
               },
               "type": {
                 "node": "Number",
@@ -106,7 +112,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de vondstteller van de Jutter min 12"
+              "source": {
+                "snippet": "de vondstteller van de Jutter min 12"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -130,7 +138,9 @@
               "node": "AttribuutRef",
               "attribuut": "hardheidsoverschot",
               "objecttype": "Jutter",
-              "bron": "Het hardheidsoverschot van een Jutter"
+              "source": {
+                "snippet": "Het hardheidsoverschot van een Jutter"
+              }
             },
             "value": {
               "node": "Binair",
@@ -139,7 +149,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vondstteller",
                 "objecttype": "Jutter",
-                "bron": "de vondstteller van de Jutter"
+                "source": {
+                  "snippet": "de vondstteller van de Jutter"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -152,7 +164,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "6"
+                "source": {
+                  "snippet": "6"
+                }
               },
               "type": {
                 "node": "Number",
@@ -160,7 +174,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de vondstteller van de Jutter min 6"
+              "source": {
+                "snippet": "de vondstteller van de Jutter min 6"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -185,7 +201,9 @@
               "node": "AttribuutRef",
               "attribuut": "jaarsom",
               "objecttype": "Jutter",
-              "bron": "De jaarsom van een Jutter"
+              "source": {
+                "snippet": "De jaarsom van een Jutter"
+              }
             },
             "value": {
               "node": "Binair",
@@ -194,13 +212,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "drempeloverschot",
                 "objecttype": "Jutter",
-                "bron": "het drempeloverschot van de Jutter"
+                "source": {
+                  "snippet": "het drempeloverschot van de Jutter"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "hardheidsoverschot",
                 "objecttype": "Jutter",
-                "bron": "het hardheidsoverschot van de Jutter"
+                "source": {
+                  "snippet": "het hardheidsoverschot van de Jutter"
+                }
               },
               "type": {
                 "node": "Number",
@@ -208,7 +230,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "het drempeloverschot van de Jutter plus het hardheidsoverschot van de Jutter"
+              "source": {
+                "snippet": "het drempeloverschot van de Jutter plus het hardheidsoverschot van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

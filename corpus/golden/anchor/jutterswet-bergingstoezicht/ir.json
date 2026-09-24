@@ -128,7 +128,9 @@
               "node": "AttribuutRef",
               "attribuut": "toezichtopbrengst",
               "objecttype": "Berger",
-              "bron": "De toezichtopbrengst van een Berger"
+              "source": {
+                "snippet": "De toezichtopbrengst van een Berger"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -138,7 +140,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "opbrengst",
                   "objecttype": "Berging",
-                  "bron": "de opbrengst van alle bewaakte bergingen van de Berger"
+                  "source": {
+                    "snippet": "de opbrengst van alle bewaakte bergingen van de Berger"
+                  }
                 }
               ],
               "elementType": "Berging",
@@ -153,7 +157,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -166,7 +172,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van de opbrengst van alle bewaakte bergingen van de Berger of 0 als die er niet zijn"
+              "source": {
+                "snippet": "de som van de opbrengst van alle bewaakte bergingen van de Berger of 0 als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

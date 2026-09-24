@@ -81,7 +81,9 @@
               "node": "AttribuutRef",
               "attribuut": "bestemming",
               "objecttype": "Vondst",
-              "bron": "De bestemming van een Vondst"
+              "source": {
+                "snippet": "De bestemming van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -97,7 +99,9 @@
                   "wrakgoed"
                 ]
               },
-              "bron": "'wrakgoed'"
+              "source": {
+                "snippet": "'wrakgoed'"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -106,7 +110,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "klasse",
                 "objecttype": "Vondst",
-                "bron": "zijn klasse"
+                "source": {
+                  "snippet": "zijn klasse"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -122,10 +128,14 @@
                     "wrakgoed"
                   ]
                 },
-                "bron": "'drijfgoed'"
+                "source": {
+                  "snippet": "'drijfgoed'"
+                }
               },
               "periode": null,
-              "bron": "zijn klasse gelijk is aan 'drijfgoed'"
+              "source": {
+                "snippet": "zijn klasse gelijk is aan 'drijfgoed'"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -146,13 +156,17 @@
               "node": "AttribuutRef",
               "attribuut": "bestemming",
               "objecttype": "Vondst",
-              "bron": "De bestemming van een Vondst"
+              "source": {
+                "snippet": "De bestemming van een Vondst"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "klasse",
               "objecttype": "Vondst",
-              "bron": "zijn klasse"
+              "source": {
+                "snippet": "zijn klasse"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -161,7 +175,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "klasse",
                 "objecttype": "Vondst",
-                "bron": "zijn klasse"
+                "source": {
+                  "snippet": "zijn klasse"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -177,10 +193,14 @@
                     "wrakgoed"
                   ]
                 },
-                "bron": "'drijfgoed'"
+                "source": {
+                  "snippet": "'drijfgoed'"
+                }
               },
               "periode": null,
-              "bron": "zijn klasse ongelijk is aan 'drijfgoed'"
+              "source": {
+                "snippet": "zijn klasse ongelijk is aan 'drijfgoed'"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -201,7 +221,9 @@
               "node": "AttribuutRef",
               "attribuut": "bergingsplichtig",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is bergingsplichtig"
+              "source": {
+                "snippet": "Een Vondst is bergingsplichtig"
+              }
             },
             "value": {
               "node": "Literal",
@@ -211,7 +233,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -220,7 +244,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "bestemming",
                 "objecttype": "Vondst",
-                "bron": "zijn bestemming"
+                "source": {
+                  "snippet": "zijn bestemming"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -236,10 +262,14 @@
                     "wrakgoed"
                   ]
                 },
-                "bron": "'wrakgoed'"
+                "source": {
+                  "snippet": "'wrakgoed'"
+                }
               },
               "periode": null,
-              "bron": "zijn bestemming gelijk is aan 'wrakgoed'"
+              "source": {
+                "snippet": "zijn bestemming gelijk is aan 'wrakgoed'"
+              }
             },
             "initialisation": false
           }

@@ -120,7 +120,9 @@
               "node": "AttribuutRef",
               "attribuut": "ongemerkt aantal",
               "objecttype": "Jutter",
-              "bron": "Het ongemerkt aantal van een Jutter"
+              "source": {
+                "snippet": "Het ongemerkt aantal van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -148,12 +150,18 @@
                             "negatie": false,
                             "eigenaar": null,
                             "periode": null,
-                            "bron": "gemerkt zijn"
+                            "source": {
+                              "snippet": "gemerkt zijn"
+                            }
                           }
                         ],
-                        "bron": "aan geen van de volgende voorwaarden voldoen: gemerkt zijn"
+                        "source": {
+                          "snippet": "aan geen van de volgende voorwaarden voldoen: gemerkt zijn"
+                        }
                       },
-                      "bron": "aangemelde vondsten van de Jutter die niet gemerkt zijn"
+                      "source": {
+                        "snippet": "aangemelde vondsten van de Jutter die niet gemerkt zijn"
+                      }
                     },
                     {
                       "node": "InstanceSetBranch",
@@ -174,15 +182,23 @@
                             "negatie": false,
                             "eigenaar": null,
                             "periode": null,
-                            "bron": "gemerkt zijn"
+                            "source": {
+                              "snippet": "gemerkt zijn"
+                            }
                           }
                         ],
-                        "bron": "aan geen van de volgende voorwaarden voldoen: gemerkt zijn"
+                        "source": {
+                          "snippet": "aan geen van de volgende voorwaarden voldoen: gemerkt zijn"
+                        }
                       },
-                      "bron": "geborgen vondsten van de Jutter die niet gemerkt zijn"
+                      "source": {
+                        "snippet": "geborgen vondsten van de Jutter die niet gemerkt zijn"
+                      }
                     }
                   ],
-                  "bron": "aangemelde vondsten van de Jutter die niet gemerkt zijn en geborgen vondsten van de Jutter die niet gemerkt zijn"
+                  "source": {
+                    "snippet": "aangemelde vondsten van de Jutter die niet gemerkt zijn en geborgen vondsten van de Jutter die niet gemerkt zijn"
+                  }
                 }
               ],
               "type": {
@@ -191,7 +207,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal ongemerkte vondsten van de Jutter"
+              "source": {
+                "snippet": "het aantal ongemerkte vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -212,7 +230,9 @@
               "node": "AttribuutRef",
               "attribuut": "alarmerend",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is alarmerend"
+              "source": {
+                "snippet": "Een Jutter is alarmerend"
+              }
             },
             "value": {
               "node": "Literal",
@@ -222,7 +242,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -253,12 +275,18 @@
                               "negatie": false,
                               "eigenaar": null,
                               "periode": null,
-                              "bron": "gemerkt zijn"
+                              "source": {
+                                "snippet": "gemerkt zijn"
+                              }
                             }
                           ],
-                          "bron": "aan geen van de volgende voorwaarden voldoen: gemerkt zijn"
+                          "source": {
+                            "snippet": "aan geen van de volgende voorwaarden voldoen: gemerkt zijn"
+                          }
                         },
-                        "bron": "aangemelde vondsten van de Jutter die niet gemerkt zijn"
+                        "source": {
+                          "snippet": "aangemelde vondsten van de Jutter die niet gemerkt zijn"
+                        }
                       },
                       {
                         "node": "InstanceSetBranch",
@@ -279,15 +307,23 @@
                               "negatie": false,
                               "eigenaar": null,
                               "periode": null,
-                              "bron": "gemerkt zijn"
+                              "source": {
+                                "snippet": "gemerkt zijn"
+                              }
                             }
                           ],
-                          "bron": "aan geen van de volgende voorwaarden voldoen: gemerkt zijn"
+                          "source": {
+                            "snippet": "aan geen van de volgende voorwaarden voldoen: gemerkt zijn"
+                          }
                         },
-                        "bron": "geborgen vondsten van de Jutter die niet gemerkt zijn"
+                        "source": {
+                          "snippet": "geborgen vondsten van de Jutter die niet gemerkt zijn"
+                        }
                       }
                     ],
-                    "bron": "aangemelde vondsten van de Jutter die niet gemerkt zijn en geborgen vondsten van de Jutter die niet gemerkt zijn"
+                    "source": {
+                      "snippet": "aangemelde vondsten van de Jutter die niet gemerkt zijn en geborgen vondsten van de Jutter die niet gemerkt zijn"
+                    }
                   }
                 ],
                 "type": {
@@ -296,7 +332,9 @@
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "het aantal ongemerkte vondsten van de Jutter"
+                "source": {
+                  "snippet": "het aantal ongemerkte vondsten van de Jutter"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -309,10 +347,14 @@
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "periode": null,
-              "bron": "het aantal ongemerkte vondsten van de Jutter groter is dan 0"
+              "source": {
+                "snippet": "het aantal ongemerkte vondsten van de Jutter groter is dan 0"
+              }
             },
             "initialisation": false
           }
@@ -332,7 +374,9 @@
               "node": "AttribuutRef",
               "attribuut": "gemerkt",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is gemerkt"
+              "source": {
+                "snippet": "Een Vondst is gemerkt"
+              }
             },
             "value": {
               "node": "Literal",
@@ -342,7 +386,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -351,7 +397,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "gewicht",
                 "objecttype": "Vondst",
-                "bron": "het gewicht van de Vondst"
+                "source": {
+                  "snippet": "het gewicht van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -364,10 +412,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "5"
+                "source": {
+                  "snippet": "5"
+                }
               },
               "periode": null,
-              "bron": "het gewicht van de Vondst groter is dan 5"
+              "source": {
+                "snippet": "het gewicht van de Vondst groter is dan 5"
+              }
             },
             "initialisation": false
           }

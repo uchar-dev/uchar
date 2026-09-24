@@ -118,7 +118,9 @@
               "node": "AttribuutRef",
               "attribuut": "laagste muntgewicht",
               "objecttype": "Jutter",
-              "bron": "Het laagste muntgewicht van een Jutter"
+              "source": {
+                "snippet": "Het laagste muntgewicht van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -128,7 +130,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Munt",
-                  "bron": "het gewicht van alle munten van de Jutter"
+                  "source": {
+                    "snippet": "het gewicht van alle munten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Munt",
@@ -143,7 +147,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de minimale waarde van het gewicht van alle munten van de Jutter"
+              "source": {
+                "snippet": "de minimale waarde van het gewicht van alle munten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -164,7 +170,9 @@
               "node": "AttribuutRef",
               "attribuut": "hoogste muntgewicht",
               "objecttype": "Jutter",
-              "bron": "Het hoogste muntgewicht van een Jutter"
+              "source": {
+                "snippet": "Het hoogste muntgewicht van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -174,7 +182,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Munt",
-                  "bron": "het gewicht van alle munten van de Jutter"
+                  "source": {
+                    "snippet": "het gewicht van alle munten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Munt",
@@ -189,7 +199,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de maximale waarde van het gewicht van alle munten van de Jutter"
+              "source": {
+                "snippet": "de maximale waarde van het gewicht van alle munten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -80,7 +80,9 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Jutter",
-              "bron": "De heffing van een Jutter"
+              "source": {
+                "snippet": "De heffing van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -93,7 +95,9 @@
               "list": {
                 "node": "ParameterRef",
                 "parameter": "kindertallen",
-                "bron": "de kindertallen"
+                "source": {
+                  "snippet": "de kindertallen"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -123,7 +127,9 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "de opgetelde heffing"
+                    "source": {
+                      "snippet": "de opgetelde heffing"
+                    }
                   },
                   "rechts": {
                     "node": "Afgerond",
@@ -133,7 +139,9 @@
                       "links": {
                         "node": "ParameterRef",
                         "parameter": "grondslag",
-                        "bron": "de grondslag"
+                        "source": {
+                          "snippet": "de grondslag"
+                        }
                       },
                       "rechts": {
                         "node": "Binair",
@@ -149,7 +157,9 @@
                             "decimals": 4,
                             "sign": "ONBEPAALD"
                           },
-                          "bron": "1,0000"
+                          "source": {
+                            "snippet": "1,0000"
+                          }
                         },
                         "rechts": {
                           "node": "Binair",
@@ -157,7 +167,9 @@
                           "links": {
                             "node": "BinderRef",
                             "name": "x",
-                            "bron": "het kindertal"
+                            "source": {
+                              "snippet": "het kindertal"
+                            }
                           },
                           "rechts": {
                             "node": "Literal",
@@ -170,7 +182,9 @@
                               "decimals": 4,
                               "sign": "ONBEPAALD"
                             },
-                            "bron": "2,0000"
+                            "source": {
+                              "snippet": "2,0000"
+                            }
                           },
                           "type": {
                             "node": "Number",
@@ -178,7 +192,9 @@
                             "decimals": 4,
                             "sign": "ONBEPAALD"
                           },
-                          "bron": "het kindertal gedeeld door 2,0000"
+                          "source": {
+                            "snippet": "het kindertal gedeeld door 2,0000"
+                          }
                         },
                         "type": {
                           "node": "Number",
@@ -186,7 +202,9 @@
                           "decimals": 4,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "1,0000 plus het kindertal gedeeld door 2,0000"
+                        "source": {
+                          "snippet": "1,0000 plus het kindertal gedeeld door 2,0000"
+                        }
                       },
                       "type": {
                         "node": "Number",
@@ -194,7 +212,9 @@
                         "decimals": 6,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "de grondslag maal de wegingsfactor"
+                      "source": {
+                        "snippet": "de grondslag maal de wegingsfactor"
+                      }
                     },
                     "modus": "REKENKUNDIG",
                     "decimalen": 2,
@@ -204,7 +224,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de grondslag maal de wegingsfactor rekenkundig afgerond op 2 decimalen"
+                    "source": {
+                      "snippet": "de grondslag maal de wegingsfactor rekenkundig afgerond op 2 decimalen"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -212,9 +234,13 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "de opgetelde heffing plus het kinddeel"
+                  "source": {
+                    "snippet": "de opgetelde heffing plus het kinddeel"
+                  }
                 },
-                "bron": "de kinddelen opgeteld"
+                "source": {
+                  "snippet": "de kinddelen opgeteld"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -227,9 +253,13 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               },
-              "bron": "de kindertallen gevouwen tot de heffing"
+              "source": {
+                "snippet": "de kindertallen gevouwen tot de heffing"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -250,7 +280,9 @@
               "node": "AttribuutRef",
               "attribuut": "puntentotaal",
               "objecttype": "Jutter",
-              "bron": "Het puntentotaal van een Jutter"
+              "source": {
+                "snippet": "Het puntentotaal van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -263,7 +295,9 @@
               "list": {
                 "node": "ParameterRef",
                 "parameter": "kindertallen",
-                "bron": "de kindertallen"
+                "source": {
+                  "snippet": "de kindertallen"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -293,7 +327,9 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "het opgetelde punt"
+                    "source": {
+                      "snippet": "het opgetelde punt"
+                    }
                   },
                   "rechts": {
                     "node": "Binair",
@@ -301,7 +337,9 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "x",
-                      "bron": "het kindertal"
+                      "source": {
+                        "snippet": "het kindertal"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -314,7 +352,9 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "2"
+                      "source": {
+                        "snippet": "2"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -322,7 +362,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "het kindertal maal 2"
+                    "source": {
+                      "snippet": "het kindertal maal 2"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -330,9 +372,13 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "het opgetelde punt plus het kindpunt"
+                  "source": {
+                    "snippet": "het opgetelde punt plus het kindpunt"
+                  }
                 },
-                "bron": "de kindpunten opgeteld"
+                "source": {
+                  "snippet": "de kindpunten opgeteld"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -345,9 +391,13 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
-              "bron": "de kindertallen gevouwen tot het puntentotaal"
+              "source": {
+                "snippet": "de kindertallen gevouwen tot het puntentotaal"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

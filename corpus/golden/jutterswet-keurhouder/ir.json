@@ -70,7 +70,9 @@
               "node": "AttribuutRef",
               "attribuut": "afslag",
               "objecttype": "Vondst",
-              "bron": "De afslag van een Vondst"
+              "source": {
+                "snippet": "De afslag van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -80,7 +82,9 @@
               "type": {
                 "node": "Tekst"
               },
-              "bron": "'zeeveiling'"
+              "source": {
+                "snippet": "'zeeveiling'"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -88,7 +92,9 @@
               "negatie": false,
               "eigenaar": "Vondst",
               "periode": null,
-              "bron": "de Vondst gekeurd is"
+              "source": {
+                "snippet": "de Vondst gekeurd is"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -109,7 +115,9 @@
               "node": "AttribuutRef",
               "attribuut": "keurstatus",
               "objecttype": "Vondst",
-              "bron": "De keurstatus van een Vondst"
+              "source": {
+                "snippet": "De keurstatus van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -119,7 +127,9 @@
               "type": {
                 "node": "Tekst"
               },
-              "bron": "'onbekeurd'"
+              "source": {
+                "snippet": "'onbekeurd'"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -127,7 +137,9 @@
               "negatie": true,
               "eigenaar": "Vondst",
               "periode": null,
-              "bron": "de Vondst niet gekeurd is"
+              "source": {
+                "snippet": "de Vondst niet gekeurd is"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

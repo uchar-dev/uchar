@@ -125,7 +125,9 @@
               "node": "AttribuutRef",
               "attribuut": "bedrag",
               "objecttype": "Rekenkamer",
-              "bron": "de bedrag"
+              "source": {
+                "snippet": "de bedrag"
+              }
             },
             "value": {
               "node": "Binair",
@@ -134,21 +136,24 @@
                 "node": "AttribuutRef",
                 "attribuut": "grondslag",
                 "objecttype": "Rekenkamer",
-                "bron": "de grondslag"
+                "source": {
+                  "snippet": "de grondslag"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "aftrek",
                 "objecttype": "Rekenkamer",
-                "bron": "de aftrek"
+                "source": {
+                  "snippet": "de aftrek"
+                }
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
                 "sign": "ONBEPAALD"
-              },
-              "bron": null
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -169,13 +174,17 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Bergingsaanslag",
-              "bron": "de heffing"
+              "source": {
+                "snippet": "de heffing"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "bedrag",
               "objecttype": "Rekenkamer",
-              "bron": "de bedrag van de rekenkamer",
+              "source": {
+                "snippet": "de bedrag van de rekenkamer"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -207,7 +216,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bergingswaarde",
                   "objecttype": "Bergingsaanslag",
-                  "bron": "de bergingswaarde"
+                  "source": {
+                    "snippet": "de bergingswaarde"
+                  }
                 },
                 "kenmerk": false
               },
@@ -218,7 +229,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vindersaftrek",
                   "objecttype": "Bergingsaanslag",
-                  "bron": "de vindersaftrek"
+                  "source": {
+                    "snippet": "de vindersaftrek"
+                  }
                 },
                 "kenmerk": false
               }

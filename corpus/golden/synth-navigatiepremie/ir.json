@@ -117,7 +117,9 @@
               "node": "AttribuutRef",
               "attribuut": "premie",
               "objecttype": "Schuit",
-              "bron": "De premie van een Schuit"
+              "source": {
+                "snippet": "De premie van een Schuit"
+              }
             },
             "value": {
               "node": "Binair",
@@ -133,13 +135,17 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "20"
+                "source": {
+                  "snippet": "20"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "tarief",
                 "objecttype": "Werf",
-                "bron": "het tarief van de werf van de Schuit",
+                "source": {
+                  "snippet": "het tarief van de werf van de Schuit"
+                },
                 "navigatieBindingen": [
                   {
                     "node": "RolBinding",
@@ -154,7 +160,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "20% van het tarief van de werf van de Schuit"
+              "source": {
+                "snippet": "20% van het tarief van de werf van de Schuit"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -175,7 +183,9 @@
               "node": "AttribuutRef",
               "attribuut": "product",
               "objecttype": "Schuit",
-              "bron": "Het product van een Schuit"
+              "source": {
+                "snippet": "Het product van een Schuit"
+              }
             },
             "value": {
               "node": "Binair",
@@ -184,13 +194,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "lengte",
                 "objecttype": "Schuit",
-                "bron": "de lengte van de Schuit"
+                "source": {
+                  "snippet": "de lengte van de Schuit"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "tarief",
                 "objecttype": "Werf",
-                "bron": "het tarief van de werf van de Schuit",
+                "source": {
+                  "snippet": "het tarief van de werf van de Schuit"
+                },
                 "navigatieBindingen": [
                   {
                     "node": "RolBinding",
@@ -205,7 +219,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de lengte van de Schuit maal het tarief van de werf van de Schuit"
+              "source": {
+                "snippet": "de lengte van de Schuit maal het tarief van de werf van de Schuit"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -226,7 +242,9 @@
               "node": "AttribuutRef",
               "attribuut": "toeslag",
               "objecttype": "Schuit",
-              "bron": "De toeslag van een Schuit"
+              "source": {
+                "snippet": "De toeslag van een Schuit"
+              }
             },
             "value": {
               "node": "Binair",
@@ -242,13 +260,17 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "10"
+                "source": {
+                  "snippet": "10"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "tarief",
                 "objecttype": "Werf",
-                "bron": "het tarief van de werf van de Schuit",
+                "source": {
+                  "snippet": "het tarief van de werf van de Schuit"
+                },
                 "navigatieBindingen": [
                   {
                     "node": "RolBinding",
@@ -263,7 +285,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "10% van het tarief van de werf van de Schuit"
+              "source": {
+                "snippet": "10% van het tarief van de werf van de Schuit"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -272,7 +296,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "lengte",
                 "objecttype": "Schuit",
-                "bron": "de lengte van de Schuit"
+                "source": {
+                  "snippet": "de lengte van de Schuit"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -285,10 +311,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "5"
+                "source": {
+                  "snippet": "5"
+                }
               },
               "periode": null,
-              "bron": "de lengte van de Schuit groter is dan 5"
+              "source": {
+                "snippet": "de lengte van de Schuit groter is dan 5"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

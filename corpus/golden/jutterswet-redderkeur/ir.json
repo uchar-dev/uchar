@@ -124,7 +124,9 @@
               "node": "AttribuutRef",
               "attribuut": "paraat",
               "objecttype": "Reddingspost",
-              "bron": "Een Reddingspost is paraat"
+              "source": {
+                "snippet": "Een Reddingspost is paraat"
+              }
             },
             "value": {
               "node": "Literal",
@@ -134,7 +136,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -153,7 +157,9 @@
                       "node": "AttribuutRef",
                       "attribuut": "dienstjaren",
                       "objecttype": "Redder",
-                      "bron": "zijn dienstjaren"
+                      "source": {
+                        "snippet": "zijn dienstjaren"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -166,10 +172,14 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "5"
+                      "source": {
+                        "snippet": "5"
+                      }
                     },
                     "periode": null,
-                    "bron": "zijn dienstjaren groter zijn dan 5"
+                    "source": {
+                      "snippet": "zijn dienstjaren groter zijn dan 5"
+                    }
                   },
                   {
                     "node": "Kenmerk",
@@ -177,12 +187,18 @@
                     "negatie": false,
                     "eigenaar": null,
                     "periode": null,
-                    "bron": "hij gediplomeerd is"
+                    "source": {
+                      "snippet": "hij gediplomeerd is"
+                    }
                   }
                 ],
-                "bron": "hij aan alle volgende voorwaarden voldoet: - zijn dienstjaren groter zijn dan 5 - hij gediplomeerd is."
+                "source": {
+                  "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn dienstjaren groter zijn dan 5 - hij gediplomeerd is."
+                }
               },
-              "bron": "alle redders van de Reddingspost aan alle volgende voorwaarden voldoen",
+              "source": {
+                "snippet": "alle redders van de Reddingspost aan alle volgende voorwaarden voldoen"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "postindeling",
@@ -207,7 +223,9 @@
               "node": "AttribuutRef",
               "attribuut": "geoefend",
               "objecttype": "Reddingspost",
-              "bron": "Een Reddingspost is geoefend"
+              "source": {
+                "snippet": "Een Reddingspost is geoefend"
+              }
             },
             "value": {
               "node": "Literal",
@@ -217,7 +235,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -236,7 +256,9 @@
                       "node": "AttribuutRef",
                       "attribuut": "conditie",
                       "objecttype": "Redder",
-                      "bron": "zijn conditie"
+                      "source": {
+                        "snippet": "zijn conditie"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -249,10 +271,14 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "7"
+                      "source": {
+                        "snippet": "7"
+                      }
                     },
                     "periode": null,
-                    "bron": "zijn conditie groter is dan 7"
+                    "source": {
+                      "snippet": "zijn conditie groter is dan 7"
+                    }
                   },
                   {
                     "node": "Samengesteld",
@@ -265,7 +291,9 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "hij gediplomeerd is"
+                        "source": {
+                          "snippet": "hij gediplomeerd is"
+                        }
                       },
                       {
                         "node": "Vergelijking",
@@ -274,7 +302,9 @@
                           "node": "AttribuutRef",
                           "attribuut": "dienstjaren",
                           "objecttype": "Redder",
-                          "bron": "zijn dienstjaren"
+                          "source": {
+                            "snippet": "zijn dienstjaren"
+                          }
                         },
                         "rechts": {
                           "node": "Literal",
@@ -287,18 +317,28 @@
                             "decimals": 0,
                             "sign": "ONBEPAALD"
                           },
-                          "bron": "2"
+                          "source": {
+                            "snippet": "2"
+                          }
                         },
                         "periode": null,
-                        "bron": "zijn dienstjaren groter zijn dan 2"
+                        "source": {
+                          "snippet": "zijn dienstjaren groter zijn dan 2"
+                        }
                       }
                     ],
-                    "bron": "hij aan alle volgende voorwaarden voldoet: - hij gediplomeerd is - zijn dienstjaren groter zijn dan 2."
+                    "source": {
+                      "snippet": "hij aan alle volgende voorwaarden voldoet: - hij gediplomeerd is - zijn dienstjaren groter zijn dan 2."
+                    }
                   }
                 ],
-                "bron": "hij aan ten minste 1 van de volgende voorwaarden voldoet: - zijn conditie groter is dan 7 - hij aan alle volgende voorwaarden voldoet: - hij gediplomeerd is - zijn dienstjaren groter zijn dan 2."
+                "source": {
+                  "snippet": "hij aan ten minste 1 van de volgende voorwaarden voldoet: - zijn conditie groter is dan 7 - hij aan alle volgende voorwaarden voldoet: - hij gediplomeerd is - zijn dienstjaren groter zijn dan 2."
+                }
               },
-              "bron": "alle redders van de Reddingspost aan ten minste 1 van de volgende voorwaarden voldoen",
+              "source": {
+                "snippet": "alle redders van de Reddingspost aan ten minste 1 van de volgende voorwaarden voldoen"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "postindeling",
@@ -323,7 +363,9 @@
               "node": "AttribuutRef",
               "attribuut": "stil",
               "objecttype": "Reddingspost",
-              "bron": "Een Reddingspost is stil"
+              "source": {
+                "snippet": "Een Reddingspost is stil"
+              }
             },
             "value": {
               "node": "Literal",
@@ -333,7 +375,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -352,7 +396,9 @@
                       "node": "AttribuutRef",
                       "attribuut": "dienstjaren",
                       "objecttype": "Redder",
-                      "bron": "zijn dienstjaren"
+                      "source": {
+                        "snippet": "zijn dienstjaren"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -365,10 +411,14 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "5"
+                      "source": {
+                        "snippet": "5"
+                      }
                     },
                     "periode": null,
-                    "bron": "zijn dienstjaren groter zijn dan 5"
+                    "source": {
+                      "snippet": "zijn dienstjaren groter zijn dan 5"
+                    }
                   },
                   {
                     "node": "Kenmerk",
@@ -376,12 +426,18 @@
                     "negatie": false,
                     "eigenaar": null,
                     "periode": null,
-                    "bron": "hij gediplomeerd is"
+                    "source": {
+                      "snippet": "hij gediplomeerd is"
+                    }
                   }
                 ],
-                "bron": "hij aan alle volgende voorwaarden voldoet: - zijn dienstjaren groter zijn dan 5 - hij gediplomeerd is."
+                "source": {
+                  "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn dienstjaren groter zijn dan 5 - hij gediplomeerd is."
+                }
               },
-              "bron": "geen van de redders van de Reddingspost aan alle volgende voorwaarden voldoet",
+              "source": {
+                "snippet": "geen van de redders van de Reddingspost aan alle volgende voorwaarden voldoet"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "postindeling",
@@ -406,7 +462,9 @@
               "node": "AttribuutRef",
               "attribuut": "wisselend",
               "objecttype": "Reddingspost",
-              "bron": "Een Reddingspost is wisselend"
+              "source": {
+                "snippet": "Een Reddingspost is wisselend"
+              }
             },
             "value": {
               "node": "Literal",
@@ -416,7 +474,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -434,7 +494,9 @@
                     "negatie": false,
                     "eigenaar": null,
                     "periode": null,
-                    "bron": "hij gediplomeerd is"
+                    "source": {
+                      "snippet": "hij gediplomeerd is"
+                    }
                   },
                   {
                     "node": "Vergelijking",
@@ -443,7 +505,9 @@
                       "node": "AttribuutRef",
                       "attribuut": "conditie",
                       "objecttype": "Redder",
-                      "bron": "zijn conditie"
+                      "source": {
+                        "snippet": "zijn conditie"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -456,10 +520,14 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "7"
+                      "source": {
+                        "snippet": "7"
+                      }
                     },
                     "periode": null,
-                    "bron": "zijn conditie groter is dan 7"
+                    "source": {
+                      "snippet": "zijn conditie groter is dan 7"
+                    }
                   },
                   {
                     "node": "Vergelijking",
@@ -468,7 +536,9 @@
                       "node": "AttribuutRef",
                       "attribuut": "dienstjaren",
                       "objecttype": "Redder",
-                      "bron": "zijn dienstjaren"
+                      "source": {
+                        "snippet": "zijn dienstjaren"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -481,15 +551,23 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "5"
+                      "source": {
+                        "snippet": "5"
+                      }
                     },
                     "periode": null,
-                    "bron": "zijn dienstjaren groter zijn dan 5"
+                    "source": {
+                      "snippet": "zijn dienstjaren groter zijn dan 5"
+                    }
                   }
                 ],
-                "bron": "hij aan ten hoogste 1 van de volgende voorwaarden voldoet: - hij gediplomeerd is - zijn conditie groter is dan 7 - zijn dienstjaren groter zijn dan 5."
+                "source": {
+                  "snippet": "hij aan ten hoogste 1 van de volgende voorwaarden voldoet: - hij gediplomeerd is - zijn conditie groter is dan 7 - zijn dienstjaren groter zijn dan 5."
+                }
               },
-              "bron": "alle redders van de Reddingspost aan ten hoogste 1 van de volgende voorwaarden voldoen",
+              "source": {
+                "snippet": "alle redders van de Reddingspost aan ten hoogste 1 van de volgende voorwaarden voldoen"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "postindeling",
@@ -514,7 +592,9 @@
               "node": "AttribuutRef",
               "attribuut": "redderstal",
               "objecttype": "Reddingspost",
-              "bron": "Het redderstal van een Reddingspost"
+              "source": {
+                "snippet": "Het redderstal van een Reddingspost"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -524,7 +604,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "redders",
                   "objecttype": "Reddingspost",
-                  "bron": "redders van de Reddingspost"
+                  "source": {
+                    "snippet": "redders van de Reddingspost"
+                  }
                 }
               ],
               "elementType": "Redder",
@@ -539,7 +621,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal redders van de Reddingspost"
+              "source": {
+                "snippet": "het aantal redders van de Reddingspost"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

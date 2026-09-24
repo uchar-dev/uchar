@@ -119,7 +119,9 @@
               "node": "AttribuutRef",
               "attribuut": "bekwaam",
               "objecttype": "Loodspost",
-              "bron": "Een Loodspost is bekwaam"
+              "source": {
+                "snippet": "Een Loodspost is bekwaam"
+              }
             },
             "value": {
               "node": "Literal",
@@ -129,7 +131,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -143,17 +147,25 @@
                   "node": "AttribuutRef",
                   "attribuut": "ervaring",
                   "objecttype": "Loods",
-                  "bron": "de ervaring van alle loodsen van de Loodspost"
+                  "source": {
+                    "snippet": "de ervaring van alle loodsen van de Loodspost"
+                  }
                 },
                 "rechts": {
                   "node": "ParameterRef",
                   "parameter": "keurgrens",
-                  "bron": "de keurgrens"
+                  "source": {
+                    "snippet": "de keurgrens"
+                  }
                 },
                 "periode": null,
-                "bron": "de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens"
+                "source": {
+                  "snippet": "de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens"
+                }
               },
-              "bron": "de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens",
+              "source": {
+                "snippet": "de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "loodsindeling",
@@ -178,7 +190,9 @@
               "node": "AttribuutRef",
               "attribuut": "onbekwaam",
               "objecttype": "Loodspost",
-              "bron": "Een Loodspost is onbekwaam"
+              "source": {
+                "snippet": "Een Loodspost is onbekwaam"
+              }
             },
             "value": {
               "node": "Literal",
@@ -188,7 +202,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -202,17 +218,25 @@
                   "node": "AttribuutRef",
                   "attribuut": "ervaring",
                   "objecttype": "Loods",
-                  "bron": "de ervaring van geen van de loodsen van de Loodspost"
+                  "source": {
+                    "snippet": "de ervaring van geen van de loodsen van de Loodspost"
+                  }
                 },
                 "rechts": {
                   "node": "ParameterRef",
                   "parameter": "keurgrens",
-                  "bron": "de keurgrens"
+                  "source": {
+                    "snippet": "de keurgrens"
+                  }
                 },
                 "periode": null,
-                "bron": "de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens"
+                "source": {
+                  "snippet": "de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens"
+                }
               },
-              "bron": "de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens",
+              "source": {
+                "snippet": "de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "loodsindeling",
@@ -237,7 +261,9 @@
               "node": "AttribuutRef",
               "attribuut": "merendeels",
               "objecttype": "Loodspost",
-              "bron": "Een Loodspost is merendeels bekwaam"
+              "source": {
+                "snippet": "Een Loodspost is merendeels bekwaam"
+              }
             },
             "value": {
               "node": "Literal",
@@ -247,7 +273,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -262,17 +290,25 @@
                   "node": "AttribuutRef",
                   "attribuut": "ervaring",
                   "objecttype": "Loods",
-                  "bron": "de ervaring van ten minste 2 van de loodsen van de Loodspost"
+                  "source": {
+                    "snippet": "de ervaring van ten minste 2 van de loodsen van de Loodspost"
+                  }
                 },
                 "rechts": {
                   "node": "ParameterRef",
                   "parameter": "keurgrens",
-                  "bron": "de keurgrens"
+                  "source": {
+                    "snippet": "de keurgrens"
+                  }
                 },
                 "periode": null,
-                "bron": "de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens"
+                "source": {
+                  "snippet": "de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens"
+                }
               },
-              "bron": "de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens",
+              "source": {
+                "snippet": "de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "loodsindeling",
@@ -297,7 +333,9 @@
               "node": "AttribuutRef",
               "attribuut": "gangbaar",
               "objecttype": "Loodspost",
-              "bron": "Een Loodspost is gangbaar"
+              "source": {
+                "snippet": "Een Loodspost is gangbaar"
+              }
             },
             "value": {
               "node": "Literal",
@@ -307,7 +345,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -320,18 +360,26 @@
                 "links": {
                   "node": "ParameterRef",
                   "parameter": "keurgrens",
-                  "bron": "de keurgrens"
+                  "source": {
+                    "snippet": "de keurgrens"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "ervaring",
                   "objecttype": "Loods",
-                  "bron": "de ervaring van alle loodsen van de Loodspost"
+                  "source": {
+                    "snippet": "de ervaring van alle loodsen van de Loodspost"
+                  }
                 },
                 "periode": null,
-                "bron": "de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost"
+                "source": {
+                  "snippet": "de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost"
+                }
               },
-              "bron": "de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost",
+              "source": {
+                "snippet": "de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost"
+              },
               "bronRol": {
                 "node": "RolBinding",
                 "feittype": "loodsindeling",
@@ -356,7 +404,9 @@
               "node": "AttribuutRef",
               "attribuut": "loodstal",
               "objecttype": "Loodspost",
-              "bron": "Het loodstal van een Loodspost"
+              "source": {
+                "snippet": "Het loodstal van een Loodspost"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -366,7 +416,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "loodsen",
                   "objecttype": "Loodspost",
-                  "bron": "loodsen van de Loodspost"
+                  "source": {
+                    "snippet": "loodsen van de Loodspost"
+                  }
                 }
               ],
               "elementType": "Loods",
@@ -381,7 +433,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal loodsen van de Loodspost"
+              "source": {
+                "snippet": "het aantal loodsen van de Loodspost"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

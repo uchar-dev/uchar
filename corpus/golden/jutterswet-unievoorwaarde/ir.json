@@ -92,7 +92,9 @@
               "node": "AttribuutRef",
               "attribuut": "ruim voorzien",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is ruim voorzien"
+              "source": {
+                "snippet": "Een Jutter is ruim voorzien"
+              }
             },
             "value": {
               "node": "Literal",
@@ -102,7 +104,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -123,7 +127,9 @@
                           "rol": "aangemelde vondst"
                         },
                         "filter": null,
-                        "bron": "aangemelde vondsten van de Jutter"
+                        "source": {
+                          "snippet": "aangemelde vondsten van de Jutter"
+                        }
                       },
                       {
                         "node": "InstanceSetBranch",
@@ -134,10 +140,14 @@
                           "rol": "geborgen vondst"
                         },
                         "filter": null,
-                        "bron": "geborgen vondsten van de Jutter"
+                        "source": {
+                          "snippet": "geborgen vondsten van de Jutter"
+                        }
                       }
                     ],
-                    "bron": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter"
+                    "source": {
+                      "snippet": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter"
+                    }
                   }
                 ],
                 "type": {
@@ -146,7 +156,9 @@
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter"
+                "source": {
+                  "snippet": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -159,10 +171,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "2"
+                "source": {
+                  "snippet": "2"
+                }
               },
               "periode": null,
-              "bron": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter groter is dan 2"
+              "source": {
+                "snippet": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter groter is dan 2"
+              }
             },
             "initialisation": false
           }

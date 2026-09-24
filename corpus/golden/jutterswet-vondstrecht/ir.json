@@ -118,7 +118,9 @@
               "node": "AttribuutRef",
               "attribuut": "vondstrecht",
               "objecttype": "Vondst",
-              "bron": "Het vondstrecht van een Vondst"
+              "source": {
+                "snippet": "Het vondstrecht van een Vondst"
+              }
             },
             "value": {
               "node": "Let",
@@ -143,7 +145,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "meerprijs",
                 "objecttype": "Vondst",
-                "bron": "de meerprijs van de Vondst"
+                "source": {
+                  "snippet": "de meerprijs van de Vondst"
+                }
               },
               "body": {
                 "node": "Binair",
@@ -152,12 +156,16 @@
                   "node": "AttribuutRef",
                   "attribuut": "grondrecht",
                   "objecttype": "Vondst",
-                  "bron": "het grondrecht van de Vondst"
+                  "source": {
+                    "snippet": "het grondrecht van de Vondst"
+                  }
                 },
                 "rechts": {
                   "node": "BinderRef",
                   "name": "toeslag",
-                  "bron": "de toeslag"
+                  "source": {
+                    "snippet": "de toeslag"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -175,9 +183,13 @@
                     }
                   }
                 },
-                "bron": "het grondrecht van de Vondst plus de toeslag"
+                "source": {
+                  "snippet": "het grondrecht van de Vondst plus de toeslag"
+                }
               },
-              "bron": "de toeslag is de meerprijs van de Vondst."
+              "source": {
+                "snippet": "de toeslag is de meerprijs van de Vondst."
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -143,7 +143,9 @@
               "node": "AttribuutRef",
               "attribuut": "registratiekosten",
               "objecttype": "Strandrecht",
-              "bron": "De registratiekosten van een Strandrecht"
+              "source": {
+                "snippet": "De registratiekosten van een Strandrecht"
+              }
             },
             "value": {
               "node": "Literal",
@@ -156,7 +158,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "5.00"
+              "source": {
+                "snippet": "5.00"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -177,7 +181,9 @@
               "node": "AttribuutRef",
               "attribuut": "uitkeringstotaal",
               "objecttype": "Kustgemeente",
-              "bron": "Het uitkeringstotaal van een Kustgemeente"
+              "source": {
+                "snippet": "Het uitkeringstotaal van een Kustgemeente"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -187,7 +193,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "uitkering",
                   "objecttype": "Strandrecht",
-                  "bron": "de uitkering van alle geregistreerde strandrechten van de Kustgemeente"
+                  "source": {
+                    "snippet": "de uitkering van alle geregistreerde strandrechten van de Kustgemeente"
+                  }
                 }
               ],
               "elementType": "Strandrecht",
@@ -202,7 +210,9 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -215,7 +225,9 @@
                 "decimals": 2,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "de som van de uitkering van alle geregistreerde strandrechten van de Kustgemeente of 0,00 als die er niet zijn"
+              "source": {
+                "snippet": "de som van de uitkering van alle geregistreerde strandrechten van de Kustgemeente of 0,00 als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -236,7 +248,9 @@
               "node": "AttribuutRef",
               "attribuut": "registertal",
               "objecttype": "Kustgemeente",
-              "bron": "Het registertal van een Kustgemeente"
+              "source": {
+                "snippet": "Het registertal van een Kustgemeente"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -246,7 +260,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "geregistreerde strandrechten",
                   "objecttype": "Kustgemeente",
-                  "bron": "geregistreerde strandrechten van de Kustgemeente"
+                  "source": {
+                    "snippet": "geregistreerde strandrechten van de Kustgemeente"
+                  }
                 }
               ],
               "elementType": "Strandrecht",
@@ -261,7 +277,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal geregistreerde strandrechten van de Kustgemeente"
+              "source": {
+                "snippet": "het aantal geregistreerde strandrechten van de Kustgemeente"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -294,7 +312,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "het Strandrecht betwist is"
+              "source": {
+                "snippet": "het Strandrecht betwist is"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -307,9 +327,13 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "99.00"
+              "source": {
+                "snippet": "99.00"
+              }
             },
-            "bron": "99,00 indien het Strandrecht betwist is"
+            "source": {
+              "snippet": "99,00 indien het Strandrecht betwist is"
+            }
           },
           {
             "node": "Default",
@@ -319,18 +343,26 @@
               "kwantor": "ALLE",
               "drempel": 0,
               "onderdelen": [],
-              "bron": "altijd"
+              "source": {
+                "snippet": "altijd"
+              }
             },
             "consequentie": {
               "node": "AttribuutRef",
               "attribuut": "grondslag",
               "objecttype": "Strandrecht",
-              "bron": "zijn grondslag"
+              "source": {
+                "snippet": "zijn grondslag"
+              }
             },
-            "bron": "de grondslag"
+            "source": {
+              "snippet": "de grondslag"
+            }
           }
         ],
-        "bron": "art. 3: de uitkering van een Strandrecht",
+        "source": {
+          "snippet": "art. 3: de uitkering van een Strandrecht"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,
@@ -354,7 +386,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "bergingsdiepte",
                 "objecttype": "Wrakrecht",
-                "bron": "zijn bergingsdiepte"
+                "source": {
+                  "snippet": "zijn bergingsdiepte"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -367,10 +401,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "20"
+                "source": {
+                  "snippet": "20"
+                }
               },
               "periode": null,
-              "bron": "zijn bergingsdiepte groter is dan 20"
+              "source": {
+                "snippet": "zijn bergingsdiepte groter is dan 20"
+              }
             },
             "consequentie": {
               "node": "Literal",
@@ -383,9 +421,13 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "55.00"
+              "source": {
+                "snippet": "55.00"
+              }
             },
-            "bron": "55,00 indien de bergingsdiepte groter is dan 20"
+            "source": {
+              "snippet": "55,00 indien de bergingsdiepte groter is dan 20"
+            }
           },
           {
             "node": "Default",
@@ -395,7 +437,9 @@
               "kwantor": "ALLE",
               "drempel": 0,
               "onderdelen": [],
-              "bron": "altijd"
+              "source": {
+                "snippet": "altijd"
+              }
             },
             "consequentie": {
               "node": "Binair",
@@ -404,7 +448,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "grondslag",
                 "objecttype": "Wrakrecht",
-                "bron": "zijn grondslag"
+                "source": {
+                  "snippet": "zijn grondslag"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -417,7 +463,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "2"
+                "source": {
+                  "snippet": "2"
+                }
               },
               "type": {
                 "node": "Number",
@@ -425,12 +473,18 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "zijn grondslag maal 2"
+              "source": {
+                "snippet": "zijn grondslag maal 2"
+              }
             },
-            "bron": "de grondslag maal 2"
+            "source": {
+              "snippet": "de grondslag maal 2"
+            }
           }
         ],
-        "bron": "art. 4: de uitkering van een Wrakrecht",
+        "source": {
+          "snippet": "art. 4: de uitkering van een Wrakrecht"
+        },
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,

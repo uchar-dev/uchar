@@ -120,7 +120,9 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Kamer",
-              "bron": "De heffing van een grote Kamer"
+              "source": {
+                "snippet": "De heffing van een grote Kamer"
+              }
             },
             "value": {
               "node": "Binair",
@@ -129,7 +131,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "grondslag",
                 "objecttype": "Kamer",
-                "bron": "de grondslag van de Kamer"
+                "source": {
+                  "snippet": "de grondslag van de Kamer"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -142,7 +146,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "2"
+                "source": {
+                  "snippet": "2"
+                }
               },
               "type": {
                 "node": "Number",
@@ -150,7 +156,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de grondslag van de Kamer maal 2"
+              "source": {
+                "snippet": "de grondslag van de Kamer maal 2"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -158,7 +166,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "de Kamer is groot"
+              "source": {
+                "snippet": "de Kamer is groot"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -179,13 +189,17 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Kamer",
-              "bron": "De heffing van een gewone Kamer"
+              "source": {
+                "snippet": "De heffing van een gewone Kamer"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "grondslag",
               "objecttype": "Kamer",
-              "bron": "de grondslag van de Kamer"
+              "source": {
+                "snippet": "de grondslag van de Kamer"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -193,7 +207,9 @@
               "negatie": true,
               "eigenaar": null,
               "periode": null,
-              "bron": "de Kamer is niet groot"
+              "source": {
+                "snippet": "de Kamer is niet groot"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -214,13 +230,17 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Jutter",
-              "bron": "De heffing van een Jutter"
+              "source": {
+                "snippet": "De heffing van een Jutter"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Kamer",
-              "bron": "de heffing van haar kamer",
+              "source": {
+                "snippet": "de heffing van haar kamer"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -252,7 +272,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "grondslag",
                   "objecttype": "Jutter",
-                  "bron": "de grondslag van de Jutter"
+                  "source": {
+                    "snippet": "de grondslag van de Jutter"
+                  }
                 },
                 "kenmerk": false
               },
@@ -263,7 +285,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "omvangrijk",
                   "objecttype": "Jutter",
-                  "bron": "de omvangrijk van de Jutter"
+                  "source": {
+                    "snippet": "de omvangrijk van de Jutter"
+                  }
                 },
                 "kenmerk": true
               }

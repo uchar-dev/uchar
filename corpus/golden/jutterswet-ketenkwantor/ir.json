@@ -116,7 +116,9 @@
               "node": "AttribuutRef",
               "attribuut": "vondstrijk",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is vondstrijk"
+              "source": {
+                "snippet": "Een Jutter is vondstrijk"
+              }
             },
             "value": {
               "node": "Literal",
@@ -126,7 +128,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -141,7 +145,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Vondst",
-                  "bron": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter"
+                  "source": {
+                    "snippet": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -154,12 +160,18 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "1,00"
+                  "source": {
+                    "snippet": "1,00"
+                  }
                 },
                 "periode": null,
-                "bron": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
+                "source": {
+                  "snippet": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
+                }
               },
-              "bron": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00",
+              "source": {
+                "snippet": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
+              },
               "bronPad": [
                 {
                   "node": "RolBinding",
@@ -191,7 +203,9 @@
               "node": "AttribuutRef",
               "attribuut": "vondstarm",
               "objecttype": "Jutter",
-              "bron": "Een Jutter is vondstarm"
+              "source": {
+                "snippet": "Een Jutter is vondstarm"
+              }
             },
             "value": {
               "node": "Literal",
@@ -201,7 +215,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Kwantorvouw",
@@ -216,7 +232,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Vondst",
-                  "bron": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter"
+                  "source": {
+                    "snippet": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -229,12 +247,18 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "1,00"
+                  "source": {
+                    "snippet": "1,00"
+                  }
                 },
                 "periode": null,
-                "bron": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
+                "source": {
+                  "snippet": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
+                }
               },
-              "bron": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00",
+              "source": {
+                "snippet": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
+              },
               "bronPad": [
                 {
                   "node": "RolBinding",

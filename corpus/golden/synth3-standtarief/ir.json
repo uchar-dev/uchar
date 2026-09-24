@@ -120,7 +120,9 @@
               "node": "AttribuutRef",
               "attribuut": "tarief",
               "objecttype": "Jutter",
-              "bron": "Het tarief van een Jutter"
+              "source": {
+                "snippet": "Het tarief van een Jutter"
+              }
             },
             "value": {
               "node": "Match",
@@ -134,7 +136,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "stand",
                 "objecttype": "Jutter",
-                "bron": "zijn stand"
+                "source": {
+                  "snippet": "zijn stand"
+                }
               },
               "arms": [
                 {
@@ -146,7 +150,9 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "w",
-                      "bron": "de geborgen waarde"
+                      "source": {
+                        "snippet": "de geborgen waarde"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -159,7 +165,9 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "0.00"
+                      "source": {
+                        "snippet": "0.00"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -167,7 +175,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de geborgen waarde plus 0.00"
+                    "source": {
+                      "snippet": "de geborgen waarde plus 0.00"
+                    }
                   }
                 },
                 {
@@ -184,7 +194,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "0.00"
+                    "source": {
+                      "snippet": "0.00"
+                    }
                   }
                 },
                 {
@@ -199,12 +211,16 @@
                         "node": "AttribuutRef",
                         "attribuut": "grondslag",
                         "objecttype": "Jutter",
-                        "bron": "zijn grondslag"
+                        "source": {
+                          "snippet": "zijn grondslag"
+                        }
                       },
                       "rechts": {
                         "node": "BinderRef",
                         "name": "a",
-                        "bron": "de betwiste noemer"
+                        "source": {
+                          "snippet": "de betwiste noemer"
+                        }
                       },
                       "type": {
                         "node": "Number",
@@ -212,7 +228,9 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "zijn grondslag gedeeld door de betwiste noemer"
+                      "source": {
+                        "snippet": "zijn grondslag gedeeld door de betwiste noemer"
+                      }
                     },
                     "modus": "REKENKUNDIG",
                     "decimalen": 2,
@@ -222,11 +240,15 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "zijn grondslag gedeeld door de betwiste noemer rekenkundig afgerond op 2 decimalen"
+                    "source": {
+                      "snippet": "zijn grondslag gedeeld door de betwiste noemer rekenkundig afgerond op 2 decimalen"
+                    }
                   }
                 }
               ],
-              "bron": "de grondslag afhankelijk van zijn stand"
+              "source": {
+                "snippet": "de grondslag afhankelijk van zijn stand"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

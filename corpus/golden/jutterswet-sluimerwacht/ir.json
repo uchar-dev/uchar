@@ -72,7 +72,9 @@
               "node": "AttribuutRef",
               "attribuut": "sluimerend",
               "objecttype": "Seinpost",
-              "bron": "Een Seinpost is sluimerend"
+              "source": {
+                "snippet": "Een Seinpost is sluimerend"
+              }
             },
             "value": {
               "node": "Literal",
@@ -82,7 +84,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Samengesteld",
@@ -95,7 +99,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "de Seinpost bemand is"
+                  "source": {
+                    "snippet": "de Seinpost bemand is"
+                  }
                 },
                 {
                   "node": "Kenmerk",
@@ -103,7 +109,9 @@
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
-                  "bron": "de Seinpost verlicht is"
+                  "source": {
+                    "snippet": "de Seinpost verlicht is"
+                  }
                 },
                 {
                   "node": "Vergelijking",
@@ -112,7 +120,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "meldingen",
                     "objecttype": "Seinpost",
-                    "bron": "de meldingen van de Seinpost"
+                    "source": {
+                      "snippet": "de meldingen van de Seinpost"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -125,13 +135,19 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "2"
+                    "source": {
+                      "snippet": "2"
+                    }
                   },
                   "periode": null,
-                  "bron": "haar meldingen groter zijn dan 2"
+                  "source": {
+                    "snippet": "haar meldingen groter zijn dan 2"
+                  }
                 }
               ],
-              "bron": "ten hoogste \u00e9\u00e9n van: bemand, verlicht, meldingen boven 2"
+              "source": {
+                "snippet": "ten hoogste \u00e9\u00e9n van: bemand, verlicht, meldingen boven 2"
+              }
             },
             "initialisation": false
           }
@@ -151,13 +167,17 @@
               "node": "AttribuutRef",
               "attribuut": "meldingsafschrift",
               "objecttype": "Seinpost",
-              "bron": "Het meldingsafschrift van een Seinpost"
+              "source": {
+                "snippet": "Het meldingsafschrift van een Seinpost"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "meldingen",
               "objecttype": "Seinpost",
-              "bron": "de meldingen van de Seinpost"
+              "source": {
+                "snippet": "de meldingen van de Seinpost"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

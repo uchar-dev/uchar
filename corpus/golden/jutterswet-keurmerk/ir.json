@@ -56,7 +56,9 @@
               "node": "AttribuutRef",
               "attribuut": "gekeurd",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is gekeurd"
+              "source": {
+                "snippet": "Een Vondst is gekeurd"
+              }
             },
             "value": {
               "node": "Literal",
@@ -66,7 +68,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -75,7 +79,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "keurmerk",
                 "objecttype": "Vondst",
-                "bron": "het keurmerk van de Vondst"
+                "source": {
+                  "snippet": "het keurmerk van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -85,10 +91,14 @@
                 "type": {
                   "node": "Tekst"
                 },
-                "bron": "'merk \"AA\"'"
+                "source": {
+                  "snippet": "'merk \"AA\"'"
+                }
               },
               "periode": null,
-              "bron": "haar keurmerk gelijk is aan 'merk \"AA\"'"
+              "source": {
+                "snippet": "haar keurmerk gelijk is aan 'merk \"AA\"'"
+              }
             },
             "initialisation": false
           }
@@ -108,7 +118,9 @@
               "node": "AttribuutRef",
               "attribuut": "afslag",
               "objecttype": "Vondst",
-              "bron": "De afslag van een Vondst"
+              "source": {
+                "snippet": "De afslag van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -118,7 +130,9 @@
               "type": {
                 "node": "Tekst"
               },
-              "bron": "'veiling \"Zee\"'"
+              "source": {
+                "snippet": "'veiling \"Zee\"'"
+              }
             },
             "condition": {
               "node": "Kenmerk",
@@ -126,7 +140,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "de Vondst is gekeurd"
+              "source": {
+                "snippet": "de Vondst is gekeurd"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

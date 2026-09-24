@@ -97,7 +97,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal keurstukken",
               "objecttype": "Jutter",
-              "bron": "Het aantal keurstukken van een Jutter"
+              "source": {
+                "snippet": "Het aantal keurstukken van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -120,9 +122,13 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "gemerkt zijn"
+                        "source": {
+                          "snippet": "gemerkt zijn"
+                        }
                       },
-                      "bron": "aangemelde vondsten van de Jutter die gemerkt zijn"
+                      "source": {
+                        "snippet": "aangemelde vondsten van de Jutter die gemerkt zijn"
+                      }
                     },
                     {
                       "node": "InstanceSetBranch",
@@ -138,12 +144,18 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "gekeurd zijn"
+                        "source": {
+                          "snippet": "gekeurd zijn"
+                        }
                       },
-                      "bron": "aangemelde vondsten van de Jutter die gekeurd zijn"
+                      "source": {
+                        "snippet": "aangemelde vondsten van de Jutter die gekeurd zijn"
+                      }
                     }
                   ],
-                  "bron": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter die gekeurd zijn"
+                  "source": {
+                    "snippet": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter die gekeurd zijn"
+                  }
                 }
               ],
               "type": {
@@ -152,7 +164,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter die gekeurd zijn"
+              "source": {
+                "snippet": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter die gekeurd zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -173,7 +187,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal gemelde stukken",
               "objecttype": "Jutter",
-              "bron": "Het aantal gemelde stukken van een Jutter"
+              "source": {
+                "snippet": "Het aantal gemelde stukken van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -196,9 +212,13 @@
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
-                        "bron": "gemerkt zijn"
+                        "source": {
+                          "snippet": "gemerkt zijn"
+                        }
                       },
-                      "bron": "aangemelde vondsten van de Jutter die gemerkt zijn"
+                      "source": {
+                        "snippet": "aangemelde vondsten van de Jutter die gemerkt zijn"
+                      }
                     },
                     {
                       "node": "InstanceSetBranch",
@@ -209,10 +229,14 @@
                         "rol": "aangemelde vondst"
                       },
                       "filter": null,
-                      "bron": "aangemelde vondsten van de Jutter"
+                      "source": {
+                        "snippet": "aangemelde vondsten van de Jutter"
+                      }
                     }
                   ],
-                  "bron": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter"
+                  "source": {
+                    "snippet": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter"
+                  }
                 }
               ],
               "type": {
@@ -221,7 +245,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter"
+              "source": {
+                "snippet": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -60,7 +60,9 @@
               "node": "AttribuutRef",
               "attribuut": "machttotaal",
               "objecttype": "Jutter",
-              "bron": "Het machttotaal van een Jutter"
+              "source": {
+                "snippet": "Het machttotaal van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -73,7 +75,9 @@
               "list": {
                 "node": "ParameterRef",
                 "parameter": "kindertallen",
-                "bron": "de kindertallen"
+                "source": {
+                  "snippet": "de kindertallen"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -103,7 +107,9 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "het opgetelde punt"
+                    "source": {
+                      "snippet": "het opgetelde punt"
+                    }
                   },
                   "rechts": {
                     "node": "Binair",
@@ -111,7 +117,9 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "x",
-                      "bron": "het kindertal"
+                      "source": {
+                        "snippet": "het kindertal"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -124,7 +132,9 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "3"
+                      "source": {
+                        "snippet": "3"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -132,7 +142,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "het kindertal tot de macht 3"
+                    "source": {
+                      "snippet": "het kindertal tot de macht 3"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -140,9 +152,13 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "het opgetelde punt plus het kindpunt"
+                  "source": {
+                    "snippet": "het opgetelde punt plus het kindpunt"
+                  }
                 },
-                "bron": "de kinddelen opgeteld"
+                "source": {
+                  "snippet": "de kinddelen opgeteld"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -155,9 +171,13 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
-              "bron": "de kindertallen gevouwen tot het machttotaal"
+              "source": {
+                "snippet": "de kindertallen gevouwen tot het machttotaal"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -147,7 +147,9 @@
               "node": "AttribuutRef",
               "attribuut": "laagste muntgewicht",
               "objecttype": "Jutter",
-              "bron": "Het laagste muntgewicht van een Jutter"
+              "source": {
+                "snippet": "Het laagste muntgewicht van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -157,7 +159,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Munt",
-                  "bron": "het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter"
+                  "source": {
+                    "snippet": "het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Munt",
@@ -179,7 +183,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de minimale waarde van het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter"
+              "source": {
+                "snippet": "de minimale waarde van het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -200,7 +206,9 @@
               "node": "AttribuutRef",
               "attribuut": "totaal muntgewicht",
               "objecttype": "Jutter",
-              "bron": "Het totaal muntgewicht van een Jutter"
+              "source": {
+                "snippet": "Het totaal muntgewicht van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -210,7 +218,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Munt",
-                  "bron": "het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter"
+                  "source": {
+                    "snippet": "het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Munt",
@@ -225,7 +235,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "sourcePath": [
                 {
@@ -245,7 +257,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter of 0 als die er niet zijn"
+              "source": {
+                "snippet": "de som van het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter of 0 als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

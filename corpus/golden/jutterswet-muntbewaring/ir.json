@@ -184,7 +184,9 @@
               "node": "AttribuutRef",
               "attribuut": "bewaarlast",
               "objecttype": "Jutter",
-              "bron": "De bewaarlast van een Jutter"
+              "source": {
+                "snippet": "De bewaarlast van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -194,7 +196,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bewaartarief",
                   "objecttype": "Munt",
-                  "bron": "het bewaartarief van alle munten van de Jutter"
+                  "source": {
+                    "snippet": "het bewaartarief van alle munten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Munt",
@@ -219,7 +223,9 @@
                   }
                 }
               },
-              "bron": "het totaal van het bewaartarief van alle munten van de Jutter"
+              "source": {
+                "snippet": "het totaal van het bewaartarief van alle munten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -205,7 +205,9 @@
               "node": "AttribuutRef",
               "attribuut": "pakket",
               "objecttype": "Jutter",
-              "bron": "Het pakket van een Jutter"
+              "source": {
+                "snippet": "Het pakket van een Jutter"
+              }
             },
             "value": {
               "node": "StructLiteral",
@@ -287,7 +289,9 @@
                           "node": "AttribuutRef",
                           "attribuut": "stuks",
                           "objecttype": "Jutter",
-                          "bron": "zijn stuks"
+                          "source": {
+                            "snippet": "zijn stuks"
+                          }
                         }
                       },
                       {
@@ -296,11 +300,15 @@
                           "node": "AttribuutRef",
                           "attribuut": "prijs",
                           "objecttype": "Jutter",
-                          "bron": "zijn prijs"
+                          "source": {
+                            "snippet": "zijn prijs"
+                          }
                         }
                       }
                     ],
-                    "bron": "zijn kern"
+                    "source": {
+                      "snippet": "zijn kern"
+                    }
                   }
                 },
                 {
@@ -309,11 +317,15 @@
                     "node": "AttribuutRef",
                     "attribuut": "opslag",
                     "objecttype": "Jutter",
-                    "bron": "zijn opslag"
+                    "source": {
+                      "snippet": "zijn opslag"
+                    }
                   }
                 }
               ],
-              "bron": "zijn pakket"
+              "source": {
+                "snippet": "zijn pakket"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -334,7 +346,9 @@
               "node": "AttribuutRef",
               "attribuut": "kernprijs",
               "objecttype": "Jutter",
-              "bron": "De kernprijs van een Jutter"
+              "source": {
+                "snippet": "De kernprijs van een Jutter"
+              }
             },
             "value": {
               "node": "FieldAccess",
@@ -374,13 +388,19 @@
                   "node": "AttribuutRef",
                   "attribuut": "pakket",
                   "objecttype": "Jutter",
-                  "bron": "zijn pakket"
+                  "source": {
+                    "snippet": "zijn pakket"
+                  }
                 },
                 "field": "kern",
-                "bron": "de kern van zijn pakket"
+                "source": {
+                  "snippet": "de kern van zijn pakket"
+                }
               },
               "field": "prijs",
-              "bron": "de prijs van de kern van zijn pakket"
+              "source": {
+                "snippet": "de prijs van de kern van zijn pakket"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -401,7 +421,9 @@
               "node": "AttribuutRef",
               "attribuut": "totaal",
               "objecttype": "Jutter",
-              "bron": "Het totaal van een Jutter"
+              "source": {
+                "snippet": "Het totaal van een Jutter"
+              }
             },
             "value": {
               "node": "Binair",
@@ -444,13 +466,19 @@
                     "node": "AttribuutRef",
                     "attribuut": "pakket",
                     "objecttype": "Jutter",
-                    "bron": "zijn pakket"
+                    "source": {
+                      "snippet": "zijn pakket"
+                    }
                   },
                   "field": "kern",
-                  "bron": "de kern van zijn pakket"
+                  "source": {
+                    "snippet": "de kern van zijn pakket"
+                  }
                 },
                 "field": "prijs",
-                "bron": "de prijs van de kern van zijn pakket"
+                "source": {
+                  "snippet": "de prijs van de kern van zijn pakket"
+                }
               },
               "rechts": {
                 "node": "FieldAccess",
@@ -464,10 +492,14 @@
                   "node": "AttribuutRef",
                   "attribuut": "pakket",
                   "objecttype": "Jutter",
-                  "bron": "zijn pakket"
+                  "source": {
+                    "snippet": "zijn pakket"
+                  }
                 },
                 "field": "opslag",
-                "bron": "de opslag van zijn pakket"
+                "source": {
+                  "snippet": "de opslag van zijn pakket"
+                }
               },
               "type": {
                 "node": "Number",
@@ -475,7 +507,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de kernprijs plus de opslag"
+              "source": {
+                "snippet": "de kernprijs plus de opslag"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

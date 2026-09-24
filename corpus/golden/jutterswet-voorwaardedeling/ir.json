@@ -115,7 +115,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vrijgavescore",
                 "objecttype": "Strandberging",
-                "bron": "de vrijgavescore van de strandberging"
+                "source": {
+                  "snippet": "de vrijgavescore van de strandberging"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -128,10 +130,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "10"
+                "source": {
+                  "snippet": "10"
+                }
               },
               "periode": null,
-              "bron": "de vrijgavescore van de strandberging groter of gelijk is aan 10"
+              "source": {
+                "snippet": "de vrijgavescore van de strandberging groter of gelijk is aan 10"
+              }
             },
             "validity": {
               "node": "Geldigheid",

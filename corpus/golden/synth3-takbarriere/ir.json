@@ -87,7 +87,9 @@
               "node": "AttribuutRef",
               "attribuut": "heffing",
               "objecttype": "Jutter",
-              "bron": "De heffing van een Jutter"
+              "source": {
+                "snippet": "De heffing van een Jutter"
+              }
             },
             "value": {
               "node": "Let",
@@ -102,7 +104,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "grondslag",
                 "objecttype": "Jutter",
-                "bron": "zijn grondslag"
+                "source": {
+                  "snippet": "zijn grondslag"
+                }
               },
               "body": {
                 "node": "Let",
@@ -117,7 +121,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "opslag",
                   "objecttype": "Jutter",
-                  "bron": "zijn opslag"
+                  "source": {
+                    "snippet": "zijn opslag"
+                  }
                 },
                 "body": {
                   "node": "IfThenElse",
@@ -133,20 +139,28 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "g",
-                      "bron": "de grondslag"
+                      "source": {
+                        "snippet": "de grondslag"
+                      }
                     },
                     "rechts": {
                       "node": "ParameterRef",
                       "parameter": "drempel",
-                      "bron": "de drempel"
+                      "source": {
+                        "snippet": "de drempel"
+                      }
                     },
                     "periode": null,
-                    "bron": "de grondslag groter dan de drempel"
+                    "source": {
+                      "snippet": "de grondslag groter dan de drempel"
+                    }
                   },
                   "then": {
                     "node": "ParameterRef",
                     "parameter": "basisheffing",
-                    "bron": "de basisheffing"
+                    "source": {
+                      "snippet": "de basisheffing"
+                    }
                   },
                   "else": {
                     "node": "Binair",
@@ -154,12 +168,16 @@
                     "links": {
                       "node": "ParameterRef",
                       "parameter": "basisheffing",
-                      "bron": "de basisheffing"
+                      "source": {
+                        "snippet": "de basisheffing"
+                      }
                     },
                     "rechts": {
                       "node": "BinderRef",
                       "name": "o",
-                      "bron": "de opslag"
+                      "source": {
+                        "snippet": "de opslag"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -167,13 +185,21 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de basisheffing plus de opslag"
+                    "source": {
+                      "snippet": "de basisheffing plus de opslag"
+                    }
                   },
-                  "bron": "de basisheffing, boven de drempel zonder opslag en daaronder met opslag"
+                  "source": {
+                    "snippet": "de basisheffing, boven de drempel zonder opslag en daaronder met opslag"
+                  }
                 },
-                "bron": "de opslag is zijn opslag"
+                "source": {
+                  "snippet": "de opslag is zijn opslag"
+                }
               },
-              "bron": "de grondslag is zijn grondslag"
+              "source": {
+                "snippet": "de grondslag is zijn grondslag"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

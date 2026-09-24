@@ -206,7 +206,9 @@
               "node": "AttribuutRef",
               "attribuut": "loon",
               "objecttype": "Vondst",
-              "bron": "Het loon van een Vondst"
+              "source": {
+                "snippet": "Het loon van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -215,13 +217,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "waardering",
                 "objecttype": "Vondst",
-                "bron": "de waardering van de Vondst"
+                "source": {
+                  "snippet": "de waardering van de Vondst"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "factor",
                 "objecttype": "Vondst",
-                "bron": "de factor van de Vondst"
+                "source": {
+                  "snippet": "de factor van de Vondst"
+                }
               },
               "type": {
                 "node": "Number",
@@ -229,7 +235,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de waardering van de Vondst maal de factor van de Vondst"
+              "source": {
+                "snippet": "de waardering van de Vondst maal de factor van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -250,7 +258,9 @@
               "node": "AttribuutRef",
               "attribuut": "vindersloon",
               "objecttype": "Vondst",
-              "bron": "Het vindersloon van een Vondst"
+              "source": {
+                "snippet": "Het vindersloon van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -275,13 +285,17 @@
                     }
                   }
                 },
-                "bron": "20%"
+                "source": {
+                  "snippet": "20%"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "opbrengst",
                 "objecttype": "Vondst",
-                "bron": "de opbrengst van de Vondst"
+                "source": {
+                  "snippet": "de opbrengst van de Vondst"
+                }
               },
               "type": {
                 "node": "Number",
@@ -289,7 +303,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "20% van de opbrengst van de Vondst"
+              "source": {
+                "snippet": "20% van de opbrengst van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -310,7 +326,9 @@
               "node": "AttribuutRef",
               "attribuut": "deel",
               "objecttype": "Vondst",
-              "bron": "Het deel van een Vondst"
+              "source": {
+                "snippet": "Het deel van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -319,13 +337,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "opbrengst",
                 "objecttype": "Vondst",
-                "bron": "de opbrengst van de Vondst"
+                "source": {
+                  "snippet": "de opbrengst van de Vondst"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "aandeel",
                 "objecttype": "Vondst",
-                "bron": "het aandeel van de Vondst"
+                "source": {
+                  "snippet": "het aandeel van de Vondst"
+                }
               },
               "type": {
                 "node": "Number",
@@ -333,7 +355,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de opbrengst van de Vondst gedeeld door het aandeel van de Vondst"
+              "source": {
+                "snippet": "de opbrengst van de Vondst gedeeld door het aandeel van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -354,7 +378,9 @@
               "node": "AttribuutRef",
               "attribuut": "portie",
               "objecttype": "Vondst",
-              "bron": "De portie van een Vondst"
+              "source": {
+                "snippet": "De portie van een Vondst"
+              }
             },
             "value": {
               "node": "Afgerond",
@@ -365,13 +391,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "opbrengst",
                   "objecttype": "Vondst",
-                  "bron": "de opbrengst van de Vondst"
+                  "source": {
+                    "snippet": "de opbrengst van de Vondst"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "weging",
                   "objecttype": "Vondst",
-                  "bron": "de weging van de Vondst"
+                  "source": {
+                    "snippet": "de weging van de Vondst"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -379,7 +409,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de opbrengst van de Vondst gedeeld door de weging van de Vondst"
+                "source": {
+                  "snippet": "de opbrengst van de Vondst gedeeld door de weging van de Vondst"
+                }
               },
               "modus": "NAAR_BENEDEN",
               "decimalen": 0,
@@ -389,7 +421,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de opbrengst van de Vondst gedeeld door de weging van de Vondst naar beneden afgerond op 0 decimalen"
+              "source": {
+                "snippet": "de opbrengst van de Vondst gedeeld door de weging van de Vondst naar beneden afgerond op 0 decimalen"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -410,7 +444,9 @@
               "node": "AttribuutRef",
               "attribuut": "bonus",
               "objecttype": "Vondst",
-              "bron": "De bonus van een Vondst"
+              "source": {
+                "snippet": "De bonus van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -419,13 +455,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "opbrengst",
                 "objecttype": "Vondst",
-                "bron": "de opbrengst van de Vondst"
+                "source": {
+                  "snippet": "de opbrengst van de Vondst"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "kaveldeel",
                 "objecttype": "Vondst",
-                "bron": "het kaveldeel van de Vondst"
+                "source": {
+                  "snippet": "het kaveldeel van de Vondst"
+                }
               },
               "type": {
                 "node": "Number",
@@ -433,7 +473,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de opbrengst van de Vondst gedeeld door het kaveldeel van de Vondst"
+              "source": {
+                "snippet": "de opbrengst van de Vondst gedeeld door het kaveldeel van de Vondst"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -442,7 +484,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "waardering",
                 "objecttype": "Vondst",
-                "bron": "de waardering van de Vondst"
+                "source": {
+                  "snippet": "de waardering van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -455,10 +499,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "100"
+                "source": {
+                  "snippet": "100"
+                }
               },
               "periode": null,
-              "bron": "de waardering van de Vondst is groter of gelijk aan 100"
+              "source": {
+                "snippet": "de waardering van de Vondst is groter of gelijk aan 100"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -479,7 +527,9 @@
               "node": "AttribuutRef",
               "attribuut": "middenprijs",
               "objecttype": "Vondst",
-              "bron": "De middenprijs van een Vondst"
+              "source": {
+                "snippet": "De middenprijs van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -488,13 +538,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "koopsom",
                 "objecttype": "Vondst",
-                "bron": "de koopsom van de Vondst"
+                "source": {
+                  "snippet": "de koopsom van de Vondst"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "partijen",
                 "objecttype": "Vondst",
-                "bron": "de partijen van de Vondst"
+                "source": {
+                  "snippet": "de partijen van de Vondst"
+                }
               },
               "type": {
                 "node": "Number",
@@ -502,7 +556,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de koopsom van de Vondst gedeeld door de partijen van de Vondst"
+              "source": {
+                "snippet": "de koopsom van de Vondst gedeeld door de partijen van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -523,7 +579,9 @@
               "node": "AttribuutRef",
               "attribuut": "krimp",
               "objecttype": "Vondst",
-              "bron": "De krimp van een Vondst"
+              "source": {
+                "snippet": "De krimp van een Vondst"
+              }
             },
             "value": {
               "node": "Binair",
@@ -532,13 +590,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "spanwijdte",
                 "objecttype": "Vondst",
-                "bron": "de spanwijdte van de Vondst"
+                "source": {
+                  "snippet": "de spanwijdte van de Vondst"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "rek",
                 "objecttype": "Vondst",
-                "bron": "de rek van de Vondst"
+                "source": {
+                  "snippet": "de rek van de Vondst"
+                }
               },
               "type": {
                 "node": "Number",
@@ -546,7 +608,9 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de spanwijdte van de Vondst maal de rek van de Vondst"
+              "source": {
+                "snippet": "de spanwijdte van de Vondst maal de rek van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

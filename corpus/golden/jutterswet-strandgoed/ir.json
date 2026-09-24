@@ -103,7 +103,9 @@
               "node": "AttribuutRef",
               "attribuut": "waardevol",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is waardevol"
+              "source": {
+                "snippet": "Een Vondst is waardevol"
+              }
             },
             "value": {
               "node": "Literal",
@@ -113,7 +115,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -122,7 +126,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "gewicht",
                 "objecttype": "Vondst",
-                "bron": "het gewicht van de Vondst"
+                "source": {
+                  "snippet": "het gewicht van de Vondst"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -135,10 +141,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "10"
+                "source": {
+                  "snippet": "10"
+                }
               },
               "periode": null,
-              "bron": "het gewicht van de Vondst groter is dan 10"
+              "source": {
+                "snippet": "het gewicht van de Vondst groter is dan 10"
+              }
             },
             "initialisation": false
           }
@@ -158,7 +168,9 @@
               "node": "AttribuutRef",
               "attribuut": "zwaargewicht",
               "objecttype": "Jutter",
-              "bron": "Het zwaargewicht van een Jutter"
+              "source": {
+                "snippet": "Het zwaargewicht van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -168,7 +180,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Vondst",
-                  "bron": "het gewicht van alle vondsten van de Jutter die groter zijn dan 5"
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die groter zijn dan 5"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -179,7 +193,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Vondst",
-                  "bron": "groter zijn dan 5"
+                  "source": {
+                    "snippet": "groter zijn dan 5"
+                  }
                 },
                 "rechts": {
                   "node": "Literal",
@@ -192,10 +208,14 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "5"
+                  "source": {
+                    "snippet": "5"
+                  }
                 },
                 "periode": null,
-                "bron": "groter zijn dan 5"
+                "source": {
+                  "snippet": "groter zijn dan 5"
+                }
               },
               "emptyFallback": {
                 "node": "Literal",
@@ -208,7 +228,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -221,7 +243,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van het gewicht van alle vondsten van de Jutter die groter zijn dan 5 of 0 als die er niet zijn"
+              "source": {
+                "snippet": "de som van het gewicht van alle vondsten van de Jutter die groter zijn dan 5 of 0 als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -242,7 +266,9 @@
               "node": "AttribuutRef",
               "attribuut": "pronkstukaantal",
               "objecttype": "Jutter",
-              "bron": "Het pronkstukaantal van een Jutter"
+              "source": {
+                "snippet": "Het pronkstukaantal van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -252,7 +278,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vondsten",
                   "objecttype": "Jutter",
-                  "bron": "vondsten van de Jutter die waardevol zijn"
+                  "source": {
+                    "snippet": "vondsten van de Jutter die waardevol zijn"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -262,7 +290,9 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "waardevol zijn"
+                "source": {
+                  "snippet": "waardevol zijn"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -275,7 +305,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal vondsten van de Jutter die waardevol zijn"
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die waardevol zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

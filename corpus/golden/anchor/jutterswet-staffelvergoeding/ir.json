@@ -70,7 +70,9 @@
               "node": "AttribuutRef",
               "attribuut": "vergoeding",
               "objecttype": "Jutter",
-              "bron": "De vergoeding van een Jutter"
+              "source": {
+                "snippet": "De vergoeding van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -83,7 +85,9 @@
               "list": {
                 "node": "ParameterRef",
                 "parameter": "staffelbedragen",
-                "bron": "de staffelbedragen"
+                "source": {
+                  "snippet": "de staffelbedragen"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -124,12 +128,16 @@
                       "links": {
                         "node": "BinderRef",
                         "name": "acc",
-                        "bron": "de opgetelde vergoeding"
+                        "source": {
+                          "snippet": "de opgetelde vergoeding"
+                        }
                       },
                       "rechts": {
                         "node": "BinderRef",
                         "name": "x",
-                        "bron": "het staffelbedrag"
+                        "source": {
+                          "snippet": "het staffelbedrag"
+                        }
                       },
                       "type": {
                         "node": "Number",
@@ -137,15 +145,21 @@
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "de opgetelde vergoeding plus het staffelbedrag"
+                      "source": {
+                        "snippet": "de opgetelde vergoeding plus het staffelbedrag"
+                      }
                     },
                     "rechts": {
                       "node": "ParameterRef",
                       "parameter": "plafond",
-                      "bron": "het plafond"
+                      "source": {
+                        "snippet": "het plafond"
+                      }
                     },
                     "periode": null,
-                    "bron": "de opgetelde vergoeding plus het staffelbedrag kleiner dan of gelijk aan het plafond"
+                    "source": {
+                      "snippet": "de opgetelde vergoeding plus het staffelbedrag kleiner dan of gelijk aan het plafond"
+                    }
                   },
                   "then": {
                     "node": "Binair",
@@ -153,12 +167,16 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "acc",
-                      "bron": "de opgetelde vergoeding"
+                      "source": {
+                        "snippet": "de opgetelde vergoeding"
+                      }
                     },
                     "rechts": {
                       "node": "BinderRef",
                       "name": "x",
-                      "bron": "het staffelbedrag"
+                      "source": {
+                        "snippet": "het staffelbedrag"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -166,16 +184,24 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de opgetelde vergoeding plus het staffelbedrag"
+                    "source": {
+                      "snippet": "de opgetelde vergoeding plus het staffelbedrag"
+                    }
                   },
                   "else": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "de opgetelde vergoeding"
+                    "source": {
+                      "snippet": "de opgetelde vergoeding"
+                    }
                   },
-                  "bron": "de opgetelde vergoeding met het staffelbedrag erbij zolang het plafond niet wordt overschreden"
+                  "source": {
+                    "snippet": "de opgetelde vergoeding met het staffelbedrag erbij zolang het plafond niet wordt overschreden"
+                  }
                 },
-                "bron": "de staffel opgeteld tot het plafond"
+                "source": {
+                  "snippet": "de staffel opgeteld tot het plafond"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -188,9 +214,13 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               },
-              "bron": "de staffelbedragen gevouwen tot het plafond"
+              "source": {
+                "snippet": "de staffelbedragen gevouwen tot het plafond"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

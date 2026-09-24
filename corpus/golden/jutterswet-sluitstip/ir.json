@@ -63,7 +63,9 @@
               "node": "AttribuutRef",
               "attribuut": "sluitstip",
               "objecttype": "Vondst",
-              "bron": "De sluitstip van een Vondst"
+              "source": {
+                "snippet": "De sluitstip van een Vondst"
+              }
             },
             "value": {
               "node": "Literal",
@@ -74,7 +76,9 @@
                 "node": "Date",
                 "precision": "millisecond"
               },
-              "bron": "dd. 1-7-2026 08:30:00.000"
+              "source": {
+                "snippet": "dd. 1-7-2026 08:30:00.000"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"
@@ -95,7 +99,9 @@
               "node": "AttribuutRef",
               "attribuut": "tijdig",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is tijdig"
+              "source": {
+                "snippet": "Een Vondst is tijdig"
+              }
             },
             "value": {
               "node": "Literal",
@@ -105,7 +111,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -114,7 +122,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "afgiftestip",
                 "objecttype": "Vondst",
-                "bron": "zijn afgiftestip"
+                "source": {
+                  "snippet": "zijn afgiftestip"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -125,10 +135,14 @@
                   "node": "Date",
                   "precision": "millisecond"
                 },
-                "bron": "01-07-2026 08:30:00.000"
+                "source": {
+                  "snippet": "01-07-2026 08:30:00.000"
+                }
               },
               "periode": null,
-              "bron": "zijn afgiftestip eerder is dan 01-07-2026 08:30:00.000"
+              "source": {
+                "snippet": "zijn afgiftestip eerder is dan 01-07-2026 08:30:00.000"
+              }
             },
             "initialisation": false
           }
@@ -148,7 +162,9 @@
               "node": "AttribuutRef",
               "attribuut": "verlaat",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is verlaat"
+              "source": {
+                "snippet": "Een Vondst is verlaat"
+              }
             },
             "value": {
               "node": "Literal",
@@ -158,7 +174,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Vergelijking",
@@ -167,7 +185,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "afgiftestip",
                 "objecttype": "Vondst",
-                "bron": "zijn afgiftestip"
+                "source": {
+                  "snippet": "zijn afgiftestip"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -178,10 +198,14 @@
                   "node": "Date",
                   "precision": "millisecond"
                 },
-                "bron": "1-07-2026 08:30:00.000"
+                "source": {
+                  "snippet": "1-07-2026 08:30:00.000"
+                }
               },
               "periode": null,
-              "bron": "zijn afgiftestip later is dan 1-07-2026 08:30:00.000"
+              "source": {
+                "snippet": "zijn afgiftestip later is dan 1-07-2026 08:30:00.000"
+              }
             },
             "initialisation": false
           }
