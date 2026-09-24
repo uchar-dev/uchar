@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Where a {@code // Bron:} annotation lands when it is not written directly above a rule of its own. An
- * annotation belongs to the rule directly below it ({@code bronAnnotaties}, IR-SPEC ch. 3.1). A {@code Regelgroep}
+ * annotation belongs to the rule directly below it ({@code statuteAnnotations}, IR-SPEC ch. 3.1). A {@code Regelgroep}
  * header is no rule, so an annotation above it reached nothing and vanished without a word — measured on the
  * frontend before this fix (df485007): {@code diagnostics: []}, the annotation nowhere in the IR. It now draws the
  * WARNING the {@code Uitzonderingen ongeordend:} header already draws. The group's own {@code bron} field is no
@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>A {@code Beslistabel} header is no rule either, but the table IS rules: it desugars to one rule per row. An
  * annotation above it vanished the same way — measured on the same build: {@code diagnostics: []}, no
  * {@code bronAnnotaties} on either desugared rule — because each row is re-parsed in a stream of its own, where
- * no comment stands above it. It now lands on every desugared rule, the multi-version precedent of IR-SPEC
- * ch. 3.1: the field per flattened entry, stamped from the one comment block above the shared header.
+ * no comment stands above it. It now lands on every desugared rule, as every version of a rule carries the rule's
+ * annotations (IR-SPEC ch. 3.1), stamped from the one comment block above the shared header.
  */
 class BronAnnotatiePlaatsTest {
 

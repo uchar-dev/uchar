@@ -383,7 +383,7 @@ class SubtypeDialectTest {
         // bound, so once Wrakrecht joins the chain a Wrakrecht fills BOTH the Strandrecht role and its own — the pair
         // Kustgemeente x Wrakrecht is doubly connected and the by-pair search goes silent. The
         // frontend is ahead of it: the written element name still names exactly one role, so the fold
-        // keeps a bronRol and never goes out bindingless.
+        // keeps a sourceRole and never goes out bindingless.
         String src = """
             Objecttype het Strandrecht (mv: Strandrechten)
                 de uitkering Numeriek (niet-negatief getal met 2 decimalen);

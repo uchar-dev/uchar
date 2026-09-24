@@ -207,7 +207,7 @@ class AantalGevuldeDialectTest {
 
     @Test void het_meerstapsbereik_wordt_een_bronpad_en_valt_niet_stil_weg() {
         // MEASURED rather than assumed: the stacked range does NOT hit keurVouwbron's nested-step
-        // refusal, because WF-102's resolution runs first and carries the range as a bronPad. That is
+        // refusal, because WF-102's resolution runs first and carries the range as a sourcePath. That is
         // the wire form ch. 3.4b's flat union needs, and `corpus/golden/jutterswet-gevuldepad` pins
         // what it means; what matters here is that the SENTENCE reaches it, and that the outer step
         // never disappears into a one-relation fold in silence.

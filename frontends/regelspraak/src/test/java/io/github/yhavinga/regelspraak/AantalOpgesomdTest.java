@@ -87,7 +87,7 @@ class AantalOpgesomdTest {
         """;
 
     /** The third measured route, and the one that shows the arm must not read the element type: the
-     *  first operand BINDS an element ("vondsten"), so the node carries an {@code elementObjecttype}
+     *  first operand BINDS an element ("vondsten"), so the node carries an {@code elementType}
      *  beside its operand list. Before this arm it emitted with a WARNING only — which does not block
      *  — although the verifier rejects it under WF-037 and WF-034 both. */
     static final String ELEMENT_SPELLING = """

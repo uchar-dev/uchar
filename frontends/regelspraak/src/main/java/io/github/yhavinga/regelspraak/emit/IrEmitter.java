@@ -143,7 +143,7 @@ public final class IrEmitter {
      *  resolve against it (null outside a subject-bearing form). */
     private Objecttype huidigSubject;
     /** The one AttribuutRef currently being emitted as the single argument of an instance fold: its
-     *  relation is the fold's range ({@code bronRol} or {@code bronPad}), so it never carries
+     *  relation is the fold's range ({@code sourceRole} or {@code sourcePath}), so it never carries
      *  {@code navigatieBindingen} (IR-SPEC ch. 4.1a; the verifier rejects them in a fold slot, WF-053).
      *  Null otherwise. */
     private Expr foldBron;
@@ -935,8 +935,8 @@ public final class IrEmitter {
             // the §5.7 concatenation as an instance set (IR-SPEC ch. 4.3, WF-110). No "type" key:
             // the node denotes INSTANCES and carries no datatype, which is why the verifier's type
             // prologue exempts it the way it exempts a Lambda. Each selection's filter is emitted
-            // with the SELECTION's element type as the subject, exactly as a Functie's filter is
-            // emitted under its elementObjecttype — the condition evaluates per contributor.
+            // with the SELECTION's element type as the subject, exactly as an aggregation's filter is
+            // emitted under its elementType — the condition evaluates per contributor.
             case Expr.InstanceSetUnion u -> {
                 w.key("node").value("InstanceSetUnion");
                 w.key("branches").beginArray();
