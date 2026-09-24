@@ -14,8 +14,13 @@
      writes two nodes for them: the loader reads a `Number` whose unit is
      '%' as [Percentage] and any other `Number` as [Numeriek], and a `Date`
      by its precision as [Datum_in_dagen] or [Datum_tijd], so every reader
-     keeps the typing families it was written against (L3 changes no
-     meaning). What the in-memory form gained is what the wire now states
+     keeps the typing families it was written against. On every corpus
+     document that is the v0 meaning exactly (no v0 [Numeriek] carried the
+     unit '%'), but not at every derived position: the RegelSpraak frontend
+     types a sum of two percentages as a number with the unit '%', and L3
+     reads what it writes there as a [Percentage] — a refinement the
+     verifier's derivation follows ([Checks.derived_number]; IR-SPEC ch. 2.4
+     states it). What the in-memory form gained is what the wire now states
      and v0 could not: a unit's factor as an exact rational, a declared
      unit's spellings, a day kind's plural and a parameter's period count.
      The presentation tag of a percentage stays out of the datatype, which

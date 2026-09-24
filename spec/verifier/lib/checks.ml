@@ -2145,6 +2145,22 @@ let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) a
 let dt_decimals = function Numeriek { decimalen; _ } | Percentage { decimalen; _ } -> decimalen | _ -> 0
 let dt_whole = function Numeriek { geheel; _ } | Percentage { geheel; _ } -> geheel | _ -> false
 
+(* A number an arm below derives is built in the loader's reading
+   ([Loader.datatype], the Ast header): a unit '%' — a rate whose numerator
+   is '%' among them — makes it a [Percentage], any other unit or none a
+   [Numeriek]. The annotation it is crossed against went through that
+   reading at load, so a '%' result built as a [Numeriek] would refuse every
+   annotation its position can carry. Since L3 that is a live shape: the
+   RegelSpraak frontend types a sum of two percentages as a number with the
+   unit '%', its emitter writes a `Number` with the unit '%', and the loader
+   reads that as a percentage (measured 2026-09-24: before this reading,
+   WF-091 refused the soort of the frontend's own PLUS, MIN and
+   VERMINDERD_MET over two percentage attributes). *)
+let derived_number ~geheel ~decimalen (eenheid : eenheid option) =
+  match eenheid with
+  | Some { afkorting = Some "%"; _ } -> Percentage { geheel; decimalen; eenheid }
+  | _ -> Numeriek { geheel; decimalen; teken = Some Onbepaald; eenheid }
+
 (* The ch. 2.6 MAAL join, in the two shapes the IR fixes: a unitless operand
    hands the other unit through (the dimensionless 1 absorbs), and a rate
    times its convertible denominator unit CANCELS to the numerator ("€/jr
@@ -2236,15 +2252,15 @@ let composite_expectation ctx ~binders (e : expr) :
             is_number_like l && is_number_like r && units_compatible (unit_of l) (unit_of r)
           then
             (* ch. 2.3: maxDec, whole iff both operands are; ch. 2.6: the
-               result carries the LEFT unit. The SIGN is not claimed here or
-               at any other arm — see the header note. *)
+               result carries the LEFT unit, and a '%' result is a percentage
+               ([derived_number]). The SIGN is not claimed here or at any
+               other arm — see the header note. *)
             Some
               ( what, "the type derived from its operands",
-                Numeriek
-                  { geheel = dt_whole l && dt_whole r;
-                    decimalen = max (dt_decimals l) (dt_decimals r);
-                    teken = Some Onbepaald;
-                    eenheid = unit_of l },
+                derived_number
+                  ~geheel:(dt_whole l && dt_whole r)
+                  ~decimalen:(max (dt_decimals l) (dt_decimals r))
+                  (unit_of l),
                 [] )
           else
             (* a one-sided unit pair: WF-035's literal-adoption clause
@@ -2269,7 +2285,7 @@ let composite_expectation ctx ~binders (e : expr) :
                  wholeness witnesses over golden+rood+negatief. *)
               Some
                 ( "the MAAL composite", "the type derived from its operands",
-                  Numeriek { geheel = false; decimalen = 0; teken = Some Onbepaald; eenheid = u },
+                  derived_number ~geheel:false ~decimalen:0 u,
                   [ "decimals"; "wholeness" ] ))
       | _ -> None)
   | Afgerond { basis = Some b; decimalen; _ } -> (
@@ -2372,10 +2388,19 @@ let composite_expectation ctx ~binders (e : expr) :
               | Some true ->
                   Some (what, "the type derived from its first operand", t0, [])
               | Some false ->
+                  (* the strip keeps the constructor: a rate over '%' strips
+                     to '%' and stays the percentage the loader read, as any
+                     other rate strips to a number. Since L3 a '%' rate is a
+                     [Percentage] whichever producer typed it, and the
+                     RegelSpraak frontend strips the rate its own sum of two
+                     '%' rates carries (measured 2026-09-24: without the
+                     second arm, WF-091 refused the unit of that TOTAAL) *)
                   let d =
                     match t0 with
                     | Numeriek ({ eenheid = Some ({ noemer = Some _; _ } as u); _ } as n) ->
                         Numeriek { n with eenheid = Some { u with noemer = None } }
+                    | Percentage ({ eenheid = Some ({ noemer = Some _; _ } as u); _ } as p) ->
+                        Percentage { p with eenheid = Some { u with noemer = None } }
                     | other -> other
                   in
                   Some (what, "the type derived from its first operand", d, []))
@@ -2400,6 +2425,22 @@ let composite_expectation ctx ~binders (e : expr) :
                                decimalen =
                                  List.fold_left (fun m x -> min m (dt_decimals x)) max_int ts;
                                teken; eenheid },
+                           [ "domain" ] )
+                   | Percentage { eenheid; _ } ->
+                       (* the same formula over a percentage operand 0: since
+                          L3 a '%' number is a [Percentage], and the RegelSpraak
+                          frontend's MINIMUM over two percentage sums writes
+                          the least precision (measured 2026-09-24: passing
+                          operand 0's precision through, WF-091 refused its
+                          decimals). The frontend refuses the fold over a
+                          declared percentage, so it writes no other reading *)
+                       Some
+                         ( what, "the type derived from its operands",
+                           Percentage
+                             { geheel = List.for_all dt_whole ts;
+                               decimalen =
+                                 List.fold_left (fun m x -> min m (dt_decimals x)) max_int ts;
+                               eenheid },
                            [ "domain" ] )
                    | _ ->
                        Some
