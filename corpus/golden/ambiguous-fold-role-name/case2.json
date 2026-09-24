@@ -1,0 +1,18 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": { "vondstvrienden": [ "V1", "V2" ] }, "characteristics": [] },
+      { "label": "J2", "objectType": "Jutter", "attributes": {}, "roles": { "bakenvrienden": [ "B1" ] }, "characteristics": [] },
+      { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "V2", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "B1", "objectType": "Baken", "attributes": {}, "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "aantal vrienden", "value": { "number": "2" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "aantal vrienden", "value": { "number": "0" } }
+  ]
+}

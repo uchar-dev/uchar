@@ -56,7 +56,7 @@
             "node": "Rol",
             "naam": "vriend",
             "objecttypeNaam": "Vondst",
-            "meervoud": null,
+            "meervoud": "vondstvrienden",
             "meervoudig": true
           }
         ]
@@ -77,7 +77,7 @@
             "node": "Rol",
             "naam": "vriend",
             "objecttypeNaam": "Baken",
-            "meervoud": null,
+            "meervoud": "bakenvrienden",
             "meervoudig": true
           }
         ]
