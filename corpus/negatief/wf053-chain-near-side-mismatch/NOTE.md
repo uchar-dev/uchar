@@ -15,4 +15,4 @@ hop, over `kustligging`, starts at a `Post`, while the walk stands at the
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the read lost
 its written hop names (B11), and the two lines the verifier drew for a
 written step that did not denote its bound role left with them; the
-near-side and endpoint lines remain. `expect.txt` pins the arm (U1).
+near-side and endpoint lines remain. `expect.txt` pins the arm.

@@ -12,7 +12,7 @@ never a silent first pick.
 (i); the L2 fix round measured the document byte-identical to the
 migration's translation of its L1 form.) Until L2 the hop
 was spelled by the written plural `posten` and derived by name. Since L2 the
-navigation carries its binding (B11, D10); the migration derived
+navigation carries its binding (B11); the migration derived
 `postbezetting`/`post` from the written name, and the to-many hop is what
 remains. `wf053-to-many-regelwaarde` pins the same position on the vondsten
-model. `expect.txt` pins the arm (U1).
+model. `expect.txt` pins the arm.

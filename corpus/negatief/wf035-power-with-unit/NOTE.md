@@ -10,4 +10,4 @@ operand was a read of a unitless attribute whose own `type` annotation
 claimed `jr`; with the annotation gone (B13) the read is typed by its
 declaration, and the migration's translation was verifier-clean. Written by
 hand: the unit now sits on the declaration the operand reads, so the base
-genuinely carries it. `expect.txt` pins the arm (U1).
+genuinely carries it. `expect.txt` pins the arm.

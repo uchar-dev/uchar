@@ -23,24 +23,24 @@ The denominator strip is a **measured four-source divergence**, recorded at
 the card and not resolved by it: §4.20 states the strip, and the RegelSpraak
 frontend applies it — but, since the *set-fold "totaal van"* card, not
 unconditionally. The frontend strips on every reading **except** the
-non-temporal set one, tested by one predicate
-(`ExpressieBouwer.setLezing`: exactly one operand, an attribute reference
-read as the set source, over an attribute its object type declares no
-granularity for; since L2 the set source is the argument of a fold that
-carries a range, D8), because that reading is an alias of the sum and integrates over
-nothing. The ASP translator's `eff_unit` and the Drools backend's
-`EffectieveEenheid` strip in neither reading: both hand the first operand's
-unit through whole. The verifier follows the source that states a `TOTAAL`
-rule and mirrors its predicate rather than restating the strip — an
-unconditional strip is *not* what §4.20 plus the emitter say together, and
-writing one made `jutterswet-tempototaal` red on a wire type no executor can
-produce. The two executor-side derivations state no integration rule at all
-and are a consumer-side question, not a well-formedness one.
+non-temporal set one, tested by one predicate (`ExpressieBouwer.setLezing`:
+exactly one operand, an attribute reference read as the set source, over an
+attribute its object type declares no granularity for; since L2 the set source
+is the argument of a fold that carries a range, IR-SPEC ch. 4.3), because that
+reading is an alias of the sum and integrates over nothing. The ASP
+translator's `eff_unit` and the Drools backend's `EffectieveEenheid` strip in
+neither reading: both hand the first operand's unit through whole. The
+verifier follows the source that states a `TOTAAL` rule and mirrors its
+predicate rather than restating the strip — an unconditional strip is *not*
+what §4.20 plus the emitter say together, and writing one made
+`jutterswet-tempototaal` red on a wire type no executor can produce. The two
+executor-side derivations state no integration rule at all and are a
+consumer-side question, not a well-formedness one.
 
-This document reaches the strip on the arity half of that predicate: it
-totals **two** operands, both ordinary reads without a range, so no reading of it is the set
-alias. *Measured 2026-09-04:* 15 `TOTAAL` nodes over the four zones — 9
-golden, 6 negatief, none in rood or the parity zone — of which only three
+This document reaches the strip on the arity half of that predicate: it totals
+**two** operands, both ordinary reads without a range, so no reading of it is
+the set alias. *Measured 2026-09-04:* 15 `TOTAAL` nodes over the four zones —
+9 golden, 6 negatief, none in rood or the parity zone — of which only three
 carry a rate unit at all (the two in `jutterswet-tempototaal`, one per
 reading, and this one), so at the other twelve the strip is a no-op either
 way.
@@ -63,4 +63,4 @@ migration's translation (`spec/proposals/v1-migratie/m2.py`): the operand
 references lost their own `type` (B13), and the composite's annotation, a
 derived position, keeps its (V5 (a)), so the cross now runs against the type
 the operands' declarations derive. The rule still fires on the same arm, and
-`expect.txt` pins it (U1).
+`expect.txt` pins it.

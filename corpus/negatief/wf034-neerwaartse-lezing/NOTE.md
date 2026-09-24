@@ -20,4 +20,4 @@ migration's translation (`spec/proposals/v1-migratie/m2.py`): the fold
 source lost its own `type` and set reading (B11, B13), and the fold carries
 its range; the source still reads, on the supertype `Strandrecht`, an
 attribute declared on a subtype. The rule still fires on the same arm, and
-`expect.txt` pins it (U1).
+`expect.txt` pins it.

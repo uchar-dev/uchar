@@ -25,4 +25,4 @@ A minimal hand-built document.
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the references
 lost their own `type` (B13); the drift sits on a `Literal`'s `type`, which
 stays (V9 (a)). The rule still fires on the same arm, and `expect.txt` pins
-it (U1).
+it.

@@ -7,9 +7,9 @@ value; a to-many step there needs an aggregation.
     the to-many role 'vondst' in a scalar slot — a to-many step needs an
     aggregation, never a silent first pick
 
-**Successor at L2 (2026-09-24), stamp: vervangen (U8).** This directory
-replaces `wf096-setlezing-operand`, whose defect was the set reading on an
-operand of `PLUS` (WF-096). The field left the wire with L2 (B11, D8);
-measured on the migration's translation
+**Successor at L2 (2026-09-24), stamp: vervangen, named after the rule it now
+pins.** This directory replaces `wf096-setlezing-operand`, whose defect was
+the set reading on an operand of `PLUS` (WF-096). The field left the wire with
+L2 (B11); measured on the migration's translation
 (`spec/proposals/v1-migratie/m2.py`), what remains is the navigated read,
-which WF-053 refuses for its to-many hop. `expect.txt` pins the arm (U1).
+which WF-053 refuses for its to-many hop. `expect.txt` pins the arm.

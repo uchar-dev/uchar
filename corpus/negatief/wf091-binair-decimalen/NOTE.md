@@ -29,4 +29,4 @@ migration's translation (`spec/proposals/v1-migratie/m2.py`): the operand
 references lost their own `type` (B13), and the composite's annotation, a
 derived position, keeps its (V5 (a)), so the cross now runs against the type
 the operands' declarations derive. The rule still fires on the same arm, and
-`expect.txt` pins it (U1).
+`expect.txt` pins it.

@@ -23,9 +23,9 @@ attribute reference inside the fold, a *reference* position) while the fold
 root stayed honest. Here the source is honest and the ROOT lies — the half
 no reference arm can reach.
 
-Falsifiable: drop `unit` and this case turns CLEAN — the derived arms
-carry no backstop since the sign round, so the unit facet alone carries
-this refusal (measured); remove `Som` from the aggregation branch and it turns clean while
+Falsifiable: drop `unit` and this case turns CLEAN — the derived arms carry no
+backstop since the sign round, so the unit facet alone carries this refusal
+(measured); remove `Som` from the aggregation branch and it turns clean while
 the MAXIMUM, TOTAAL, MINIMUM and AANTAL cases stay red.
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
@@ -33,4 +33,4 @@ migration's translation (`spec/proposals/v1-migratie/m2.py`): the operand
 references lost their own `type` (B13), and the composite's annotation, a
 derived position, keeps its (V5 (a)), so the cross now runs against the type
 the operands' declarations derive. The rule still fires on the same arm, and
-`expect.txt` pins it (U1).
+`expect.txt` pins it.

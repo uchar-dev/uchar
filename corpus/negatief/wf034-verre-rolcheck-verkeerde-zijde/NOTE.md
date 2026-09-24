@@ -1,5 +1,5 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6), the role arm of the
-`RoleMembership` node (D11): the condition on the subject `Wachtpost` names
+`RoleMembership` node (B9): the condition on the subject `Wachtpost` names
 the fact type `wachtindeling` and its role `wachtjutter` — a role of the
 right fact type on the wrong side. `wachtjutter` is filled by the `Jutter`;
 the `Wachtpost` fills `toegewezen wachtpost`. The check therefore names a
@@ -18,4 +18,4 @@ migration derives its fact type and role from exactly the pair this witness
 gets wrong — it refused the document, finding no candidate. Written by hand
 in the merged form, with the same mistake: this is the red-first proof V4
 (b) asks of the v1 role arm, which crosses the fact type, the role and the
-subject's filling together. `expect.txt` pins the arm (U1).
+subject's filling together. `expect.txt` pins the arm.

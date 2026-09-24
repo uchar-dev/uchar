@@ -11,7 +11,7 @@ date components, eerste paasdag, literals, parameters and other day kinds).
     characteristic read)
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (i).** L2 merged the two
-role-check nodes into `RoleMembership {factType, role, negated}` (B9, D11),
+role-check nodes into `RoleMembership {factType, role, negated}` (B9),
 which names its fact type instead of deriving it from the subject. A
 day-kind condition has no subject, so the migration had nothing to derive
 from and refused the document; it was written by hand with the fact type

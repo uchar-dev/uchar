@@ -42,4 +42,4 @@ migration's translation (`spec/proposals/v1-migratie/m2.py`): the operand
 references lost their own `type` (B13), and the aggregation's annotation, a
 derived position, keeps its (V5 (a)); operand 0 is now typed by the
 attribute it reads. The rule still fires on the same arm, and `expect.txt`
-pins it (U1).
+pins it.

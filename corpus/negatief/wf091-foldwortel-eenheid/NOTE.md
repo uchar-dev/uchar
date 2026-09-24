@@ -28,15 +28,15 @@ backend refuses a multi-operand `MINIMUM`/`MAXIMUM` ahead of translation,
 so the shape can carry no pinned expectations — which is exactly why the
 artifact that closes it is a negatief.
 
-Falsifiable: drop `unit` from the facet list and this case turns clean (no facet
-stands behind the unit facet: the min/max arm skipped sign and residual,
-and since the L2 fix round the engine has neither); keep the facet and remove `Minimum | Maximum` from
-`composite_expectation` and this case turns clean while `wf091-som-eenheid`
-and `wf091-totaal-eenheid` stay red.
+Falsifiable: drop `unit` from the facet list and this case turns clean (no
+facet stands behind the unit facet: the min/max arm skipped sign and residual,
+and since the L2 fix round the engine has neither); keep the facet and remove
+`Minimum | Maximum` from `composite_expectation` and this case turns clean
+while `wf091-som-eenheid` and `wf091-totaal-eenheid` stay red.
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the operand
 references lost their own `type` (B13), and the composite's annotation, a
 derived position, keeps its (V5 (a)), so the cross now runs against the type
 the operands' declarations derive. The rule still fires on the same arm, and
-`expect.txt` pins it (U1).
+`expect.txt` pins it.

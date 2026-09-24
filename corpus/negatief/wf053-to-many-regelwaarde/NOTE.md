@@ -9,12 +9,12 @@ position on another model.
     to-many role 'vondst' in a scalar slot — a to-many step needs an
     aggregation, never a silent first pick
 
-**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-053 (D17).** Until
-L2 this document was `wf096-setlezing-regelwaarde`, a witness of WF-096: the
-read carried the set reading (a field saying "the members' values, one per
-member") at a position that consumes one value. The field left the wire with
-L2 (B11, D8): the set source is the single argument of a fold that carries a
-range, and nothing else. Measured on the migration's translation
-(`spec/proposals/v1-migratie/m2.py`), what remains is the navigated read
-itself, which WF-053 refuses for its to-many hop. `expect.txt` pins the arm
-(U1).
+**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-053, the rule its
+translation falls on.** Until L2 this document was
+`wf096-setlezing-regelwaarde`, a witness of WF-096: the read carried the set
+reading (a field saying "the members' values, one per member") at a position
+that consumes one value. The field left the wire with L2 (B11): the set source
+is the single argument of a fold that carries a range, and nothing else.
+Measured on the migration's translation (`spec/proposals/v1-migratie/m2.py`),
+what remains is the navigated read itself, which WF-053 refuses for its
+to-many hop. `expect.txt` pins the arm.

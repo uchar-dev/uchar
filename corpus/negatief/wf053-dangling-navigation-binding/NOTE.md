@@ -8,4 +8,4 @@ hop resolves against nothing.
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the read lost
 its written hop name (B11); the binding is unchanged. `expect.txt` pins the
-arm (U1).
+arm.

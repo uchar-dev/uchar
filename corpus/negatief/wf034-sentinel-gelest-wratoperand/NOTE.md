@@ -8,7 +8,7 @@ ordinary reads, and a role name read as an attribute resolves to nothing.
 The document. A `MAXIMUM` with two arguments and a vestigial
 `elementType`: operand 0 the subject's `drempelgewicht`, operand 1
 `vondsten` on `Jutter`. The name is a count source only as the single
-argument of an aggregation (D9); here it is the second of two operands, and
+argument of an aggregation (WF-093); here it is the second of two operands, and
 nothing reads a relation from it.
 
     WF-034 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/1: 'vondsten'
@@ -26,4 +26,4 @@ reference's own annotation (B13); the migration's translation
 attribute of `Jutter`, and WF-034 refuses it in its name-resolution arm. The
 witness now guards the edge of the count-source recognition: outside the
 source position a role name is a name like any other. `expect.txt` pins the
-new arm (U1).
+new arm.

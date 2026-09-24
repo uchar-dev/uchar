@@ -13,9 +13,9 @@ contributor, and a literal is no such read.
 **Rewritten at L2 (2026-09-24), stamp: herschreven (i).** Until L2 the
 argument was the subject's own attribute read without the set reading,
 beside an `elementObjecttype` and without a range. Since L2 the set source
-is the argument of a fold that carries a range (D8 (i)), and a
+is the argument of a fold that carries a range (IR-SPEC ch. 4.3), and a
 single-argument fold with an `elementObjecttype` carries one under every
-kind but `TOTAAL` (U2): the old shape is refused by the schema and the
+kind but `TOTAAL` (B12): the old shape is refused by the schema and the
 loader before WF-037 is asked, so the set-source demand of the arm is
 enforced at load. What the verifier still decides is a range beside a source
 that is no attribute reference, and this document pins that. The card

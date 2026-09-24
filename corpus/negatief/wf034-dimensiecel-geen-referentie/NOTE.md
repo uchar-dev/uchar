@@ -84,4 +84,4 @@ verdict.
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the cell read
 lost its own `type` (B13); its attribute position still holds a literal
 instead of an attribute reference. The rule still fires on the same arm, and
-`expect.txt` pins it (U1).
+`expect.txt` pins it.

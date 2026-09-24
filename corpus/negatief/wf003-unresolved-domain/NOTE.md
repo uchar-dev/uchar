@@ -11,8 +11,8 @@ attribute's datatype was the v0 unknown-type node with the reason "domein
 Bedragen niet gevonden": the producer's record that it could not resolve the
 domain. L2 took that node out of the datatype union (B16), so an unfindable
 domain is spelled as what it is — a declaration naming an undeclared domain
-(D15) — and the migration refuses the old node, having no L2 spelling for
-it. Written by hand: the declaration names `Bedragen`, and the rule's
-condition compares the attribute with a literal of the same domain for
-equality, so no ordering or family clause of WF-036 reports beside the one
-defect. `expect.txt` pins the arm (U1).
+(WF-003 since the L2 landing) — and the migration refuses the old node, having
+no L2 spelling for it. Written by hand: the declaration names `Bedragen`, and
+the rule's condition compares the attribute with a literal of the same domain
+for equality, so no ordering or family clause of WF-036 reports beside the one
+defect. `expect.txt` pins the arm.

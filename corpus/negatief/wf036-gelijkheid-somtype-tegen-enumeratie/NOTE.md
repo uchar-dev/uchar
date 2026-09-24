@@ -8,13 +8,13 @@ declares one variant.
     WF-036 FAIL /rules/resolvedRegels/0/versions/0/condition: equality across
     families: sumtype vs enumeration
 
-**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-036 (D17).** Until
-L2 this document was `wf089-enum-over-som`, a witness of WF-089 on the
-reference-type arm: the reference's own `type` spelled the attribute as an
-enumeration of the domain `beschikking`, the variant the literal it is
-compared with also carries. L2 took that annotation off the five reference
-classes (B13, IR-SPEC ch. 4.1), so the read's type IS its declaration's and
-the lie cannot be written. The migration
-(`spec/proposals/v1-migratie/m2.py`) removed the annotation and nothing
-else; measured on that translation, the verifier refuses it on WF-036, the
-rule this directory now names. `expect.txt` pins the arm (U1).
+**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-036, the rule its
+translation falls on.** Until L2 this document was `wf089-enum-over-som`, a
+witness of WF-089 on the reference-type arm: the reference's own `type`
+spelled the attribute as an enumeration of the domain `beschikking`, the
+variant the literal it is compared with also carries. L2 took that annotation
+off the five reference classes (B13, IR-SPEC ch. 4.1), so the read's type IS
+its declaration's and the lie cannot be written. The migration
+(`spec/proposals/v1-migratie/m2.py`) removed the annotation and nothing else;
+measured on that translation, the verifier refuses it on WF-036, the rule this
+directory now names. `expect.txt` pins the arm.

@@ -12,7 +12,7 @@ one node, and nothing decides which of the two a consumer should read.
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (i).** Until L2 the count
 carried the `elementObjecttype` alone. Since L2 a single-argument fold with
-an `elementObjecttype` carries a range under every kind but `TOTAAL` (U2),
+an `elementObjecttype` carries a range under every kind but `TOTAAL` (B12),
 so the migration had to derive one and refused: nothing derives a range
 beside a union. Written by hand with the first selection's relation as
 `bronRol`; the clause now names both halves of the count's own source.

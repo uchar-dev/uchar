@@ -17,4 +17,4 @@ reference classes (B13), so the migration's translation was verifier-clean.
 The expression-layer arm of WF-072 stands wherever a node still carries its
 own type; written by hand, the base of the field access is now a
 `StructLiteral`, whose `type` is required and read. `expect.txt` pins the
-arm (U1).
+arm.

@@ -12,15 +12,14 @@ consult come apart.
     'bewaarvergoeding per maand' against the anchor, never against this field,
     so the two spellings name different declarations
 
-The document. A Vondst-subject rule whose value is the ch. 3.6 temporal
-total, `elementType: "Vondst"` (the subject, the tag v0 stamps on an
-own temporal total), one operand: `bewaarvergoeding per maand` with
-`objecttype: "Jutter"`, no range (so the subject's own read, D8 (iv)), no
-navigation. `Jutter` really does
-declare that attribute, at MAAND granularity, so every other rule that
-crosses the reference against a declaration is satisfied — this is precisely
-why the shape stayed verifier-clean: nothing in the document is wrong except
-the type it says the fold is anchored at.
+The document. A Vondst-subject rule whose value is the ch. 3.6 temporal total,
+`elementType: "Vondst"` (the subject, the tag v0 stamps on an own temporal
+total), one operand: `bewaarvergoeding per maand` with `objecttype: "Jutter"`,
+no range (so the subject's own read, IR-SPEC ch. 4.3), no navigation. `Jutter`
+really does declare that attribute, at MAAND granularity, so every other rule
+that crosses the reference against a declaration is satisfied — this is
+precisely why the shape stayed verifier-clean: nothing in the document is
+wrong except the type it says the fold is anchored at.
 
 What the executors do with it. `ref`'s temporal-total arm carries the control
 `norm aot = norm self.otype` outright; failing that, the document falls to
@@ -61,7 +60,7 @@ exactly one report changes, this one, which turns clean.
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the source
 lost its own `type` (B13); a `TOTAAL` without a range reads the subject's
-own attribute (D8 (iv)), so its anchor is the fold subject, and its
+own attribute (IR-SPEC ch. 4.3), so its anchor is the fold subject, and its
 `objecttype` still names another type. The rule still fires on the same arm.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each

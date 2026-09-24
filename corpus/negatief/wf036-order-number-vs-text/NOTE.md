@@ -10,4 +10,4 @@ parameter was declared numeric and only its reference's own `type`
 annotation said text; with the annotation gone (B13) the reference is typed
 by its declaration, and the migration's translation was verifier-clean.
 Written by hand: the text type now sits on the parameter's declaration.
-`expect.txt` pins the arm (U1).
+`expect.txt` pins the arm.

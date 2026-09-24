@@ -15,7 +15,7 @@ A minimal hand-built document on the shape of
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the fact
-creation lost its bean fields and carries its symbolic block alone (B7, D12);
+creation lost its bean fields and carries its symbolic block alone (B7);
 the created relation equals the relation of the final hop. The rule still
 fires on the same arm.
 

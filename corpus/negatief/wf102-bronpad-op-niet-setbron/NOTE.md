@@ -28,10 +28,10 @@ itself unchanged.
 migration's translation (`spec/proposals/v1-migratie/m2.py`). Until L2 the
 count source was spelled with the unknown-type sentinel on its own `type`;
 that annotation left the wire (B13), and the count source is recognised at the
-source itself (D9). The clause's wording moved with it: the position it admits
-is the set source of a VALUE fold, since under L2 the range stands on every
-instance fold (D8). `expect.txt` was added in the L2 fix round (the message
-changed at L2, so the witness belongs to the stamp list).
+source itself (WF-093). The clause's wording moved with it: the position it
+admits is the set source of a VALUE fold, since under L2 the range stands on
+every instance fold (IR-SPEC ch. 4.3). `expect.txt` was added in the L2 fix
+round (the message changed at L2, so the witness belongs to the stamp list).
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,

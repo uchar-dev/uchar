@@ -9,7 +9,7 @@ is one instance; a to-many scope role names many.
 (i); the L2 fix round measured the document byte-identical to the
 migration's translation of its L1 form.) Until L2 the scope
 was the written field `kavel` without a binding, and the verifier derived
-the role by name. Since L2 the binding IS the scoping (B8, D12): the
+the role by name. Since L2 the binding IS the scoping (B8): the
 migration wrote `scopeRol` from the written name, and the to-many role is
 what remains.
 

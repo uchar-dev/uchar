@@ -88,4 +88,4 @@ keeping its verdict.
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the cell read
 lost its own `type` (B13); its attribute position is still empty. The rule
-still fires on the same arm, and `expect.txt` pins it (U1).
+still fires on the same arm, and `expect.txt` pins it.

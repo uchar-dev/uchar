@@ -16,4 +16,4 @@ operand reads lost their own `type` (B13), and the count's annotation, a
 derived position, kept its (V5 (a)). The card's rewrite drops the second
 operand once the count carries no operand list (B21, L4); until then the
 operand list stays, and with it the WF-037 line beside this one, which
-refuses a count's listed form. `expect.txt` pins the arm (U1).
+refuses a count's listed form. `expect.txt` pins the arm.

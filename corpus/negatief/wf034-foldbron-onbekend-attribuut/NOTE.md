@@ -13,7 +13,7 @@ resolves against nothing.
 migration's translation of its L1 form.) Until L2 the fold
 carried no range and the verifier's type-pair fallback stood in for it; the
 attribute name was the defect then as now. Since L2 the range is written
-(B12, D7): the migration derived it from the one reciprocal role, and the
+(B12): the migration derived it from the one reciprocal role, and the
 unknown name stayed.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
