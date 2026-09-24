@@ -3211,12 +3211,16 @@ let connecting_candidates ctx ~from_type ~to_type =
       | _ -> None)
     ctx.doc.feittypen
 
-(* The ch. 4.3 fallback counts candidate ROLES, not fact types — v0's
-   verbindendeRol (every role of the far type whose fact type also relates
-   the near type). A self-typed two-role fact type offers BOTH its roles and
-   so blocks the derivation, exactly as the executors' Eval.connecting_role
-   and the ch. 4.1/5.5 connecting_pair do; WF-034 lifts that block to
-   well-formedness. Mirrors ref's candidate list one-to-one. *)
+(* Candidate ROLES, not fact types — v0's verbindendeRol derivation (every
+   role of the far type whose fact type also relates the near type). Since
+   L2 its one reader is an object creation without a back-link binding
+   (WF-052's created-side role below; the executors derive that back-link
+   with ref's [Eval.connecting_pair], ch. 5.5). A self-typed two-role fact
+   type offers BOTH its roles and so blocks the derivation, as
+   [connecting_pair] does. Until L2 this was also the ch. 4.3 fallback of a
+   bindingless fold and allocation (the executors' Eval.connecting_role,
+   and WF-034 lifted the self-typed block to well-formedness there); both
+   left with that fallback (B12). *)
 let connecting_role_candidates ctx ~from_type ~to_type =
   List.concat_map
     (fun (_, (ft : feittype)) ->
@@ -6001,9 +6005,10 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
      widening WF-102: that rule is scoped to a fold's ARGUMENT — the source
      position, which this node does not have — and a negatief directory must
      be able to name the rule it violates. What is shared is the MACHINERY,
-     not the number: [wf047_binding], [wf048_derivable] and [resolve_binding]
-     are the fold's, called from here, so a range can never be judged by two
-     different engines. An unresolvable binding therefore still reports
+     not the number: [wf047_binding] and [resolve_binding] are the fold's,
+     called from here, so a range can never be judged by two different
+     engines (until L2 also [wf048_derivable], which left with the
+     bindingless range, B12). An unresolvable binding therefore still reports
      WF-047, exactly as a fold's does. *)
   | Kwantorvouw k ->
       let sub p = at ^ "/" ^ p in
