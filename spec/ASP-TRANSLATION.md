@@ -269,14 +269,18 @@ term `P`; granular parameters are refused in scalar slots (ch. 3.3/8).
 **Attribute reference**: body atom `val(S,a,A)`; a *navigated*
 reference (ch. 5.8) chains one `rol/3` atom per to-one hop before the
 final `val` — the shared variable is the join, and an absent link
-simply leaves the body underivable. Role resolution reuses the
-reference interpreter's own binding helpers (`Eval.bound_role`,
-`Eval.connecting_role`, `Eval.nav_single_step`), so both executors
-resolve navigation identically; the zero-hop self-reference (ch. 5.8
-rule 4) resolves to an EMPTY hop list, so no `rol/3` atom is emitted
-at all and the `val` atom reads the subject itself — the
-unconditional own-read, structurally (witness
-`jutterswet-aanmelderkrediet`). **Rekendatum** (ch. 8.2): the session's evaluation date
+simply leaves the body underivable. The hops are the reference's role
+bindings (`navigatieBindingen`, since L2 the only spelling of a hop), each
+resolved through the reference interpreter's own `Eval.bound_role`, so
+both executors resolve navigation identically. A reference without
+bindings is the subject's own read (ch. 5.8 rule 4): no `rol/3` atom is
+emitted at all and the `val` atom reads the subject itself — the
+unconditional own read, structurally (witness
+`jutterswet-aanmelderkrediet`) — and its `objecttype` must be the subject
+type itself, anything else refused by name (WF-053). *Until L2* the
+translator also resolved written hop names (`Eval.connecting_role`,
+`Eval.nav_single_step`), and the zero-hop self-reference was a written
+step that resolved to an empty hop list. **Rekendatum** (ch. 8.2): the session's evaluation date
 as a compile-time civil day number; a case without `asOfDate` faults.
 **Temporal point read** (ch. 3.3): a `tl/5`/`param_tl/4` atom with
 `F <= D, D < T` — the gap and the empty-index corner are the
@@ -773,18 +777,29 @@ this sound. The *navigated* check walks the `rol/3` hop as a POSITIVE
 literal with only the characteristic under the negation: an absent
 link fails the positive and the negated form alike — the deliberate
 v0 asymmetry (ch. 5.8), encoded for free. **Role membership**
-(rolcheck — the near-side `Rollidmaatschap`): the subject fills the
-role iff its to-one reference to the other end is set, so the positive
-form is a bare `rol(S,role,X)` join over the connecting role's
-canonical name (`Eval.connecting_role`, shared with ref) — an absent
-link never binds, so the gated rule does not fire (the null-test,
-leeg-on-absence for free). The "is geen" negation derives a per-subject
-helper `rmN(S) :- is_a(S,ot), rol(S,role,X)` and reads it negated, the
-subject kept bound by the head's `is_a` base — the inverse null-test,
-and unlike the navigated characteristic check it *flips*
-(RUNTIME-SEMANTICS ch. 5.8a). A to-many connecting reference is v0's
-marker (the far-side `VerreRollidmaatschap` exists-join is the distinct
-form), refused loudly. Witness `jutterswet-wachtindeling`.
+(`RoleMembership`, RUNTIME-SEMANTICS ch. 5.8a): the subject's links are
+read over the OTHER role of `factType` (a reciprocal fact type's one role
+is its own other end), so the positive form is a bare `rol(S,r,N)` join
+keyed on that role's canonical name, the far variable free — N
+groundings collapse onto one head, so the check is existence, never a
+count, and the multiplicity of either role is no condition. A written
+`counterpartType` adds `isa(N,ct)`, the program's extensional membership
+closure (ch. 2.2), so an instance of a subtype satisfies it; absent, no
+literal is added. The negated form derives a per-subject helper
+`rmN(S) :- isa(S,ot), rol(S,r,N)` (plus the `isa(N,ct)` literal where a
+counterpart is written) and reads it negated, the subject kept bound by
+the helper's `isa` base — the plain complement, which *flips*, unlike
+the navigated characteristic check. The pair is resolved as the verifier
+resolves a role binding (the declared role name; a plural names no
+role), and the translator refuses by name what ref refuses: a subject
+type that does not fill `role`, and a `counterpartType` that is not
+declared or not ⊑ the other role's declared filler (WF-034). Witnesses
+`jutterswet-wachtindeling`, `jutterswet-postbezetting`,
+`near-side-rolcheck-to-many`. *Until L2* the near-side `Rollidmaatschap`
+was a join over the connecting role derived from the type pair
+(`Eval.connecting_role`, shared with ref), and a to-many connecting
+reference was v0's marker, refused loudly; the far-side
+`VerreRollidmaatschap` was the separate exists-join.
 **Composite** (samengesteld, the ALLE and singular DE quantifiers):
 concatenation of the parts' atoms — both quantifiers are conjunctions
 over their parts. Other condition kinds fault (S19).
@@ -934,24 +949,29 @@ well-formedness the verifier enforces before translation.
 ### S8. Aggregations and folds
 
 **Count** (aantal): `V = #count { X : rol(S,role,X), ⟨filter
-atoms⟩ }`, scale 1 — the role is the node's binding when present,
-else resolve-or-fault (IR-SPEC ch. 4.3): the written source name must
-resolve against declared roles (name or plural, ci) or fall back to
-the unique connecting fact type, and the count keys that connecting
-role's **canonical** name — never the raw written lexeme, which as a
-`rol/3` key silently counted 0 whenever it differed from the declared
-plural that keys the facts (the written singular of a to-many role,
-or an undeclared synthesized plural; hardened 2026-08-26, witnessed
-by `jutterswet-kaveltelling`). The `die/dat` filter is lowered by
+atoms⟩ }`, scale 1 — the role is the node's `bronRol` (since L2
+required on a count over one source argument, IR-SPEC ch. 4.3), and the
+count keys that role's **canonical** name — never the raw written
+lexeme, which as a `rol/3` key silently counted 0 whenever it differed
+from the declared plural that keys the facts (the written singular of a
+to-many role, or an undeclared synthesized plural; hardened 2026-08-26,
+witnessed by `jutterswet-kaveltelling`). A count source whose written
+name is an attribute of the element type is refused by name (`a count
+over …, which is an attribute of …`, WF-093), and so is a count that
+carries a `bronPad` (WF-102 (c): a count source's range is one step).
+*Until L2* a count without a binding resolved its written source name
+against the declared roles (name or plural, ci) or fell back to the
+unique connecting fact type. The `die/dat` filter is lowered by
 `cond_atoms` over the element variable. An element the filter's body
 cannot derive contributes no tuple: the contributor skip is the join,
 for free.
-The **self-denoting** source (WF-083, RS ch. 3.4a): a fold-source
-argument whose `navigatieRol` names a role the subject's own type
-fills translates identically — the field is presentation, not
-navigation, so the same `rol(S,role,X)` join over the written source
-role applies (the ref mirror's `self_denoting_role` check gates the
-arm); an away-pointing role keeps the loud translation fault.
+The **self-denoting** source (WF-083, RS ch. 3.4a) is, since L2, a
+plain count source: the count carries its `bronRol` and translates as
+every other count. *Until L2* the written role stood in the argument's
+`navigatieRol`, which translated identically — the field was
+presentation, not navigation — behind the ref mirror's
+`self_denoting_role` check, and an away-pointing role kept the loud
+translation fault.
 **Sum** (som): contributor body `rol(S,role,X), val(X,a,G), ⟨filter⟩`
 and `V = #sum { G,X : ⟨body⟩ }` at the element attribute's scale —
 an instance without the attribute contributes no tuple, and the empty
@@ -986,8 +1006,9 @@ carries no fence — a `#count` cannot approach 2^31 before grounding
 itself becomes infeasible (recorded, not guarded; ch. 6c).
 **Minimum / Maximum / Eerste / Laatste** (set-form, ch. 1.2e, ref
 `agg_min`/`agg_max`/`agg_eerste`/`agg_laatste`):
-the SAME contributor gathering as the som over a set-typed
-`AttribuutRef`, aggregated with `V = #min { G : ⟨body⟩ }` (resp.
+the SAME contributor gathering as the som over its set source (since
+L2 the argument of a fold that carries a range; until L2 a set-typed
+`AttribuutRef`), aggregated with `V = #min { G : ⟨body⟩ }` (resp.
 `#max`) at the element attribute's scale. An empty contributor is
 skipped (the join is the skip, as for the som), and the extreme IS one
 contributed value — no accumulation, so no range fence — with a
@@ -2325,14 +2346,16 @@ harmonised scale, S6, `jutterswet-grensbedrag` — save a bound needing a
 real unit conversion factor or a non-ground, possibly-empty bound, which
 stay loud); a temporal attribute read in a scalar slot (ch. 3.3);
 genuinely non-numeric arithmetic operands (text/enum/boolean, or a
-date reaching the numeric path) — narrowed 2026-08-28: the v0
+date reaching the numeric path) — narrowed 2026-08-28 for the v0
 **`Onbekend` typing-inability sentinel** (a composite unit the
-frontend could not name, not an actual non-numeric value) now
-translates when the node is a PROVABLY-numeric arithmetic `Binair`
-whose operands pass the numeric checks recursively, so an operand
-carrying a *resolved* non-numeric type still faults here (an operand
-the frontend left untyped passes as it always has, the standing S5
-numeric-typing policy); and narrowed
+frontend could not name, not an actual non-numeric value), which then
+translated when the node was a PROVABLY-numeric arithmetic `Binair`
+whose operands passed the numeric checks recursively; that arm was
+retired again on 2026-08-29 with the unit-identity typing fix
+(decisions 16Y and 17b), and since L2 `Onbekend` is no datatype at all (B16): a
+composite whose `type` is `null` — the spelling an untypable derived
+position has since L2 — faults here like any other non-numeric operand;
+and narrowed
 2026-08-25: the
 **day-precision date family now translates** (date ± duration and
 tijdsduur/absolute-tijdsduur in dagen/weken/maanden/kwartalen/jaren,
@@ -2448,15 +2471,18 @@ SET-typed source now translate too — the `#min`/`#max` aggregation
 arm, S8, `jutterswet-vondstpiek` and `jutterswet-vondstvenster` — while
 minimum/maximum over LISTED operands stay under this catch-all: the
 same listed-fold encoding would serve, no corpus case; the AANTAL set
-source stays under it too, and since 2026-09-19 it is the one entry in
-this inventory that will never leave the catch-all by being translated
-— the maintainer took option (ii) of
+source stayed under it too until L2, and from 2026-09-19 it was the one
+entry in this inventory that would never leave the catch-all by being
+translated — the maintainer took option (ii) of
 `backlog/done/20260909-eerste-laatste-setvouw-kloof.md` §6 and the WIRE
-now refuses the form (`IR-SPEC.md` WF-096, negatiefs
+refused the form (`IR-SPEC.md` WF-096, negatiefs
 `wf096-aantal-setbron*`), so this backend's refusal, which was the
 strictest of the three readings, is what the verifier came round to.
-The arm stays as a second line of defence rather than a gap: a count
-folds the contributors, and a set source hands it values). The LISTED
+Since L2 the form has a named arm instead: WF-096 retired with the set
+flag, and a count whose source names an attribute of the element type
+is refused as WF-093's (`a count over …, which is an attribute of …`;
+negatief `wf093-telling-over-attribuutbron`), on the same ground: a
+count folds the contributors, and such a source hands it values). The LISTED
 som left this catch-all on 2026-09-19 WITHOUT being translated: it has
 a named arm of its own (`a som over listed operands is not translated
 …`) and is refused exactly as before. The reason it needed a name is
@@ -2484,12 +2510,13 @@ counting list (`a counting composite without members is not
 translated (no corpus case)`) and every member kind that keeps its
 own fault (a Periode member — the vormenkabinet's peiling rule, still
 refused by both executors — an Onopgelost bullet, a
-comparison carrying a periode, the negated gevuld predicate; the
-near-side Rollidmaatschap now rides the S7 rol/3 join, above — save
-its **to-many connecting reference**, which still faults loudly in
-both executors (`the rolcheck's connecting reference to … is the
-to-many role …`, RUNTIME-SEMANTICS ch. 5.8a rule 3; rood
-`near-side-rolcheck-to-many`)). The **day-kind (DAGSOORT) predicate** — a
+comparison carrying a periode, the negated gevuld predicate; the role
+check rides the S7 `rol/3` join, above, with no to-many exception since
+L2 — until L2 the near-side `Rollidmaatschap`'s **to-many connecting
+reference** faulted loudly in both executors (`the rolcheck's
+connecting reference to … is the to-many role …`; the red case
+`near-side-rolcheck-to-many`, since L2 a golden, RUNTIME-SEMANTICS
+ch. 5.8a)). The **day-kind (DAGSOORT) predicate** — a
 reference to a declared day kind used as a condition — is itself a loud
 non-translation here: clingo reaches this condition catch-all and ref
 refuses the predicate by name, so a reference to a day kind faults loudly
@@ -3009,7 +3036,9 @@ the statute's intent, reproduced under stable-model semantics.
    cleaner — for this backend it is the only thing that *can* exist.
    *Landed (2026-08-16):* the binding rides the wire (`IR-SPEC.md`
    ch. 2.6, WF-047/048) and `backends/clingo` reads the `rol/3` join
-   role from it, deriving only for bindingless v0 dumps.
+   role from it; until L2 it derived the role for bindingless v0
+   dumps, and since L2 the binding is required and nothing is derived
+   (B12).
 2. **The top-level-only restriction is a Drools artefact** (row 5,
    confirmation). The existential lives in any rule body at any depth.
 3. **The single-layer default is one NAF over a declared contrary**
