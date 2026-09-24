@@ -137,13 +137,14 @@
 #     all, only Afgerond.decimalen, which is a NODE field and not a type annotation.
 # So the unit is both the facet all three consumers can be indifferent to and the only one this
 # backend reads. The lie: every twistable annotation carrying a unit with a canonical and a
-# factor gets a SISTER unit — same canonical, abbreviation suffixed, factorNaarCanoniek
-# multiplied by a power of ten fixed PER POSITION CLASS. Same canonical keeps the units
+# factor gets a SISTER unit — same canonical, abbreviation suffixed, factorToCanonical
+# multiplied by a power of ten fixed PER POSITION CLASS (the exact rational {num, den} with num
+# times 10^k, in lowest terms). Same canonical keeps the units
 # inter-convertible, so a consumer that trusts the annotation happily restates by the wrong
 # factor (a loud wrong number) instead of refusing; distinct per-class factors keep two
 # annotations from cancelling each other at a restatement boundary. Nothing else in the
 # document moves — every DECLARATION (an objecttype's attributen, a parameter's datatype, an
-# eenheidstelsel) is left byte-identical, which is precisely what makes the derived answer the
+# unit system) is left byte-identical, which is precisely what makes the derived answer the
 # right answer.
 #
 # Twisted positions (the class factor in brackets): the composite positions —
@@ -277,7 +278,7 @@ trap 'rm -rf "$TWISTER" "$WORK" "$LIST" "$CASES" "$ONGEDEKT" "$RAKERS" "$DRLRAKE
 
 cat > "$TWISTER" <<'PY'
 import json, os, sys
-from decimal import Decimal
+from fractions import Fraction
 
 # the position classes and their restatement-factor exponents (see the script header). The exponent
 # is per NODE KIND; MEMBERSHIP is per position class, which for Binair/Functie is finer (below).
@@ -294,7 +295,7 @@ AFGELEIDE_KIND = {"SOM", "TOTAAL", "MINIMUM", "MAXIMUM", "EERSTE", "LAATSTE"}
 UITZONDERING = {"Literal": "the lexeme's own carrier (\"3,5 EUR\") is a copy of no declaration"}
 # WF-038: a tijdsduur's own unit is the operator's parameter, not a derived result type
 GEEN_FUNCTIE = {"TIJDSDUUR", "ABSOLUTE_TIJDSDUUR"}
-DATUM = ("DatumInDagen", "DatumTijd")
+DATUM = "Date"
 ACHTERVOEGSEL = "-verdraaid"
 
 
@@ -328,32 +329,38 @@ class RuweNum:
         self.raw = s
 
 
-def getal(v):
-    return Decimal(v.raw) if isinstance(v, RuweNum) else (None if v is None else Decimal(str(v)))
+def rationaal(f):
+    """The exact factor {num, den} as a Fraction; anything else is no factor to twist."""
+    if not (isinstance(f, dict) and isinstance(f.get("num"), RuweNum)
+            and isinstance(f.get("den"), RuweNum)):
+        return None
+    return Fraction(int(f["num"].raw), int(f["den"].raw))
 
 
 def zusje(e, exp):
-    """A convertible SISTER of unit e: same canonical, distinct abbreviation, factor x 10^exp."""
+    """A convertible SISTER of unit e: same canonical, distinct abbreviation, factor x 10^exp —
+       the rational written {num, den} in lowest terms, as the wire writes every factor."""
     if not isinstance(e, dict):
         return None
-    a, c, f = e.get("afkorting"), e.get("canoniek"), e.get("factorNaarCanoniek")
+    a, c, f = e.get("abbreviation"), e.get("canonical"), rationaal(e.get("factorToCanonical"))
     if a is None or c is None or f is None or ACHTERVOEGSEL in a:
         return None
+    z = f * (10 ** exp)
     uit = dict(e)
-    uit["afkorting"] = a + ACHTERVOEGSEL + str(exp)
-    uit["factorNaarCanoniek"] = RuweNum(str(getal(f) * (10 ** exp)))
+    uit["abbreviation"] = a + ACHTERVOEGSEL + str(exp)
+    uit["factorToCanonical"] = {"num": RuweNum(str(z.numerator)), "den": RuweNum(str(z.denominator))}
     return uit
 
 
 def verdraai(dt, exp):
-    if not isinstance(dt, dict) or dt.get("node") not in ("Numeriek", "Percentage"):
+    if not isinstance(dt, dict) or dt.get("node") != "Number":
         return dt, None
-    u = zusje(dt.get("eenheid"), exp)
+    u = zusje(dt.get("unit"), exp)
     if u is None:
         return dt, None
     uit = dict(dt)
-    uit["eenheid"] = u
-    return uit, "%s %s->%s" % (dt.get("node"), dt["eenheid"].get("afkorting"), u["afkorting"])
+    uit["unit"] = u
+    return uit, "%s %s->%s" % (dt.get("node"), dt["unit"].get("abbreviation"), u["abbreviation"])
 
 
 # A reference writes no type since L2 (B13): whether an operand is a DATE is read off the
@@ -370,7 +377,7 @@ def declaraties(doc):
         for a in ot.get("attributes", []):
             DECL["attr"][(n.lower(), a.get("name", "").lower())] = a.get("datatype")
     for p in model.get("parameters", []):
-        DECL["param"][(p.get("naam") or "").lower()] = p.get("datatype")
+        DECL["param"][(p.get("name") or "").lower()] = p.get("datatype")
 
 
 def gedeclareerd(e, scope):
@@ -395,12 +402,11 @@ def datum_getypeerd(e, scope):
     if not isinstance(e, dict):
         return False
     t = gedeclareerd(e, scope)
-    return isinstance(t, dict) and t.get("node") in DATUM
+    return isinstance(t, dict) and t.get("node") == DATUM
 
 
 def eenheiddragend(dt):
-    return isinstance(dt, dict) and dt.get("node") in ("Numeriek", "Percentage") \
-        and dt.get("eenheid") is not None
+    return isinstance(dt, dict) and dt.get("node") == "Number" and dt.get("unit") is not None
 
 
 def loop(x, telling, sla_eigen_over=False, scope=None):
@@ -432,7 +438,7 @@ def loop(x, telling, sla_eigen_over=False, scope=None):
             telling["vrijgesteld"] += 1
         elif not afgeleid(x):
             telling["vierde" if node in KLASSE else "ongedekt"].append(positieklasse(x))
-        elif zusje(x["type"].get("eenheid"), KLASSE[node]) is None:
+        elif zusje(x["type"].get("unit"), KLASSE[node]) is None:
             # in the table, but no convertible SISTER exists (a unit with no canonical/factor —
             # a unit system declares no conversion for it). A non-convertible lie would measure
             # refusal routing, not a declaration reading, so it is counted and not twisted.
