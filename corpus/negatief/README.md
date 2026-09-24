@@ -306,3 +306,177 @@ the lens on the union asked for (`expect.txt` in each).
 | `wf053-eigen-lezing-supertype` | WF-053 | B11 | toegevoegd | a read without navigation bindings whose `objecttype` is a supertype of the subject | the own read names the subject type itself (equality, IR-SPEC ch. 4.1a); on the union `ref` and the ASP backend admitted the supertype |
 | `wf083-totaal-vreemd-elementtype` | WF-083 (c) | B12 | toegevoegd | the `elementObjecttype` of a `TOTAAL` without a range is not the fold subject | new arm of the fix round; before it the field was verifier-clean and moved no answer |
 | `wf091-plus-eenheid-kast` | WF-091 | B13 | toegevoegd | derived arm, PLUS, unit facet (unit names differ in case alone) | the byte-exact unit names lost their witness with `wf091-attribuutref-eenheid-kast` (removed above); the lie now sits on a composite's annotation |
+
+### L3 — the type system (2026-09-24)
+
+L3 (card `20260924-l3-typesysteem`, `backlog/done/20260924-l3-typesysteem.md`;
+the decision numbers D# and U# below are that card's decision list) takes the
+type system to its v1 form: a percentage is a `Number` whose unit is `%`, with
+the presentation tag only on a declaration (B14, D22, D23); the two date nodes
+are one `Date` with a `precision` (B15); a unit's conversion factor is the exact
+rational `{num, den}` (B17 (i), D25); a parameter's time-dependence is a
+timeline facet (B18); a unit system is a list of units that carry their further
+spellings (D54); and a day kind is a node with its name and its plural (D55).
+Every unit took the IR-SPEC keys (U4), every number the keys `whole`,
+`decimals`, `sign` and `unit` (U5), and a number declared without a sign writes
+`ONBEPAALD` (D24). Every witness was measured before its stamp: the L2 verifier
+on the document's L2 form against the L3 verifier on its L3 form, the
+translation of `spec/proposals/v1-migratie/m3.py`. On every document of the
+three zones the two reports agree but for their paths, except on the four the
+migration refuses (removed below) and on `wf017-dagsoortnaam-bindt-vreemde-dagsoort`,
+whose arm now reads the day kinds' own spellings. A rewritten witness of the
+card's stamp list carries `expect.txt`, one literal line of the verifier
+message of the arm it pins, without a JSON pointer; so does every date witness
+whose rule reads the precision, and every witness added here. The arm column
+names that arm in words, or, for a removed witness, the arm that left. The
+negatief zone went from 400 to 402 documents (four removed, six added); the
+floor `EXPECTED_MIN_NEGATIEF` did not have to move, and `EXPECTED_MIN_EXPECT`
+rose from 91 to 159 (`scripts/check-verifier.sh`).
+
+| directory | rule | delta | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf017-eenheidsleutel-schaduwt-kalenderafkorting` | WF-017 (a) | D55 | verwijderd-met-reden | a registry key that is a calendar spelling (the abbreviation `wk`) | the key is a third spelling of `schouwdag` beside its name and its plural `schouwdagen`, and a `DayKind` carries its name and one plural (m3.py: "a third spelling of the day kind "schouwdag" beside its name and the plural "schouwdagen": a DayKind carries its name and one plural"); the arm now reads the `plural`, where `wf017-meervoud-schaduwt-kalendereenheid` pins it |
+| `wf017-eenheidsleutel-schaduwt-kalendereenheid` | WF-017 (a) | D55 | verwijderd-met-reden | a registry key that is a calendar spelling (the plural `dagen`) | idem |
+| `wf017-eenheidsleutel-schaduwt-tweede-meervoudsvorm` | WF-017 (a) | D55 | verwijderd-met-reden | a registry key that is a calendar spelling (the second plural `secondes`) | idem; the class is pinned on the `plural` by `wf017-meervoud-schaduwt-tweede-meervoudsvorm` |
+| `wf034-dagsoorteenheid-onbekende-dagsoort` | WF-034 (s) | D55 | verwijderd-met-reden | a registry value naming an undeclared day kind (the arm left with the registry) | a spelling stands on the day kind it belongs to or not at all, so there is no value to name an undeclared day kind (m3.py: "the registry entry names the day kind "havendag", which no declaration carries: the L3 shape has no registry, so a spelling is written on its own day kind or not at all"); arm (s) of WF-034 loses its object and becomes a history line in `spec/IR-SPEC.md` ch. 4.6 |
+| `wf092-canoniek-zonder-factor` | WF-092 (a) | B17 (i), U4 | herschreven (m) | a canonical unit without a factor | the conversion pair is spelled `canonical`/`factorToCanonical`, the missing half absent where it was null; the report moved only in its paths |
+| `wf092-factor-zonder-canoniek` | WF-092 (b) | B17 (i), U4 | herschreven (m) | a factor without a canonical unit | as the row above; the factor is `{num: 1, den: 1}` |
+| `wf092-noemer-zonder-factor` | WF-092 (a) | B17 (i), U4, D54 | herschreven (m) | a canonical unit without a factor, on the denominator of a rate | as the rows above; the denominator is spelled `denominator`. The unit system carries a map key other than the abbreviation, now a spelling (D54, not on the defect) |
+| `wf017-dagsoortnaam-bindt-vreemde-dagsoort` | WF-017 (b) | D55 | herschreven (m) | arm (b): the plural of one day kind is the name of another | measured: the one witness whose message moved. Until L3 the arm reported the registry key of a declared name bound to another day kind; the day kinds now carry their own spellings, and the arm reports the plural that is another day kind's name |
+| `wf017-dagsoortnaam-schaduwt-kalenderafkorting` | WF-017 | D55 | herschreven (m) | the declared-name clause: a name that is a calendar spelling (the abbreviation `wk`) | the name is the `DayKind`'s `name`; the report moved only in its path (`/model/dayKinds/2/name`) |
+| `wf017-daykind-shadows-builtin` | WF-017 | D55 | herschreven (m) | the declared-name clause (the singular `dag`) | as the row above (`/model/dayKinds/0/name`) |
+| `wf095-bronsnippet` | WF-095 | B15 | herschreven (m) | the lexeme of a millisecond-precision date literal (a day-first snippet) | the literal's type is `Date` with `precision: millisecond`, which is what makes WF-095 its rule; the message names the date by its precision |
+| `wf095-fractiebreedte` | WF-095 | B15 | herschreven (m) | idem (a fraction of one digit) | as the row above |
+| `wf095-omringende-tekst` | WF-095 | B15 | herschreven (m) | idem (text around the lexeme) | as the row above |
+| `wf095-ontbrekende-seconden` | WF-095 | B15 | herschreven (m) | idem (no seconds field) | as the row above |
+| `wf095-spatie-scheider` | WF-095 | B15 | herschreven (m) | idem (a space for `T`) | as the row above |
+| `wf095-zone-suffix` | WF-095 | B15 | herschreven (m) | idem (a zone suffix) | as the row above |
+| `wf034-eenheid-onbekend-stelsel` | WF-034 (r) | U4 | herschreven (m) | a unit's `system` naming no declared unit system | the field is spelled `system`; the report moved only in its paths |
+| `wf009-conversion-cycle` | WF-009 | D25, U4 | herschreven (m) | a conversion cycle | the factors 2.0 and 0.5 are the exact rationals `{2, 1}` and `{1, 2}`; the report moved only in its paths (`/model/unitSystems/0/units/<i>`) |
+
+The WF-091 family carries `expect.txt` since L2, and every fragment holds
+unchanged. Its unit-facet arm compares unit records, which L3 respelled (U4);
+fourteen of the fifteen hosts carry a unit-less percentage that became a
+`Number` with the built-in `%` (D23), the card's percentage carriers, and in
+none of them is it the defect.
+
+| directory | rule | delta | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf091-afgerond-eenheid` | WF-091 | U4, B14, D23 | herschreven (m) | derived arm, rounding, unit facet (`t` against `kg`) | the unit record the arm compares is spelled with the L3 keys (U4); the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-begrensd-eenheid` | WF-091 | U4, B14, D23 | herschreven (m) | derived arm, clamp, unit facet (`t` against `kg`) | the unit record the arm compares is spelled with the L3 keys (U4); the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-binair-eenheid` | WF-091 | U4, B14, D23 | herschreven (m) | derived arm, PLUS, unit facet (`t` against `kg`) | the unit record the arm compares is spelled with the L3 keys (U4); the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-foldwortel-eenheid` | WF-091 | U4, B14, D23 | herschreven (m) | derived arm, MAXIMUM, unit facet (`t` against `kg`) | the unit record the arm compares is spelled with the L3 keys (U4); the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-som-eenheid` | WF-091 | U4, B14, D23 | herschreven (m) | derived arm, SOM, unit facet (`t` against `kg`) | the unit record the arm compares is spelled with the L3 keys (U4); the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-plus-eenheid-kast` | WF-091 | U4, B14, D23 | herschreven (m) | derived arm, PLUS, unit facet (unit names differ in case alone) | the unit record the arm compares is spelled with the L3 keys (U4); the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-maal-eenheid` | WF-091 | U4, B14, D23 | herschreven (m) | derived arm, MAAL, unit facet (a rate against a plain unit) | the unit record the arm compares is spelled with the L3 keys (U4); the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-totaal-eenheid` | WF-091 | U4, B14, D23 | herschreven (m) | derived arm, TOTAAL, unit facet (a rate against a plain unit) | the unit record the arm compares is spelled with the L3 keys (U4); the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-aantalgevulde-eenheid` | WF-091 | U4, D54 | herschreven (m) | derived arm, AANTAL_GEVULDE, unit facet | the unit record the arm compares is spelled with the L3 keys (U4); the unit system carries spellings (D54), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-binair-soort` | WF-091 | B14, D23 | herschreven (m) | derived arm, PLUS, soort facet | the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-aantal-decimalen` | WF-091 | B14, D23 | herschreven (m) | derived arm, AANTAL, decimals facet | the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-afgerond-decimalen` | WF-091 | B14, D23 | herschreven (m) | derived arm, rounding, decimals facet | the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-binair-decimalen` | WF-091 | B14, D23 | herschreven (m) | derived arm, PLUS, decimals facet | the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-binair-geheel` | WF-091 | B14, D23 | herschreven (m) | derived arm, PLUS, wholeness facet | the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+| `wf091-fold-decimalen` | WF-091 | B14, D23 | herschreven (m) | derived arm, MINIMUM, decimals facet | the host's unit-less percentage is a `Number` with the built-in `%` (D23), not on the defect; `expect.txt` since L2, unchanged |
+
+The card's group rows — a sign written where none was (D24), a parameter's
+timeline facet (B18), the day kinds' plurals (D55), a unit system's spellings
+(D54) — rewrote each document at a place that is not its defect. Each keeps its
+report, and pins its arm now.
+
+| directory | rule | delta | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf035-duur-min-datum` | WF-035 | D24 | herschreven (m) | duration − date | no L3 delta on the defect: a number declared without a sign writes `sign: ONBEPAALD` now, and the rule reads no sign |
+| `wf035-duur-plus-datum` | WF-035 | D24 | herschreven (m) | duration + date | no L3 delta on the defect: a number declared without a sign writes `sign: ONBEPAALD` now, and the rule reads no sign |
+| `wf038-extractor-text` | WF-038 | D24 | herschreven (m) | a day-precision extractor over text | no L3 delta on the defect: a number declared without a sign writes `sign: ONBEPAALD` now, and the rule reads no sign |
+| `wf038-tijdsduur-zonder-node-type` | WF-038 | D24 | herschreven (m) | a tijdsduur without a node type | no L3 delta on the defect: a number declared without a sign writes `sign: ONBEPAALD` now, and the rule reads no sign |
+| `wf038-tijdsduur-zonder-tijdseenheid` | WF-038 | D24 | herschreven (m) | a tijdsduur without a recognised time unit | no L3 delta on the defect: a number declared without a sign writes `sign: ONBEPAALD` now, and the rule reads no sign |
+| `wf049-read-of-nontemporal` | WF-049 | B18 | herschreven (m) | a temporal read of a non-temporal attribute | no L3 delta on the defect: the host's time-dependent parameter carries a timeline facet |
+| `wf049-type-not-element` | WF-049 | B18 | herschreven (m) | a temporal read typed other than the element datatype | no L3 delta on the defect: the host's time-dependent parameter carries a timeline facet |
+| `wf098-contextwaarde-naam-kapitalisatie` | WF-098 | B18 | herschreven (m) | a context-value name spelled in another case | no L3 delta on the defect: the host's time-dependent parameter carries a timeline facet |
+| `wf031-sessiewaarde-in-dagsoort` | WF-031 | D55 | herschreven (m) | a day-kind condition reading a session value | no L3 delta on the defect: the host's day kinds carry their plurals |
+| `wf098-onbekende-contextwaarde-naam` | WF-098 | D55 | herschreven (m) | an unknown context-value name | no L3 delta on the defect: the host's day kinds carry their plurals |
+| `wf034-attribuutref-zonder-attribuut` | WF-034 | D54 | herschreven (m) | an attribute reference without an attribute name | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-attribuutref-zonder-objecttype` | WF-034 | D54 | herschreven (m) | an attribute reference without an object type | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-dimensiecel-geen-referentie` | WF-034 | D54 | herschreven (m) | a dimension-cell read whose attribute position is no attribute reference | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-dimensiecel-zonder-attribuut` | WF-034 | D54 | herschreven (m) | a dimension-cell read without an attribute reference | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-foldbron-zonder-attribuut` | WF-034 | D54 | herschreven (m) | a fold source without an attribute name | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-foldbron-zonder-objecttype` | WF-034 | D54 | herschreven (m) | a fold source without an object type | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-parameterref-zonder-parameter` | WF-034 | D54 | herschreven (m) | a parameter reference without a parameter name | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-sentinel-builtin-wratoperand` | WF-034 | D54 | herschreven (m) | a name that is neither an attribute nor a characteristic (an operand of a builtin) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-sentinel-gelest-wratoperand` | WF-034 | D54 | herschreven (m) | idem (an operand read on the subject) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-verdeling-lege-maximumattribuut` | WF-034 | D54 | herschreven (m) | an allocation's empty `maximumAttribuut` | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-verdeling-onbekend-bronattribuut` | WF-034 | D54 | herschreven (m) | an allocation's `bronAttribuut` naming no attribute of the source type | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-verdeling-onbekend-doelattribuut` | WF-034 | D54 | herschreven (m) | an allocation's `doelAttribuut` naming no attribute of the target type | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-verdeling-onbekend-maximumattribuut` | WF-034 | D54 | herschreven (m) | an allocation's `maximumAttribuut` naming no attribute of the target type | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-verdeling-onbekend-restantattribuut` | WF-034 | D54 | herschreven (m) | an allocation's `restantAttribuut` naming no attribute of the source type | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-verdeling-zonder-brontype` | WF-034 | D54 | herschreven (m) | an allocation without a source type | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf034-verdeling-zonder-doeltype` | WF-034 | D54 | herschreven (m) | an allocation without a target type | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf037-aantal-geen-operand` | WF-037 | D54 | herschreven (m) | a count without an element type (no argument) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf037-aantal-lijstliteraal` | WF-037 | D54 | herschreven (m) | a count without an element type (a list-literal argument) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf037-aantal-opgesomd` | WF-037 | D54 | herschreven (m) | a count in a listed form (two operands) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf037-aantal-opgesomd-drietal` | WF-037 | D54 | herschreven (m) | a count in a listed form (three operands) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf037-aantal-opgesomd-element` | WF-037 | D54 | herschreven (m) | a count in a listed form (two operands and an element type) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf037-aantal-zonder-elementtype` | WF-037 | D54 | herschreven (m) | a count without an element type | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf037-aantalgevulde-dimensieselectie` | WF-037 | D54 | herschreven (m) | a dimension selection on the filled count | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf037-aantalgevulde-granulariteit` | WF-037 | D54 | herschreven (m) | a granularity facet on the filled count | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf037-aantalgevulde-leegwaarde` | WF-037 | D54 | herschreven (m) | an empty-value fallback on the filled count | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf037-aantalgevulde-niet-setbron` | WF-037 | D54 | herschreven (m) | the filled count's argument is no set source | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf037-aantalgevulde-tweede-argument` | WF-037 | D54 | herschreven (m) | the filled count with a second argument | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf037-aantalgevulde-zonder-elementtype` | WF-037 | D54 | herschreven (m) | the filled count without an element type | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf047-bereik-op-builtin` | WF-047 | D54 | herschreven (m) | a fold-source role binding on a node that is no instance fold | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf047-bronpad-stap-onopgeloste-rol` | WF-047 | D54 | herschreven (m) | a `bronPad` step naming a plural as its role | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf053-eigen-lezing-supertype` | WF-053 | D54 | herschreven (m) | an own read whose `objecttype` is a supertype of the subject | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf053-geleste-vouwoperand-onverbonden-hop` | WF-053 | D54 | herschreven (m) | an own read whose `objecttype` is not the subject (a fold operand) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf053-to-many-lijstvouwoperand` | WF-053 | D54 | herschreven (m) | a to-many hop in a scalar slot (a list-fold operand) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf053-to-many-plusoperand` | WF-053 | D54 | herschreven (m) | a to-many hop in a scalar slot (a PLUS operand) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf053-to-many-regelwaarde` | WF-053 | D54 | herschreven (m) | a to-many hop in a scalar slot (a rule value) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf083-totaal-vreemd-elementtype` | WF-083 (c) | D54 | herschreven (m) | the `elementObjecttype` of a TOTAAL without a range is not the fold subject | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf083-vouwbron-anker-op-operand` | WF-083 (c) | D54 | herschreven (m) | anchor of a count source (the fold subject) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf083-vouwbron-anker-op-tussentype` | WF-083 (c) | D54 | herschreven (m) | anchor of a set source (an intermediate path type) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf083-vouwbron-vreemd-elementtype` | WF-083 (c) | D54 | herschreven (m) | anchor of a set source (the fold subject) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf083-vouwbron-vreemd-objecttype` | WF-083 (c) | D54 | herschreven (m) | anchor of the subject's own read (another type) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf093-aantalgevulde-wrat` | WF-093 | D54 | herschreven (m) | a value fold over a role name (the filled count) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf093-telbron-onder-som` | WF-093 | D54 | herschreven (m) | a count source under SOM | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf093-telling-over-attribuutbron` | WF-093 | D54 | herschreven (m) | a count over an attribute source | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf093-wratvouw-kale-eerste` | WF-093 | D54 | herschreven (m) | a value fold over a role name (EERSTE) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf093-wratvouw-kale-som` | WF-093 | D54 | herschreven (m) | a value fold over a role name (SOM) | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf102-bronpad-een-stap` | WF-102 | D54 | herschreven (m) | a `bronPad` of one step | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf102-bronpad-landt-naast-elementtype` | WF-102 | D54 | herschreven (m) | a `bronPad` that does not land on the element type | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf102-bronpad-leeg` | WF-102 | D54 | herschreven (m) | an empty `bronPad` | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf102-bronpad-onverbonden-stap` | WF-102 | D54 | herschreven (m) | a `bronPad` step that does not connect | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf102-bronpad-op-niet-setbron` | WF-102 (c) | D54 | herschreven (m) | a `bronPad` on a count source | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+| `wf102-bronpad-start-niet-op-onderwerp` | WF-102 | D54 | herschreven (m) | a `bronPad` that does not start at the fold subject | no L3 delta on the defect: the unit system carries its aliases, and a map key other than the abbreviation, as spellings |
+
+#### Measured beyond the card's stamp list
+
+The date witnesses whose rule reads the precision, which the card's WF-036
+line names without a list, and the witnesses of two rules that gained a
+sibling arm at L3, so that a fragment tells the arms apart.
+
+| directory | rule | delta | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf035-uur-op-dagdatum` | WF-035 | B15, D24 | herschreven (m) | a sub-day time unit on a day-precision date | the rule reads the date's precision, a field of `Date` since L3; the sign written where none was (D24) is not on the defect; the report is unchanged |
+| `wf036-datumordening-precisie` | WF-036 | B15 | herschreven (m) | an ordering of two date precisions | the rule reads the date's precision, a field of `Date` since L3; the report is unchanged |
+| `wf038-eerste-gemengde-datumprecisie` | WF-038 | B15 | herschreven (m) | an ordering fold over two date precisions | the rule reads the date's precision, a field of `Date` since L3; the report is unchanged |
+| `wf038-tijdsduur-gemengde-precisie` | WF-038 | B15, D24 | herschreven (m) | a tijdsduur over two date precisions | the rule reads the date's precision, a field of `Date` since L3; the sign written where none was (D24) is not on the defect; the report is unchanged |
+| `wf049-read-at-datetime` | WF-049 | B15, B18 | herschreven (m) | a temporal read at a millisecond-precision date | the rule reads the date's precision, a field of `Date` since L3; the host parameter's facet (B18) is not on the defect; the report is unchanged |
+| `wf084-bare-non-iso` | WF-084 | B15 | herschreven (m) | the lexeme of a day-precision date literal (day-first) | the rule reads the date's precision, a field of `Date` since L3; the report is unchanged |
+| `wf084-source-snippet` | WF-084 | B15 | herschreven (m) | idem (a source snippet) | the rule reads the date's precision, a field of `Date` since L3; the report is unchanged |
+| `wf111-datumtijdgrens-attribuut` | WF-111 | B15 | herschreven (m) | a millisecond-precision window bound (an attribute) | the rule reads the date's precision, a field of `Date` since L3; the report is unchanged |
+| `wf111-datumtijdgrens-literal` | WF-111 | B15 | herschreven (m) | a millisecond-precision window bound (a literal) | the rule reads the date's precision, a field of `Date` since L3; the report is unchanged |
+| `wf007-whole-with-decimals` | WF-007 | U5 | herschreven (m) | the precision forms (`whole` with decimals) | WF-007 gained the presentation arm; the precision fields are spelled `whole`/`decimals`, and the witness pins the arm it always held |
+| `wf005-count-zero` | WF-005 | — | herschreven (m) | an attribute's facet with count 0 | WF-005 gained the parameter-facet arm; the witness pins the attribute arm it always held |
+
+#### Added at L3 (2026-09-24)
+
+A witness for each arm L3 added or moved onto a new field (`expect.txt` in
+each).
+
+| directory | rule | delta | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf092-factor-niet-in-laagste-termen` | WF-092 (c) | B17 (i) (U1) | toegevoegd | arm (c): a factor not in lowest terms (`{24, 2}` for twelve months) | the new arm: a schema cannot state a greatest common divisor, and WF-091 compares factors byte for byte; `corpus/golden/jutterswet-vergunningsduur` with the factor of `jaar` respelled at its three positions |
+| `wf007-presentatietag-op-annotatie` | WF-007 | B14 (U2) | toegevoegd | the presentation tag on a type annotation (a `Literal.type`) | the new arm: the tag belongs to a declared datatype; `corpus/golden/jutterswet-vondsttarief` with the tag on one literal type |
+| `wf017-meervoud-schaduwt-kalendereenheid` | WF-017 (a) | D55 (U7) | toegevoegd | arm (a): a plural that is a calendar spelling (`dagen`) | the arm on the `plural`, which the registry-key witnesses above held; `corpus/golden/jutterswet-schouwrooster` with an unused plural respelled |
+| `wf017-meervoud-schaduwt-tweede-meervoudsvorm` | WF-017 (a) | D55 (U7) | toegevoegd | idem (the second plural `secondes`) | the second-plural class, which no other witness reaches; as the row above |
+| `wf017-meervoud-botst-met-vreemd-meervoud` | WF-017 (b) | D55 (U7) | toegevoegd | arm (b): a plural that is another day kind's plural, differing in case alone | the plural-against-plural collision the registry could not show, and the pin of the ch. 2.1 identity, which left `corpus/golden/jutterswet-vormenkabinet` with its registry entries; as the row above |
+| `wf005-parameterfacet-telling-nul` | WF-005 | B18 (U6) | toegevoegd | a parameter's facet with count 0 | the new arm: WF-018 defers a parameter's facet to WF-005; `corpus/golden/jutterswet-penningvintage` with the count set to 0 |
