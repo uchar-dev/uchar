@@ -1,4 +1,5 @@
-(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L4 shape.
+(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its L4 shape
+   with the source record of L5.
 
    The lowering builds typed [Ir_v0.Ast] values and hands them to exactly
    one serialiser — this module — so schema conformity is structural
@@ -25,7 +26,22 @@ let opt (f : 'a -> json) : 'a option -> json = function None -> `Null | Some x -
 let str_opt_list (xs : string option list) : json = `List (List.map so xs)
 let map_ (f : 'a -> json) (kvs : (string * 'a) list) : json =
   `Assoc (List.map (fun (k, v) -> (k, f v)) kvs)
-let node k rest : json = `Assoc (("node", `String k) :: rest)
+(* The source record (delta B26): a node with source text writes it as
+   {"snippet"} under "source", at the place v0 wrote "bron"; a node without
+   source text writes no field and never a null, so [fields] and [node] leave
+   the placeholder of an absent record out. An empty snippet has no reading
+   in any reader of the wire, so it is refused here in the loader's sentence.
+   The slice writes no line: it builds no consistency and no rule group. *)
+let source (br : string option) : string * json =
+  match br with
+  | Some "" -> failwith ("Emit: " ^ Ir_v0.Loader.empty_snippet_refusal)
+  | Some x -> ("source", `Assoc [ ("snippet", `String x) ])
+  | None -> ("source", `Null)
+
+let fields (kvs : (string * json) list) : (string * json) list =
+  List.filter (fun (k, v) -> not (k = "source" && v = `Null)) kvs
+
+let node k rest : json = `Assoc (("node", `String k) :: fields rest)
 
 let teken_s = function
   | Onbepaald -> "ONBEPAALD" | Negatief -> "NEGATIEF"
@@ -86,18 +102,17 @@ let literal_value (v : literal_variant) : json =
 
 let rec expr (e : expr) : json =
   let typ t = ("type", opt datatype t) in
-  let bron br = ("bron", so br) in
   match e with
   | Literal { variant; typ = t; bron = br } ->
-      node "Literal" [ ("value", literal_value variant); typ t; bron br ]
+      node "Literal" [ ("value", literal_value variant); typ t; source br ]
   | Binair { op; links; rechts; typ = t; bron = br } ->
       node "Binair"
         [ ("op", s (bin_op_s op)); ("links", opt expr links);
-          ("rechts", opt expr rechts); typ t; bron br ]
+          ("rechts", opt expr rechts); typ t; source br ]
   | Attribuut_ref { attribuut; objecttype; bron = br; navigatie_bindingen } ->
       if navigatie_bindingen <> None then
         failwith "Emit: the slice synthesises no navigation bindings";
-      node "AttribuutRef" [ ("attribuut", so attribuut); ("objecttype", so objecttype); bron br ]
+      node "AttribuutRef" [ ("attribuut", so attribuut); ("objecttype", so objecttype); source br ]
   | Functie
       { kind; argumenten; element_objecttype; leegwaarde; filter; dimensie_selectie;
         typ = t; bron = br; granulariteit; bron_rol; bron_pad } ->
@@ -117,17 +132,16 @@ let rec expr (e : expr) : json =
            ("arguments", `List (List.map expr argumenten)) ]
         @ (match element_objecttype with None -> [] | Some el -> [ ("elementType", s el) ])
         @ (match leegwaarde with None -> [] | Some f -> [ ("emptyFallback", expr f) ])
-        @ [ ("sourceRole", rol_binding rb); typ t; bron br ])
+        @ [ ("sourceRole", rol_binding rb); typ t; source br ])
   | _ -> failwith "Emit: expression node not produced by the F-logic slice"
 
 let rec conditie (c : conditie) : json =
-  let bron br = ("bron", so br) in
   match c with
   | Vergelijking { op; links; rechts; periode; bron = br } ->
       if periode <> None then failwith "Emit: the slice writes no period qualifier";
       node "Vergelijking"
         [ ("op", s (vergelijk_op_s op)); ("links", opt expr links);
-          ("rechts", opt expr rechts); ("periode", `Null); bron br ]
+          ("rechts", opt expr rechts); ("periode", `Null); source br ]
   | Samengesteld { kwantor; drempel; onderdelen; bron = br } ->
       node "Samengesteld"
         [ ("kwantor", s (kwantor_s kwantor)); ("drempel", i drempel);
@@ -139,7 +153,7 @@ let rec conditie (c : conditie) : json =
              | Kwantorvouw _ -> conditie c
              | _ -> failwith "Emit: nested composite not produced by the F-logic slice")
              onderdelen));
-          bron br ]
+          source br ]
   (* The quantifier fold. [drempel] is present EXACTLY under the three
      counting quantifiers (WF-108 (e)) and absent otherwise, so it is
      written conditionally rather than as a null nobody may consult; the
@@ -160,23 +174,22 @@ let rec conditie (c : conditie) : json =
         @ [ ("elementObjecttype", so kv_element_objecttype);
             ("filter", opt conditie kv_filter);
             ("toets", opt conditie kv_toets);
-            bron kv_bron;
+            source kv_bron;
             ("bronRol", rol_binding rb) ])
   | c -> conditie_leaf c
 
 and conditie_leaf (c : conditie) : json =
-  let bron br = ("bron", so br) in
   match c with
   | Kenmerk_check { kenmerk; negatie; eigenaar; periode; bron = br; navigatie_binding } ->
       if periode <> None || navigatie_binding <> None then
         failwith "Emit: the slice writes no period or navigation on a characteristic check";
       node "Kenmerk"
         [ ("kenmerk", so kenmerk); ("negatie", b negatie); ("eigenaar", so eigenaar);
-          ("periode", `Null); bron br ]
+          ("periode", `Null); source br ]
   | Vergelijking { op; links; rechts; periode = _; bron = br } ->
       node "Vergelijking"
         [ ("op", s (vergelijk_op_s op)); ("links", opt expr links);
-          ("rechts", opt expr rechts); ("periode", `Null); bron br ]
+          ("rechts", opt expr rechts); ("periode", `Null); source br ]
   | _ -> failwith "Emit: condition shape not produced by the F-logic slice"
 
 let geldigheid (g : geldigheid) : json =
@@ -303,20 +316,22 @@ let default (d : default) : json =
   if d.default_initialisatie || d.default_excepties <> None then
     failwith "Emit: default form not produced by the F-logic slice";
   `Assoc
-    [ ("node", `String "Default");
-      ("besluit", (match d.default_besluit with None -> `Null | Some x -> `Bool x));
-      ("voorwaarde", opt conditie d.default_voorwaarde);
-      ("consequentie", opt expr d.default_consequentie);
-      ("bron", so d.default_bron) ]
+    (fields
+       [ ("node", `String "Default");
+         ("besluit", (match d.default_besluit with None -> `Null | Some x -> `Bool x));
+         ("voorwaarde", opt conditie d.default_voorwaarde);
+         ("consequentie", opt expr d.default_consequentie);
+         source d.default_bron ])
 
 let prioritized_defaults (pd : prioritized_defaults) : json =
   if pd.pd_ongeordend then failwith "Emit: the slice declares no unordered group";
   `Assoc
-    [ ("node", `String "PrioritizedDefaults"); ("naam", so pd.pd_naam);
-      ("onderwerp", `String pd.pd_onderwerp); ("kenmerk", so pd.pd_kenmerk);
-      ("attribuut", so pd.pd_attribuut);
-      ("defaults", `List (List.map default pd.defaults));
-      ("bron", so pd.pd_bron); ("geldigheid", opt geldigheid pd.pd_geldigheid) ]
+    (fields
+       [ ("node", `String "PrioritizedDefaults"); ("naam", so pd.pd_naam);
+         ("onderwerp", `String pd.pd_onderwerp); ("kenmerk", so pd.pd_kenmerk);
+         ("attribuut", so pd.pd_attribuut);
+         ("defaults", `List (List.map default pd.defaults));
+         source pd.pd_bron; ("geldigheid", opt geldigheid pd.pd_geldigheid) ])
 
 (* The M1 container (decision V3 (b)): the declaration set under "model", the
    rule lists under "rules" with their v0 keys, in the schema's property
