@@ -3341,6 +3341,18 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       fault
         "a bronPad is admissible only as the range of a single-argument VALUE fold's set source \
          — a count's range is one step, spelled bronRol (WF-102)"
+  (* WF-083 (c), the verifier's sentence and ref's check: a TOTAAL without a
+     range is the subject's own read, so the type it folds over is the
+     subject type; a foreign type in the field otherwise moves no answer *)
+  | Functie
+      { kind = Totaal; argumenten = [ _ ]; element_objecttype = Some el; bron_rol = None;
+        bron_pad = None; _ }
+    when norm el <> norm subject_ot ->
+      fault
+        "the elementObjecttype '%s' of a TOTAAL without a range is not the fold subject '%s': \
+         without a range the fold is the subject's own read, so the type it folds over is the \
+         subject type, and the executors never read this field there (WF-083)"
+        el subject_ot
   | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol = Some _ as bron_rol; filter; _ } ->
       (* WF-093 (b), the verifier's sentence and ref's arm: a count source
          names a role; a name that is a MEMBER of the element type — an

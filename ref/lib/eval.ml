@@ -1352,6 +1352,18 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           Value.fault
             "a bronPad is admissible only as the range of a single-argument VALUE fold's set \
              source — a count's range is one step, spelled bronRol (WF-102)"));
+  (* WF-083 (c), the verifier's sentence: a TOTAAL without a range is the
+     subject's own read, so the type it folds over is the subject type. The
+     field is checked here because a foreign type in it otherwise moves no
+     answer and nothing else refuses it *)
+  (match (kind, element_objecttype, argumenten, env.subj) with
+  | Totaal, Some el, [ _ ], Some st when bron_rol = None && bron_pad = None && norm el <> norm st ->
+      Value.fault
+        "the elementObjecttype '%s' of a TOTAAL without a range is not the fold subject '%s': \
+         without a range the fold is the subject's own read, so the type it folds over is the \
+         subject type, and the executors never read this field there (WF-083)"
+        el st
+  | _ -> ());
   match (kind, argumenten) with
   | ( Totaal,
       [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_bindingen = None; _ } ] )

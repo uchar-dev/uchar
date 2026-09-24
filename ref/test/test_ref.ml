@@ -6342,7 +6342,20 @@ let () =
     "'vrijgesteld' is a characteristic of 'Jutter', not an attribute — a characteristic \
      endpoint is ill-formed in a value position (WF-080)";
   check "WV-2.10-kenmerk-heeft-geen-statisch-type"
-    (Eval.static_type (env_of (doc (aref "leeftijd" "Jutter"))) (aref "vrijgesteld" "Jutter") = None)
+    (Eval.static_type (env_of (doc (aref "leeftijd" "Jutter"))) (aref "vrijgesteld" "Jutter") = None);
+  (* WF-083 (c): a TOTAAL without a range is the subject's own read, so its
+     elementObjecttype is the subject type; the supertype Persoon there is
+     refused in the verifier's sentence, where the time-total arm used to
+     let it through [isa] *)
+  let totaal el : Ir_v0.Ast.expr =
+    Functie
+      { kind = Totaal; argumenten = [ aref "leeftijd" "Jutter" ]; element_objecttype = Some el;
+        leegwaarde = None; filter = None; dimensie_selectie = None; typ = Some num0; bron = None;
+        granulariteit = None; bron_rol = None; bron_pad = None }
+  in
+  expect_fault_msg "WV-4.3-totaal-zonder-bereik-over-een-supertype-faalt"
+    (fun () -> run (totaal "Persoon"))
+    "the elementObjecttype 'Persoon' of a TOTAAL without a range is not the fold subject 'Jutter'"
 
 let () =
   if !failures > 0 then begin

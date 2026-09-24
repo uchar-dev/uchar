@@ -1578,7 +1578,11 @@ let totaal_doc ?(bron_rol = false) ~vondst_attribuut ~operand () =
       "waarde": { "node": "Functie", "kind": "TOTAAL", "argumenten": [ |}
   ^ operand
   ^ {| ],
-        "elementObjecttype": "Jutter", "leegwaarde": null, "filter": null,
+        "elementObjecttype": "|}
+  (* with a range the fold's element is the related Jutter; without one it is
+     the subject's own read, whose element type IS the subject (WF-083 (c)) *)
+  ^ (if bron_rol then "Jutter" else "Vondst")
+  ^ {|", "leegwaarde": null, "filter": null,
         "dimensieSelectie": null, "type": |}
   ^ jaar_num
   ^ {|,
@@ -8463,7 +8467,22 @@ let () =
          [ pf_is ~attr:"topsom" "66"; pf_cons ]);
   unbound_fires ~name:"temporal: the gedurende clip's bound, unbound" ~ir:clip_ir ~param:"klipgrens"
     ~case_text:(pf_case ~instances:[ j1_klip ] [ pf_is ~attr:"topsom" "0"; pf_cons ])
-    ~silent:"topsom 0: no month passed the clip"
+    ~silent:"topsom 0: no month passed the clip";
+  (* WF-083 (c): a TOTAAL without a range is the subject's own read, so its
+     elementObjecttype is the subject type; the supertype Persoon there is
+     refused in the verifier's sentence, with the bound case that plays *)
+  let persoon_ir =
+    clip_ir
+    |> vervang ~waar:{|"elementObjecttype": "Jutter"|} ~door:{|"elementObjecttype": "Persoon"|}
+    |> vervang ~waar:{|"plural": "Jutters",|} ~door:{|"plural": "Jutters", "supertype": "Persoon",|}
+    |> vervang ~waar:{|"objectTypes": [ |}
+         ~door:({|"objectTypes": [ |} ^ pf_ot ~naam:"Persoon" ~meervoud:"Personen" [] ^ ", ")
+  in
+  faults_with ~name:"WF-083 een TOTAAL zonder bereik over een supertype" ~ir:persoon_ir
+    ~case_text:
+      (pf_case ~instances:[ j1_klip ] ~params:[ pf_bind "klipgrens" "10" ]
+         [ pf_is ~attr:"topsom" "66"; pf_cons ])
+    ~needle:"the elementObjecttype 'Persoon' of a TOTAAL without a range is not the fold subject 'Jutter'"
 
 (* the defaults: ref walks a chain in order and stops at the first default
    that settles, and reads a consequence only under its holding
