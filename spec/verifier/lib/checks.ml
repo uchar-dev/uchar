@@ -5711,7 +5711,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
         if List.exists (fun e -> match e with Some e -> expr_temporal ctx e | None -> false) operands
         then []
         else
-          [ v "WF-043" at "whole-period qualifier on a non-time-dependent operand" ]
+          [ v "WF-043" at "wholePeriod qualifier on a non-time-dependent operand" ]
   in
   let closed =
     (* inside a closed body a condition is limited to Comparison/Predicate
@@ -6006,7 +6006,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
               match objecttype ctx otn with
               | Some ot
                 when not (List.exists (fun (n, _) -> norm n = norm k) ot.kenmerk_granulariteit) ->
-                  [ v "WF-043" at "whole-period qualifier on a non-time-dependent characteristic" ]
+                  [ v "WF-043" at "wholePeriod qualifier on a non-time-dependent characteristic" ]
               | _ -> [])
           | _ -> []))
       @ (* WF-053: the navigated characteristic check — one hop, its binding
