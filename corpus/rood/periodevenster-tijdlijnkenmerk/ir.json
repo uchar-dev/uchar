@@ -46,7 +46,9 @@
               "node": "AttribuutRef",
               "attribuut": "geborgen",
               "objecttype": "Vondst",
-              "bron": "Een Vondst is geborgen"
+              "source": {
+                "snippet": "Een Vondst is geborgen"
+              }
             },
             "value": {
               "node": "Literal",
@@ -56,7 +58,9 @@
               "type": {
                 "node": "Booleaan"
               },
-              "bron": "waar"
+              "source": {
+                "snippet": "waar"
+              }
             },
             "condition": {
               "node": "Periode",
@@ -69,7 +73,9 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "2024-01-01"
+                "source": {
+                  "snippet": "2024-01-01"
+                }
               },
               "tot": {
                 "node": "Literal",
@@ -80,10 +86,14 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "2025-01-01"
+                "source": {
+                  "snippet": "2025-01-01"
+                }
               },
               "totInclusief": false,
-              "bron": "van 1 januari 2024 tot 1 januari 2025"
+              "source": {
+                "snippet": "van 1 januari 2024 tot 1 januari 2025"
+              }
             },
             "initialisation": false
           }

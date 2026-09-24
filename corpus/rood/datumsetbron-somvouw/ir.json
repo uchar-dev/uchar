@@ -84,7 +84,9 @@
               "node": "AttribuutRef",
               "attribuut": "vondstdagensom",
               "objecttype": "Jutter",
-              "bron": "De vondstdagensom van een Jutter"
+              "source": {
+                "snippet": "De vondstdagensom van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -94,7 +96,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "vondstdatum",
                   "objecttype": "Vondst",
-                  "bron": "de vondstdatum van alle vondsten van de Jutter"
+                  "source": {
+                    "snippet": "de vondstdatum van alle vondsten van de Jutter"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -107,7 +111,9 @@
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "de som van de vondstdatum van alle vondsten van de Jutter"
+              "source": {
+                "snippet": "de som van de vondstdatum van alle vondsten van de Jutter"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

@@ -78,7 +78,9 @@
               "node": "AttribuutRef",
               "attribuut": "wachtsom",
               "objecttype": "Klipjutter",
-              "bron": "De wachtsom van een Klipjutter"
+              "source": {
+                "snippet": "De wachtsom van een Klipjutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -88,7 +90,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "wachtvergoeding per maand",
                   "objecttype": "Klipjutter",
-                  "bron": "zijn wachtvergoeding per maand"
+                  "source": {
+                    "snippet": "zijn wachtvergoeding per maand"
+                  }
                 }
               ],
               "elementType": "Klipjutter",
@@ -98,13 +102,17 @@
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
-                "bron": "gedurende de tijd dat hij wachtplichtig is"
+                "source": {
+                  "snippet": "gedurende de tijd dat hij wachtplichtig is"
+                }
               },
               "type": {
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is"
+              "source": {
+                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is"
+              }
             },
             "initialisation": false,
             "presentation": "GELIJKSTELLING"

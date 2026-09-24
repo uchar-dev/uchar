@@ -76,7 +76,9 @@
               "node": "AttribuutRef",
               "attribuut": "begrenswaarde",
               "objecttype": "Jutter",
-              "bron": "De begrenswaarde van een Jutter"
+              "source": {
+                "snippet": "De begrenswaarde van een Jutter"
+              }
             },
             "value": {
               "node": "Let",
@@ -91,7 +93,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "grens",
                 "objecttype": "Jutter",
-                "bron": "zijn grens"
+                "source": {
+                  "snippet": "zijn grens"
+                }
               },
               "body": {
                 "node": "Begrensd",
@@ -106,7 +110,9 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "100"
+                  "source": {
+                    "snippet": "100"
+                  }
                 },
                 "minimum": {
                   "node": "Binair",
@@ -115,13 +121,17 @@
                     "node": "AttribuutRef",
                     "attribuut": "teller",
                     "objecttype": "Jutter",
-                    "bron": "zijn teller"
+                    "source": {
+                      "snippet": "zijn teller"
+                    }
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "noemer",
                     "objecttype": "Jutter",
-                    "bron": "zijn noemer"
+                    "source": {
+                      "snippet": "zijn noemer"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -129,12 +139,16 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "zijn teller gedeeld door zijn noemer"
+                  "source": {
+                    "snippet": "zijn teller gedeeld door zijn noemer"
+                  }
                 },
                 "maximum": {
                   "node": "BinderRef",
                   "name": "grenswaarde",
-                  "bron": "de grenswaarde"
+                  "source": {
+                    "snippet": "de grenswaarde"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -142,9 +156,13 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "100 met een minimum van zijn teller gedeeld door zijn noemer en een maximum van de grenswaarde"
+                "source": {
+                  "snippet": "100 met een minimum van zijn teller gedeeld door zijn noemer en een maximum van de grenswaarde"
+                }
               },
-              "bron": "de grenswaarde is zijn grens"
+              "source": {
+                "snippet": "de grenswaarde is zijn grens"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

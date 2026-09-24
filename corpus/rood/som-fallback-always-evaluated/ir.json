@@ -76,7 +76,9 @@
               "node": "AttribuutRef",
               "attribuut": "vangstsom",
               "objecttype": "Vangst",
-              "bron": "De vangstsom van een Vangst"
+              "source": {
+                "snippet": "De vangstsom van een Vangst"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -86,13 +88,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "deelvangst",
                   "objecttype": "Vangst",
-                  "bron": "zijn deelvangst"
+                  "source": {
+                    "snippet": "zijn deelvangst"
+                  }
                 },
                 {
                   "node": "AttribuutRef",
                   "attribuut": "teller",
                   "objecttype": "Vangst",
-                  "bron": "zijn teller"
+                  "source": {
+                    "snippet": "zijn teller"
+                  }
                 }
               ],
               "emptyFallback": {
@@ -102,13 +108,17 @@
                   "node": "AttribuutRef",
                   "attribuut": "teller",
                   "objecttype": "Vangst",
-                  "bron": "zijn teller"
+                  "source": {
+                    "snippet": "zijn teller"
+                  }
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "noemer",
                   "objecttype": "Vangst",
-                  "bron": "zijn noemer"
+                  "source": {
+                    "snippet": "zijn noemer"
+                  }
                 },
                 "type": {
                   "node": "Number",
@@ -116,7 +126,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "zijn teller gedeeld door zijn noemer"
+                "source": {
+                  "snippet": "zijn teller gedeeld door zijn noemer"
+                }
               },
               "type": {
                 "node": "Number",
@@ -124,7 +136,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van zijn deelvangst en zijn teller of zijn teller gedeeld door zijn noemer als die er niet zijn"
+              "source": {
+                "snippet": "de som van zijn deelvangst en zijn teller of zijn teller gedeeld door zijn noemer als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

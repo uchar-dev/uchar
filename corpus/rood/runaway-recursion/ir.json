@@ -74,7 +74,9 @@
                     "node": "AttribuutRef",
                     "attribuut": "rang",
                     "objecttype": "Wachter",
-                    "bron": "de rang van de Wachter"
+                    "source": {
+                      "snippet": "de rang van de Wachter"
+                    }
                   },
                   "rechts": {
                     "node": "Literal",
@@ -87,7 +89,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "1"
+                    "source": {
+                      "snippet": "1"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -95,7 +99,9 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "de rang van de Wachter plus 1"
+                  "source": {
+                    "snippet": "de rang van de Wachter plus 1"
+                  }
                 },
                 "kenmerk": false
               }
@@ -107,7 +113,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "rang",
                 "objecttype": "Wachter",
-                "bron": "de rang van de Wachter"
+                "source": {
+                  "snippet": "de rang van de Wachter"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -120,10 +128,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "1"
+                "source": {
+                  "snippet": "1"
+                }
               },
               "periode": null,
-              "bron": "de rang van de Wachter is groter of gelijk aan 1"
+              "source": {
+                "snippet": "de rang van de Wachter is groter of gelijk aan 1"
+              }
             },
             "validity": {
               "node": "Geldigheid",
@@ -151,9 +163,7 @@
         "recursief": true,
         "leden": [
           "werf eeuwig"
-        ],
-        "bron": null,
-        "line": 1
+        ]
       }
     ]
   },

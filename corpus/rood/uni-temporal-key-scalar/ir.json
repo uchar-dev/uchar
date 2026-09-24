@@ -106,7 +106,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "De vondstnummers van alle Strandvondsten moeten uniek zijn."
+            "source": {
+              "snippet": "De vondstnummers van alle Strandvondsten moeten uniek zijn."
+            }
           }
         ]
       },
@@ -134,7 +136,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "De kavelnummers van alle Strandvondsten van de kust moeten uniek zijn."
+            "source": {
+              "snippet": "De kavelnummers van alle Strandvondsten van de kust moeten uniek zijn."
+            }
           }
         ]
       }

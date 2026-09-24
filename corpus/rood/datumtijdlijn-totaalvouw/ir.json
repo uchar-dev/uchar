@@ -98,7 +98,9 @@
               "node": "AttribuutRef",
               "attribuut": "bewaargeld",
               "objecttype": "Jutter",
-              "bron": "Het bewaargeld van een Jutter"
+              "source": {
+                "snippet": "Het bewaargeld van een Jutter"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -108,7 +110,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bewaarvergoeding per maand",
                   "objecttype": "Jutter",
-                  "bron": "zijn bewaarvergoeding per maand"
+                  "source": {
+                    "snippet": "zijn bewaarvergoeding per maand"
+                  }
                 }
               ],
               "elementType": "Jutter",
@@ -116,7 +120,9 @@
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "het totaal van zijn bewaarvergoeding per maand"
+              "source": {
+                "snippet": "het totaal van zijn bewaarvergoeding per maand"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

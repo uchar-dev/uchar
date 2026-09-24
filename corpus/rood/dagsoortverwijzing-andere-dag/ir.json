@@ -135,7 +135,9 @@
               "node": "AttribuutRef",
               "attribuut": "uiterste bergingsdatum",
               "objecttype": "Bergingsploeg",
-              "bron": "De uiterste bergingsdatum van een Bergingsploeg"
+              "source": {
+                "snippet": "De uiterste bergingsdatum van een Bergingsploeg"
+              }
             },
             "value": {
               "node": "Binair",
@@ -144,19 +146,25 @@
                 "node": "AttribuutRef",
                 "attribuut": "meldingsdatum",
                 "objecttype": "Bergingsploeg",
-                "bron": "zijn meldingsdatum"
+                "source": {
+                  "snippet": "zijn meldingsdatum"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "bergingsbestek",
                 "objecttype": "Bergingsploeg",
-                "bron": "zijn bergingsbestek"
+                "source": {
+                  "snippet": "zijn bergingsbestek"
+                }
               },
               "type": {
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "zijn meldingsdatum plus zijn bergingsbestek"
+              "source": {
+                "snippet": "zijn meldingsdatum plus zijn bergingsbestek"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -180,13 +188,17 @@
               "node": "Date",
               "precision": "day"
             },
-            "bron": "15-03-2026"
+            "source": {
+              "snippet": "15-03-2026"
+            }
           },
           "dagsoort": "ankerdag",
           "negatie": false,
           "cijfers": 0,
           "periode": null,
-          "bron": "15-03-2026 een ankerdag is"
+          "source": {
+            "snippet": "15-03-2026 een ankerdag is"
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",
@@ -210,7 +222,9 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "de dag"
+                "source": {
+                  "snippet": "de dag"
+                }
               }
             ],
             "type": {
@@ -219,7 +233,9 @@
               "decimals": 0,
               "sign": "ONBEPAALD"
             },
-            "bron": "de dag_uit uit de dag"
+            "source": {
+              "snippet": "de dag_uit uit de dag"
+            }
           },
           "rechts": {
             "node": "Literal",
@@ -232,10 +248,14 @@
               "decimals": 0,
               "sign": "ONBEPAALD"
             },
-            "bron": "15"
+            "source": {
+              "snippet": "15"
+            }
           },
           "periode": null,
-          "bron": "de dag uit de dag gelijk is aan 15"
+          "source": {
+            "snippet": "de dag uit de dag gelijk is aan 15"
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",

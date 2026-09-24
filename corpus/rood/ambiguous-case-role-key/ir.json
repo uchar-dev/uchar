@@ -127,13 +127,17 @@
               "node": "AttribuutRef",
               "attribuut": "ligdiepte",
               "objecttype": "Schuit",
-              "bron": "De ligdiepte van een Schuit"
+              "source": {
+                "snippet": "De ligdiepte van een Schuit"
+              }
             },
             "value": {
               "node": "AttribuutRef",
               "attribuut": "draagvlak",
               "objecttype": "Ponton",
-              "bron": "het draagvlak van de ligger van de Schuit",
+              "source": {
+                "snippet": "het draagvlak van de ligger van de Schuit"
+              },
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",

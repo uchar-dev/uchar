@@ -70,7 +70,9 @@
               "node": "AttribuutRef",
               "attribuut": "delertotaal",
               "objecttype": "Jutter",
-              "bron": "Het delertotaal van een Jutter"
+              "source": {
+                "snippet": "Het delertotaal van een Jutter"
+              }
             },
             "value": {
               "node": "Fold",
@@ -83,7 +85,9 @@
               "list": {
                 "node": "ParameterRef",
                 "parameter": "kindertallen",
-                "bron": "de kindertallen"
+                "source": {
+                  "snippet": "de kindertallen"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -113,7 +117,9 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "het opgetelde deel"
+                    "source": {
+                      "snippet": "het opgetelde deel"
+                    }
                   },
                   "rechts": {
                     "node": "Binair",
@@ -121,12 +127,16 @@
                     "links": {
                       "node": "ParameterRef",
                       "parameter": "grondslag",
-                      "bron": "de grondslag"
+                      "source": {
+                        "snippet": "de grondslag"
+                      }
                     },
                     "rechts": {
                       "node": "BinderRef",
                       "name": "x",
-                      "bron": "het kindertal"
+                      "source": {
+                        "snippet": "het kindertal"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -134,7 +144,9 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de grondslag gedeeld door het kindertal"
+                    "source": {
+                      "snippet": "de grondslag gedeeld door het kindertal"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -142,9 +154,13 @@
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "het opgetelde deel plus het deel"
+                  "source": {
+                    "snippet": "het opgetelde deel plus het deel"
+                  }
                 },
-                "bron": "de kinddelen opgeteld"
+                "source": {
+                  "snippet": "de kinddelen opgeteld"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -157,9 +173,13 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0.00"
+                "source": {
+                  "snippet": "0.00"
+                }
               },
-              "bron": "de kindertallen gevouwen tot het delertotaal"
+              "source": {
+                "snippet": "de kindertallen gevouwen tot het delertotaal"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

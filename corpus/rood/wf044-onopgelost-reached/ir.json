@@ -46,7 +46,9 @@
               "node": "AttribuutRef",
               "attribuut": "waardering",
               "objecttype": "Vondst",
-              "bron": "De waardering van een Vondst"
+              "source": {
+                "snippet": "De waardering van een Vondst"
+              }
             },
             "value": {
               "node": "Onopgelost",
@@ -56,7 +58,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de taxatie volgens het niet-gemodelleerde protocol"
+              "source": {
+                "snippet": "de taxatie volgens het niet-gemodelleerde protocol"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

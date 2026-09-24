@@ -87,7 +87,9 @@
               "node": "AttribuutRef",
               "attribuut": "liggertal",
               "objecttype": "Haven",
-              "bron": "Het liggertal van een Haven"
+              "source": {
+                "snippet": "Het liggertal van een Haven"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -97,7 +99,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "ligger",
                   "objecttype": "Haven",
-                  "bron": "ligger van de Haven"
+                  "source": {
+                    "snippet": "ligger van de Haven"
+                  }
                 }
               ],
               "elementType": "Schuit",
@@ -112,7 +116,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal ligger van de Haven"
+              "source": {
+                "snippet": "het aantal ligger van de Haven"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

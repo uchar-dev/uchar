@@ -58,7 +58,9 @@
               "node": "AttribuutRef",
               "attribuut": "vaartduur",
               "objecttype": "Vaart",
-              "bron": "De vaartduur van een Vaart"
+              "source": {
+                "snippet": "De vaartduur van een Vaart"
+              }
             },
             "value": {
               "node": "Let",
@@ -77,7 +79,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "vertrek",
                 "objecttype": "Vaart",
-                "bron": "zijn vertrek"
+                "source": {
+                  "snippet": "zijn vertrek"
+                }
               },
               "body": {
                 "node": "BuiltinCall",
@@ -90,12 +94,16 @@
                       "node": "Date",
                       "precision": "day"
                     },
-                    "bron": "de rekendatum"
+                    "source": {
+                      "snippet": "de rekendatum"
+                    }
                   },
                   {
                     "node": "BinderRef",
                     "name": "vertrekdatum",
-                    "bron": "de vertrekdatum"
+                    "source": {
+                      "snippet": "de vertrekdatum"
+                    }
                   }
                 ],
                 "type": {
@@ -108,9 +116,13 @@
                     "abbreviation": "dagen"
                   }
                 },
-                "bron": "de tijdsduur van de rekendatum tot de vertrekdatum in hele dagen"
+                "source": {
+                  "snippet": "de tijdsduur van de rekendatum tot de vertrekdatum in hele dagen"
+                }
               },
-              "bron": "de vertrekdatum is zijn vertrek"
+              "source": {
+                "snippet": "de vertrekdatum is zijn vertrek"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

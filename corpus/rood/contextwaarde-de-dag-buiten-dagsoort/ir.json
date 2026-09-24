@@ -54,7 +54,9 @@
               "node": "AttribuutRef",
               "attribuut": "jaartal",
               "objecttype": "Baken",
-              "bron": "Het jaartal van een Baken"
+              "source": {
+                "snippet": "Het jaartal van een Baken"
+              }
             },
             "value": {
               "node": "BuiltinCall",
@@ -66,7 +68,9 @@
                     "node": "Date",
                     "precision": "day"
                   },
-                  "bron": "de dag"
+                  "source": {
+                    "snippet": "de dag"
+                  }
                 }
               ],
               "type": {
@@ -75,7 +79,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het jaar uit de dag"
+              "source": {
+                "snippet": "het jaar uit de dag"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

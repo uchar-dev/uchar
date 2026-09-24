@@ -126,7 +126,9 @@
               "node": "AttribuutRef",
               "attribuut": "stukprijs",
               "objecttype": "Kavel",
-              "bron": "De stukprijs van een Kavel"
+              "source": {
+                "snippet": "De stukprijs van een Kavel"
+              }
             },
             "value": {
               "node": "Binair",
@@ -135,13 +137,17 @@
                 "node": "AttribuutRef",
                 "attribuut": "opbrengst",
                 "objecttype": "Kavel",
-                "bron": "de opbrengst van de Kavel"
+                "source": {
+                  "snippet": "de opbrengst van de Kavel"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "partijen",
                 "objecttype": "Kavel",
-                "bron": "de partijen van de Kavel"
+                "source": {
+                  "snippet": "de partijen van de Kavel"
+                }
               },
               "type": {
                 "node": "Number",
@@ -149,7 +155,9 @@
                 "decimals": 5,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de opbrengst van de Kavel gedeeld door abs de partijen van de Kavel"
+              "source": {
+                "snippet": "de opbrengst van de Kavel gedeeld door abs de partijen van de Kavel"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -170,7 +178,9 @@
               "node": "AttribuutRef",
               "attribuut": "oppervlakte",
               "objecttype": "Kavel",
-              "bron": "De oppervlakte van een Kavel"
+              "source": {
+                "snippet": "De oppervlakte van een Kavel"
+              }
             },
             "value": {
               "node": "Binair",
@@ -179,7 +189,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "zijde",
                 "objecttype": "Kavel",
-                "bron": "de zijde van de Kavel"
+                "source": {
+                  "snippet": "de zijde van de Kavel"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -192,7 +204,9 @@
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "2"
+                "source": {
+                  "snippet": "2"
+                }
               },
               "type": {
                 "node": "Number",
@@ -200,7 +214,9 @@
                 "decimals": 2,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "de zijde van de Kavel tot de macht 2"
+              "source": {
+                "snippet": "de zijde van de Kavel tot de macht 2"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -221,7 +237,9 @@
               "node": "AttribuutRef",
               "attribuut": "inhoud",
               "objecttype": "Kavel",
-              "bron": "De inhoud van een Kavel"
+              "source": {
+                "snippet": "De inhoud van een Kavel"
+              }
             },
             "value": {
               "node": "Binair",
@@ -230,7 +248,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "ribbe",
                 "objecttype": "Kavel",
-                "bron": "de ribbe van de Kavel"
+                "source": {
+                  "snippet": "de ribbe van de Kavel"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -243,7 +263,9 @@
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "3"
+                "source": {
+                  "snippet": "3"
+                }
               },
               "type": {
                 "node": "Number",
@@ -251,7 +273,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "de ribbe van de Kavel tot de macht 3"
+              "source": {
+                "snippet": "de ribbe van de Kavel tot de macht 3"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -272,7 +296,9 @@
               "node": "AttribuutRef",
               "attribuut": "krimpmaat",
               "objecttype": "Kavel",
-              "bron": "De krimpmaat van een Kavel"
+              "source": {
+                "snippet": "De krimpmaat van een Kavel"
+              }
             },
             "value": {
               "node": "Binair",
@@ -281,7 +307,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "krimp",
                 "objecttype": "Kavel",
-                "bron": "de krimp van de Kavel"
+                "source": {
+                  "snippet": "de krimp van de Kavel"
+                }
               },
               "rechts": {
                 "node": "Literal",
@@ -294,7 +322,9 @@
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "3"
+                "source": {
+                  "snippet": "3"
+                }
               },
               "type": {
                 "node": "Number",
@@ -302,7 +332,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de krimp van de Kavel tot de macht 3"
+              "source": {
+                "snippet": "de krimp van de Kavel tot de macht 3"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

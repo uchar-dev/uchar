@@ -163,7 +163,9 @@
               "node": "AttribuutRef",
               "attribuut": "bergingsgewicht",
               "objecttype": "Gemeente",
-              "bron": "Het bergingsgewicht van een Gemeente"
+              "source": {
+                "snippet": "Het bergingsgewicht van een Gemeente"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -173,7 +175,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "gewicht",
                   "objecttype": "Vondst",
-                  "bron": "het gewicht van alle geborgen vondsten van de Gemeente"
+                  "source": {
+                    "snippet": "het gewicht van alle geborgen vondsten van de Gemeente"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -188,7 +192,9 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
               "sourceRole": {
                 "node": "RolBinding",
@@ -201,7 +207,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de som van het gewicht van alle geborgen vondsten van de Gemeente of 0 als die er niet zijn"
+              "source": {
+                "snippet": "de som van het gewicht van alle geborgen vondsten van de Gemeente of 0 als die er niet zijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -222,7 +230,9 @@
               "node": "AttribuutRef",
               "attribuut": "bergingsaantal",
               "objecttype": "Gemeente",
-              "bron": "Het bergingsaantal van een Gemeente"
+              "source": {
+                "snippet": "Het bergingsaantal van een Gemeente"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -232,7 +242,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "geborgen vondsten",
                   "objecttype": "Gemeente",
-                  "bron": "geborgen vondsten van de Gemeente"
+                  "source": {
+                    "snippet": "geborgen vondsten van de Gemeente"
+                  }
                 }
               ],
               "elementType": "Vondst",
@@ -247,7 +259,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal geborgen vondsten van de Gemeente"
+              "source": {
+                "snippet": "het aantal geborgen vondsten van de Gemeente"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -268,7 +282,9 @@
               "node": "AttribuutRef",
               "attribuut": "aantal bergende gemeenten",
               "objecttype": "Vondst",
-              "bron": "Het aantal bergende gemeenten van een Vondst"
+              "source": {
+                "snippet": "Het aantal bergende gemeenten van een Vondst"
+              }
             },
             "value": {
               "node": "Aggregation",
@@ -278,7 +294,9 @@
                   "node": "AttribuutRef",
                   "attribuut": "bergende gemeente",
                   "objecttype": "Vondst",
-                  "bron": "bergende gemeente van de Vondst"
+                  "source": {
+                    "snippet": "bergende gemeente van de Vondst"
+                  }
                 }
               ],
               "elementType": "Gemeente",
@@ -293,7 +311,9 @@
                 "decimals": 0,
                 "sign": "NIET_NEGATIEF"
               },
-              "bron": "het aantal bergende gemeenten van de Vondst"
+              "source": {
+                "snippet": "het aantal bergende gemeenten van de Vondst"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -334,7 +354,9 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "de Gemeente is een kustgemeente"
+              "source": {
+                "snippet": "de Gemeente is een kustgemeente"
+              }
             },
             "validity": {
               "node": "Geldigheid",

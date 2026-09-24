@@ -60,7 +60,9 @@
               "node": "AttribuutRef",
               "attribuut": "quotientsom",
               "objecttype": "Deling",
-              "bron": "Het quoti\u00ebntsom van een Deling"
+              "source": {
+                "snippet": "Het quoti\u00ebntsom van een Deling"
+              }
             },
             "value": {
               "node": "Fold",
@@ -73,7 +75,9 @@
               "list": {
                 "node": "ParameterRef",
                 "parameter": "tellers",
-                "bron": "de tellers"
+                "source": {
+                  "snippet": "de tellers"
+                }
               },
               "function": {
                 "node": "Lambda",
@@ -103,7 +107,9 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "bron": "de opgetelde deling"
+                    "source": {
+                      "snippet": "de opgetelde deling"
+                    }
                   },
                   "rechts": {
                     "node": "Binair",
@@ -111,7 +117,9 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "x",
-                      "bron": "de teller"
+                      "source": {
+                        "snippet": "de teller"
+                      }
                     },
                     "rechts": {
                       "node": "Literal",
@@ -124,7 +132,9 @@
                         "decimals": 0,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "3"
+                      "source": {
+                        "snippet": "3"
+                      }
                     },
                     "type": {
                       "node": "Number",
@@ -132,7 +142,9 @@
                       "decimals": 0,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "de teller gedeeld door 3"
+                    "source": {
+                      "snippet": "de teller gedeeld door 3"
+                    }
                   },
                   "type": {
                     "node": "Number",
@@ -140,9 +152,13 @@
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "de opgetelde deling plus de deeluitkomst"
+                  "source": {
+                    "snippet": "de opgetelde deling plus de deeluitkomst"
+                  }
                 },
-                "bron": "de delingen opgeteld"
+                "source": {
+                  "snippet": "de delingen opgeteld"
+                }
               },
               "init": {
                 "node": "Literal",
@@ -155,9 +171,13 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "0"
+                "source": {
+                  "snippet": "0"
+                }
               },
-              "bron": "de tellers gevouwen tot het quoti\u00ebntsom"
+              "source": {
+                "snippet": "de tellers gevouwen tot het quoti\u00ebntsom"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

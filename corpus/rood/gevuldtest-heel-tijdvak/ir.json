@@ -118,7 +118,9 @@
               "node": "AttribuutRef",
               "attribuut": "meldpremie",
               "objecttype": "Schuit",
-              "bron": "De meldpremie van een Schuit"
+              "source": {
+                "snippet": "De meldpremie van een Schuit"
+              }
             },
             "value": {
               "node": "Literal",
@@ -131,7 +133,9 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "40"
+              "source": {
+                "snippet": "40"
+              }
             },
             "condition": {
               "node": "Predicaat",
@@ -140,7 +144,9 @@
                 "node": "AttribuutRef",
                 "attribuut": "lengte",
                 "objecttype": "Schuit",
-                "bron": "de lengte van de Schuit"
+                "source": {
+                  "snippet": "de lengte van de Schuit"
+                }
               },
               "dagsoort": null,
               "negatie": false,
@@ -150,7 +156,9 @@
                 "jaar": true,
                 "niet": false
               },
-              "bron": "de lengte van de Schuit gedurende het gehele jaar gevuld is"
+              "source": {
+                "snippet": "de lengte van de Schuit gedurende het gehele jaar gevuld is"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"

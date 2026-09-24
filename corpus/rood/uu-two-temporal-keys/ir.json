@@ -124,7 +124,9 @@
               "vanaf": null,
               "tot": null
             },
-            "bron": "Het vondstnummer met het volgnummer van Strandvondst verenigd met Wrakvondst moeten uniek zijn."
+            "source": {
+              "snippet": "Het vondstnummer met het volgnummer van Strandvondst verenigd met Wrakvondst moeten uniek zijn."
+            }
           }
         ]
       }

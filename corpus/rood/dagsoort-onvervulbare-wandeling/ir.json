@@ -77,7 +77,9 @@
               "node": "AttribuutRef",
               "attribuut": "vervaldatum",
               "objecttype": "Baken",
-              "bron": "De vervaldatum van een Baken"
+              "source": {
+                "snippet": "De vervaldatum van een Baken"
+              }
             },
             "value": {
               "node": "Binair",
@@ -86,19 +88,25 @@
                 "node": "AttribuutRef",
                 "attribuut": "peildatum",
                 "objecttype": "Baken",
-                "bron": "zijn peildatum"
+                "source": {
+                  "snippet": "zijn peildatum"
+                }
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "termijn",
                 "objecttype": "Baken",
-                "bron": "zijn termijn"
+                "source": {
+                  "snippet": "zijn termijn"
+                }
               },
               "type": {
                 "node": "Date",
                 "precision": "day"
               },
-              "bron": "zijn peildatum plus zijn termijn"
+              "source": {
+                "snippet": "zijn peildatum plus zijn termijn"
+              }
             },
             "initialisation": false,
             "presentation": "BEREKENING"
@@ -123,7 +131,9 @@
                   "node": "Date",
                   "precision": "day"
                 },
-                "bron": "de dag"
+                "source": {
+                  "snippet": "de dag"
+                }
               }
             ],
             "type": {
@@ -132,7 +142,9 @@
               "decimals": 0,
               "sign": "NIET_NEGATIEF"
             },
-            "bron": "de maand uit de dag"
+            "source": {
+              "snippet": "de maand uit de dag"
+            }
           },
           "rechts": {
             "node": "Literal",
@@ -145,10 +157,14 @@
               "decimals": 0,
               "sign": "ONBEPAALD"
             },
-            "bron": "13"
+            "source": {
+              "snippet": "13"
+            }
           },
           "periode": null,
-          "bron": "de maand uit de dag gelijk is aan 13"
+          "source": {
+            "snippet": "de maand uit de dag gelijk is aan 13"
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",
