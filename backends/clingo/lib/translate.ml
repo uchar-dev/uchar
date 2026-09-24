@@ -3388,9 +3388,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         bron_pad = None; _ }
     when norm el <> norm subject_ot ->
       fault
-        "the elementObjecttype '%s' of a TOTAAL without a range is not the fold subject '%s': \
-         without a range the fold is the subject's own read, so its elementObjecttype must name \
-         the subject type (WF-083)"
+        "the elementType '%s' of a TOTAAL without a range is not the fold subject '%s': \
+         without a range the fold is the subject's own read, so its elementType must name the \
+         subject type (WF-083)"
         el subject_ot
   | Functie { kind = Aantal; argumenten = [ Attribuut_ref { navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol = Some _ as bron_rol; filter; _ } ->
       (* D8 (ii), the count source (a source naming a member of the element

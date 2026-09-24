@@ -1387,9 +1387,9 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
   (match (kind, element_objecttype, argumenten, env.subj) with
   | Totaal, Some el, [ _ ], Some st when bron_rol = None && bron_pad = None && norm el <> norm st ->
       Value.fault
-        "the elementObjecttype '%s' of a TOTAAL without a range is not the fold subject '%s': \
-         without a range the fold is the subject's own read, so its elementObjecttype must name \
-         the subject type (WF-083)"
+        "the elementType '%s' of a TOTAAL without a range is not the fold subject '%s': \
+         without a range the fold is the subject's own read, so its elementType must name the \
+         subject type (WF-083)"
         el st
   | _ -> ());
   match (kind, argumenten) with

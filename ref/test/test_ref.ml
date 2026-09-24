@@ -6507,8 +6507,8 @@ let () =
   in
   expect_fault_msg "WV-4.3-totaal-zonder-bereik-over-een-supertype-faalt"
     (fun () -> run (totaal "Persoon"))
-    "the elementObjecttype 'Persoon' of a TOTAAL without a range is not the fold subject \
-     'Jutter': without a range the fold is the subject's own read, so its elementObjecttype must \
+    "the elementType 'Persoon' of a TOTAAL without a range is not the fold subject \
+     'Jutter': without a range the fold is the subject's own read, so its elementType must \
      name the subject type (WF-083)"
 
 (* WV-4.1-literaal (IR-SPEC ch. 4.1): a literal is read from its value
