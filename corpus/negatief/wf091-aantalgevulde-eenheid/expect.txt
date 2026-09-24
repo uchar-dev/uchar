@@ -1,1 +1,1 @@
-unit mismatch: the AANTAL_GEVULDE aggregation is typed 'kg' of system 'Gewicht' (factor 1 to 'kg'), but the type a filled count derives is no unit
+unit mismatch: the filledCount aggregation is typed 'kg' of system 'Gewicht' (factor 1 to 'kg'), but the type a filled count derives is no unit

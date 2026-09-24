@@ -1,1 +1,1 @@
-validity windows of versions 'Kenmerktoekenning jutter penninggerechtigd #1' and 'Kenmerktoekenning jutter penninggerechtigd #2' overlap (resolvedRegels)
+validity windows of versions 'Kenmerktoekenning jutter penninggerechtigd #1' and 'Kenmerktoekenning jutter penninggerechtigd #2' overlap (rules)

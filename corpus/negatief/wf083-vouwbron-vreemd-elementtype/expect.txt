@@ -1,1 +1,1 @@
-fold-source objecttype 'Jutter' is not the fold's anchor 'Vondst' (a set source reads each member of the elementType)
+fold-source subjectType 'Jutter' is not the fold's anchor 'Vondst' (a set source reads each member of the elementType)

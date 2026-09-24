@@ -1,1 +1,1 @@
-an attribute reference without navigation bindings is the subject's own read
+an attribute reference without a path is the subject's own read

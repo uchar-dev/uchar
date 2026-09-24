@@ -1,1 +1,1 @@
-eerste-paasdag operand is text, must be a whole unitless number
+easterSunday operand is text, must be a whole unitless number

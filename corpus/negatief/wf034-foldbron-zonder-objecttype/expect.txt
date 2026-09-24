@@ -1,1 +1,1 @@
-attribute reference 'gewicht' without an object type: it resolves against no declaration
+attribute reference 'gewicht' without a subjectType: it resolves against no declaration

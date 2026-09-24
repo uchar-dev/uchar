@@ -1,1 +1,1 @@
-the EERSTE aggregation is typed with struct domain 'logboek', but operand 0 names struct domain 'dossier'
+the first aggregation is typed with struct domain 'logboek', but operand 0 names struct domain 'dossier'

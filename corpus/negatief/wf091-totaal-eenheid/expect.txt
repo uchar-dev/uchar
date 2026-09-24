@@ -1,1 +1,1 @@
-unit mismatch: the TOTAAL aggregation is typed 'EUR' of system 'Munt' (factor 1 to 'EUR') per 'jr' of system 'Tijd' (factor 1 to 'jr'), but the type
+unit mismatch: the total aggregation is typed 'EUR' of system 'Munt' (factor 1 to 'EUR') per 'jr' of system 'Tijd' (factor 1 to 'jr'), but the type

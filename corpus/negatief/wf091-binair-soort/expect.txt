@@ -1,1 +1,1 @@
-soort mismatch: the PLUS composite is typed boolean, but the type derived from its operands is number
+soort mismatch: the plus composite is typed boolean, but the type derived from its operands is number

@@ -1,1 +1,1 @@
-wholeness mismatch: the PLUS composite is typed whole, but the type derived from its operands is fractional
+wholeness mismatch: the plus composite is typed whole, but the type derived from its operands is fractional

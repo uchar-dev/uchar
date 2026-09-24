@@ -1,1 +1,1 @@
-EERSTE orders operands of two comparable families, numbers and dates, which share no ordering
+first orders operands of two comparable families, numbers and dates, which share no ordering

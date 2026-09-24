@@ -1,1 +1,1 @@
-operand of the MINIMUM ordering fold is enumeration, must be a number or a date
+operand of the minimum ordering fold is enumeration, must be a number or a date

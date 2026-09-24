@@ -1,1 +1,1 @@
-collides with 'Kenmerktoekenning jutter penninggerechtigd' in verdelingen
+collides with 'Kenmerktoekenning jutter penninggerechtigd' in allocations

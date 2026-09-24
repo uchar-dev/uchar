@@ -1,1 +1,1 @@
-decimals mismatch: the MINIMUM aggregation is typed 4 decimals, but the type derived from its operands is 2 decimals
+decimals mismatch: the minimum aggregation is typed 4 decimals, but the type derived from its operands is 2 decimals

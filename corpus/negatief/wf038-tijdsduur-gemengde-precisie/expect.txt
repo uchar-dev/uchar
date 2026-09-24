@@ -1,1 +1,1 @@
-tijdsduur operands mix date precisions (both must share one precision)
+duration operands mix date precisions (both must share one precision)
