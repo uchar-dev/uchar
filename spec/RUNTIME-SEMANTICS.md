@@ -4149,7 +4149,7 @@ rather than by a node name it does not have.
 | `TemporalRead` | `datum` only — `basis` **names** the timeline and is never evaluated (ch. 3.3) | invisible | — |
 | `Predicaat` — leeg / gevuld | `operand` | invisible | — |
 | `Predicaat` — elfproef / numeriek met exact / dagsoort | `operand` | invisible | — *(ref declines them)* |
-| `Kenmerk`, `Rollidmaatschap`, `VerreRollidmaatschap`, `Regelversie` | none | invisible | — |
+| `Kenmerk`, `RoleMembership` (until L2 `Rollidmaatschap` and `VerreRollidmaatschap`), `Regelversie` | none | invisible | — |
 | `Literal`, `AttribuutRef`, `ParameterRef`, `VariabeleRef`, `Constante`, `BinderRef`, `ExprOnopgelost`, `ConditieOnopgelost` | none | invisible | — (a `BinderRef` forces its ch. 10.6 need **at its own position** in the parent's order) |
 | `Lambda` | — | not an operand position | never a value (WF-069): it is only the `functie` slot of a `Fold`/`MapList`, applied once per element under that node's row |
 
@@ -4368,7 +4368,7 @@ Each rule form reads and writes nodes:
 | assignment / initialisation | its target attribute | every attribute and characteristic its value expression and condition reference — a navigated reference reads the referenced type's node; population(element type) per instance fold |
 | characteristic attribution | its target characteristic | idem |
 | allocation | target attribute; declared remainder attribute | source amount; ratio, maximum and ordering attributes; condition reads; population(target type) |
-| consistency / uniqueness | channel(own name) | assertion operands / key attributes; a union reads every source's key attributes; a scoped uniqueness also reads relation(scope hop) — bound by its named fact type, else derived from the written scope field |
+| consistency / uniqueness | channel(own name) | assertion operands / key attributes; a union reads every source's key attributes; a scoped uniqueness also reads relation(scope hop), named by its `scopeRol` binding (since L2 the only spelling of the scope, B8; until L2 a scope without a binding was derived from the written scope field) |
 | object creation | the attributes and characteristics its toekenningen set on the created type; population(created type); relation(the uniquely-derivable connecting fact type — the back-link, ch. 5.5) | condition and toekenning-value reads on the anchor; population(subject type) — iterating the subjects is a read: it orders creation-after-creation, and a self-typed creation becomes a WF-045 cycle instead of a diverging fixpoint or an unbounded grounding |
 | relation creation | population(target-role filler type); relation(created fact type) | condition reads on the anchor; relation(each hop of the join-chain traversal, `IR-SPEC.md` ch. 3.4) |
 
@@ -4406,23 +4406,28 @@ Parameters and input-only nodes (nodes no form writes) contribute no
 edges.
 
 *Scope narrowing, recorded:* relation membership read by a *condition*
-(rollidmaatschap) is treated as input. A **bindingless** allocation keeps
-the population proxy alone. A bindingless fold reads the population
-proxy too, and beside it the relation derived best-effort: for an
-instance fold, the fact type of the role its source names; for a
-quantifier fold (since 2026-09-23), the one connecting relation WF-048
-demands. A relation that cannot be derived contributes no edge, and the
-verifier reports it. Otherwise only reads that name the relation in a
-role binding, and the creation's own hops, carry relation-node edges
-(the creation-after-creation ordering demanded this; a bean-field-only v0
-creation record carries no symbolic hops and stays on the bare
-population write, recorded with WF-028's uncheckable clause). Day-kind
-definitions read only input dates and contribute no edges.
+(the role check, `RoleMembership`) is treated as input. Only reads that
+name the relation in a role binding, and the creation's own hops, carry
+relation-node edges (the creation-after-creation ordering demanded
+this); since L2 every allocation, instance fold and quantifier fold names
+its relation so (B12), and an allocation and an instance fold read the
+population proxy beside it. Day-kind definitions read only input dates
+and contribute no edges. *History until L2:* a bindingless allocation
+kept the population proxy alone; a bindingless fold read the population
+proxy and, beside it, the relation derived best-effort — for an instance
+fold the fact type of the role its source named, for a quantifier fold
+(from 2026-09-23) the one connecting relation WF-048 demanded — and a
+relation that could not be derived contributed no edge while the
+verifier reported the document; a bean-field-only v0 creation record
+carried no symbolic hops and stayed on the bare population write,
+recorded with WF-028's uncheckable clause (since L2 the symbolic block
+is required, B7).
 
-*Navigated reads (ch. 5.8)* consume relation(each hop) — bound hops by
-their named fact types, bindingless hops by the WF-053 unique
-derivation (an unresolvable walk contributes no relation edges; WF-053
-rejects the document, so nothing is hidden on clean input). A navigated
+*Navigated reads (ch. 5.8)* consume relation(each hop), named by the
+hop's binding — since L2 every hop carries one (B11); until L2 a
+bindingless hop was resolved by the WF-053 unique derivation, and an
+unresolvable walk contributed no relation edges (WF-053 rejected the
+document, so nothing was hidden on clean input). A navigated
 characteristic check additionally reads characteristic(reached type) —
 on the type the hop lands on, never the subject — negatively when
 negated; the hop relation itself is always a positive read (the
@@ -4630,21 +4635,24 @@ many strata as the chain is deep.
   *geen* (`IR-SPEC.md` ch. 5.2): "alle opvolgers hebben een rang groter
   dan 5" and "geen van de opvolgers heeft een rang groter dan 0" over the
   successors it mints, "geen van de ploegleden heeft een merk groter dan
-  0" with merk derived from the minted successors, "ten hoogste 1" and "precies 1 opvolger heeft een
-  kleur ongelijk aan 7" with kleur input only, "ten hoogste 1" and
-  "precies 1 ploeglid heeft een merk groter dan 0", and "geen van: ten
-  minste 1 opvolger heeft een rang groter dan 0" — negatief cases
+  0" with merk derived from the minted successors, "alle posten van de
+  Wachter hebben een nummer groter dan 5" over the Posts a creation of
+  another type mints for the Wachter, "ten hoogste 1" and "precies 1
+  opvolger heeft een kleur ongelijk aan 7" with kleur input only, "ten
+  hoogste 1" and "precies 1 ploeglid heeft een merk groter dan 0", and
+  "geen van: ten minste 1 opvolger heeft een rang groter dan 0" —
+  negatief cases
   `wf046-kwantorvouw-alle-bereik`, `wf046-kwantorvouw-geen-vergelijking`,
-  `wf046-kwantorvouw-geen-matrix`,
+  `wf046-kwantorvouw-geen-matrix`, `wf046-kwantorvouw-bereik-ander-type`,
   `wf046-kwantorvouw-tenhoogste-bereik`, `wf046-kwantorvouw-precies-bereik`,
   `wf046-kwantorvouw-tenhoogste-matrix`, `wf046-kwantorvouw-precies-matrix`
   and `wf046-kwantorvouw-onder-geen`. Before the rule, where the range
   or an enclosing negation closed the cycle, the reference interpreter
   minted on a condition that the mint itself falsified (a chain, one
-  successor, or for the bindingless fold one Post) and the ASP reading
-  has no stable model; where only the matrix closed it, the two
-  executors split without either failing (the reference interpreter
-  minted for W1, the ASP backend did not).
+  successor, or — where the creation mints a Post for a Wachter — one
+  Post) and the ASP reading has no stable model; where only the matrix
+  closed it, the two executors split without either failing (the
+  reference interpreter minted for W1, the ASP backend did not).
 - Well-formed, the monotone parts of the same fold on the same kind of
   cycle (golden `jutterswet-opvolgerquorum`): the creation mints while
   "ten minste 1 opvolger heeft een rang groter dan 3" and "alle
