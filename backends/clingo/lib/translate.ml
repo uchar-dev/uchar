@@ -8306,7 +8306,7 @@ and closed_division ctx ~guard_body ~witness ~rounding ~links ~rechts : string l
    ([translate_ite]) below. One reading of the condition, or the two routes
    could disagree about which arm is taken. *)
 and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * string * string =
-  (* WF-077 admits arithmetic combinators (Binair/Afgerond/Begrensd/Tekst_reeks)
+  (* WF-077 admits arithmetic combinators (Binary/Rounding/Clamp/TextComposition)
      over binders, parameters and literals as condition operands — the READS are
      what stay total (never leeg), which is what keeps the else-branch the
      positive builtin's EXACT complement. [expr_term] lowers each operand below
