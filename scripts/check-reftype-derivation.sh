@@ -2,8 +2,8 @@
 # The reference-type derivation harness (RUNTIME-SEMANTICS ch. 2.10, "the consumer clause").
 #
 # A v0 IR node repeated its type on the wire at positions where that type is a COPY of a
-# declaration — an AttribuutRef, a ParameterRef, a DimensieCel read, a binder read — or a
-# DERIVATION over its operands — an arithmetic node, a Let, a value aggregation. Since L2
+# declaration — an attribute reference, a parameter reference, a dimension-cell read, a binder
+# read — or a DERIVATION over its operands — an arithmetic node, a Let, a value aggregation. Since L2
 # (2026-09-24, B13) the reference positions write no type at all: a copy that cannot be written
 # cannot drift, and every consumer takes the type there from the declaration. What stays on the
 # wire is the DERIVED annotation, and the clause says a consumer must read the SOURCE — the
@@ -25,14 +25,14 @@
 #   5. an empty twist set is a failure, never silently green.
 #   6. every unit-bearing annotation the twister MEETS must sit either in the twist table below
 #      or in the explicit, reason-carrying exception set (where the annotation IS the source).
-#      Table and clamp key on the POSITION CLASS, which for a Binair is (node, op) and for an
+#      Table and clamp key on the POSITION CLASS, which for a Binary is (node, op) and for an
 #      Aggregation or a BuiltinCall (node, kind) — ch. 2.10 splits those node kinds by OPERATOR,
 #      not by node.
-#      PLUS/MIN/VERMINDERD_MET/MAAL and the six value aggregations derive their result unit;
-#      GEDEELD_DOOR, TOT_DE_MACHT, PERCENTAGE_VAN, an absolute value, a root and the date/time
-#      extractors are ch. 2.10's FOURTH class, where v0 derives nothing. Keying on the node alone
-#      would twist a unit-bearing GEDEELD_DOOR as though it sat at a derived position, and then
-#      report whatever came out as a consumer defect — a wrong diagnosis where the honest answer
+#      plus/minus/reducedBy/times and the six value aggregations derive their result unit;
+#      dividedBy, power, percentageOf, an absolute value, a root and the date/time extractors are
+#      ch. 2.10's FOURTH class, where v0 derives nothing. Keying on the node alone would twist a
+#      unit-bearing dividedBy as though it sat at a derived position, and then report whatever
+#      came out as a consumer defect — a wrong diagnosis where the honest answer
 #      is "v0 states no join rule here" (or, when nothing observable moved, silence where the
 #      fourth-class witness should have been announced). A position in neither set is one this
 #      harness cannot probe, so nothing holds a consumer to the declaration there — the gate
@@ -57,13 +57,13 @@
 # baseline is simply wrong in both runs. So its BASELINE is pinned here too, for exactly the goldens
 # this harness probes (the DRL_BASIS_UIT list below).
 #
-# Two twist classes are, for BOTH DROOLS legs, a no-op by construction: the Java IR records for
-# Afgerond and Begrensd DERIVE their type() from the basis and hold no wire annotation at all, so the
-# graft cannot reach either of them — it still probes ref and clingo, which do read the wire there.
-# The Drools side of those two rests on the EffectieveEenheidWitnessTest witnesses, which build the
-# nodes directly. Said out loud so a green line is not read as coverage it has not got. (Until L2
-# ParameterRef and DimensieCel were two more such classes; since L2 they carry no annotation to
-# twist.)
+# Two twist classes, Rounding and Clamp, are for BOTH DROOLS legs a no-op by construction: their Java
+# IR records (in memory still Afgerond and Begrensd) DERIVE their type() from the basis and hold no
+# wire annotation at all, so the graft cannot reach either of them — it still probes ref and clingo,
+# which do read the wire there. The Drools side of those two rests on the EffectieveEenheidWitnessTest
+# witnesses, which build the nodes directly. Said out loud so a green line is not read as coverage it
+# has not got. (Until L2 the parameter reference and the dimension-cell read were two more such
+# classes; since L2 they carry no annotation to twist.)
 #
 # And the same honesty about HOW MUCH of the two Drools legs a green line covers. On the UNTOUCHED
 # corpus the derivation never disagreed with the annotation — WF-091 made the repetition faithful,
@@ -144,18 +144,20 @@
 # inter-convertible, so a consumer that trusts the annotation happily restates by the wrong
 # factor (a loud wrong number) instead of refusing; distinct per-class factors keep two
 # annotations from cancelling each other at a restatement boundary. Nothing else in the
-# document moves — every DECLARATION (an objecttype's attributen, a parameter's datatype, an
+# document moves — every DECLARATION (an object type's attributes, a parameter's datatype, an
 # unit system) is left byte-identical, which is precisely what makes the derived answer the
 # right answer.
 #
 # Twisted positions (the class factor in brackets): the composite positions —
-#   Binair/{PLUS,MIN,VERMINDERD_MET,MAAL} [1e5], Let [1e6],
-#   Aggregation/{SOM,TOTAAL,MINIMUM,MAXIMUM,EERSTE,LAATSTE} [1e7], Afgerond [1e8], Begrensd [1e9]
+#   Binary/{plus,minus,reducedBy,times} [1e5], Let [1e6],
+#   Aggregation/{sum,total,minimum,maximum,first,last} [1e7], Rounding [1e8], Clamp [1e9]
 #   (the ch. 4.10 Let node reaches this backend as a carrier, and its wire annotation is what the
-#   carrier holds). Until L2 the reference positions were twisted too — AttribuutRef [10],
-#   ParameterRef [100], DimensieCel [1000], BinderRef [10000]; since L2 they write no type, so the
-#   table no longer names them (D21) and the factors above keep their v0 exponents, which leaves
-#   every composite twist byte-identical to what it was.
+#   carrier holds). Until L2 the reference positions were twisted too — the attribute reference
+#   [10], the parameter reference [100], the dimension-cell read [1000], BinderRef [10000]; since L2
+#   they write no type, so the table no longer names them (the L2 card) and the factors above keep
+#   their v0 exponents, which leaves every composite twist byte-identical to what it was. Since the
+#   L5 landing the table keys on the L5 names of the wire (Binary, Rounding, Clamp, the operators and
+#   the aggregation kinds in their one spelling); the classes and their factors did not move.
 # The factor stays per NODE KIND even though membership is per (node, op): a restatement boundary
 # sits between two node kinds, never between two operators of one kind, so splitting the factor as
 # well would buy nothing and would move the twist set the corpus already pins.
@@ -164,19 +166,19 @@
 # each therefore EXEMPT from the clamp of step 6:
 #   - a Literal: its type is its own value's carrier ({"number": "3.5"} in EUR), a copy of
 #     nothing; the value itself is never twisted. All three executors read it, and must.
-#   - the DURATION operand of a date +/- duration Binair: ref (eval.ml) and the ASP translator
+#   - the DURATION operand of a date +/- duration Binary: ref (eval.ml) and the ASP translator
 #     both route the calendar unit off that operand's static type (WF-035). Twisting it would
 #     measure that routing, not a declaration reading. Which operand is the DATE is read the way
 #     the executors read it: off the node's own annotation, and — since a reference writes no
 #     type (L2) — off the declaration a reference names (attribute, parameter, dimension cell,
 #     binder in scope).
-#   - a TIJDSDUUR / ABSOLUTE_TIJDSDUUR BuiltinCall's own type: its unit is the OPERATOR's parameter
+#   - a duration / absoluteDuration BuiltinCall's own type: its unit is the OPERATOR's parameter
 #     ("de tijdsduur van A tot B in jaren", WF-038), not a derived result type.
 #
 # Neither twisted nor exempt is NOT silently skipped any more (step 6), and the clamp separates
 # two different arrivals:
 #   - a ch. 2.10 FOURTH-CLASS branch of a node kind the table otherwise carries — a unit-bearing
-#     Binair/GEDEELD_DOOR, /TOT_DE_MACHT, /PERCENTAGE_VAN, or a BuiltinCall absolute value, root or
+#     Binary/dividedBy, /power, /percentageOf, or a BuiltinCall absolute value, root or
 #     date/time extractor. v0 derives no result unit there, so a twist would probe a rule that
 #     does not exist; the gate reports the witness instead. What that witness must buy is a
 #     derivation rule (or a fence) — never a wider licence to read the wire.
@@ -210,7 +212,7 @@ DRL_BASIS_UIT=''
 # --- the DRL-text branch and ch. 5.10: the divergence class is EMPTY (measured 2026-09-07) ---
 # This gate owns the DRL-TEXT branch, so it records the branch's relationship to
 # RUNTIME-SEMANTICS ch. 5.10. Until 2026-09-07 that relationship was a divergence, and this file
-# carried a watchlist over every TEN_HOOGSTE carrier in the corpus.
+# carried a watchlist over every at-most carrier in the corpus.
 #
 # THE MAINTAINER DECISION OF 2026-09-07 CLOSED IT. Including at-most's TRUE trigger (`at most d`
 # stops once h + r <= d, not only once h > d) made ch. 5.10 exactly the dual of at-least — which is
@@ -224,7 +226,7 @@ DRL_BASIS_UIT=''
 #     executor reads a member ch. 5.10 skips .......... 0   (would be a fault the norm does not have)
 #     executor skips a member ch. 5.10 reads .......... 0   (would be an answer where the norm faults)
 # for the DRL-text branch AND for clingo. Confirmed end-to-end on the very probe that used to be
-# the smoking gun (TEN HOOGSTE 1 over one member that divides by zero): ref, clingo, the exec-model
+# the smoking gun (at most 1 over one member that divides by zero): ref, clingo, the exec-model
 # branch and the DRL-text branch now all write 1 — they agree, where three of them used to fault
 # and the fourth answered.
 #
@@ -282,35 +284,35 @@ import json, os, sys
 from fractions import Fraction
 
 # the position classes and their restatement-factor exponents (see the script header). The exponent
-# is per NODE KIND; MEMBERSHIP is per position class, which for Binair/Aggregation is finer (below).
-KLASSE = {"Binair": 5, "Let": 6, "Aggregation": 7, "Afgerond": 8, "Begrensd": 9}
-# ch. 2.10 clause 2 splits Binair by OPERATOR and an Aggregation by KIND, not by node: only these
+# is per NODE KIND; MEMBERSHIP is per position class, which for Binary/Aggregation is finer (below).
+KLASSE = {"Binary": 5, "Let": 6, "Aggregation": 7, "Rounding": 8, "Clamp": 9}
+# ch. 2.10 clause 2 splits Binary by OPERATOR and an Aggregation by KIND, not by node: only these
 # branches DERIVE a result unit (an additive result carries the left unit / a unitless side adopts
-# the other; a MAAL cancels or forms the opaque product; §4.6 Eenheid1 hands a value aggregation its
-# first operand's). Every OTHER op/kind of those two node kinds is ch. 2.10's FOURTH class — v0
+# the other; a times cancels or forms the opaque product; §4.6 Eenheid1 hands a value aggregation
+# its first operand's). Every OTHER op/kind of those two node kinds is ch. 2.10's FOURTH class — v0
 # derives nothing there, so it is neither twistable nor exempt, and the clamp reports it.
-AFGELEIDE_OP = {"PLUS", "MIN", "VERMINDERD_MET", "MAAL"}
-AFGELEIDE_KIND = {"SOM", "TOTAAL", "MINIMUM", "MAXIMUM", "EERSTE", "LAATSTE"}
+AFGELEIDE_OP = {"plus", "minus", "reducedBy", "times"}
+AFGELEIDE_KIND = {"sum", "total", "minimum", "maximum", "first", "last"}
 # A BuiltinCall is a node kind the table carries with no derived branch at all: an absolute value,
-# a root and the date/time extractors are the fourth class, and the two tijdsduur kinds are exempt
+# a root and the date/time extractors are the fourth class, and the two duration kinds are exempt
 # (below). Since L4 it is the other half of what v0 wrote as one Functie node (delta B21).
 GEDRAGEN = set(KLASSE) | {"BuiltinCall"}
 # The reason-carrying exception set of the step-6 clamp: node kinds OUTSIDE the twist table whose
 # annotation IS the source, so leaving them unprobed is a statement and not a gap.
 UITZONDERING = {"Literal": "the literal's type carries its own value's unit ({\"number\": \"3.5\"} in EUR), a copy of no declaration"}
-# WF-038: a tijdsduur's own unit is the operator's parameter, not a derived result type
-GEEN_FUNCTIE = {"TIJDSDUUR", "ABSOLUTE_TIJDSDUUR"}
+# WF-038: a duration's own unit is the operator's parameter, not a derived result type
+GEEN_FUNCTIE = {"duration", "absoluteDuration"}
 DATUM = "Date"
 ACHTERVOEGSEL = "-verdraaid"
 
 
 def positieklasse(x):
-    """The key table and clamp agree on: (node, op) for a Binair, (node, kind) for an Aggregation
+    """The key table and clamp agree on: (node, op) for a Binary, (node, kind) for an Aggregation
        or a BuiltinCall, the bare node kind otherwise. Printed as the clamp's witness, so a report
        names the BRANCH."""
     node = x.get("node")
-    if node == "Binair":
-        return "Binair/%s" % x.get("op")
+    if node == "Binary":
+        return "Binary/%s" % x.get("op")
     if node in ("Aggregation", "BuiltinCall"):
         return "%s/%s" % (node, x.get("kind"))
     return node
@@ -320,7 +322,7 @@ def afgeleid(x):
     """True iff this position's result unit is one ch. 2.10 clause 2 DERIVES — the only positions a
        twist may probe, because a twist asks whether a consumer follows a rule that exists."""
     node = x.get("node")
-    if node == "Binair":
+    if node == "Binary":
         return x.get("op") in AFGELEIDE_OP
     if node == "Aggregation":
         return x.get("kind") in AFGELEIDE_KIND
@@ -388,17 +390,17 @@ def declaraties(doc):
 
 def gedeclareerd(e, scope):
     node = e.get("node")
-    if node == "AttribuutRef":
-        ot, a = (e.get("objecttype") or "").lower(), (e.get("attribuut") or "").lower()
+    if node == "AttributeReference":
+        ot, a = (e.get("subjectType") or "").lower(), (e.get("attribute") or "").lower()
         while ot:
             if (ot, a) in DECL["attr"]:
                 return DECL["attr"][(ot, a)]
             ot = (DECL["super"].get(ot) or "").lower()
         return None
-    if node == "ParameterRef":
+    if node == "ParameterReference":
         return DECL["param"].get((e.get("parameter") or "").lower())
-    if node == "DimensieCel":
-        return gedeclareerd(e.get("attribuut") or {}, scope)
+    if node == "DimensionCellRead":
+        return gedeclareerd(e.get("attribute") or {}, scope)
     if node == "BinderRef":
         return scope.get((e.get("name") or "").lower())
     return e.get("type")
@@ -426,8 +428,8 @@ def loop(x, telling, sla_eigen_over=False, scope=None):
     node = x.get("node")
     # WF-035: the duration operand of a date +/- duration carries the calendar unit ref routes on
     duur = None
-    if node == "Binair" and x.get("op") in ("PLUS", "MIN", "VERMINDERD_MET"):
-        l, r = x.get("links"), x.get("rechts")
+    if node == "Binary" and x.get("op") in ("plus", "minus", "reducedBy"):
+        l, r = x.get("left"), x.get("right")
         if datum_getypeerd(l, scope) and not datum_getypeerd(r, scope):
             duur = r
         elif datum_getypeerd(r, scope) and not datum_getypeerd(l, scope):
@@ -771,8 +773,8 @@ n_ongedekt=$((n_vierde + n_onbekend))
 if [ "$n_vierde" -gt 0 ]; then
     echo 'FAIL: a unit-bearing annotation sits at a node kind whose result unit v0 does not derive —' >&2
     echo '      the §2.10 fourth-class witness has arrived. The node kind is one the twist table carries,' >&2
-    echo '      but THIS operator/kind branch has no join rule (GEDEELD_DOOR, TOT_DE_MACHT,' >&2
-    echo '      PERCENTAGE_VAN, an absolute value, a root, a date/time extractor), so a twist here would' >&2
+    echo '      but THIS operator/kind branch has no join rule (dividedBy, power, percentageOf, an' >&2
+    echo '      absolute value, a root, a date/time extractor), so a twist here would' >&2
     echo '      probe a rule that does not exist and report its absence as a consumer defect. What the' >&2
     echo '      witness must buy is a derivation rule (or a fence) — never a wider licence to read the' >&2
     echo '      wire. ref/clingo and the Drools backend answer such a position DIFFERENTLY today (ch.' >&2
