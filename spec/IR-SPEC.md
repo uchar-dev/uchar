@@ -5884,13 +5884,18 @@ ch. 3.12), and it belongs to whoever measures it.
   fold operand alike (since the seventh wave's fix round, 2026-09-06),
   with two exemptions, a Lambda and the single argument of an
   aggregation. The waves below record how each arm was measured on the
-  L1 wire; the arms whose fields left with L2 say so where they stand.
+  L1 wire; the arms whose fields left with L2 say so where they stand. The
+  arms that stand name their fields in the L5 spelling; they were measured
+  on the same fields under the v0 names the wire then carried
+  (`objecttype`, `attribuut`, `kenmerk`, `eigenaar`, the `AttribuutRef`,
+  `ParameterRef`, `DimensieCel` and `Kenmerk` nodes), which the measurement
+  notes below keep.
   **Widened 2026-09-04** (maintainer decision), closing three measured
   channels through which a document could *serve itself* an exemption from
   the identity family (WF-089/WF-090/WF-091), each carried by **zero**
   documents — 152 golden + 22 rood + 237 negatief + 30 parity, measured —
   so no clause can over-reject. First: an
-  `AttributeReference` MUST name the **`objecttype`** its value lives on
+  `AttributeReference` MUST name the **`subjectType`** its value lives on
   (ch. 4.1a); a reference naming none resolves against no declaration, and
   the absent field is not one rule's deferral but a generic exemption — it
   silences the member check, WF-053, WF-080 and the whole identity family
@@ -5919,7 +5924,7 @@ ch. 3.12), and it belongs to whoever measures it.
   carried by **zero** documents outside its own negatief witness (152 golden
   + 22 rood + 238 negatief + 30 parity, measured before and after), so no
   clause can over-reject. (a) An `AttributeReference` MUST name the
-  **`attribuut`** it reads — the other half of the resolving pair, silencing
+  **`attribute`** it reads — the other half of the resolving pair, silencing
   the same rules from the other side, and needing the same TWO arms as the
   first half (the fold source never reaches the generic walk: with the
   value-position arm alone, 43 of the goldens' 751 emptied `attribuut`
@@ -5994,7 +5999,7 @@ ch. 3.12), and it belongs to whoever measures it.
   allocation negatiefs, which gain a truthful
   incidental line and keep both their verdict and the rule their directory
   declares. (e) A **characteristic check** (ch. 4.5) MUST name its
-  `kenmerk`. It is the only field the node resolves through, and behind it
+  `characteristic`. It is the only field the node resolves through, and behind it
   sit four readers at once — this rule's declared-characteristic cross,
   WF-043's granularity cross for a whole-period qualifier, WF-053's
   navigated hop, and the dependency graph's edge from the reading rule to
@@ -6016,7 +6021,7 @@ ch. 3.12), and it belongs to whoever measures it.
   clause left open — a name that no declaration *carries* on any of the six
   fields, and an empty `sourceType`/`targetType` — are closed by (j) and (k)
   below. (g) A **dimension-cell read** MUST hold
-  an attribute reference in its `attribuut` position — refused in BOTH
+  an attribute reference in its `attribute` position — refused in BOTH
   spellings, an absent field and a non-reference node, because the cell arm
   resolves only through a complete inner `AttributeReference` and an empty
   field misses that pattern by being absent while any other node misses it
@@ -6065,7 +6070,7 @@ ch. 3.12), and it belongs to whoever measures it.
   (whitespace collapsed, lowercased), so a blank spelling is the same empty
   name. Absence keeps its meaning where it carries one: absence of the four
   facet fields (a null until L4) is a facet switched OFF and stays legal, and
-  an absent `ratioAttribute` under `NAAR_RATO` is already WF-025's business.
+  an absent `ratioAttribute` under `proportional` is already WF-025's business.
   *Measured, one field blanked at a time over the golden allocations, every
   position verifier-clean before and none after:* `sourceAttribute` 11 of 11
   and `targetAttribute` 11 of 11 and `remainderAttribute` 9 of 9, on all of which
@@ -6345,11 +6350,11 @@ ch. 3.12), and it belongs to whoever measures it.
   and its measurements are in `backlog/done/20260905-wf034-zesde-golf-restvelden.md`
   (wave 6 and its fix round of 2026-09-06); its nine witnesses were removed
   with reason (`corpus/negatief/README.md`, "Vervallen bij de v1-migratie").
-  (q) A characteristic check's explicit **`eigenaar`** MUST name a declared
+  (q) A characteristic check's explicit **`host`** MUST name a declared
   object type. It names the type the characteristic is read on when that is
   not the enclosing form's subject, and it IS read — it is the node key of the
   dependency edge the check contributes (ch. 5.1; the graph builder keys its
-  characteristic node on `eigenaar` and falls back to the subject only when
+  characteristic node on `host` and falls back to the subject only when
   the field is absent, and the Drools backend does the identical thing in its
   own stratification and producer/consumer graphs) — but nothing crossed it
   against the object-type table, so an undeclared owner builds an edge on a
@@ -6381,7 +6386,7 @@ ch. 3.12), and it belongs to whoever measures it.
   loader's exact-then-case-insensitive object-type lookup). The verbatim rule
   of (p) was scoped to the eight denormalised keys and to nothing else, and it
   left with them at M1.
-  (q1) A NON-navigated characteristic check's explicit **`eigenaar`** MUST name
+  (q1) A NON-navigated characteristic check's explicit **`host`** MUST name
   a type that DECLARES the named characteristic (**WF-100**, maintainer
   decision 2026-09-10). This is the second half of (q) and it is a semantic
   decision, not a resolution one: it settles WHICH OWNER IS AUTHORITATIVE, the
@@ -6514,7 +6519,7 @@ ch. 3.12), and it belongs to whoever measures it.
   owner-carrying production were disjoint; under (q2) the producer's own shape
   replays, and the corpus carries it (`jutterswet-seinhijsing`,
   `jutterswet-mastsein`).
-  (q2) A characteristic check's explicit **`eigenaar`** is its **GASTHEER**: it
+  (q2) A characteristic check's explicit **`host`** is its **GASTHEER**: it
   names the object type the check LIVES ON, and it MUST DESIGNATE exactly one
   of the objects bound at the check's own position — exactly one of them
   SATISFIES it (`T ⊑ O`) and no second one OVERLAPS it (the declared type graph
@@ -6525,11 +6530,11 @@ ch. 3.12), and it belongs to whoever measures it.
   did not draw: every executor honours it, so a verifier-clean owner is
   carried by all four and the differential square closes over the form.
 
-  *The wire does not move.* The field is still spelled `eigenaar` and still
-  carries one object-type string. v0 is the faithful dump and this is a
-  semantics decision, not a shape one; a v1 rename to a hosting name is a
-  migration PROPOSAL (`proposals/V1-WIREMIGRATIE.md`) and nothing here depends
-  on it.
+  *The wire field.* It carries one object-type string, spelled `host` since
+  L5 (delta B10), the hosting name the migration proposal
+  (`proposals/V1-WIREMIGRATIE.md`) gave v0's `eigenaar`. The decision itself
+  was a semantic one, not a shape one, and the rename moved no meaning: until
+  L5 the field was `eigenaar`, and this clause read it the same way.
 
   *Which objects a position binds.* ONE, everywhere: the enclosing form's
   subject. TWO at exactly one position — the `voorwaarde` of a §13.4.7 fact
@@ -6600,7 +6605,7 @@ ch. 3.12), and it belongs to whoever measures it.
   the third falls the day the §8.2 family reaches this position.
 
   *Vorm B — the doel-hosted COMPARISON — is out of scope by construction.*
-  A `Vergelijking` has no `eigenaar` field at all, and the frontend produces no
+  A `Comparison` has no `host` field at all, and the frontend produces no
   doel-hosted comparison; measured 2026-09-19, a fact creation whose guard
   compares a DOEL attribute has no verifier-clean instance when anker and doel
   differ (the derived reading falls to WF-045's cycle or WF-053's ambiguity).
@@ -6609,10 +6614,13 @@ ch. 3.12), and it belongs to whoever measures it.
 
   *An open tension, named rather than resolved.* The same intuition gets two
   opposite answers from this wire. On a characteristic check a foreign type in
-  `eigenaar` names the HOST — the object the check is about. On an
-  `AttribuutRef` a foreign type in `objecttype` is read by every reader as
-  NAVIGATION over the derived relation, silently. One field says "read it
-  there", the other says "walk to it". Measured 2026-09-19; not decided here,
+  `host` names the HOST — the object the check is about. On an
+  `AttributeReference` a foreign type in `subjectType` was read by every
+  reader as NAVIGATION over the derived relation, silently (the wire of
+  2026-09-19, where the fields were `AttribuutRef` and `objecttype`; since L2
+  an own read's `subjectType` MUST equal the subject type, WF-053). One field
+  said "read it there", the other "walk to it". Measured 2026-09-19; not
+  decided here,
   because deciding it means touching a field this card does not.
 
   *The other executors read the same two predicates.* The reference interpreter
@@ -7039,7 +7047,7 @@ ch. 3.12), and it belongs to whoever measures it.
   **attribute** of its endpoint type, never a characteristic. A value
   position is where an expression yields a value: a rule/member value, a
   default consequence, a condition operand, and the source of a value-yielding
-  aggregation (a `SOM`/`TOTAAL`/`MINIMUM`/… fold whose element values are
+  aggregation (a `sum`/`total`/`minimum`/… fold whose element values are
   folded — a count's source names a role, not a value, and is out of
   scope). A characteristic carries truth, not an attribute value; it is
   read through a characteristic check (ch. 4.5), never an
@@ -7053,9 +7061,10 @@ ch. 3.12), and it belongs to whoever measures it.
   operators' operands MUST be number-like; power operands MUST
   additionally be unitless; a date ± duration MUST use a time unit (the
   ch. 3.8 spelling table of `RUNTIME-SEMANTICS.md`) or declared day
-  kind, with the date on the left of both plus and min (a duration-left
-  operand is ill-formed — v0's typing opens its date branch only for a
-  date-left operand, so plus does not commute), date ± date ill-formed,
+  kind, with the date on the left of both `plus` and `minus` (a
+  duration-left operand is ill-formed — v0's typing opens its date branch
+  only for a date-left operand, so `plus` does not commute), date ± date
+  ill-formed,
   and a sub-day unit demanding a
   millisecond-precision date operand; additive operands MUST have
   compatible units (both
@@ -7069,19 +7078,20 @@ ch. 3.12), and it belongs to whoever measures it.
   MUST be dates of one representation** — both day-precision or both
   millisecond-precision; equality
   operands MUST share the family — same enumeration domain, same date
-  precision, compatible units; an elfproef operand MUST be text or a
-  whole number without unit; exact-digits MUST have a text operand and a
+  precision, compatible units; an `elevenTest` operand MUST be text or a
+  whole number without unit; `exactDigits` MUST have a text operand and a
   whole digit count (v0 does not check positivity — mirrored; a ≥ 1
-  tightening is a candidate); a day-kind predicate operand MUST be a
+  tightening is a candidate); a `dayKind` predicate operand MUST be a
   date. A unitless literal adopts its sibling's unit before the check
   (mirrored convenience).
   **The date-ordering precision clause** (maintainer decision 2026-09-05)
   replaces the v0 letter this rule mirrored — date-ordering operands need
   only *be* dates, either precision, an asymmetry v0 left standing — with
   the per-representation family reading WF-038's ordering fold has
-  carried since 2026-09-05, and ratifies it. `eerder`, `eerder of
-  gelijk`, `later` and `later of gelijk` ask which of two dates comes
-  first, so they need an order over both. `Date` has one **per
+  carried since 2026-09-05, and ratifies it. `earlier`, `earlierOrEqual`,
+  `later` and `laterOrEqual` (the dialect's `eerder`, `eerder of gelijk`,
+  `later` and `later of gelijk`) ask which of two dates comes first, so they
+  need an order over both. `Date` has one **per
   precision**, and its two precisions are two of them: a day date names a
   whole day, a millisecond date a point inside one. Since L3 (2026-09-24,
   B15) the precision is the `precision` field of the one `Date` node, `day`
@@ -7240,13 +7250,14 @@ ch. 3.12), and it belongs to whoever measures it.
   decision for WF-035, WF-036, WF-023 and this rule together, not a
   divergence to introduce at one of the four.
 - **WF-037** Aggregation shape: facet validity per kind MUST hold —
-  `emptyFallback` only on sum; `dimensionSelection` only on sum/min/max;
-  `granularity` only on tijdsevenredig-deel and aantal-dagen-in (builtin
-  side); an instance fold MUST carry `elementType`, a value fold MUST
-  carry ≥ 2 arguments; builtin arities MUST follow the ch. 4.3 catalogue
-  (one operand for the scalar and extractor kinds, two dates for
-  tijdsduur, the component list for date construction). **The filled
-  count** (`AANTAL_GEVULDE`, ch. 4.3; landed 2026-09-20) takes exactly ONE
+  `emptyFallback` only on `sum`; `dimensionSelection` only on `sum`,
+  `minimum` and `maximum`; `granularity` only on `timeProportionalPart` and
+  `dayCount` (builtin side); an instance fold MUST carry `elementType`, a
+  value fold MUST carry ≥ 2 arguments; builtin arities MUST follow the
+  ch. 4.3 catalogue (one operand for the scalar and extractor kinds, two
+  dates for `duration` and `absoluteDuration`, the component list for date
+  construction). **The filled count** (`filledCount`, ch. 4.3; landed
+  2026-09-20) takes exactly ONE
   argument, MUST carry an `elementType`, and that one argument MUST be the
   SET source — three arms, of which the last two are the only clauses of
   this rule that demand a form instead of forbidding one, and they are
@@ -7256,13 +7267,13 @@ ch. 3.12), and it belongs to whoever measures it.
   (2026-09-24, B11, B12) the set-source arm reads "carries a range":** the
   range makes the single argument the set source, and the schema and every
   loader demand it of a single-argument fold with an `elementType` under
-  every kind but `TOTAAL`, so a filled count without one is refused at
+  every kind but `total`, so a filled count without one is refused at
   load. What the arm still decides is a range beside a source that is no
   attribute reference (`wf037-aantalgevulde-niet-setbron`). A count source
   under the kind is WF-093 (a)'s, and this rule steps aside on it, so one
   malformation carries one rule. The kind is
   outside the "≥ 2 arguments" clause above, whose sentence reads its arity
-  law backwards. **The count** (`AANTAL`) stands outside that clause too, and
+  law backwards. **The count** (`count`) stands outside that clause too, and
   since 2026-09-20 carries its mirror image: it MUST NOT carry two or more
   arguments. A count folds INSTANCES (`RUNTIME-SEMANTICS.md` ch. 3.4a) and
   the source language spells no operand list for one — §5.8.1 defines the
@@ -7316,19 +7327,19 @@ ch. 3.12), and it belongs to whoever measures it.
   widening): numeric folds' operands MUST be numeric with compatible
   units; **every operand of an ORDERING fold — `first`, `last`,
   `minimum`, `maximum` — MUST come from one comparable family: numbers,
-  or dates of one precision**; a totaal operand that is
-  non-temporal MUST carry a rate unit per time unit; eerste-paasdag MUST
+  or dates of one precision**; a `total` operand that is
+  non-temporal MUST carry a rate unit per time unit; `easterSunday` MUST
   take a whole, unitless year; the day-precision part extractors
-  (jaar-uit, maand-uit, dag-uit) MUST take a date operand — either
+  (`yearOf`, `monthOf`, `dayOf`) MUST take a date operand — either
   precision; the sub-day part extractors MUST take a
   millisecond-precision date; a sum's `emptyFallback` MUST be numeric;
-  a tijdsduur's (either variant) two operands MUST be dates of one
+  the two operands of a `duration` or an `absoluteDuration` MUST be dates of one
   precision and its node type MUST carry a recognised time-unit or
   declared day-kind spelling (the ch. 3.8 table of
   `RUNTIME-SEMANTICS.md`), a sub-day unit demanding
   millisecond-precision operands.
   **Scope, stated because the silence would be read the other way
-  (2026-09-20):** the filled count (`AANTAL_GEVULDE`, ch. 4.3) is NOT a
+  (2026-09-20):** the filled count (`filledCount`, ch. 4.3) is NOT a
   numeric fold in the sense of this rule and has no operand-typing clause
   here. Its source may carry any VALUE type — the test is presence, nothing
   is added and nothing is compared — so neither the numeric clause above nor
@@ -7461,8 +7472,8 @@ ch. 3.12), and it belongs to whoever measures it.
   propositional `Compound` and the first-order `QuantifierFold`
   (ch. 4.5), whose WF-108 (e) hands the value here rather than judging it
   itself. What the bound refuses is the same in both places — a
-  *threshold* of 0 asks nothing under *at-least*, and under *at-most* and
-  *exactly* it is `none` spelled a second way, so admitting it would put
+  *threshold* of 0 asks nothing under `atLeast`, and under `atMost` and
+  `exactly` it is `none` spelled a second way, so admitting it would put
   two quantifiers on the wire for one reading.
 - **WF-042** A TimeWindow MUST have at least one bound, and its bounds
   MUST be date expressions (mirror; v0 checks date-ness only — either
@@ -7471,7 +7482,7 @@ ch. 3.12), and it belongs to whoever measures it.
   holds for the date typing this rule checks and no longer for a
   well-formed window.
 - **WF-111** Each bound of a TimeWindow MUST be one of two shapes: a date
-  `Literal`, or an `AttributeRef` to a **scalar** (non-time-dependent)
+  `Literal`, or an `AttributeReference` to a **scalar** (non-time-dependent)
   date attribute of the enclosing form's own subject — un-navigated (no
   navigation role, path or binding), not a set read, on an object type
   the subject satisfies (`S ⊑ O`, ch. 2.2). Either shape MUST be of day
@@ -7494,7 +7505,7 @@ ch. 3.12), and it belongs to whoever measures it.
   has nothing an ASP encoding could attach its fault to. A position with
   no subject (a day-kind definition) therefore admits the literal only.
 - **WF-112** A TimeWindow MUST NOT sit under `none` or a counting
-  quantifier (`at-least`, `at-most`, `exactly`): not as a member of a
+  quantifier (`atLeast`, `atMost`, `exactly`): not as a member of a
   `Compound` with such a quantifier, at any depth, and not inside the
   `filter` or `test` of a `QuantifierFold` with one. `all` and `the` carry
   it. *(Maintainer decision 2026-09-23.)* The window is a gate on the
@@ -7510,7 +7521,7 @@ ch. 3.12), and it belongs to whoever measures it.
 - **WF-043** A whole-period qualifier MUST sit on a time-dependent
   operand (mirror: v0 errors and emits Unresolved). *Recorded scope
   (2026-09-11):* on a characteristic check the cross resolves against ONE
-  type — the `eigenaar` where present, the enclosing form's subject
+  type — the `host` where present, the enclosing form's subject
   otherwise (WF-100, ch. 4.6 (q1)) — so it reaches the **non-navigated**
   form only. On a navigated check the characteristic lives on the reached
   type, which this rule does not cross; both OCaml executors therefore
@@ -7532,9 +7543,9 @@ ch. 3.12), and it belongs to whoever measures it.
 - **WF-046** No dependency cycle — including a WF-045-admissible one —
   may carry a negative edge (a negated or negation-quantified
   characteristic read, every read under a leeg/gevuld test in either
-  polarity, every read in the range of a quantifier fold under *all*,
-  *none*, *at-most* or *exactly* and in its matrix under *none*, *at-most*
-  or *exactly*, or a regelversie channel test): evaluation strata MUST
+  polarity, every read in the range of a quantifier fold under `all`,
+  `none`, `atMost` or `exactly` and in its matrix under `none`, `atMost`
+  or `exactly`, or a regelversie channel test): evaluation strata MUST
   exist (ch. 5.2, 5.3; operational reading `RUNTIME-SEMANTICS.md` ch. 6.3).
   v0's single agenda boundary is the two-stratum special case.
 
@@ -7552,7 +7563,7 @@ decisions `spec/proposals/PHASE5B-KERNEL.md` §2). `Construct` and
 |---|---|---|
 | Construct | `type` (the SumType), `constructor`, `argument?` (expr), `source` | builds a constructor value; a leeg argument propagates (the whole node evaluates leeg — a constructor value never carries a leeg payload) |
 | Match | `type` (the result datatype), `scrutinee` (expr), `arms`, `source` | takes a **keuzetype** value apart (ch. 2.4) — the scrutinee is sum-typed *or* enumeration-typed. Each arm: `{constructor, binder: string \| null, body: expr}`; on an enumeration scrutinee `constructor` carries the declared value label and `binder` is always null (enumeration alternatives are nullary). Evaluation `RUNTIME-SEMANTICS.md` ch. 9.2 — a leeg scrutinee propagates, no implicit leeg-arm, in both variants |
-| BinderRef | `name`, `source` | reads the nearest enclosing binder (a unary match arm's `binder`; the row-10 card adds lambda and function parameters; the 5c widening adds a `Let` binder, ch. 4.10 — which is what the RegelSpraak emitter now produces for a §13.4.2.10 variabele read). Its type is the binder's declared datatype; since L2 (2026-09-24, B13) the node carries no `type` of its own. Deliberately distinct from `VariabeleRef`, which since the let-lowering card carries only what a `BinderRef` cannot: a row-24 variable reference the resolver could **not** bind (a forward or cyclic definition) — an honest residual marker, never a bound read; the two roles never share a node |
+| BinderRef | `name`, `source` | reads the nearest enclosing binder (a unary match arm's `binder`; the row-10 card adds lambda and function parameters; the 5c widening adds a `Let` binder, ch. 4.10 — which is what the RegelSpraak emitter now produces for a §13.4.2.10 variabele read). Its type is the binder's declared datatype; since L2 (2026-09-24, B13) the node carries no `type` of its own. Deliberately distinct from `VariableReference`, which since the let-lowering card carries only what a `BinderRef` cannot: a row-24 variable reference the resolver could **not** bind (a forward or cyclic definition) — an honest residual marker, never a bound read; the two roles never share a node |
 
 There are no wildcards: the arms enumerate the declared alternatives
 literally (a wildcard would make totality a runtime property again).
@@ -7587,7 +7598,7 @@ nothing, so neither node has an enumeration reading.
   datatype — the `Match`'s own `type`. (This rule governs the new
   binder forms — a match arm's binder, a lambda/function parameter and,
   the Phase-5c widening, a `Let` binder (ch. 4.10), scoped to the `Let`
-  body; a `VariabeleRef` remains outside it, row 24.) **The closure
+  body; a `VariableReference` remains outside it, row 24.) **The closure
   clause:** inside a **closed** body — a lambda or function body
   (ch. 4.8/2.11), the bodies WF-069/WF-067 hold closed — the
   enclosing-binder set is *closed at the boundary*. A `BinderRef` there
@@ -7822,8 +7833,8 @@ over a leeg attribute *coalesces* to 0 (the ch. 1.2 coalesce table's
   well-formed.
 - **WF-077** Everywhere an `IfThenElse` is admissible (a lambda,
   function or `Let` body), its condition may **read** only
-  binders, parameters and literals — arithmetic combinators (`Binair`,
-  `Afgerond`, `Begrensd`) over those are admissible, since what matters
+  binders, parameters and literals — arithmetic combinators (`Binary`,
+  `Rounding`, `Clamp`) over those are admissible, since what matters
   is what is read. An attribute, field, characteristic, aggregation,
   temporal or variable read as (or inside) a condition operand is
   ill-formed: it MUST pass through a `Let` binding first. This is
@@ -7952,8 +7963,8 @@ to every form that **reads** it — in one of three kinds:
   a negation-like quantifier (*geen*, *ten hoogste*, *precies* — their
   truth can be lost by a later monotone write), every read under a
   leeg/gevuld test in either polarity (*2026-09-23*, below), every read in
-  the range of a quantifier fold under *all*, *none*, *at-most* or
-  *exactly* and in its matrix under *none*, *at-most* or *exactly*
+  the range of a quantifier fold under `all`, `none`, `atMost` or
+  `exactly` and in its matrix under `none`, `atMost` or `exactly`
   (*2026-09-23*, below), or a channel test (regelversie). **Once negative,
   conservatively negative** — a double negation does not cancel. A negative
   edge is stratum-strict *and* forbidden on any cycle (WF-046).
@@ -8002,7 +8013,7 @@ minted, and it is refused because the decision counts both polarities; it
 is the witness that separates the decision from the narrower reading "only
 a test that holds on absence is negative". In
 `wf046-leegtest-kwantorvouw-recursieve-creatie` the test is the matrix of an
-ALLE fold over the successors that the creation mints.
+`all` fold over the successors that the creation mints.
 
 Off a cycle the rule orders a reader strictly above the writers of its
 operand, which also closes an order dependence in the reference
@@ -8020,16 +8031,16 @@ byte-identical.
 *Not covered, recorded open:* other conditions that hold on absence without a
 `negated` field keep their positive or stratum-strict reading: an inequality
 with one leeg operand, a numeric equality of two leeg operands, a count or a
-filled-value count tested against zero, a propositional *none* over a
+filled-value count tested against zero, a propositional `none` over a
 comparison, and an ordering over arithmetic that coalesces leeg to 0. On an
 admissible creation cycle each of them was measured verifier-clean with the
 executors split, and off a cycle each leaves the reference interpreter
 order-dependent in the condition of an attribute-writing form
 (`RUNTIME-SEMANTICS.md` ch. 6.1, recorded residuals). This decision does not
 cover them. The quantifier fold, first measured in the same round, is
-covered by the decision that follows, but only in its range under *all*,
-*none*, *at-most* and *exactly* and in its matrix under *none*, *at-most*
-and *exactly*. A comparison in the matrix of an *all* or *at-least* fold
+covered by the decision that follows, but only in its range under `all`,
+`none`, `atMost` and `exactly` and in its matrix under `none`, `atMost`
+and `exactly`. A comparison in the matrix of an `all` or `atLeast` fold
 keeps its positive or stratum-strict reading.
 
 **The quantifier fold's range and matrix** *(maintainer decision 2026-09-23,
@@ -8059,20 +8070,20 @@ range edge at all for such a fold. "Negative" means every read under the part,
 comparisons and positive characteristic reads included. In a monotone part a
 read keeps its own kind, so a negated characteristic, a leeg/gevuld test and
 a channel test stay negative there, and a positive characteristic read in a
-monotone part (the matrix of an *all* fold, either part of an *at-least*
+monotone part (the matrix of an `all` fold, either part of an `atLeast`
 fold) is now positive where the walk used to read it negatively. A fold
 under an enclosing negation-like composite is negative in both parts.
 
-The witnesses. `corpus/negatief/wf046-kwantorvouw-alle-bereik` is an ALLE
+The witnesses. `corpus/negatief/wf046-kwantorvouw-alle-bereik` is an `all`
 fold over the successors a recursive creation mints (the R5 shape): its
 matrix is monotone, so the range alone refuses it.
-`wf046-kwantorvouw-geen-vergelijking` is the GEEN twin, where range and
-matrix both close the cycle. In `wf046-kwantorvouw-geen-matrix` the GEEN
+`wf046-kwantorvouw-geen-vergelijking` is the `none` twin, where range and
+matrix both close the cycle. In `wf046-kwantorvouw-geen-matrix` the `none`
 fold ranges over an input relation and its matrix reads a merk the cycle
 derives, so the matrix alone refuses it; before the rule the executors split
 there without failing. `wf046-kwantorvouw-bereik-ander-type` is the one
 witness whose creation mints ANOTHER type: "richt een post in" mints a
-`Post` for a `Wachter` under an ALLE fold over the `Wachter`'s posts, and
+`Post` for a `Wachter` under an `all` fold over the `Wachter`'s posts, and
 the creation writes that relation through its back-link, so the range
 alone refuses it. Until L2 the same document was
 `wf046-kwantorvouw-bindingloos-bereik`, a bindingless ALLE fold whose range
@@ -8082,28 +8093,28 @@ this rule, so it was rewritten under the new name rather than removed
 (`corpus/negatief/README.md`, L2). The remaining clauses have one witness each, every
 one the golden's model below with another creation condition:
 `wf046-kwantorvouw-tenhoogste-bereik` and `wf046-kwantorvouw-precies-bereik`
-(the range under *at-most* and *exactly*, over the successors the creation
+(the range under `atMost` and `exactly`, over the successors the creation
 mints, with an input-only matrix), `wf046-kwantorvouw-tenhoogste-matrix` and
-`wf046-kwantorvouw-precies-matrix` (the matrix under *at-most* and *exactly*,
+`wf046-kwantorvouw-precies-matrix` (the matrix under `atMost` and `exactly`,
 over an input-only range, reading a merk the cycle derives), and
-`wf046-kwantorvouw-onder-geen` (an *at-least* fold, positive on its own,
-under an enclosing propositional *none*). The clean witness is the golden
+`wf046-kwantorvouw-onder-geen` (an `atLeast` fold, positive on its own,
+under an enclosing propositional `none`). The clean witness is the golden
 `corpus/golden/jutterswet-opvolgerquorum`: the counter-witness above as its
-first case, a TEN_MINSTE fold whose range grows under the creation without
-losing the verdict, and an ALLE fold whose matrix turns true when another
+first case, an `atLeast` fold whose range grows under the creation without
+losing the verdict, and an `all` fold whose matrix turns true when another
 creation fires. The reference interpreter, the ASP backend and both Drools
 branches agree on all four of its cases. Each clause has a mutation that
 fails gate 3 on its own witness (measured 2026-09-23): the range positive
-under *all*, *at-most* or *exactly*, the matrix positive under *none*,
-*at-most* or *exactly*, the enclosing context ignored, and no bindingless
-reach; and in the other direction the range negative under *at-least*, or
-the matrix negative under *at-least* or *all*, each of which refuses the
+under `all`, `atMost` or `exactly`, the matrix positive under `none`,
+`atMost` or `exactly`, the enclosing context ignored, and no bindingless
+reach; and in the other direction the range negative under `atLeast`, or
+the matrix negative under `atLeast` or `all`, each of which refuses the
 golden.
 
 *Recorded open, not decided here:* "monotone in the matrix" is a property of
 the verdict, and it holds only while the matrix itself cannot lose its
 truth. A comparison that a growing value falsifies can: in the golden's
-model, with the ALLE matrix read as "merk kleiner dan 2" (or "merk ongelijk
+model, with the `all` matrix read as "merk kleiner dan 2" (or "merk ongelijk
 aan 2") and merk the number of successors, the document is verifier-clean
 and the executors split on case 4 (the reference interpreter and the Drools
 exec branch 2, the ASP backend and the DRL-text branch 1); with "ten minste 1
@@ -8129,7 +8140,7 @@ replay of the 652 golden and red cases is byte-identical.
 target: every default-justification read — and, on attribute defaults,
 every consequence read (the gevuld gate makes it decision-bearing) — is a
 **negative edge** toward the group's write, recursed through the nested
-`excepties` sub-defaults (ch. 6.1; `RUNTIME-SEMANTICS.md` ch. 7.9); the
+`exceptions` sub-defaults (ch. 6.1; `RUNTIME-SEMANTICS.md` ch. 7.9); the
 initialisation default's implicit input-emptiness justification reads
 nothing. WF-051 names this defaults-specific rule; the WF-045/046
 principles apply to the extended graph unchanged.
@@ -8250,7 +8261,7 @@ gate 12 cannot see them. The fix belongs to the backend: far-side
 reactivity for a condition or a named refusal, and a salience below the
 operand's writers for the order-dependent form.
 
-*Recorded flank, the ASP backend (measured 2026-09-23, open).* Its ALLE
+*Recorded flank, the ASP backend (measured 2026-09-23, open).* Its `all`
 fold is a double negation (a helper for "some member fails the matrix",
 read under `not`). On a POSITIVE cycle through the matrix, which the
 quantifier-fold decision admits, that encoding has a second, self-supporting
@@ -8263,9 +8274,9 @@ creations justifying each other. The runner happens to pick the first. The
 same holds for a positive characteristic read in the matrix ("alle
 ploegleden zijn actief", actief derived from the number of successors), a
 document the walk refused before the decision and admits after it. A
-TEN_MINSTE fold, encoded as a count, has one model on the same input. No
+`atLeast` fold, encoded as a count, has one model on the same input. No
 corpus document has the shape. The fix belongs to the backend: a monotone
-encoding of the ALLE fold (a count) or a named refusal.
+encoding of the `all` fold (a count) or a named refusal.
 
 ---
 
@@ -8292,27 +8303,29 @@ pre-rename revisions — uses the old names throughout.*
 
 `layer: core`; an **extension form** per the Method: an optional
 list `prioritizedDefaults` under `rules` (top-level until M1) of `PrioritizedDefaults` nodes —
-never emitter-produced.
+never emitter-produced. The fields below carry their names since L5; until
+then the wire kept the v0 names each row gives.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `name` | string | v0 wire `naam`. A **named form**: the wire type is nullable and WF-107 is what demands the name, and WF-020 holds it unique in the same namespace as the ch. 3 rule forms — a defaults group and a rule may not share one |
-| `subject` | type ref | v0 wire `onderwerp`: the iterated subject type |
-| `characteristic` | string? | v0 wire `kenmerk`: the target characteristic — **exactly one** of the two targets |
-| `attribute` | string? | v0 wire `attribuut`: the target attribute |
+| `name` | string | v0 `naam`. A **named form**: the wire type is nullable and WF-107 is what demands the name, and WF-020 holds it unique in the same namespace as the ch. 3 rule forms — a defaults group and a rule may not share one |
+| `subject` | type ref | v0 `onderwerp`: the iterated subject type |
+| `characteristic` | string? | v0 `kenmerk`: the target characteristic — **exactly one** of the two targets; absent on an attribute group (a `null` until L5) |
+| `attribute` | string? | v0 `attribuut`: the target attribute |
 | `defaults` | non-empty list of Default | **descending** priority: highest first |
-| `unordered` | boolean | v0 wire `ongeordend`: declared-unordered (ch. 7.2 there) — multiple defaults groups on one target are admissible iff **every** one carries it; the group decides jointly, and differing simultaneous decisions route to the §9.5 channel (keyed by the target form; no write — the target keeps what the fact base holds) |
-| `source`, `validity` | — | v0 wire `bron`, `geldigheid` |
+| `unordered` | boolean | v0 `ongeordend`: declared-unordered (ch. 7.2 there) — multiple defaults groups on one target are admissible iff **every** one carries it; the group decides jointly, and differing simultaneous decisions route to the §9.5 channel (keyed by the target form; no write — the target keeps what the fact base holds) |
+| `source`, `validity` | — | v0 `bron` and `geldigheid`; `source` is the source reference of ch. 4 |
 
-**Default**: `decision` (v0 wire `besluit`, boolean? — characteristic
-defaults only: attribute vs do-not-attribute), `justification` (v0 wire
-`voorwaarde`, a condition; null only on the initialisation and
-group-defaults), `consequence` (v0 wire `consequentie`, expression? —
-attribute defaults only), `initialisation` (v0 wire `initialisatie`,
-boolean — the ch. 7.3 default: justified iff the target is empty in the
-input facts; lowest only, **root-only**), `exceptions` (v0 wire
+**Default**: `decision` (v0 `besluit`, boolean? — characteristic
+defaults only: attribute vs do-not-attribute; absent where a default carries
+no decision), `justification` (v0 `voorwaarde`, a condition; absent only on
+the initialisation default and a group-default), `consequence` (v0
+`consequentie`, expression? — attribute defaults only), `initialisation`
+(v0 `initialisatie`, boolean — the ch. 7.3 default: justified iff the target
+is empty in the input facts; lowest only, **root-only**), `exceptions` (v0
 `excepties`, the optional nested exception groups — the **Default.exceptions and
-ExceptionGroup** paragraph below), `source`. Semantics:
+ExceptionGroup** paragraph below), `source` (v0 `bron`). Until L5 an absent
+`decision` or `justification` was a `null`. Semantics:
 `RUNTIME-SEMANTICS.md` ch. 7.1 —
 per subject the highest default that **decides** wins: on a
 characteristic every justified default decides (a false decision derives
@@ -8323,17 +8336,17 @@ nothing** (the input value is left standing), and default evaluation is
 speculative (only the deciding default's channel deposits persist).
 
 **Default.exceptions and ExceptionGroup** (`RUNTIME-SEMANTICS.md` ch. 7.9,
-Phase 5c — the below-root branching form): a default's `exceptions` slot
-(v0 wire `excepties = { unordered, members }`, `ongeordend` + `leden`)
-holds its **exception groups** — its `members` are `ExceptionGroup` nodes (v0 wire
-`ExceptionGroup`: `defaults` — a non-empty default chain, descending,
-highest first — and `source`). An exception group inherits the root target
+Phase 5c — the below-root branching form): a default's `exceptions` slot,
+the record `{ unordered, members }` (v0 `excepties = { ongeordend, leden }`),
+holds its **exception groups** — its `members` are `ExceptionGroup` nodes
+(`defaults` — a non-empty default chain, descending, highest first — and
+`source`; the node carried the name `ExceptionGroup` in v0 as well). An exception group inherits the root target
 and carries **none of its own**, and it may nest again via
 `Default.exceptions` — the defaults group is a rose tree. Two default shapes: a **group-default**
-(`exceptions`, no own condition/besluit/consequence — the exception groups
+(`exceptions`, no own justification, decision or consequence — the exception groups
 *are* its decision, carrying a multi-member base or exception group as a chain
 position; a stray justification here is ill-formed, WF-075) and a
-**form-a default** (own besluit/consequence too — the
+**form-a default** (own decision or consequence too — the
 exception groups decide first, its own consequence the fall-back when they
 decide nothing). A default reconciles its exception groups by the same rule
 the declared-unordered root group uses (ch. 7.2), recursively;
@@ -8374,8 +8387,8 @@ verifier-clean and replay through all three executors.
 - **WF-050** A defaults group MUST carry at least one default and MUST
   target exactly one of a characteristic or an attribute, resolving on its
   subject. Default shapes MUST match the target kind (characteristic:
-  `besluit`, no `consequentie`; attribute: `consequentie`, no
-  `besluit`); the initialisation default MUST be the lowest, MUST carry
+  `decision`, no `consequence`; attribute: `consequence`, no
+  `decision`); the initialisation default MUST be the lowest, MUST carry
   no written justification, and MUST NOT sit on characteristic
   defaults. The target MUST have no other writer — no second defaults
   group, no rule, no allocation, and no object-creation initialisation on
