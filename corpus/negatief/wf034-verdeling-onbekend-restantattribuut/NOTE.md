@@ -8,19 +8,20 @@ remainder endpoint names an attribute *no declaration carries*.
 The clause is the one described in full in the sibling NOTE
 (`wf034-verdeling-onbekend-ratoattribuut`): every filled attribute name on the
 allocation's six name fields resolves against the declaration scope of its own
-side. `restantAttribuut` is the second **source-side** field — the remainder
-that is written back on the `bronType` instance when the shares do not exhaust
-the pot, resolved against `bronType` exactly as `bronAttribuut` is, while the
-other four resolve against `doelType`.
+side. `remainderAttribute` is the second **source-side** field — the
+remainder that is written back on the `sourceType` instance when the shares do
+not exhaust the pot, resolved against `sourceType` exactly as
+`sourceAttribute` is, while the other four resolve against `targetType`.
 
 This witness exists because the sub-arm it pins left **no trace anywhere**.
-Drop the one `restantAttribuut` line from `wf034_verdeling_naamresolutie` and
+Drop the one `remainderAttribute` line from `wf034_verdeling_naamresolutie` and
 the verifier's report over all four zones changes on exactly **one** document —
 this one, and on none of the other 485. Before this witness was written that
 mutant changed nothing at all, so the sub-arm was carried by the clause and by
 no artifact — the silence a negatief exists to break. Its two
-source-side neighbours are not in that position: the `bronAttribuut` sub-arm has
-its own witness, and the `doelAttribuut` one is also read by the parity fixture.
+source-side neighbours are not in that position: the `sourceAttribute` sub-arm
+has its own witness, and the `targetAttribute` one is also read by the parity
+fixture.
 
 Measured on this document, against `corpus/golden/jutterswet-berging/case.json`:
 
@@ -43,11 +44,11 @@ name. **0** stay clean after the clause.
 allocation witnesses; see the sibling NOTE for the four-zone sweep.
 
 A hand-broken variant of `corpus/golden/jutterswet-berging/ir.json` — one
-field repointed, a one-line diff; schema-valid, since
-`ResolvedVerdeling.restantAttribuut` is `["string","null"]` on the v0 wire.
+field repointed, a one-line diff; schema-valid, since the version's
+`remainderAttribute` is an optional string on the wire.
 
 Falsifiable, arm-exact: in `wf034_verdeling_naamresolutie` delete the single
-line `resolve ~side:"source" ~scope:r.bron_type "restantAttribuut"
+line `resolve ~side:"source" ~scope:r.bron_type "remainderAttribute"
 r.restant_attribuut`. This case, alone in all four zones, turns clean.
 Measured: 486 documents compared, 1 report changes, 1 verdict. Dropping the
 whole clause instead frees this case and its five `-onbekend-` allocation
@@ -57,5 +58,6 @@ Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
 version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
 `targetType`, `targetAttribute`, `method`, `ratioAttribute`,
 `maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
-`connectingRole`); the report cites the version and names the L4 field.
-`expect.txt` pins the arm.
+`connectingRole`); the report cites the version and names the L4 field. The
+measurements above name the fields as they were spelled then
+(`restantAttribuut` → `remainderAttribute`). `expect.txt` pins the arm.

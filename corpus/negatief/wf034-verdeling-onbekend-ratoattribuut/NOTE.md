@@ -7,11 +7,11 @@ proportional weight names an attribute *no declaration carries*.
 
 The clause: every filled attribute name on the allocation's six name fields
 resolves against the declaration scope of **its own side**, the side both
-executors read it on — `bronAttribuut` and `restantAttribuut` against
-`bronType` (the pot that is distributed, and the remainder written back on the
-source), `doelAttribuut`, `ratoAttribuut`, `maximumAttribuut` and
-`groepeerAttribuut` against `doelType` (the share written on each recipient,
-and the three facets read per recipient). The two earlier arms of this rule
+executors read it on — `sourceAttribute` and `remainderAttribute` against
+`sourceType` (the pot that is distributed, and the remainder written back on
+the source), `targetAttribute`, `ratioAttribute`, `maximumAttribute` and
+`orderingAttribute` against `targetType` (the share written on each
+recipient, and the three facets read per recipient). The two earlier arms of this rule
 ask whether the field is there and whether it is more than blanks; this one
 asks the question the rule is about — does the name resolve?
 
@@ -53,8 +53,8 @@ pre-existing allocation negatiefs and the parity casus, which gains six
 truthful incidental lines, one per allocation.
 
 A hand-broken variant of `corpus/golden/anchor/jutterswet-bergingstoezicht/`
-— one field repointed, a one-line diff; schema-valid, since
-`ResolvedVerdeling.ratoAttribuut` is `["string","null"]` on the v0 wire.
+— one field repointed, a one-line diff; schema-valid, since the version's
+`ratioAttribute` is an optional string on the wire.
 
 Falsifiable, clause-exact: drop `wf034_verdeling_naamresolutie` from the
 verifier's check list — its own function beside the expression walk, because
@@ -67,5 +67,9 @@ Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
 version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
 `targetType`, `targetAttribute`, `method`, `ratioAttribute`,
 `maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
-`connectingRole`); the report cites the version and names the L4 field.
+`connectingRole`); the report cites the version and names the L4 field. The
+measurements above name the fields as they were spelled then (`bronAttribuut`
+→ `sourceAttribute`, `doelAttribuut` → `targetAttribute`, `ratoAttribuut` →
+`ratioAttribute`, `maximumAttribuut` → `maximumAttribute`, `restantAttribuut`
+→ `remainderAttribute`, `groepeerAttribuut` → `orderingAttribute`).
 `expect.txt` pins the arm.

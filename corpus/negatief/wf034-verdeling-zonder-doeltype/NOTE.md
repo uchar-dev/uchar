@@ -6,16 +6,16 @@ names no target object type.
 
 The empty-reference class of the earlier waves, one field further along, and
 the other half of the pair its sibling NOTE
-(`wf034-verdeling-zonder-brontype`) sets out in full: `bronType` names the
-object type an allocation distributes **from**, `doelType` the type it
-distributes **to**; both are references, both are nullable on the v0 wire, and
-a null in either resolves against nothing.
+(`wf034-verdeling-zonder-brontype`) sets out in full: `sourceType` names the
+object type an allocation distributes **from**, `targetType` the type it
+distributes **to**; both are references, both are nullable on the wire, and a
+null in either resolves against nothing.
 
 The two halves are one field pattern read twice, but they are not one arm: each
 has its own `match` in `wf034_verdeling_typen`, and each therefore needs its
-own witness. Without this document, deleting the `doelType` arm alone changed
+own witness. Without this document, deleting the `targetType` arm alone changed
 no **verdict** anywhere in the four zones — three type-less allocation
-negatiefs merely lost an incidental line, and the `bronType` witness kept
+negatiefs merely lost an incidental line, and the `sourceType` witness kept
 standing on its own arm, proving nothing about this one.
 
 Measured on this document, against `corpus/golden/jutterswet-berging/case.json`:
@@ -23,7 +23,7 @@ Measured on this document, against `corpus/golden/jutterswet-berging/case.json`:
     ref    : EVALUATION FAULT: missing doelType in IR node
     clingo : TRANSLATION FAULT: missing doelType
 
-Both refuse, by the field's own name — exactly as they do on the `bronType`
+Both refuse, by the field's own name — exactly as they do on the `sourceType`
 half. The clause makes the verifier say before the run what both executors say
 during it.
 
@@ -45,13 +45,13 @@ allocations name a declared `doelType` and no `bronType` at all.) No golden and
 no rood document carries the shape.
 
 A hand-broken variant of `corpus/golden/jutterswet-berging/ir.json` — one
-field nulled, a one-line diff; schema-valid, since `ResolvedVerdeling.doelType`
-is `["string","null"]` on the v0 wire.
+field nulled, a one-line diff; schema-valid, since the version's
+`targetType` is `["string","null"]` on the wire.
 
 Falsifiable, arm-exact: in `wf034_verdeling_typen` replace the whole
-`match r.doel_type with …` arm by `[]`, leaving the `bronType` arm untouched.
-This case, alone in all four zones, turns clean; its `bronType` sibling stays
-rejected. Measured: 486 documents compared, 4 reports change, 1 verdict.
+`match r.doel_type with …` arm by `[]`, leaving the `sourceType` arm
+untouched. This case, alone in all four zones, turns clean; its `sourceType`
+sibling stays rejected. Measured: 486 documents compared, 4 reports change, 1 verdict.
 Dropping the whole clause instead frees this case and
 `wf034-verdeling-zonder-brontype`, those two and nothing else: 6 reports
 change, 2 verdicts.
@@ -60,5 +60,6 @@ Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
 version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
 `targetType`, `targetAttribute`, `method`, `ratioAttribute`,
 `maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
-`connectingRole`); the report cites the version and names the L4 field.
-`expect.txt` pins the arm.
+`connectingRole`); the report cites the version and names the L4 field. The
+measurements above name the fields as they were spelled then (`bronType` →
+`sourceType`, `doelType` → `targetType`). `expect.txt` pins the arm.

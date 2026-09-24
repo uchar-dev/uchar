@@ -5,9 +5,9 @@ names no source object type.
     source object type: it resolves against no declaration
 
 The empty-reference class of the earlier waves, one field further along. An
-allocation's `bronType` names the object type it distributes **from**, as
-`doelType` names the type it distributes **to**; both are references, both are
-nullable on the v0 wire, and a null in either resolves against nothing.
+allocation's `sourceType` names the object type it distributes **from**, as
+`targetType` names the type it distributes **to**; both are references, both
+are nullable on the wire, and a null in either resolves against nothing.
 
 An *undeclared* type is already caught — WF-047 crosses it against the
 fillers of the recipient role the allocation carries (required since L2; the
@@ -37,7 +37,7 @@ Measured breadth: **11 of 11** golden allocations stayed verifier-clean with
 `bronType` emptied, and the same 11 of 11 with `doelType` emptied; **0** stay
 clean after the clause. One witness per half: the two are one field pattern
 read twice, but they are two `match` arms, and deleting either on its own moves
-only its own document — so `doelType` has its own witness,
+only its own document — so `targetType` has its own witness,
 `wf034-verdeling-zonder-doeltype`.
 
 *Measured breadth of the shape itself:* four pre-existing allocation negatiefs
@@ -50,8 +50,8 @@ golden + rood + negatief + parity this arm changes exactly one verdict — this
 one; its `doelType` twin changes exactly one too, its own.
 
 A hand-broken variant of `corpus/golden/jutterswet-berging/ir.json` — one
-field nulled, a one-line diff; schema-valid, since `ResolvedVerdeling.bronType`
-is `["string","null"]` on the v0 wire.
+field nulled, a one-line diff; schema-valid, since the version's
+`sourceType` is `["string","null"]` on the wire.
 
 Falsifiable, clause-exact: drop `wf034_verdeling_typen` from the verifier's
 check list — its own function, distinct from the name arms beside it — and
@@ -66,5 +66,6 @@ Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
 version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
 `targetType`, `targetAttribute`, `method`, `ratioAttribute`,
 `maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
-`connectingRole`); the report cites the version and names the L4 field.
-`expect.txt` pins the arm.
+`connectingRole`); the report cites the version and names the L4 field. The
+measurements above name the fields as they were spelled then (`bronType` →
+`sourceType`, `doelType` → `targetType`). `expect.txt` pins the arm.

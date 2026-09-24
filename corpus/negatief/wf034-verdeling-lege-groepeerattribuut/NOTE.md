@@ -8,9 +8,9 @@ whose ordering key is *present but blank*.
 This is the witness for the worst row: **both executors play on, agree, and
 are both wrong**. The clause is the one described in full in the sibling NOTE
 (`wf034-verdeling-lege-bronattribuut`): a present attribute name on any of the
-allocation's six name fields is not blank, while a null on the four facet
-fields keeps its meaning of a facet switched off. `groepeerAttribuut` is the
-key an `OP_VOLGORDE` allocation orders recipients by; absent, WF-025 already
+allocation's six name fields is not blank, while an absent facet field
+keeps its meaning of a facet switched off. `orderingAttribute` is the key an
+`OP_VOLGORDE` allocation orders recipients by; absent, WF-025 already
 forbids it on any other method, so on an ordered allocation it is the field
 that decides *who gets served first*.
 
@@ -48,9 +48,8 @@ NOTE; no document in any zone that predates this card carries a blank
 allocation attribute name.
 
 A hand-broken variant of `corpus/golden/jutterswet-rangaflopend/ir.json` — one
-field blanked, a one-field diff; schema-valid, since
-`ResolvedVerdeling.groepeerAttribuut` is `["string","null"]` on the v0 wire
-and `""` is a string.
+field blanked, a one-field diff; schema-valid, since the version's
+`orderingAttribute` is an optional string on the wire and `""` is a string.
 
 Falsifiable, clause-exact: drop `wf034_verdeling_namen` from the verifier's
 check list and this case and its two `-lege-` siblings — those three and
@@ -61,5 +60,7 @@ Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
 version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
 `targetType`, `targetAttribute`, `method`, `ratioAttribute`,
 `maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
-`connectingRole`); the report cites the version and names the L4 field.
-`expect.txt` pins the arm.
+`connectingRole`); the report cites the version and names the L4 field. The
+measurements above name the fields as they were spelled then (`ratoAttribuut`
+→ `ratioAttribute`, `groepeerAttribuut` → `orderingAttribute`). `expect.txt`
+pins the arm.

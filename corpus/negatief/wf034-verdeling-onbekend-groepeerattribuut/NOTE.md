@@ -8,9 +8,9 @@ ordering key names an attribute *no declaration carries*.
 The clause is the one described in full in the sibling NOTE
 (`wf034-verdeling-onbekend-ratoattribuut`): every filled attribute name on the
 allocation's six name fields resolves against the declaration scope of its own
-side — the source-side pair against `bronType`, the four target-side fields
-against `doelType`. `groepeerAttribuut` is the key an `OP_VOLGORDE` allocation
-orders recipients by: it decides *who gets served first*.
+side — the source-side pair against `sourceType`, the four target-side
+fields against `targetType`. `orderingAttribute` is the key an `OP_VOLGORDE`
+allocation orders recipients by: it decides *who gets served first*.
 
 The second **silent, agreeing** witness, and the sharper one, because here the
 executors do not merely underive — they compute a whole distribution and it is
@@ -42,8 +42,8 @@ name (`jutterswet-rangaflopend`, `jutterswet-rangdeling`,
 allocation witnesses; see the sibling NOTE for the four-zone sweep.
 
 A hand-broken variant of `corpus/golden/jutterswet-rangaflopend/ir.json` — one
-field repointed, a one-line diff; schema-valid, since
-`ResolvedVerdeling.groepeerAttribuut` is `["string","null"]` on the v0 wire.
+field repointed, a one-line diff; schema-valid, since the version's
+`orderingAttribute` is an optional string on the wire.
 
 Falsifiable, clause-exact: drop `wf034_verdeling_naamresolutie` from the
 verifier's check list and this case and its five `-onbekend-` allocation
@@ -53,5 +53,6 @@ Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
 version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
 `targetType`, `targetAttribute`, `method`, `ratioAttribute`,
 `maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
-`connectingRole`); the report cites the version and names the L4 field.
-`expect.txt` pins the arm.
+`connectingRole`); the report cites the version and names the L4 field. The
+measurements above name the fields as they were spelled then
+(`groepeerAttribuut` → `orderingAttribute`). `expect.txt` pins the arm.

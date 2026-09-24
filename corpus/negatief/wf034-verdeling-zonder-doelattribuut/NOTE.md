@@ -1,12 +1,12 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2)
-that names no target attribute. `doelAttribuut` is where every recipient's
-share is written; with the field empty the write resolves against no
+that names no target attribute. `targetAttribute` is where every recipient's
+share is written; with the field `null` the write resolves against no
 declaration.
 
     WF-034 FAIL /rules/verdelingen/0/versions/0/targetAttribute: allocation
     without a target attribute: it resolves against no declaration
 
-It exists separately from its `bronAttribuut` sibling for the reason the
+It exists separately from its `sourceAttribute` sibling for the reason the
 fold-source pair established one wave earlier: each half of a resolving pair
 needs its own witness, because a clause that closes one half says nothing
 about the other. Here both halves live in the same arm, and the sibling
@@ -18,7 +18,7 @@ reaches it; the target attribute is additionally the allocation's **write**
 position, so the empty field also removes the allocation from the dependency
 graph's write side — WF-026's duplicate-target comparison, WF-050's overlap
 with a defaults group, and the stratification edge all key on
-`(doelType, doelAttribuut)` and none of them can see an allocation that
+`(targetType, targetAttribute)` and none of them can see an allocation that
 declines to say what it writes. Measured: **11 of 11** golden allocations
 stayed verifier-clean with this field emptied, and 0 do after this clause.
 
@@ -43,11 +43,11 @@ declaration, and the two `bronType`/`doelType` fields, are equally emptyable
 and equally clean, and stay **open**.
 
 A hand-broken variant of `corpus/golden/jutterswet-gelijkdeling/ir.json` —
-one field emptied, a one-field diff; schema-valid, since
-`ResolvedVerdeling.doelAttribuut` is `["string","null"]` on the v0 wire.
+one field emptied, a one-field diff; schema-valid, since the version's
+`targetAttribute` is `["string","null"]` on the wire.
 
 Falsifiable, clause-exact: neuter `wf034_verdelingen` and this case and its
-`bronAttribuut` sibling turn clean, the four pre-existing negatief cases
+`sourceAttribute` sibling turn clean, the four pre-existing negatief cases
 named above and in the sibling NOTE lose an incidental WF-034 line while
 staying refused for their own rule, and nothing else over the four zones
 moves.
@@ -56,5 +56,7 @@ Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
 version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
 `targetType`, `targetAttribute`, `method`, `ratioAttribute`,
 `maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
-`connectingRole`); the report cites the version and names the L4 field.
+`connectingRole`); the report cites the version and names the L4 field. The
+measurements above name the fields as they were spelled then (`bronType` →
+`sourceType`, `doelType` → `targetType`, `doelAttribuut` → `targetAttribute`).
 `expect.txt` pins the arm.

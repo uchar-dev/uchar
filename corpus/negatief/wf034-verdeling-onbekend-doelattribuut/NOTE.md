@@ -8,11 +8,11 @@ target endpoint names an attribute *no declaration carries*.
 The clause is the one described in full in the sibling NOTE
 (`wf034-verdeling-onbekend-ratoattribuut`): every filled attribute name on the
 allocation's six name fields resolves against the declaration scope of its own
-side. `doelAttribuut` is the field the allocation *writes* — the share
-deposited on each `doelType` recipient — where `bronAttribuut` names the pot it
-reads from; the three facet fields beside it (`ratoAttribuut`,
-`maximumAttribuut`, `groepeerAttribuut`) resolve against the same `doelType`
-but are read, not written.
+side. `targetAttribute` is the field the allocation *writes* — the share
+deposited on each `targetType` recipient — where `sourceAttribute` names the
+pot it reads from; the three facet fields beside it (`ratioAttribute`,
+`maximumAttribute`, `orderingAttribute`) resolve against the same
+`targetType` but are read, not written.
 
 The written endpoint is the one the pair could not do without: WF-026's
 same-target comparison, WF-050's overlap with a defaults group and the
@@ -44,11 +44,11 @@ and no rood document carries the shape. See the sibling NOTE for the four-zone
 sweep.
 
 A hand-broken variant of `corpus/golden/jutterswet-berging/ir.json` — one
-field repointed, a one-line diff; schema-valid, since
-`ResolvedVerdeling.doelAttribuut` is `["string","null"]` on the v0 wire.
+field repointed, a one-line diff; schema-valid, since the version's
+`targetAttribute` is `["string","null"]` on the wire.
 
 Falsifiable, arm-exact: in `wf034_verdeling_naamresolutie` delete the single
-line `resolve ~side:"target" ~scope:r.doel_type "doelAttribuut"
+line `resolve ~side:"target" ~scope:r.doel_type "targetAttribute"
 r.doel_attribuut`. This case, alone in all four zones, turns clean; the parity
 casus loses its six incidental lines and keeps its verdict. Measured: 486
 documents compared, 2 reports change, 1 verdict. Dropping the whole clause
@@ -59,5 +59,7 @@ Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
 version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
 `targetType`, `targetAttribute`, `method`, `ratioAttribute`,
 `maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
-`connectingRole`); the report cites the version and names the L4 field.
-`expect.txt` pins the arm.
+`connectingRole`); the report cites the version and names the L4 field. The
+measurements above name the fields as they were spelled then (`bronAttribuut`
+→ `sourceAttribute`, `doelAttribuut` → `targetAttribute`). `expect.txt` pins
+the arm.

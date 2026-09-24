@@ -1,6 +1,6 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2)
 that names no source attribute. The amount an allocation distributes lives in
-`bronAttribuut` on the source type; with the field empty there is no
+`sourceAttribute` on the source type; with the field `null` there is no
 declaration to read it from.
 
     WF-034 FAIL /rules/verdelingen/0/versions/0/sourceAttribute: allocation
@@ -46,12 +46,12 @@ resolution against the object-type table — a wider movement than this card's
 empty-field class — and they stay **open**.
 
 A hand-broken variant of `corpus/golden/jutterswet-gelijkdeling/ir.json` —
-one field emptied, a one-field diff. The shape is schema-valid:
-`ResolvedVerdeling.bronAttribuut` is `["string","null"]` on the v0 wire,
-which is precisely why the verifier, not the schema, is the fence.
+one field emptied, a one-field diff. The shape is schema-valid: the
+version's `sourceAttribute` is `["string","null"]` on the wire, which is
+precisely why the verifier, not the schema, is the fence.
 
 Falsifiable, clause-exact: neuter `wf034_verdelingen` and this case and its
-`doelAttribuut` sibling turn clean, the four incidental co-citations above
+`targetAttribute` sibling turn clean, the four incidental co-citations above
 lose their WF-034 line while staying refused for their own rule, and nothing
 else over the four zones moves.
 
@@ -59,5 +59,7 @@ Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
 version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
 `targetType`, `targetAttribute`, `method`, `ratioAttribute`,
 `maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
-`connectingRole`); the report cites the version and names the L4 field.
+`connectingRole`); the report cites the version and names the L4 field. The
+measurements above name the fields as they were spelled then (`bronType` →
+`sourceType`, `bronAttribuut` → `sourceAttribute`, `doelType` → `targetType`).
 `expect.txt` pins the arm.

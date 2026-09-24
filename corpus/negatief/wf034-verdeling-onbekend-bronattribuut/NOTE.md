@@ -8,12 +8,12 @@ source endpoint names an attribute *no declaration carries*.
 The clause is the one described in full in the sibling NOTE
 (`wf034-verdeling-onbekend-ratoattribuut`): every filled attribute name on the
 allocation's six name fields resolves against the declaration scope of its own
-side. `bronAttribuut` is a **source-side** field — it names the pot on the
-`bronType` instance, as `restantAttribuut` names the remainder written back
-there; the other four resolve against `doelType`.
+side. `sourceAttribute` is a **source-side** field — it names the pot on the
+`sourceType` instance, as `remainderAttribute` names the remainder written
+back there; the other four resolve against `targetType`.
 
 This is a **loud** witness — one of three, since the fix round gave
-`doelAttribuut` and `restantAttribuut` their own — and it is here for exactly
+`targetAttribute` and `remainderAttribute` their own — and it is here for exactly
 that reason: the class has three observability rows, and the two silent ones
 must not be mistaken for the whole story. Measured on this document, against
 `corpus/golden/jutterswet-berging/case.json`:
@@ -39,18 +39,20 @@ loud in both executors. **0** stay clean after the clause.
 allocation witnesses; see the sibling NOTE for the four-zone sweep.
 
 A hand-broken variant of `corpus/golden/jutterswet-berging/ir.json` — one
-field repointed, a one-line diff; schema-valid, since
-`ResolvedVerdeling.bronAttribuut` is `["string","null"]` on the v0 wire.
+field repointed, a one-line diff; schema-valid, since the version's
+`sourceAttribute` is `["string","null"]` on the wire.
 
 Falsifiable, clause-exact: drop `wf034_verdeling_naamresolutie` from the
 verifier's check list and this case and its five `-onbekend-` allocation
 siblings, those six and nothing else, turn clean. Arm-exact instead: delete
-the single `resolve … "bronAttribuut" …` line and this case, alone in all
+the single `resolve … "sourceAttribute" …` line and this case, alone in all
 four zones, turns clean.
 
 Since L4 an allocation is an `Allocation` with its versions (delta B19), and a
 version's fields carry their IR-SPEC names (`sourceType`, `sourceAttribute`,
 `targetType`, `targetAttribute`, `method`, `ratioAttribute`,
 `maximumAttribute`, `remainderAttribute`, `orderingAttribute`,
-`connectingRole`); the report cites the version and names the L4 field.
-`expect.txt` pins the arm.
+`connectingRole`); the report cites the version and names the L4 field. The
+measurements above name the fields as they were spelled then (`bronAttribuut`
+→ `sourceAttribute`, `doelAttribuut` → `targetAttribute`, `restantAttribuut` →
+`remainderAttribute`). `expect.txt` pins the arm.
