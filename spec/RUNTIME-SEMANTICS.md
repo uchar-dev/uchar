@@ -3237,7 +3237,7 @@ a to-one role is a fault, never a silent overwrite.
 
 **The condition is about the anchor, or about the target, and the wire
 says which.** This is the one construct whose guard has two objects in
-scope, and a characteristic check's owner (`eigenaar`, ch. 5.8b) is what
+scope, and a characteristic check's owner (`host`, ch. 5.8b) is what
 names the host: absent, or naming a type the anchor satisfies, the guard
 GATES the anchor exactly as written above — an anchor that fails it
 creates nothing at all. Naming a type the TARGET satisfies, it FILTERS
@@ -3362,7 +3362,7 @@ implements:
    channel. Engine-internal control facts (creation markers and kin) are
    not part of the observable outcome.
 
-Onopgelost nodes take no part in evaluation and must survive into the
+`Unresolved` nodes take no part in evaluation and must survive into the
 report (WF-044); an engine that reaches one fails that rule's evaluation
 observably rather than guessing.
 
@@ -3458,7 +3458,7 @@ directions is not the same as inventing one.
 
 An attribute reference whose endpoint is off-subject (IR-SPEC ch. 4.1a,
 WF-053) reads through the role links, one to-one hop per step, each hop
-named by its role binding (`navigatieBindingen`; since L2 the only
+named by its role binding (`path`; since L2 the only
 spelling of a hop, B11). The rules, mirrored from the pinned runtime's
 null-safe navigation readers:
 
@@ -3484,8 +3484,8 @@ null-safe navigation readers:
    failure — the same asymmetry, for free.
 4. **A read without navigation bindings is the subject's own read —
    unconditionally.** An attribute reference that carries no
-   `navigatieBindingen` reads the subject's OWN attribute, and its
-   `objecttype` is the subject type itself — equality, not ⊑ (IR-SPEC
+   `path` reads the subject's OWN attribute, and its
+   `subjectType` is the subject type itself — equality, not ⊑ (IR-SPEC
    ch. 4.1a, WF-053): the verifier refuses any other type there, a
    supertype included, and so do `ref` and the ASP backend, by name. No
    link is consulted, so the read succeeds on an instance with no
@@ -3680,7 +3680,7 @@ WV-5.8a-ver-vreemde-tegenpartij).
 
 ### 5.8b The characteristic check's owner: the host
 
-A characteristic check may carry an **owner** (the IR's `eigenaar`). It is
+A characteristic check may carry an **owner** (the IR's `host`). It is
 **authoritative** (maintainer decision 2026-09-10; `IR-SPEC.md` ch. 4.6 (q1),
 WF-100): where the field is present it, and not the enclosing form's subject,
 decides what the check resolves against. And it is the **host** (maintainer
@@ -3903,17 +3903,17 @@ stops as soon as one of these holds:
 |------------|--------------|---------|
 | `all` / `the` | a member read does not hold | **false** |
 | `none` | a member read holds (*h* > 0) | **false** |
-| `at-least` *d* | *h* ≥ *d* | **true** |
-| `at-least` *d* | *h* + *r* < *d* (the threshold is out of reach) | **false** |
-| `at-most` *d* | *h* > *d* | **false** |
-| `at-most` *d* | *h* + *r* ≤ *d* (the threshold can no longer be exceeded) | **true** |
+| `atLeast` *d* | *h* ≥ *d* | **true** |
+| `atLeast` *d* | *h* + *r* < *d* (the threshold is out of reach) | **false** |
+| `atMost` *d* | *h* > *d* | **false** |
+| `atMost` *d* | *h* + *r* ≤ *d* (the threshold can no longer be exceeded) | **true** |
 | `exactly` *d* | *h* > *d* | **false** |
 | `exactly` *d* | *h* + *r* < *d* | **false** |
 
 If no trigger fires, every member is read and the verdict is the plain
 comparison over the total hits *h* against the member count *n*: `all`
-and `the` need *h* = *n*, `none` needs *h* = 0, `at-least` *h* ≥ *d*,
-`at-most` *h* ≤ *d*, `exactly` *h* = *d*.
+and `the` need *h* = *n*, `none` needs *h* = 0, `atLeast` *h* ≥ *d*,
+`atMost` *h* ≤ *d*, `exactly` *h* = *d*.
 
 The table is **one rule with no exception**: each row marks a moment at
 which the outcome can no longer change, and the rows together are the
@@ -3926,15 +3926,15 @@ trigger fires exactly when the arithmetic says the verdict is fixed
 included.** With *h* = 0 and *r* = *n* three rows can already fire on the
 empty prefix, and then the composite reads **no member at all**:
 
-- `at-least` and `exactly` with ***d* > *n***: the threshold is out of
+- `atLeast` and `exactly` with ***d* > *n***: the threshold is out of
   reach from the start, so the composite is **false**;
-- `at-most` with ***d* ≥ *n***: the threshold can never be exceeded, so
+- `atMost` with ***d* ≥ *n***: the threshold can never be exceeded, so
   the composite is **vacuously true**.
 
 That is not an edge case bolted on — it is the same rule applied to the
 prefix of length zero. It is observable, because the members it does not
 read are exactly the members whose faults do not happen: a vacuously true
-`at-most` over a member that would divide by zero **answers**, and does
+`atMost` over a member that would divide by zero **answers**, and does
 not fault. The wire admits all three shapes (WF-041 constrains only
 *d* ≥ 1) and this clause fixes what they mean.
 
@@ -4028,11 +4028,11 @@ fault — measured against a mutant that changes exactly that row:
 |-----|---------|
 | `all` / `the`, first non-holding member | `jutterswet-ploegaandeel` (row 1) |
 | `none`, first holding member | `jutterswet-wachtdeling` (`geenteken`, row 1) |
-| `at-least`, threshold reached | `jutterswet-wachtdeling` (`minsteteken`, row 1) |
-| `at-least`, out of reach | `jutterswet-seinwacht` (`minsteteken`, *d* = 3 > *n* = 2) |
-| `at-most`, threshold exceeded | `jutterswet-seinwacht` (`hoogsteteken`, `S1`) |
-| `at-most`, can no longer be exceeded (*d* < *n*) | `jutterswet-vacuumwacht` (`stopteken`, `B1`) |
-| `at-most`, vacuously true (*d* ≥ *n*) | `jutterswet-vacuumwacht` (`vacuumteken`, every row) |
+| `atLeast`, threshold reached | `jutterswet-wachtdeling` (`minsteteken`, row 1) |
+| `atLeast`, out of reach | `jutterswet-seinwacht` (`minsteteken`, *d* = 3 > *n* = 2) |
+| `atMost`, threshold exceeded | `jutterswet-seinwacht` (`hoogsteteken`, `S1`) |
+| `atMost`, can no longer be exceeded (*d* < *n*) | `jutterswet-vacuumwacht` (`stopteken`, `B1`) |
+| `atMost`, vacuously true (*d* ≥ *n*) | `jutterswet-vacuumwacht` (`vacuumteken`, every row) |
 | `exactly`, threshold exceeded | `jutterswet-seinwacht` (`preciesteken`, `S1`) |
 | `exactly`, out of reach | `jutterswet-seinwacht` (`randteken`, *d* = 3 > *n* = 2) |
 | triggers tested *before* the member | `jutterswet-seinwacht` (`minsteteken`): a check made afterwards reads the faulting member 1 |
@@ -4073,16 +4073,16 @@ outcome writes nothing and retracts nothing (ch. 5.6).
 **Wire order** is the order the node declares its operands in: for a
 list-valued slot the list's own order, for named slots the order the
 **schema** gives them — `spec/schema/uchar-ir-v1.schema.json`,
-`$defs/Begrensd` (`node`, `basis`, `minimum`, `maximum`), `$defs/Aggregation`
+`$defs/Clamp` (`node`, `base`, `minimum`, `maximum`), `$defs/Aggregation`
 (`arguments` before `emptyFallback`), `$defs/Fold` (`list` before `init`).
 For the tijdsduur family the slot is a list: argument 0 is `van`,
 argument 1 is `tot`.
 
-The schema is named here rather than `IR-SPEC.md` because the naming
-split is systematic, not incidental: `IR-SPEC.md` writes the metamodel in
-English — `Clamp`, `Rounding`, `TextComposition` — where the wire writes
-`Begrensd`, `Afgerond`, `TekstReeks`. A clause about *slot* order has to
-name the slots as a document carries them.
+The schema is named here rather than `IR-SPEC.md` because a clause about
+*slot* order has to name the slots as a document carries them. Until L5
+the two spelled the metamodel apart — `IR-SPEC.md` wrote `Clamp`,
+`Rounding`, `TextComposition` where the wire wrote `Begrensd`, `Afgerond`,
+`TekstReeks`; since L5 the wire carries the `IR-SPEC.md` names.
 
 **How far that is checked, stated exactly.** JSON Schema has no ordering
 vocabulary, and gate 2's round-trip re-emits each document in *its own*
@@ -4100,13 +4100,13 @@ executor, for every visible row. It does mean the wire convention itself
 rests on the emitters and on review.
 
 Nothing here is left to the executor. A consumer that evaluates
-`Begrensd`'s `maximum` before its `minimum` is **wrong**, not merely
+`Clamp`'s `maximum` before its `minimum` is **wrong**, not merely
 different — and this clause is written because that is precisely what an
 executor does when its host language leaves the argument order of an
 application unspecified and nobody chose.
 
 Two consequences the rule is chosen to give, rather than accidents it
-inherits: within `Begrensd` the operands are now evaluated in the same
+inherits: within `Clamp` the operands are now evaluated in the same
 direction ch. 2.7 **applies** the bounds in (minimum first), and
 "tijdsduur van A tot B" evaluates A before B, in the order the phrase
 names them.
@@ -4133,35 +4133,35 @@ rather than by a node name it does not have.
 
 | node | evaluated operands | verdict | normative order |
 |------|--------------------|---------|-----------------|
-| `Binair` (all operators) | `links`, `rechts` | **visible** | `links`, then `rechts` |
-| `Vergelijking` | `links`, `rechts` | **visible** | `links`, then `rechts` |
-| `Periode` (the period condition) | `vanaf`, `tot` | **visible** | `vanaf`, then `tot`; an absent bound evaluates nothing, and BOTH bounds are read before the evaluation date decides. *Carried by both OCaml executors since 2026-09-20 (ch. 3.10); the order is stated and not yet witnessed by a case, because the two bound shapes WF-111 admits — a literal and an own attribute — have no fault position to order* |
-| `Begrensd` | `basis`, `minimum`, `maximum` | **visible** | `basis`, then `minimum`, then `maximum`; an absent bound evaluates nothing |
+| `Binary` (all operators) | `left`, `right` | **visible** | `left`, then `right` |
+| `Comparison` | `left`, `right` | **visible** | `left`, then `right` |
+| `TimeWindow` (the period condition) | `from`, `to` | **visible** | `from`, then `to`; an absent bound evaluates nothing, and BOTH bounds are read before the evaluation date decides. *Carried by both OCaml executors since 2026-09-20 (ch. 3.10); the order is stated and not yet witnessed by a case, because the two bound shapes WF-111 admits — a literal and an own attribute — have no fault position to order* |
+| `Clamp` | `base`, `minimum`, `maximum` | **visible** | `base`, then `minimum`, then `maximum`; an absent bound evaluates nothing |
 | tijdsduur / absolute tijdsduur | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
 | `datum met` / `datum-tijd met` | the `arguments` list (WF-037 leaves its arity open) | **visible** | argument order. *ref declines the form; the order is stated, not yet exercised* |
 | aggregation (`som`, `totaal`, `aantal`, `minimum`, `maximum`, `eerste`, `laatste`) | the contributors — the listed `arguments`, or the instance fold's members each gated by the `filter` — then the `emptyFallback` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `emptyFallback` (WF-037 confines it to the som) |
 | aggregation over a `dimensionSelection` (the third contributor source; WF-037 admits it on `som`, `minimum`, `maximum`) | the selected cells, then the `emptyFallback` | **visible** | the cells in the selection's own label order, then the `emptyFallback`. *ref declines the form; the order is stated, not yet exercised* |
-| `concatenatie`, `TekstReeks` | the inserted parts | **visible** | part order |
+| `concatenatie`, `TextComposition` | the inserted parts | **visible** | part order |
 | `ListLiteral` | `elements` | **visible** | element order |
-| `StructLiteral` | `velden` | **visible** | declared field order (WF-073) |
+| `StructLiteral` | `fields` | **visible** | declared field order (WF-073) |
 | `Invoke` | `arguments`, then the body | **visible** | argument order, then the body (a leeg argument propagates without entering it) |
 | `Fold` | `list`, `init`, the body per element | **visible** | `list`, then `init`, then the elements in list order (a leeg `list` answers before `init` is read) |
 | `MapList` | `list`, the body per element | **visible** | `list`, then element order |
 | `FilterList` | `list`, the condition per element | **visible** | `list`, then element order |
-| `Samengesteld` | the members | **visible** | ch. 5.10: wire order, with the short circuit |
+| `Compound` | the members | **visible** | ch. 5.10: wire order, with the short circuit |
 | `Let` | `value`, `body` | forced | ch. 10.6: the `body` drives; the `value` is evaluated at the **first read**, so it takes that read's position in the enclosing order |
 | `Match` | `scrutinee`, one arm body | forced | the scrutinee selects the arm |
 | `IfThenElse` | `condition`, one branch | forced | the condition selects the branch; the other branch evaluates nothing |
-| `Afgerond`, `wortel`, `absolute waarde`, `jaar uit`, `maand uit`, `dag uit`, `eerste paasdag`, `ListLength`, `FieldAccess`, `Construct`, `DimensieCel` | one | invisible | — |
+| `Rounding`, `wortel`, `absolute waarde`, `jaar uit`, `maand uit`, `dag uit`, `eerste paasdag`, `ListLength`, `FieldAccess`, `Construct`, `DimensionCellRead` | one | invisible | — |
 | `uur uit`, `minuut uit`, `seconde uit`, `milliseconde uit` | one | invisible | — *(ref declines them; a single operand carries no order either way)* |
 | `tijdsevenredig deel` | the base, and the `filter` | invisible | WF-056 restricts the base to a **bare** temporal attribute reference, so only the filter is data-dependent — one fault-capable position, no order |
 | `aantal dagen in` | none in `arguments`; the `filter` carries the condition | invisible | — |
-| `TemporalRead` | `datum` only — `basis` **names** the timeline and is never evaluated (ch. 3.3) | invisible | — |
-| `Predicaat` — leeg / gevuld | `operand` | invisible | — |
-| `Predicaat` — elfproef / numeriek met exact / dagsoort | `operand` | invisible | — *(ref declines them)* |
-| `Kenmerk`, `RoleMembership` (until L2 `Rollidmaatschap` and `VerreRollidmaatschap`), `Regelversie` | none | invisible | — |
-| `Literal`, `AttribuutRef`, `ParameterRef`, `VariabeleRef`, `ContextValue`, `BoundDay`, `BinderRef`, `ExprOnopgelost`, `ConditieOnopgelost` | none | invisible | — (a `BinderRef` forces its ch. 10.6 need **at its own position** in the parent's order) |
-| `Lambda` | — | not an operand position | never a value (WF-069): it is only the `functie` slot of a `Fold`/`MapList`, applied once per element under that node's row |
+| `TemporalRead` | `date` only — `base` **names** the timeline and is never evaluated (ch. 3.3) | invisible | — |
+| `Predicate` — leeg / gevuld | `operand` | invisible | — |
+| `Predicate` — elfproef / numeriek met exact / dagsoort | `operand` | invisible | — *(ref declines them)* |
+| `CharacteristicCheck`, `RoleMembership` (until L2 `Rollidmaatschap` and `VerreRollidmaatschap`), `Regelversie` | none | invisible | — |
+| `Literal`, `AttributeReference`, `ParameterReference`, `VariableReference`, `ContextValue`, `BoundDay`, `BinderRef`, `Unresolved` (the expression and the condition variant) | none | invisible | — (a `BinderRef` forces its ch. 10.6 need **at its own position** in the parent's order) |
+| `Lambda` | — | not an operand position | never a value (WF-069): it is only the `function` slot of a `Fold`/`MapList`, applied once per element under that node's row |
 
 **The som's `emptyFallback` is evaluated unconditionally.** It is an
 operand of the node, not a lazy alternative: it runs every time the node
@@ -4177,7 +4177,7 @@ defaults group is tried — is **not** this clause's subject: ch. 5.2 makes
 the fixpoint independent of it, and ch. 7.1 fixes the defaults chain by
 priority rather than by evaluation.
 
-**Worked example — `Begrensd` (absolute; the `begrensd-reads-bounds-in-order`
+**Worked example — `Clamp` (absolute; the `begrensd-reads-bounds-in-order`
 red case verbatim, gate 8).** A `Jutter` with `teller` = 1, `noemer` = 0
 and `grens` **absent**:
 
@@ -4187,7 +4187,7 @@ begrenswaarde := Let grenswaarde = zijn grens
                          en een maximum van de grenswaarde)
 ```
 
-`basis` = 100 evaluates first. `minimum` = 1 ÷ 0 evaluates second and
+`base` = 100 evaluates first. `minimum` = 1 ÷ 0 evaluates second and
 **faults** — division by a numeric zero (ch. 1.2). `maximum` is never
 reached. Pinned outcome: the rule **fails observably** with *"division
 by numeric zero"*.
@@ -4207,7 +4207,7 @@ vaartduur := Let vertrekdatum = zijn vertrek
              in de tijdsduur van de rekendatum tot de vertrekdatum in hele dagen
 ```
 
-`van` = the `Rekendatum` context value evaluates first and **faults** — there
+`van` = the `evaluationDate` context value evaluates first and **faults** — there
 is no evaluation date to read (ch. 8.2). `tot` is never reached. Pinned
 outcome: the rule **fails observably**. Under the reverse order the read
 of `vertrekdatum` would raise the barrier first and there would be no
@@ -4221,14 +4221,14 @@ vangstsom := Let deel = zijn deelvangst
              in (het deel  plus  zijn teller gedeeld door zijn noemer)
 ```
 
-`links` is a read of `deel` — the barrier, when `deelvangst` is absent.
-`rechts` is a division with a filled dividend and an absent divisor — a
+`left` is a read of `deel` — the barrier, when `deelvangst` is absent.
+`right` is a division with a filled dividend and an absent divisor — a
 §9.5 producer (ch. 5.6). The value cannot separate the two orders,
 because `leeg plus …` coalesces either way; the channel can:
 
 | case | `deelvangst` | `teller` | `noemer` | `vangstsom` | channel facts |
 |------|--------------|----------|----------|-------------|---------------|
-| barrier | *absent* | 4 | *absent* | **leeg** | **0** — `links` barriers, `rechts` is never reached |
+| barrier | *absent* | 4 | *absent* | **leeg** | **0** — `left` barriers, `right` is never reached |
 | companion | 5 | 4 | *absent* | 5 + leeg = **5** | **1** (`vangstsom van een vangst`, that instance) |
 | filled | 5 | 4 | 2 | 5 + 2 = **7** | 0 |
 
@@ -4245,7 +4245,7 @@ circuit's triggers are monotone in the prefix. Nothing analogous is
 available for a clamp's two bounds or a duration's two dates. Two
 consequences, both measured:
 
-- Its `Begrensd` order *is* pinned, but on the **translation** side: a
+- Its `Clamp` order *is* pinned, but on the **translation** side: a
   bound that is not a ground literal is refused (an empty bound is ref's
   *no* bound, which the bare join cannot express), and the red case
   above pins which bound is refused first. That is the translator's
@@ -4261,7 +4261,7 @@ consequences, both measured:
   this corpus places a deposit before a barrier in wire order.
 
 The third executor is a **known divergence**, not a gap: it evaluates a
-`Begrensd`'s maximum **before** its minimum, measured in both
+`Clamp`'s maximum **before** its minimum, measured in both
 directions on the red case above (move the division to the maximum and
 it faults on the document where ref does not). It is listed with that
 reason in the red gate's exclusion list, and correcting it is a card of
@@ -4270,7 +4270,7 @@ its own.
 **The v0 pin, measured row by row — two of the three already agree.**
 The pin's *static trace walk* (the bookkeeping that decides which
 companion preconditions and which hoists the emitted rules carry) runs
-`Begrensd` maximum-first, the tijdsduur operands in reverse, and the
+`Clamp` maximum-first, the tijdsduur operands in reverse, and the
 aggregation's `emptyFallback` before the contributors, and an arbiter test
 pins that with absolute channel-fact counts, citing the *reference
 interpreter's host-language argument order* as its evidence — the
@@ -4314,16 +4314,16 @@ what reaches the rows a barrier cannot, because a closed fold body
 
 | what is pinned | witness |
 |----------------|---------|
-| `Binair` `links` before `rechts`, by channel count | `synth3-operandvolgorde` (gates 5–6, and Drools: the full square) |
-| `Begrensd` `minimum` before `maximum` | `begrensd-reads-bounds-in-order` (gate 8; ref by which fault, clingo by which bound is refused first) |
+| `Binary` `left` before `right`, by channel count | `synth3-operandvolgorde` (gates 5–6, and Drools: the full square) |
+| `Clamp` `minimum` before `maximum` | `begrensd-reads-bounds-in-order` (gate 8; ref by which fault, clingo by which bound is refused first) |
 | tijdsduur `van` before `tot` | `tijdsduur-reads-van-before-tot` (gate 8; the ref leg — clingo carries the form and fails, but does not order it) |
 | composite members, wire order + short circuit | ch. 5.10's own witness table |
-| `Vergelijking` `links` before `rechts` | `ref/` `WV-5.11-vergelijking-…` (pair) |
+| `Comparison` `left` before `right` | `ref/` `WV-5.11-vergelijking-…` (pair) |
 | aggregation contributors, in wire order | `ref/` `WV-5.11-som-bijdrager…` (pair) |
 | the **instance** fold: the filter per member, members in fold order | `ref/` `WV-5.11-instantiefold-…` and `WV-5.11-instantiesom-…` (two pairs — the `Instances` walk an `aantal` takes and the `Values` walk a set-read `som` takes) |
 | aggregation contributors **before** the `emptyFallback` | `ref/` `WV-5.11-som-…-leegwaarde` (pair) |
 | the `emptyFallback` evaluates unconditionally | `som-fallback-always-evaluated` (gate 8) + `ref/` `WV-5.11-som-leegwaarde-onvoorwaardelijk` |
-| `concatenatie` and `TekstReeks` part order | `ref/` `WV-5.11-concat-…`, `WV-5.11-tekstreeks-…` (pairs) |
+| `concatenatie` and `TextComposition` part order | `ref/` `WV-5.11-concat-…`, `WV-5.11-tekstreeks-…` (pairs) |
 | `ListLiteral` element order | `ref/` `WV-5.11-listliteral-…` (pair) |
 | `StructLiteral` field order | `ref/` `WV-5.11-structliteral-…` (pair) |
 | `Invoke` argument order | `ref/` `WV-5.11-invoke-…` (pair) |
@@ -4331,7 +4331,7 @@ what reaches the rows a barrier cannot, because a closed fold body
 | `MapList` element order | `ref/` `WV-5.11-maplist-…` (pair) |
 | `FilterList` element order | `ref/` `WV-5.11-filterlist-…` (pair) |
 | `datum met` / `datum-tijd met` | **none** — the reference interpreter declines the form, so there is nothing to run. The order is stated for the consumer that carries it first, and lands with it |
-| `Periode` `vanaf` before `tot` | **none yet** — the form is carried since 2026-09-20 (ch. 3.10, golden `jutterswet-premievenster`), but the two bound shapes WF-111 admits are a literal and an own scalar attribute, and neither can fault. A witness lands with the general date expression, which is the first bound that can and an OPEN wire decision (ch. 3.12) |
+| `TimeWindow` `from` before `to` | **none yet** — the form is carried since 2026-09-20 (ch. 3.10, golden `jutterswet-premievenster`), but the two bound shapes WF-111 admits are a literal and an own scalar attribute, and neither can fault. A witness lands with the general date expression, which is the first bound that can and an OPEN wire decision (ch. 3.12) |
 
 ---
 
