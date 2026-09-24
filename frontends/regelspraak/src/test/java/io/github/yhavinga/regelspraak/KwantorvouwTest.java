@@ -87,10 +87,10 @@ class KwantorvouwTest {
                 .filter(d -> d.message().startsWith("setlezing buiten een vouwbron")).toList();
     }
 
-    /** The emitted voorwaarde of the single rule, compacted — the slice every assertion below reads. */
+    /** The emitted condition of the single rule's version, compacted — the slice every assertion below reads. */
     private static String voorwaarde(RegelSpraakModel m) {
         String c = emitCompact(m);
-        int van = c.indexOf("\"voorwaarde\":");
+        int van = c.indexOf("\"condition\":");
         assertTrue(van >= 0, () -> "geen voorwaarde in de emissie:\n" + c);
         return c.substring(van);
     }
@@ -120,8 +120,8 @@ class KwantorvouwTest {
 
     @Test void de_kwantorvouw_draagt_de_verbindende_rol_als_bereik() {
         // The required range, on this node (WF-048's concern until L2): a quantifier bound to no relation
-        // quantifies over a set the sentence never named. The range is the connecting role, spelled exactly as the
-        // instance fold's bronRol — one search in the model serves both, so the two can never disagree.
+        // quantifies over a set the sentence never named. The range is the connecting role, the binding the
+        // instance fold's sourceRole carries — one search in the model serves both, so the two can never disagree.
         String v = voorwaarde(resolveer(ZIN.formatted("alle")));
         assertTrue(v.contains("\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\",\"rol\":\"vondst\"}"),
                 () -> "de vouw hoort het verbindende feittype+rol als bereik te dragen:\n" + v);
@@ -141,7 +141,8 @@ class KwantorvouwTest {
         assertTrue(java.util.regex.Pattern.compile("\"links\":\\{\"node\":\"AttribuutRef\",\"attribuut\":\"gewicht\","
                         + "\"objecttype\":\"Vondst\",\"bron\":\"[^\"]*\"\\}").matcher(v).find(),
                 () -> "de gekwantificeerde operand hoort als eigen lezing terug te komen, zonder binding:\n" + v);
-        assertFalse(v.substring(v.indexOf("\"toets\":"), v.lastIndexOf("\"bronRol\":")).contains("\"bronRol\""),
+        String toets = v.substring(v.indexOf("\"toets\":"), v.lastIndexOf("\"bronRol\":"));
+        assertFalse(toets.contains("\"bronRol\"") || toets.contains("\"sourceRole\""),
                 () -> "na de verlaging hoort er geen vouw over gekoppelde instanties meer in de toets te staan:\n" + v);
         assertTrue(v.contains("\"periode\":{\"node\":\"GeheelPeriode\",\"jaar\":true,\"niet\":false}"),
                 () -> "de §8.2-kwalificatie hoort op de toets te blijven staan:\n" + v);
@@ -151,7 +152,7 @@ class KwantorvouwTest {
         // The element-subject emission, and the reason it is not cosmetic: emitted from the OUTER
         // subject, an element-own read is an off-subject type and would pick up a by-pair
         // navigatieBindingen — a navigation from the Jutter, inside a matrix whose subject is the
-        // Vondst. Exactly the trap Functie.filter already avoids the same way.
+        // Vondst. Exactly the trap an aggregation's filter already avoids the same way.
         String v = voorwaarde(resolveer(ZIN.formatted("alle")));
         assertFalse(v.contains("\"navigatieBindingen\""),
                 () -> "de toets wordt met het ELEMENT als subject geëmitteerd en hoort dus geen "
@@ -187,7 +188,7 @@ class KwantorvouwTest {
             assertTrue(m.diagnostics.isEmpty(),
                     () -> r.geschreven() + " — onverwachte diagnostiek: " + m.diagnostics);
             String v = voorwaarde(m);
-            assertTrue(v.startsWith("\"voorwaarde\":{\"node\":\"Kwantorvouw\",\"kwantor\":\""
+            assertTrue(v.startsWith("\"condition\":{\"node\":\"Kwantorvouw\",\"kwantor\":\""
                             + r.kwantor() + "\",\"drempel\":" + r.drempel() + ","),
                     () -> r.geschreven() + " hoort de kwantor EN het telwoord te dragen:\n" + v);
         }
@@ -233,7 +234,7 @@ class KwantorvouwTest {
             """);
         assertTrue(setlezingfouten(m).isEmpty(), () -> "de vouw hoort de setlezing weg te nemen: " + m.diagnostics);
         String v = voorwaarde(m);
-        assertTrue(v.startsWith("\"voorwaarde\":{\"node\":\"Kwantorvouw\",\"kwantor\":\"ALLE\","),
+        assertTrue(v.startsWith("\"condition\":{\"node\":\"Kwantorvouw\",\"kwantor\":\"ALLE\","),
                 () -> "de ongekwalificeerde zin hoort dezelfde vouw te worden:\n" + v);
         assertTrue(v.contains("\"periode\":null"),
                 () -> "zonder §8.2-kwalificatie hoort de toets geen periode te dragen:\n" + v);
@@ -276,7 +277,7 @@ class KwantorvouwTest {
             """);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
-        assertTrue(c.contains("\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\",\"rol\":\"vondst\"}"),
+        assertTrue(c.contains("\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\",\"rol\":\"vondst\"}"),
                 () -> "de vouw hoort haar setlezing te houden, als bereik:\n" + c);
         assertFalse(c.contains("\"kwantor\""),
                 () -> "de geschreven kwantor is frontend-intern en hoort niet op de wire te staan:\n" + c);

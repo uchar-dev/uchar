@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * A MEMBER fold ("de minimale waarde van &lt;attr&gt; van alle &lt;elem&gt; van &lt;onderwerp&gt;") describes its
- * source on the uchar wire with exactly ONE relation: one {@code elementObjecttype} plus one {@code bronRol}
+ * source on the uchar wire with exactly ONE relation: one {@code elementType} plus one {@code sourceRole}
  * (IR-SPEC ch. 4.3). Three written shapes used to be mapped onto that single relation in silence, and all
  * three produced a fold over a DIFFERENT collection than the sentence names:
  *
@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * WF-044 in every executor (IR-SPEC ch. 2.4: the marker is legal wire content, the fence is behavioural).
  *
  * <p><b>Updated 2026-09-11, the wire half (WF-102).</b> The range is no longer one relation: a fold source
- * may carry a {@code bronPad} of two or more steps, and the flat-union reading over it is normative
+ * may carry a {@code sourcePath} of two or more steps, and the flat-union reading over it is normative
  * (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS ch. 3.4b). Shapes (1) and (2) above are therefore EXPRESSIBLE where
  * the written chain RESOLVES, and this suite pins that instead of the refusal on exactly those documents —
  * the card's A, B and F. The refusals are not gone: they hold for every chain that declines (an
@@ -304,7 +304,7 @@ class GenesteVouwbronTest {
         assertEquals(List.of(), vouwbronDiagnoses(MODEL_B + KETENREGEL));
         String json = ir(MODEL_B + KETENREGEL);
         assertBronPad(json, "bemanning", "gevoerde boot", "berging", "geborgen vondst");
-        assertFalse(json.contains("\"bronRol\""), "bronPad en bronRol sluiten elkaar uit (WF-102 (a))");
+        assertFalse(json.contains("\"sourceRole\""), "sourcePath en sourceRole sluiten elkaar uit (WF-102 (a))");
         assertFalse(json.contains("\"rol\": \"aangemelde vondst\""),
                 "de wire mag geen rolbinding dragen die de zin niet schrijft");
     }
@@ -333,8 +333,8 @@ class GenesteVouwbronTest {
     @Test
     void een_onoplosbare_keten_blijft_een_markering() {
         String json = ir(MODEL_B + GEMENGDE_KETENREGEL);
-        assertFalse(json.contains("\"bronPad\""), "een onoplosbare keten mag geen half pad op de wire zetten");
-        assertFalse(json.contains("\"bronRol\""), "een geneste keten mag geen bronRol op de wire zetten");
+        assertFalse(json.contains("\"sourcePath\""), "een onoplosbare keten mag geen half pad op de wire zetten");
+        assertFalse(json.contains("\"sourceRole\""), "een geneste keten mag geen sourceRole op de wire zetten");
         assertFalse(json.contains("\"kind\": \"MINIMUM\""), "de vouw mag niet geëmitteerd worden");
         assertTrue(json.contains("\"node\": \"Onopgelost\""), "de vouw moet een zichtbare markering worden");
     }
@@ -383,7 +383,7 @@ class GenesteVouwbronTest {
     /** The role-anchor question the acute flank left to this card, DECIDED (2026-09-11) and decided by the
      *  order ch. 4.1a already fixes rather than by a new test. "van de aanmelder" has ZERO far hits from the
      *  subject and the subject type fills a role of that name, so it denotes the SUBJECT: the range starts
-     *  there, it is one step, and the wire spelling is the unchanged {@code bronRol}. The outcome is
+     *  there, it is one step, and the wire spelling is the one-step {@code sourceRole}. The outcome is
      *  byte-identical to before the decision, which is the point — the decision moves no document. */
     @Test
     void een_zelfdenoterend_rolanker_blijft_een_eenstaps_binding() {
@@ -391,7 +391,7 @@ class GenesteVouwbronTest {
         String json = ir(MODEL_B + ROLANKERREGEL);
         assertTrue(json.contains("\"rol\": \"aangemelde vondst\""),
                 "een zelfdenoterend anker IS het onderwerp, dus de eenstaps-binding blijft staan");
-        assertFalse(json.contains("\"bronPad\""), "één relatie blijft één relatie: geen pad");
+        assertFalse(json.contains("\"sourcePath\""), "één relatie blijft één relatie: geen pad");
     }
 
     /** The other half of the same decision: a role REACHABLE FROM the subject denotes ANOTHER instance, so
@@ -436,13 +436,13 @@ class GenesteVouwbronTest {
     // ---------------- counter-proofs ----------------
 
     /** The one form this card must not touch: a correct one-step fold whose written name names the role the
-     *  fact type declares. It emits exactly as before, bronRol and all. */
+     *  fact type declares. It emits exactly as before, sourceRole and all. */
     @Test
     void een_correcte_eenstaps_vouw_blijft_ongewijzigd_emitteren() {
         assertEquals(List.of(), vouwbronDiagnoses(MODEL_B + CORRECTE_EENSTAPSREGEL));
         String json = ir(MODEL_B + CORRECTE_EENSTAPSREGEL);
         assertTrue(json.contains("\"kind\": \"MINIMUM\""), "de vouw moet gewoon geëmitteerd worden");
-        assertTrue(json.contains("\"rol\": \"aangemelde vondst\""), "de bronRol hoort op de wire");
+        assertTrue(json.contains("\"rol\": \"aangemelde vondst\""), "de sourceRole hoort op de wire");
         assertFalse(json.contains("\"node\": \"Onopgelost\""), "geen markering op een correcte vouw");
     }
 
@@ -516,11 +516,11 @@ class GenesteVouwbronTest {
                 "de wire moet de reden dragen, niet alleen een niveau");
     }
 
-    /** The emitted {@code bronPad}, step by step and in order: the pairs are given subject-outwards, and
+    /** The emitted {@code sourcePath}, step by step and in order: the pairs are given subject-outwards, and
      *  the assertion is on the ORDER because a range read backwards walks a different chain. */
     private static void assertBronPad(String json, String... feittypeEnRol) {
-        assertTrue(json.contains("\"bronPad\""), () -> "verwacht een bronPad op de wire:\n" + json);
-        int vanaf = json.indexOf("\"bronPad\"");
+        assertTrue(json.contains("\"sourcePath\""), () -> "verwacht een sourcePath op de wire:\n" + json);
+        int vanaf = json.indexOf("\"sourcePath\"");
         for (int i = 0; i < feittypeEnRol.length; i += 2) {
             String stap = "\"feittype\": \"" + feittypeEnRol[i] + "\"";
             String rolnaam = feittypeEnRol[i + 1];

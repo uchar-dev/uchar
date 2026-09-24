@@ -229,8 +229,8 @@ class AantalGevuldeDialectTest {
         Expr.Functie f = vouw(m);
         assertEquals(Expr.FunctieKind.AANTAL_GEVULDE, f.kind());
         String json = IrEmitter.emit(m);
-        assertTrue(json.contains("\"bronPad\""), "het meerstapsbereik gaat niet als bronPad de wire op:\n" + json);
-        assertFalse(json.contains("\"bronRol\""), "het bereik gaat als bronRol EN bronPad de wire op");
+        assertTrue(json.contains("\"sourcePath\""), "het meerstapsbereik gaat niet als sourcePath de wire op:\n" + json);
+        assertFalse(json.contains("\"sourceRole\""), "het bereik gaat als sourceRole EN sourcePath de wire op");
     }
 
     // ---------------- the maximal-munch risk, pinned ----------------

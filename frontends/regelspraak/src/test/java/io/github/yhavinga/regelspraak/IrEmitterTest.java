@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class IrEmitterTest {
 
-    /** The emitted v0 IR JSON with all whitespace removed — deterministic, so an exact
+    /** The emitted IR JSON with all whitespace removed — deterministic, so an exact
      *  compacted fragment pins the wire shape without depending on indentation. */
     private static String emitCompact(String src) {
         RegelSpraakModel m = Resolver.resolve(src);
@@ -36,7 +36,7 @@ class IrEmitterTest {
         return IrEmitter.emit(m).replaceAll("\\s+", "");
     }
 
-    /** The emitted v0 IR JSON UNTOUCHED. Only a witness about whitespace INSIDE a value may use this
+    /** The emitted IR JSON UNTOUCHED. Only a witness about whitespace INSIDE a value may use this
      *  — {@link #emitCompact} would erase the very difference it asserts. */
     private static String emitRaw(String src) {
         RegelSpraakModel m = Resolver.resolve(src);
@@ -98,7 +98,7 @@ class IrEmitterTest {
 
     @Test void scoperol_op_parent_scoped_uniciteit() {
         // "De X van alle Werknemer van de afdeling moeten uniek zijn": parent-scoped uniqueness;
-        // scopeRol names the scope-parent relation (the reference field made symbolic).
+        // the version's scope names the scope-parent relation (the reference field made symbolic).
         String src = """
             Objecttype de Werknemer
                 het personeelsnummer Numeriek (geheel getal);
@@ -113,14 +113,16 @@ class IrEmitterTest {
             """;
         String c = emitCompact(src);
         assertTrue(c.contains(
-                "\"scopeRol\":{\"node\":\"RolBinding\",\"feittype\":\"aanstelling\",\"rol\":\"afdeling\"}"),
-                () -> "scopeRol op de parent-scoped uniciteit ontbreekt:\n" + c);
+                "\"scope\":{\"node\":\"RolBinding\",\"feittype\":\"aanstelling\",\"rol\":\"afdeling\"}"),
+                () -> "de scope op de parent-scoped uniciteit ontbreekt:\n" + c);
     }
 
     @Test void feitcreatie_symbolisch_blok_is_heel_of_niet() {
-        // A §13.4.7 feitcreatie with one tussenstap: the whole symbolic block (created fact type,
-        // both ends, the final join) plus a RolBinding on the intermediate hop — and nothing beside
-        // them, since IR-SPEC ch. 3.4 leaves the storage fields to the backend's own role→field mapping.
+        // A §13.4.7 feitcreatie with one tussenstap: the whole symbolic block — the created fact type, both
+        // its roles, the anchor and the path from it, the intermediate hop and then the final one, each a
+        // RolBinding — and nothing beside it: IR-SPEC ch. 3.4 leaves the storage fields to the backend's own
+        // role→field mapping, and the target type is the declared filler of the target role, so it is not
+        // written either.
         String src = """
             Objecttype het Bedrijf
             Objecttype de Afdeling
@@ -142,19 +144,17 @@ class IrEmitterTest {
                     Een sponsorproject van een Bedrijf is een project van de afdeling van het bedrijf.
             """;
         String c = emitCompact(src);
-        assertTrue(c.contains("\"tussenstappen\":[{\"node\":\"Tussenstap\","
-                + "\"rolBinding\":{\"node\":\"RolBinding\",\"feittype\":\"onderdeel\",\"rol\":\"afdeling\"}}],"),
-                () -> "tussenstap-rolBinding ontbreekt, of staat naast bonenvelden:\n" + c);
-        assertTrue(c.contains("\"anker\":\"Bedrijf\",\"doel\":\"Project\",\"tussenstappen\":"),
-                () -> "de feitcreatie draagt geen bonenvelden naast anker en doel:\n" + c);
-        assertTrue(c.contains(
-                "\"feittype\":\"sponsoring\",\"ankerRol\":\"sponsorbedrijf\",\"doelRol\":\"sponsorproject\","
-                + "\"joinRol\":{\"node\":\"RolBinding\",\"feittype\":\"uitvoering\",\"rol\":\"project\"}"),
-                () -> "het symbolische feitcreatieblok ontbreekt of is onvolledig:\n" + c);
+        assertTrue(c.contains("{\"node\":\"FactCreation\",\"name\":\"sponsoring\",\"versions\":[{"
+                + "\"factType\":\"sponsoring\",\"anchorRole\":\"sponsorbedrijf\",\"targetRole\":\"sponsorproject\","
+                + "\"anchor\":\"Bedrijf\",\"path\":["
+                + "{\"node\":\"RolBinding\",\"feittype\":\"onderdeel\",\"rol\":\"afdeling\"},"
+                + "{\"node\":\"RolBinding\",\"feittype\":\"uitvoering\",\"rol\":\"project\"}],"
+                + "\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}]}"),
+                () -> "het symbolische feitcreatieblok ontbreekt, is onvolledig of draagt velden ernaast:\n" + c);
     }
 
     @Test void fold_bron_argument_draagt_geen_navigatiebindingen() {
-        // The fold's SOURCE argument routes through bronRol; even though its type (Persoon) differs
+        // The fold's SOURCE argument routes through its sourceRole; even though its type (Persoon) differs
         // from the fold's outer subject (Ploeg) — the by-pair shape — it must carry NO
         // navigatieBindingen (IR-SPEC ch. 4.1a; the uchar verifier rejects nav bindings in a fold slot).
         String src = """
@@ -172,8 +172,8 @@ class IrEmitterTest {
             """;
         String c = emitCompact(src);
         assertTrue(c.contains(
-                "\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"deelname\",\"rol\":\"deelnemer\"}"),
-                () -> "de fold moet zijn bronRol dragen:\n" + c);
+                "\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"deelname\",\"rol\":\"deelnemer\"}"),
+                () -> "de vouw moet haar sourceRole dragen:\n" + c);
         assertFalse(c.contains("navigatieBindingen"),
                 () -> "een fold-bron-argument mag GEEN navigatieBindingen dragen:\n" + c);
     }
@@ -198,17 +198,17 @@ class IrEmitterTest {
             """;
         String c = emitCompact(src);
         assertTrue(c.contains(
-                "\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"deelname\",\"rol\":\"deelnemer\"}"),
-                () -> "de fold moet zijn bronRol dragen:\n" + c);
+                "\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"deelname\",\"rol\":\"deelnemer\"}"),
+                () -> "de vouw moet haar sourceRole dragen:\n" + c);
         assertFalse(c.contains("navigatieBindingen"),
                 () -> "een element-eigen filter-lezing mag GEEN navigatieBindingen dragen:\n" + c);
     }
 
     @Test void unit_literal_lexeme_is_kaal_eenheid_in_type() {
-        // uchar WF-081 (IR-SPEC ch. 4.1): a numeric literal's waarde is the BARE number lexeme;
+        // uchar WF-081 (IR-SPEC ch. 4.1): a numeric literal's value is the BARE number;
         // the unit rides the literal's datatype ("unit"), exactly as attribute datatypes carry
-        // it. The source snippet ("5 €") stays in bron. The old form ("waarde":"5 €") is
-        // verifier-ill-formed and faults in both uchar executors.
+        // it. The source snippet ("5 €") stays in bron. A number carrying its unit ("5 €") is
+        // verifier-ill-formed and faults in every uchar executor.
         String src = """
             Eenheidsysteem Munt
                 de euro (mv: euros) EUR €
@@ -222,12 +222,12 @@ class IrEmitterTest {
         String c = emitCompact(src);
         // the emitter JSON-escapes non-ASCII, so the compacted € is the six-char escape \\u20ac
         assertTrue(c.contains(
-                "{\"node\":\"Literal\",\"waarde\":\"5\",\"type\":{\"node\":\"Number\",\"whole\":true,"
+                "{\"node\":\"Literal\",\"value\":{\"number\":\"5\"},\"type\":{\"node\":\"Number\",\"whole\":true,"
                 + "\"decimals\":0,\"sign\":\"ONBEPAALD\",\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"EUR\","
                 + "\"system\":\"Munt\",\"canonical\":\"EUR\",\"factorToCanonical\":{\"num\":1,\"den\":1}}},"
                 + "\"bron\":\"5\\u20ac\"}"),
                 () -> "de unit-literal moet een kaal lexeme dragen met de eenheid in het type:\n" + c);
-        assertFalse(c.contains("\"waarde\":\"5\\u20ac\""),
+        assertFalse(c.contains("\"number\":\"5\\u20ac\""),
                 () -> "de eenheid mag niet in het literal-lexeme zitten:\n" + c);
     }
 
@@ -322,7 +322,7 @@ class IrEmitterTest {
     }
 
     @Test void percentage_literal_lexeme_is_kaal() {
-        // Same WF-081 fence for the '%' suffix: "21%" emits waarde "21", its type a number with the unit '%'.
+        // Same WF-081 fence for the '%' suffix: "21%" emits the number "21", its type a number with the unit '%'.
         // The presentation tag belongs to the declaration and never to a type annotation (IR-SPEC ch. 2.4).
         String src = """
             Objecttype de Vondst
@@ -332,7 +332,7 @@ class IrEmitterTest {
                     Het heffingspercentage van een Vondst moet gesteld worden op 21%.
             """;
         String c = emitCompact(src);
-        assertTrue(c.contains("{\"node\":\"Literal\",\"waarde\":\"21\",\"type\":{\"node\":\"Number\",\"whole\":true,"
+        assertTrue(c.contains("{\"node\":\"Literal\",\"value\":{\"number\":\"21\"},\"type\":{\"node\":\"Number\",\"whole\":true,"
                 + "\"decimals\":0,\"sign\":\"ONBEPAALD\",\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"%\","
                 + "\"canonical\":\"%\",\"factorToCanonical\":{\"num\":1,\"den\":1}}},\"bron\":\"21%\"}"),
                 () -> "de percentage-literal moet een kaal lexeme dragen, als getal met de eenheid %, zonder tag:\n" + c);
@@ -341,16 +341,19 @@ class IrEmitterTest {
                 + "\"abbreviation\":\"%\",\"canonical\":\"%\",\"factorToCanonical\":{\"num\":1,\"den\":1}},"
                 + "\"presentation\":\"percentage\"}}"),
                 () -> "de declaratie draagt de presentatietag:\n" + c);
-        assertEquals(1, c.split("\"presentation\"", -1).length - 1,
+        // the rule version's own presentation is the dialect tag GELIJKSTELLING, a field of another node
+        assertEquals(1, c.split("\"presentation\":\"percentage\"", -1).length - 1,
                 () -> "de presentatietag staat alleen op de declaratie:\n" + c);
-        assertFalse(c.contains("\"waarde\":\"21%\""),
+        assertTrue(c.contains("\"initialisation\":false,\"presentation\":\"GELIJKSTELLING\"}"),
+                () -> "de regelversie draagt haar eigen presentatie:\n" + c);
+        assertFalse(c.contains("\"number\":\"21%\""),
                 () -> "het %-teken mag niet in het literal-lexeme zitten:\n" + c);
     }
 
     @Test void datum_literal_lexeme_is_iso_snippet_in_bron() {
-        // uchar WF-084 (IR-SPEC ch. 4.1): a date literal's waarde is the BARE ISO lexeme the uchar
+        // uchar WF-084 (IR-SPEC ch. 4.1): a date literal's value is the BARE ISO lexeme the uchar
         // executors parse (yyyy-mm-dd), NOT the Dutch day-first source snippet ("31-01-2024"). The
-        // old form ("waarde":"31-01-2024") was silently misread as year 31 (0036-07-16) by both
+        // day-first form ("31-01-2024") was silently misread as year 31 (0036-07-16) by both
         // executors — a differential-blind wrong answer. The source snippet stays in bron.
         String src = """
             Objecttype de Vondst
@@ -363,16 +366,16 @@ class IrEmitterTest {
             """;
         String c = emitCompact(src);
         assertTrue(c.contains(
-                "{\"node\":\"Literal\",\"waarde\":\"2024-01-31\",\"type\":{\"node\":\"Date\",\"precision\":\"day\"},"
-                + "\"bron\":\"31-01-2024\"}"),
+                "{\"node\":\"Literal\",\"value\":{\"date\":\"2024-01-31\"},\"type\":{\"node\":\"Date\","
+                + "\"precision\":\"day\"},\"bron\":\"31-01-2024\"}"),
                 () -> "de datum-literal moet het kale ISO-lexeme dragen, de bron-snippet in bron:\n" + c);
-        assertFalse(c.contains("\"waarde\":\"31-01-2024\""),
-                () -> "de day-first bron-snippet mag niet in het literal-lexeme zitten:\n" + c);
+        assertFalse(c.contains("\"date\":\"31-01-2024\""),
+                () -> "de day-first bron-snippet mag niet in de literalwaarde zitten:\n" + c);
     }
 
     @Test void datum_literal_dedato_prefix_wordt_iso_lexeme() {
         // The §13.2.19 "dd. " de-dato prefix (and the day-first order) belong to the source snippet,
-        // never to the parsed lexeme: "dd. 31-01-2024" emits waarde "2024-01-31", bron unchanged.
+        // never to the parsed lexeme: "dd. 31-01-2024" emits the date "2024-01-31", bron unchanged.
         String src = """
             Objecttype de Vondst
                 de vondstdag Datum in dagen;
@@ -383,16 +386,16 @@ class IrEmitterTest {
                     indien zijn vondstdag eerder is dan dd. 31-01-2024.
             """;
         String c = emitCompact(src);
-        assertTrue(c.contains("{\"node\":\"Literal\",\"waarde\":\"2024-01-31\",\"type\":{\"node\":\"Date\",\"precision\":\"day\"}"),
+        assertTrue(c.contains("{\"node\":\"Literal\",\"value\":{\"date\":\"2024-01-31\"},\"type\":{\"node\":\"Date\",\"precision\":\"day\"}"),
                 () -> "de de-dato-literal moet het kale ISO-lexeme dragen:\n" + c);
-        assertFalse(c.contains("\"waarde\":\"dd.31-01-2024\"") || c.contains("\"waarde\":\"31-01-2024\""),
-                () -> "de bron-snippet (prefix of day-first) mag niet in het literal-lexeme zitten:\n" + c);
+        assertFalse(c.contains("\"date\":\"dd.31-01-2024\"") || c.contains("\"date\":\"31-01-2024\""),
+                () -> "de bron-snippet (prefix of day-first) mag niet in de literalwaarde zitten:\n" + c);
     }
 
     @Test void datumtijd_literal_lexeme_is_iso_snippet_in_bron() {
-        // uchar WF-095 (IR-SPEC ch. 4.1, narrowed 2026-09-22): a datum-tijd literal's waarde is the
+        // uchar WF-095 (IR-SPEC ch. 4.1, narrowed 2026-09-22): a datum-tijd literal's value is the
         // canonical ISO lexeme yyyy-mm-ddThh:mm:ss.fff, the day-first source snippet stays in bron —
-        // the same split the date branch makes. The snippet in waarde is refused by the verifier,
+        // the same split the date branch makes. The snippet in the value is refused by the verifier,
         // so this is what keeps the emitter's own output on the wire. The "dd. " prefix belongs to
         // the snippet too.
         String src = """
@@ -407,12 +410,12 @@ class IrEmitterTest {
         // emitRaw, not emitCompact: the snippet's own space is part of what bron must keep.
         String c = emitRaw(src.formatted("15-03-2026 12:00:00.000"));
         java.util.regex.Pattern literal = java.util.regex.Pattern.compile(
-                "\\{\\s*\"node\"\\s*:\\s*\"Literal\",\\s*\"waarde\"\\s*:\\s*\"([^\"]*)\",\\s*"
+                "\\{\\s*\"node\"\\s*:\\s*\"Literal\",\\s*\"value\"\\s*:\\s*\\{\\s*\"dateTime\"\\s*:\\s*\"([^\"]*)\"\\s*\\},\\s*"
                 + "\"type\"\\s*:\\s*\\{\\s*\"node\"\\s*:\\s*\"Date\",\\s*\"precision\"\\s*:\\s*\"millisecond\"\\s*\\},"
                 + "\\s*\"bron\"\\s*:\\s*\"([^\"]*)\"");
         java.util.regex.Matcher m = literal.matcher(c);
         assertTrue(m.find(), () -> "geen datum-tijd-literal in de emissie:\n" + c);
-        assertEquals("2026-03-15T12:00:00.000", m.group(1), "waarde draagt het ISO-lexeme");
+        assertEquals("2026-03-15T12:00:00.000", m.group(1), "de waarde draagt het ISO-lexeme");
         assertEquals("15-03-2026 12:00:00.000", m.group(2), "bron draagt de bron-snippet, spatie inbegrepen");
         String d = emitRaw(src.formatted("dd. 5-3-2026 09:07:05.004"));
         java.util.regex.Matcher md = literal.matcher(d);
@@ -558,18 +561,18 @@ class IrEmitterTest {
     }
 
     @Test void tekst_literal_lexeme_is_de_geparste_waarde_snippet_in_bron() {
-        // uchar, maintainer decision 2026-09-18 (IR-SPEC ch. 4.1): a Tekst literal's waarde is the
+        // uchar, maintainer decision 2026-09-18 (IR-SPEC ch. 4.1): a Tekst literal's value is the
         // PARSED string — what stands BETWEEN the delimiters — not the source snippet with its own
-        // outer '"' still attached. The old form ("waarde":"\"Flevoland\"") gave v0 two lexeme
+        // outer '"' still attached. The delimited form ("\"Flevoland\"") gave v0 two lexeme
         // families for one text value, and since all four consumers compare Tekst verbatim, an
         // emitted golden only played when its case input carried the delimiters too. Third in the
         // bare-lexeme row beside WF-081 (number) and WF-084 (date); bron keeps the source snippet.
         String c = emitCompact(tekstBron("\"Flevoland\""));
         assertTrue(c.contains(
-                "{\"node\":\"Literal\",\"waarde\":\"Flevoland\",\"type\":{\"node\":\"Tekst\"},\"bron\":\"\\\"Flevoland\\\"\"}"),
+                "{\"node\":\"Literal\",\"value\":{\"text\":\"Flevoland\"},\"type\":{\"node\":\"Tekst\"},\"bron\":\"\\\"Flevoland\\\"\"}"),
                 () -> "de tekst-literal moet de geparste waarde dragen, de bron-snippet in bron:\n" + c);
-        assertFalse(c.contains("\"waarde\":\"\\\"Flevoland\\\"\""),
-                () -> "de buitenste aanhalingstekens mogen niet in het literal-lexeme zitten:\n" + c);
+        assertFalse(c.contains("\"text\":\"\\\"Flevoland\\\"\""),
+                () -> "de buitenste aanhalingstekens mogen niet in de literalwaarde zitten:\n" + c);
     }
 
     @Test void tekst_literal_grammatica_kent_geen_escape_dus_nooit_een_ingebed_aanhalingsteken() {
@@ -598,21 +601,21 @@ class IrEmitterTest {
         // backslash and a single quote are ordinary characters and stay as written; an empty string
         // stays empty (zero STRING_TEXT chunks, not a two-character lexeme).
         String raw = emitRaw(tekstBron("\"a  b\""));
-        assertTrue(raw.contains("\"waarde\": \"a  b\""),
+        assertTrue(raw.contains("\"text\": \"a  b\""),
                 () -> "de dubbele spatie binnen de delimiters hoort bij de waarde:\n" + raw);
         assertTrue(raw.contains("\"bron\": \"\\\"a b\\\"\""),
                 () -> "bron blijft de (whitespace-gevouwen) bronsnippet:\n" + raw);
 
         String backslash = emitCompact(tekstBron("\"pad\\naar\""));
-        assertTrue(backslash.contains("\"waarde\":\"pad\\\\naar\""),
+        assertTrue(backslash.contains("\"text\":\"pad\\\\naar\""),
                 () -> "een backslash is een gewoon teken, niet een escape-inleiding:\n" + backslash);
 
         String enkel = emitRaw(tekstBron("\"het 'merk'\""));
-        assertTrue(enkel.contains("\"waarde\": \"het 'merk'\""),
+        assertTrue(enkel.contains("\"text\": \"het 'merk'\""),
                 () -> "enkele aanhalingstekens zijn gewone tekens in een Tekst-literal:\n" + enkel);
 
         String leeg = emitCompact(tekstBron("\"\""));
-        assertTrue(leeg.contains("{\"node\":\"Literal\",\"waarde\":\"\",\"type\":{\"node\":\"Tekst\"},\"bron\":\"\\\"\\\"\"}"),
+        assertTrue(leeg.contains("{\"node\":\"Literal\",\"value\":{\"text\":\"\"},\"type\":{\"node\":\"Tekst\"},\"bron\":\"\\\"\\\"\"}"),
                 () -> "de lege tekst is leeg, niet twee aanhalingstekens:\n" + leeg);
     }
 
@@ -637,14 +640,14 @@ class IrEmitterTest {
      *  against the declared domain) typed with the domain the position names (WF-034 (r) refuses the
      *  unknown sentinel), the delimited source lexeme in bron. */
     private static final String GAAF_GETYPEERD =
-            "{\"node\":\"Literal\",\"waarde\":\"gaaf\","
+            "{\"node\":\"Literal\",\"value\":{\"enumeration\":\"gaaf\"},"
             + "\"type\":{\"node\":\"Enumeratie\",\"domein\":\"Keurklasse\",\"waarden\":[\"gaaf\",\"beschadigd\"]},"
             + "\"bron\":\"'gaaf'\"}";
 
     @Test void enum_literal_krijgt_zijn_domein_van_het_schrijfdoel() {
         // uchar V8 (spec/proposals/V1-WIREMIGRATIE.md, maintainer decision 2026-09-19): an
-        // enumeratiewaarde reaches the wire as the bare label typed with its domain. The old form
-        // ("waarde":"'gaaf'", type the unknown sentinel) is doubly ill-formed — WF-039 crosses the
+        // enumeratiewaarde reaches the wire as the bare label typed with its domain. The delimited form
+        // ("'gaaf'", type the unknown sentinel) is doubly ill-formed — WF-039 crosses the
         // label byte-exactly against the declared value list and WF-034 (r) refuses the sentinel —
         // so the frontend could not emit the construct at all and no bron.rgs golden carried one.
         // Derivation rule, first half: the domain comes from the WRITE TARGET, i.e. the declared
@@ -656,7 +659,7 @@ class IrEmitterTest {
             """));
         assertTrue(c.contains(GAAF_GETYPEERD),
                 () -> "het schrijfdoel moet het domein van de enumeratiewaarde leveren:\n" + c);
-        assertFalse(c.contains("\"waarde\":\"'gaaf'\""),
+        assertFalse(c.contains("\"enumeration\":\"'gaaf'\""),
                 () -> "de delimiters mogen niet in het literal-lexeme zitten:\n" + c);
     }
 
@@ -778,7 +781,7 @@ class IrEmitterTest {
                 geldig altijd
                     De kleur van een Jutter moet gesteld worden op 'licht  blauw'.
             """);
-        assertTrue(raw.contains("\"waarde\": \"licht  blauw\""),
+        assertTrue(raw.contains("\"enumeration\": \"licht  blauw\""),
                 () -> "het label moet dezelfde witruimte-run houden als de declaratie:\n" + raw);
         assertTrue(raw.contains("\"bron\": \"'licht  blauw'\""),
                 () -> "bron is de tokentekst, niet de gevouwen snippet:\n" + raw);
@@ -801,10 +804,10 @@ class IrEmitterTest {
         String c = emitCompact(src);
         int at = c.indexOf("\"kind\":\"TIJDSEVENREDIG_DEEL\"");
         assertTrue(at >= 0, () -> "de pro-rata-node ontbreekt:\n" + c);
-        // scope to the node's OWN type field: it sits between the node's dimensieSelectie
-        // (the first one after kind — argument refs and the Kenmerk filter carry none) and
+        // scope to the node's OWN type field: it sits between the node's granularity
+        // (the first one after kind — the argument refs and the Kenmerk filter carry none) and
         // its bron, so the base argument's type object cannot satisfy the assertion.
-        int from = c.indexOf("\"dimensieSelectie\"", at);
+        int from = c.indexOf("\"granularity\"", at);
         int to = c.indexOf("\"bron\"", from);
         assertTrue(from > at && to > from, () -> "de node-veldvolgorde is onverwacht:\n" + c);
         String ownType = c.substring(from, to);
@@ -816,7 +819,7 @@ class IrEmitterTest {
 
     @Test void bron_annotaties_op_de_draad_heel_of_niet() {
         // uchar WF-082 (IR-SPEC ch. 3.1): the // Bron: statuutannotaties above a rule ride the
-        // ResolvedRegel as the optional bronAnnotaties array (after geldigheid), in source order;
+        // Rule as the optional statuteAnnotations array (after its versions), in source order;
         // a rule WITHOUT annotations leaves no trace, and a blank annotation is dropped (an
         // empty or blank form is verifier-ill-formed — written whole or not at all).
         String src = """
@@ -840,9 +843,9 @@ class IrEmitterTest {
             """;
         String c = emitCompact(src);
         // emitCompact strips ALL whitespace, also inside string values.
-        assertTrue(c.contains("\"bronAnnotaties\":[\"art.3Jutterswet\",\"art.5Jutterswet\"]}"),
-                () -> "beide annotaties moeten in bronvolgorde na geldigheid staan:\n" + c);
-        assertEquals(c.indexOf("bronAnnotaties"), c.lastIndexOf("bronAnnotaties"),
+        assertTrue(c.contains("\"statuteAnnotations\":[\"art.3Jutterswet\",\"art.5Jutterswet\"]}"),
+                () -> "beide annotaties moeten in bronvolgorde na de versies staan:\n" + c);
+        assertEquals(c.indexOf("statuteAnnotations"), c.lastIndexOf("statuteAnnotations"),
                 () -> "alleen de geannoteerde regel draagt het veld (geen spoor bij afwezigheid, blanco vervalt):\n" + c);
     }
 
@@ -978,10 +981,10 @@ class IrEmitterTest {
                 geldig altijd
                     Een Wachtpost is bemand indien hij een wachtjutter heeft.
             """);
-        assertTrue(c.contains("\"voorwaarde\":{\"node\":\"RoleMembership\",\"factType\":\"wachtindeling\","
+        assertTrue(c.contains("\"condition\":{\"node\":\"RoleMembership\",\"factType\":\"wachtindeling\","
                         + "\"role\":\"wachtjutter\",\"negated\":false,\"bron\":\"hijeenwachtjutteris\"}"),
                 () -> "de rolcheck aan de nabije zijde:\n" + c);
-        assertTrue(c.contains("\"voorwaarde\":{\"node\":\"RoleMembership\",\"factType\":\"wachtindeling\","
+        assertTrue(c.contains("\"condition\":{\"node\":\"RoleMembership\",\"factType\":\"wachtindeling\","
                         + "\"role\":\"toegewezenwachtpost\",\"negated\":false,\"bron\":\"hijeenwachtjutterheeft\"}"),
                 () -> "de rolcheck aan de verre zijde noemt de rol die het onderwerp speelt:\n" + c);
     }

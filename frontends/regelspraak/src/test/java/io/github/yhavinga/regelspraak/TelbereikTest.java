@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * <ol>
  * <li><b>The element word may name a POPULATION.</b> Until 2026-09-16 it was looked up as the SINGULAR
  *     of an object type or as a role name, so a written plural denoting a declared type resolved to
- *     nothing: the fold went out with {@code elementObjecttype: null} and the uchar verifier refused the
+ *     nothing: the fold went out without its element type and the uchar verifier refused the
  *     document under WF-034. The population-plural lookup (ExpressieBouwer.aantalElement, the
  *     {@code typeViaMeervoud} fallback) closed that.
  * <li><b>No role is called that, so the range comes from the type pair.</b> Since L2 of the v1 wire
@@ -119,12 +119,12 @@ class TelbereikTest {
     // ---------------- the population name ----------------
 
     /** The arm this suite exists for: the count's element word is the object type's declared plural, and
-     *  it resolves. Before the population-plural lookup this emitted {@code "elementObjecttype": null}. */
+     *  it resolves. Before the population-plural lookup this emitted a count without its element type. */
     @Test
     void een_telling_op_een_typemeervoud_bindt_het_objecttype() {
         String c = ir(MODEL + TYPEMEERVOUD_REGEL);
         assertTrue(c.contains("\"kind\": \"AANTAL\""), () -> "de telling hoort geëmitteerd te worden:\n" + c);
-        assertTrue(c.contains("\"elementObjecttype\": \"Munt\""),
+        assertTrue(c.contains("\"elementType\": \"Munt\""),
                 () -> "het geschreven meervoud moet het objecttype binden:\n" + c);
     }
 
@@ -134,14 +134,14 @@ class TelbereikTest {
     @Test
     void een_telling_op_een_typemeervoud_draagt_het_bereik_van_het_typenpaar() {
         String c = ir(MODEL + TYPEMEERVOUD_REGEL);
-        assertTrue(c.contains("\"bronRol\""), () -> "een vouw over gekoppelde instanties draagt haar bereik:\n" + c);
+        assertTrue(c.contains("\"sourceRole\""), () -> "een vouw over gekoppelde instanties draagt haar bereik:\n" + c);
         assertTrue(c.contains("\"feittype\": \"muntvondst\""), () -> "het enige verbindende feittype:\n" + c);
         assertTrue(c.contains("\"rol\": \"gevonden munt\""), () -> "de binding noemt de gedeclareerde rol:\n" + c);
         assertTrue(c.contains("\"attribuut\": \"gevonden munt\""),
                 () -> "de telbron noemt de gebonden rol bij haar gedeclareerde naam:\n" + c);
         assertTrue(c.contains("\"bron\": \"Munten van de Jutter\""),
                 () -> "de geschreven spelling blijft in de bron:\n" + c);
-        assertFalse(c.contains("\"bronPad\""),
+        assertFalse(c.contains("\"sourcePath\""),
                 () -> "een eenstaps bereik is nooit een pad:\n" + c);
         assertFalse(c.contains("\"node\": \"Onopgelost\""),
                 () -> "de telling is opgelost:\n" + c);
@@ -153,7 +153,7 @@ class TelbereikTest {
     @Test
     void een_telling_op_de_geschreven_rolnaam_houdt_haar_bronrol() {
         String c = ir(MODEL + ROLNAAM_REGEL);
-        assertTrue(c.contains("\"bronRol\""), () -> "de geschreven rolnaam hoort te binden:\n" + c);
+        assertTrue(c.contains("\"sourceRole\""), () -> "de geschreven rolnaam hoort te binden:\n" + c);
         assertTrue(c.contains("\"feittype\": \"muntvondst\""), () -> "de binding noemt haar feittype:\n" + c);
         assertTrue(c.contains("\"rol\": \"gevonden munt\""), () -> "de binding noemt de gedeclareerde rol:\n" + c);
     }
@@ -161,7 +161,7 @@ class TelbereikTest {
     // ---------------- the ambiguous flank ----------------
 
     /** Two fact types between the same pair. The frontend does not guess one: there is no range to write,
-     *  so the model is refused. A {@code bronRol} here would be the silent wrong answer this arm exists to
+     *  so the model is refused. A {@code sourceRole} here would be the silent wrong answer this arm exists to
      *  avoid, and a fold without one would be read as a fold over something else. */
     @Test
     void de_meerduidige_telling_gokt_geen_relatie() {
@@ -183,7 +183,8 @@ class TelbereikTest {
     @Test
     void een_gedeeld_typemeervoud_bindt_geen_van_beide() {
         String c = irMetBronloosFout(GEDEELD_MEERVOUD_MODEL + TYPEMEERVOUD_REGEL);
-        assertTrue(c.contains("\"elementObjecttype\": null"),
+        assertTrue(c.contains("\"kind\": \"AANTAL\""), () -> "de telling hoort geëmitteerd te worden:\n" + c);
+        assertFalse(c.contains("\"elementType\""),
                 () -> "een gedeeld meervoud mag geen van beide types binden:\n" + c);
     }
 
@@ -193,7 +194,8 @@ class TelbereikTest {
     @Test
     void een_woord_dat_niets_benoemt_levert_geen_elementtype() {
         String c = irMetBronloosFout(MODEL + VREEMDE_REGEL);
-        assertTrue(c.contains("\"elementObjecttype\": null"),
+        assertTrue(c.contains("\"kind\": \"AANTAL\""), () -> "de telling hoort geëmitteerd te worden:\n" + c);
+        assertFalse(c.contains("\"elementType\""),
                 () -> "een onbekend elementwoord mag geen type binden:\n" + c);
     }
 
@@ -207,9 +209,9 @@ class TelbereikTest {
     @Test
     void een_woord_dat_ook_een_rolmeervoud_is_bindt_de_relatie() {
         String c = ir(BOTSEND_MEERVOUD_MODEL + TYPEMEERVOUD_REGEL);
-        assertTrue(c.contains("\"elementObjecttype\": \"Munt\""),
+        assertTrue(c.contains("\"elementType\": \"Munt\""),
                 () -> "beide lezingen bereiken Munt, dus het elementtype staat vast:\n" + c);
-        assertTrue(c.contains("\"bronRol\""),
+        assertTrue(c.contains("\"sourceRole\""),
                 () -> "een woord dat een rol NOEMT hoort die rol te binden:\n" + c);
         assertTrue(c.contains("\"rol\": \"munt\""),
                 () -> "de binding noemt de gedeclareerde rol:\n" + c);

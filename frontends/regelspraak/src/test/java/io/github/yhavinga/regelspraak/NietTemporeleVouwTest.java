@@ -91,10 +91,10 @@ class NietTemporeleVouwTest {
         return Emissie.zonderFouten(m).replaceAll("\\s+", "");
     }
 
-    /** The emitted voorwaarde of the single rule, compacted. */
+    /** The emitted condition of the single rule's version, compacted. */
     private static String voorwaarde(RegelSpraakModel m) {
         String c = emitCompact(m);
-        int van = c.indexOf("\"voorwaarde\":");
+        int van = c.indexOf("\"condition\":");
         assertTrue(van >= 0, () -> "geen voorwaarde in de emissie:\n" + c);
         return c.substring(van);
     }
@@ -121,7 +121,7 @@ class NietTemporeleVouwTest {
             assertTrue(m.diagnostics.isEmpty(),
                     () -> r.geschreven() + " — onverwachte diagnostiek: " + m.diagnostics);
             String v = voorwaarde(m);
-            assertTrue(v.startsWith("\"voorwaarde\":{\"node\":\"Kwantorvouw\",\"kwantor\":\""
+            assertTrue(v.startsWith("\"condition\":{\"node\":\"Kwantorvouw\",\"kwantor\":\""
                             + r.kwantor() + "\"," + r.drempel() + "\"elementObjecttype\":\"Strandwacht\","),
                     () -> r.geschreven() + " hoort de kwantor (en zijn telwoord) te dragen:\n" + v);
         }
@@ -146,7 +146,8 @@ class NietTemporeleVouwTest {
         assertTrue(v.contains("\"links\":{\"node\":\"AttribuutRef\",\"attribuut\":\"dienstjaren\","
                         + "\"objecttype\":\"Strandwacht\""),
                 () -> "de toets hoort het attribuut op het ELEMENTtype te lezen:\n" + v);
-        assertFalse(v.substring(v.indexOf("\"toets\":"), v.lastIndexOf("\"bronRol\":")).contains("\"bronRol\""),
+        String toets = v.substring(v.indexOf("\"toets\":"), v.lastIndexOf("\"bronRol\":"));
+        assertFalse(toets.contains("\"bronRol\"") || toets.contains("\"sourceRole\""),
                 () -> "na de verlaging hoort er geen vouw over gekoppelde instanties meer in de toets te staan:\n" + v);
         assertTrue(v.contains("\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"schouwindeling\","
                         + "\"rol\":\"wacht\"}"),
@@ -205,7 +206,7 @@ class NietTemporeleVouwTest {
         RegelSpraakModel m = resolveer(KENMERK.formatted("alle", "gediplomeerd zijn"));
         schoon(m);
         String v = voorwaarde(m);
-        assertTrue(v.startsWith("\"voorwaarde\":{\"node\":\"Kwantorvouw\",\"kwantor\":\"ALLE\","
+        assertTrue(v.startsWith("\"condition\":{\"node\":\"Kwantorvouw\",\"kwantor\":\"ALLE\","
                         + "\"elementObjecttype\":\"Strandwacht\",\"filter\":null,"),
                 () -> "de kenmerkvorm hoort een vouw over Strandwacht te worden:\n" + v);
         assertTrue(v.contains("\"toets\":{\"node\":\"Kenmerk\",\"kenmerk\":\"gediplomeerd\","
@@ -248,7 +249,7 @@ class NietTemporeleVouwTest {
             assertTrue(m.diagnostics.isEmpty(),
                     () -> r.geschreven() + " — onverwachte diagnostiek: " + m.diagnostics);
             String v = voorwaarde(m);
-            assertTrue(v.startsWith("\"voorwaarde\":{\"node\":\"Kwantorvouw\",\"kwantor\":\""
+            assertTrue(v.startsWith("\"condition\":{\"node\":\"Kwantorvouw\",\"kwantor\":\""
                             + r.kwantor() + "\"," + r.drempel() + "\"elementObjecttype\":\"Strandwacht\","),
                     () -> r.geschreven() + " hoort de kwantor (en zijn telwoord) te dragen:\n" + v);
         }

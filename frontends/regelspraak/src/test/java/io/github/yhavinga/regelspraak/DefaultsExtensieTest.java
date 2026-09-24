@@ -230,7 +230,7 @@ class DefaultsExtensieTest {
         }
         // the §9.5 conflict channel is only reachable via this form: distinct written values on one target
         String c = emitCompact(m);
-        assertTrue(c.contains("\"waarde\":\"30\"") && c.contains("\"waarde\":\"45\""),
+        assertTrue(c.contains("\"value\":{\"number\":\"30\"}") && c.contains("\"value\":{\"number\":\"45\"}"),
                 () -> "de twee defaultswaarden ontbreken:\n" + c);
     }
 

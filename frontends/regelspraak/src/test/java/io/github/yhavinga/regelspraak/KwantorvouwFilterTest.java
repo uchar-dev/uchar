@@ -73,10 +73,10 @@ class KwantorvouwFilterTest {
         return Emissie.zonderFouten(m).replaceAll("\\s+", "");
     }
 
-    /** The emitted voorwaarde of the single rule, compacted. */
+    /** The emitted condition of the single rule's version, compacted. */
     private static String voorwaarde(RegelSpraakModel m) {
         String c = emitCompact(m);
-        int van = c.indexOf("\"voorwaarde\":");
+        int van = c.indexOf("\"condition\":");
         assertTrue(van >= 0, () -> "geen voorwaarde in de emissie:\n" + c);
         return c.substring(van);
     }

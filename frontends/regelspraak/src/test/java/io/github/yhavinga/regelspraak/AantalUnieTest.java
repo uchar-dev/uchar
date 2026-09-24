@@ -278,7 +278,9 @@ class AantalUnieTest {
         String json = IrEmitter.emit(schoon(TWEE_RELATIES));
         assertTrue(json.contains("\"node\": \"InstanceSetUnion\""), () -> "geen unie op de wire:\n" + json);
         assertTrue(json.contains("\"node\": \"InstanceSetBranch\""), () -> "geen selectie op de wire:\n" + json);
-        assertTrue(json.contains("\"elementObjecttype\": null"),
+        // every selection names its element type, and the count over the union names none of its own
+        assertEquals(json.split("\"node\": \"InstanceSetBranch\"", -1).length - 1,
+                json.split("\"elementType\"", -1).length - 1,
                 () -> "de telling draagt nog een eigen elementtype:\n" + json);
         // the node denotes INSTANCES and carries no datatype: a "type" key on the union would be an
         // annotation nobody derives, and the verifier's type prologue exempts it for exactly that

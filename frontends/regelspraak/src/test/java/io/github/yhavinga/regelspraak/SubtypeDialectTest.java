@@ -376,7 +376,7 @@ class SubtypeDialectTest {
 
     // -------------------------------------------------------------------- de rolbinding-consequentie
 
-    @Test void een_subtype_dat_het_typepaar_dubbel_verbindt_houdt_zijn_bronRol() {
+    @Test void een_subtype_dat_het_typepaar_dubbel_verbindt_houdt_zijn_sourceRole() {
         // SUBTYPING §3.4 / IR-SPEC ch. 2.2: the pair's uniqueness (WF-048's, until L2) was computed over the
         // CHAIN-CLOSED type-pair set, so adding a subtype could turn a previously well-formed BINDINGLESS fold
         // into a loud refusal; since L2 the wire requires the binding. A role's declared filler is an UPPER
@@ -414,7 +414,7 @@ class SubtypeDialectTest {
         assertNull(m.verbindendeRolBinding(m.objecttypen.get("Kustgemeente"), m.objecttypen.get("Wrakrecht")),
                 "het typepaar hoort door het subtype dubbel verbonden te zijn");
         String c = emitCompact(m);
-        assertTrue(c.contains("\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"wrakberging\","
+        assertTrue(c.contains("\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"wrakberging\","
                         + "\"rol\":\"geborgenwrakrecht\"}"),
                 () -> "de vouwbron hoort op de GESCHREVEN rol te binden in plaats van bindingloos de wire op te "
                         + "gaan (de wire eist sinds L2 het bereik):\n" + c);
@@ -465,7 +465,7 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
-        assertTrue(c.contains("\"doelType\":\"Hoofdberger\",\"doelAttribuut\":\"bergingsaandeel\""),
+        assertTrue(c.contains("\"targetType\":\"Hoofdberger\",\"targetAttribute\":\"bergingsaandeel\""),
                 () -> "de verdeling hoort het GEDECLAREERDE enkelvoud van de voorouder op de wire te zetten:\n" + c);
         assertFalse(c.contains("bergingsaandelen\","),
                 () -> "de geschreven meervoudsvorm hoort nergens als lidnaam op de wire te staan:\n" + c);

@@ -90,7 +90,7 @@ class VariabeledeelLoweringTest {
         assertFalse(c.contains("\"node\":\"Let\""), () -> "geen Let verwacht om een voorwaarde-variabele:\n" + c);
         assertFalse(c.contains("\"node\":\"BinderRef\""), () -> "geen BinderRef buiten een Let:\n" + c);
         // the definition IS there — substituted into the condition's left operand.
-        assertTrue(c.contains("\"op\":\"GROTER\",\"links\":{\"node\":\"Literal\",\"waarde\":\"30\""),
+        assertTrue(c.contains("\"op\":\"GROTER\",\"links\":{\"node\":\"Literal\",\"value\":{\"number\":\"30\"}"),
                 () -> "de voorwaarde-substitutie ontbreekt:\n" + c);
     }
 
@@ -224,7 +224,7 @@ class VariabeledeelLoweringTest {
         // the filter SURVIVES as a comparison against the substituted literal …
         assertTrue(c.contains("\"filter\":{\"node\":\"Vergelijking\",\"op\":\"GROTER\""),
                 () -> "de subselectie mag niet degraderen tot een marker:\n" + c);
-        assertTrue(c.contains("\"rechts\":{\"node\":\"Literal\",\"waarde\":\"5\""),
+        assertTrue(c.contains("\"rechts\":{\"node\":\"Literal\",\"value\":{\"number\":\"5\"}"),
                 () -> "het rechterlid moet de gesubstitueerde definitie zijn:\n" + c);
         // … and precisely because it did, there is no read left to bind: no Let, no BinderRef.
         assertFalse(c.contains("\"node\":\"Let\""), () -> "geen Let om een enkel structuurgevoelig gebruik:\n" + c);
@@ -414,7 +414,7 @@ class VariabeledeelLoweringTest {
         String d = emitCompact(achteruit);
         assertTrue(d.contains("\"filter\":{\"node\":\"Vergelijking\",\"op\":\"GROTER\""),
                 () -> "een achterwaartse verwijzing zit WEL in het prefix:\n" + d);
-        assertTrue(d.contains("\"rechts\":{\"node\":\"Literal\",\"waarde\":\"5\""),
+        assertTrue(d.contains("\"rechts\":{\"node\":\"Literal\",\"value\":{\"number\":\"5\"}"),
                 () -> "het rechterlid is de gesubstitueerde eerdere definitie:\n" + d);
     }
 
@@ -447,7 +447,7 @@ class VariabeledeelLoweringTest {
         String c = emitCompact(src);
         assertEquals(0, tel(c, "\"node\":\"Let\""), () -> "geen Let: het enige gebruik zit onder de aggregatie:\n" + c);
         assertEquals(0, tel(c, "\"node\":\"BinderRef\""), () -> "geen BinderRef onder een aggregatie:\n" + c);
-        assertTrue(c.contains("\"leegwaarde\":{\"node\":\"Binair\",\"op\":\"PLUS\",\"links\":{\"node\":\"AttribuutRef\",\"attribuut\":\"bonusgrond\""),
+        assertTrue(c.contains("\"emptyFallback\":{\"node\":\"Binair\",\"op\":\"PLUS\",\"links\":{\"node\":\"AttribuutRef\",\"attribuut\":\"bonusgrond\""),
                 () -> "de leegwaarde draagt de gesubstitueerde definitie:\n" + c);
     }
 }
