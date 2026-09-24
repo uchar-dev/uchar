@@ -127,8 +127,9 @@
 # out:
 #   - SOORT: a soort lie is a different document — ref routes its ch. 1.2d empty-equality and
 #     its date arithmetic on the static soort, so twisting it would measure ref's routing, not
-#     a declaration reading. WF-091 crosses it in the verifier instead (at a binder read that was
-#     WF-078 until L2).
+#     a declaration reading. WF-091 crosses it in the verifier instead, at the derived positions
+#     that still carry an annotation. Until L2 WF-078 crossed it at a binder read; a BinderRef
+#     carries no type since then (B13), so there is nothing to cross there.
 #   - PRECISION: the ASP translator sizes its integer encoding off the annotation's decimals
 #     (value_scale in backends/clingo/lib/translate.ml), so a precision lie makes clingo
 #     overflow or refuse rather than answer — measured: 21 of 402 cases. And it would probe
