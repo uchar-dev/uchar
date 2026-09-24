@@ -12,55 +12,50 @@
             "node": "Attribute",
             "name": "kadegeld",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "liggertal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "wintertal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "keurtal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "vlaglengte",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           }
         ],
@@ -82,33 +77,30 @@
             "node": "Attribute",
             "name": "romplengte",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "ligprijs",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "vlagprijs",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           }
         ],
@@ -212,8 +204,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -243,11 +234,10 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": "het aantal liggers van de Haven",
           "granulariteit": null,
@@ -290,11 +280,10 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": "het aantal winterschuiten van de Haven",
           "granulariteit": null,
@@ -337,11 +326,10 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": "het aantal keurschuiten van de Haven",
           "granulariteit": null,
@@ -510,11 +498,10 @@
             "node": "Literal",
             "waarde": "30",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "30"
           },

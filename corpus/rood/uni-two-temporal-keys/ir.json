@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "vondstnummer",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -28,11 +27,10 @@
             "node": "Attribute",
             "name": "kavelnummer",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -50,8 +48,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [],

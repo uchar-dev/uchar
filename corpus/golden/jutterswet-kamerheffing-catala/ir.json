@@ -11,22 +11,20 @@
             "node": "Attribute",
             "name": "grondslag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "bedrag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -43,11 +41,10 @@
             "datatype": {
               "node": "ListType",
               "element": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               }
             }
           },
@@ -55,11 +52,10 @@
             "node": "Attribute",
             "name": "heffing",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -73,7 +69,6 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [],
-    "dagsoortPerEenheid": {},
     "functionDefs": [
       {
         "node": "FunctionDef",
@@ -82,20 +77,18 @@
           {
             "name": "grondslag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
         "result": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD"
         },
         "body": {
           "node": "Binair",
@@ -109,20 +102,18 @@
             "node": "Literal",
             "waarde": "100",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "100"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": null
         },
@@ -155,20 +146,18 @@
             "node": "Literal",
             "waarde": "100",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "100"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": null
         },
@@ -192,22 +181,20 @@
         "waarde": {
           "node": "Fold",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "list": {
             "node": "MapList",
             "type": {
               "node": "ListType",
               "element": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               }
             },
             "list": {
@@ -222,22 +209,20 @@
                 {
                   "name": "g",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   }
                 }
               ],
               "body": {
                 "node": "Invoke",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "function": "Kamerbedrag",
                 "arguments": [
@@ -259,21 +244,19 @@
               {
                 "name": "acc",
                 "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 }
               },
               {
                 "name": "b",
                 "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 }
               }
             ],
@@ -291,11 +274,10 @@
                 "bron": "b"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
               "bron": null
             },
@@ -305,11 +287,10 @@
             "node": "Literal",
             "waarde": "0",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "0"
           },

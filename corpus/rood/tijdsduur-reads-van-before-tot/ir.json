@@ -12,24 +12,21 @@
             "node": "Attribute",
             "name": "vertrek",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "vaartduur",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "dagen",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "dagen"
               }
             }
           }
@@ -43,8 +40,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -61,17 +57,13 @@
         "waarde": {
           "node": "Let",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "dagen",
-              "stelsel": null,
-              "canoniek": null,
-              "factorNaarCanoniek": null,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "dagen"
             }
           },
           "binder": "vertrekdatum",
@@ -89,7 +81,8 @@
                 "node": "Constante",
                 "naam": "Rekendatum",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "de rekendatum"
               },
@@ -104,17 +97,13 @@
             "filter": null,
             "dimensieSelectie": null,
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "dagen",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "dagen"
               }
             },
             "bron": "de tijdsduur van de rekendatum tot de vertrekdatum in hele dagen",

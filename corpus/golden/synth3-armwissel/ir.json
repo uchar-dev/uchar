@@ -12,33 +12,30 @@
             "node": "Attribute",
             "name": "inkomen",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "restpost",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "heffing",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -49,35 +46,30 @@
     "parameters": [
       {
         "node": "Parameter",
-        "naam": "drempel",
+        "name": "drempel",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "granulariteit": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "ONBEPAALD"
+        }
       },
       {
         "node": "Parameter",
-        "naam": "basisheffing",
+        "name": "basisheffing",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "granulariteit": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "ONBEPAALD"
+        }
       }
     ],
     "domains": [],
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -94,11 +86,10 @@
         "waarde": {
           "node": "Let",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "binder": "k",
           "value": {
@@ -110,11 +101,10 @@
           "body": {
             "node": "Let",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "binder": "z",
             "value": {
@@ -132,22 +122,20 @@
                 "bron": "zijn restpost"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": "de grondslag gedeeld door zijn restpost"
             },
             "body": {
               "node": "Let",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "binder": "w",
               "value": {
@@ -158,11 +146,10 @@
               "body": {
                 "node": "IfThenElse",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "condition": {
                   "node": "Vergelijking",
@@ -184,11 +171,10 @@
                   "node": "Literal",
                   "waarde": "0",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "0,00"
                 },

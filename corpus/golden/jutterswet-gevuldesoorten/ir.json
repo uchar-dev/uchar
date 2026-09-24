@@ -12,55 +12,50 @@
             "node": "Attribute",
             "name": "aantal aangemelde vondsten",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "aantal gevulde vindplaatsen",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "aantal gevulde vondstdagen",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "aantal gevulde kustvakken",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "aantal gevulde bergingsvlaggen",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           }
         ],
@@ -84,7 +79,8 @@
             "node": "Attribute",
             "name": "vondstdag",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "plural": "vondstdagen"
           },
@@ -153,8 +149,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -184,11 +179,10 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": "het aantal vondsten van de Jutter",
           "granulariteit": null,
@@ -231,11 +225,10 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": "het aantal gevulde waarden van de vindplaats van alle vondsten van de Jutter",
           "granulariteit": null,
@@ -278,11 +271,10 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": "het aantal gevulde waarden van de vondstdag van alle vondsten van de Jutter",
           "granulariteit": null,
@@ -325,11 +317,10 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": "het aantal gevulde waarden van het kustvak van alle vondsten van de Jutter",
           "granulariteit": null,
@@ -372,11 +363,10 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": "het aantal gevulde waarden van geborgen van alle vondsten van de Jutter",
           "granulariteit": null,

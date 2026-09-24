@@ -9,9 +9,11 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [
-      "schouwdag"
-    ],
-    "dagsoortPerEenheid": {}
+      {
+        "node": "DayKind",
+        "name": "schouwdag"
+      }
+    ]
   },
   "rules": {
     "resolvedRegels": [],
@@ -26,7 +28,8 @@
             "node": "Literal",
             "waarde": "2026-03-01",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "2026-03-01"
           },
@@ -34,7 +37,8 @@
             "node": "Literal",
             "waarde": "2026-10-01",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "2026-10-01"
           },

@@ -12,31 +12,29 @@
             "node": "Attribute",
             "name": "aankomst",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "vertrek",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "uurspanne",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": null,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "uur",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "uur"
               }
             }
           },
@@ -44,17 +42,13 @@
             "node": "Attribute",
             "name": "dagspanne",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": null,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "dagen",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "dagen"
               }
             }
           },
@@ -62,14 +56,16 @@
             "node": "Attribute",
             "name": "hersteltijd",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "ijkdatum",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           }
         ],
@@ -82,8 +78,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -119,17 +114,13 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": null,
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "uur",
-              "stelsel": null,
-              "canoniek": null,
-              "factorNaarCanoniek": null,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "uur"
             }
           },
           "bron": "de tijdsduur van zijn aankomst tot zijn vertrek in hele uren",
@@ -174,17 +165,13 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": null,
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "dagen",
-              "stelsel": null,
-              "canoniek": null,
-              "factorNaarCanoniek": null,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "dagen"
             }
           },
           "bron": "de tijdsduur van zijn aankomst tot zijn vertrek in hele dagen",
@@ -220,23 +207,20 @@
             "node": "Literal",
             "waarde": "26",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": null,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "uur",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "uur"
               }
             },
             "bron": "26 uur"
           },
           "type": {
-            "node": "DatumTijd"
+            "node": "Date",
+            "precision": "millisecond"
           },
           "bron": "zijn aankomst plus 26 uur"
         },
@@ -270,23 +254,20 @@
             "node": "Literal",
             "waarde": "1",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": null,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "maand",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "maand"
               }
             },
             "bron": "1 maand"
           },
           "type": {
-            "node": "DatumTijd"
+            "node": "Date",
+            "precision": "millisecond"
           },
           "bron": "zijn aankomst plus 1 maand"
         },

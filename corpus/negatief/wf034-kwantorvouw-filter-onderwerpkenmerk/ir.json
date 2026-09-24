@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "keurtal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -43,11 +42,10 @@
             "node": "Attribute",
             "name": "keurvergoeding",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -93,8 +91,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -141,11 +138,10 @@
               "node": "Literal",
               "waarde": "40",
               "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
               "bron": "40"
             },

@@ -12,31 +12,34 @@
             "node": "Attribute",
             "name": "meldingsdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "opleverdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "bergingsbestek",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "springtijdagen",
-                "stelsel": null,
-                "canoniek": "springtijdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "springtijdagen",
+                "canonical": "springtijdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -44,31 +47,34 @@
             "node": "Attribute",
             "name": "uiterste bergingsdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "vroegste meldingsdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "bergingsspanne",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "springtijdagen",
-                "stelsel": null,
-                "canoniek": "springtijdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "springtijdagen",
+                "canonical": "springtijdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -76,17 +82,18 @@
             "node": "Attribute",
             "name": "bergingsafstand",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "springtijdagen",
-                "stelsel": null,
-                "canoniek": "springtijdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "springtijdagen",
+                "canonical": "springtijdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -101,12 +108,12 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [
-      "springtijdag"
-    ],
-    "dagsoortPerEenheid": {
-      "springtijdag": "springtijdag",
-      "springtijdagen": "springtijdag"
-    }
+      {
+        "node": "DayKind",
+        "name": "springtijdag",
+        "plural": "springtijdagen"
+      }
+    ]
   },
   "rules": {
     "resolvedRegels": [
@@ -136,7 +143,8 @@
             "bron": "zijn bergingsbestek"
           },
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "zijn meldingsdatum plus zijn bergingsbestek"
         },
@@ -173,7 +181,8 @@
             "bron": "zijn bergingsbestek"
           },
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "zijn meldingsdatum min zijn bergingsbestek"
         },
@@ -216,17 +225,18 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "springtijdagen",
-              "stelsel": null,
-              "canoniek": "springtijdagen",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "springtijdagen",
+              "canonical": "springtijdagen",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
           },
           "bron": "de tijdsduur van zijn meldingsdatum tot zijn opleverdatum in hele springtijdagen",
@@ -271,17 +281,18 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "springtijdagen",
-              "stelsel": null,
-              "canoniek": "springtijdagen",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "springtijdagen",
+              "canonical": "springtijdagen",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
           },
           "bron": "de absolute tijdsduur van zijn opleverdatum tot zijn meldingsdatum in hele springtijdagen",
@@ -315,7 +326,8 @@
                     "node": "Constante",
                     "naam": "de dag",
                     "type": {
-                      "node": "DatumInDagen"
+                      "node": "Date",
+                      "precision": "day"
                     },
                     "bron": "de dag"
                   }
@@ -325,11 +337,10 @@
                 "filter": null,
                 "dimensieSelectie": null,
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "bron": "de dag uit de dag",
                 "granulariteit": null
@@ -338,11 +349,10 @@
                 "node": "Literal",
                 "waarde": "1",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "1"
               },
@@ -360,7 +370,8 @@
                     "node": "Constante",
                     "naam": "de dag",
                     "type": {
-                      "node": "DatumInDagen"
+                      "node": "Date",
+                      "precision": "day"
                     },
                     "bron": "de dag"
                   }
@@ -370,11 +381,10 @@
                 "filter": null,
                 "dimensieSelectie": null,
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "bron": "de dag uit de dag",
                 "granulariteit": null
@@ -383,11 +393,10 @@
                 "node": "Literal",
                 "waarde": "15",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "15"
               },

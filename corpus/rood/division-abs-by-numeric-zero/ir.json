@@ -12,99 +12,90 @@
             "node": "Attribute",
             "name": "opbrengst",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "partijen",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "stukprijs",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 5,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 5,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "zijde",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 1,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "oppervlakte",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "ribbe",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "inhoud",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "krimp",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "krimpmaat",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -117,8 +108,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -148,11 +138,10 @@
             "bron": "de partijen van de Kavel"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 5,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 5,
+            "sign": "ONBEPAALD"
           },
           "bron": "de opbrengst van de Kavel gedeeld door abs de partijen van de Kavel"
         },
@@ -186,20 +175,18 @@
             "node": "Literal",
             "waarde": "2",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             },
             "bron": "2"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": "de zijde van de Kavel tot de macht 2"
         },
@@ -233,20 +220,18 @@
             "node": "Literal",
             "waarde": "3",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             },
             "bron": "3"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": "de ribbe van de Kavel tot de macht 3"
         },
@@ -280,20 +265,18 @@
             "node": "Literal",
             "waarde": "3",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             },
             "bron": "3"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "de krimp van de Kavel tot de macht 3"
         },

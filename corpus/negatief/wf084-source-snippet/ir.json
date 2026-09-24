@@ -12,7 +12,8 @@
             "node": "Attribute",
             "name": "ijkdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           }
         ],
@@ -25,8 +26,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -44,7 +44,8 @@
           "node": "Literal",
           "waarde": "dd. 31-01-2024",
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "dd. 31-01-2024"
         },

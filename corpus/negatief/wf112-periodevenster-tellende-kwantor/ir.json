@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "premie",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -35,8 +34,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -54,11 +52,10 @@
           "node": "Literal",
           "waarde": "7",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "7"
         },
@@ -81,7 +78,8 @@
                 "node": "Literal",
                 "waarde": "2024-01-01",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "2024-01-01"
               },
@@ -89,7 +87,8 @@
                 "node": "Literal",
                 "waarde": "2025-01-01",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "2025-01-01"
               },

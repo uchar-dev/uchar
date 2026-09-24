@@ -11,33 +11,30 @@
             "node": "Attribute",
             "name": "vangst",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "kinderen",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "bedrag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -58,21 +55,19 @@
                 {
                   "name": "vangst",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   }
                 },
                 {
                   "name": "kinderen",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   }
                 }
               ]
@@ -82,22 +77,20 @@
             "node": "Attribute",
             "name": "kamerbedrag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "aftrek",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -120,21 +113,19 @@
                   {
                     "name": "vangst",
                     "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
                     }
                   },
                   {
                     "name": "kinderen",
                     "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
                     }
                   }
                 ]
@@ -145,44 +136,40 @@
             "node": "Attribute",
             "name": "totale_aftrek basis",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "totale_aftrek begrensd",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "heffing basis",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "heffing na_aftrek",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -227,11 +214,10 @@
             {
               "name": "Present",
               "payload": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               }
             }
           ]
@@ -246,21 +232,19 @@
             {
               "name": "vangst",
               "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               }
             },
             {
               "name": "kinderen",
               "datatype": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               }
             }
           ]
@@ -271,7 +255,6 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [],
-    "dagsoortPerEenheid": {},
     "functionDefs": [
       {
         "node": "FunctionDef",
@@ -280,39 +263,35 @@
           {
             "name": "vangst",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "name": "kinderen",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
         "result": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "ONBEPAALD"
         },
         "body": {
           "node": "IfThenElse",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "condition": {
             "node": "Vergelijking",
@@ -326,11 +305,10 @@
               "node": "Literal",
               "waarde": "2",
               "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
               "bron": "2"
             },
@@ -351,31 +329,28 @@
                 "node": "Literal",
                 "waarde": "0.1500",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 4,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 4,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "0.1500"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": null
             },
             "modus": "REKENKUNDIG",
             "decimalen": 2,
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "bron": null
           },
@@ -393,31 +368,28 @@
                 "node": "Literal",
                 "waarde": "0.2000",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 4,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 4,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "0.2000"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": null
             },
             "modus": "REKENKUNDIG",
             "decimalen": 2,
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "bron": null
           },
@@ -438,21 +410,19 @@
                 {
                   "name": "vangst",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   }
                 },
                 {
                   "name": "kinderen",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   }
                 }
               ]
@@ -460,31 +430,28 @@
           }
         ],
         "result": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "ONBEPAALD"
         },
         "body": {
           "node": "Invoke",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "function": "Vangstheffing",
           "arguments": [
             {
               "node": "FieldAccess",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "base": {
                 "node": "BinderRef",
@@ -497,11 +464,10 @@
             {
               "node": "FieldAccess",
               "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
               "base": {
                 "node": "BinderRef",
@@ -529,21 +495,19 @@
                 {
                   "name": "vangst",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   }
                 },
                 {
                   "name": "kinderen",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   }
                 }
               ]
@@ -551,11 +515,10 @@
           }
         ],
         "result": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "ONBEPAALD"
         },
         "body": {
           "node": "Afgerond",
@@ -566,11 +529,10 @@
               "node": "Literal",
               "waarde": "1000.00",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": "1000.00"
             },
@@ -581,11 +543,10 @@
                 "node": "Literal",
                 "waarde": "1.0000",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 4,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 4,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "1.0000"
               },
@@ -595,11 +556,10 @@
                 "links": {
                   "node": "FieldAccess",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   },
                   "base": {
                     "node": "BinderRef",
@@ -613,49 +573,44 @@
                   "node": "Literal",
                   "waarde": "4.0000",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 4,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 4,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "4.0000"
                 },
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 4,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 4,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": null
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 4,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 4,
+                "sign": "ONBEPAALD"
               },
               "bron": null
             },
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "bron": null
           },
           "modus": "REKENKUNDIG",
           "decimalen": 2,
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "bron": null
         },
@@ -684,11 +639,10 @@
               "node": "Literal",
               "waarde": "1000.00",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": "1000.00"
             },
@@ -699,11 +653,10 @@
                 "node": "Literal",
                 "waarde": "1.0000",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 4,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 4,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "1.0000"
               },
@@ -713,11 +666,10 @@
                 "links": {
                   "node": "FieldAccess",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   },
                   "base": {
                     "node": "AttribuutRef",
@@ -732,49 +684,44 @@
                   "node": "Literal",
                   "waarde": "4.0000",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 4,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 4,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "4.0000"
                 },
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 4,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 4,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": null
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 4,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 4,
+                "sign": "ONBEPAALD"
               },
               "bron": null
             },
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "bron": null
           },
           "modus": "REKENKUNDIG",
           "decimalen": 2,
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "bron": null
         },
@@ -828,11 +775,10 @@
         "waarde": {
           "node": "Match",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "scrutinee": {
             "node": "Fold",
@@ -847,11 +793,10 @@
                 {
                   "name": "Present",
                   "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   }
                 }
               ]
@@ -861,11 +806,10 @@
               "type": {
                 "node": "ListType",
                 "element": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 }
               },
               "list": {
@@ -886,21 +830,19 @@
                         {
                           "name": "vangst",
                           "datatype": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "ONBEPAALD"
                           }
                         },
                         {
                           "name": "kinderen",
                           "datatype": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "ONBEPAALD"
                           }
                         }
                       ]
@@ -910,11 +852,10 @@
                 "body": {
                   "node": "Invoke",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   },
                   "function": "JutterAandeel aftrek",
                   "arguments": [
@@ -946,11 +887,10 @@
                       {
                         "name": "Present",
                         "payload": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "ONBEPAALD"
                         }
                       }
                     ]
@@ -959,11 +899,10 @@
                 {
                   "name": "sum2",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   }
                 }
               ],
@@ -980,11 +919,10 @@
                     {
                       "name": "Present",
                       "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
                       }
                     }
                   ]
@@ -1011,11 +949,10 @@
                           {
                             "name": "Present",
                             "payload": {
-                              "node": "Numeriek",
-                              "geheel": false,
-                              "decimalen": 2,
-                              "teken": "ONBEPAALD",
-                              "eenheid": null
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "ONBEPAALD"
                             }
                           }
                         ]
@@ -1045,11 +982,10 @@
                           {
                             "name": "Present",
                             "payload": {
-                              "node": "Numeriek",
-                              "geheel": false,
-                              "decimalen": 2,
-                              "teken": "ONBEPAALD",
-                              "eenheid": null
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "ONBEPAALD"
                             }
                           }
                         ]
@@ -1069,11 +1005,10 @@
                           "bron": "sum2"
                         },
                         "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "ONBEPAALD"
                         },
                         "bron": null
                       },
@@ -1098,11 +1033,10 @@
                   {
                     "name": "Present",
                     "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
                     }
                   }
                 ]
@@ -1121,11 +1055,10 @@
                 "node": "Literal",
                 "waarde": "0.00",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "0.00"
               }
@@ -1162,33 +1095,30 @@
         "waarde": {
           "node": "Let",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "binder": "cap",
           "value": {
             "node": "Literal",
             "waarde": "500.00",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "bron": "500.00"
           },
           "body": {
             "node": "Let",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "binder": "raw",
             "value": {
@@ -1200,11 +1130,10 @@
             "body": {
               "node": "IfThenElse",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "condition": {
                 "node": "Vergelijking",
@@ -1258,11 +1187,10 @@
         "waarde": {
           "node": "Match",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "scrutinee": {
             "node": "Fold",
@@ -1277,11 +1205,10 @@
                 {
                   "name": "Present",
                   "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   }
                 }
               ]
@@ -1291,11 +1218,10 @@
               "type": {
                 "node": "ListType",
                 "element": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 }
               },
               "list": {
@@ -1316,21 +1242,19 @@
                         {
                           "name": "vangst",
                           "datatype": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "ONBEPAALD"
                           }
                         },
                         {
                           "name": "kinderen",
                           "datatype": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "ONBEPAALD"
                           }
                         }
                       ]
@@ -1340,11 +1264,10 @@
                 "body": {
                   "node": "Invoke",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   },
                   "function": "JutterAandeel kamerbedrag",
                   "arguments": [
@@ -1376,11 +1299,10 @@
                       {
                         "name": "Present",
                         "payload": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "ONBEPAALD"
                         }
                       }
                     ]
@@ -1389,11 +1311,10 @@
                 {
                   "name": "sum2",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   }
                 }
               ],
@@ -1410,11 +1331,10 @@
                     {
                       "name": "Present",
                       "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
                       }
                     }
                   ]
@@ -1441,11 +1361,10 @@
                           {
                             "name": "Present",
                             "payload": {
-                              "node": "Numeriek",
-                              "geheel": false,
-                              "decimalen": 2,
-                              "teken": "ONBEPAALD",
-                              "eenheid": null
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "ONBEPAALD"
                             }
                           }
                         ]
@@ -1475,11 +1394,10 @@
                           {
                             "name": "Present",
                             "payload": {
-                              "node": "Numeriek",
-                              "geheel": false,
-                              "decimalen": 2,
-                              "teken": "ONBEPAALD",
-                              "eenheid": null
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "ONBEPAALD"
                             }
                           }
                         ]
@@ -1499,11 +1417,10 @@
                           "bron": "sum2"
                         },
                         "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "ONBEPAALD"
                         },
                         "bron": null
                       },
@@ -1528,11 +1445,10 @@
                   {
                     "name": "Present",
                     "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
                     }
                   }
                 ]
@@ -1551,11 +1467,10 @@
                 "node": "Literal",
                 "waarde": "0.00",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "0.00"
               }
@@ -1592,11 +1507,10 @@
         "waarde": {
           "node": "Let",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "binder": "basis",
           "value": {
@@ -1608,11 +1522,10 @@
           "body": {
             "node": "Let",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "binder": "afgetrokken",
             "value": {
@@ -1624,11 +1537,10 @@
             "body": {
               "node": "IfThenElse",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "condition": {
                 "node": "Vergelijking",
@@ -1650,11 +1562,10 @@
                 "node": "Literal",
                 "waarde": "0.00",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "0.00"
               },
@@ -1672,11 +1583,10 @@
                   "bron": "afgetrokken"
                 },
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": null
               },
@@ -1708,11 +1618,10 @@
             "waarde": {
               "node": "FieldAccess",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "base": {
                 "node": "AttribuutRef",
@@ -1731,11 +1640,10 @@
             "waarde": {
               "node": "FieldAccess",
               "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
               "base": {
                 "node": "AttribuutRef",
@@ -1793,11 +1701,10 @@
                 "node": "Literal",
                 "waarde": "2",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "2"
               },
@@ -1819,31 +1726,28 @@
                   "node": "Literal",
                   "waarde": "0.1500",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 4,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 4,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "0.1500"
                 },
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": null
               },
               "modus": "REKENKUNDIG",
               "decimalen": 2,
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": null
             },
@@ -1874,31 +1778,28 @@
                   "node": "Literal",
                   "waarde": "0.2000",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 4,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 4,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "0.2000"
                 },
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": null
               },
               "modus": "REKENKUNDIG",
               "decimalen": 2,
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": null
             },

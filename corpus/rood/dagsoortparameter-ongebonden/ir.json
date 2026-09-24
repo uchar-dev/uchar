@@ -12,31 +12,34 @@
             "node": "Attribute",
             "name": "aanvraagdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "sluitdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "doorlooptijd",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "havendagen",
-                "stelsel": null,
-                "canoniek": "havendagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "havendagen",
+                "canonical": "havendagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -44,24 +47,26 @@
             "node": "Attribute",
             "name": "streefdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "havenspanne",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "havendagen",
-                "stelsel": null,
-                "canoniek": "havendagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "havendagen",
+                "canonical": "havendagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -73,11 +78,11 @@
     "parameters": [
       {
         "node": "Parameter",
-        "naam": "openingsdatum",
+        "name": "openingsdatum",
         "datatype": {
-          "node": "DatumInDagen"
-        },
-        "granulariteit": null
+          "node": "Date",
+          "precision": "day"
+        }
       }
     ],
     "domains": [],
@@ -85,12 +90,12 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [
-      "havendag"
-    ],
-    "dagsoortPerEenheid": {
-      "havendag": "havendag",
-      "havendagen": "havendag"
-    }
+      {
+        "node": "DayKind",
+        "name": "havendag",
+        "plural": "havendagen"
+      }
+    ]
   },
   "rules": {
     "resolvedRegels": [
@@ -120,7 +125,8 @@
             "bron": "zijn doorlooptijd"
           },
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "zijn aanvraagdatum plus zijn doorlooptijd"
         },
@@ -163,17 +169,18 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "havendagen",
-              "stelsel": null,
-              "canoniek": "havendagen",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "havendagen",
+              "canonical": "havendagen",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
           },
           "bron": "de tijdsduur van zijn aanvraagdatum tot zijn sluitdatum in hele havendagen",
@@ -203,7 +210,8 @@
                 "node": "Constante",
                 "naam": "de dag",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "de dag"
               },
@@ -226,7 +234,8 @@
                     "node": "Constante",
                     "naam": "de dag",
                     "type": {
-                      "node": "DatumInDagen"
+                      "node": "Date",
+                      "precision": "day"
                     },
                     "bron": "de dag"
                   }
@@ -236,11 +245,10 @@
                 "filter": null,
                 "dimensieSelectie": null,
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "bron": "de dag uit de dag",
                 "granulariteit": null
@@ -249,11 +257,10 @@
                 "node": "Literal",
                 "waarde": "1",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "1"
               },

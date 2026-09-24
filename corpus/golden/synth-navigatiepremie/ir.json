@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "tarief",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -32,44 +31,40 @@
             "node": "Attribute",
             "name": "lengte",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "premie",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "product",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "toeslag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -104,8 +99,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -126,11 +120,10 @@
             "node": "Literal",
             "waarde": "20",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "20"
           },
@@ -148,11 +141,10 @@
             ]
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "20% van het tarief van de werf van de Schuit"
         },
@@ -196,11 +188,10 @@
             ]
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "de lengte van de Schuit maal het tarief van de werf van de Schuit"
         },
@@ -228,11 +219,10 @@
             "node": "Literal",
             "waarde": "10",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "10"
           },
@@ -250,11 +240,10 @@
             ]
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "10% van het tarief van de werf van de Schuit"
         },
@@ -271,11 +260,10 @@
             "node": "Literal",
             "waarde": "5",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "5"
           },

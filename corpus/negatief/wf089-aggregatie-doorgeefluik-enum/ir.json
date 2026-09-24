@@ -24,11 +24,10 @@
             "node": "Attribute",
             "name": "tarief",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -109,8 +108,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -176,11 +174,10 @@
         "waarde": {
           "node": "Match",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "scrutinee": {
             "node": "AttribuutRef",
@@ -196,11 +193,10 @@
                 "node": "Literal",
                 "waarde": "1",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "1"
               }
@@ -212,11 +208,10 @@
                 "node": "Literal",
                 "waarde": "2",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "2"
               }
@@ -228,11 +223,10 @@
                 "node": "Literal",
                 "waarde": "3",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "3"
               }

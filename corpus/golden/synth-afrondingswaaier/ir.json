@@ -12,88 +12,80 @@
             "node": "Attribute",
             "name": "opbrengst",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "kavels",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "prijsBenedenaf",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "prijsBovenaf",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "prijsRekenkundig",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "prijsNaarNul",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "prijsVanNul",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "prijsFijn",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 1,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -106,8 +98,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -139,22 +130,20 @@
               "bron": "de kavels van de Veilingronde"
             },
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
           },
           "modus": "NAAR_BENEDEN",
           "decimalen": 0,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar beneden afgerond op 0 decimalen"
         },
@@ -193,22 +182,20 @@
               "bron": "de kavels van de Veilingronde"
             },
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
           },
           "modus": "NAAR_BOVEN",
           "decimalen": 0,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar boven afgerond op 0 decimalen"
         },
@@ -247,22 +234,20 @@
               "bron": "de kavels van de Veilingronde"
             },
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
           },
           "modus": "REKENKUNDIG",
           "decimalen": 0,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 0 decimalen"
         },
@@ -301,22 +286,20 @@
               "bron": "de kavels van de Veilingronde"
             },
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
           },
           "modus": "RICHTING_NUL",
           "decimalen": 0,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde richting nul afgerond op 0 decimalen"
         },
@@ -355,22 +338,20 @@
               "bron": "de kavels van de Veilingronde"
             },
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
           },
           "modus": "WEG_VAN_NUL",
           "decimalen": 0,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde weg van nul afgerond op 0 decimalen"
         },
@@ -409,22 +390,20 @@
               "bron": "de kavels van de Veilingronde"
             },
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
           },
           "modus": "REKENKUNDIG",
           "decimalen": 1,
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 1,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 1,
+            "sign": "ONBEPAALD"
           },
           "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 1 decimaal"
         },

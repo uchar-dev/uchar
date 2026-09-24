@@ -12,31 +12,34 @@
             "node": "Attribute",
             "name": "meldingsdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "opleverdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "bergingsbestek",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "springtijdagen",
-                "stelsel": null,
-                "canoniek": "springtijdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "springtijdagen",
+                "canonical": "springtijdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -44,31 +47,34 @@
             "node": "Attribute",
             "name": "uiterste bergingsdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "vroegste meldingsdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "bergingsspanne",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "springtijdagen",
-                "stelsel": null,
-                "canoniek": "springtijdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "springtijdagen",
+                "canonical": "springtijdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -76,17 +82,18 @@
             "node": "Attribute",
             "name": "bergingsafstand",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "springtijdagen",
-                "stelsel": null,
-                "canoniek": "springtijdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "springtijdagen",
+                "canonical": "springtijdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -101,13 +108,16 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [
-      "springtijdag",
-      "ankerdag"
-    ],
-    "dagsoortPerEenheid": {
-      "springtijdag": "springtijdag",
-      "springtijdagen": "springtijdag"
-    }
+      {
+        "node": "DayKind",
+        "name": "springtijdag",
+        "plural": "springtijdagen"
+      },
+      {
+        "node": "DayKind",
+        "name": "ankerdag"
+      }
+    ]
   },
   "rules": {
     "resolvedRegels": [
@@ -137,7 +147,8 @@
             "bron": "zijn bergingsbestek"
           },
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "zijn meldingsdatum plus zijn bergingsbestek"
         },
@@ -160,7 +171,8 @@
             "node": "Literal",
             "waarde": "2026-03-15",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "15-03-2026"
           },
@@ -190,7 +202,8 @@
                 "node": "Constante",
                 "naam": "de dag",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "de dag"
               }
@@ -200,11 +213,10 @@
             "filter": null,
             "dimensieSelectie": null,
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "de dag_uit uit de dag",
             "granulariteit": null
@@ -213,11 +225,10 @@
             "node": "Literal",
             "waarde": "15",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "15"
           },

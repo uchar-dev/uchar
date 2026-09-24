@@ -12,44 +12,40 @@
             "node": "Attribute",
             "name": "bergingsgrondslag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "aantal geborgen wrakken",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "bergingstoeslag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "bergingsforfait",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -62,8 +58,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [],
@@ -100,11 +95,10 @@
                 "node": "Literal",
                 "waarde": "2",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "2"
               },
@@ -114,11 +108,10 @@
             "consequentie": {
               "node": "Let",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "binder": "bergingsgrond",
               "value": {
@@ -139,20 +132,18 @@
                   "node": "Literal",
                   "waarde": "100.00",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "100.00"
                 },
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "de bergingsgrond plus 100,00"
               },
@@ -174,11 +165,10 @@
               "node": "Literal",
               "waarde": "0.00",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": "0.00"
             },
@@ -212,11 +202,10 @@
             "consequentie": {
               "node": "Let",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "binder": "bergingsgrond",
               "value": {
@@ -229,11 +218,10 @@
                 "node": "Literal",
                 "waarde": "42.00",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "42,00"
               },
@@ -255,11 +243,10 @@
               "node": "Literal",
               "waarde": "0.00",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": "0.00"
             },

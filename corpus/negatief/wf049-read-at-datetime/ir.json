@@ -12,18 +12,18 @@
             "node": "Attribute",
             "name": "aanmelddatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "jaarquotum",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -35,29 +35,28 @@
             "node": "Attribute",
             "name": "quotum bij aanmelding",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "penning bij aanmelding",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "aanmeldmoment",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           }
         ],
@@ -68,23 +67,25 @@
     "parameters": [
       {
         "node": "Parameter",
-        "naam": "penningbedrag",
+        "name": "penningbedrag",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD"
         },
-        "granulariteit": "JAAR"
+        "timeline": {
+          "node": "TimelineFacet",
+          "granularity": "JAAR",
+          "count": 1
+        }
       }
     ],
     "domains": [],
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -113,11 +114,10 @@
             "bron": "zijn aanmeldmoment"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "zijn jaarquotum op zijn aanmelddatum"
         },

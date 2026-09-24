@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "jaarforfait",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -28,11 +27,10 @@
             "node": "Attribute",
             "name": "ligdeel",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -44,11 +42,10 @@
             "node": "Attribute",
             "name": "staffelbasis",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -60,11 +57,10 @@
             "node": "Attribute",
             "name": "heffingdeel",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -76,11 +72,10 @@
             "node": "Attribute",
             "name": "seizoenbasis",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -92,11 +87,10 @@
             "node": "Attribute",
             "name": "toeslagdeel",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -108,11 +102,10 @@
             "node": "Attribute",
             "name": "lengte",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -136,8 +129,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -174,11 +166,10 @@
           },
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "bron": "het tijdsevenredig deel per maand van haar jaarforfait gedurende de tijd dat zij bezet is",
           "granulariteit": "MAAND"
@@ -223,11 +214,10 @@
           },
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "het tijdsevenredig deel per maand van haar staffelbasis gedurende de tijd dat zij bezet is",
           "granulariteit": "MAAND"
@@ -272,11 +262,10 @@
           },
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "bron": "het tijdsevenredig deel per maand van haar seizoenbasis gedurende de tijd dat zij bezet is",
           "granulariteit": "MAAND"
@@ -294,11 +283,10 @@
             "node": "Literal",
             "waarde": "15",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "15"
           },

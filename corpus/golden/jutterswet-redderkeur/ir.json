@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "redderstal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -53,22 +52,20 @@
             "node": "Attribute",
             "name": "dienstjaren",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "conditie",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -109,8 +106,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -155,11 +151,10 @@
                   "node": "Literal",
                   "waarde": "5",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "5"
                 },
@@ -231,11 +226,10 @@
                   "node": "Literal",
                   "waarde": "7",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "7"
                 },
@@ -268,11 +262,10 @@
                       "node": "Literal",
                       "waarde": "2",
                       "type": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
                       },
                       "bron": "2"
                     },
@@ -339,11 +332,10 @@
                   "node": "Literal",
                   "waarde": "5",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "5"
                 },
@@ -423,11 +415,10 @@
                   "node": "Literal",
                   "waarde": "7",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "7"
                 },
@@ -447,11 +438,10 @@
                   "node": "Literal",
                   "waarde": "5",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "5"
                 },
@@ -500,11 +490,10 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": "het aantal redders van de Reddingspost",
           "granulariteit": null,

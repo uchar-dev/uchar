@@ -12,28 +12,32 @@
             "node": "Attribute",
             "name": "ochtendhoogwater",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "avondhoogwater",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "eerstehoogwater",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "laatstehoogwater",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           }
         ],
@@ -46,8 +50,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -83,7 +86,8 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "DatumTijd"
+            "node": "Date",
+            "precision": "millisecond"
           },
           "bron": "de eerste van zijn ochtendhoogwater en zijn avondhoogwater",
           "granulariteit": null
@@ -127,7 +131,8 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "DatumTijd"
+            "node": "Date",
+            "precision": "millisecond"
           },
           "bron": "de laatste van zijn ochtendhoogwater en zijn avondhoogwater",
           "granulariteit": null

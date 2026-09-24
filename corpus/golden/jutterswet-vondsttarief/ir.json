@@ -12,34 +12,40 @@
             "node": "Attribute",
             "name": "vondsttarief",
             "datatype": {
-              "node": "Percentage",
-              "geheel": true,
-              "decimalen": 0,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "%",
-                "stelsel": null,
-                "canoniek": "%",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              },
+              "presentation": "percentage"
             }
           },
           {
             "node": "Attribute",
             "name": "bergingstarief",
             "datatype": {
-              "node": "Percentage",
-              "geheel": true,
-              "decimalen": 0,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "%",
-                "stelsel": null,
-                "canoniek": "%",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              },
+              "presentation": "percentage"
             }
           }
         ],
@@ -58,8 +64,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -77,16 +82,18 @@
           "node": "Literal",
           "waarde": "21",
           "type": {
-            "node": "Percentage",
-            "geheel": true,
-            "decimalen": 0,
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "%",
-              "stelsel": null,
-              "canoniek": "%",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "%",
+              "canonical": "%",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
           },
           "bron": "21%"
@@ -129,16 +136,18 @@
             "node": "Literal",
             "waarde": "21",
             "type": {
-              "node": "Percentage",
-              "geheel": true,
-              "decimalen": 0,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "%",
-                "stelsel": null,
-                "canoniek": "%",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             },
             "bron": "21%"

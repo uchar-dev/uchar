@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "grondslag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
@@ -29,11 +28,10 @@
                 {
                   "name": "Vast",
                   "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "NIET_NEGATIEF"
                   }
                 },
                 {
@@ -47,11 +45,10 @@
             "node": "Attribute",
             "name": "beslag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -70,11 +67,10 @@
             {
               "name": "Vast",
               "payload": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
               }
             },
             {
@@ -88,8 +84,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -106,11 +101,10 @@
         "waarde": {
           "node": "Let",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "binder": "g",
           "value": {
@@ -122,11 +116,10 @@
           "body": {
             "node": "Match",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "scrutinee": {
               "node": "AttribuutRef",
@@ -152,11 +145,10 @@
                     "bron": "het vaste bedrag"
                   },
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "de grondslag plus het vaste bedrag"
                 }
@@ -178,31 +170,28 @@
                       "node": "Literal",
                       "waarde": "0.10",
                       "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
                       },
                       "bron": "0.10"
                     },
                     "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 4,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 4,
+                      "sign": "ONBEPAALD"
                     },
                     "bron": "de grondslag maal 0.10"
                   },
                   "modus": "REKENKUNDIG",
                   "decimalen": 2,
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "de grondslag maal 0.10 rekenkundig afgerond op 2 decimalen"
                 }

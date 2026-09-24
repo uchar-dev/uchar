@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "aantal aangemelde vondsten",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           }
         ],
@@ -40,8 +39,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [],
@@ -90,11 +88,10 @@
                     "node": "Literal",
                     "waarde": "6",
                     "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
                     },
                     "bron": "6"
                   },
@@ -122,11 +119,10 @@
                 "node": "Literal",
                 "waarde": "12",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "bron": "12"
               },

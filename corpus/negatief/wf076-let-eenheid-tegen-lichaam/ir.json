@@ -12,17 +12,19 @@
             "node": "Attribute",
             "name": "gewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -30,17 +32,19 @@
             "node": "Attribute",
             "name": "kopie",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -53,33 +57,35 @@
     "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "Gewicht",
-        "eenheden": {
-          "kg": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Gewicht",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "kg",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
           },
-          "t": {
-            "node": "Eenheid",
-            "afkorting": "t",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1000,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "t",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1000,
+              "den": 1
+            }
           }
-        },
-        "aliassen": {}
+        ]
       }
     ],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -96,17 +102,19 @@
         "waarde": {
           "node": "Let",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "t",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1000,
-              "noemer": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "NIET_NEGATIEF",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "t",
+              "system": "Gewicht",
+              "canonical": "kg",
+              "factorToCanonical": {
+                "num": 1000,
+                "den": 1
+              }
             }
           },
           "binder": "b",

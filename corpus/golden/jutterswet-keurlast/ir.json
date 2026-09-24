@@ -12,17 +12,19 @@
             "node": "Attribute",
             "name": "keurlast",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -39,23 +41,28 @@
             "node": "Attribute",
             "name": "keurtarief",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": {
-                  "node": "Eenheid",
-                  "afkorting": "mnd",
-                  "stelsel": "Keurtijd",
-                  "canoniek": "mnd",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                },
+                "denominator": {
+                  "node": "Unit",
+                  "abbreviation": "mnd",
+                  "system": "Keurtijd",
+                  "canonical": "mnd",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
               }
             },
@@ -103,74 +110,49 @@
     "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "Munt",
-        "eenheden": {
-          "EUR": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "\u20ac": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
           }
-        },
-        "aliassen": {
-          "euro": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "euros": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
+        ]
       },
       {
-        "node": "Eenheidstelsel",
-        "naam": "Keurtijd",
-        "eenheden": {
-          "mnd": {
-            "node": "Eenheid",
-            "afkorting": "mnd",
-            "stelsel": "Keurtijd",
-            "canoniek": "mnd",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Keurtijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "mnd",
+            "system": "Keurtijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "maand"
+            ]
           }
-        },
-        "aliassen": {
-          "maand": {
-            "node": "Eenheid",
-            "afkorting": "mnd",
-            "stelsel": "Keurtijd",
-            "canoniek": "mnd",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
+        ]
       }
     ],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -207,17 +189,19 @@
           },
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "EUR",
+              "system": "Munt",
+              "canonical": "EUR",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
           },
           "bron": "het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn",

@@ -12,17 +12,19 @@
             "node": "Attribute",
             "name": "basisbedrag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -30,28 +32,29 @@
             "node": "Attribute",
             "name": "stuktal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "stukprijs",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -59,17 +62,19 @@
             "node": "Attribute",
             "name": "opbrengst",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -82,50 +87,30 @@
     "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "Munt",
-        "eenheden": {
-          "EUR": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "\u20ac": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
           }
-        },
-        "aliassen": {
-          "euro": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "euros": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
+        ]
       }
     ],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -164,33 +149,37 @@
               "bron": "de stukprijs van de Vondst"
             },
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             },
             "bron": "het stuktal van de Vondst maal de stukprijs van de Vondst"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "EUR",
+              "system": "Munt",
+              "canonical": "EUR",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
           },
           "bron": "het basisbedrag van de Vondst plus het stuktal van de Vondst maal de stukprijs van de Vondst"

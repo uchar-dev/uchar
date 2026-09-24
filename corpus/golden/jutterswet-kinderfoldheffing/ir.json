@@ -12,22 +12,20 @@
             "node": "Attribute",
             "name": "heffing",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "puntentotaal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -38,38 +36,33 @@
     "parameters": [
       {
         "node": "Parameter",
-        "naam": "grondslag",
+        "name": "grondslag",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "granulariteit": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "NIET_NEGATIEF"
+        }
       },
       {
         "node": "Parameter",
-        "naam": "kindertallen",
+        "name": "kindertallen",
         "datatype": {
           "node": "ListType",
           "element": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF"
           }
-        },
-        "granulariteit": null
+        }
       }
     ],
     "domains": [],
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -86,11 +79,10 @@
         "waarde": {
           "node": "Fold",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "list": {
             "node": "ParameterRef",
@@ -103,21 +95,19 @@
               {
                 "name": "acc",
                 "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 }
               },
               {
                 "name": "x",
                 "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 }
               }
             ],
@@ -146,11 +136,10 @@
                       "node": "Literal",
                       "waarde": "1.0000",
                       "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 4,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 4,
+                        "sign": "ONBEPAALD"
                       },
                       "bron": "1,0000"
                     },
@@ -166,58 +155,52 @@
                         "node": "Literal",
                         "waarde": "2.0000",
                         "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 4,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 4,
+                          "sign": "ONBEPAALD"
                         },
                         "bron": "2,0000"
                       },
                       "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 4,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 4,
+                        "sign": "ONBEPAALD"
                       },
                       "bron": "het kindertal gedeeld door 2,0000"
                     },
                     "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 4,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 4,
+                      "sign": "ONBEPAALD"
                     },
                     "bron": "1,0000 plus het kindertal gedeeld door 2,0000"
                   },
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 6,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 6,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "de grondslag maal de wegingsfactor"
                 },
                 "modus": "REKENKUNDIG",
                 "decimalen": 2,
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "de grondslag maal de wegingsfactor rekenkundig afgerond op 2 decimalen"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": "de opgetelde heffing plus het kinddeel"
             },
@@ -227,11 +210,10 @@
             "node": "Literal",
             "waarde": "0.00",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "bron": "0.00"
           },
@@ -257,11 +239,10 @@
         "waarde": {
           "node": "Fold",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "list": {
             "node": "ParameterRef",
@@ -274,21 +255,19 @@
               {
                 "name": "acc",
                 "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 }
               },
               {
                 "name": "x",
                 "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 }
               }
             ],
@@ -312,29 +291,26 @@
                   "node": "Literal",
                   "waarde": "2",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "2"
                 },
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "het kindertal maal 2"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
               "bron": "het opgetelde punt plus het kindpunt"
             },
@@ -344,11 +320,10 @@
             "node": "Literal",
             "waarde": "0",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "0"
           },

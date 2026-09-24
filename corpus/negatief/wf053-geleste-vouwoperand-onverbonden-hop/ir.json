@@ -12,17 +12,19 @@
             "node": "Attribute",
             "name": "ijkloon",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -39,17 +41,19 @@
             "node": "Attribute",
             "name": "meldloon",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -57,17 +61,19 @@
             "node": "Attribute",
             "name": "sluitsom",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -84,17 +90,19 @@
             "node": "Attribute",
             "name": "bakenloon",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -129,50 +137,30 @@
     "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "Munt",
-        "eenheden": {
-          "EUR": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "\u20ac": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
           }
-        },
-        "aliassen": {
-          "euro": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "euros": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
+        ]
       }
     ],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -208,17 +196,19 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "EUR",
+              "system": "Munt",
+              "canonical": "EUR",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
           },
           "bron": "het maximum van haar meldloon en het bakenloon van het Baken",

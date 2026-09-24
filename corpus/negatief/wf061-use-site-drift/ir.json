@@ -18,11 +18,10 @@
                 {
                   "name": "Toegekend",
                   "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "NIET_NEGATIEF"
                   }
                 },
                 {
@@ -52,11 +51,10 @@
             {
               "name": "Toegekend",
               "payload": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
               }
             },
             {
@@ -74,8 +72,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [],

@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "aantal aangemelde vondsten",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           }
         ],
@@ -58,9 +57,11 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [
-      "feestdag"
-    ],
-    "dagsoortPerEenheid": {}
+      {
+        "node": "DayKind",
+        "name": "feestdag"
+      }
+    ]
   },
   "rules": {
     "resolvedRegels": [],

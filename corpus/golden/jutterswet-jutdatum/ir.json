@@ -12,14 +12,16 @@
             "node": "Attribute",
             "name": "vondstdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "keurdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           }
         ],
@@ -48,8 +50,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -84,7 +85,8 @@
             "node": "Literal",
             "waarde": "2026-06-21",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "21-06-2026"
           },
@@ -128,7 +130,8 @@
             "node": "Literal",
             "waarde": "2026-06-21",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "21-06-2026"
           },
@@ -172,7 +175,8 @@
             "node": "Literal",
             "waarde": "2026-06-01",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "01-06-2026"
           },

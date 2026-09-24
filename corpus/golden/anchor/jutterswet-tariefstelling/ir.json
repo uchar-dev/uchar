@@ -12,55 +12,50 @@
             "node": "Attribute",
             "name": "inkomen",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "kindertal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "aanslag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "factor",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 4,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "gewogen",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -73,8 +68,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -91,11 +85,10 @@
         "waarde": {
           "node": "Let",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "binder": "ink",
           "value": {
@@ -107,11 +100,10 @@
           "body": {
             "node": "Let",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "binder": "aftrek",
             "value": {
@@ -127,31 +119,28 @@
                 "node": "Literal",
                 "waarde": "250.00",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "250,00"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": "het kindertal van de Jutter maal 250,00"
             },
             "body": {
               "node": "Let",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "binder": "belasting",
               "value": {
@@ -168,42 +157,38 @@
                     "node": "Literal",
                     "waarde": "0.2100",
                     "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 4,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 4,
+                      "sign": "ONBEPAALD"
                     },
                     "bron": "0,2100"
                   },
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 6,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 6,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "ink maal 0,2100"
                 },
                 "modus": "REKENKUNDIG",
                 "decimalen": 2,
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "ink maal 0,2100 rekenkundig afgerond op 2 decimalen"
               },
               "body": {
                 "node": "IfThenElse",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "condition": {
                   "node": "Vergelijking",
@@ -225,11 +210,10 @@
                   "node": "Literal",
                   "waarde": "0.00",
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "0,00"
                 },
@@ -247,11 +231,10 @@
                     "bron": "aftrek"
                   },
                   "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   },
                   "bron": "belasting min aftrek"
                 },
@@ -287,11 +270,10 @@
             "node": "Literal",
             "waarde": "1.0000",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 4,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "ONBEPAALD"
             },
             "bron": "1,0000"
           },
@@ -308,29 +290,26 @@
               "node": "Literal",
               "waarde": "2.0000",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 4,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 4,
+                "sign": "ONBEPAALD"
               },
               "bron": "2,0000"
             },
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 4,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "ONBEPAALD"
             },
             "bron": "het kindertal van de Jutter gedeeld door 2,0000"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 4,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 4,
+            "sign": "ONBEPAALD"
           },
           "bron": "1,0000 plus het kindertal van de Jutter gedeeld door 2,0000"
         },
@@ -356,11 +335,10 @@
           "basis": {
             "node": "Let",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 6,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 6,
+              "sign": "ONBEPAALD"
             },
             "binder": "ink2",
             "value": {
@@ -384,11 +362,10 @@
                 "bron": "de factor van de Jutter"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 6,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 6,
+                "sign": "ONBEPAALD"
               },
               "bron": "ink2 maal de factor van de Jutter"
             },
@@ -397,11 +374,10 @@
           "modus": "REKENKUNDIG",
           "decimalen": 2,
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "bron": "ink2 maal de factor van de Jutter rekenkundig afgerond op 2 decimalen"
         },

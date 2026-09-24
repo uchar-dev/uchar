@@ -12,17 +12,19 @@
             "node": "Attribute",
             "name": "brutogewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -30,17 +32,19 @@
             "node": "Attribute",
             "name": "geborgen gewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -48,17 +52,19 @@
             "node": "Attribute",
             "name": "aangegeven gewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -76,11 +82,10 @@
             "node": "Attribute",
             "name": "jaartal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           }
         ],
@@ -92,66 +97,43 @@
     "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "Gewicht",
-        "eenheden": {
-          "kg": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Gewicht",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "kg",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "kilogram",
+              "kilogrammen"
+            ]
           },
-          "t": {
-            "node": "Eenheid",
-            "afkorting": "t",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1000,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "t",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1000,
+              "den": 1
+            },
+            "spellings": [
+              "ton",
+              "tonnen"
+            ]
           }
-        },
-        "aliassen": {
-          "kilogram": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "kilogrammen": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "ton": {
-            "node": "Eenheid",
-            "afkorting": "t",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1000,
-            "noemer": null
-          },
-          "tonnen": {
-            "node": "Eenheid",
-            "afkorting": "t",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1000,
-            "noemer": null
-          }
-        }
+        ]
       }
     ],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -178,33 +160,37 @@
             "node": "Literal",
             "waarde": "1",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "t",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1000,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "t",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1000,
+                  "den": 1
+                }
               }
             },
             "bron": "1 t"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "kg",
+              "system": "Gewicht",
+              "canonical": "kg",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
           },
           "bron": "het brutogewicht van de Vondst plus 1 t"
@@ -239,33 +225,37 @@
             "node": "Literal",
             "waarde": "1",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "t",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1000,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "t",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1000,
+                  "den": 1
+                }
               }
             },
             "bron": "1 t"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "kg",
+              "system": "Gewicht",
+              "canonical": "kg",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
           },
           "bron": "het brutogewicht van de Munt plus 1 t"

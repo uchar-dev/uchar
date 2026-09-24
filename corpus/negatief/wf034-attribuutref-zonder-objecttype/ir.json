@@ -12,17 +12,19 @@
             "node": "Attribute",
             "name": "aangevoerd gewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -30,17 +32,19 @@
             "node": "Attribute",
             "name": "aanvoerwaarde",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -48,17 +52,19 @@
             "node": "Attribute",
             "name": "aanvoergeld",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -76,122 +82,92 @@
     "parameters": [
       {
         "node": "Parameter",
-        "naam": "aanvoerdrempel",
+        "name": "aanvoerdrempel",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "NIET_NEGATIEF",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "kg",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
           }
-        },
-        "granulariteit": null
+        }
       },
       {
         "node": "Parameter",
-        "naam": "aanvoertarief",
+        "name": "aanvoertarief",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "ONBEPAALD",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
           }
-        },
-        "granulariteit": null
+        }
       }
     ],
     "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "Gewicht",
-        "eenheden": {
-          "kg": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Gewicht",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "kg",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "kilogram",
+              "kilogrammen"
+            ]
           }
-        },
-        "aliassen": {
-          "kilogram": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "kilogrammen": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
+        ]
       },
       {
-        "node": "Eenheidstelsel",
-        "naam": "Munt",
-        "eenheden": {
-          "EUR": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "\u20ac": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
           }
-        },
-        "aliassen": {
-          "euro": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "euros": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
+        ]
       }
     ],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -261,17 +237,19 @@
             "bron": "het aanvoertarief"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "EUR",
+              "system": "Munt",
+              "canonical": "EUR",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
           },
           "bron": "zijn aanvoerwaarde plus het aanvoertarief"

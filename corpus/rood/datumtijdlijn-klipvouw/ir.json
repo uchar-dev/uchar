@@ -12,7 +12,8 @@
             "node": "Attribute",
             "name": "wachtvergoeding per maand",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -45,7 +46,8 @@
             "node": "Attribute",
             "name": "wachtsom",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           }
         ],
@@ -58,8 +60,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -96,7 +97,8 @@
           },
           "dimensieSelectie": null,
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is",
           "granulariteit": null

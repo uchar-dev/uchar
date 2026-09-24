@@ -12,39 +12,39 @@
             "node": "Attribute",
             "name": "vrachttal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "spoedtal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "eenheidsloon",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -52,17 +52,19 @@
             "node": "Attribute",
             "name": "lichterloon",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -75,50 +77,30 @@
     "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "Munt",
-        "eenheden": {
-          "EUR": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "\u20ac": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
           }
-        },
-        "aliassen": {
-          "euro": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "euros": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
+        ]
       }
     ],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -135,17 +117,19 @@
         "waarde": {
           "node": "Let",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "EUR",
+              "system": "Munt",
+              "canonical": "EUR",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
           },
           "binder": "grondloon",
@@ -165,17 +149,19 @@
               "bron": "het eenheidsloon van de Lichterbeurt"
             },
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             },
             "bron": "het vrachttal van de Lichterbeurt maal het eenheidsloon van de Lichterbeurt"
@@ -203,33 +189,37 @@
                 "bron": "het spoedtal van de Lichterbeurt"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "EUR",
-                  "stelsel": "Munt",
-                  "canoniek": "EUR",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
               },
               "bron": "het grondloon maal het spoedtal van de Lichterbeurt"
             },
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             },
             "bron": "het grondloon plus het grondloon maal het spoedtal van de Lichterbeurt"

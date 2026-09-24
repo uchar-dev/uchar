@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "loodstal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -53,11 +52,10 @@
             "node": "Attribute",
             "name": "ervaring",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -90,23 +88,20 @@
     "parameters": [
       {
         "node": "Parameter",
-        "naam": "keurgrens",
+        "name": "keurgrens",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "granulariteit": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "NIET_NEGATIEF"
+        }
       }
     ],
     "domains": [],
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -349,11 +344,10 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": "het aantal loodsen van de Loodspost",
           "granulariteit": null,

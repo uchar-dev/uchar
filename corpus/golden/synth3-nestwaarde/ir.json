@@ -12,33 +12,30 @@
             "node": "Attribute",
             "name": "stuks",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "prijs",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "opslag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
@@ -57,21 +54,19 @@
                       {
                         "name": "stuks",
                         "datatype": {
-                          "node": "Numeriek",
-                          "geheel": true,
-                          "decimalen": 0,
-                          "teken": "NIET_NEGATIEF",
-                          "eenheid": null
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "NIET_NEGATIEF"
                         }
                       },
                       {
                         "name": "prijs",
                         "datatype": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "NIET_NEGATIEF",
-                          "eenheid": null
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "NIET_NEGATIEF"
                         }
                       }
                     ]
@@ -80,11 +75,10 @@
                 {
                   "name": "opslag",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "NIET_NEGATIEF"
                   }
                 }
               ]
@@ -94,22 +88,20 @@
             "node": "Attribute",
             "name": "kernprijs",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "totaal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -128,21 +120,19 @@
             {
               "name": "stuks",
               "datatype": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
               }
             },
             {
               "name": "prijs",
               "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
               }
             }
           ]
@@ -163,21 +153,19 @@
                   {
                     "name": "stuks",
                     "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
                     }
                   },
                   {
                     "name": "prijs",
                     "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
                     }
                   }
                 ]
@@ -186,11 +174,10 @@
             {
               "name": "opslag",
               "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
               }
             }
           ]
@@ -200,8 +187,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -230,21 +216,19 @@
                     {
                       "name": "stuks",
                       "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "NIET_NEGATIEF"
                       }
                     },
                     {
                       "name": "prijs",
                       "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
                       }
                     }
                   ]
@@ -253,11 +237,10 @@
               {
                 "name": "opslag",
                 "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "NIET_NEGATIEF"
                 }
               }
             ]
@@ -274,21 +257,19 @@
                     {
                       "name": "stuks",
                       "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "NIET_NEGATIEF"
                       }
                     },
                     {
                       "name": "prijs",
                       "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
                       }
                     }
                   ]
@@ -348,11 +329,10 @@
         "waarde": {
           "node": "FieldAccess",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "NIET_NEGATIEF"
           },
           "base": {
             "node": "FieldAccess",
@@ -363,21 +343,19 @@
                 {
                   "name": "stuks",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "NIET_NEGATIEF"
                   }
                 },
                 {
                   "name": "prijs",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "NIET_NEGATIEF"
                   }
                 }
               ]
@@ -417,11 +395,10 @@
           "links": {
             "node": "FieldAccess",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             },
             "base": {
               "node": "FieldAccess",
@@ -432,21 +409,19 @@
                   {
                     "name": "stuks",
                     "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
                     }
                   },
                   {
                     "name": "prijs",
                     "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
                     }
                   }
                 ]
@@ -466,11 +441,10 @@
           "rechts": {
             "node": "FieldAccess",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             },
             "base": {
               "node": "AttribuutRef",
@@ -482,11 +456,10 @@
             "bron": "de opslag van zijn pakket"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "bron": "de kernprijs plus de opslag"
         },

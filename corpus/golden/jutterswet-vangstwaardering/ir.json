@@ -12,33 +12,30 @@
             "node": "Attribute",
             "name": "grondbedrag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "stuks",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "toeslagbedrag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
@@ -51,11 +48,10 @@
                 {
                   "name": "toeslag",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "NIET_NEGATIEF"
                   }
                 },
                 {
@@ -67,21 +63,19 @@
                       {
                         "name": "eenheden",
                         "datatype": {
-                          "node": "Numeriek",
-                          "geheel": true,
-                          "decimalen": 0,
-                          "teken": "NIET_NEGATIEF",
-                          "eenheid": null
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "NIET_NEGATIEF"
                         }
                       },
                       {
                         "name": "grondslag",
                         "datatype": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "NIET_NEGATIEF",
-                          "eenheid": null
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "NIET_NEGATIEF"
                         }
                       }
                     ]
@@ -94,22 +88,20 @@
             "node": "Attribute",
             "name": "heffing",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "grondslagkopie",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             }
           }
         ],
@@ -128,21 +120,19 @@
             {
               "name": "eenheden",
               "datatype": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
               }
             },
             {
               "name": "grondslag",
               "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
               }
             }
           ]
@@ -157,11 +147,10 @@
             {
               "name": "toeslag",
               "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
               }
             },
             {
@@ -173,21 +162,19 @@
                   {
                     "name": "eenheden",
                     "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
                     }
                   },
                   {
                     "name": "grondslag",
                     "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
                     }
                   }
                 ]
@@ -200,8 +187,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -224,11 +210,10 @@
               {
                 "name": "toeslag",
                 "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "NIET_NEGATIEF"
                 }
               },
               {
@@ -240,21 +225,19 @@
                     {
                       "name": "eenheden",
                       "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "NIET_NEGATIEF"
                       }
                     },
                     {
                       "name": "grondslag",
                       "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
                       }
                     }
                   ]
@@ -283,21 +266,19 @@
                     {
                       "name": "eenheden",
                       "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "NIET_NEGATIEF"
                       }
                     },
                     {
                       "name": "grondslag",
                       "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
                       }
                     }
                   ]
@@ -347,11 +328,10 @@
           "links": {
             "node": "FieldAccess",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             },
             "base": {
               "node": "FieldAccess",
@@ -362,21 +342,19 @@
                   {
                     "name": "eenheden",
                     "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
                     }
                   },
                   {
                     "name": "grondslag",
                     "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
                     }
                   }
                 ]
@@ -396,11 +374,10 @@
           "rechts": {
             "node": "FieldAccess",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF"
             },
             "base": {
               "node": "AttribuutRef",
@@ -412,11 +389,10 @@
             "bron": null
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": null
         },
@@ -436,11 +412,10 @@
         "waarde": {
           "node": "FieldAccess",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "NIET_NEGATIEF"
           },
           "base": {
             "node": "FieldAccess",
@@ -451,21 +426,19 @@
                 {
                   "name": "eenheden",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "NIET_NEGATIEF"
                   }
                 },
                 {
                   "name": "grondslag",
                   "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "NIET_NEGATIEF"
                   }
                 }
               ]

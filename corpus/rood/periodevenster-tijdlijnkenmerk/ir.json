@@ -28,8 +28,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -57,7 +56,8 @@
             "node": "Literal",
             "waarde": "2024-01-01",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "2024-01-01"
           },
@@ -65,7 +65,8 @@
             "node": "Literal",
             "waarde": "2025-01-01",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "2025-01-01"
           },

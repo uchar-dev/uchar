@@ -12,22 +12,20 @@
             "node": "Attribute",
             "name": "korting",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "grondslag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -61,8 +59,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [],
@@ -107,20 +104,18 @@
                 "node": "Literal",
                 "waarde": "90.00",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "90.00"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": "de grondslag plus 90.00"
             },
@@ -155,20 +150,18 @@
                           "node": "Literal",
                           "waarde": "20.00",
                           "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "ONBEPAALD"
                           },
                           "bron": "20.00"
                         },
                         "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "ONBEPAALD"
                         },
                         "bron": "de grondslag plus 20.00"
                       },
@@ -204,20 +197,18 @@
                           "node": "Literal",
                           "waarde": "35.00",
                           "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "ONBEPAALD"
                           },
                           "bron": "35.00"
                         },
                         "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "ONBEPAALD"
                         },
                         "bron": "de grondslag plus 35.00"
                       },
@@ -256,20 +247,18 @@
                             "node": "Literal",
                             "waarde": "15.00",
                             "type": {
-                              "node": "Numeriek",
-                              "geheel": false,
-                              "decimalen": 2,
-                              "teken": "ONBEPAALD",
-                              "eenheid": null
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "ONBEPAALD"
                             },
                             "bron": "15.00"
                           },
                           "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "ONBEPAALD"
                           },
                           "bron": "de grondslag plus 15.00"
                         },
@@ -277,20 +266,18 @@
                           "node": "Literal",
                           "waarde": "5.00",
                           "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "ONBEPAALD"
                           },
                           "bron": "5.00"
                         },
                         "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "ONBEPAALD"
                         },
                         "bron": "die som plus 5.00"
                       },
@@ -310,11 +297,10 @@
               "node": "Literal",
               "waarde": "5.00",
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": "5.00"
             },

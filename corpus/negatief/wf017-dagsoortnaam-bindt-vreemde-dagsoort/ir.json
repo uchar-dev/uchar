@@ -9,14 +9,17 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [
-      "schouwdag",
-      "schouwdagen"
-    ],
-    "dagsoortPerEenheid": {
-      "schouwdag": "schouwdag",
-      "schouwdagen": "schouwdag",
-      "schouwdagens": "schouwdagen"
-    }
+      {
+        "node": "DayKind",
+        "name": "schouwdag",
+        "plural": "schouwdagen"
+      },
+      {
+        "node": "DayKind",
+        "name": "schouwdagen",
+        "plural": "schouwdagens"
+      }
+    ]
   },
   "rules": {
     "resolvedRegels": [],
@@ -31,7 +34,8 @@
             "node": "Constante",
             "naam": "de dag",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "de dag"
           },
@@ -39,7 +43,8 @@
             "node": "Literal",
             "waarde": "2026-02-28",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "28-02-2026"
           },
@@ -62,7 +67,8 @@
             "node": "Constante",
             "naam": "de dag",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "de dag"
           },
@@ -70,7 +76,8 @@
             "node": "Literal",
             "waarde": "2026-09-30",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "30-09-2026"
           },

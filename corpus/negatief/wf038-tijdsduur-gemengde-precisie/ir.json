@@ -12,31 +12,29 @@
             "node": "Attribute",
             "name": "geboortedatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "stempelmoment",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "jutleeftijd",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": null,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "jr",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "jr"
               }
             }
           }
@@ -50,8 +48,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -87,17 +84,13 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": null,
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "jr",
-              "stelsel": null,
-              "canoniek": null,
-              "factorNaarCanoniek": null,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "jr"
             }
           },
           "bron": "de tijdsduur van zijn geboortedatum tot zijn stempelmoment in hele jaren",

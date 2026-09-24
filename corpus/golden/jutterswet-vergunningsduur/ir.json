@@ -12,17 +12,19 @@
             "node": "Attribute",
             "name": "basisduur",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "maand",
-                "stelsel": "Termijn",
-                "canoniek": "maand",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "maand",
+                "system": "Termijn",
+                "canonical": "maand",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -30,17 +32,19 @@
             "node": "Attribute",
             "name": "looptijd",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "maand",
-                "stelsel": "Termijn",
-                "canoniek": "maand",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "maand",
+                "system": "Termijn",
+                "canonical": "maand",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -53,33 +57,35 @@
     "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "Termijn",
-        "eenheden": {
-          "maand": {
-            "node": "Eenheid",
-            "afkorting": "maand",
-            "stelsel": "Termijn",
-            "canoniek": "maand",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Termijn",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "maand",
+            "system": "Termijn",
+            "canonical": "maand",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
           },
-          "jaar": {
-            "node": "Eenheid",
-            "afkorting": "jaar",
-            "stelsel": "Termijn",
-            "canoniek": "maand",
-            "factorNaarCanoniek": 12,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "jaar",
+            "system": "Termijn",
+            "canonical": "maand",
+            "factorToCanonical": {
+              "num": 12,
+              "den": 1
+            }
           }
-        },
-        "aliassen": {}
+        ]
       }
     ],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -100,17 +106,19 @@
             "node": "Literal",
             "waarde": "2",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "jaar",
-                "stelsel": "Termijn",
-                "canoniek": "maand",
-                "factorNaarCanoniek": 12,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "jaar",
+                "system": "Termijn",
+                "canonical": "maand",
+                "factorToCanonical": {
+                  "num": 12,
+                  "den": 1
+                }
               }
             },
             "bron": "2 jaar"
@@ -122,17 +130,19 @@
             "bron": "de basisduur van de Bergingsvergunning"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "jaar",
-              "stelsel": "Termijn",
-              "canoniek": "maand",
-              "factorNaarCanoniek": 12,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "jaar",
+              "system": "Termijn",
+              "canonical": "maand",
+              "factorToCanonical": {
+                "num": 12,
+                "den": 1
+              }
             }
           },
           "bron": "2 jaar plus de basisduur van de Bergingsvergunning"

@@ -12,17 +12,19 @@
             "node": "Attribute",
             "name": "gewicht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -30,17 +32,19 @@
             "node": "Attribute",
             "name": "kopie",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -48,67 +52,68 @@
             "node": "Attribute",
             "name": "deel",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "fijn",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 4,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "aantal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "ruim",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "tarief",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": {
-                  "node": "Eenheid",
-                  "afkorting": "jr",
-                  "stelsel": "Tijd",
-                  "canoniek": "jr",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                },
+                "denominator": {
+                  "node": "Unit",
+                  "abbreviation": "jr",
+                  "system": "Tijd",
+                  "canonical": "jr",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
               }
             }
@@ -117,17 +122,19 @@
             "node": "Attribute",
             "name": "duur",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "jr",
-                "stelsel": "Tijd",
-                "canoniek": "jr",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "jr",
+                "system": "Tijd",
+                "canonical": "jr",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -135,17 +142,19 @@
             "node": "Attribute",
             "name": "bedrag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -153,66 +162,78 @@
             "node": "Attribute",
             "name": "aandeel",
             "datatype": {
-              "node": "Percentage",
-              "geheel": false,
-              "decimalen": 2,
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              },
+              "presentation": "percentage"
             }
           },
           {
             "node": "Attribute",
             "name": "uitdeel",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "uitfijn",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 4,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "uitaantal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "uittarief",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": {
-                  "node": "Eenheid",
-                  "afkorting": "jr",
-                  "stelsel": "Tijd",
-                  "canoniek": "jr",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                },
+                "denominator": {
+                  "node": "Unit",
+                  "abbreviation": "jr",
+                  "system": "Tijd",
+                  "canonical": "jr",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
               }
             }
@@ -226,63 +247,67 @@
     "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "Gewicht",
-        "eenheden": {
-          "kg": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Gewicht",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "kg",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
           },
-          "t": {
-            "node": "Eenheid",
-            "afkorting": "t",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1000,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "t",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1000,
+              "den": 1
+            }
           }
-        },
-        "aliassen": {}
+        ]
       },
       {
-        "node": "Eenheidstelsel",
-        "naam": "Munt",
-        "eenheden": {
-          "EUR": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
           }
-        },
-        "aliassen": {}
+        ]
       },
       {
-        "node": "Eenheidstelsel",
-        "naam": "Tijd",
-        "eenheden": {
-          "jr": {
-            "node": "Eenheid",
-            "afkorting": "jr",
-            "stelsel": "Tijd",
-            "canoniek": "jr",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "jr",
+            "system": "Tijd",
+            "canonical": "jr",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
           }
-        },
-        "aliassen": {}
+        ]
       }
     ],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -312,17 +337,19 @@
             "bron": "de gewicht van de Jutter"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "t",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1000,
-              "noemer": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "t",
+              "system": "Gewicht",
+              "canonical": "kg",
+              "factorToCanonical": {
+                "num": 1000,
+                "den": 1
+              }
             }
           },
           "bron": "het gewicht van de Jutter plus het gewicht van de Jutter"

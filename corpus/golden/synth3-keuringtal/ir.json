@@ -20,11 +20,10 @@
                   {
                     "name": "Goedgekeurd",
                     "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
                     }
                   },
                   {
@@ -34,11 +33,10 @@
                   {
                     "name": "Voorwaardelijk",
                     "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
                     }
                   }
                 ]
@@ -49,33 +47,30 @@
             "node": "Attribute",
             "name": "aantalAfgekeurd",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "aantalNietAfgekeurd",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "totaalKeuringen",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -94,11 +89,10 @@
             {
               "name": "Goedgekeurd",
               "payload": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
               }
             },
             {
@@ -108,11 +102,10 @@
             {
               "name": "Voorwaardelijk",
               "payload": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
               }
             }
           ]
@@ -122,8 +115,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -140,11 +132,10 @@
         "waarde": {
           "node": "ListLength",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "list": {
             "node": "FilterList",
@@ -157,11 +148,10 @@
                   {
                     "name": "Goedgekeurd",
                     "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
                     }
                   },
                   {
@@ -171,11 +161,10 @@
                   {
                     "name": "Voorwaardelijk",
                     "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
                     }
                   }
                 ]
@@ -205,11 +194,10 @@
                     {
                       "name": "Goedgekeurd",
                       "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
                       }
                     },
                     {
@@ -219,11 +207,10 @@
                     {
                       "name": "Voorwaardelijk",
                       "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
                       }
                     }
                   ]
@@ -259,11 +246,10 @@
         "waarde": {
           "node": "ListLength",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "list": {
             "node": "FilterList",
@@ -276,11 +262,10 @@
                   {
                     "name": "Goedgekeurd",
                     "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
                     }
                   },
                   {
@@ -290,11 +275,10 @@
                   {
                     "name": "Voorwaardelijk",
                     "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
                     }
                   }
                 ]
@@ -324,11 +308,10 @@
                     {
                       "name": "Goedgekeurd",
                       "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
                       }
                     },
                     {
@@ -338,11 +321,10 @@
                     {
                       "name": "Voorwaardelijk",
                       "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
                       }
                     }
                   ]
@@ -378,11 +360,10 @@
         "waarde": {
           "node": "ListLength",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "list": {
             "node": "AttribuutRef",

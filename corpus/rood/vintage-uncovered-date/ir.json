@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "huidig penningbedrag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -27,23 +26,25 @@
     "parameters": [
       {
         "node": "Parameter",
-        "naam": "penningbedrag",
+        "name": "penningbedrag",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD"
         },
-        "granulariteit": "JAAR"
+        "timeline": {
+          "node": "TimelineFacet",
+          "granularity": "JAAR",
+          "count": 1
+        }
       }
     ],
     "domains": [],
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -68,16 +69,16 @@
             "node": "Constante",
             "naam": "Rekendatum",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "de rekendatum"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "het penningbedrag op de rekendatum"
         },

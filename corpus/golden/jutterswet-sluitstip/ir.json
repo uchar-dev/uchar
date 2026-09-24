@@ -12,14 +12,16 @@
             "node": "Attribute",
             "name": "afgiftestip",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "sluitstip",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           }
         ],
@@ -43,8 +45,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -62,7 +63,8 @@
           "node": "Literal",
           "waarde": "2026-07-01T08:30:00.000",
           "type": {
-            "node": "DatumTijd"
+            "node": "Date",
+            "precision": "millisecond"
           },
           "bron": "dd. 1-7-2026 08:30:00.000"
         },
@@ -104,7 +106,8 @@
             "node": "Literal",
             "waarde": "2026-07-01T08:30:00.000",
             "type": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             },
             "bron": "01-07-2026 08:30:00.000"
           },
@@ -148,7 +151,8 @@
             "node": "Literal",
             "waarde": "2026-07-01T08:30:00.000",
             "type": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             },
             "bron": "1-07-2026 08:30:00.000"
           },

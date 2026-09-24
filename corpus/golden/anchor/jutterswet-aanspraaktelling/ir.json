@@ -20,11 +20,10 @@
                   {
                     "name": "Erkend",
                     "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
                     }
                   },
                   {
@@ -39,22 +38,20 @@
             "node": "Attribute",
             "name": "erkende som",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "aantal erkend",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -73,11 +70,10 @@
             {
               "name": "Erkend",
               "payload": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
               }
             },
             {
@@ -92,7 +88,6 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [],
-    "dagsoortPerEenheid": {},
     "functionDefs": [
       {
         "node": "FunctionDef",
@@ -107,11 +102,10 @@
                 {
                   "name": "Erkend",
                   "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "NIET_NEGATIEF"
                   }
                 },
                 {
@@ -123,20 +117,18 @@
           }
         ],
         "result": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "NIET_NEGATIEF"
         },
         "body": {
           "node": "Match",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "NIET_NEGATIEF"
           },
           "scrutinee": {
             "node": "BinderRef",
@@ -160,11 +152,10 @@
                 "node": "Literal",
                 "waarde": "0.00",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "bron": "0.00"
               }
@@ -191,22 +182,20 @@
         "waarde": {
           "node": "Fold",
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "list": {
             "node": "MapList",
             "type": {
               "node": "ListType",
               "element": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
               }
             },
             "list": {
@@ -227,11 +216,10 @@
                       {
                         "name": "Erkend",
                         "payload": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "NIET_NEGATIEF",
-                          "eenheid": null
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "NIET_NEGATIEF"
                         }
                       },
                       {
@@ -245,11 +233,10 @@
               "body": {
                 "node": "Invoke",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "function": "aanspraakwaarde",
                 "arguments": [
@@ -271,21 +258,19 @@
               {
                 "name": "acc",
                 "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 }
               },
               {
                 "name": "x",
                 "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "NIET_NEGATIEF"
                 }
               }
             ],
@@ -303,11 +288,10 @@
                 "bron": "de aanspraakwaarde"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": "de opgetelde som plus de aanspraakwaarde"
             },
@@ -317,11 +301,10 @@
             "node": "Literal",
             "waarde": "0.00",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "bron": "0.00"
           },
@@ -347,11 +330,10 @@
         "waarde": {
           "node": "ListLength",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "list": {
             "node": "FilterList",
@@ -364,11 +346,10 @@
                   {
                     "name": "Erkend",
                     "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
                     }
                   },
                   {
@@ -402,11 +383,10 @@
                     {
                       "name": "Erkend",
                       "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
                       }
                     },
                     {

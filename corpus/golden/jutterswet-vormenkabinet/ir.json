@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "opbrengst",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "dimensions": [
               "seizoen"
@@ -26,40 +25,38 @@
             "node": "Attribute",
             "name": "vakcijfer",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "meetdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "peiling",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "waterstand",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -109,15 +106,17 @@
       }
     ],
     "dayKinds": [
-      "schouwdag",
-      "stormvloeddag"
-    ],
-    "dagsoortPerEenheid": {
-      "schouwdag": "SchouwDag",
-      "schouwdagen": "  schouwdag  ",
-      "stormvloeddag": "stormvloeddag",
-      "stormvloeddagen": "stormvloeddag"
-    }
+      {
+        "node": "DayKind",
+        "name": "schouwdag",
+        "plural": "schouwdagen"
+      },
+      {
+        "node": "DayKind",
+        "name": "stormvloeddag",
+        "plural": "stormvloeddagen"
+      }
+    ]
   },
   "rules": {
     "resolvedRegels": [
@@ -165,11 +164,10 @@
           "node": "Literal",
           "waarde": "1",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "1"
         },
@@ -200,7 +198,8 @@
                 "node": "Literal",
                 "waarde": "2026-01-01",
                 "type": {
-                  "node": "DatumInDagen"
+                  "node": "Date",
+                  "precision": "day"
                 },
                 "bron": "2026-01-01"
               },

@@ -12,110 +12,100 @@
             "node": "Attribute",
             "name": "vracht",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "eenheden",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "toeslag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "totaal",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "omzet",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "posten",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "aftrek",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 1,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "marge",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 1,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "grondslag",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 1,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "premie",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -128,8 +118,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -164,22 +153,20 @@
                 "bron": "de eenheden van de Partij"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
               "bron": "de vracht van de Partij gedeeld door de eenheden van de Partij"
             },
             "modus": "NAAR_BENEDEN",
             "decimalen": 0,
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "de vracht van de Partij gedeeld door de eenheden van de Partij naar beneden afgerond op 0 decimalen"
           },
@@ -190,11 +177,10 @@
             "bron": "de toeslag van de Partij"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "de vracht van de Partij gedeeld door de eenheden van de Partij naar beneden afgerond op 0 decimalen plus de toeslag van de Partij"
         },
@@ -236,22 +222,20 @@
                 "bron": "de posten van de Partij"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 1,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 1,
+                "sign": "ONBEPAALD"
               },
               "bron": "de omzet van de Partij gedeeld door de posten van de Partij"
             },
             "modus": "REKENKUNDIG",
             "decimalen": 1,
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 1,
+              "sign": "ONBEPAALD"
             },
             "bron": "de omzet van de Partij gedeeld door de posten van de Partij rekenkundig afgerond op 1 decimaal"
           },
@@ -262,11 +246,10 @@
             "bron": "de aftrek van de Partij"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 1,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 1,
+            "sign": "ONBEPAALD"
           },
           "bron": "de omzet van de Partij gedeeld door de posten van de Partij rekenkundig afgerond op 1 decimaal verminderd met de aftrek van de Partij"
         },
@@ -294,16 +277,18 @@
             "node": "Literal",
             "waarde": "20",
             "type": {
-              "node": "Percentage",
-              "geheel": true,
-              "decimalen": 0,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "%",
-                "stelsel": null,
-                "canoniek": "%",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             },
             "bron": "20%"
@@ -319,20 +304,18 @@
             "modus": "NAAR_BENEDEN",
             "decimalen": 0,
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             },
             "bron": "de grondslag van de Partij naar beneden afgerond op 0 decimalen"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "bron": "20% van de grondslag van de Partij naar beneden afgerond op 0 decimalen"
         },

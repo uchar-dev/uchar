@@ -12,24 +12,21 @@
             "node": "Attribute",
             "name": "aangiftedatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "uitsteldagen",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": null,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "dagen",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "dagen"
               }
             }
           },
@@ -37,42 +34,48 @@
             "node": "Attribute",
             "name": "vervaldatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "toetsdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "herinneringsdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "gedoogdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "respijtdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "opschortdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           }
         ],
@@ -85,8 +88,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -113,23 +115,20 @@
             "node": "Literal",
             "waarde": "2",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": null,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "wk",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "wk"
               }
             },
             "bron": "2 weken"
           },
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "zijn aangiftedatum plus 2 weken"
         },
@@ -163,23 +162,20 @@
             "node": "Literal",
             "waarde": "1",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": null,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "maand",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "maand"
               }
             },
             "bron": "1 maand"
           },
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "zijn aangiftedatum plus 1 maand"
         },
@@ -213,23 +209,20 @@
             "node": "Literal",
             "waarde": "1",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": null,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "week",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "week"
               }
             },
             "bron": "1 week"
           },
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "zijn aangiftedatum min 1 week"
         },
@@ -266,7 +259,8 @@
             "bron": "zijn uitsteldagen"
           },
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "zijn aangiftedatum plus zijn uitsteldagen"
         },
@@ -300,23 +294,20 @@
             "node": "Literal",
             "waarde": "1,9",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": null,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "mnd",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 1,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "mnd"
               }
             },
             "bron": "1,9 maanden"
           },
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "zijn aangiftedatum min 1,9 maanden"
         },
@@ -350,23 +341,20 @@
             "node": "Literal",
             "waarde": "1",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": null,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kw",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kw"
               }
             },
             "bron": "1 kwartaal"
           },
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "zijn aangiftedatum plus 1 kwartaal"
         },

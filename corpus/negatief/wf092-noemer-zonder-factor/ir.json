@@ -12,23 +12,24 @@
             "node": "Attribute",
             "name": "bewaarlast",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": {
-                  "node": "Eenheid",
-                  "afkorting": "mnd",
-                  "stelsel": "Bewaartijd",
-                  "canoniek": "mnd",
-                  "factorNaarCanoniek": null,
-                  "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                },
+                "denominator": {
+                  "node": "Unit",
+                  "abbreviation": "mnd",
+                  "system": "Bewaartijd",
+                  "canonical": "mnd"
                 }
               }
             }
@@ -37,23 +38,24 @@
             "node": "Attribute",
             "name": "bewaarsom",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": {
-                  "node": "Eenheid",
-                  "afkorting": "mnd",
-                  "stelsel": "Bewaartijd",
-                  "canoniek": "mnd",
-                  "factorNaarCanoniek": null,
-                  "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                },
+                "denominator": {
+                  "node": "Unit",
+                  "abbreviation": "mnd",
+                  "system": "Bewaartijd",
+                  "canonical": "mnd"
                 }
               }
             }
@@ -62,23 +64,24 @@
             "node": "Attribute",
             "name": "bewaarvergoeding per maand",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": {
-                  "node": "Eenheid",
-                  "afkorting": "mnd",
-                  "stelsel": "Bewaartijd",
-                  "canoniek": "mnd",
-                  "factorNaarCanoniek": null,
-                  "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                },
+                "denominator": {
+                  "node": "Unit",
+                  "abbreviation": "mnd",
+                  "system": "Bewaartijd",
+                  "canonical": "mnd"
                 }
               }
             },
@@ -92,17 +95,19 @@
             "node": "Attribute",
             "name": "bewaargeld",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -119,23 +124,24 @@
             "node": "Attribute",
             "name": "bewaartarief",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": {
-                  "node": "Eenheid",
-                  "afkorting": "mnd",
-                  "stelsel": "Bewaartijd",
-                  "canoniek": "mnd",
-                  "factorNaarCanoniek": null,
-                  "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                },
+                "denominator": {
+                  "node": "Unit",
+                  "abbreviation": "mnd",
+                  "system": "Bewaartijd",
+                  "canonical": "mnd"
                 }
               }
             },
@@ -172,74 +178,49 @@
     "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "Munt",
-        "eenheden": {
-          "EUR": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "\u20ac": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
           }
-        },
-        "aliassen": {
-          "euro": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "euros": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
+        ]
       },
       {
-        "node": "Eenheidstelsel",
-        "naam": "Bewaartijd",
-        "eenheden": {
-          "mnd": {
-            "node": "Eenheid",
-            "afkorting": "mnd",
-            "stelsel": "Bewaartijd",
-            "canoniek": "mnd",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Bewaartijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "mnd",
+            "system": "Bewaartijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "maand"
+            ]
           }
-        },
-        "aliassen": {
-          "maand": {
-            "node": "Eenheid",
-            "afkorting": "mnd",
-            "stelsel": "Bewaartijd",
-            "canoniek": "mnd",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
+        ]
       }
     ],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -269,23 +250,24 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": {
-                "node": "Eenheid",
-                "afkorting": "mnd",
-                "stelsel": "Bewaartijd",
-                "canoniek": "mnd",
-                "factorNaarCanoniek": null,
-                "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "EUR",
+              "system": "Munt",
+              "canonical": "EUR",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              },
+              "denominator": {
+                "node": "Unit",
+                "abbreviation": "mnd",
+                "system": "Bewaartijd",
+                "canonical": "mnd"
               }
             }
           },
@@ -330,23 +312,24 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": {
-                "node": "Eenheid",
-                "afkorting": "mnd",
-                "stelsel": "Bewaartijd",
-                "canoniek": "mnd",
-                "factorNaarCanoniek": null,
-                "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "EUR",
+              "system": "Munt",
+              "canonical": "EUR",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              },
+              "denominator": {
+                "node": "Unit",
+                "abbreviation": "mnd",
+                "system": "Bewaartijd",
+                "canonical": "mnd"
               }
             }
           },
@@ -391,17 +374,19 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "EUR",
+              "system": "Munt",
+              "canonical": "EUR",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
           },
           "bron": "het totaal van zijn bewaarvergoeding per maand",

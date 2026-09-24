@@ -12,33 +12,30 @@
             "node": "Attribute",
             "name": "teller",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 4,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "noemer",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 4,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "quotient",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 4,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -51,8 +48,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -82,11 +78,10 @@
             "bron": "de noemer van de Deling"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 4,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 4,
+            "sign": "ONBEPAALD"
           },
           "bron": "de teller van de Deling gedeeld door de noemer van de Deling"
         },

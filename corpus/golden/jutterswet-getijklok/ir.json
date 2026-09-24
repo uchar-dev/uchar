@@ -12,24 +12,26 @@
             "node": "Attribute",
             "name": "meldtijdstip",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "wachttermijn",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "springtijdagen",
-                "stelsel": null,
-                "canoniek": "springtijdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "springtijdagen",
+                "canonical": "springtijdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -37,14 +39,16 @@
             "node": "Attribute",
             "name": "sluittijdstip",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "openingstijdstip",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           }
         ],
@@ -58,12 +62,12 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [
-      "springtijdag"
-    ],
-    "dagsoortPerEenheid": {
-      "springtijdag": "springtijdag",
-      "springtijdagen": "springtijdag"
-    }
+      {
+        "node": "DayKind",
+        "name": "springtijdag",
+        "plural": "springtijdagen"
+      }
+    ]
   },
   "rules": {
     "resolvedRegels": [
@@ -93,7 +97,8 @@
             "bron": "zijn wachttermijn"
           },
           "type": {
-            "node": "DatumTijd"
+            "node": "Date",
+            "precision": "millisecond"
           },
           "bron": "zijn meldtijdstip plus zijn wachttermijn"
         },
@@ -130,7 +135,8 @@
             "bron": "zijn wachttermijn"
           },
           "type": {
-            "node": "DatumTijd"
+            "node": "Date",
+            "precision": "millisecond"
           },
           "bron": "zijn meldtijdstip min zijn wachttermijn"
         },
@@ -162,7 +168,8 @@
                     "node": "Constante",
                     "naam": "de dag",
                     "type": {
-                      "node": "DatumInDagen"
+                      "node": "Date",
+                      "precision": "day"
                     },
                     "bron": "de dag"
                   }
@@ -172,11 +179,10 @@
                 "filter": null,
                 "dimensieSelectie": null,
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "bron": "de dag uit de dag",
                 "granulariteit": null
@@ -185,11 +191,10 @@
                 "node": "Literal",
                 "waarde": "1",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "1"
               },
@@ -207,7 +212,8 @@
                     "node": "Constante",
                     "naam": "de dag",
                     "type": {
-                      "node": "DatumInDagen"
+                      "node": "Date",
+                      "precision": "day"
                     },
                     "bron": "de dag"
                   }
@@ -217,11 +223,10 @@
                 "filter": null,
                 "dimensieSelectie": null,
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "bron": "de dag uit de dag",
                 "granulariteit": null
@@ -230,11 +235,10 @@
                 "node": "Literal",
                 "waarde": "15",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "15"
               },

@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "aantal aangemelde vondsten",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           }
         ],
@@ -33,47 +32,47 @@
     "parameters": [
       {
         "node": "Parameter",
-        "naam": "vondstdrempel",
+        "name": "vondstdrempel",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "granulariteit": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD"
+        }
       }
     ],
     "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "tijd",
-        "eenheden": {
-          "a": {
-            "node": "Eenheid",
-            "afkorting": "a",
-            "stelsel": "tijd",
-            "canoniek": "b",
-            "factorNaarCanoniek": 2.0,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "a",
+            "system": "tijd",
+            "canonical": "b",
+            "factorToCanonical": {
+              "num": 2,
+              "den": 1
+            }
           },
-          "b": {
-            "node": "Eenheid",
-            "afkorting": "b",
-            "stelsel": "tijd",
-            "canoniek": "a",
-            "factorNaarCanoniek": 0.5,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "b",
+            "system": "tijd",
+            "canonical": "a",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 2
+            }
           }
-        },
-        "aliassen": {}
+        ]
       }
     ],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [

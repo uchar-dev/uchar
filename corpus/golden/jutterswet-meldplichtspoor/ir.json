@@ -18,11 +18,10 @@
                 {
                   "name": "Openstaand",
                   "payload": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   }
                 },
                 {
@@ -44,7 +43,7 @@
     "parameters": [
       {
         "node": "Parameter",
-        "naam": "meldreeks",
+        "name": "meldreeks",
         "datatype": {
           "node": "ListType",
           "element": {
@@ -54,11 +53,10 @@
               {
                 "name": "Dagverloop",
                 "payload": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 }
               },
               {
@@ -67,8 +65,7 @@
               }
             ]
           }
-        },
-        "granulariteit": null
+        }
       }
     ],
     "domains": [
@@ -81,11 +78,10 @@
             {
               "name": "Openstaand",
               "payload": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               }
             },
             {
@@ -108,11 +104,10 @@
             {
               "name": "Dagverloop",
               "payload": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               }
             },
             {
@@ -126,8 +121,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -150,11 +144,10 @@
               {
                 "name": "Openstaand",
                 "payload": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 }
               },
               {
@@ -184,11 +177,10 @@
                     {
                       "name": "Openstaand",
                       "payload": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
                       }
                     },
                     {
@@ -211,11 +203,10 @@
                     {
                       "name": "Dagverloop",
                       "payload": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
                       }
                     },
                     {
@@ -235,11 +226,10 @@
                   {
                     "name": "Openstaand",
                     "payload": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
                     }
                   },
                   {
@@ -270,11 +260,10 @@
                         {
                           "name": "Openstaand",
                           "payload": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "ONBEPAALD"
                           }
                         },
                         {
@@ -305,11 +294,10 @@
                               {
                                 "name": "Openstaand",
                                 "payload": {
-                                  "node": "Numeriek",
-                                  "geheel": true,
-                                  "decimalen": 0,
-                                  "teken": "ONBEPAALD",
-                                  "eenheid": null
+                                  "node": "Number",
+                                  "whole": true,
+                                  "decimals": 0,
+                                  "sign": "ONBEPAALD"
                                 }
                               },
                               {
@@ -347,11 +335,10 @@
                                 {
                                   "name": "Openstaand",
                                   "payload": {
-                                    "node": "Numeriek",
-                                    "geheel": true,
-                                    "decimalen": 0,
-                                    "teken": "ONBEPAALD",
-                                    "eenheid": null
+                                    "node": "Number",
+                                    "whole": true,
+                                    "decimals": 0,
+                                    "sign": "ONBEPAALD"
                                   }
                                 },
                                 {
@@ -379,11 +366,10 @@
                                 "bron": "het aantal verstreken dagen"
                               },
                               "type": {
-                                "node": "Numeriek",
-                                "geheel": true,
-                                "decimalen": 0,
-                                "teken": "ONBEPAALD",
-                                "eenheid": null
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "ONBEPAALD"
                               },
                               "bron": "de resterende termijn min het aantal verstreken dagen"
                             },
@@ -398,11 +384,10 @@
                                 {
                                   "name": "Openstaand",
                                   "payload": {
-                                    "node": "Numeriek",
-                                    "geheel": true,
-                                    "decimalen": 0,
-                                    "teken": "ONBEPAALD",
-                                    "eenheid": null
+                                    "node": "Number",
+                                    "whole": true,
+                                    "decimals": 0,
+                                    "sign": "ONBEPAALD"
                                   }
                                 },
                                 {
@@ -434,11 +419,10 @@
                               {
                                 "name": "Openstaand",
                                 "payload": {
-                                  "node": "Numeriek",
-                                  "geheel": true,
-                                  "decimalen": 0,
-                                  "teken": "ONBEPAALD",
-                                  "eenheid": null
+                                  "node": "Number",
+                                  "whole": true,
+                                  "decimals": 0,
+                                  "sign": "ONBEPAALD"
                                 }
                               },
                               {
@@ -472,11 +456,10 @@
                         {
                           "name": "Openstaand",
                           "payload": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "ONBEPAALD"
                           }
                         },
                         {
@@ -506,11 +489,10 @@
                         {
                           "name": "Openstaand",
                           "payload": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "ONBEPAALD"
                           }
                         },
                         {
@@ -542,11 +524,10 @@
                 {
                   "name": "Openstaand",
                   "payload": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
                   }
                 },
                 {
@@ -564,11 +545,10 @@
               "node": "Literal",
               "waarde": "30",
               "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
               "bron": "30"
             },

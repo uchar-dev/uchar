@@ -12,17 +12,19 @@
             "node": "Attribute",
             "name": "aanloop",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "m",
-                "stelsel": "Afstand",
-                "canoniek": "m",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "m",
+                "system": "Afstand",
+                "canonical": "m",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           },
@@ -30,17 +32,19 @@
             "node": "Attribute",
             "name": "sleeplengte",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "m",
-                "stelsel": "Afstand",
-                "canoniek": "m",
-                "factorNaarCanoniek": 1,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "m",
+                "system": "Afstand",
+                "canonical": "m",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
               }
             }
           }
@@ -53,33 +57,31 @@
     "domains": [],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "Afstand",
-        "eenheden": {
-          "m": {
-            "node": "Eenheid",
-            "afkorting": "m",
-            "stelsel": "Afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Afstand",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "m",
+            "system": "Afstand",
+            "canonical": "m",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
           },
-          "km": {
-            "node": "Eenheid",
-            "afkorting": "km",
-            "stelsel": "Afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": null,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "km",
+            "system": "Afstand",
+            "canonical": "m"
           }
-        },
-        "aliassen": {}
+        ]
       }
     ],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -100,17 +102,15 @@
             "node": "Literal",
             "waarde": "2,5",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "km",
-                "stelsel": "Afstand",
-                "canoniek": "m",
-                "factorNaarCanoniek": null,
-                "noemer": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 1,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "km",
+                "system": "Afstand",
+                "canonical": "m"
               }
             },
             "bron": "2,5 km"
@@ -122,17 +122,15 @@
             "bron": "de aanloop van de Sleepbaan"
           },
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 1,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "km",
-              "stelsel": "Afstand",
-              "canoniek": "m",
-              "factorNaarCanoniek": null,
-              "noemer": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 1,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "km",
+              "system": "Afstand",
+              "canonical": "m"
             }
           },
           "bron": "2,5 km plus de aanloop van de Sleepbaan"

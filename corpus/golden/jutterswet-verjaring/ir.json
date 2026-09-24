@@ -12,7 +12,8 @@
             "node": "Attribute",
             "name": "peildatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           }
         ],
@@ -36,8 +37,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -72,7 +72,8 @@
             "node": "Literal",
             "waarde": "2000-01-01",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "2000-01-01"
           },
@@ -116,7 +117,8 @@
             "node": "Literal",
             "waarde": "2000-01-01",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "2000-01-01"
           },

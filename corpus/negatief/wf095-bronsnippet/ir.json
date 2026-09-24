@@ -12,7 +12,8 @@
             "node": "Attribute",
             "name": "meldstip",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           }
         ],
@@ -25,8 +26,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -44,7 +44,8 @@
           "node": "Literal",
           "waarde": "15-03-2026 12:00:00.000",
           "type": {
-            "node": "DatumTijd"
+            "node": "Date",
+            "precision": "millisecond"
           },
           "bron": "15-03-2026 12:00:00.000"
         },

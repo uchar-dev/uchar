@@ -18,7 +18,6 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [],
-    "dagsoortPerEenheid": {},
     "functionDefs": [
       {
         "node": "FunctionDef",
@@ -27,20 +26,18 @@
           {
             "name": "a",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           }
         ],
         "result": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "ONBEPAALD"
         },
         "body": {
           "node": "BinderRef",
@@ -67,11 +64,10 @@
           "operand": {
             "node": "Invoke",
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "function": "dubbel",
             "arguments": [
@@ -79,11 +75,10 @@
                 "node": "Literal",
                 "waarde": "1.00",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": null
               },
@@ -91,11 +86,10 @@
                 "node": "Literal",
                 "waarde": "2.00",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": null
               }

@@ -12,11 +12,10 @@
             "node": "Attribute",
             "name": "aantal aangemelde vondsten",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF"
             }
           }
         ],
@@ -33,15 +32,13 @@
     "parameters": [
       {
         "node": "Parameter",
-        "naam": "vondstdrempel",
+        "name": "vondstdrempel",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "granulariteit": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD"
+        }
       }
     ],
     "domains": [],
@@ -49,9 +46,11 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [
-      "dag"
-    ],
-    "dagsoortPerEenheid": {}
+      {
+        "node": "DayKind",
+        "name": "dag"
+      }
+    ]
   },
   "rules": {
     "resolvedRegels": [

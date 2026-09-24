@@ -9,10 +9,15 @@
     "dimensions": [],
     "timelines": [],
     "dayKinds": [
-      "vloeddag",
-      "ebdag"
-    ],
-    "dagsoortPerEenheid": {}
+      {
+        "node": "DayKind",
+        "name": "vloeddag"
+      },
+      {
+        "node": "DayKind",
+        "name": "ebdag"
+      }
+    ]
   },
   "rules": {
     "resolvedRegels": [],
@@ -27,7 +32,8 @@
             "node": "Literal",
             "waarde": "2026-06-21",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "die dag"
           },
@@ -53,7 +59,8 @@
             "node": "Literal",
             "waarde": "2026-06-21",
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "die dag"
           },

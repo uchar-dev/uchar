@@ -12,14 +12,16 @@
             "node": "Attribute",
             "name": "eerste vondstdag",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "laatste vondstdag",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           }
         ],
@@ -35,7 +37,8 @@
             "node": "Attribute",
             "name": "vondstdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "plural": "vondstdata"
           }
@@ -71,8 +74,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -102,7 +104,8 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "de eerste van de vondstdatum van alle vondsten van de Jutter",
           "granulariteit": null,
@@ -145,7 +148,8 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "de laatste van de vondstdatum van alle vondsten van de Jutter",
           "granulariteit": null,

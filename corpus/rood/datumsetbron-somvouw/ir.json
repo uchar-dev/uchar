@@ -12,7 +12,8 @@
             "node": "Attribute",
             "name": "vondstdagensom",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           }
         ],
@@ -28,7 +29,8 @@
             "node": "Attribute",
             "name": "vondstdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "plural": "vondstdata"
           }
@@ -64,8 +66,7 @@
     "unitSystems": [],
     "dimensions": [],
     "timelines": [],
-    "dayKinds": [],
-    "dagsoortPerEenheid": {}
+    "dayKinds": []
   },
   "rules": {
     "resolvedRegels": [
@@ -95,7 +96,8 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "DatumInDagen"
+            "node": "Date",
+            "precision": "day"
           },
           "bron": "de som van de vondstdatum van alle vondsten van de Jutter",
           "granulariteit": null,
