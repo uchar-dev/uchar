@@ -51,6 +51,12 @@ final class Verslag {
         return uit;
     }
 
+    /** A JSON text as the reader below gives it: objects as ordered maps, arrays as lists. The name table's test
+     *  reads the repository's name table with it rather than with a second reader. */
+    static Object json(String tekst) {
+        return new Lezer(tekst).document();
+    }
+
     private static void verzamel(Object x, List<String> uit) {
         if (x instanceof Map<?, ?> m) {
             if ("Onopgelost".equals(m.get("node")))
