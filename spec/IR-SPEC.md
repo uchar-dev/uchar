@@ -6444,7 +6444,7 @@ ch. 3.12), and it belongs to whoever measures it.
   What the subtype admission costs is that the field then carries MEANING
   beyond resolution, and every reader must spend it — the objects the
   relation reaches count only where their own type is ⊑ `filler`
-  (ch. 2.2, extensionally; `RUNTIME-SEMANTICS.md` ch. 5.8a rule 2). A
+  (ch. 2.2, extensionally; `RUNTIME-SEMANTICS.md` ch. 5.8a). A
   reader that resolves the pair and stops answers the ROLE's whole
   population instead of the named one. Not hypothetical: it is what `ref`
   and the ASP backend did when this clause first landed, measured
