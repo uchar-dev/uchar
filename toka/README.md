@@ -178,6 +178,23 @@ stays honest about where it no longer proves toolchain agreement.
   with the two diagnostics appended. The original toolchain still writes the v0
   rule and expression layers, so for these nodes too the comparison proves
   "frontend == the recorded state".
+- **2026-09-25 — the zone is in the L5 shape of `uchar-ir-v1`.** Executed by the
+  L5 card (`20260924-l5-bronrecord-en-hernoeming.md` in `backlog/`). Two steps
+  and nothing else: every source text moved into the source record (a `bron`
+  string became `"source": {"snippet": …}` byte for byte, and the `line` of a
+  consistency version went into that record), and every node, key and
+  enumeration value that L1–L4 left in its v0 spelling took its IR-SPEC name,
+  with an optional field that was null left out. In `casus/ir.json` that moved
+  168 snippets and 1 line, renamed 203 nodes, 411 keys and the 9 lists under
+  `rules`, respelled 157 enumeration values and left out 99 nulls; nothing was
+  refused. The 29 `cases/` slices were migrated mechanically with the same
+  script (`spec/proposals/v1-migratie/m5.py`): 244 snippets in 22 slices and 1
+  line, 820 nodes, 1934 keys, 261 list keys, 1756 values and 330 nulls.
+  `casus/ir.json` was migrated the same way and then re-emitted by uchar's
+  frontend, which reproduced the migrated file byte for byte (45 fragments,
+  holdouts unchanged): no divergence. The original toolchain still writes the
+  v0 names, so for every renamed node the comparison proves "frontend == the
+  recorded state".
 - The precedent runs the other way: `toka-45` (decision 16Y, 2026-08-29) is held
   **out** of the re-emission rather than re-pinned, because uchar's unit typing
   rejects the fragment as written. Divergence by holdout and divergence by
