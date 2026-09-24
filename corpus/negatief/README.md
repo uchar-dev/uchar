@@ -22,13 +22,14 @@ syntax error.
 
 Paths in the notes are JSON pointers into the document, the spelling the
 verifier reports (`/model/objectTypes/<i>/...`; since L4 a version of a named
-form is `/rules/resolvedRegels/<f>/versions/<v>/...`, with the L4 field names
-below it). The citations were respelled when the verifier's paths moved,
-quotes of measurements taken on a document's v0 form included: the position
-cited is the same, only its spelling is the current one. At L4 every citation
-was taken again from the verifier's own output on the witness; the quotes that
-a note marks as measured on a wire form that has since left (until L2) keep
-the spelling of that time.
+form is `/rules/<list>/<f>/versions/<v>/...`, and since L5 the list and the
+fields below it carry their L5 names, as in
+`/rules/rules/0/versions/0/condition/host`). The citations were respelled when
+the verifier's paths moved, quotes of measurements taken on a document's v0
+form included: the position cited is the same, only its spelling is the current
+one. At L4, and again at L5, every citation was taken again from the verifier's
+own output on the witness; the quotes that a note marks as measured on a wire
+form that has since left keep the spelling of that time.
 
 ## Vervallen bij de v1-migratie
 
@@ -715,3 +716,115 @@ golden, rood and negatief moves (706 compared, for all eight).
 | `wf037-jaar-uit-twee-operanden` | WF-037 | B21 | toegevoegd | builtin arity 2, expected 1 | the arm had no witness; `corpus/golden/jutterswet-paasvondst` with the one argument of its `JAAR_UIT` repeated as a second |
 | `wf037-tijdsduur-een-operand` | WF-037 | B21 | toegevoegd | builtin arity 1, expected 2 | the arm had no witness; `corpus/golden/jutterswet-getijdenpaar` with the second argument of its `TIJDSDUUR` removed |
 | `wf037-eerste-een-operand` | WF-037 | B21 | toegevoegd | value fold with fewer than two operands | the arm had no witness; `corpus/golden/jutterswet-hoogwaterpaar` with the second operand of its listed `EERSTE` removed |
+
+### L5 — the source record and the renaming (2026-09-25)
+
+L5 (card `20260924-l5-bronrecord-en-hernoeming`,
+`backlog/done/20260924-l5-bronrecord-en-hernoeming.md`; the decision numbers D#
+and U# below are that card's decision list) completes the v1 wire in two
+steps. M7, the source record (B26): every `bron` string became
+`"source": {"snippet": …}`, byte for byte; a `bron: null` became absent; the
+`line` of a consistency version and of a rule group went into `source.line`;
+`source` is required on an `Unresolved` marker, and WF-113 (b) reads
+`source.snippet`. M8, the renaming (B6, B10): every node name and key that
+L1–L4 left in its v0 spelling carries its IR-SPEC name — among them
+`Kenmerk.eigenaar` → `CharacteristicCheck.host`, `AttribuutRef.objecttype` →
+`AttributeReference.subjectType`, `TemporalRead {base, date}`,
+`WholePeriod {granularity, negated}` and the nine lists under `rules`
+(D48–D51); every enumeration value follows the one spelling rule of N2,
+English lowerCamel (D47); and a field that IR-SPEC calls optional went from
+`null` to absent (D5 (a)). No rule came and none went.
+
+M7 was measured on its own commits before anything else moved (U1, U2): over
+the 736 documents of the four zones and the parity zone the verifier's output
+stayed byte-identical except for the ten negatief reports whose message named
+`bron` — the six WF-095 witnesses and the four WF-113 (b) witnesses — and no
+output of `ref`, clingo or Drools moved. Every witness was then measured
+before its stamp: the L4 verifier on the document's L4 form against the L5
+verifier on its L5 form, the translation of `spec/proposals/v1-migratie/m5.py`
+(M7 + M8). Over the 417 witnesses the two reports carry the same rules in the
+same order; they are identical on 70, differ only in their pointers on 252,
+only in their message on 10 and in both on 85 — every pointer difference a
+renamed segment, every message difference a name. The 289 golden and red
+documents stay verifier-clean.
+
+No witness is removed: the empty snippet and the marker without a `source`
+stay witnesses of WF-113 (b), which the verifier's reading keeps judging. Two
+witnesses whose L4 shape L5 cannot carry were rewritten by hand (i); every
+other row below carries its L5 delta on the defect and is the migration's
+translation (m), except `wf113-marker-bron-null`, which the migration refuses
+(the `source` of a marker is required) and which is written by hand. Each row
+carries `expect.txt`: 31 pinned their arm for the first time, 12 re-pinned it
+where the message moved, and 3 kept it. The arm column quotes the pinned
+fragment, shortened where it is long. Every NOTE citation was taken again from
+the L5 verifier's output; a NOTE that describes a v0 form, or a measurement
+taken on one, says so and keeps that form's names. The negatief zone went from
+417 to 418 documents (none removed, one added); the floor
+`EXPECTED_MIN_NEGATIEF` did not have to move, and `EXPECTED_MIN_EXPECT` rose
+from 228 to 229 with the added witness and to 260 with the 31 first pins
+(`scripts/check-verifier.sh`).
+
+| directory | rule | delta | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf113-marker-bron-leeg` | WF-113 (b) | B26 (D42, U10) | herschreven (i) | Unresolved marker whose source snippet is blank | m5.py refuses `"bron": ""` (an empty snippet does not exist: the schema's `minLength: 1`, and every reader refuses it at load); rewritten by hand to `"source": {"snippet": " "}`, a snippet of one space, so the blank arm keeps its defect |
+| `wf098-contextwaarde-naam-kapitalisatie` | WF-098 | N2 (D47, U21) | herschreven (i) | context value 'EvaluationDate' is not one of the two admissible names evaluationDate, … | m5.py carries `rekendatum` verbatim (a name outside the table); rewritten by hand to `EvaluationDate`, the recapitalised L5 name, so the witness keeps pinning that the set is compared byte for byte |
+| `wf034-kenmerkcheck-onbekende-eigenaar` | WF-034 (q) | B10 (D48) | herschreven (m) | characteristic check's owner 'Bestaatniet' is not a declared object type | `host: "Bestaatniet"`; the report cites `…/host` |
+| `wf100-eigenaar-verklaart-kenmerk-niet` | WF-100 | B10 (D48) | herschreven (m) | 'gekeurd' is not a declared characteristic of 'Jutter' | `host: "Jutter"`, which declares no `gekeurd`; the incidental WF-109 line stays |
+| `wf109-doelgastheer-genavigeerd` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Sein', which no object bound here can be | `host: "Sein"` beside a `navigation` |
+| `wf109-doelgastheer-periode` | WF-109 | B10 (D48), B6 (D51) | herschreven (m) | the characteristic check is hosted on 'Sein', which no object bound here can be | `host: "Sein"` beside a `WholePeriod` |
+| `wf109-doelgastheer-samengesteld` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Sein', which no object bound here can be | `host: "Sein"` on the first member of an `all` composite, the second hosted on `Kustvak` |
+| `wf109-subtype-overlap` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Sein', which the target 'Sein' is — but so can … | `host: "Sein"`, declared a subtype of the anchor `Kustvak` |
+| `wf109-gastheer-ambigu-supertype` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Baken', which the anchor 'Kustvak' and the … | `host: "Baken"`, a supertype of anchor and target |
+| `wf109-gastheer-ambigu-zelfgetypeerd` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Wachter', which the anchor 'Wachter' and the … | `host: "Wachter"` on a self-typed creation |
+| `wf109-gastheer-buiten-bereik` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Jutter', which no object bound here can be | `host: "Jutter"` where the subject is `Vondst` |
+| `wf109-gastheer-deelpopulatie` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Strandvondst', which no object bound here IS | `host: "Strandvondst"`, a subtype of the subject `Vondst` |
+| `wf109-gastheer-derde-type` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Post', which no object bound here can be | `host: "Post"`, beside the legal target host `Sein` of the second creation |
+| `wf097-clip-kenmerk-eigenaar` | WF-097 | B10 (D48) | herschreven (m) | host 'Jutter' on a gedurende clip member | `host: "Jutter"` on the member of the clip; the message names `host` |
+| `wf097-dagentelling-kenmerk-eigenaar` | WF-097 | B10 (D48) | herschreven (m) | host 'Jutter' on a gedurende clip member | idem, on the day count's clip |
+| `wf097-prorata-kenmerk-eigenaar` | WF-097 | B10 (D48) | herschreven (m) | host 'Jutter' on a gedurende clip member | idem, on the pro-rata clip |
+| `wf097-clip-kenmerk-periode` | WF-097 | B6 (D51) | herschreven (m) | wholePeriod qualifier (affirmative) on the gedurende clip member 'aangesteld' | `wholePeriod: {"node": "WholePeriod", "granularity": "year", "negated": false}` on the member of the clip; the message names `wholePeriod` |
+| `wf097-clip-kenmerk-periode-ontkend` | WF-097 | B6 (D51) | herschreven (m) | wholePeriod qualifier (negated) on the gedurende clip member 'aangesteld' | idem, with `"negated": true` |
+| `wf097-dagentelling-kenmerk-periode` | WF-097 | B6 (D51) | herschreven (m) | wholePeriod qualifier (affirmative) on the gedurende clip member 'borgplichtig' | idem, affirmative, on the day count's clip |
+| `wf097-prorata-kenmerk-periode` | WF-097 | B6 (D51) | herschreven (m) | wholePeriod qualifier (affirmative) on the gedurende clip member 'borgplichtig' | idem, affirmative, on the pro-rata clip |
+| `wf043-wholeperiod-nontemporal` | WF-043 | B6 (D51) | herschreven (m) | wholePeriod qualifier on a non-time-dependent operand | a `WholePeriod` on a non-temporal operand; the message names `wholePeriod` |
+| `wf113-marker-bron-null` | WF-113 (b) | B26 (D46, U11) | herschreven (m) | Unresolved marker without a source | an `Unresolved` without `source`: m5.py refuses it (a required field), written by hand; the verifier's loader loads it, every executor refuses it at load, and the null arm refuses it |
+| `wf113-marker-zonder-verslag` | WF-113 (b) | B26 (D46) | herschreven (m) | Unresolved marker 'de verjaringsgrens' is not accounted for | `source.snippet` on the expression marker; the message names the snippet |
+| `wf113-verslag-noemt-marker-niet` | WF-113 (b) | B26 (D46) | herschreven (m) | Unresolved marker 'zijn vondstdag eerder is dan de verjaringsgrens' is not accounted for | `source.snippet` on the condition marker; the message names the snippet |
+| `wf113-severity-error` | WF-113 (a) | N2 (D47, U22) | herschreven (m) | severity error is not a wire severity | `severity: "error"`, refused by name; the verifier's loader loads it, every executor refuses it at load |
+| `wf113-severity-info` | WF-113 (a) | N2 (D47, U22) | herschreven (m) | severity info is not a wire severity | `severity: "info"`, idem |
+| `wf113-severity-null` | WF-113 (a) | N2 (D47) | herschreven (m) | diagnostic without a severity | `severity: null`; the message names `warning` as the one wire severity |
+| `wf108-kwantorvouw-kwantor-de` | WF-108 (a) | N2 (D47, U22) | herschreven (m) | quantifier fold with quantifier the | `QuantifierFold.quantifier: "the"`, refused by name; the verifier's loader loads it, every executor refuses it at load |
+| `wf098-onbekende-contextwaarde-naam` | WF-098 | N2 (D47) | herschreven (m) | context value 'de dagX' is not one of the two admissible names evaluationDate, … | `de dagX` verbatim; the message names `evaluationDate`, `evaluationYear` |
+| `wf098-de-dag-als-contextwaarde` | WF-098 | N2 (D47) | herschreven (m) | context value 'de dag' is not one of the two admissible names evaluationDate, … | `de dag` verbatim; idem |
+| `wf031-sessiewaarde-in-dagsoort` | WF-031 | N2 (D47) | herschreven (m) | day-kind condition reads the session value 'evaluationDate' | `ContextValue {name: "evaluationDate"}` in a `DayKindDefinition.condition` |
+| `wf049-read-at-datetime` | WF-049 | B6 (D50) | herschreven (m) | the read's date operand is date-ms, must be a day-precision date | `TemporalRead {base, date}`: the `date` operand at millisecond precision |
+| `wf049-read-of-nontemporal` | WF-049 | B6 (D50) | herschreven (m) | temporal read of 'vast quotum', which is not a temporal attribute of 'Jutter' | `TemporalRead {base, date}`: a `base` that reads an attribute without a timeline |
+| `wf049-type-not-element` | WF-049 | B6 (D50) | herschreven (m) | the read's type must equal the timeline's element datatype | `TemporalRead {base, date}`: a node `type` other than the timeline's element type |
+| `wf053-eigen-lezing-supertype` | WF-053 | B6 (D49) | herschreven (m) | an attribute reference without a path is the subject's own read, so its subjectType is … | `subjectType: "Vondst"`, a supertype of the subject `Munt`, without a `path` |
+| `wf034-attribuutref-zonder-objecttype` | WF-034 | B6 (D49) | herschreven (m) | attribute reference 'aangevoerd gewicht' without a subjectType: it resolves against no … | `subjectType: null`; the message names `subjectType` |
+| `wf083-vouwbron-anker-op-tussentype` | WF-083 | B6 (D49) | herschreven (m) | fold-source subjectType 'Boot' is not the fold's anchor 'Vondst' (a set source reads … | the fold source's `subjectType` names an intermediate type of the path; the message names `subjectType` |
+| `wf083-vouwbron-vreemd-elementtype` | WF-083 | B6 (D49) | herschreven (m) | fold-source subjectType 'Jutter' is not the fold's anchor 'Vondst' (a set source reads … | the set source's `subjectType` names the fold subject; idem |
+| `wf083-vouwbron-vreemd-objecttype` | WF-083 | B6 (D49) | herschreven (m) | fold-source subjectType 'Jutter' is not the fold's anchor 'Vondst' (a fold without a … | the own read's `subjectType` names another type; idem |
+| `wf021-version-overlap` | WF-021 | B6, D5 (a) | herschreven (m) | validity windows of versions 'Kenmerktoekenning jutter penninggerechtigd #1' and … | two versions whose `Validity {from?, to?}` windows overlap; the list name in the message is `rules` |
+| `wf101-geldigheidsgrens-kalenderdag` | WF-101 | B6, D5 (a) | herschreven (m) | validity bound '2026-02-30' is not the ISO form yyyy-mm-dd | the invalid bound in `to` of a `Validity` |
+| `wf101-geldigheidsgrens-tekenjaar` | WF-101 | B6, D5 (a) | herschreven (m) | validity bound '+012026-01-01' is not the ISO form yyyy-mm-dd | the invalid bound in `from` of a `Validity` |
+| `wf042-empty-window` | WF-042 | B6, D5 (a) | herschreven (m) | time window without any bound | a `TimeWindow` without `from` and without `to` (v0: both `null`) |
+| `wf111-datumtijdgrens-attribuut` | WF-111 | B6 | herschreven (m) | the from bound of a time window is a millisecond-precision date: the window is a range … | a millisecond-precision attribute in `TimeWindow.from`; the message names `from` |
+| `wf111-datumtijdgrens-literal` | WF-111 | B6 | herschreven (m) | the from bound of a time window is a millisecond-precision date: the window is a range … | a millisecond-precision literal in `TimeWindow.from`; idem |
+| `wf111-periodegrens-parameterdatum` | WF-111 | B6 | herschreven (m) | the from bound of a time window is the parameter 'peildatum' | a parameter in `TimeWindow.from`; idem |
+
+Mechanical, without an L5 delta on the defect (no row): the other 371
+witnesses, of which 235 moved in their pointer only, 7 in their message only,
+59 in both and 70 not at all. Among them, the 34 whose `expect.txt` named a
+kind, an operator, a list or a field in its v0 spelling were re-pinned from the
+real output: WF-020 and WF-107 (the list names, four), WF-038 (ten), WF-089
+(three), WF-090 (one), WF-091 (twelve), and one each of WF-034
+(`wf034-foldbron-zonder-objecttype`), WF-053
+(`wf053-geleste-vouwoperand-onverbonden-hop`), WF-056
+(`wf056-no-gedurende-condition`) and WF-083 (`wf083-totaal-vreemd-elementtype`).
+
+#### Added at L5 (2026-09-25)
+
+| directory | rule | delta | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf098-v0-naam-rekendatum` | WF-098 | N2 (D47, U20) | toegevoegd | context value 'Rekendatum' is not one of the two admissible names evaluationDate, … | the v0 spelling of `evaluationDate` falls outside the closed set since L5, as `de dag` has since L4; `corpus/golden/anchor/jutterswet-penningvintage` with its one `ContextValue` named `Rekendatum`. Arm-exact: with the name readmitted it alone turns clean (707 documents compared) |
