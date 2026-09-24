@@ -40,10 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * versions, sources, keys or hops, and a union with a scope; a form name that spells a version; a target that is no
  * attribute reference; a presentation tag beside an initialisation; a context node without its name or datatype — in
  * the words of the shared OCaml loader. And, as the shared loader refuses them only when it reads for an executor: a
- * literal whose variant is not the one its type names (WF-114's sentence), a context value outside the two names
- * (WF-098's), a number with a decimal comma (WF-081's); beside them the member-kind arm and the name that is both an
- * attribute and a characteristic (WF-022's sentences, which need the model the shared loader does not consult) and a
- * fact creation whose target role names no declared filler (WF-028's). Read: every version of a named form as one
+ * literal whose variant is not the one its type names (WF-114's sentence) and a context value outside the two names
+ * (WF-098's); beside them a number outside the case format's number grammar (WF-081's, which ref and the ASP backend
+ * fault on when they read the lexeme), the member-kind arm and the name that is both an attribute and a
+ * characteristic (WF-022's sentences, which need the model the shared loader does not consult) and a fact creation
+ * whose target role names no declared filler (WF-028's). Read: every version of a named form as one
  * record, named as the frontend names a version of a form with several; the kind of a rule version from its
  * structure; a fact creation's target type as the filler of its target role and its path as its steps and its join;
  * the one list of uniquenesses split on the number of sources; both function nodes as the one function record; a
@@ -266,14 +267,22 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         assertNotNull(IrLoader.load(ir));
     }
 
-    @Test void een_decimale_komma_is_geen_getal() throws Exception {
-        ObjectNode ir = golden(PREMIEVENSTER);
-        zet(ir, WAARDE + "/value", "{\"number\":\"12,50\"}");
-        assertTrue(weigert(ir, WAARDE + "/value").getMessage().endsWith(": numeric literal lexeme '12,50' is not a"
-                + " number of the case format (an optional '-', digits, an optional '.' and digits, or a rational a/b"
-                + " whose denominator has no leading zero — ch. 4.1)"));
-        zet(ir, WAARDE + "/value", "{\"number\":\"12.50\"}");
-        assertEquals("12.50", ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
+    /** WF-081's sentence, over the case format's number grammar: a decimal comma, a point without a digit before it,
+     *  a unit in the lexeme and a denominator with a leading zero are no number. Before this check both branches read
+     *  each of them as some other number (.5 and -.5 as 5, 3/04 as 0.75), where ref and the ASP backend fault. */
+    @Test void een_getal_volgt_de_getalgrammatica_van_het_casusformaat() throws Exception {
+        for (String lexeem : List.of("12,50", ".5", "-.5", "3/04", "5 €", "1.", "+1", "1e3", "1/0", "")) {
+            ObjectNode ir = golden(PREMIEVENSTER);
+            zet(ir, WAARDE + "/value", "{\"number\":\"" + lexeem + "\"}");
+            assertTrue(weigert(ir, WAARDE + "/value").getMessage().endsWith(": numeric literal lexeme '" + lexeem
+                    + "' is not a number of the case format (an optional '-', digits, an optional '.' and digits, or a"
+                    + " rational a/b whose denominator has no leading zero — ch. 4.1)"), lexeem);
+        }
+        for (String lexeem : List.of("12.50", "-3", "0", "1/3", "-2/7", "007")) {
+            ObjectNode ir = golden(PREMIEVENSTER);
+            zet(ir, WAARDE + "/value", "{\"number\":\"" + lexeem + "\"}");
+            assertEquals(lexeem, ((Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).waarde()).waarde());
+        }
     }
 
     // ---------------- the context nodes ----------------

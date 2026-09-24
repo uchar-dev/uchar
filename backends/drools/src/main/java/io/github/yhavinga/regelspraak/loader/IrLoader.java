@@ -1411,9 +1411,11 @@ public final class IrLoader {
      * WF-084's and WF-095's, and the schema's patterns), with two exceptions no executor may read past. A variant
      * that is not the one the literal's type names is refused (WF-114's sentence without its number), so no branch
      * reads {@code {"text": "5"}} under a Number as a number; a literal without a type has nothing to cross it
-     * against (WF-034's typeless value node). And a number written with a decimal comma is refused (WF-081's
-     * sentence): the wire writes a point, and the frontend's shared number reader, which also reads source text,
-     * would take the comma for one.
+     * against (WF-034's typeless value node). And a number outside the case format's number grammar is refused
+     * (WF-081's sentence), the grammar ref and the ASP backend read with: the frontend's shared number reader, which
+     * also reads source text, searches the lexeme for its first number, so it took a comma for a point and read
+     * {@code .5} and {@code 5 €} as 5, {@code -.5} as 5 and {@code 3/04} as 0.75 where those two fault (measured on
+     * both branches before this check).
      */
     private Expr literal(JsonNode n) {
         String p = padVan(n);
@@ -1431,12 +1433,16 @@ public final class IrLoader {
             String weigering = literaalvariantWeigering(variant, type);
             if (weigering != null) throw new Documentfout(p + "/value", weigering);
         }
-        if (variant.equals("number") && lexeem.contains(","))
+        if (variant.equals("number") && !GETAL.matcher(lexeem).matches())
             throw new Documentfout(p + "/value", "numeric literal lexeme '" + lexeem + "' is not a number of the case"
                     + " format (an optional '-', digits, an optional '.' and digits, or a rational a/b whose denominator"
                     + " has no leading zero — ch. 4.1)");
         return new Expr.Literal(lexeem, type, bron(n));
     }
+
+    /** The number grammar of the case format (uchar-case-v0), which the literal's number variant carries. */
+    private static final java.util.regex.Pattern GETAL =
+            java.util.regex.Pattern.compile("-?[0-9]+(\\.[0-9]+)?|-?[0-9]+/[1-9][0-9]*");
 
     /** The seven variants of the case format's value union, in its order. */
     private static final List<String> LITERAALVARIANTEN = List.of("number", "boolean", "text", "date", "dateTime",
