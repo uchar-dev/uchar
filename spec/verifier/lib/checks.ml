@@ -3352,7 +3352,7 @@ let roles_named_from ctx ~from_type ~name =
     ctx.doc.feittypen
 
 (* The reading of an instance fold's SOURCE — the single argument of an
-   aggregation carrying an elementType (IR-SPEC ch. 4.3, D8). The
+   aggregation carrying an elementType (IR-SPEC ch. 4.3, the reading of the source). The
    range decides it: with one (sourceRole or sourcePath) the argument is the SET
    source, read per contributor; without one it is the subject's own read,
    which the loader admits under TOTAAL alone. Under AANTAL the set source
