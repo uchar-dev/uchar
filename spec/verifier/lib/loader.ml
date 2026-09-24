@@ -1472,7 +1472,7 @@ let uniqueness path j : (resolved_uniciteit, resolved_uniciteit_unie) Either.t l
    fact type, read as WF-028 reads a role — the fact type found with the
    verifier's name identity, and the one of its two roles that the name
    matches. Where that does not resolve the target type stays empty, and
-   WF-028 and WF-034 report the creation. *)
+   WF-028 reports the creation. *)
 let target_filler feittypen ~fact_type ~role =
   match Checks.find_ci feittypen fact_type with
   | Some ({ rollen = [ a; b ]; _ } : feittype) -> (

@@ -649,7 +649,7 @@ type resolved_feit_creatie = {
       (* not on the wire since L4 (IR-SPEC ch. 3.4): the declared filler of
          [doel_rol] in [fc_feittype], resolved by the loader with the
          verifier's name identity; [None] where that does not resolve (an
-         undeclared fact type or role, which WF-028 and WF-034 report) *)
+         undeclared fact type or role, which WF-028 reports) *)
   tussenstappen : tussenstap list;
   fc_voorwaarde : conditie option;
   fc_geldigheid : geldigheid option;
