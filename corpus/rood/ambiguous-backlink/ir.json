@@ -21,44 +21,42 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "insignedracht",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "insignedracht",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "drager",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "drager",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "gedragen insigne",
-            "objecttypeNaam": "Insigne",
-            "meervoud": "gedragen insignes",
-            "meervoudig": true
+            "node": "Role",
+            "name": "gedragen insigne",
+            "objectType": "Insigne",
+            "plural": "gedragen insignes",
+            "many": true
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "insignebezit",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "insignebezit",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "eigenaar",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "eigenaar",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "bezeten insigne",
-            "objecttypeNaam": "Insigne",
-            "meervoud": "bezeten insignes",
-            "meervoudig": true
+            "node": "Role",
+            "name": "bezeten insigne",
+            "objectType": "Insigne",
+            "plural": "bezeten insignes",
+            "many": true
           }
         ]
       }
@@ -71,9 +69,9 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [
       {
         "node": "ObjectCreation",
         "name": "insigne voor een jutter",
@@ -83,20 +81,18 @@
             "subject": "Jutter",
             "initialisations": [],
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             }
           }
         ]
       }
     ],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

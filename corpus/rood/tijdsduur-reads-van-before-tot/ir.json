@@ -23,7 +23,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "dagen"
@@ -43,21 +43,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "vaartduur van een vaart",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vaartduur",
-              "objecttype": "Vaart",
+              "node": "AttributeReference",
+              "attribute": "vaartduur",
+              "subjectType": "Vaart",
               "source": {
                 "snippet": "De vaartduur van een Vaart"
               }
@@ -68,7 +66,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "dagen"
@@ -76,20 +74,20 @@
               },
               "binder": "vertrekdatum",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "vertrek",
-                "objecttype": "Vaart",
+                "node": "AttributeReference",
+                "attribute": "vertrek",
+                "subjectType": "Vaart",
                 "source": {
                   "snippet": "zijn vertrek"
                 }
               },
               "body": {
                 "node": "BuiltinCall",
-                "kind": "TIJDSDUUR",
+                "kind": "duration",
                 "arguments": [
                   {
                     "node": "ContextValue",
-                    "name": "Rekendatum",
+                    "name": "evaluationDate",
                     "type": {
                       "node": "Date",
                       "precision": "day"
@@ -110,7 +108,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD",
+                  "sign": "unspecified",
                   "unit": {
                     "node": "Unit",
                     "abbreviation": "dagen"
@@ -125,19 +123,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

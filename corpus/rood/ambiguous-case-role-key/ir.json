@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -34,7 +34,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -53,7 +53,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -62,44 +62,44 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "pontonligging",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "pontonligging",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "pontonschuit",
-            "objecttypeNaam": "Schuit",
-            "meervoud": "pontonschuiten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "pontonschuit",
+            "objectType": "Schuit",
+            "plural": "pontonschuiten",
+            "many": true
           },
           {
-            "node": "Rol",
-            "naam": "ligger",
-            "objecttypeNaam": "Ponton",
-            "meervoud": "liggers",
-            "meervoudig": false
+            "node": "Role",
+            "name": "ligger",
+            "objectType": "Ponton",
+            "plural": "liggers",
+            "many": false
           }
         ]
       },
       {
-        "node": "Feittype",
-        "naam": "vlotligging",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "vlotligging",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "vlotschuit",
-            "objecttypeNaam": "Schuit",
-            "meervoud": "vlotschuiten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "vlotschuit",
+            "objectType": "Schuit",
+            "plural": "vlotschuiten",
+            "many": true
           },
           {
-            "node": "Rol",
-            "naam": "ligger",
-            "objecttypeNaam": "Vlot",
-            "meervoud": "liggers",
-            "meervoudig": false
+            "node": "Role",
+            "name": "ligger",
+            "objectType": "Vlot",
+            "plural": "liggers",
+            "many": false
           }
         ]
       }
@@ -112,54 +112,52 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "ligdiepte van een schuit",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "ligdiepte",
-              "objecttype": "Schuit",
+              "node": "AttributeReference",
+              "attribute": "ligdiepte",
+              "subjectType": "Schuit",
               "source": {
                 "snippet": "De ligdiepte van een Schuit"
               }
             },
             "value": {
-              "node": "AttribuutRef",
-              "attribuut": "draagvlak",
-              "objecttype": "Ponton",
+              "node": "AttributeReference",
+              "attribute": "draagvlak",
+              "subjectType": "Ponton",
               "source": {
                 "snippet": "het draagvlak van de ligger van de Schuit"
               },
-              "navigatieBindingen": [
+              "path": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "pontonligging",
-                  "rol": "ligger"
+                  "node": "RoleBinding",
+                  "factType": "pontonligging",
+                  "role": "ligger"
                 }
               ]
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

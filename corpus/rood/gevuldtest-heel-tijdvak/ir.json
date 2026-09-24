@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -34,11 +34,11 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
@@ -49,7 +49,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -59,7 +59,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 2,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -67,30 +67,29 @@
           {
             "node": "Characteristic",
             "name": "ongemeten",
-            "kind": "BIJVOEGLIJK"
+            "kind": "adjectival"
           }
         ]
       }
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "ligplaats",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "ligplaats",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "werf",
-            "objecttypeNaam": "Werf",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "werf",
+            "objectType": "Werf",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "schuit",
-            "objecttypeNaam": "Schuit",
-            "meervoud": "schuiten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "schuit",
+            "objectType": "Schuit",
+            "plural": "schuiten",
+            "many": true
           }
         ]
       }
@@ -103,21 +102,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "meldpremie van een schuit",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "meldpremie",
-              "objecttype": "Schuit",
+              "node": "AttributeReference",
+              "attribute": "meldpremie",
+              "subjectType": "Schuit",
               "source": {
                 "snippet": "De meldpremie van een Schuit"
               }
@@ -131,49 +128,48 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "40"
               }
             },
             "condition": {
-              "node": "Predicaat",
-              "soort": "GEVULD",
+              "node": "Predicate",
+              "kind": "filled",
               "operand": {
-                "node": "AttribuutRef",
-                "attribuut": "lengte",
-                "objecttype": "Schuit",
+                "node": "AttributeReference",
+                "attribute": "lengte",
+                "subjectType": "Schuit",
                 "source": {
                   "snippet": "de lengte van de Schuit"
                 }
               },
-              "dagsoort": null,
-              "negatie": false,
-              "cijfers": 0,
-              "periode": {
-                "node": "GeheelPeriode",
-                "jaar": true,
-                "niet": false
+              "negated": false,
+              "digits": 0,
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "year",
+                "negated": false
               },
               "source": {
                 "snippet": "de lengte van de Schuit gedurende het gehele jaar gevuld is"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

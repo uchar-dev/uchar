@@ -31,7 +31,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "springtijdagen",
@@ -66,7 +66,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "springtijdagen",
@@ -85,7 +85,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "springtijdagen",
@@ -120,40 +120,38 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "uiterste bergingsdatum van een bergingsploeg",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "uiterste bergingsdatum",
-              "objecttype": "Bergingsploeg",
+              "node": "AttributeReference",
+              "attribute": "uiterste bergingsdatum",
+              "subjectType": "Bergingsploeg",
               "source": {
                 "snippet": "De uiterste bergingsdatum van een Bergingsploeg"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "meldingsdatum",
-                "objecttype": "Bergingsploeg",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldingsdatum",
+                "subjectType": "Bergingsploeg",
                 "source": {
                   "snippet": "zijn meldingsdatum"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "bergingsbestek",
-                "objecttype": "Bergingsploeg",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "bergingsbestek",
+                "subjectType": "Bergingsploeg",
                 "source": {
                   "snippet": "zijn bergingsbestek"
                 }
@@ -167,18 +165,18 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [
+    "dayKindDefinitions": [
       {
-        "node": "ResolvedDagsoort",
-        "naam": "springtijdag",
-        "voorwaarde": {
-          "node": "Predicaat",
-          "soort": "DAGSOORT",
+        "node": "DayKindDefinition",
+        "dayKind": "springtijdag",
+        "condition": {
+          "node": "Predicate",
+          "kind": "dayKind",
           "operand": {
             "node": "Literal",
             "value": {
@@ -192,29 +190,26 @@
               "snippet": "15-03-2026"
             }
           },
-          "dagsoort": "ankerdag",
-          "negatie": false,
-          "cijfers": 0,
-          "periode": null,
+          "dayKind": "ankerdag",
+          "negated": false,
+          "digits": 0,
           "source": {
             "snippet": "15-03-2026 een ankerdag is"
           }
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       },
       {
-        "node": "ResolvedDagsoort",
-        "naam": "ankerdag",
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
+        "node": "DayKindDefinition",
+        "dayKind": "ankerdag",
+        "condition": {
+          "node": "Comparison",
+          "op": "equal",
+          "left": {
             "node": "BuiltinCall",
-            "kind": "DAG_UIT",
+            "kind": "dayOf",
             "arguments": [
               {
                 "node": "BoundDay",
@@ -231,13 +226,13 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "source": {
               "snippet": "de dag_uit uit de dag"
             }
           },
-          "rechts": {
+          "right": {
             "node": "Literal",
             "value": {
               "number": "15"
@@ -246,31 +241,28 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "source": {
               "snippet": "15"
             }
           },
-          "periode": null,
           "source": {
             "snippet": "de dag uit de dag gelijk is aan 15"
           }
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

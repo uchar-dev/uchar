@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -34,7 +34,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           }
         ],
@@ -43,23 +43,23 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "ligplaats",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "ligplaats",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "haven",
-            "objecttypeNaam": "Haven",
-            "meervoud": "havens",
-            "meervoudig": false
+            "node": "Role",
+            "name": "haven",
+            "objectType": "Haven",
+            "plural": "havens",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "ligger",
-            "objecttypeNaam": "Schuit",
-            "meervoud": "liggers",
-            "meervoudig": true
+            "node": "Role",
+            "name": "ligger",
+            "objectType": "Schuit",
+            "plural": "liggers",
+            "many": true
           }
         ]
       }
@@ -72,33 +72,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "liggertal van een haven",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "liggertal",
-              "objecttype": "Haven",
+              "node": "AttributeReference",
+              "attribute": "liggertal",
+              "subjectType": "Haven",
               "source": {
                 "snippet": "Het liggertal van een Haven"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL",
+              "kind": "count",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "ligger",
-                  "objecttype": "Haven",
+                  "node": "AttributeReference",
+                  "attribute": "ligger",
+                  "subjectType": "Haven",
                   "source": {
                     "snippet": "ligger van de Haven"
                   }
@@ -106,34 +104,34 @@
               ],
               "elementType": "Schuit",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "ligplaats",
-                "rol": "ligger"
+                "node": "RoleBinding",
+                "factType": "ligplaats",
+                "role": "ligger"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal ligger van de Haven"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

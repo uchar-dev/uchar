@@ -12,10 +12,10 @@
           {
             "node": "Characteristic",
             "name": "geborgen",
-            "kind": "BIJVOEGLIJK",
+            "kind": "adjectival",
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "JAAR",
+              "granularity": "year",
               "count": 1
             }
           }
@@ -31,21 +31,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "berging van een vondst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "geborgen",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "geborgen",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "Een Vondst is geborgen"
               }
@@ -56,15 +54,15 @@
                 "boolean": true
               },
               "type": {
-                "node": "Booleaan"
+                "node": "Boolean"
               },
               "source": {
                 "snippet": "waar"
               }
             },
             "condition": {
-              "node": "Periode",
-              "vanaf": {
+              "node": "TimeWindow",
+              "from": {
                 "node": "Literal",
                 "value": {
                   "date": "2024-01-01"
@@ -77,7 +75,7 @@
                   "snippet": "2024-01-01"
                 }
               },
-              "tot": {
+              "to": {
                 "node": "Literal",
                 "value": {
                   "date": "2025-01-01"
@@ -90,7 +88,7 @@
                   "snippet": "2025-01-01"
                 }
               },
-              "totInclusief": false,
+              "toInclusive": false,
               "source": {
                 "snippet": "van 1 januari 2024 tot 1 januari 2025"
               }
@@ -100,14 +98,14 @@
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

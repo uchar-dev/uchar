@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -45,7 +45,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -61,21 +61,19 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "begrenswaarde van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "begrenswaarde",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "begrenswaarde",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De begrenswaarde van een Jutter"
               }
@@ -86,20 +84,20 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "binder": "grenswaarde",
               "value": {
-                "node": "AttribuutRef",
-                "attribuut": "grens",
-                "objecttype": "Jutter",
+                "node": "AttributeReference",
+                "attribute": "grens",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "zijn grens"
                 }
               },
               "body": {
-                "node": "Begrensd",
-                "basis": {
+                "node": "Clamp",
+                "base": {
                   "node": "Literal",
                   "value": {
                     "number": "100"
@@ -108,27 +106,27 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "100"
                   }
                 },
                 "minimum": {
-                  "node": "Binair",
-                  "op": "GEDEELD_DOOR",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "teller",
-                    "objecttype": "Jutter",
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "teller",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "zijn teller"
                     }
                   },
-                  "rechts": {
-                    "node": "AttribuutRef",
-                    "attribuut": "noemer",
-                    "objecttype": "Jutter",
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "noemer",
+                    "subjectType": "Jutter",
                     "source": {
                       "snippet": "zijn noemer"
                     }
@@ -137,7 +135,7 @@
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
-                    "sign": "ONBEPAALD"
+                    "sign": "unspecified"
                   },
                   "source": {
                     "snippet": "zijn teller gedeeld door zijn noemer"
@@ -154,7 +152,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "100 met een minimum van zijn teller gedeeld door zijn noemer en een maximum van de grenswaarde"
@@ -165,19 +163,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

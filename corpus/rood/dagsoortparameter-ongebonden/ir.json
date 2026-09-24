@@ -31,7 +31,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "havendagen",
@@ -58,7 +58,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "havendagen",
@@ -98,40 +98,38 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "streefdatum van een havenmeester",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "streefdatum",
-              "objecttype": "Havenmeester",
+              "node": "AttributeReference",
+              "attribute": "streefdatum",
+              "subjectType": "Havenmeester",
               "source": {
                 "snippet": "De streefdatum van een Havenmeester"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aanvraagdatum",
-                "objecttype": "Havenmeester",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aanvraagdatum",
+                "subjectType": "Havenmeester",
                 "source": {
                   "snippet": "zijn aanvraagdatum"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "doorlooptijd",
-                "objecttype": "Havenmeester",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "doorlooptijd",
+                "subjectType": "Havenmeester",
                 "source": {
                   "snippet": "zijn doorlooptijd"
                 }
@@ -145,7 +143,7 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -155,34 +153,32 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "havenspanne",
-              "objecttype": "Havenmeester",
+              "node": "AttributeReference",
+              "attribute": "havenspanne",
+              "subjectType": "Havenmeester",
               "source": {
                 "snippet": "De havenspanne van een Havenmeester"
               }
             },
             "value": {
               "node": "BuiltinCall",
-              "kind": "TIJDSDUUR",
+              "kind": "duration",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "aanvraagdatum",
-                  "objecttype": "Havenmeester",
+                  "node": "AttributeReference",
+                  "attribute": "aanvraagdatum",
+                  "subjectType": "Havenmeester",
                   "source": {
                     "snippet": "zijn aanvraagdatum"
                   }
                 },
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "sluitdatum",
-                  "objecttype": "Havenmeester",
+                  "node": "AttributeReference",
+                  "attribute": "sluitdatum",
+                  "subjectType": "Havenmeester",
                   "source": {
                     "snippet": "zijn sluitdatum"
                   }
@@ -192,7 +188,7 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD",
+                "sign": "unspecified",
                 "unit": {
                   "node": "Unit",
                   "abbreviation": "havendagen",
@@ -208,24 +204,24 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [
+    "dayKindDefinitions": [
       {
-        "node": "ResolvedDagsoort",
-        "naam": "havendag",
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
+        "node": "DayKindDefinition",
+        "dayKind": "havendag",
+        "condition": {
+          "node": "Compound",
+          "quantifier": "all",
+          "threshold": 0,
+          "parts": [
             {
-              "node": "Vergelijking",
-              "op": "LATER",
-              "links": {
+              "node": "Comparison",
+              "op": "later",
+              "left": {
                 "node": "BoundDay",
                 "type": {
                   "node": "Date",
@@ -235,24 +231,23 @@
                   "snippet": "de dag"
                 }
               },
-              "rechts": {
-                "node": "ParameterRef",
+              "right": {
+                "node": "ParameterReference",
                 "parameter": "openingsdatum",
                 "source": {
                   "snippet": "de openingsdatum"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "de dag later is dan de openingsdatum"
               }
             },
             {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
                 "node": "BuiltinCall",
-                "kind": "DAG_UIT",
+                "kind": "dayOf",
                 "arguments": [
                   {
                     "node": "BoundDay",
@@ -269,13 +264,13 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
+                  "sign": "nonNegative"
                 },
                 "source": {
                   "snippet": "de dag uit de dag"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "1"
@@ -284,13 +279,12 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "1"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "de dag uit de dag gelijk is aan 1"
               }
@@ -300,20 +294,18 @@
             "snippet": "er aan alle volgende voorwaarden wordt voldaan: - de dag later is dan de openingsdatum - de dag uit de dag gelijk is aan 1."
           }
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

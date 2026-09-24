@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 4,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 4,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": false,
               "decimals": 4,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -51,40 +51,38 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "quotient van een deling",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "quotient",
-              "objecttype": "Deling",
+              "node": "AttributeReference",
+              "attribute": "quotient",
+              "subjectType": "Deling",
               "source": {
                 "snippet": "Het quotient van een Deling"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "GEDEELD_DOOR",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "teller",
-                "objecttype": "Deling",
+              "node": "Binary",
+              "op": "dividedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "teller",
+                "subjectType": "Deling",
                 "source": {
                   "snippet": "de teller van de Deling"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "noemer",
-                "objecttype": "Deling",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "noemer",
+                "subjectType": "Deling",
                 "source": {
                   "snippet": "de noemer van de Deling"
                 }
@@ -93,26 +91,26 @@
                 "node": "Number",
                 "whole": false,
                 "decimals": 4,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de teller van de Deling gedeeld door de noemer van de Deling"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -31,56 +31,54 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "waardering van een vondst",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "waardering",
-              "objecttype": "Vondst",
+              "node": "AttributeReference",
+              "attribute": "waardering",
+              "subjectType": "Vondst",
               "source": {
                 "snippet": "De waardering van een Vondst"
               }
             },
             "value": {
-              "node": "Onopgelost",
+              "node": "Unresolved",
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de taxatie volgens het niet-gemodelleerde protocol"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": [
     {
       "node": "Diagnostic",
-      "severity": "WARNING",
+      "severity": "warning",
       "message": "onopgelost: de waarde van de berekening is niet opgelost \u2014 'de taxatie volgens het niet-gemodelleerde protocol' blijft als marker op de wire staan",
       "line": 0
     }

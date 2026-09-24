@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -51,37 +51,37 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "vensterheffing in 2026",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": "2026-01-01",
-              "tot": "2026-12-31"
+              "node": "Validity",
+              "from": "2026-01-01",
+              "to": "2026-12-31"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vensterheffing",
-              "objecttype": "Vondstmelding",
+              "node": "AttributeReference",
+              "attribute": "vensterheffing",
+              "subjectType": "Vondstmelding",
               "source": {
                 "snippet": "De vensterheffing van een Vondstmelding"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "meldwaarde",
-                "objecttype": "Vondstmelding",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldwaarde",
+                "subjectType": "Vondstmelding",
                 "source": {
                   "snippet": "de meldwaarde van de Vondstmelding"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "25"
@@ -90,7 +90,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "25"
@@ -100,14 +100,14 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de meldwaarde van de Vondstmelding vermeerderd met 25"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       },
@@ -117,30 +117,29 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": "2025-12-31"
+              "node": "Validity",
+              "to": "2025-12-31"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "overgangsheffing",
-              "objecttype": "Vondstmelding",
+              "node": "AttributeReference",
+              "attribute": "overgangsheffing",
+              "subjectType": "Vondstmelding",
               "source": {
                 "snippet": "De overgangsheffing van een Vondstmelding"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "meldwaarde",
-                "objecttype": "Vondstmelding",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldwaarde",
+                "subjectType": "Vondstmelding",
                 "source": {
                   "snippet": "de meldwaarde van de Vondstmelding"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "40"
@@ -149,7 +148,7 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "40"
@@ -159,26 +158,26 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de meldwaarde van de Vondstmelding vermeerderd met 40"
               }
             },
             "initialisation": false,
-            "presentation": "GELIJKSTELLING"
+            "presentation": "equation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

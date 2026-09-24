@@ -15,7 +15,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              "sign": "nonNegative"
             }
           },
           {
@@ -25,7 +25,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           },
           {
@@ -35,7 +35,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             }
           }
         ],
@@ -54,7 +54,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD"
+              "sign": "unspecified"
             },
             "plural": "waarderingen"
           }
@@ -64,23 +64,22 @@
     ],
     "factTypes": [
       {
-        "node": "Feittype",
-        "naam": "vondstaanmelding",
-        "wederkerig": false,
-        "rollen": [
+        "node": "FactType",
+        "name": "vondstaanmelding",
+        "reciprocal": false,
+        "roles": [
           {
-            "node": "Rol",
-            "naam": "aanmelder",
-            "objecttypeNaam": "Jutter",
-            "meervoud": null,
-            "meervoudig": false
+            "node": "Role",
+            "name": "aanmelder",
+            "objectType": "Jutter",
+            "many": false
           },
           {
-            "node": "Rol",
-            "naam": "vondst",
-            "objecttypeNaam": "Vondst",
-            "meervoud": "vondsten",
-            "meervoudig": true
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
           }
         ]
       }
@@ -93,33 +92,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "aantal gewaardeerde vondsten",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "aantal gewaardeerde vondsten",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "aantal gewaardeerde vondsten",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De aantal gewaardeerde vondsten van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "AANTAL_GEVULDE",
+              "kind": "filledCount",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "waardering",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "waardering",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "de waardering van alle vondsten van de Jutter"
                   }
@@ -127,22 +124,22 @@
               ],
               "elementType": "Vondst",
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "vondstaanmelding",
-                "rol": "vondst"
+                "node": "RoleBinding",
+                "factType": "vondstaanmelding",
+                "role": "vondst"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "NIET_NEGATIEF"
+                "sign": "nonNegative"
               },
               "source": {
                 "snippet": "het aantal gevulde waarden van de waardering van alle vondsten van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -152,26 +149,24 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "vondstwaarde",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "vondstwaarde",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De vondstwaarde van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "SOM",
+              "kind": "sum",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "waardering",
-                  "objecttype": "Vondst",
+                  "node": "AttributeReference",
+                  "attribute": "waardering",
+                  "subjectType": "Vondst",
                   "source": {
                     "snippet": "de waardering van alle vondsten van de Jutter"
                   }
@@ -187,29 +182,29 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "0"
                 }
               },
               "sourceRole": {
-                "node": "RolBinding",
-                "feittype": "vondstaanmelding",
-                "rol": "vondst"
+                "node": "RoleBinding",
+                "factType": "vondstaanmelding",
+                "role": "vondst"
               },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de som van de waardering van alle vondsten van de Jutter of 0 als die er niet zijn"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       },
@@ -219,33 +214,31 @@
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "gemiddelde vondstwaarde",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "gemiddelde vondstwaarde",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "De gemiddelde vondstwaarde van een Jutter"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "GEDEELD_DOOR",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vondstwaarde",
-                "objecttype": "Jutter",
+              "node": "Binary",
+              "op": "dividedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstwaarde",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "de vondstwaarde van de Jutter"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "aantal gewaardeerde vondsten",
-                "objecttype": "Jutter",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "aantal gewaardeerde vondsten",
+                "subjectType": "Jutter",
                 "source": {
                   "snippet": "de aantal gewaardeerde vondsten van de Jutter"
                 }
@@ -254,26 +247,26 @@
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
-                "sign": "ONBEPAALD"
+                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de vondstwaarde van de Jutter gedeeld door het aantal gewaardeerde vondsten van de Jutter"
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

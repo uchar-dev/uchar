@@ -31,7 +31,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "springtijdagen",
@@ -66,7 +66,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "springtijdagen",
@@ -85,7 +85,7 @@
               "node": "Number",
               "whole": true,
               "decimals": 0,
-              "sign": "ONBEPAALD",
+              "sign": "unspecified",
               "unit": {
                 "node": "Unit",
                 "abbreviation": "springtijdagen",
@@ -116,40 +116,38 @@
     ]
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "uiterste bergingsdatum van een bergingsploeg",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "uiterste bergingsdatum",
-              "objecttype": "Bergingsploeg",
+              "node": "AttributeReference",
+              "attribute": "uiterste bergingsdatum",
+              "subjectType": "Bergingsploeg",
               "source": {
                 "snippet": "De uiterste bergingsdatum van een Bergingsploeg"
               }
             },
             "value": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "meldingsdatum",
-                "objecttype": "Bergingsploeg",
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldingsdatum",
+                "subjectType": "Bergingsploeg",
                 "source": {
                   "snippet": "zijn meldingsdatum"
                 }
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "bergingsbestek",
-                "objecttype": "Bergingsploeg",
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "bergingsbestek",
+                "subjectType": "Bergingsploeg",
                 "source": {
                   "snippet": "zijn bergingsbestek"
                 }
@@ -163,26 +161,26 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [
+    "dayKindDefinitions": [
       {
-        "node": "ResolvedDagsoort",
-        "naam": "springtijdag",
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
+        "node": "DayKindDefinition",
+        "dayKind": "springtijdag",
+        "condition": {
+          "node": "Compound",
+          "quantifier": "all",
+          "threshold": 0,
+          "parts": [
             {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
                 "node": "BuiltinCall",
-                "kind": "JAAR_UIT",
+                "kind": "yearOf",
                 "arguments": [
                   {
                     "node": "BoundDay",
@@ -199,13 +197,13 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "x"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "2026"
@@ -214,23 +212,22 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "2026"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "x"
               }
             },
             {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
                 "node": "BuiltinCall",
-                "kind": "MAAND_UIT",
+                "kind": "monthOf",
                 "arguments": [
                   {
                     "node": "BoundDay",
@@ -247,13 +244,13 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "x"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "12"
@@ -262,23 +259,22 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "12"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "x"
               }
             },
             {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
                 "node": "BuiltinCall",
-                "kind": "DAG_UIT",
+                "kind": "dayOf",
                 "arguments": [
                   {
                     "node": "BoundDay",
@@ -295,13 +291,13 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "x"
                 }
               },
-              "rechts": {
+              "right": {
                 "node": "Literal",
                 "value": {
                   "number": "1"
@@ -310,13 +306,12 @@
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "sign": "unspecified"
                 },
                 "source": {
                   "snippet": "1"
                 }
               },
-              "periode": null,
               "source": {
                 "snippet": "x"
               }
@@ -326,20 +321,18 @@
             "snippet": "x"
           }
         },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
+        "validity": {
+          "node": "Validity"
         }
       }
     ],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }

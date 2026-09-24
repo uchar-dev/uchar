@@ -17,7 +17,7 @@
             },
             "timeline": {
               "node": "TimelineFacet",
-              "granularity": "MAAND",
+              "granularity": "month",
               "count": 1
             }
           },
@@ -83,33 +83,31 @@
     "dayKinds": []
   },
   "rules": {
-    "resolvedRegels": [
+    "rules": [
       {
         "node": "Rule",
         "name": "bewaargeld van een jutter",
         "versions": [
           {
             "validity": {
-              "node": "Geldigheid",
-              "vanaf": null,
-              "tot": null
+              "node": "Validity"
             },
             "target": {
-              "node": "AttribuutRef",
-              "attribuut": "bewaargeld",
-              "objecttype": "Jutter",
+              "node": "AttributeReference",
+              "attribute": "bewaargeld",
+              "subjectType": "Jutter",
               "source": {
                 "snippet": "Het bewaargeld van een Jutter"
               }
             },
             "value": {
               "node": "Aggregation",
-              "kind": "TOTAAL",
+              "kind": "total",
               "arguments": [
                 {
-                  "node": "AttribuutRef",
-                  "attribuut": "bewaarvergoeding per maand",
-                  "objecttype": "Jutter",
+                  "node": "AttributeReference",
+                  "attribute": "bewaarvergoeding per maand",
+                  "subjectType": "Jutter",
                   "source": {
                     "snippet": "zijn bewaarvergoeding per maand"
                   }
@@ -125,19 +123,19 @@
               }
             },
             "initialisation": false,
-            "presentation": "BEREKENING"
+            "presentation": "calculation"
           }
         ]
       }
     ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [],
-    "verdelingen": [],
-    "consistenties": [],
-    "uniciteiten": [],
-    "feitCreaties": [],
-    "resolvedStartpunten": [],
-    "regelGroepen": []
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
   },
   "diagnostics": []
 }
