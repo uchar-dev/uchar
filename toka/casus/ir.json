@@ -12,35 +12,37 @@
             "node": "Attribute",
             "name": "identificatienummer",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "POSITIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "POSITIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "geboortedatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "leeftijd",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "jr",
-                "stelsel": "Tijd",
-                "canoniek": "mnd",
-                "factorNaarCanoniek": 12,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "jr",
+                "system": "Tijd",
+                "canonical": "mnd",
+                "factorToCanonical": {
+                  "num": 12,
+                  "den": 1
+                }
               }
             }
           },
@@ -48,55 +50,50 @@
             "node": "Attribute",
             "name": "belasting op basis van afstand",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "belasting op basis van reisduur",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "te betalen belasting",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "treinmiles op basis van evenredige verdeling",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "maximaal te ontvangen treinmiles bij evenredige verdeling volgens rangorde",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
@@ -117,11 +114,10 @@
             "node": "Attribute",
             "name": "woonregio factor",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           }
         ],
@@ -191,24 +187,27 @@
             "node": "Attribute",
             "name": "vluchtdatum",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           },
           {
             "node": "Attribute",
             "name": "afstand tot bestemming",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "km",
-                "stelsel": "afstand",
-                "canoniek": "m",
-                "factorNaarCanoniek": 1000,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "km",
+                "system": "afstand",
+                "canonical": "m",
+                "factorToCanonical": {
+                  "num": 1000,
+                  "den": 1
+                }
               }
             }
           },
@@ -230,17 +229,19 @@
             "node": "Attribute",
             "name": "reisduur per trein",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "minuut",
-                "stelsel": "Tijd",
-                "canoniek": "dg",
-                "factorNaarCanoniek": 0.0006944444444444446388888888888889,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "minuut",
+                "system": "Tijd",
+                "canonical": "dg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1440
+                }
               }
             }
           },
@@ -248,39 +249,39 @@
             "node": "Attribute",
             "name": "hoeveelheid passagiers",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "hoeveelheid uitzonderingspassagiers",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "leeftijd van de oudste passagier",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "jr",
-                "stelsel": "Tijd",
-                "canoniek": "mnd",
-                "factorNaarCanoniek": 12,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "NIET_NEGATIEF",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "jr",
+                "system": "Tijd",
+                "canonical": "mnd",
+                "factorToCanonical": {
+                  "num": 12,
+                  "den": 1
+                }
               }
             }
           },
@@ -288,64 +289,65 @@
             "node": "Attribute",
             "name": "totale belasting op basis van afstand",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "totale belasting op basis van reisduur",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "totaal te betalen belasting",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             }
           },
           {
             "node": "Attribute",
             "name": "verwachte datum-tijd van aankomst",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "verwachte datum-tijd van vertrek",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "verwachte duur",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "minuut",
-                "stelsel": "Tijd",
-                "canoniek": "dg",
-                "factorNaarCanoniek": 0.0006944444444444446388888888888889,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "minuut",
+                "system": "Tijd",
+                "canonical": "dg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1440
+                }
               }
             }
           },
@@ -353,28 +355,32 @@
             "node": "Attribute",
             "name": "datum-tijd voor het berekenen van de belasting op basis van afstand",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "bevestigingstijdstip",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "uiterste boekingstijdstip",
             "datatype": {
-              "node": "DatumTijd"
+              "node": "Date",
+              "precision": "millisecond"
             }
           },
           {
             "node": "Attribute",
             "name": "startpunt variabele periode van 3 maanden",
             "datatype": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             }
           }
         ],
@@ -435,33 +441,30 @@
             "node": "Attribute",
             "name": "totaal aantal treinmiles",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "POSITIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "POSITIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "aantal treinmiles op basis van aantal passagiers",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "POSITIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "POSITIEF"
             }
           },
           {
             "node": "Attribute",
             "name": "restant na verdeling",
             "datatype": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "POSITIEF",
-              "eenheid": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "POSITIEF"
             }
           }
         ],
@@ -550,278 +553,279 @@
     "parameters": [
       {
         "node": "Parameter",
-        "naam": "korting bij gebruik niet-fossiele brandstof",
+        "name": "korting bij gebruik niet-fossiele brandstof",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "granulariteit": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "ONBEPAALD"
+        }
       },
       {
         "node": "Parameter",
-        "naam": "volwassenleeftijd",
+        "name": "volwassenleeftijd",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "jr",
-            "stelsel": "Tijd",
-            "canoniek": "mnd",
-            "factorNaarCanoniek": 12,
-            "noemer": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "NIET_NEGATIEF",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "jr",
+            "system": "Tijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 12,
+              "den": 1
+            }
           }
-        },
-        "granulariteit": null
+        }
       },
       {
         "node": "Parameter",
-        "naam": "bevestigingsinterval",
+        "name": "bevestigingsinterval",
         "datatype": {
-          "node": "DatumTijd"
-        },
-        "granulariteit": null
+          "node": "Date",
+          "precision": "millisecond"
+        }
       },
       {
         "node": "Parameter",
-        "naam": "eerste boekingsdatum",
+        "name": "eerste boekingsdatum",
         "datatype": {
-          "node": "DatumInDagen"
-        },
-        "granulariteit": null
+          "node": "Date",
+          "precision": "day"
+        }
       },
       {
         "node": "Parameter",
-        "naam": "aantal treinmiles per passagier voor contingent",
+        "name": "aantal treinmiles per passagier voor contingent",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "POSITIEF",
-          "eenheid": null
-        },
-        "granulariteit": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "POSITIEF"
+        }
       },
       {
         "node": "Parameter",
-        "naam": "initiele belasting",
+        "name": "initiele belasting",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "granulariteit": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "ONBEPAALD"
+        }
       },
       {
         "node": "Parameter",
-        "naam": "pensioenleeftijd",
+        "name": "pensioenleeftijd",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "jr",
-            "stelsel": "Tijd",
-            "canoniek": "mnd",
-            "factorNaarCanoniek": 12,
-            "noemer": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "jr",
+            "system": "Tijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 12,
+              "den": 1
+            }
           }
-        },
-        "granulariteit": null
+        }
       },
       {
         "node": "Parameter",
-        "naam": "duurzaamheidskorting minimale afstand",
+        "name": "duurzaamheidskorting minimale afstand",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "km",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 1000,
-            "noemer": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "km",
+            "system": "afstand",
+            "canonical": "m",
+            "factorToCanonical": {
+              "num": 1000,
+              "den": 1
+            }
           }
-        },
-        "granulariteit": null
+        }
       },
       {
         "node": "Parameter",
-        "naam": "burgerservicenummer lengte",
+        "name": "burgerservicenummer lengte",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "granulariteit": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD"
+        }
       },
       {
         "node": "Parameter",
-        "naam": "bovengrens afstand eerste schijf",
+        "name": "bovengrens afstand eerste schijf",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "km",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 1000,
-            "noemer": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "km",
+            "system": "afstand",
+            "canonical": "m",
+            "factorToCanonical": {
+              "num": 1000,
+              "den": 1
+            }
           }
-        },
-        "granulariteit": null
+        }
       },
       {
         "node": "Parameter",
-        "naam": "lage basistarief eerste schijf",
+        "name": "lage basistarief eerste schijf",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "granulariteit": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "ONBEPAALD"
+        }
       },
       {
         "node": "Parameter",
-        "naam": "lage tarief vermindering eerste schijf",
+        "name": "lage tarief vermindering eerste schijf",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "granulariteit": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "ONBEPAALD"
+        }
       },
       {
         "node": "Parameter",
-        "naam": "percentage reisduur eerste schijf",
+        "name": "percentage reisduur eerste schijf",
         "datatype": {
-          "node": "Percentage",
-          "geheel": true,
-          "decimalen": 0,
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "%",
-            "stelsel": null,
-            "canoniek": "%",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "%",
+            "canonical": "%",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          },
+          "presentation": "percentage"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "percentage reisduur tweede schijf",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "%",
+            "canonical": "%",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          },
+          "presentation": "percentage"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "percentage reisduur derde schijf",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "%",
+            "canonical": "%",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          },
+          "presentation": "percentage"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "bovengrens reisduur eerste schijf",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "minuut",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1440
+            }
           }
-        },
-        "granulariteit": null
+        }
       },
       {
         "node": "Parameter",
-        "naam": "percentage reisduur tweede schijf",
+        "name": "bovengrens reisduur tweede schijf",
         "datatype": {
-          "node": "Percentage",
-          "geheel": true,
-          "decimalen": 0,
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "%",
-            "stelsel": null,
-            "canoniek": "%",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "minuut",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1440
+            }
           }
-        },
-        "granulariteit": null
+        }
       },
       {
         "node": "Parameter",
-        "naam": "percentage reisduur derde schijf",
+        "name": "STANDAARDTERMIJN VOOR RESERVERING",
         "datatype": {
-          "node": "Percentage",
-          "geheel": true,
-          "decimalen": 0,
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "%",
-            "stelsel": null,
-            "canoniek": "%",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "ONBEPAALD",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "mnd",
+            "system": "Tijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
           }
-        },
-        "granulariteit": null
-      },
-      {
-        "node": "Parameter",
-        "naam": "bovengrens reisduur eerste schijf",
-        "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "minuut",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 0.0006944444444444446388888888888889,
-            "noemer": null
-          }
-        },
-        "granulariteit": null
-      },
-      {
-        "node": "Parameter",
-        "naam": "bovengrens reisduur tweede schijf",
-        "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "minuut",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 0.0006944444444444446388888888888889,
-            "noemer": null
-          }
-        },
-        "granulariteit": null
-      },
-      {
-        "node": "Parameter",
-        "naam": "STANDAARDTERMIJN VOOR RESERVERING",
-        "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "mnd",
-            "stelsel": "Tijd",
-            "canoniek": "mnd",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "granulariteit": null
+        }
       }
     ],
     "domains": [
@@ -829,11 +833,10 @@
         "node": "Domain",
         "name": "Bedrag",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "ONBEPAALD"
         }
       },
       {
@@ -852,300 +855,207 @@
     ],
     "unitSystems": [
       {
-        "node": "Eenheidstelsel",
-        "naam": "Valuta",
-        "eenheden": {
-          "EUR": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Valuta",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "\u20ac": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Valuta",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Valuta",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Valuta",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
           }
-        },
-        "aliassen": {
-          "euro": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Valuta",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "euros": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Valuta",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
+        ]
       },
       {
-        "node": "Eenheidstelsel",
-        "naam": "Tijd",
-        "eenheden": {
-          "ms": {
-            "node": "Eenheid",
-            "afkorting": "ms",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 0.000000011574074074074079629629629629630462962962962963,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "ms",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 86400000
+            },
+            "spellings": [
+              "milliseconde"
+            ]
           },
-          "s": {
-            "node": "Eenheid",
-            "afkorting": "s",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 0.000011574074074074079629629629629630462962962962963,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "s",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 86400
+            },
+            "spellings": [
+              "seconde"
+            ]
           },
-          "minuut": {
-            "node": "Eenheid",
-            "afkorting": "minuut",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 0.0006944444444444446388888888888889,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "minuut",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1440
+            }
           },
-          "u": {
-            "node": "Eenheid",
-            "afkorting": "u",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 0.04166666666666667,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "u",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 24
+            },
+            "spellings": [
+              "uur"
+            ]
           },
-          "dg": {
-            "node": "Eenheid",
-            "afkorting": "dg",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
           },
-          "wk": {
-            "node": "Eenheid",
-            "afkorting": "wk",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 7,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "wk",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 7,
+              "den": 1
+            },
+            "spellings": [
+              "week"
+            ]
           },
-          "mnd": {
-            "node": "Eenheid",
-            "afkorting": "mnd",
-            "stelsel": "Tijd",
-            "canoniek": "mnd",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "mnd",
+            "system": "Tijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "maand"
+            ]
           },
-          "kw": {
-            "node": "Eenheid",
-            "afkorting": "kw",
-            "stelsel": "Tijd",
-            "canoniek": "mnd",
-            "factorNaarCanoniek": 3,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "kw",
+            "system": "Tijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 3,
+              "den": 1
+            },
+            "spellings": [
+              "kwartaal"
+            ]
           },
-          "jr": {
-            "node": "Eenheid",
-            "afkorting": "jr",
-            "stelsel": "Tijd",
-            "canoniek": "mnd",
-            "factorNaarCanoniek": 12,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "jr",
+            "system": "Tijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 12,
+              "den": 1
+            },
+            "spellings": [
+              "jaar"
+            ]
           }
-        },
-        "aliassen": {
-          "milliseconde": {
-            "node": "Eenheid",
-            "afkorting": "ms",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 0.000000011574074074074079629629629629630462962962962963,
-            "noemer": null
-          },
-          "seconde": {
-            "node": "Eenheid",
-            "afkorting": "s",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 0.000011574074074074079629629629629630462962962962963,
-            "noemer": null
-          },
-          "minuut": {
-            "node": "Eenheid",
-            "afkorting": "minuut",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 0.0006944444444444446388888888888889,
-            "noemer": null
-          },
-          "uur": {
-            "node": "Eenheid",
-            "afkorting": "u",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 0.04166666666666667,
-            "noemer": null
-          },
-          "dag": {
-            "node": "Eenheid",
-            "afkorting": "dg",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "week": {
-            "node": "Eenheid",
-            "afkorting": "wk",
-            "stelsel": "Tijd",
-            "canoniek": "dg",
-            "factorNaarCanoniek": 7,
-            "noemer": null
-          },
-          "maand": {
-            "node": "Eenheid",
-            "afkorting": "mnd",
-            "stelsel": "Tijd",
-            "canoniek": "mnd",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "kwartaal": {
-            "node": "Eenheid",
-            "afkorting": "kw",
-            "stelsel": "Tijd",
-            "canoniek": "mnd",
-            "factorNaarCanoniek": 3,
-            "noemer": null
-          },
-          "jaar": {
-            "node": "Eenheid",
-            "afkorting": "jr",
-            "stelsel": "Tijd",
-            "canoniek": "mnd",
-            "factorNaarCanoniek": 12,
-            "noemer": null
-          }
-        }
+        ]
       },
       {
-        "node": "Eenheidstelsel",
-        "naam": "afstand",
-        "eenheden": {
-          "mm": {
-            "node": "Eenheid",
-            "afkorting": "mm",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 0.001,
-            "noemer": null
+        "node": "UnitSystem",
+        "name": "afstand",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "mm",
+            "system": "afstand",
+            "canonical": "m",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1000
+            },
+            "spellings": [
+              "millimeter",
+              "millimeters"
+            ]
           },
-          "cm": {
-            "node": "Eenheid",
-            "afkorting": "cm",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 0.01,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "cm",
+            "system": "afstand",
+            "canonical": "m",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 100
+            },
+            "spellings": [
+              "centimeter",
+              "centimeters"
+            ]
           },
-          "m": {
-            "node": "Eenheid",
-            "afkorting": "m",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "m",
+            "system": "afstand",
+            "canonical": "m",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "meter",
+              "meters"
+            ]
           },
-          "km": {
-            "node": "Eenheid",
-            "afkorting": "km",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 1000,
-            "noemer": null
+          {
+            "node": "Unit",
+            "abbreviation": "km",
+            "system": "afstand",
+            "canonical": "m",
+            "factorToCanonical": {
+              "num": 1000,
+              "den": 1
+            },
+            "spellings": [
+              "kilometer",
+              "kilometers"
+            ]
           }
-        },
-        "aliassen": {
-          "millimeter": {
-            "node": "Eenheid",
-            "afkorting": "mm",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 0.001,
-            "noemer": null
-          },
-          "millimeters": {
-            "node": "Eenheid",
-            "afkorting": "mm",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 0.001,
-            "noemer": null
-          },
-          "centimeter": {
-            "node": "Eenheid",
-            "afkorting": "cm",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 0.01,
-            "noemer": null
-          },
-          "centimeters": {
-            "node": "Eenheid",
-            "afkorting": "cm",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 0.01,
-            "noemer": null
-          },
-          "meter": {
-            "node": "Eenheid",
-            "afkorting": "m",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "meters": {
-            "node": "Eenheid",
-            "afkorting": "m",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          },
-          "kilometer": {
-            "node": "Eenheid",
-            "afkorting": "km",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 1000,
-            "noemer": null
-          },
-          "kilometers": {
-            "node": "Eenheid",
-            "afkorting": "km",
-            "stelsel": "afstand",
-            "canoniek": "m",
-            "factorNaarCanoniek": 1000,
-            "noemer": null
-          }
-        }
+        ]
       }
     ],
     "dimensions": [],
@@ -1159,12 +1069,12 @@
       }
     ],
     "dayKinds": [
-      "kerstdag"
-    ],
-    "dagsoortPerEenheid": {
-      "kerstdag": "kerstdag",
-      "kerstdagen": "kerstdag"
-    }
+      {
+        "node": "DayKind",
+        "name": "kerstdag",
+        "plural": "kerstdagen"
+      }
+    ]
   },
   "rules": {
     "resolvedRegels": [
@@ -1207,17 +1117,19 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "jr",
-              "stelsel": "Tijd",
-              "canoniek": "mnd",
-              "factorNaarCanoniek": 12,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "jr",
+              "system": "Tijd",
+              "canonical": "mnd",
+              "factorToCanonical": {
+                "num": 12,
+                "den": 1
+              }
             }
           },
           "bron": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren",
@@ -1280,17 +1192,19 @@
             "filter": null,
             "dimensieSelectie": null,
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "jr",
-                "stelsel": "Tijd",
-                "canoniek": "mnd",
-                "factorNaarCanoniek": 12,
-                "noemer": null
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "ONBEPAALD",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "jr",
+                "system": "Tijd",
+                "canonical": "mnd",
+                "factorToCanonical": {
+                  "num": 12,
+                  "den": 1
+                }
               }
             },
             "bron": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren",
@@ -1336,11 +1250,10 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF"
           },
           "bron": "het aantal passagiers van de reis",
           "granulariteit": null,
@@ -1383,11 +1296,10 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "ONBEPAALD"
           },
           "bron": "de som van de te betalen belasting van alle passagiers van de reis",
           "granulariteit": null,
@@ -1430,17 +1342,19 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "jr",
-              "stelsel": "Tijd",
-              "canoniek": "mnd",
-              "factorNaarCanoniek": 12,
-              "noemer": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "NIET_NEGATIEF",
+            "unit": {
+              "node": "Unit",
+              "abbreviation": "jr",
+              "system": "Tijd",
+              "canonical": "mnd",
+              "factorToCanonical": {
+                "num": 12,
+                "den": 1
+              }
             }
           },
           "bron": "de maximale waarde van de leeftijden van alle passagiers van de reis",
@@ -1490,7 +1404,8 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "DatumTijd"
+            "node": "Date",
+            "precision": "millisecond"
           },
           "bron": "de eerste van de verwachte datum-tijd van vertrek van de vlucht en de daadwerkelijke datum-tijd van vertrek van de vlucht",
           "granulariteit": null
@@ -1531,11 +1446,10 @@
                 "bron": "de korting bij gebruik niet-fossiele brandstof"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
               "bron": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof"
             },
@@ -1543,39 +1457,39 @@
               "node": "Literal",
               "waarde": "0",
               "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "EUR",
-                  "stelsel": "Valuta",
-                  "canoniek": "EUR",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Valuta",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
               },
               "bron": "0 \u20ac"
             },
             "maximum": null,
             "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "ONBEPAALD"
             },
             "bron": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof, met een minimum van 0 \u20ac"
           },
           "modus": "NAAR_BENEDEN",
           "decimalen": 0,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof, met een minimum van 0 \u20ac naar beneden afgerond op 0 decimalen"
         },
@@ -1612,7 +1526,8 @@
             "bron": "de verwachte duur van de vlucht"
           },
           "type": {
-            "node": "DatumTijd"
+            "node": "Date",
+            "precision": "millisecond"
           },
           "bron": "de verwachte Datum-tijd van vertrek van de Vlucht plus de verwachte duur van de vlucht"
         },
@@ -1665,11 +1580,10 @@
                 "filter": null,
                 "dimensieSelectie": null,
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "bron": "de maand uit (de vluchtdatum van de Vlucht)",
                 "granulariteit": null
@@ -1678,11 +1592,10 @@
                 "node": "Literal",
                 "waarde": "6",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "6"
               },
@@ -1708,11 +1621,10 @@
                 "filter": null,
                 "dimensieSelectie": null,
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "bron": "de maand uit (de vluchtdatum van de Vlucht)",
                 "granulariteit": null
@@ -1721,11 +1633,10 @@
                 "node": "Literal",
                 "waarde": "7",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "7"
               },
@@ -1751,11 +1662,10 @@
                 "filter": null,
                 "dimensieSelectie": null,
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "bron": "de maand uit (de vluchtdatum van de Vlucht)",
                 "granulariteit": null
@@ -1764,11 +1674,10 @@
                 "node": "Literal",
                 "waarde": "8",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "8"
               },
@@ -1831,11 +1740,10 @@
                 "filter": null,
                 "dimensieSelectie": null,
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "bron": "het jaar uit (de vluchtdatum van de Vlucht)",
                 "granulariteit": null
@@ -1846,7 +1754,8 @@
             "filter": null,
             "dimensieSelectie": null,
             "type": {
-              "node": "DatumInDagen"
+              "node": "Date",
+              "precision": "day"
             },
             "bron": "de eerste paasdag van (het jaar uit (de vluchtdatum van de Vlucht))",
             "granulariteit": null
@@ -2162,17 +2071,19 @@
                 "node": "Literal",
                 "waarde": "24",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "jr",
-                    "stelsel": "Tijd",
-                    "canoniek": "mnd",
-                    "factorNaarCanoniek": 12,
-                    "noemer": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "jr",
+                    "system": "Tijd",
+                    "canonical": "mnd",
+                    "factorToCanonical": {
+                      "num": 12,
+                      "den": 1
+                    }
                   }
                 },
                 "bron": "24 jr"
@@ -2267,11 +2178,10 @@
           "node": "Literal",
           "waarde": "1",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "1"
         },
@@ -2403,11 +2313,10 @@
           "node": "Literal",
           "waarde": "2",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "2"
         },
@@ -2519,11 +2428,10 @@
           "node": "Literal",
           "waarde": "3",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "ONBEPAALD"
           },
           "bron": "3"
         },
@@ -2622,7 +2530,8 @@
                     "node": "Constante",
                     "naam": "de dag",
                     "type": {
-                      "node": "DatumInDagen"
+                      "node": "Date",
+                      "precision": "day"
                     },
                     "bron": "de dag"
                   }
@@ -2632,11 +2541,10 @@
                 "filter": null,
                 "dimensieSelectie": null,
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "bron": "de maand uit (de dag)",
                 "granulariteit": null
@@ -2645,11 +2553,10 @@
                 "node": "Literal",
                 "waarde": "12",
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
                 },
                 "bron": "12"
               },
@@ -2672,7 +2579,8 @@
                         "node": "Constante",
                         "naam": "de dag",
                         "type": {
-                          "node": "DatumInDagen"
+                          "node": "Date",
+                          "precision": "day"
                         },
                         "bron": "de dag"
                       }
@@ -2682,11 +2590,10 @@
                     "filter": null,
                     "dimensieSelectie": null,
                     "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
                     },
                     "bron": "de dag uit (de dag)",
                     "granulariteit": null
@@ -2695,11 +2602,10 @@
                     "node": "Literal",
                     "waarde": "25",
                     "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
                     },
                     "bron": "25"
                   },
@@ -2717,7 +2623,8 @@
                         "node": "Constante",
                         "naam": "de dag",
                         "type": {
-                          "node": "DatumInDagen"
+                          "node": "Date",
+                          "precision": "day"
                         },
                         "bron": "de dag"
                       }
@@ -2727,11 +2634,10 @@
                     "filter": null,
                     "dimensieSelectie": null,
                     "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
                     },
                     "bron": "de dag uit (de dag)",
                     "granulariteit": null
@@ -2740,11 +2646,10 @@
                     "node": "Literal",
                     "waarde": "26",
                     "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
                     },
                     "bron": "26"
                   },
@@ -2793,11 +2698,10 @@
                 "filter": null,
                 "dimensieSelectie": null,
                 "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
                 },
                 "bron": "het aantal passagiers van de Vlucht",
                 "granulariteit": null,
@@ -2813,11 +2717,10 @@
                 "bron": "het aantal treinmiles per passagier voor contingent"
               },
               "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
               "bron": "het aantal passagiers van de Vlucht maal het aantal treinmiles per passagier voor contingent"
             },
