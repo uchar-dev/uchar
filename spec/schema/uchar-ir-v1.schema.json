@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uchar.dev/schema/uchar-ir-v1.schema.json",
   "title": "uchar-ir-v1",
-  "description": "Structural schema for the 'uchar-ir-v1' format in its L2 shape (spec/proposals/V1-WIREMIGRATIE.md, section 7, landings L1 and L2): the former 'regelspraak-ir-v0' dump of the reference frontend's fully resolved model with its CONTAINER restructured (L1) and its REFERENCE LAYER reduced to the symbolic form (L2), and nothing else. The root nests {format, model, rules, diagnostics} (decision V3 (b)): 'model' is the declaration set of IR-SPEC ch. 2, as lists in declaration order (WF-019), with no map keys; 'rules' carries the resolved rule lists under their v0 keys, in v0 order; 'diagnostics' is the producer's own account (WF-113). An ObjectType carries its members as Attribute and Characteristic nodes with their own facets (TimelineFacet), and a Domain wraps a name and a datatype that carries no self-name at the declaration position (domainDatatype). A reference carries only its symbolic form (L2): the five reference classes carry no type annotation, because the declaration is the one source; an attribute reference names its navigation by role bindings alone; the range of an instance fold, a quantifier fold and an allocation is written, never derived; one RoleMembership node names the fact type and the role the subject fills; a fact creation and a scoped uniqueness carry their symbolic fields alone; and the datatype union has no member for an unknown type (B16). Every other node keeps its v0 name, field spellings and enum values until its own landing. Canonical key order is the 'properties' order of this schema: the migration script and every emitter write exactly that order, and every node L1 left untouched keeps the order its v0 emitter wrote, less the keys L2 removed. Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol on an object creation, bronRol, bronPad, and bronAnnotaties \u2014 of these, bronPad is the multi-step fold-source range of IR-SPEC ch. 4.3 / WF-102, two or more RolBindings subject-outwards and mutually exclusive with bronRol, which is the one-step spelling of the same field; and bronAnnotaties carries the statute annotations on a resolved rule, when present a non-empty list of non-empty strings and absent otherwise) are optional where L2 makes none of them required (the allocation's verbindendeRol and the range of a fold and of a quantifier fold, under the conditions stated on those nodes), the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md \u00a72), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess, the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength) and the value-level binding Let (spec/proposals/PHASE5C-TUTORIAL.md \u00a76), and the optional lists functionDefs (under 'model') and prioritizedDefaults (under 'rules') carry the named-logic and prioritized-defaults extensions, and a Default carries the optional excepties field \u2014 its nested exception groups (RUNTIME-SEMANTICS ch. 7.9) \u2014 the v0 emitter produces none of them EXCEPT Let and BinderRef, which the RegelSpraak frontend has emitted for a \u00a713.4.2.10 variabelendeel since the let-lowering card (2026-09-01); when present they are all written whole, never null. Wire epoch v0.10 (the rename epoch, 2026-08-29): the prioritized-defaults spellings (prioritizedDefaults/Default/ExceptionGroup and the defaults list) are the only valid ones; a file in the pre-rename spelling (see the formerly notes, IR-SPEC ch. 6.1 and RUNTIME-SEMANTICS ch. 7.1) fails loudly against the closed objects. Section citations (e.g. \u00a713.3.3) point into the source language spec by number only.",
+  "description": "Structural schema for the 'uchar-ir-v1' format in its L3 shape (spec/proposals/V1-WIREMIGRATIE.md, section 7, landings L1, L2 and L3): the former 'regelspraak-ir-v0' dump of the reference frontend's fully resolved model with its CONTAINER restructured (L1), its REFERENCE LAYER reduced to the symbolic form (L2) and its TYPE SYSTEM in the v1 nodes (L3), and nothing else. The root nests {format, model, rules, diagnostics} (decision V3 (b)): 'model' is the declaration set of IR-SPEC ch. 2, as lists in declaration order (WF-019), with no map keys; 'rules' carries the resolved rule lists under their v0 keys, in v0 order; 'diagnostics' is the producer's own account (WF-113). An ObjectType carries its members as Attribute and Characteristic nodes with their own facets (TimelineFacet), and a Domain wraps a name and a datatype that carries no self-name at the declaration position (domainDatatype). A reference carries only its symbolic form (L2): the five reference classes carry no type annotation, because the declaration is the one source; an attribute reference names its navigation by role bindings alone; the range of an instance fold, a quantifier fold and an allocation is written, never derived; one RoleMembership node names the fact type and the role the subject fills; a fact creation and a scoped uniqueness carry their symbolic fields alone; and the datatype union has no member for an unknown type (B16). The type system is the v1 one (L3): a number is a Number, and a percentage a Number with the unit '%' that carries the presentation tag 'percentage' at a declaration (B14); a date is one Date node with its precision (B15); a unit is a Unit whose conversion factor is an exact rational {num, den} (B17 (i)) and whose declaration carries its spellings; a unit system is a list of units; a day kind is a DayKind node with its plural; and a parameter carries the attribute's timeline facet without a timeline name (B18). Every other node keeps its v0 name, field spellings and enum values until its own landing. Canonical key order is the 'properties' order of this schema: the migration script and every emitter write exactly that order, and every node L1 left untouched keeps the order its v0 emitter wrote, less the keys L2 removed. Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol on an object creation, bronRol, bronPad, and bronAnnotaties \u2014 of these, bronPad is the multi-step fold-source range of IR-SPEC ch. 4.3 / WF-102, two or more RolBindings subject-outwards and mutually exclusive with bronRol, which is the one-step spelling of the same field; and bronAnnotaties carries the statute annotations on a resolved rule, when present a non-empty list of non-empty strings and absent otherwise) are optional where L2 makes none of them required (the allocation's verbindendeRol and the range of a fold and of a quantifier fold, under the conditions stated on those nodes), the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md \u00a72), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess, the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength) and the value-level binding Let (spec/proposals/PHASE5C-TUTORIAL.md \u00a76), and the optional lists functionDefs (under 'model') and prioritizedDefaults (under 'rules') carry the named-logic and prioritized-defaults extensions, and a Default carries the optional excepties field \u2014 its nested exception groups (RUNTIME-SEMANTICS ch. 7.9) \u2014 the v0 emitter produces none of them EXCEPT Let and BinderRef, which the RegelSpraak frontend has emitted for a \u00a713.4.2.10 variabelendeel since the let-lowering card (2026-09-01); when present they are all written whole, never null. Wire epoch v0.10 (the rename epoch, 2026-08-29): the prioritized-defaults spellings (prioritizedDefaults/Default/ExceptionGroup and the defaults list) are the only valid ones; a file in the pre-rename spelling (see the formerly notes, IR-SPEC ch. 6.1 and RUNTIME-SEMANTICS ch. 7.1) fails loudly against the closed objects. Section citations (e.g. \u00a713.3.3) point into the source language spec by number only.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -16,7 +16,7 @@
       "const": "uchar-ir-v1"
     },
     "model": {
-      "description": "The model layer: the declaration set of IR-SPEC ch. 2. The six former v0 registries are lists in declaration order, each entry carrying its name on its node (there is no map key); timelines, day kinds and dagsoortPerEenheid are unchanged from v0. functionDefs is an extension list: optional, written whole or not at all.",
+      "description": "The model layer: the declaration set of IR-SPEC ch. 2. The six former v0 registries are lists in declaration order, each entry carrying its name on its node (there is no map key); timelines are unchanged from v0; the day kinds are a list of DayKind nodes, each carrying its own spellings (L3). functionDefs is an extension list: optional, written whole or not at all.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -27,8 +27,7 @@
         "unitSystems",
         "dimensions",
         "timelines",
-        "dayKinds",
-        "dagsoortPerEenheid"
+        "dayKinds"
       ],
       "properties": {
         "objectTypes": {
@@ -58,7 +57,7 @@
         "unitSystems": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/Eenheidstelsel"
+            "$ref": "#/$defs/UnitSystem"
           }
         },
         "dimensions": {
@@ -76,19 +75,7 @@
         "dayKinds": {
           "type": "array",
           "items": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "dagsoortPerEenheid": {
-          "type": "object",
-          "additionalProperties": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "$ref": "#/$defs/DayKind"
           }
         },
         "functionDefs": {
@@ -194,75 +181,39 @@
     }
   },
   "$defs": {
-    "Numeriek": {
+    "Number": {
+      "description": "A number (IR-SPEC ch. 2.4). 'whole' and 'decimals' carry the precision form; which combinations are well-formed is WF-007, a verifier check, so the schema admits any integer for 'decimals'. 'sign' is always written and keeps its v0 enum spelling until its own landing; a number declared without a sign is ONBEPAALD. 'unit' absent: the number carries no unit. A percentage is a Number whose unit is '%' (or a rate with '%' as its numerator), delta B14 of spec/proposals/V1-WIREMIGRATIE.md and CONSTRUCTS row 27; 'presentation' is its dialect(regelspraak) presentation tag, the one value 'percentage', written only at a declaration position (the datatype of an attribute, a parameter or a domain, a sum-type payload, a list element, a struct field, a function or lambda parameter, a function result) and never on a type annotation, where the verifier refuses it (WF-007). The tag carries no meaning for evaluation. Key order is this 'properties' order.",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "geheel",
-        "decimalen",
-        "teken",
-        "eenheid"
+        "whole",
+        "decimals",
+        "sign"
       ],
       "properties": {
         "node": {
-          "const": "Numeriek"
+          "const": "Number"
         },
-        "geheel": {
+        "whole": {
           "type": "boolean"
         },
-        "decimalen": {
+        "decimals": {
           "type": "integer"
         },
-        "teken": {
+        "sign": {
           "enum": [
             "ONBEPAALD",
             "NEGATIEF",
             "NIET_NEGATIEF",
-            "POSITIEF",
-            null
+            "POSITIEF"
           ]
         },
-        "eenheid": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Eenheid"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      }
-    },
-    "Percentage": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "node",
-        "geheel",
-        "decimalen",
-        "eenheid"
-      ],
-      "properties": {
-        "node": {
-          "const": "Percentage"
+        "unit": {
+          "$ref": "#/$defs/Unit"
         },
-        "geheel": {
-          "type": "boolean"
-        },
-        "decimalen": {
-          "type": "integer"
-        },
-        "eenheid": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Eenheid"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "presentation": {
+          "const": "percentage"
         }
       }
     },
@@ -290,27 +241,23 @@
         }
       }
     },
-    "DatumInDagen": {
+    "Date": {
+      "description": "A date (IR-SPEC ch. 2.4; delta B15 of spec/proposals/V1-WIREMIGRATIE.md): one node, parameterised by its precision. 'day' and 'millisecond' share no order (WF-036), so the precision is always written.",
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "node"
+        "node",
+        "precision"
       ],
       "properties": {
         "node": {
-          "const": "DatumInDagen"
-        }
-      }
-    },
-    "DatumTijd": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "node"
-      ],
-      "properties": {
-        "node": {
-          "const": "DatumTijd"
+          "const": "Date"
+        },
+        "precision": {
+          "enum": [
+            "day",
+            "millisecond"
+          ]
         }
       }
     },
@@ -447,10 +394,7 @@
       "description": "A RegelSpraak datatype (\u00a713.3.3), discriminated on 'node'.",
       "oneOf": [
         {
-          "$ref": "#/$defs/Numeriek"
-        },
-        {
-          "$ref": "#/$defs/Percentage"
+          "$ref": "#/$defs/Number"
         },
         {
           "$ref": "#/$defs/Tekst"
@@ -459,10 +403,7 @@
           "$ref": "#/$defs/Booleaan"
         },
         {
-          "$ref": "#/$defs/DatumInDagen"
-        },
-        {
-          "$ref": "#/$defs/DatumTijd"
+          "$ref": "#/$defs/Date"
         },
         {
           "$ref": "#/$defs/Enumeratie"
@@ -482,10 +423,7 @@
       "description": "The datatype at the DECLARATION position, Domain.datatype (IR-SPEC ch. 2.3). It admits the same datatype nodes as 'datatype', except that Enumeratie, SumType and StructType appear here in a form without their self-name field ('domein' on Enumeratie, 'domain' on SumType and StructType): the Domain wrapper carries the name, and a second spelling of it cannot be written. At every REFERENCE position (attributes, parameters, expressions, payloads, fields, elements) the 'datatype' union applies unchanged: there that field is the domain reference of IR-SPEC ch. 2.4 (WF-003), not a self-name, and stays required. The three declaration forms share their remaining field schemas with the reference forms by JSON pointer, so each field is defined once.",
       "oneOf": [
         {
-          "$ref": "#/$defs/Numeriek"
-        },
-        {
-          "$ref": "#/$defs/Percentage"
+          "$ref": "#/$defs/Number"
         },
         {
           "$ref": "#/$defs/Tekst"
@@ -494,10 +432,7 @@
           "$ref": "#/$defs/Booleaan"
         },
         {
-          "$ref": "#/$defs/DatumInDagen"
-        },
-        {
-          "$ref": "#/$defs/DatumTijd"
+          "$ref": "#/$defs/Date"
         },
         {
           "$ref": "#/$defs/DomainEnumeratie"
@@ -564,57 +499,85 @@
         }
       }
     },
-    "Eenheid": {
+    "Unit": {
+      "description": "A unit where it occurs (IR-SPEC ch. 2.5): on a Number, and as the denominator of a rate. 'abbreviation' is its primary spelling. 'system' names the declaring UnitSystem (WF-034 (r)); it is absent for the built-in '%' and for the bare calendar units. 'canonical' and 'factorToCanonical' are the conversion pair, both present or both absent (WF-092). The factor is an exact positive rational, how many canonical units equal one of this unit, written {num, den} without a node discriminator (delta B17 (i) of spec/proposals/V1-WIREMIGRATIE.md, CONSTRUCTS row 26); that it is in lowest terms is a verifier check (WF-092), because a schema cannot state a greatest common divisor. 'denominator' is the denominator unit of a rate. No field is ever null: absent is the one spelling of a field not given. A unit's further spellings belong to its declaration (DeclaredUnit), so an occurrence cannot carry them. Key order is this 'properties' order.",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "afkorting",
-        "stelsel",
-        "canoniek",
-        "factorNaarCanoniek",
-        "noemer"
+        "abbreviation"
       ],
       "properties": {
         "node": {
-          "const": "Eenheid"
+          "const": "Unit"
         },
-        "afkorting": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "abbreviation": {
+          "type": "string"
         },
-        "stelsel": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "system": {
+          "type": "string"
         },
-        "canoniek": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "canonical": {
+          "type": "string"
         },
-        "factorNaarCanoniek": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "noemer": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Eenheid"
+        "factorToCanonical": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "num",
+            "den"
+          ],
+          "properties": {
+            "num": {
+              "type": "integer",
+              "minimum": 1
             },
-            {
-              "type": "null"
+            "den": {
+              "type": "integer",
+              "minimum": 1
             }
-          ]
+          }
+        },
+        "denominator": {
+          "$ref": "#/$defs/Unit"
         }
-      },
-      "description": "A unit: abbreviation, declaring system, canonical unit and conversion factor; 'noemer' is the denominator unit of a composite rate (\u00a713.3.3.2), else null."
+      }
+    },
+    "DeclaredUnit": {
+      "description": "A unit as its UnitSystem declares it (IR-SPEC ch. 2.5): the node of Unit, and after its fields 'spellings', the further spellings that resolve to this unit (word and plural aliases), at least one when present. Only the declaration carries them: an occurrence of the unit is a Unit, which has no such field, so a spelling written there cannot be accepted and dropped. The other fields are Unit's own field schemas, by JSON pointer, so each is defined once. Key order is this 'properties' order.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "abbreviation"
+      ],
+      "properties": {
+        "node": {
+          "$ref": "#/$defs/Unit/properties/node"
+        },
+        "abbreviation": {
+          "$ref": "#/$defs/Unit/properties/abbreviation"
+        },
+        "system": {
+          "$ref": "#/$defs/Unit/properties/system"
+        },
+        "canonical": {
+          "$ref": "#/$defs/Unit/properties/canonical"
+        },
+        "factorToCanonical": {
+          "$ref": "#/$defs/Unit/properties/factorToCanonical"
+        },
+        "denominator": {
+          "$ref": "#/$defs/Unit/properties/denominator"
+        },
+        "spellings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "Literal": {
       "type": "object",
@@ -2808,6 +2771,27 @@
         }
       }
     },
+    "ParameterTimelineFacet": {
+      "description": "The TimelineFacet of a Parameter (IR-SPEC ch. 2.10): the same node without 'timelineName', for the reason CharacteristicTimelineFacet states: no parameter records a timeline name, so an open position would be a wire field no producer writes and no reader checks. 'granularity' and 'count' are the attribute facet's own field schemas, by JSON pointer.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "granularity",
+        "count"
+      ],
+      "properties": {
+        "node": {
+          "const": "TimelineFacet"
+        },
+        "granularity": {
+          "$ref": "#/$defs/TimelineFacet/properties/granularity"
+        },
+        "count": {
+          "$ref": "#/$defs/TimelineFacet/properties/count"
+        }
+      }
+    },
     "Domain": {
       "description": "A named, reusable datatype (IR-SPEC ch. 2.3). The name is written once, here; the datatype at this declaration position carries no self-name (domainDatatype).",
       "type": "object",
@@ -2830,83 +2814,49 @@
       }
     },
     "Parameter": {
+      "description": "A top-level named value (IR-SPEC ch. 2.10): its declared name, its datatype and, when it is time-dependent, its timeline facet (delta B18 of spec/proposals/V1-WIREMIGRATIE.md). The facet is ParameterTimelineFacet: no parameter records a timeline name, so the position is closed as a characteristic's is. Key order is this 'properties' order.",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "naam",
-        "datatype",
-        "granulariteit"
+        "name",
+        "datatype"
       ],
       "properties": {
         "node": {
           "const": "Parameter"
         },
-        "naam": {
+        "name": {
           "type": "string"
         },
         "datatype": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/datatype"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/$defs/datatype"
         },
-        "granulariteit": {
-          "enum": [
-            "DAG",
-            "WEEK",
-            "MAAND",
-            "KWARTAAL",
-            "JAAR",
-            null
-          ]
+        "timeline": {
+          "$ref": "#/$defs/ParameterTimelineFacet"
         }
       }
     },
-    "Eenheidstelsel": {
+    "UnitSystem": {
+      "description": "A unit system (IR-SPEC ch. 2.5): its declared name and its units, as a list in declaration order. Each unit is written once, with its further spellings on the unit itself (Unit.spellings); there is no second map of spellings beside the units. Key order is this 'properties' order.",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "naam",
-        "eenheden",
-        "aliassen"
+        "name",
+        "units"
       ],
       "properties": {
         "node": {
-          "const": "Eenheidstelsel"
+          "const": "UnitSystem"
         },
-        "naam": {
+        "name": {
           "type": "string"
         },
-        "eenheden": {
-          "type": "object",
-          "additionalProperties": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/Eenheid"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "aliassen": {
-          "type": "object",
-          "additionalProperties": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/Eenheid"
-              },
-              {
-                "type": "null"
-              }
-            ]
+        "units": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DeclaredUnit"
           }
         }
       }
@@ -3232,6 +3182,26 @@
         },
         "aantal": {
           "type": "integer"
+        }
+      }
+    },
+    "DayKind": {
+      "description": "A day kind (IR-SPEC ch. 2.9): its singular 'name' and its optional 'plural', the spelling it takes as a duration unit. These two are every spelling a day kind has on the wire; WF-017 holds them against the calendar spellings and against the other day kinds'. Key order is this 'properties' order.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "name"
+      ],
+      "properties": {
+        "node": {
+          "const": "DayKind"
+        },
+        "name": {
+          "type": "string"
+        },
+        "plural": {
+          "type": "string"
         }
       }
     },
