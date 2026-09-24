@@ -23,7 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The loader's refusals of the reference layer in the shape L2 of the v1 wire migration removed: a type written on a
  * reference, the two role-check nodes and their fields beside {@code RoleMembership}, a {@code RoleMembership}
  * without its fact type or role, a narrowing written as {@code null}, the datatype {@code Onbekend} at every kind
- * of position, and a marker's type written as {@code null}. The fields of an attribute read, a creation, a
+ * of position, and a marker's type written as {@code null}. And the reference-layer shapes every executor refuses by
+ * name: a role check naming no link the subject can be in (WF-034), a fold's set source its kind cannot consume
+ * (WF-093, WF-080, WF-102 (c), WF-034), and a characteristic read at a value position (WF-080). The fields of an attribute read, a creation, a
  * uniqueness and a characteristic check are pinned where their bindings are ({@code NavigatiebindingWitnessTest},
  * {@code BonenveldWitnessTest}); a fold, a quantifier fold and a selection without their range where those are
  * ({@code TemporeleSetvouwBereikWitnessTest}, {@code KwantorvouwBereikWitnessTest}, {@code InstantieUnieWitnessTest}).
@@ -48,6 +50,10 @@ class ReferentielaagWeigeringWitnessTest {
     private static final String POSTBEZETTING = "jutterswet-postbezetting";
     /** Temporal attributes on Bakenmeester; rule 0 computes a value, a fold with a type of its own. */
     private static final String BAKENMEESTER = "jutterswet-bakenmeester";
+    /** Munt ⊑ Vondst; rule 0 counts a Jutter's vondsten over Munt, rule 1 sums their gewicht. Both bound. */
+    private static final String MUNTTELLING = "jutterswet-munttelling";
+    /** Rule 0 folds over the two-step path Jutter -> Boot -> Vondst. */
+    private static final String BOOTBERGING = "anchor/jutterswet-bootberging";
 
     private static final String NUMERIEK =
             "{\"node\":\"Numeriek\",\"geheel\":false,\"decimalen\":2,\"teken\":\"ONBEPAALD\",\"eenheid\":null}";
@@ -127,7 +133,8 @@ class ReferentielaagWeigeringWitnessTest {
 
         rm.put("counterpartType", "Kustwacht");
         e = weigert(ir, vw + "/counterpartType");
-        assertTrue(e.getMessage().contains("'Kustwacht' is not a declared object type"), e.getMessage());
+        assertTrue(e.getMessage().contains("the counterpart type \"Kustwacht\" is no declared object type (WF-034)"),
+                e.getMessage());
 
         rm.put("counterpartType", 2);
         e = weigert(ir, vw + "/counterpartType");
@@ -175,7 +182,124 @@ class ReferentielaagWeigeringWitnessTest {
         assertTrue(e.getMessage().contains("null is neither"), e.getMessage());
     }
 
+    // ---------------- the role check names a link of the model (WF-034) ----------------
+    // Until L2's fix round each of these loaded and was then answered with a storage reason, or played: a check that
+    // names no link the subject can be in asks for nothing. The sentences are the ones ref and the ASP backend fault
+    // with, or the verifier's where those have none.
+
+    @Test void een_rolcheck_over_een_onbekend_feittype_of_een_onbekende_rol_weigert() throws Exception {
+        String vw = "/rules/resolvedRegels/0/voorwaarde";
+        ObjectNode ir = golden(POSTBEZETTING);
+        rolcheck(ir, 0).put("factType", "wachtrooster");
+        IrLoader.Documentfout e = weigert(ir, vw + "/factType");
+        assertTrue(e.getMessage().contains("role check names fact type 'wachtrooster', which is not declared"),
+                e.getMessage());
+
+        ir = golden(POSTBEZETTING);
+        rolcheck(ir, 0).put("role", "wachtjutters");   // the declared PLURAL names no role here
+        e = weigert(ir, vw + "/role");
+        assertTrue(e.getMessage().contains("'wachtjutters' is not a declared role of fact type 'wachtindeling'"),
+                e.getMessage());
+    }
+
+    @Test void een_rolcheck_die_het_subject_niet_vult_weigert() throws Exception {
+        // "hij een wachtjutter heeft" read with the role the OTHER end plays: a Wachtpost never fills wachtjutter
+        ObjectNode ir = golden(POSTBEZETTING);
+        rolcheck(ir, 0).put("role", "wachtjutter");
+        IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/0/voorwaarde/role");
+        assertTrue(e.getMessage().contains("role check: the subject \"Wachtpost\" does not fill the role"
+                + " \"wachtjutter\" of \"wachtindeling\", so no link of it can hold the subject there (WF-034)"),
+                e.getMessage());
+    }
+
+    @Test void een_tegenpartij_buiten_de_vuller_van_de_andere_rol_weigert() throws Exception {
+        ObjectNode ir = golden(POSTBEZETTING);
+        rolcheck(ir, 2).put("counterpartType", "Wachtpost");
+        IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/2/voorwaarde/counterpartType");
+        assertTrue(e.getMessage().contains("role check: the counterpart type \"Wachtpost\" is no subtype of"
+                + " \"Jutter\", the filler the role \"wachtjutter\" declares (WF-034)"), e.getMessage());
+        // ⊑ admits the declared filler itself: the check then narrows nothing, and it loads
+        rolcheck(ir, 2).put("counterpartType", "Jutter");
+        IrLoader.loadAll(ir);
+    }
+
+    // ---------------- the set source of a fold with a range (WF-093, WF-080, WF-102 (c), WF-034) ----------------
+    // jutterswet-munttelling: rule 0 counts the Jutter's vondsten over Munt, rule 1 sums the gewicht of those munten.
+    // Measured on the L2 union before the fix round: the count over an attribute PLAYED in both branches, the value
+    // fold over the role name died at first fire in the exec branch and did not compile in the DRL-text one.
+
+    @Test void een_telling_over_een_attribuut_van_het_elementtype_weigert() throws Exception {
+        ObjectNode ir = golden(MUNTTELLING);
+        bron(ir, 0).put("attribuut", "gewicht").put("objecttype", "Munt");
+        IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/0/waarde/argumenten/0");
+        assertTrue(e.getMessage().contains("a count over \"gewicht\", which is an attribute of \"Munt\": a count"
+                + " source names the counted role, and a value read per member is a value fold's source (WF-093 (b))"),
+                e.getMessage());
+    }
+
+    @Test void een_waardevouw_over_een_rolnaam_weigert() throws Exception {
+        ObjectNode ir = golden(MUNTTELLING);
+        bron(ir, 1).put("attribuut", "vondsten").put("objecttype", "Jutter");
+        IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/1/waarde/argumenten/0");
+        assertTrue(e.getMessage().contains("value aggregation over \"vondsten\", which is no attribute of \"Munt\":"
+                + " a value fold reads an attribute per contributor, and a role name is a count source only a count"
+                + " folds (WF-093 (a))"), e.getMessage());
+
+        // a name that is neither an attribute nor a role declares nothing (WF-034)
+        ir = golden(MUNTTELLING);
+        bron(ir, 1).put("attribuut", "glans");
+        e = weigert(ir, "/rules/resolvedRegels/1/waarde/argumenten/0");
+        assertTrue(e.getMessage().contains("'glans' is not a declared attribute of 'Munt'"), e.getMessage());
+    }
+
+    @Test void een_kenmerk_als_bron_van_een_waardevouw_weigert() throws Exception {
+        ObjectNode ir = golden(MUNTTELLING);
+        IrPad.objectType(ir, "Munt").withArray("characteristics").addObject().put("node", "Characteristic")
+                .put("name", "gangbaar").put("kind", "BIJVOEGLIJK");
+        bron(ir, 1).put("attribuut", "gangbaar");
+        IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/1/waarde/argumenten/0");
+        assertTrue(e.getMessage().contains("'gangbaar' is a characteristic of 'Munt', not an attribute — a"
+                + " characteristic endpoint is ill-formed in an aggregation source position (WF-080)"), e.getMessage());
+    }
+
+    @Test void een_telling_over_een_pad_weigert() throws Exception {
+        // anchor/jutterswet-bootberging's rule 0 folds over the two-step path Jutter -> Boot -> Vondst; as a count over
+        // the reached role it names a range of two steps where a count's range is one
+        ObjectNode ir = golden(BOOTBERGING);
+        ObjectNode w = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("waarde");
+        w.put("kind", "AANTAL");
+        bron(ir, 0).put("attribuut", "geborgen vondsten").put("objecttype", "Jutter");
+        IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/0/waarde/bronPad");
+        assertTrue(e.getMessage().contains("a bronPad is admissible only as the range of a single-argument VALUE"
+                + " fold's set source — a count's range is one step, spelled bronRol (WF-102 (c))"), e.getMessage());
+    }
+
+    // ---------------- a characteristic at a value position (WF-080) ----------------
+
+    @Test void een_kenmerk_op_een_waardepositie_weigert() throws Exception {
+        // "hij bemand gelijk is aan onwaar": the characteristic read as an operand. Measured on the L2 union before
+        // the fix round: PLAYED in both branches, where the verifier refuses it.
+        ObjectNode ir = golden(POSTBEZETTING);
+        ((ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(1)).set("voorwaarde", JSON.readTree(
+                "{\"node\":\"Vergelijking\",\"op\":\"GELIJK\",\"links\":{\"node\":\"AttribuutRef\",\"attribuut\":"
+                + "\"bemand\",\"objecttype\":\"Wachtpost\",\"bron\":\"bemand\"},\"rechts\":{\"node\":\"Literal\","
+                + "\"waarde\":\"onwaar\",\"type\":{\"node\":\"Booleaan\"},\"bron\":\"onwaar\"},\"periode\":null,"
+                + "\"bron\":\"hij bemand gelijk is aan onwaar\"}"));
+        IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/1/voorwaarde/links");
+        assertTrue(e.getMessage().contains("'bemand' is a characteristic of 'Wachtpost', not an attribute — a"
+                + " characteristic endpoint is ill-formed in a value position (WF-080)"), e.getMessage());
+    }
+
     // ---------------- fixtures ----------------
+
+    private static ObjectNode rolcheck(ObjectNode ir, int regel) {
+        return (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(regel).get("voorwaarde");
+    }
+
+    /** The single argument of rule {@code regel}'s fold: its set source. */
+    private static ObjectNode bron(ObjectNode ir, int regel) {
+        return (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(regel).get("waarde").get("argumenten").get(0);
+    }
 
     /** A node of the given kind and its JSON pointer. */
     private record Treffer(ObjectNode knoop, String pad) {}

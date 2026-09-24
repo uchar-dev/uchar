@@ -144,6 +144,9 @@ public final class IrLoader {
     /** IR-SPEC ch. 4.1a: the navigation bindings per AttribuutRef / Kenmerk node — see
      *  {@link Loaded#navigatieBindingen()}. Identity-keyed for {@link #rolBindingen}'s reason. */
     private final Map<Object, List<RolBindingRef>> navigatieBindingen = new java.util.IdentityHashMap<>();
+    /** The JSON pointer of every AttribuutRef and role check read, by identity: the two node kinds
+     *  {@link #keurOnderwerpen} refuses after the whole document is read, at the place they were written. */
+    private final Map<Object, String> plekken = new java.util.IdentityHashMap<>();
 
     private IrLoader() {}
 
@@ -283,26 +286,169 @@ public final class IrLoader {
                 (k, v) -> m.dagsoortPerEenheid.put(k, tekstOfNull(v, "/model/dagsoortPerEenheid/" + k)));
 
         lijst(rules, "/rules", "resolvedRegels", (p, n) -> m.resolvedRegels.add(resolvedRegel(n)));
-        lijst(rules, "/rules", "resolvedDagsoorten", (p, n) -> m.resolvedDagsoorten.add(
-                new ResolvedDagsoort(text(n, "naam"), conditie(n.get("voorwaarde")), geldigheid(n))));
+        lijst(rules, "/rules", "resolvedDagsoorten", (p, n) -> {
+            velden(n, p, "ResolvedDagsoort", List.of("node", "naam", "voorwaarde", "geldigheid"), List.of());
+            m.resolvedDagsoorten.add(new ResolvedDagsoort(text(n, "naam"), conditie(n.get("voorwaarde")), geldigheid(n)));
+        });
         lijst(rules, "/rules", "objectCreaties", (p, n) -> m.objectCreaties.add(objectCreatie(n)));
         lijst(rules, "/rules", "verdelingen", (p, n) -> m.verdelingen.add(verdeling(n)));
         lijst(rules, "/rules", "consistenties", (p, n) -> m.consistenties.add(consistentie(n)));
         lijst(rules, "/rules", "uniciteiten", (p, n) -> m.uniciteiten.add(uniciteit(n)));
         lijst(rules, "/rules", "uniciteitUnies", (p, n) -> m.uniciteitUnies.add(uniciteitUnie(n)));
         lijst(rules, "/rules", "feitCreaties", (p, n) -> m.feitCreaties.add(feitCreatie(n)));
-        lijst(rules, "/rules", "resolvedStartpunten", (p, n) -> m.resolvedStartpunten.add(
-                new ResolvedStartpunt(text(n, "tijdlijn"), text(n, "objecttype"), text(n, "lid"))));
+        lijst(rules, "/rules", "resolvedStartpunten", (p, n) -> {
+            velden(n, p, "ResolvedStartpunt", List.of("node", "tijdlijn", "objecttype", "lid"), List.of());
+            m.resolvedStartpunten.add(new ResolvedStartpunt(text(n, "tijdlijn"), text(n, "objecttype"), text(n, "lid")));
+        });
         weigerGeerfdAnker();   // the §9.9 family: asked here, where BOTH the tijdlijnen and the determinations are read
-        lijst(rules, "/rules", "regelGroepen", (p, n) -> m.regelGroepen.add(new ResolvedRegelGroep(
-                text(n, "naam"), bool(n, "recursief"), stringList(n.get("leden")), bron(n), intOf(n, "line"))));
+        lijst(rules, "/rules", "regelGroepen", (p, n) -> {
+            velden(n, p, "ResolvedRegelGroep", List.of("node", "naam", "recursief", "leden", "bron", "line"), List.of());
+            m.regelGroepen.add(new ResolvedRegelGroep(
+                    text(n, "naam"), bool(n, "recursief"), stringList(n.get("leden")), bron(n), intOf(n, "line")));
+        });
         lijst(root, "", "diagnostics", (p, n) -> m.diagnostics.add(diagnostic(p, n)));
         // §6.1 (Phase 4) the prioritized-defaults extension, parsed AFTER the declarations so a default's
         // condition/value resolves its objecttype/parameter references against the fully-built model. A malformed
         // defaults bundle (an unknown inner node, a missing target) raises a loud Refusal from these parsers.
         if (rules.has("prioritizedDefaults"))
             lijst(rules, "/rules", "prioritizedDefaults", (p, n) -> prioritizedDefaults.add(prioritizedDefaults(n)));
+        keurOnderwerpen();
         return m;
+    }
+
+    // --- the reference layer's questions that need the subject or the position -----------------------
+
+    /** Two questions the node-by-node reading cannot answer, because they need the SUBJECT a node is read on or the
+     *  POSITION it stands at, asked once the whole document is read and refused as the verifier refuses them and
+     *  in the words {@code ref} and the ASP backend fault with: a role check whose subject does not fill the role
+     *  (WF-034, IR-SPEC ch. 4.5 — a link the subject can never be in), and a characteristic read at a value
+     *  position (WF-080 — a characteristic carries truth, no value). The subject of each position is the one the
+     *  verifier walks it with: the rule target's type, the element type inside a fold's filter and a quantifier
+     *  fold, a selection's type inside a union branch, the creation and consistency subject, the allocation's
+     *  source type, the fact creation's anchor, the defaults' onderwerp, and none in a day-kind definition. A rule
+     *  target is a write, never read here; the set source of a fold with a range is {@link #keurVouwbron}'s. Until
+     *  L2's fix round the first answered with a storage reason and the second played (measured on the L2 union). */
+    private void keurOnderwerpen() {
+        for (ResolvedRegel r : m.resolvedRegels) {
+            Objecttype s = r.doel() instanceof Expr.AttribuutRef a ? a.objecttype() : null;
+            keurWaarde(r.waarde(), s);
+            keurConditie(r.voorwaarde(), s);
+        }
+        for (ResolvedDagsoort d : m.resolvedDagsoorten) keurConditie(d.voorwaarde(), null);
+        for (ResolvedObjectCreatie oc : m.objectCreaties) {
+            for (ResolvedObjectCreatie.Toekenning t : oc.toekenningen()) keurWaarde(t.waarde(), oc.subject());
+            keurConditie(oc.voorwaarde(), oc.subject());
+        }
+        for (ResolvedVerdeling v : m.verdelingen) keurConditie(v.voorwaarde(), v.bronType());
+        for (ResolvedConsistentie c : m.consistenties) keurConditie(c.assertie(), c.subject());
+        for (ResolvedFeitCreatie fc : m.feitCreaties) keurConditie(fc.voorwaarde(), fc.anker());
+        for (PrioritizedDefaults pd : prioritizedDefaults)
+            for (Default d : pd.defaults()) keurStandaard(d, ot(pd.onderwerp()));
+    }
+
+    private void keurStandaard(Default d, Objecttype s) {
+        keurConditie(d.voorwaarde(), s);
+        keurWaarde(d.consequentie(), s);
+        if (d.excepties() != null)
+            for (ExceptionGroup g : d.excepties().leden())
+                for (Default x : g.defaults()) keurStandaard(x, s);
+    }
+
+    /** A value position and everything below it. Exhaustive over the sealed union, so a node the union grows is a
+     *  compile error here rather than a subtree the walk skips. */
+    private void keurWaarde(Expr e, Objecttype s) {
+        switch (e) {
+            case null -> { }
+            case Expr.AttribuutRef a -> {
+                Objecttype ot = a.objecttype();
+                if (ot != null && a.attribuut() != null && ot.attribuut(a.attribuut()) == null
+                        && ot.kenmerkNaam(a.attribuut()) != null)
+                    throw new Documentfout(plekken.get(a), "'" + a.attribuut() + "' is a characteristic of '" + ot.naam
+                            + "', not an attribute — a characteristic endpoint is ill-formed in a value position"
+                            + " (WF-080)");
+            }
+            case Expr.Functie f -> {
+                boolean setbron = f.elementObjecttype() != null && f.argumenten().size() == 1
+                        && (rolBindingen.containsKey(f) || bronPaden.containsKey(f));
+                if (!setbron) for (Expr x : f.argumenten()) keurWaarde(x, s);
+                keurWaarde(f.leegwaarde(), s);
+                keurConditie(f.filter(), f.elementObjecttype() != null ? f.elementObjecttype() : s);
+            }
+            case Expr.Binair b -> { keurWaarde(b.links(), s); keurWaarde(b.rechts(), s); }
+            case Expr.Afgerond x -> keurWaarde(x.basis(), s);
+            case Expr.Begrensd x -> { keurWaarde(x.basis(), s); keurWaarde(x.minimum(), s); keurWaarde(x.maximum(), s); }
+            case Expr.TekstReeks t -> {
+                for (Expr.TekstReeks.Deel d : t.delen())
+                    if (d instanceof Expr.TekstReeks.Ingevoegd i) keurWaarde(i.expr(), s);
+            }
+            case Expr.Let l -> { keurWaarde(l.value(), s); keurWaarde(l.body(), s); }
+            case Expr.IfThenElse k -> { keurConditie(k.conditie(), s); keurWaarde(k.dan(), s); keurWaarde(k.anders(), s); }
+            case Expr.InstanceSetUnion u -> {
+                for (Expr.InstanceSetUnion.Tak t : u.takken()) keurConditie(t.filter(), t.elementType());
+            }
+            // a dimension cell reads a dimensioned attribute, which no characteristic is
+            case Expr.DimensieCel c -> { }
+            case Expr.Literal x -> { }
+            case Expr.ParameterRef x -> { }
+            case Expr.VariabeleRef x -> { }
+            case Expr.BinderRef x -> { }
+            case Expr.Constante x -> { }
+            case Expr.Onopgelost x -> { }
+        }
+    }
+
+    private void keurConditie(Conditie c, Objecttype s) {
+        switch (c) {
+            case null -> { }
+            case Conditie.Vergelijking v -> { keurWaarde(v.links(), s); keurWaarde(v.rechts(), s); }
+            case Conditie.Predicaat p -> keurWaarde(p.operand(), s);
+            case Conditie.Periode p -> { keurWaarde(p.vanaf(), s); keurWaarde(p.tot(), s); }
+            case Conditie.Samengesteld x -> { for (Conditie o : x.onderdelen()) keurConditie(o, s); }
+            case Conditie.Kwantorvouw kv -> {
+                Objecttype es = kv.elementObjecttype() != null ? kv.elementObjecttype() : s;
+                keurConditie(kv.filter(), es);
+                keurConditie(kv.toets(), es);
+            }
+            case Conditie.Rollidmaatschap r -> keurVulling(r, s);
+            case Conditie.Kenmerk k -> { }
+            case Conditie.Regelversie x -> { }
+            case Conditie.Onopgelost x -> { }
+            // this loader refuses the node itself, so no document it returns carries one
+            case Conditie.VerreRollidmaatschap x -> { }
+        }
+    }
+
+    /** WF-034: the subject fills the role the check names — one-sided, through the supertype chain (ch. 2.6), as
+     *  every near-side question is asked. A subject-less position (a day-kind definition) has nothing to cross. */
+    private void keurVulling(Conditie.Rollidmaatschap r, Objecttype s) {
+        if (s == null) return;
+        RolBindingRef rb = rolBindingen.get(r);
+        RegelSpraakModel.Rol rol = rolOpNaam(feittypeOpNaam(rb.feittype()), rb.rol());
+        Objecttype vuller = ot(rol.objecttypeNaam());
+        if (vuller != null && !s.isEen(vuller))
+            throw new Documentfout(plekken.get(r) + "/role", "role check: the subject \"" + s.naam
+                    + "\" does not fill the role \"" + rb.rol() + "\" of \"" + rb.feittype()
+                    + "\", so no link of it can hold the subject there (WF-034)");
+    }
+
+    /** The declared fact type of that name, case-insensitively, or null. */
+    private Feittype feittypeOpNaam(String naam) {
+        if (naam == null) return null;
+        for (Feittype ft : m.feittypen.values()) if (naam.equalsIgnoreCase(ft.naam)) return ft;
+        return null;
+    }
+
+    /** The role of {@code ft} with that DECLARED name (the plural does not name a role here), or null. */
+    private static RegelSpraakModel.Rol rolOpNaam(Feittype ft, String naam) {
+        if (ft == null || naam == null) return null;
+        for (RegelSpraakModel.Rol r : ft.rollen) if (naam.equalsIgnoreCase(r.naam())) return r;
+        return null;
+    }
+
+    /** The other role of a two-role fact type, or null when it has not exactly two. */
+    private static RegelSpraakModel.Rol andereRol(Feittype ft, RegelSpraakModel.Rol r) {
+        if (ft.rollen.size() != 2) return null;
+        return ft.rollen.get(0) == r ? ft.rollen.get(1) : ft.rollen.get(0);
     }
 
     /** The key set of a container object or an M1 node, checked as the OCaml loader's {@code check_keys} checks it:
@@ -473,6 +619,8 @@ public final class IrLoader {
     // --- prioritized-defaults extension (ch. 7) ----------------------------
 
     private PrioritizedDefaults prioritizedDefaults(JsonNode n) {
+        velden(n, padVan(n), "PrioritizedDefaults", List.of("node", "naam", "onderwerp", "kenmerk", "defaults", "bron",
+                "geldigheid"), List.of("attribuut", "ongeordend"));
         String onderwerp = text(n, "onderwerp");
         String kenmerk = text(n, "kenmerk");
         String attribuut = text(n, "attribuut");
@@ -486,6 +634,8 @@ public final class IrLoader {
     }
 
     private Default dflt(JsonNode n) {
+        velden(n, padVan(n), "Default", List.of("node", "besluit", "voorwaarde", "bron"),
+                List.of("consequentie", "initialisatie", "excepties"));
         JsonNode b = n.get("besluit");
         Boolean besluit = b == null || b.isNull() ? null : b.asBoolean();
         return new Default(besluit, conditie(n.get("voorwaarde")), expr(n.get("consequentie")),
@@ -494,12 +644,14 @@ public final class IrLoader {
 
     private Default.Excepties excepties(JsonNode n) {
         if (n == null || n.isNull()) return null;
+        velden(n, padVan(n), null, List.of("ongeordend", "leden"), List.of());
         List<ExceptionGroup> leden = new ArrayList<>();
         forEach(n.get("leden"), s -> leden.add(exceptionGroup(s)));
         return new Default.Excepties(bool(n, "ongeordend"), leden);
     }
 
     private ExceptionGroup exceptionGroup(JsonNode n) {
+        velden(n, padVan(n), "ExceptionGroup", List.of("node", "defaults", "bron"), List.of());
         List<Default> defaults = new ArrayList<>();
         forEach(n.get("defaults"), r -> defaults.add(dflt(r)));
         return new ExceptionGroup(defaults, text(n, "bron"));
@@ -686,12 +838,25 @@ public final class IrLoader {
             Map.entry("DatumInDagen", List.of("node")),
             Map.entry("DatumTijd", List.of("node")));
 
+    /** The key set of each datatype kind this backend carries, at every position but a domain's declaration (see
+     *  {@link #DOMEINDATATYPE}): an Enumeratie names its domain here. */
+    private static final Map<String, List<String>> DATATYPE = Map.ofEntries(
+            Map.entry("Numeriek", List.of("node", "geheel", "decimalen", "teken", "eenheid")),
+            Map.entry("Percentage", List.of("node", "geheel", "decimalen", "eenheid")),
+            Map.entry("Tekst", List.of("node")),
+            Map.entry("Booleaan", List.of("node")),
+            Map.entry("DatumInDagen", List.of("node")),
+            Map.entry("DatumTijd", List.of("node")),
+            Map.entry("Enumeratie", List.of("node", "domein", "waarden")));
+
     private Parameter parameter(String pad, JsonNode n) {
+        velden(n, pad, "Parameter", List.of("node", "naam", "datatype", "granulariteit"), List.of());
         return new Parameter(naam(n, pad, "naam"), datatype(n.get("datatype"), pad + "/datatype"),
                 enumOf(Granulariteit.class, n, "granulariteit"));
     }
 
     private Eenheidstelsel eenheidstelsel(String pad, JsonNode n) {
+        velden(n, pad, "Eenheidstelsel", List.of("node", "naam", "eenheden", "aliassen"), List.of());
         Eenheidstelsel es = new Eenheidstelsel(naam(n, pad, "naam"));
         forEachField(n.get("eenheden"), (k, v) -> es.eenheden.put(k, eenheid(v)));
         forEachField(n.get("aliassen"), (k, v) -> es.aliassen.put(k, eenheid(v)));
@@ -700,24 +865,33 @@ public final class IrLoader {
 
     private Eenheid eenheid(JsonNode n) {
         if (n == null || n.isNull()) return null;
+        velden(n, n.isObject() ? padVan(n) : "Eenheid", "Eenheid",
+                List.of("node", "afkorting", "stelsel", "canoniek", "factorNaarCanoniek", "noemer"), List.of());
         return new Eenheid(text(n, "afkorting"), text(n, "stelsel"), text(n, "canoniek"),
                 decimal(n, "factorNaarCanoniek"), eenheid(n.get("noemer")));
     }
 
     private Feittype feittype(String pad, JsonNode n) {
+        velden(n, pad, "Feittype", List.of("node", "naam", "wederkerig", "rollen"), List.of());
         Feittype ft = new Feittype(naam(n, pad, "naam"));
         ft.wederkerig = bool(n, "wederkerig");
-        forEach(n.get("rollen"), r -> ft.rollen.add(new RegelSpraakModel.Rol(
-                text(r, "naam"), text(r, "objecttypeNaam"), text(r, "meervoud"), bool(r, "meervoudig"))));
+        forEach(n.get("rollen"), r -> {
+            velden(r, padVan(r), "Rol", List.of("node", "naam", "objecttypeNaam", "meervoud", "meervoudig"), List.of());
+            ft.rollen.add(new RegelSpraakModel.Rol(
+                    text(r, "naam"), text(r, "objecttypeNaam"), text(r, "meervoud"), bool(r, "meervoudig")));
+        });
         return ft;
     }
 
     private Dimensie dimensie(String pad, JsonNode n) {
+        velden(n, pad, "Dimensie", List.of("node", "naam", "naamMeervoud", "voorzetsel", "waarden"), List.of());
         return new Dimensie(naam(n, pad, "naam"), text(n, "naamMeervoud"),
                 text(n, "voorzetsel"), stringList(n.get("waarden")));
     }
 
     private Tijdlijn tijdlijn(JsonNode n) {
+        velden(n, padVan(n), "Tijdlijn", List.of("node", "naam", "variabelStartpunt", "granulariteit", "aantal"),
+                List.of());
         return new Tijdlijn(text(n, "naam"), bool(n, "variabelStartpunt"),
                 enumOf(Granulariteit.class, n, "granulariteit"), intOf(n, "aantal"));
     }
@@ -733,6 +907,8 @@ public final class IrLoader {
         if (!n.isObject())
             throw new Documentfout(pad == null ? "Datatype" : pad, "expected a datatype object or null, got " + kort(n));
         String node = datatypeSoort(n, pad);
+        List<String> sleutels = DATATYPE.get(node);
+        if (sleutels != null) velden(n, pad == null ? padVan(n) : pad, node, sleutels, List.of());
         return switch (node) {
             case "Numeriek" -> new Datatype.Numeriek(bool(n, "geheel"), intOf(n, "decimalen"),
                     enumOf(Datatype.Teken.class, n, "teken"), eenheid(n.get("eenheid")));
@@ -762,11 +938,79 @@ public final class IrLoader {
         return soort.asText();
     }
 
+    // --- the key sets of the rule-side nodes ----------------------------------
+
+    /** A node's keys as the schema gives them: required, then optional (IR-SPEC § Method). */
+    private record Sleutels(List<String> verplicht, List<String> optioneel) {}
+
+    private static Map.Entry<String, Sleutels> sleutels(String node, List<String> verplicht, String... optioneel) {
+        return Map.entry(node, new Sleutels(verplicht, List.of(optioneel)));
+    }
+
+    /** Every expression node this loader reads, with the schema's keys. A node kind outside the table is a form this
+     *  backend does not carry and reaches the dispatch's refusal; the union's selection is read inside its union. */
+    private static final Map<String, Sleutels> EXPRESSIE = Map.ofEntries(
+            sleutels("Literal", List.of("node", "waarde", "type", "bron")),
+            sleutels("TekstReeks", List.of("node", "delen", "type", "bron")),
+            sleutels("Binair", List.of("node", "op", "links", "rechts", "type", "bron")),
+            sleutels("Functie", List.of("node", "kind", "argumenten", "elementObjecttype", "leegwaarde", "filter",
+                    "dimensieSelectie", "type", "bron", "granulariteit"), "bronRol", "bronPad"),
+            sleutels("Afgerond", List.of("node", "basis", "modus", "decimalen", "type", "bron")),
+            sleutels("Begrensd", List.of("node", "basis", "minimum", "maximum", "type", "bron")),
+            sleutels("AttribuutRef", List.of("node", "attribuut", "objecttype", "bron"), "navigatieBindingen"),
+            sleutels("DimensieCel", List.of("node", "attribuut", "labels", "bron")),
+            sleutels("ParameterRef", List.of("node", "parameter", "bron")),
+            sleutels("VariabeleRef", List.of("node", "naam", "bron")),
+            sleutels("Constante", List.of("node", "naam", "type", "bron")),
+            sleutels("Onopgelost", List.of("node", "bron"), "type"),
+            sleutels("Let", List.of("node", "type", "binder", "value", "body", "bron")),
+            sleutels("BinderRef", List.of("node", "name", "bron")),
+            sleutels("IfThenElse", List.of("node", "type", "condition", "then", "else", "bron")),
+            sleutels("InstanceSetUnion", List.of("node", "branches", "bron")));
+
+    /** Every condition node this loader reads, with the schema's keys. The condition marker carries no type: that
+     *  field is the expression marker's alone. */
+    private static final Map<String, Sleutels> CONDITIE = Map.ofEntries(
+            sleutels("Vergelijking", List.of("node", "op", "links", "rechts", "periode", "bron")),
+            sleutels("Predicaat", List.of("node", "soort", "operand", "dagsoort", "negatie", "cijfers", "periode",
+                    "bron")),
+            sleutels("Kenmerk", List.of("node", "kenmerk", "negatie", "eigenaar", "periode", "bron"),
+                    "navigatieBinding"),
+            sleutels("RoleMembership", List.of("node", "factType", "role", "negated", "bron"), "counterpartType"),
+            sleutels("Periode", List.of("node", "vanaf", "tot", "totInclusief", "bron")),
+            sleutels("Samengesteld", List.of("node", "kwantor", "drempel", "onderdelen", "bron")),
+            sleutels("Kwantorvouw", List.of("node", "kwantor", "elementObjecttype", "filter", "toets", "bron"),
+                    "drempel", "bronRol", "bronPad"),
+            sleutels("Regelversie", List.of("node", "regel", "inconsistent", "bron")),
+            sleutels("Onopgelost", List.of("node", "bron")));
+
+    /** The two parts of a text sequence. */
+    private static final Map<String, Sleutels> DEEL = Map.ofEntries(
+            sleutels("Letterlijk", List.of("node", "tekst")),
+            sleutels("Ingevoegd", List.of("node", "expr")));
+
+    /** The discriminator of an expression or condition node, and — for the kinds this loader reads — its key set,
+     *  checked as {@link #velden} checks every node since L2's fix round: no key outside the node's own, every
+     *  required key present, an optional one written whole or not at all. Until then a field no node has was
+     *  read past on most rule-side nodes, a condition marker carrying a type among them. */
+    private String knoopSoort(JsonNode n, Map<String, Sleutels> tabel, String wat) {
+        if (!n.isObject())
+            throw new Documentfout(n.isArray() ? padVan(n) : wat,
+                    "expected " + ("expression".equals(wat) ? "an " : "a ") + wat + " node, got " + kort(n));
+        String p = padVan(n);
+        JsonNode soort = n.get("node");
+        if (soort == null) throw new Documentfout(p, "missing field 'node' (the " + wat + " discriminator)");
+        if (!soort.isTextual()) throw new Documentfout(p + "/node", "expected a string, got " + kort(soort));
+        Sleutels sl = tabel.get(soort.asText());
+        if (sl != null) velden(n, p, soort.asText(), sl.verplicht(), sl.optioneel());
+        return soort.asText();
+    }
+
     // --- Expr --------------------------------------------------------------
 
     private Expr expr(JsonNode n) {
         if (n == null || n.isNull()) return null;
-        String node = text(n, "node");
+        String node = knoopSoort(n, EXPRESSIE, "expression");
         return switch (node) {
             case "Literal" -> new Expr.Literal(text(n, "waarde"), datatype(n.get("type")), bron(n));
             case "TekstReeks" -> {
@@ -830,6 +1074,7 @@ public final class IrLoader {
                 // the one-step range — see Loaded#rolBindingen. It stays OUT of the record (that one is vendored).
                 RolBindingRef br = rolBinding(n, p, "bronRol");
                 if (br != null) rolBindingen.put(f, br);
+                if (eenBron && (n.has("bronRol") || n.has("bronPad"))) keurVouwbron(n, p, fk, f);
                 yield f;
             }
             case "Afgerond" -> new Expr.Afgerond(expr(n.get("basis")),
@@ -839,10 +1084,9 @@ public final class IrLoader {
             // carries no written navigation; the record's components for both stay empty
             case "AttribuutRef" -> {
                 String p = padVan(n);
-                velden(n, p, "AttribuutRef", List.of("node", "attribuut", "objecttype", "bron"),
-                        List.of("navigatieBindingen"));
                 Expr.AttribuutRef a = new Expr.AttribuutRef(text(n, "attribuut"), ot(text(n, "objecttype")),
                         null, null, null, bron(n), false, List.of());
+                plekken.put(a, p);
                 if (n.has("navigatieBindingen")) {
                     // written whole or not at all, never empty (IR-SPEC ch. 4.1a): an empty list would read as the
                     // subject's own attribute
@@ -855,16 +1099,13 @@ public final class IrLoader {
                 yield a;
             }
             case "DimensieCel" -> {
-                velden(n, padVan(n), "DimensieCel", List.of("node", "attribuut", "labels", "bron"), List.of());
                 yield new Expr.DimensieCel((Expr.AttribuutRef) expr(n.get("attribuut")), stringList(n.get("labels")),
                         bron(n));
             }
             case "ParameterRef" -> {
-                velden(n, padVan(n), "ParameterRef", List.of("node", "parameter", "bron"), List.of());
                 yield new Expr.ParameterRef(param(text(n, "parameter")), bron(n));
             }
             case "VariabeleRef" -> {
-                velden(n, padVan(n), "VariabeleRef", List.of("node", "naam", "bron"), List.of());
                 yield new Expr.VariabeleRef(text(n, "naam"), null, bron(n));
             }
             case "Constante" -> new Expr.Constante(text(n, "naam"), datatype(n.get("type")), bron(n));
@@ -873,7 +1114,6 @@ public final class IrLoader {
             // ch. 4.4: an absent type is an unknown one, and the record holds null for it.
             case "Onopgelost" -> {
                 String p = padVan(n);
-                velden(n, p, "Onopgelost", List.of("node", "bron"), List.of("type"));
                 yield new Expr.Onopgelost(n.has("type") ? datatype(n.get("type"), p + "/type") : null, bron(n), null);
             }
             // IR-SPEC ch. 4.10 the Let cluster — all three are ORDINARY union nodes, built straight into the tree
@@ -885,7 +1125,6 @@ public final class IrLoader {
                     verplicht("Let", "body", expr(n.get("body"))),
                     verplicht("Let", "type", datatype(n.get("type"))), bron(n)));
             case "BinderRef" -> {
-                velden(n, padVan(n), "BinderRef", List.of("node", "name", "bron"), List.of());
                 yield new Expr.BinderRef(verplicht("BinderRef", "name", text(n, "name")), null, bron(n));
             }
             case "IfThenElse" -> new Expr.IfThenElse(
@@ -903,11 +1142,12 @@ public final class IrLoader {
             case "InstanceSetUnion" -> {
                 List<Expr.InstanceSetUnion.Tak> takken = new ArrayList<>();
                 forEach(n.get("branches"), b -> {
+                    String bp = padVan(b);
+                    velden(b, bp, "InstanceSetBranch", List.of("node", "elementType", "sourceRole", "filter", "bron"),
+                            List.of());
                     RegelSpraakModel.Objecttype el = verplicht("InstanceSetBranch", "elementType",
                             ot(text(b, "elementType")));
                     // IR-SPEC ch. 4.3: every selection names its relation; nothing derives a missing one
-                    String bp = padVan(b);
-                    if (!b.has("sourceRole")) throw ontbreekt(bp, "sourceRole");
                     RolBindingRef rb = rolBinding(b, bp, "sourceRole");
                     if (rb == null) throw new Documentfout(bp + "/sourceRole", "expected a RolBinding, got null");
                     takken.add(new Expr.InstanceSetUnion.Tak(el, rb, conditie(b.get("filter")), bron(b)));
@@ -944,6 +1184,61 @@ public final class IrLoader {
         return "AttribuutRef".equals(text(a, "node")) && !a.has("navigatieBindingen");
     }
 
+    /** The set source of a single-argument fold that carries a range (IR-SPEC ch. 4.3): what its name reads on the
+     *  element type decides which fold kinds may consume it, and a document that pairs the two otherwise is refused
+     *  here by name, as the verifier refuses it and as {@code ref} and the ASP backend fault on it. Under
+     *  {@code AANTAL} the source names the counted role, so a name that is a member of the element type reads a
+     *  value per contributor, which a count does not fold (WF-093 (b)), and a count's range is one step
+     *  (WF-102 (c)). Under a value fold the name is read per contributor, so it must be an attribute of the element
+     *  type: a characteristic carries no value there (WF-080), a role name is a count source only a count folds
+     *  (WF-093 (a)), and any other name declares nothing (WF-034). Without these the exec branch played a count
+     *  over an attribute as a count of members and died at first fire on a value fold over a role name, and the
+     *  DRL-text branch compiled neither (measured on the L2 union). A navigated source is WF-053's and is left to
+     *  the transpilers' refusal. */
+    private void keurVouwbron(JsonNode n, String p, Expr.FunctieKind fk, Expr.Functie f) {
+        if (fk == null || f.elementObjecttype() == null
+                || !(f.argumenten().get(0) instanceof Expr.AttribuutRef bron) || navigatieBindingen.containsKey(bron)
+                || bron.attribuut() == null) return;
+        Objecttype el = f.elementObjecttype();
+        String a = bron.attribuut(), plek = p + "/argumenten/0";
+        boolean attribuut = el.attribuut(a) != null, kenmerk = !attribuut && el.kenmerkNaam(a) != null;
+        if (fk == Expr.FunctieKind.AANTAL) {
+            if (attribuut || kenmerk)
+                throw new Documentfout(plek, "a count over \"" + a + "\", which is "
+                        + (attribuut ? "an attribute" : "a characteristic") + " of \"" + el.naam + "\": a count source"
+                        + " names the counted role, and a value read per member is a value fold's source (WF-093 (b))");
+            if (n.has("bronPad"))
+                throw new Documentfout(p + "/bronPad", "a bronPad is admissible only as the range of a"
+                        + " single-argument VALUE fold's set source — a count's range is one step, spelled bronRol"
+                        + " (WF-102 (c))");
+            return;
+        }
+        if (!WAARDEVOUWEN.contains(fk) || attribuut) return;
+        if (kenmerk)
+            throw new Documentfout(plek, "'" + a + "' is a characteristic of '" + el.naam + "', not an attribute — a"
+                    + " characteristic endpoint is ill-formed in an aggregation source position (WF-080)");
+        if (isRolnaam(a))
+            throw new Documentfout(plek, "value aggregation over \"" + a + "\", which is no attribute of \""
+                    + el.naam + "\": a value fold reads an attribute per contributor, and a role name is a count source"
+                    + " only a count folds (WF-093 (a))");
+        throw new Documentfout(plek, "'" + a + "' is not a declared attribute of '" + el.naam + "': a value fold's"
+                + " source reads an attribute of each contributor (WF-034)");
+    }
+
+    /** The fold kinds that read a VALUE per contributor (IR-SPEC ch. 4.3) — every aggregation kind but
+     *  {@code AANTAL}, which folds the contributors themselves. */
+    private static final java.util.Set<Expr.FunctieKind> WAARDEVOUWEN = java.util.EnumSet.of(
+            Expr.FunctieKind.SOM, Expr.FunctieKind.TOTAAL, Expr.FunctieKind.MINIMUM, Expr.FunctieKind.MAXIMUM,
+            Expr.FunctieKind.EERSTE, Expr.FunctieKind.LAATSTE, Expr.FunctieKind.AANTAL_GEVULDE);
+
+    /** Does {@code naam} name a declared role — by its declared name or its declared plural, case-insensitively? */
+    private boolean isRolnaam(String naam) {
+        for (Feittype ft : m.feittypen.values())
+            for (RegelSpraakModel.Rol r : ft.rollen)
+                if (naam.equalsIgnoreCase(r.naam()) || naam.equalsIgnoreCase(r.meervoud())) return true;
+        return false;
+    }
+
     /** The two range spellings are one field (IR-SPEC ch. 4.3, WF-102 (a)): never both, and never written null. */
     private static void bereikVelden(JsonNode n, String p) {
         for (String veld : List.of("bronRol", "bronPad"))
@@ -960,7 +1255,7 @@ public final class IrLoader {
     }
 
     private Expr.TekstReeks.Deel tekstReeksDeel(JsonNode d) {
-        String node = text(d, "node");
+        String node = knoopSoort(d, DEEL, "text part");
         return switch (node) {
             case "Letterlijk" -> new Expr.TekstReeks.Letterlijk(text(d, "tekst"));
             case "Ingevoegd" -> new Expr.TekstReeks.Ingevoegd(expr(d.get("expr")));
@@ -970,6 +1265,7 @@ public final class IrLoader {
 
     private Expr.DimensieSelectie dimensieSelectie(JsonNode n) {
         if (n == null || n.isNull()) return null;
+        velden(n, padVan(n), "DimensieSelectie", List.of("node", "dimensie", "labels", "bron"), List.of());
         return new Expr.DimensieSelectie(text(n, "dimensie"), stringList(n.get("labels")), bron(n));
     }
 
@@ -977,7 +1273,7 @@ public final class IrLoader {
 
     private Conditie conditie(JsonNode n) {
         if (n == null || n.isNull()) return null;
-        String node = text(n, "node");
+        String node = knoopSoort(n, CONDITIE, "condition");
         return switch (node) {
             case "Vergelijking" -> new Conditie.Vergelijking(enumOf(Conditie.Operator.class, n, "op"),
                     expr(n.get("links")), expr(n.get("rechts")), geheelPeriode(n.get("periode")), bron(n));
@@ -985,8 +1281,6 @@ public final class IrLoader {
             // IR-SPEC ch. 4.5: the binding IS the hop — a check without one tests the subject's own kenmerk
             case "Kenmerk" -> {
                 String p = padVan(n);
-                velden(n, p, "Kenmerk", List.of("node", "kenmerk", "negatie", "eigenaar", "periode", "bron"),
-                        List.of("navigatieBinding"));
                 Conditie.Kenmerk k = new Conditie.Kenmerk(text(n, "kenmerk"), null, bool(n, "negatie"),
                         ot(text(n, "eigenaar")), geheelPeriode(n.get("periode")), bron(n));
                 RolBindingRef nb = rolBinding(n, p, "navigatieBinding");
@@ -997,15 +1291,36 @@ public final class IrLoader {
             // narrowing of the other end where there is one. The record is the carrier (see Loaded#rolBindingen).
             case "RoleMembership" -> {
                 String p = padVan(n);
-                velden(n, p, "RoleMembership", List.of("node", "factType", "role", "negated", "bron"),
-                        List.of("counterpartType"));
+                // WF-034, the role check's pair crossed against the declarations, in the words ref and the ASP
+                // backend fault with: a check naming no link of the model asks for nothing, and until L2's fix round
+                // this backend answered it with a storage reason instead (the fact type, the role, the narrowing
+                // here; whether the subject fills the role in keurOnderwerpen, which knows the subject)
+                String feittype = tekst(n, p, "factType"), rol = tekst(n, p, "role");
+                Feittype ft = feittypeOpNaam(feittype);
+                if (ft == null)
+                    throw new Documentfout(p + "/factType", "role check names fact type '" + feittype + "', which is"
+                            + " not declared: the check resolves against no declaration (WF-034)");
+                RegelSpraakModel.Rol gebonden = rolOpNaam(ft, rol);
+                if (gebonden == null)
+                    throw new Documentfout(p + "/role", "'" + rol + "' is not a declared role of fact type '" + feittype
+                            + "' (a role check names the role by its declared name) (WF-034)");
                 String tegenpartij = optTekst(n, p, "counterpartType");
                 Objecttype ander = tegenpartij == null ? null : ot(tegenpartij);
-                if (tegenpartij != null && ander == null)
-                    throw new Documentfout(p + "/counterpartType", "'" + tegenpartij + "' is not a declared object type");
-                Conditie.Rollidmaatschap r = new Conditie.Rollidmaatschap(tekst(n, p, "role"), ander, bron(n),
+                if (tegenpartij != null) {
+                    if (ander == null)
+                        throw new Documentfout(p + "/counterpartType", "role check: the counterpart type \""
+                                + tegenpartij + "\" is no declared object type (WF-034)");
+                    RegelSpraakModel.Rol overzijde = ft.wederkerig ? gebonden : andereRol(ft, gebonden);
+                    Objecttype vuller = overzijde == null ? null : ot(overzijde.objecttypeNaam());
+                    if (vuller != null && !ander.isEen(vuller))
+                        throw new Documentfout(p + "/counterpartType", "role check: the counterpart type \""
+                                + tegenpartij + "\" is no subtype of \"" + vuller.naam + "\", the filler the role \""
+                                + overzijde.naam() + "\" declares (WF-034)");
+                }
+                Conditie.Rollidmaatschap r = new Conditie.Rollidmaatschap(rol, ander, bron(n),
                         waarheid(n, p, "negated"));
-                rolBindingen.put(r, new RolBindingRef(tekst(n, p, "factType"), r.rol()));
+                rolBindingen.put(r, new RolBindingRef(feittype, r.rol()));
+                plekken.put(r, p);
                 yield r;
             }
             // the two role checks of the L1 shape, which RoleMembership replaced: nodes this format no longer has
@@ -1105,12 +1420,15 @@ public final class IrLoader {
 
     private Conditie.GeheelPeriode geheelPeriode(JsonNode n) {
         if (n == null || n.isNull()) return null;
+        velden(n, padVan(n), "GeheelPeriode", List.of("node", "jaar", "niet"), List.of());
         return new Conditie.GeheelPeriode(bool(n, "jaar"), bool(n, "niet"));
     }
 
     // --- resolved IR lists -------------------------------------------------
 
     private ResolvedRegel resolvedRegel(JsonNode n) {
+        velden(n, padVan(n), "ResolvedRegel", List.of("node", "naam", "soort", "doel", "waarde", "voorwaarde",
+                "geldigheid"), List.of("bronAnnotaties"));
         List<String> bronAnnotaties = n.has("bronAnnotaties") ? stringList(n.get("bronAnnotaties")) : List.of();
         ResolvedRegel r = new ResolvedRegel(text(n, "naam"), enumOf(ResolvedRegel.Soort.class, n, "soort"),
                 expr(n.get("doel")), expr(n.get("waarde")), conditie(n.get("voorwaarde")),
@@ -1133,9 +1451,13 @@ public final class IrLoader {
     }
 
     private ResolvedObjectCreatie objectCreatie(JsonNode n) {
+        velden(n, padVan(n), "ResolvedObjectCreatie", List.of("node", "naam", "nieuwType", "subject", "toekenningen",
+                "voorwaarde", "geldigheid"), List.of("verbindendeRol"));
         List<ResolvedObjectCreatie.Toekenning> tk = new ArrayList<>();
-        forEach(n.get("toekenningen"), t -> tk.add(new ResolvedObjectCreatie.Toekenning(
-                text(t, "attribuut"), expr(t.get("waarde")), bool(t, "kenmerk"))));
+        forEach(n.get("toekenningen"), t -> {
+            velden(t, padVan(t), "Toekenning", List.of("node", "attribuut", "waarde", "kenmerk"), List.of());
+            tk.add(new ResolvedObjectCreatie.Toekenning(text(t, "attribuut"), expr(t.get("waarde")), bool(t, "kenmerk")));
+        });
         ResolvedObjectCreatie oc = new ResolvedObjectCreatie(text(n, "naam"), ot(text(n, "nieuwType")),
                 ot(text(n, "subject")), tk, conditie(n.get("voorwaarde")), geldigheid(n));
         // IR-SPEC ch. 3.3: the symbolic verbindendeRol is NOT a field of the (vendored, pinned)
@@ -1148,6 +1470,9 @@ public final class IrLoader {
     }
 
     private ResolvedVerdeling verdeling(JsonNode n) {
+        velden(n, padVan(n), "ResolvedVerdeling", List.of("node", "naam", "bronType", "bronAttribuut", "doelType",
+                "doelAttribuut", "methode", "ratoAttribuut", "maximumAttribuut", "afrondingDecimalen", "restantAttribuut",
+                "groepeerAttribuut", "afnemend", "voorwaarde", "geldigheid", "verbindendeRol"), List.of());
         ResolvedVerdeling v = new ResolvedVerdeling(text(n, "naam"), ot(text(n, "bronType")), text(n, "bronAttribuut"),
                 ot(text(n, "doelType")), text(n, "doelAttribuut"),
                 enumOf(ResolvedVerdeling.Methode.class, n, "methode"), text(n, "ratoAttribuut"),
@@ -1157,7 +1482,6 @@ public final class IrLoader {
         // IR-SPEC ch. 3.2: the recipient role binding IS the join, and it is required. Not a field of the vendored
         // record, so it rides beside the model like the objectcreatie's; see Loaded#rolBindingen.
         String p = padVan(n);
-        if (!n.has("verbindendeRol")) throw ontbreekt(p, "verbindendeRol");
         RolBindingRef vr = rolBinding(n, p, "verbindendeRol");
         if (vr == null) throw new Documentfout(p + "/verbindendeRol", "expected a RolBinding, got null");
         rolBindingen.put(v, vr);
@@ -1165,6 +1489,8 @@ public final class IrLoader {
     }
 
     private ResolvedConsistentie consistentie(JsonNode n) {
+        velden(n, padVan(n), "ResolvedConsistentie", List.of("node", "naam", "subject", "assertie", "bron", "line",
+                "geldigheid"), List.of());
         return new ResolvedConsistentie(text(n, "naam"), ot(text(n, "subject")), conditie(n.get("assertie")),
                 bron(n), intOf(n, "line"), geldigheid(n));
     }
@@ -1179,9 +1505,13 @@ public final class IrLoader {
     }
 
     private ResolvedUniciteitUnie uniciteitUnie(JsonNode n) {
+        velden(n, padVan(n), "ResolvedUniciteitUnie", List.of("node", "naam", "bronnen", "bron", "geldigheid"),
+                List.of());
         List<ResolvedUniciteitUnie.Bron> bronnen = new ArrayList<>();
-        forEach(n.get("bronnen"), b -> bronnen.add(new ResolvedUniciteitUnie.Bron(
-                ot(text(b, "type")), stringList(b.get("sleutels")))));
+        forEach(n.get("bronnen"), b -> {
+            velden(b, padVan(b), "Bron", List.of("node", "type", "sleutels"), List.of());
+            bronnen.add(new ResolvedUniciteitUnie.Bron(ot(text(b, "type")), stringList(b.get("sleutels"))));
+        });
         return new ResolvedUniciteitUnie(text(n, "naam"), bronnen, bron(n), geldigheid(n));
     }
 
@@ -1239,6 +1569,7 @@ public final class IrLoader {
     private Geldigheid geldigheid(JsonNode eigenaar) {
         JsonNode n = eigenaar.get("geldigheid");
         if (n == null || n.isNull()) return null;
+        velden(n, padVan(n), "Geldigheid", List.of("node", "vanaf", "tot"), List.of());
         String naam = text(eigenaar, "naam"), soort = text(eigenaar, "node");
         String plek = (naam != null ? naam : "<unnamed " + (soort == null ? "carrier" : soort) + ">")
                 + ".geldigheid";
