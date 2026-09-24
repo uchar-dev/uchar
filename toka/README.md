@@ -120,6 +120,37 @@ stays honest about where it no longer proves toolchain agreement.
   byte (45 fragments, holdouts unchanged). The original toolchain still writes
   the v0 reference layer, so for these nodes too the comparison proves
   "frontend == the recorded state".
+- **2026-09-24 — the zone is in the L3 shape of `uchar-ir-v1`.** Executed by the
+  L3 card (`20260924-l3-typesysteem.md` in `backlog/`). The type system moved
+  and nothing else: a number or a percentage is a `Number` (a percentage one
+  with the unit `%`, tagged `"presentation": "percentage"` at a declaration
+  only, with its `sign` always written), the two date types are one `Date` with
+  its `precision`, a unit is a `Unit` whose conversion factor is an exact
+  fraction `{num, den}`, a unit system is a `UnitSystem` listing each unit once
+  with its further `spellings` (the alias map is gone, and a spelling equal to
+  the unit's abbreviation is none), a parameter carries `name` and, when
+  time-dependent, a `timeline` facet, and a day kind is a `DayKind` node with
+  its `plural` (the registry beside the list is gone). In `casus/ir.json` that
+  rewrote 65 numbers, 3 of them percentages at a declaration, 16 dates (8 per
+  precision), 54 unit nodes, 3 unit systems with 14 units, 19 spellings (1 map
+  key and 18 aliases; 1 alias equal to its abbreviation dropped), 18 parameters
+  (none time-dependent) and 1 day kind with its plural. 20 of the 54 unit nodes
+  were copies under a second key of a system's maps (19 aliases, 1 map key), so
+  34 remain. Of the 54 factors 36 were whole numbers and carried over 1; the
+  other 18 were v0 doubles, each the product of per-step 16-digit roundings, and
+  were reconstructed as the fraction with the smallest denominator within 10^-14
+  relative of the double (`spec/proposals/v1-migratie/m3.py`): denominators 24
+  (2), 100 (3), 1000 (3), 1440 (6), 86400 (2), 86400000 (2). Ten of them stand
+  in the migrated file (24, 100, 1000, 86400 and 86400000 once each, 1440 five
+  times); the other eight sat on alias copies, seven of which became spellings
+  and one, equal to its abbreviation, nothing. The 29 `cases/` slices were
+  migrated mechanically with the same script; `casus/ir.json` was migrated the
+  same way and then re-emitted by uchar's frontend, which writes each factor
+  from the fraction the unit declarations write (`1/N` along the declaration
+  chain), not from a decimal, and it reproduced the migrated file byte for byte
+  (45 fragments, holdouts unchanged): every reconstructed fraction is the
+  declared one. The original toolchain still writes the v0 type system, so for
+  these nodes too the comparison proves "frontend == the recorded state".
 - The precedent runs the other way: `toka-45` (decision 16Y, 2026-08-29) is held
   **out** of the re-emission rather than re-pinned, because uchar's unit typing
   rejects the fragment as written. Divergence by holdout and divergence by
