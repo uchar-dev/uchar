@@ -45,10 +45,10 @@ import java.util.Map;
 /**
  * The ir.json -&gt; {@link RegelSpraakModel} loader — the inverse of the frontend's {@code IrEmitter}.
  * The maintainer architecture anchor (2026-08-27): the Drools backend CONSUMES the uchar IR off the
- * wire, exactly as ref/ and backends/clingo do. This loader parses the {@code uchar-ir-v1} JSON (its M1
- * shape: the v1 container and member nodes, every other node v0) into the SAME frontend record types the
- * transpiler consumes — the member nodes back into the model's side-maps — so the ported {@code ExecModelTranspiler}
- * fires the IR — never the RegelSpraak source.
+ * wire, exactly as ref/ and backends/clingo do. This loader parses the {@code uchar-ir-v1} JSON (the v1
+ * container and member nodes, the reference layer and the type system in their v1 shape, every other node v0) into
+ * the SAME frontend record types the transpiler consumes — the member nodes back into the model's side-maps — so the
+ * ported {@code ExecModelTranspiler} fires the IR — never the RegelSpraak source.
  *
  * <p><b>Refusal discipline.</b> Every wire form the v0 Drools backend does not carry is a LOUD, per-form
  * {@link Refusal} — never a silent skip. That covers a {@code format} other than {@code uchar-ir-v1}, the
