@@ -1,5 +1,5 @@
 Violates WF-089 (`spec/IR-SPEC.md` ch. 2.4) on its one-sided arm at a
-**composite** position: a `PLUS` over two `Numeriek` operands is annotated
+**composite** position: a `PLUS` over two `Number` operands is annotated
 with the keuzetype domain `Vaarwater` and written to the enumeration
 attribute it claims to produce. The derived type of an additive node is a
 number (ch. 2.3 / ch. 2.6), which names no keuzetype domain, so the rule

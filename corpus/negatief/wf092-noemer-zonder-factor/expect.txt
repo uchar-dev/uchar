@@ -1,0 +1,1 @@
+unit 'mnd' names canonical unit 'mnd' but carries no conversion factor into it: a half-filled conversion pair is not a unit (both fields, or neither)

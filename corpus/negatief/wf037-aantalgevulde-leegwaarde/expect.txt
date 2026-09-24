@@ -1,0 +1,1 @@
+empty-value fallback on a non-sum aggregation

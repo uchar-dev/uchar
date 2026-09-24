@@ -6,7 +6,7 @@ accounts for.
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-vondstverjaring/ir.json`:
 both operands of the rule's comparison are replaced by EXPRESSION markers of
-type `DatumInDagen` — the left one (the attribute reference `zijn vondstdag`)
+the day-precision `Date` type — the left one (the attribute reference `zijn vondstdag`)
 with `"bron": null`, the right one (the date literal `31-01-2024`) with
 `"bron": "de verjaringsgrens"` — and the comparison's own `bron` text follows
 the right one. `diagnostics` carries one `WARNING` (line 8) in the frontend's

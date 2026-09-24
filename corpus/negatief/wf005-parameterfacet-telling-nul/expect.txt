@@ -1,1 +1,1 @@
-timeline facet count 0 < 1
+the timeline facet of parameter 'penningbedrag' has count 0 < 1

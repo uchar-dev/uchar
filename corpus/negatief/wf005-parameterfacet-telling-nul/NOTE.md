@@ -3,7 +3,8 @@
 Violates WF-005 (`spec/IR-SPEC.md` ch. 2.2) on the timeline facet of a
 parameter, which WF-018 (ch. 2.10) defers to this rule: a period count 0.
 
-    WF-005 FAIL /model/parameters/0/timeline/count: timeline facet count 0 < 1
+    WF-005 FAIL /model/parameters/0/timeline/count: the timeline facet of
+    parameter 'penningbedrag' has count 0 < 1
 
 Since L3 a time-dependent parameter carries the same `TimelineFacet` node as an
 attribute, without a timeline name (delta B18 of

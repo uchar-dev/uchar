@@ -3,8 +3,8 @@
 Violates WF-111 (`spec/IR-SPEC.md` ch. 4.6): a time window's bound is a
 date literal or a scalar date attribute of the subject itself, and nothing
 else. Here the window is `vanaf de peildatum`, where `peildatum` is a date
-PARAMETER. WF-042 alone accepts that, because a parameter of type
-`DatumInDagen` is a date expression. WF-111 does not.
+PARAMETER. WF-042 alone accepts that, because a parameter of the
+day-precision `Date` type is a date expression. WF-111 does not.
 
 Expected verifier report:
 

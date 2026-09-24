@@ -683,7 +683,7 @@ let wf005 ctx =
         match par.par_tijdlijn_aantal with
         | Some n when n < 1 ->
             [ v "WF-005" ("/parameters/" ^ p ^ "/timeline/count")
-                (Printf.sprintf "timeline facet count %d < 1" n) ]
+                (Printf.sprintf "the timeline facet of parameter '%s' has count %d < 1" p n) ]
         | _ -> [])
       ctx.doc.parameters
 

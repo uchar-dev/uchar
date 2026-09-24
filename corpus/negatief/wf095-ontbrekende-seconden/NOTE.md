@@ -1,6 +1,6 @@
 # Violates WF-095 — the seconds field left unwritten
 
-The Gelijkstelling assigns the datum-tijd literal `"2026-03-15T12:00"`.
+The Gelijkstelling assigns the millisecond-precision date literal `"2026-03-15T12:00"`.
 The seconds field is **always written**, even when it is `00`.
 
 This is the field on which the readers split in the other direction: the
@@ -13,3 +13,11 @@ itself, and WF-095 puts it on the wire.
 Minimal own-authored document (Jutterswet vocabulary); the well-formed
 counterpart is the canonical-lexeme literal in
 `corpus/golden/jutterswet-meldstip/ir.json`.
+
+**Migrated at L3 (2026-09-24), stamp: herschreven (m).** The literal's type
+is a `Date` with `precision: millisecond` (delta B15 of
+`spec/proposals/V1-WIREMIGRATIE.md`), and that precision is what makes WF-095
+the lexeme's rule; the document is the translation of
+`spec/proposals/v1-migratie/m3.py`. The report is unchanged but for the
+name of the date, which the message now gives by its precision. `expect.txt`
+pins the arm.

@@ -1,6 +1,6 @@
 # Violates WF-095 — the day-first source snippet in `waarde`
 
-The Gelijkstelling assigns the datum-tijd literal
+The Gelijkstelling assigns the millisecond-precision date literal
 `"15-03-2026 12:00:00.000"`: the RegelSpraak source spelling, day-first,
 where the lexeme is the canonical ISO form `2026-03-15T12:00:00.000`.
 
@@ -21,3 +21,11 @@ Minimal own-authored document (Jutterswet vocabulary); the well-formed
 counterpart is the canonical-lexeme literal in
 `corpus/golden/jutterswet-meldstip/ir.json`, whose `bron` carries this
 same snippet.
+
+**Migrated at L3 (2026-09-24), stamp: herschreven (m).** The literal's type
+is a `Date` with `precision: millisecond` (delta B15 of
+`spec/proposals/V1-WIREMIGRATIE.md`), and that precision is what makes WF-095
+the lexeme's rule; the document is the translation of
+`spec/proposals/v1-migratie/m3.py`. The report is unchanged but for the
+name of the date, which the message now gives by its precision. `expect.txt`
+pins the arm.

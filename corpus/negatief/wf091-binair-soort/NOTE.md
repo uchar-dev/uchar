@@ -8,9 +8,10 @@ numbers.
     number
 
 **Rewritten at L2 (2026-09-24), stamp: herschreven (i).** Until L2 the
-annotation was `Percentage`. B14 (L3) makes a percentage a number with the
-unit `%`, and the report would move from the soort facet to the unit facet;
-the card rewrites the annotation to a non-numeric soort now (D18), so the
-arm this witness pins does not move at L3. The WF-023 line beside it is the
-boolean written into the percentage target, a consequence of the same
-annotation. `expect.txt` pins the arm (U1).
+annotation was a percentage. Since L3 a percentage is a number with the unit
+`%` (delta B14 of `spec/proposals/V1-WIREMIGRATIE.md`), and on that annotation
+the report would have moved from the soort facet to the unit facet; L2
+rewrote the annotation to a non-numeric soort, so the arm this witness pins
+did not move at L3 (measured: the report is unchanged). The WF-023 line
+beside it is the boolean written into the percentage target, a consequence of
+the same annotation. `expect.txt` pins the arm.

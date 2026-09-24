@@ -1,5 +1,5 @@
 Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) on the family clause: the rule
-writes a read of `Jutter.gewicht`, declared `Numeriek`, into
+writes a read of `Jutter.gewicht`, declared `Number`, into
 `Jutter.etiket`, declared `Tekst` — the mirror of `wf023-text-into-numeric`.
 
     WF-023 FAIL /rules/resolvedRegels/0: a number value is assigned to a text

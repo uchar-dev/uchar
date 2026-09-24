@@ -1,19 +1,19 @@
 Violates WF-092 (`spec/IR-SPEC.md` ch. 2.5) at the **denominator** of a
 composite rate: the `EUR/mnd` unit's numerator is untouched, and its
-denominator `mnd` names its canonical unit `mnd` while carrying
-`factorNaarCanoniek: null`. One field, at the eleven positions that same
+denominator `mnd` names its canonical unit `mnd` while carrying no
+`factorToCanonical`. One field, at the eleven positions that same
 denominator record occupies. Everything else is the temporal-total golden
 unchanged.
 
-    WF-092 FAIL /model/objectTypes/0/attributes/0/datatype/eenheid/noemer:
+    WF-092 FAIL /model/objectTypes/0/attributes/0/datatype/unit/denominator:
     unit 'mnd' names canonical unit 'mnd' but carries no conversion factor
     into it: a half-filled conversion pair is not a unit (both fields, or
     neither)
-    WF-092 FAIL /model/objectTypes/0/attributes/1/datatype/eenheid/noemer: …
-    WF-092 FAIL /model/objectTypes/0/attributes/2/datatype/eenheid/noemer: …
-    WF-092 FAIL /model/objectTypes/1/attributes/0/datatype/eenheid/noemer: …
-    WF-092 FAIL /rules/resolvedRegels/0/waarde/type/eenheid/noemer: …
-    WF-092 FAIL /rules/resolvedRegels/1/waarde/type/eenheid/noemer: …
+    WF-092 FAIL /model/objectTypes/0/attributes/1/datatype/unit/denominator: …
+    WF-092 FAIL /model/objectTypes/0/attributes/2/datatype/unit/denominator: …
+    WF-092 FAIL /model/objectTypes/1/attributes/0/datatype/unit/denominator: …
+    WF-092 FAIL /rules/resolvedRegels/0/waarde/type/unit/denominator: …
+    WF-092 FAIL /rules/resolvedRegels/1/waarde/type/unit/denominator: …
 
 Reading convention (house-wide): a citation path is the verifier's LOGICAL
 position — the walk that reached the node, spelled with declared names like
@@ -24,7 +24,7 @@ they do not address.
 The eleven split 4 / 2 / 2 / 3 over four call sites, each mutant-measured by
 the citations it loses: four model-layer attribute declarations, two rule
 targets, two walked expression `type`s and three fold sources. None of them
-comes from the `eenheidstelsels` walk, because the declared systems spell
+comes from the unit-system walk, because the declared systems spell
 `mnd` as a plain base unit and only the composite `EUR/mnd` carries it as a
 denominator.
 
@@ -65,3 +65,9 @@ targets and the fold sources lost their own `type` (B13), and with them five
 of the eleven positions — six remain, four declarations and the two
 aggregations' derived types; the split and the mutant counts above record
 the positions as they stood before L2.
+
+**Migrated at L3 (2026-09-24), stamp: herschreven (m).** The document is the
+translation of `spec/proposals/v1-migratie/m3.py`: a unit's denominator is
+spelled `denominator`, and the factor the witness leaves out is absent where
+it was null (delta B17 (i) of `spec/proposals/V1-WIREMIGRATIE.md`). The report
+is unchanged but for its paths. `expect.txt` pins the arm.

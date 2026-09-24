@@ -1,7 +1,8 @@
 Violates WF-036 (`spec/IR-SPEC.md` ch. 4.6), the DATE-ORDERING arm of the
 comparison typing rule: `De aanmelddatum van een Vondst moet later of
 gelijk zijn aan de vondstdag van de Vondst` orders a day-precision date
-(`DatumInDagen`) against a millisecond-precision one (`DatumTijd`). Both
+(`Date`, `precision: day`) against a millisecond-precision one (`precision:
+millisecond`). Both
 operands are dates, so this is not the number-versus-text defect of
 `wf036-order-number-vs-text` — but a date in days and a date in
 milliseconds are two REPRESENTATIONS: the first names a whole day, the
@@ -13,9 +14,10 @@ comparison node and not at an operand.
     precisions (day and millisecond), which share no order
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-vondstnummer`
-(a `LATER_OF_GELIJK` consistency over two `DatumInDagen` operands). Two
-lines move and nothing else: the declaration of `Vondst.vondstdag` from
-`DatumInDagen` to `DatumTijd`, and the single operand annotation that
+(a `LATER_OF_GELIJK` consistency over two day-precision operands). Two
+lines move and nothing else: the precision of the declaration of
+`Vondst.vondstdag` from `day` to `millisecond`, and the single operand
+annotation that
 reads it — so every annotation stays truthful and the document carries
 exactly one defect.
 
@@ -28,13 +30,14 @@ millisecond number below spells:
   * `ref` faults at evaluation —
     `EVALUATION FAULT: unordered comparison: 2025-03-05 vs
     @1740787200000ms`. It is the only leg that meets the defect itself:
-    a same-precision `DatumTijd` ordering plays here, and only the mixed
+    a same-precision millisecond ordering plays here, and only the mixed
     pair faults;
   * the ASP backend refuses ahead of translation —
     `TRANSLATION FAULT: unscalable datatype in the ASP translation`.
     That is a FORM refusal, not a verdict on this defect: the same
     message comes on the CLEAN same-precision ordering, because the ASP
-    scale table hands `DatumTijd` no scale — a `DatumTijd` ordering FOLD
+    scale table hands a millisecond-precision date no scale — a
+    millisecond-precision ordering FOLD
     (`corpus/golden/jutterswet-hoogwaterpaar`) does translate and play;
   * the Drools backend refuses the crossing on an explicit guard of its
     own. It SKIPS this document (`EXCLUDE transpiler SKIP: consistentie
@@ -60,8 +63,8 @@ negatief and parity — 504 documents on 2026-09-05) the only report that
 moved was this one. What the corpus does not carry: all seven of its
 date orderings put two DAY-precision operands side by side, so the
 ADMITTED millisecond half rests on the executors, not here — refusing
-the same-precision `DatumTijd` pair too moves zero of those 504 reports.
-A same-precision `DatumTijd` ordering golden is the missing regression
+the same-precision millisecond pair too moves zero of those 504 reports.
+A same-precision millisecond ordering golden is the missing regression
 witness.
 
 Falsifiable, clause-exact: let the date-ordering arm read the two
@@ -70,3 +73,9 @@ answering one `Date` tag, the shape the arm carried before this clause —
 and this case alone turns clean, while `wf036-order-number-vs-text` (an
 ordering across number and text) and the six ordering-fold cases under
 WF-038 stay red.
+
+**Migrated at L3 (2026-09-24), stamp: herschreven (m).** The two date
+representations are one `Date` node with a `precision`, `day` or
+`millisecond` (delta B15 of `spec/proposals/V1-WIREMIGRATIE.md`); the
+document is the translation of `spec/proposals/v1-migratie/m3.py`, and the
+arm reads the precision. `expect.txt` pins the arm.

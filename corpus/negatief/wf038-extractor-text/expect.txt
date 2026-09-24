@@ -1,0 +1,1 @@
+day-precision extractor operand is text, must be a date

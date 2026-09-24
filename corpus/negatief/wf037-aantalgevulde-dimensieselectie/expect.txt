@@ -1,0 +1,1 @@
+dimension selection on a kind other than sum/min/max

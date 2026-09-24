@@ -7,7 +7,7 @@ diagnostic accounts for — the document carries a marker and an empty
 A minimal hand-broken variant of `corpus/golden/jutterswet-vondstverjaring/ir.json`:
 the right-hand operand of the rule's comparison, the date literal
 `31-01-2024`, is replaced by the EXPRESSION marker
-`{"node": "Onopgelost", "type": DatumInDagen, "bron": "de verjaringsgrens"}` — a
+`{"node": "Onopgelost", "type": {"node": "Date", "precision": "day"}, "bron": "de verjaringsgrens"}` — a
 name the model does not declare, which is how a resolver hands the wire an
 operand it could not resolve — and the comparison's own `bron` text follows it.
 `diagnostics` stays empty. The marker itself is legal wire content (WF-044 is

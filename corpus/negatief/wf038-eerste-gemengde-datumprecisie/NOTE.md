@@ -1,7 +1,8 @@
 Violates WF-038 (`spec/IR-SPEC.md` ch. 4.6), the **cross-operand** half
 of the ordering-fold clause at its date seam: `de eerste van zijn
 ochtendhoogwater en zijn avondhoogwater` lists one millisecond-precision
-date (`DatumTijd`) and one day-precision date (`DatumInDagen`). Both
+date (`Date`, `precision: millisecond`) and one day-precision date
+(`precision: day`). Both
 operands are dates, so this is neither the equality-only defect of the
 four sibling cases nor the number-versus-date mix of
 `wf038-eerste-gemengde-familie` — but a date in days and a date in
@@ -17,9 +18,10 @@ Both fold nodes are refused: the document declares one attribute at each
 precision and reads that same pair twice, once per ordering kind.
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-hoogwaterpaar`
-(an articulated `EERSTE`/`LAATSTE` pair over two `DatumTijd` operands).
-Three fields move and nothing else: the declaration of
-`Getijdendag.avondhoogwater` from `DatumTijd` to `DatumInDagen`, and the
+(an articulated `EERSTE`/`LAATSTE` pair over two millisecond-precision
+operands). Three fields move and nothing else: the precision of the
+declaration of `Getijdendag.avondhoogwater` from `millisecond` to `day`, and
+the
 two operand annotations that read it — so every annotation stays
 truthful and the document has exactly one defect.
 
@@ -45,3 +47,9 @@ both answering one `Date` family, the shape the clause carried when it
 landed — and this case alone turns clean, while
 `wf038-eerste-gemengde-familie` (number versus date) and the four
 equality-only cases stay red.
+
+**Migrated at L3 (2026-09-24), stamp: herschreven (m).** The two date
+representations are one `Date` node with a `precision`, `day` or
+`millisecond` (delta B15 of `spec/proposals/V1-WIREMIGRATIE.md`); the
+document is the translation of `spec/proposals/v1-migratie/m3.py`, and the
+arm reads the precision. `expect.txt` pins the arm.

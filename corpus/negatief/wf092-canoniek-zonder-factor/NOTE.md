@@ -1,19 +1,19 @@
 Violates WF-092 (`spec/IR-SPEC.md` ch. 2.5), the **canonical-without-factor**
-half: the `Afstand` unit `km` names its canonical unit `m` and carries
-`factorNaarCanoniek: null`. Everything else is the unit-normalisation golden
+half: the `Afstand` unit `km` names its canonical unit `m` and carries no
+`factorToCanonical`. Everything else is the unit-normalisation golden
 unchanged — the `m` unit, both declared attributes, the rule, the literal
 `2,5 km`. One field, at the three positions that same unit record occupies.
 
-    WF-092 FAIL /model/unitSystems/0/eenheden/km: unit 'km' names
+    WF-092 FAIL /model/unitSystems/0/units/1: unit 'km' names
     canonical unit 'm' but carries no conversion factor into it: a
     half-filled conversion pair is not a unit (both fields, or neither)
-    WF-092 FAIL /rules/resolvedRegels/0/waarde/type/eenheid: unit 'km' …
-    WF-092 FAIL /rules/resolvedRegels/0/waarde/links/type/eenheid: unit 'km' …
+    WF-092 FAIL /rules/resolvedRegels/0/waarde/type/unit: unit 'km' …
+    WF-092 FAIL /rules/resolvedRegels/0/waarde/links/type/unit: unit 'km' …
 
 Why it has to exist: no neighbouring rule can reach this shape. WF-009 walks
-the declared systems, but it only tests a factor it FINDS (positivity) and a
-canonical chain it can FOLLOW — a missing factor is nothing to look at, and
-the chain `km → m` still terminates. WF-035 and WF-023 cross units for
+the declared systems, but it only follows a canonical chain it can FOLLOW (a
+factor's positivity is its wire form since L3) — a missing factor is nothing
+to look at, and the chain `km → m` still terminates. WF-035 and WF-023 cross units for
 COMPATIBILITY through the convertibility predicate, which reads the canonical
 names and never the factor, so `km` and `m` remain compatible. WF-091
 compares two units BYTE for byte, and the half-form is copied consistently
@@ -43,8 +43,15 @@ canonical-without-factor branch of `check_eenheid_form` in
 `spec/verifier/lib/checks.ml` and this case turns clean — together with
 `wf092-noemer-zonder-factor`, which is the same branch one level down — while
 `wf092-factor-zonder-canoniek` stays red on the mirror branch. Drop the
-`eenheidstelsels` walk from `wf092` instead and this case keeps its two
+unit-system walk from `wf092` instead and this case keeps its two
 expression-type citations and stays red; drop the expression-walk call
 instead and it keeps its declaration citation. It is refused three times over
 by design: the rule is a shape law on every unit in the document, not a cross
 between two of them.
+
+**Migrated at L3 (2026-09-24), stamp: herschreven (m).** The document is the
+translation of `spec/proposals/v1-migratie/m3.py`: the conversion pair is
+spelled `canonical` and `factorToCanonical`, and the half the witness leaves
+out is absent where it was null (delta B17 (i) of
+`spec/proposals/V1-WIREMIGRATIE.md`). The report is unchanged but for its
+paths. `expect.txt` pins the arm.

@@ -1,0 +1,1 @@
+tijdsduur without a node type (the counted unit is the node type's unit)
