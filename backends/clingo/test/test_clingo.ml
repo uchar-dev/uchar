@@ -3787,7 +3787,7 @@ let () =
       ~waar:{|"attribuut": "gewicht",|} ~door:{|"attribuut": "geborgen vondsten",|}
   in
   faults_with ~name:"ch3.4b een telling over een pad" ~ir:telling ~case_text:bp_case
-    ~needle:"a count's range is one step, spelled sourceRole (WF-102)";
+    ~needle:"a count's range is one step, spelled sourceRole";
   (* WF-093 (b) before WF-102, as the verifier and the Drools loader judge
      it: a count whose source names a MEMBER of the element type is refused
      for that, over a path of two steps and of one step alike; a count whose
@@ -3810,7 +3810,7 @@ let () =
     ~ir:(een_stap lidtelling) ~case_text:bp_case
     ~needle:"reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES";
   faults_with ~name:"ch3.4b een roltelling over een pad van een stap" ~ir:(een_stap telling)
-    ~case_text:bp_case ~needle:"a count's range is one step, spelled sourceRole (WF-102)";
+    ~case_text:bp_case ~needle:"a count's range is one step, spelled sourceRole";
   faults_with ~name:"ch3.4b een telling over een pad met filter"
     ~ir:
       (vervang telling ~waar:{|"elementType": "Vondst",|}
@@ -3823,7 +3823,7 @@ let () =
                           "type": { "node": "Number", "whole": false, "decimals": 2,
                                     "sign": "ONBEPAALD" }, "bron": "4,00" },
               "periode": null, "bron": "zijn gewicht groter is dan 4,00" },|})
-    ~case_text:bp_case ~needle:"a count's range is one step, spelled sourceRole (WF-102)"
+    ~case_text:bp_case ~needle:"a count's range is one step, spelled sourceRole"
 
 
 (* ch. 3.4b's to-ONE clause: "a step through a to-ONE role is an ordinary
@@ -8491,7 +8491,7 @@ let () =
          [ pf_is ~attr:"topsom" "66"; pf_cons ])
     ~needle:"the elementType 'Persoon' of a TOTAAL without a range is not the fold subject \
      'Jutter': without a range the fold is the subject's own read, so its elementType must \
-     name the subject type (WF-083)"
+     name the subject type"
 
 (* the defaults: ref walks a chain in order and stops at the first default
    that settles, and reads a consequence only under its holding

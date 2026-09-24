@@ -1651,7 +1651,7 @@ let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
       if n < 2 then
         fault
           "a sourcePath carries at least TWO steps, found %d — the one-step range is spelled \
-           sourceRole (WF-102)"
+           sourceRole"
           n;
       if bron_rol <> None then
         fault "a sourcePath beside a sourceRole: the one-step range IS sourceRole (WF-102)";
@@ -3382,7 +3382,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               | _ -> false) ->
       fault
         "a sourcePath is admissible only as the range of a single-argument VALUE fold's set source \
-         — a count's range is one step, spelled sourceRole (WF-102)"
+         — a count's range is one step, spelled sourceRole"
   (* WF-083 (c), the verifier's sentence and ref's check: a TOTAAL without a
      range is the subject's own read, so the type it folds over is the
      subject type; a foreign type in the field otherwise moves no answer *)
@@ -3393,7 +3393,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       fault
         "the elementType '%s' of a TOTAAL without a range is not the fold subject '%s': \
          without a range the fold is the subject's own read, so its elementType must name the \
-         subject type (WF-083)"
+         subject type"
         el subject_ot
   | Functie { kind = Aantal; argumenten = [ Attribuut_ref { navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol = Some _ as bron_rol; filter; _ } ->
       (* D8 (ii), the count source (a source naming a member of the element

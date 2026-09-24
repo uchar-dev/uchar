@@ -2865,10 +2865,10 @@ let () =
   in
   expect_fault_msg "WV-3.4b-telling-over-een-pad-faalt" (fun () -> ev w1 "J1" (telling None))
     "a sourcePath is admissible only as the range of a single-argument VALUE fold's set source \
-     — a count's range is one step, spelled sourceRole (WF-102)";
+     — a count's range is one step, spelled sourceRole";
   expect_fault_msg "WV-3.4b-telling-over-een-pad-met-filter-faalt"
     (fun () -> ev w1 "J1" (telling (Some zwaar)))
-    "a count's range is one step, spelled sourceRole (WF-102)";
+    "a count's range is one step, spelled sourceRole";
   (* WF-093 (b) before WF-102, as the verifier and the Drools loader judge
      it: a count whose source names a MEMBER of the element type is refused
      for that, over a path of two steps and of one step alike. A count whose
@@ -2889,7 +2889,7 @@ let () =
     "reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES";
   expect_fault_msg "WV-3.4b-roltelling-over-een-eenstapspad-faalt"
     (fun () -> ev w1 "J1" (telling_over "geborgen vondsten" "Jutter" een_stap))
-    "a count's range is one step, spelled sourceRole (WF-102)";
+    "a count's range is one step, spelled sourceRole";
   (* WF-080: a characteristic is no attribute, so a value fold's set source
      never names one — the verifier's aggregation-source sentence *)
   expect_fault_msg "WV-3.4b-kenmerk-als-setbron-faalt"
@@ -6508,7 +6508,7 @@ let () =
     (fun () -> run (totaal "Persoon"))
     "the elementType 'Persoon' of a TOTAAL without a range is not the fold subject \
      'Jutter': without a range the fold is the subject's own read, so its elementType must \
-     name the subject type (WF-083)"
+     name the subject type"
 
 (* WV-4.1-literaal (IR-SPEC ch. 4.1): a literal is read from its value
    variant under its type. A variant the type does not name is refused in

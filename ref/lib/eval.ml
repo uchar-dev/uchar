@@ -1387,11 +1387,11 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       | _ ->
           Value.fault
             "a sourcePath is admissible only as the range of a single-argument VALUE fold's set \
-             source — a count's range is one step, spelled sourceRole (WF-102)");
+             source — a count's range is one step, spelled sourceRole");
       if List.length pad < 2 then
         Value.fault
           "a sourcePath carries at least TWO steps, found %d — the one-step range is spelled \
-           sourceRole (WF-102)"
+           sourceRole"
           (List.length pad));
   (* WF-083 (c), the verifier's sentence: a TOTAAL without a range is the
      subject's own read, so the type it folds over is the subject type. The
@@ -1402,7 +1402,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       Value.fault
         "the elementType '%s' of a TOTAAL without a range is not the fold subject '%s': \
          without a range the fold is the subject's own read, so its elementType must name the \
-         subject type (WF-083)"
+         subject type"
         el st
   | _ -> ());
   match (kind, argumenten) with
