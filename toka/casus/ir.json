@@ -1079,383 +1079,45 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bepaal leeftijd",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "leeftijd",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "De leeftijd van een Natuurlijk persoon"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSDUUR",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "geboortedatum",
-              "objecttype": "Natuurlijk persoon",
-              "bron": "zijn geboortedatum"
+        "node": "Rule",
+        "name": "bepaal leeftijd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "AttribuutRef",
-              "attribuut": "vluchtdatum",
-              "objecttype": "Vlucht",
-              "bron": "de vluchtdatum van zijn reis",
-              "navigatieBindingen": [
-                {
-                  "node": "RolBinding",
-                  "feittype": "Vlucht van natuurlijke personen",
-                  "rol": "reis"
-                }
-              ]
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "jr",
-              "system": "Tijd",
-              "canonical": "mnd",
-              "factorToCanonical": {
-                "num": 12,
-                "den": 1
-              }
-            }
-          },
-          "bron": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "Kenmerktoekenning persoon minderjarig",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "minderjarig",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "Een Natuurlijk persoon is minderjarig"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "KLEINER",
-          "links": {
-            "node": "Functie",
-            "kind": "TIJDSDUUR",
-            "argumenten": [
-              {
-                "node": "AttribuutRef",
-                "attribuut": "geboortedatum",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn geboortedatum"
-              },
-              {
-                "node": "AttribuutRef",
-                "attribuut": "vluchtdatum",
-                "objecttype": "Vlucht",
-                "bron": "de vluchtdatum van zijn reis",
-                "navigatieBindingen": [
-                  {
-                    "node": "RolBinding",
-                    "feittype": "Vlucht van natuurlijke personen",
-                    "rol": "reis"
-                  }
-                ]
-              }
-            ],
-            "elementObjecttype": null,
-            "leegwaarde": null,
-            "filter": null,
-            "dimensieSelectie": null,
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "jr",
-                "system": "Tijd",
-                "canonical": "mnd",
-                "factorToCanonical": {
-                  "num": 12,
-                  "den": 1
-                }
-              }
-            },
-            "bron": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren",
-            "granulariteit": null
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "volwassenleeftijd",
-            "bron": "de volwassenleeftijd"
-          },
-          "periode": null,
-          "bron": "X kleiner is dan de volwassenleeftijd"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "Hoeveelheid passagiers van een reis",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "hoeveelheid passagiers",
-          "objecttype": "Vlucht",
-          "bron": "De hoeveelheid passagiers van een reis"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "passagier",
-              "objecttype": "Vlucht",
-              "bron": "passagiers van de reis"
-            }
-          ],
-          "elementObjecttype": "Natuurlijk persoon",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal passagiers van de reis",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "Vlucht van natuurlijke personen",
-            "rol": "passagier"
-          }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "Totaal te betalen belasting",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "totaal te betalen belasting",
-          "objecttype": "Vlucht",
-          "bron": "De totaal te betalen belasting van een reis"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "SOM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "te betalen belasting",
-              "objecttype": "Natuurlijk persoon",
-              "bron": "de te betalen belasting van alle passagiers van de reis"
-            }
-          ],
-          "elementObjecttype": "Natuurlijk persoon",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de som van de te betalen belasting van alle passagiers van de reis",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "Vlucht van natuurlijke personen",
-            "rol": "passagier"
-          }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "Leeftijd oudste passagier",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "leeftijd van de oudste passagier",
-          "objecttype": "Vlucht",
-          "bron": "De leeftijd van de oudste passagier van een reis"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MAXIMUM",
-          "argumenten": [
-            {
+            "target": {
               "node": "AttribuutRef",
               "attribuut": "leeftijd",
               "objecttype": "Natuurlijk persoon",
-              "bron": "de leeftijden van alle passagiers van de reis"
-            }
-          ],
-          "elementObjecttype": "Natuurlijk persoon",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "jr",
-              "system": "Tijd",
-              "canonical": "mnd",
-              "factorToCanonical": {
-                "num": 12,
-                "den": 1
-              }
-            }
-          },
-          "bron": "de maximale waarde van de leeftijden van alle passagiers van de reis",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "Vlucht van natuurlijke personen",
-            "rol": "passagier"
-          }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "Datum-tijd voor het berekenen van de belasting op basis van afstand",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "datum-tijd voor het berekenen van de belasting op basis van afstand",
-          "objecttype": "Vlucht",
-          "bron": "De datum-tijd voor het berekenen van de belasting op basis van afstand van een vlucht"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "EERSTE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "verwachte datum-tijd van vertrek",
-              "objecttype": "Vlucht",
-              "bron": "de verwachte datum-tijd van vertrek van de vlucht"
+              "bron": "De leeftijd van een Natuurlijk persoon"
             },
-            {
-              "node": "AttribuutRef",
-              "attribuut": "daadwerkelijke datum-tijd van vertrek",
-              "objecttype": "Vlucht",
-              "bron": "de daadwerkelijke datum-tijd van vertrek van de vlucht"
-            }
-          ],
-          "elementObjecttype": "Vlucht",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Date",
-            "precision": "millisecond"
-          },
-          "bron": "de eerste van de verwachte datum-tijd van vertrek van de vlucht en de daadwerkelijke datum-tijd van vertrek van de vlucht",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "Te betalen belasting van een passagier",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "te betalen belasting",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "De te betalen belasting van een passagier"
-        },
-        "waarde": {
-          "node": "Afgerond",
-          "basis": {
-            "node": "Begrensd",
-            "basis": {
-              "node": "Binair",
-              "op": "MIN",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "belasting op basis van afstand",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn belasting op basis van afstand"
-              },
-              "rechts": {
-                "node": "ParameterRef",
-                "parameter": "korting bij gebruik niet-fossiele brandstof",
-                "bron": "de korting bij gebruik niet-fossiele brandstof"
-              },
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof"
-            },
-            "minimum": {
-              "node": "Literal",
-              "waarde": "0",
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSDUUR",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "geboortedatum",
+                  "objecttype": "Natuurlijk persoon",
+                  "bron": "zijn geboortedatum"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vluchtdatum",
+                  "objecttype": "Vlucht",
+                  "bron": "de vluchtdatum van zijn reis",
+                  "navigatieBindingen": [
+                    {
+                      "node": "RolBinding",
+                      "feittype": "Vlucht van natuurlijke personen",
+                      "rol": "reis"
+                    }
+                  ]
+                }
+              ],
               "type": {
                 "node": "Number",
                 "whole": true,
@@ -1463,613 +1125,75 @@
                 "sign": "ONBEPAALD",
                 "unit": {
                   "node": "Unit",
-                  "abbreviation": "EUR",
-                  "system": "Valuta",
-                  "canonical": "EUR",
+                  "abbreviation": "jr",
+                  "system": "Tijd",
+                  "canonical": "mnd",
                   "factorToCanonical": {
-                    "num": 1,
+                    "num": 12,
                     "den": 1
                   }
                 }
               },
-              "bron": "0 \u20ac"
+              "bron": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren"
             },
-            "maximum": null,
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof, met een minimum van 0 \u20ac"
-          },
-          "modus": "NAAR_BENEDEN",
-          "decimalen": 0,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof, met een minimum van 0 \u20ac naar beneden afgerond op 0 decimalen"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Verwachte datum-tijd van aankomst van een Vlucht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "verwachte datum-tijd van aankomst",
-          "objecttype": "Vlucht",
-          "bron": "De verwachte datum-tijd van aankomst van een vlucht"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "verwachte Datum-tijd van vertrek",
-            "objecttype": "Vlucht",
-            "bron": "de verwachte Datum-tijd van vertrek van de Vlucht"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "verwachte duur",
-            "objecttype": "Vlucht",
-            "bron": "de verwachte duur van de vlucht"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "millisecond"
-          },
-          "bron": "de verwachte Datum-tijd van vertrek van de Vlucht plus de verwachte duur van de vlucht"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "Hoogseizoen",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "in het hoogseizoen",
-          "objecttype": "Vlucht",
-          "bron": "Een Vlucht is in het hoogseizoen"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 1,
-          "onderdelen": [
-            {
+        "node": "Rule",
+        "name": "Kenmerktoekenning persoon minderjarig",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "minderjarig",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "Een Natuurlijk persoon is minderjarig"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
               "node": "Vergelijking",
-              "op": "GELIJK",
+              "op": "KLEINER",
               "links": {
-                "node": "Functie",
-                "kind": "MAAND_UIT",
-                "argumenten": [
+                "node": "BuiltinCall",
+                "kind": "TIJDSDUUR",
+                "arguments": [
+                  {
+                    "node": "AttribuutRef",
+                    "attribuut": "geboortedatum",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn geboortedatum"
+                  },
                   {
                     "node": "AttribuutRef",
                     "attribuut": "vluchtdatum",
                     "objecttype": "Vlucht",
-                    "bron": "de vluchtdatum van de Vlucht"
+                    "bron": "de vluchtdatum van zijn reis",
+                    "navigatieBindingen": [
+                      {
+                        "node": "RolBinding",
+                        "feittype": "Vlucht van natuurlijke personen",
+                        "rol": "reis"
+                      }
+                    ]
                   }
                 ],
-                "elementObjecttype": null,
-                "leegwaarde": null,
-                "filter": null,
-                "dimensieSelectie": null,
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
-                },
-                "bron": "de maand uit (de vluchtdatum van de Vlucht)",
-                "granulariteit": null
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "6",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "6"
-              },
-              "periode": null,
-              "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6"
-            },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "Functie",
-                "kind": "MAAND_UIT",
-                "argumenten": [
-                  {
-                    "node": "AttribuutRef",
-                    "attribuut": "vluchtdatum",
-                    "objecttype": "Vlucht",
-                    "bron": "de vluchtdatum van de Vlucht"
-                  }
-                ],
-                "elementObjecttype": null,
-                "leegwaarde": null,
-                "filter": null,
-                "dimensieSelectie": null,
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
-                },
-                "bron": "de maand uit (de vluchtdatum van de Vlucht)",
-                "granulariteit": null
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "7",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "7"
-              },
-              "periode": null,
-              "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7"
-            },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "Functie",
-                "kind": "MAAND_UIT",
-                "argumenten": [
-                  {
-                    "node": "AttribuutRef",
-                    "attribuut": "vluchtdatum",
-                    "objecttype": "Vlucht",
-                    "bron": "de vluchtdatum van de Vlucht"
-                  }
-                ],
-                "elementObjecttype": null,
-                "leegwaarde": null,
-                "filter": null,
-                "dimensieSelectie": null,
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
-                },
-                "bron": "de maand uit (de vluchtdatum van de Vlucht)",
-                "granulariteit": null
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "8",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "8"
-              },
-              "periode": null,
-              "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8"
-            }
-          ],
-          "bron": "er aan ten minste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "Paaskorting",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "reis met paaskorting",
-          "objecttype": "Vlucht",
-          "bron": "Een Vlucht is een reis met paaskorting"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "vluchtdatum",
-            "objecttype": "Vlucht",
-            "bron": "de vluchtdatum van de Vlucht"
-          },
-          "rechts": {
-            "node": "Functie",
-            "kind": "EERSTE_PAASDAG",
-            "argumenten": [
-              {
-                "node": "Functie",
-                "kind": "JAAR_UIT",
-                "argumenten": [
-                  {
-                    "node": "AttribuutRef",
-                    "attribuut": "vluchtdatum",
-                    "objecttype": "Vlucht",
-                    "bron": "de vluchtdatum van de Vlucht"
-                  }
-                ],
-                "elementObjecttype": null,
-                "leegwaarde": null,
-                "filter": null,
-                "dimensieSelectie": null,
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
-                },
-                "bron": "het jaar uit (de vluchtdatum van de Vlucht)",
-                "granulariteit": null
-              }
-            ],
-            "elementObjecttype": null,
-            "leegwaarde": null,
-            "filter": null,
-            "dimensieSelectie": null,
-            "type": {
-              "node": "Date",
-              "precision": "day"
-            },
-            "bron": "de eerste paasdag van (het jaar uit (de vluchtdatum van de Vlucht))",
-            "granulariteit": null
-          },
-          "periode": null,
-          "bron": "de vluchtdatum van de Vlucht gelijk is aan de eerste paasdag van (het jaar uit (de vluchtdatum van de Vlucht))"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "Initialiseer te betalen belasting op initiele belasting",
-        "soort": "INITIALISATIE",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "te betalen belasting",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "De te betalen belasting van een passagier"
-        },
-        "waarde": {
-          "node": "ParameterRef",
-          "parameter": "initiele belasting",
-          "bron": "de initiele belasting"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "belaste reis",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "belaste reis",
-          "objecttype": "Vlucht",
-          "bron": "Een Vlucht is een belaste reis"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "bereikbaar per trein",
-            "objecttype": "Vlucht",
-            "bron": "bereikbaar per trein van de vlucht"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "waar",
-            "type": {
-              "node": "Booleaan"
-            },
-            "bron": "waar"
-          },
-          "periode": null,
-          "bron": "bereikbaar per trein van de vlucht gelijk is aan waar"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "Recht op Duurzaamheidskorting",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "recht op duurzaamheidskorting",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "Een passagier heeft recht op duurzaamheidskorting"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Kenmerk",
-              "kenmerk": "duurzaam",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "zijn reis is duurzaam",
-              "navigatieBinding": {
-                "node": "RolBinding",
-                "feittype": "Vlucht van natuurlijke personen",
-                "rol": "reis"
-              }
-            },
-            {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "afstand tot bestemming",
-                "objecttype": "Vlucht",
-                "bron": "de afstand tot bestemming in kilometers van zijn reis",
-                "navigatieBindingen": [
-                  {
-                    "node": "RolBinding",
-                    "feittype": "Vlucht van natuurlijke personen",
-                    "rol": "reis"
-                  }
-                ]
-              },
-              "rechts": {
-                "node": "ParameterRef",
-                "parameter": "duurzaamheidskorting minimale afstand",
-                "bron": "de duurzaamheidskorting minimale afstand"
-              },
-              "periode": null,
-              "bron": "de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand"
-            },
-            {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "leeftijd",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn leeftijd"
-              },
-              "rechts": {
-                "node": "ParameterRef",
-                "parameter": "pensioenleeftijd",
-                "bron": "de pensioenleeftijd"
-              },
-              "periode": null,
-              "bron": "zijn leeftijd is groter of gelijk aan de pensioenleeftijd"
-            }
-          ],
-          "bron": "hij aan alle volgende voorwaarden voldoet: - zijn reis is duurzaam - de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand - zijn leeftijd is groter of gelijk aan de pensioenleeftijd"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "Recht op Duurzaamheidskorting alternatief",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "recht op duurzaamheidskorting",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "Een passagier heeft recht op duurzaamheidskorting"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Kenmerk",
-              "kenmerk": "duurzaam",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "zijn reis is duurzaam",
-              "navigatieBinding": {
-                "node": "RolBinding",
-                "feittype": "Vlucht van natuurlijke personen",
-                "rol": "reis"
-              }
-            },
-            {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "afstand tot bestemming",
-                "objecttype": "Vlucht",
-                "bron": "de afstand tot bestemming in kilometers van zijn reis",
-                "navigatieBindingen": [
-                  {
-                    "node": "RolBinding",
-                    "feittype": "Vlucht van natuurlijke personen",
-                    "rol": "reis"
-                  }
-                ]
-              },
-              "rechts": {
-                "node": "ParameterRef",
-                "parameter": "duurzaamheidskorting minimale afstand",
-                "bron": "de duurzaamheidskorting minimale afstand"
-              },
-              "periode": null,
-              "bron": "de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand"
-            },
-            {
-              "node": "Samengesteld",
-              "kwantor": "GEEN",
-              "drempel": 0,
-              "onderdelen": [
-                {
-                  "node": "Onopgelost",
-                  "bron": "hij is een passagier jonger dan 18 jaar"
-                },
-                {
-                  "node": "Kenmerk",
-                  "kenmerk": "passagier van 18 tot en met 24 jaar",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
-                  "bron": "hij is een passagier van 18 tot en met 24 jaar"
-                },
-                {
-                  "node": "Kenmerk",
-                  "kenmerk": "passagier van 25 tot en met 64 jaar",
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
-                  "bron": "hij is een passagier van 25 tot en met 64 jaar"
-                }
-              ],
-              "bron": "hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
-            }
-          ],
-          "bron": "hij aan alle volgende voorwaarden voldoet: - zijn reis is duurzaam - de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand - hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "Passagier van 18 tm 24 jaar",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "passagier van 18 tot en met 24 jaar",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "Een Natuurlijk persoon is een passagier van 18 tot en met 24 jaar"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "leeftijd",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn leeftijd"
-              },
-              "rechts": {
-                "node": "ParameterRef",
-                "parameter": "volwassenleeftijd",
-                "bron": "de volwassenleeftijd"
-              },
-              "periode": null,
-              "bron": "zijn leeftijd is groter of gelijk aan de volwassenleeftijd"
-            },
-            {
-              "node": "Vergelijking",
-              "op": "KLEINER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "leeftijd",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn leeftijd"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "24",
                 "type": {
                   "node": "Number",
                   "whole": true,
@@ -2086,428 +1210,1391 @@
                     }
                   }
                 },
-                "bron": "24 jr"
+                "bron": "de tijdsduur van zijn geboortedatum tot de vluchtdatum van zijn reis in hele jaren"
+              },
+              "rechts": {
+                "node": "ParameterRef",
+                "parameter": "volwassenleeftijd",
+                "bron": "de volwassenleeftijd"
               },
               "periode": null,
-              "bron": "zijn leeftijd is kleiner of gelijk aan 24 jr"
+              "bron": "X kleiner is dan de volwassenleeftijd"
             },
-            {
-              "node": "RoleMembership",
-              "factType": "Vlucht van natuurlijke personen",
-              "role": "passagier",
-              "negated": false,
-              "bron": "hij is een passagier"
-            }
-          ],
-          "bron": "hij aan alle volgende voorwaarden voldoet: - zijn leeftijd is groter of gelijk aan de volwassenleeftijd - zijn leeftijd is kleiner of gelijk aan 24 jr - hij is een passagier."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Startpunt variabele periode op datum van vertrek",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "startpunt variabele periode van 3 maanden",
-          "objecttype": "Vlucht",
-          "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "datum van vertrek",
-          "objecttype": "Vlucht",
-          "bron": "de datum van vertrek van de reis"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "Hoeveelheid passagiers van een reis",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "hoeveelheid passagiers",
+              "objecttype": "Vlucht",
+              "bron": "De hoeveelheid passagiers van een reis"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "passagier",
+                  "objecttype": "Vlucht",
+                  "bron": "passagiers van de reis"
+                }
+              ],
+              "elementType": "Natuurlijk persoon",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "Vlucht van natuurlijke personen",
+                "rol": "passagier"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal passagiers van de reis"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Startpunt variabele periode op datum van vertrek min reserveringstermijn",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "startpunt variabele periode van 3 maanden",
-          "objecttype": "Vlucht",
-          "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "MIN",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "datum van vertrek",
-            "objecttype": "Vlucht",
-            "bron": "de datum van vertrek van de reis"
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "STANDAARDTERMIJN VOOR RESERVERING",
-            "bron": "de STANDAARDTERMIJN VOOR RESERVERING"
-          },
-          "type": null,
-          "bron": "de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "Totaal te betalen belasting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "totaal te betalen belasting",
+              "objecttype": "Vlucht",
+              "bron": "De totaal te betalen belasting van een reis"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "SOM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "te betalen belasting",
+                  "objecttype": "Natuurlijk persoon",
+                  "bron": "de te betalen belasting van alle passagiers van de reis"
+                }
+              ],
+              "elementType": "Natuurlijk persoon",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "Vlucht van natuurlijke personen",
+                "rol": "passagier"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de som van de te betalen belasting van alle passagiers van de reis"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Woonregio factor 1",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "woonregio factor",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "de woonregio factor van een Natuurlijk persoon"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "1",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "1"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 1,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Friesland",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Friesland\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Friesland\""
+        "node": "Rule",
+        "name": "Leeftijd oudste passagier",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Groningen",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Groningen\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Groningen\""
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "leeftijd van de oudste passagier",
+              "objecttype": "Vlucht",
+              "bron": "De leeftijd van de oudste passagier van een reis"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
+            "value": {
+              "node": "Aggregation",
+              "kind": "MAXIMUM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "leeftijd",
+                  "objecttype": "Natuurlijk persoon",
+                  "bron": "de leeftijden van alle passagiers van de reis"
+                }
+              ],
+              "elementType": "Natuurlijk persoon",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "Vlucht van natuurlijke personen",
+                "rol": "passagier"
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Drenthe",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Drenthe\""
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "jr",
+                  "system": "Tijd",
+                  "canonical": "mnd",
+                  "factorToCanonical": {
+                    "num": 12,
+                    "den": 1
+                  }
+                }
               },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Drenthe\""
+              "bron": "de maximale waarde van de leeftijden van alle passagiers van de reis"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Zeeland",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Zeeland\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Zeeland\""
-            },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Limburg",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Limburg\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Limburg\""
-            }
-          ],
-          "bron": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Friesland\" \u2022 zijn woonprovincie gelijk is aan \"Groningen\" \u2022 zijn woonprovincie gelijk is aan \"Drenthe\" \u2022 zijn woonprovincie gelijk is aan \"Zeeland\" \u2022 zijn woonprovincie gelijk is aan \"Limburg\"."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Woonregio factor 2",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "woonregio factor",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "de woonregio factor van een Natuurlijk persoon"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "2",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "2"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 1,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Noord-Brabant",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Noord-Brabant\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Noord-Brabant\""
+        "node": "Rule",
+        "name": "Datum-tijd voor het berekenen van de belasting op basis van afstand",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Gelderland",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Gelderland\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Gelderland\""
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "datum-tijd voor het berekenen van de belasting op basis van afstand",
+              "objecttype": "Vlucht",
+              "bron": "De datum-tijd voor het berekenen van de belasting op basis van afstand van een vlucht"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Overijssel",
-                "type": {
-                  "node": "Tekst"
+            "value": {
+              "node": "Aggregation",
+              "kind": "EERSTE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "verwachte datum-tijd van vertrek",
+                  "objecttype": "Vlucht",
+                  "bron": "de verwachte datum-tijd van vertrek van de vlucht"
                 },
-                "bron": "\"Overijssel\""
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "daadwerkelijke datum-tijd van vertrek",
+                  "objecttype": "Vlucht",
+                  "bron": "de daadwerkelijke datum-tijd van vertrek van de vlucht"
+                }
+              ],
+              "elementType": "Vlucht",
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
               },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Overijssel\""
+              "bron": "de eerste van de verwachte datum-tijd van vertrek van de vlucht en de daadwerkelijke datum-tijd van vertrek van de vlucht"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Flevoland",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Flevoland\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Flevoland\""
-            }
-          ],
-          "bron": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Noord-Brabant\" \u2022 zijn woonprovincie gelijk is aan \"Gelderland\" \u2022 zijn woonprovincie gelijk is aan \"Overijssel\" \u2022 zijn woonprovincie gelijk is aan \"Flevoland\"."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Woonregio factor 3",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "woonregio factor",
-          "objecttype": "Natuurlijk persoon",
-          "bron": "de woonregio factor van een Natuurlijk persoon"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "3",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "3"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 1,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Noord-Holland",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Noord-Holland\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Noord-Holland\""
+        "node": "Rule",
+        "name": "Te betalen belasting van een passagier",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "Zuid-Holland",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "\"Zuid-Holland\""
-              },
-              "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Zuid-Holland\""
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "te betalen belasting",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "De te betalen belasting van een passagier"
             },
-            {
+            "value": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "Begrensd",
+                "basis": {
+                  "node": "Binair",
+                  "op": "MIN",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "belasting op basis van afstand",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn belasting op basis van afstand"
+                  },
+                  "rechts": {
+                    "node": "ParameterRef",
+                    "parameter": "korting bij gebruik niet-fossiele brandstof",
+                    "bron": "de korting bij gebruik niet-fossiele brandstof"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof"
+                },
+                "minimum": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "0"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD",
+                    "unit": {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Valuta",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  },
+                  "bron": "0 \u20ac"
+                },
+                "maximum": null,
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof, met een minimum van 0 \u20ac"
+              },
+              "modus": "NAAR_BENEDEN",
+              "decimalen": 0,
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "zijn belasting op basis van afstand min de korting bij gebruik niet-fossiele brandstof, met een minimum van 0 \u20ac naar beneden afgerond op 0 decimalen"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Verwachte datum-tijd van aankomst van een Vlucht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "verwachte datum-tijd van aankomst",
+              "objecttype": "Vlucht",
+              "bron": "De verwachte datum-tijd van aankomst van een vlucht"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "verwachte Datum-tijd van vertrek",
+                "objecttype": "Vlucht",
+                "bron": "de verwachte Datum-tijd van vertrek van de Vlucht"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "verwachte duur",
+                "objecttype": "Vlucht",
+                "bron": "de verwachte duur van de vlucht"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "bron": "de verwachte Datum-tijd van vertrek van de Vlucht plus de verwachte duur van de vlucht"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Hoogseizoen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "in het hoogseizoen",
+              "objecttype": "Vlucht",
+              "bron": "Een Vlucht is in het hoogseizoen"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 1,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "BuiltinCall",
+                    "kind": "MAAND_UIT",
+                    "arguments": [
+                      {
+                        "node": "AttribuutRef",
+                        "attribuut": "vluchtdatum",
+                        "objecttype": "Vlucht",
+                        "bron": "de vluchtdatum van de Vlucht"
+                      }
+                    ],
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    },
+                    "bron": "de maand uit (de vluchtdatum van de Vlucht)"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "6"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "6"
+                  },
+                  "periode": null,
+                  "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "BuiltinCall",
+                    "kind": "MAAND_UIT",
+                    "arguments": [
+                      {
+                        "node": "AttribuutRef",
+                        "attribuut": "vluchtdatum",
+                        "objecttype": "Vlucht",
+                        "bron": "de vluchtdatum van de Vlucht"
+                      }
+                    ],
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    },
+                    "bron": "de maand uit (de vluchtdatum van de Vlucht)"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "7"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "7"
+                  },
+                  "periode": null,
+                  "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "BuiltinCall",
+                    "kind": "MAAND_UIT",
+                    "arguments": [
+                      {
+                        "node": "AttribuutRef",
+                        "attribuut": "vluchtdatum",
+                        "objecttype": "Vlucht",
+                        "bron": "de vluchtdatum van de Vlucht"
+                      }
+                    ],
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    },
+                    "bron": "de maand uit (de vluchtdatum van de Vlucht)"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "8"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "8"
+                  },
+                  "periode": null,
+                  "bron": "de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8"
+                }
+              ],
+              "bron": "er aan ten minste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8."
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Paaskorting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "reis met paaskorting",
+              "objecttype": "Vlucht",
+              "bron": "Een Vlucht is een reis met paaskorting"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
               "node": "Vergelijking",
               "op": "GELIJK",
               "links": {
                 "node": "AttribuutRef",
-                "attribuut": "woonprovincie",
-                "objecttype": "Natuurlijk persoon",
-                "bron": "zijn woonprovincie"
+                "attribuut": "vluchtdatum",
+                "objecttype": "Vlucht",
+                "bron": "de vluchtdatum van de Vlucht"
+              },
+              "rechts": {
+                "node": "BuiltinCall",
+                "kind": "EERSTE_PAASDAG",
+                "arguments": [
+                  {
+                    "node": "BuiltinCall",
+                    "kind": "JAAR_UIT",
+                    "arguments": [
+                      {
+                        "node": "AttribuutRef",
+                        "attribuut": "vluchtdatum",
+                        "objecttype": "Vlucht",
+                        "bron": "de vluchtdatum van de Vlucht"
+                      }
+                    ],
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    },
+                    "bron": "het jaar uit (de vluchtdatum van de Vlucht)"
+                  }
+                ],
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "de eerste paasdag van (het jaar uit (de vluchtdatum van de Vlucht))"
+              },
+              "periode": null,
+              "bron": "de vluchtdatum van de Vlucht gelijk is aan de eerste paasdag van (het jaar uit (de vluchtdatum van de Vlucht))"
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Initialiseer te betalen belasting op initiele belasting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "te betalen belasting",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "De te betalen belasting van een passagier"
+            },
+            "value": {
+              "node": "ParameterRef",
+              "parameter": "initiele belasting",
+              "bron": "de initiele belasting"
+            },
+            "initialisation": true
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "belaste reis",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "belaste reis",
+              "objecttype": "Vlucht",
+              "bron": "Een Vlucht is een belaste reis"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "bereikbaar per trein",
+                "objecttype": "Vlucht",
+                "bron": "bereikbaar per trein van de vlucht"
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "Utrecht",
-                "type": {
-                  "node": "Tekst"
+                "value": {
+                  "boolean": true
                 },
-                "bron": "\"Utrecht\""
+                "type": {
+                  "node": "Booleaan"
+                },
+                "bron": "waar"
               },
               "periode": null,
-              "bron": "zijn woonprovincie gelijk is aan \"Utrecht\""
-            }
-          ],
-          "bron": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Noord-Holland\" \u2022 zijn woonprovincie gelijk is aan \"Zuid-Holland\" \u2022 zijn woonprovincie gelijk is aan \"Utrecht\"."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "bereikbaar per trein van de vlucht gelijk is aan waar"
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Recht op Duurzaamheidskorting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "recht op duurzaamheidskorting",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "Een passagier heeft recht op duurzaamheidskorting"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "duurzaam",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "zijn reis is duurzaam",
+                  "navigatieBinding": {
+                    "node": "RolBinding",
+                    "feittype": "Vlucht van natuurlijke personen",
+                    "rol": "reis"
+                  }
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER_OF_GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "afstand tot bestemming",
+                    "objecttype": "Vlucht",
+                    "bron": "de afstand tot bestemming in kilometers van zijn reis",
+                    "navigatieBindingen": [
+                      {
+                        "node": "RolBinding",
+                        "feittype": "Vlucht van natuurlijke personen",
+                        "rol": "reis"
+                      }
+                    ]
+                  },
+                  "rechts": {
+                    "node": "ParameterRef",
+                    "parameter": "duurzaamheidskorting minimale afstand",
+                    "bron": "de duurzaamheidskorting minimale afstand"
+                  },
+                  "periode": null,
+                  "bron": "de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER_OF_GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "leeftijd",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn leeftijd"
+                  },
+                  "rechts": {
+                    "node": "ParameterRef",
+                    "parameter": "pensioenleeftijd",
+                    "bron": "de pensioenleeftijd"
+                  },
+                  "periode": null,
+                  "bron": "zijn leeftijd is groter of gelijk aan de pensioenleeftijd"
+                }
+              ],
+              "bron": "hij aan alle volgende voorwaarden voldoet: - zijn reis is duurzaam - de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand - zijn leeftijd is groter of gelijk aan de pensioenleeftijd"
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Recht op Duurzaamheidskorting alternatief",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "recht op duurzaamheidskorting",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "Een passagier heeft recht op duurzaamheidskorting"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "duurzaam",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "zijn reis is duurzaam",
+                  "navigatieBinding": {
+                    "node": "RolBinding",
+                    "feittype": "Vlucht van natuurlijke personen",
+                    "rol": "reis"
+                  }
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER_OF_GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "afstand tot bestemming",
+                    "objecttype": "Vlucht",
+                    "bron": "de afstand tot bestemming in kilometers van zijn reis",
+                    "navigatieBindingen": [
+                      {
+                        "node": "RolBinding",
+                        "feittype": "Vlucht van natuurlijke personen",
+                        "rol": "reis"
+                      }
+                    ]
+                  },
+                  "rechts": {
+                    "node": "ParameterRef",
+                    "parameter": "duurzaamheidskorting minimale afstand",
+                    "bron": "de duurzaamheidskorting minimale afstand"
+                  },
+                  "periode": null,
+                  "bron": "de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand"
+                },
+                {
+                  "node": "Samengesteld",
+                  "kwantor": "GEEN",
+                  "drempel": 0,
+                  "onderdelen": [
+                    {
+                      "node": "Onopgelost",
+                      "bron": "hij is een passagier jonger dan 18 jaar"
+                    },
+                    {
+                      "node": "Kenmerk",
+                      "kenmerk": "passagier van 18 tot en met 24 jaar",
+                      "negatie": false,
+                      "eigenaar": null,
+                      "periode": null,
+                      "bron": "hij is een passagier van 18 tot en met 24 jaar"
+                    },
+                    {
+                      "node": "Kenmerk",
+                      "kenmerk": "passagier van 25 tot en met 64 jaar",
+                      "negatie": false,
+                      "eigenaar": null,
+                      "periode": null,
+                      "bron": "hij is een passagier van 25 tot en met 64 jaar"
+                    }
+                  ],
+                  "bron": "hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
+                }
+              ],
+              "bron": "hij aan alle volgende voorwaarden voldoet: - zijn reis is duurzaam - de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand - hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Passagier van 18 tm 24 jaar",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "passagier van 18 tot en met 24 jaar",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "Een Natuurlijk persoon is een passagier van 18 tot en met 24 jaar"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER_OF_GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "leeftijd",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn leeftijd"
+                  },
+                  "rechts": {
+                    "node": "ParameterRef",
+                    "parameter": "volwassenleeftijd",
+                    "bron": "de volwassenleeftijd"
+                  },
+                  "periode": null,
+                  "bron": "zijn leeftijd is groter of gelijk aan de volwassenleeftijd"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "KLEINER_OF_GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "leeftijd",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn leeftijd"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "24"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD",
+                      "unit": {
+                        "node": "Unit",
+                        "abbreviation": "jr",
+                        "system": "Tijd",
+                        "canonical": "mnd",
+                        "factorToCanonical": {
+                          "num": 12,
+                          "den": 1
+                        }
+                      }
+                    },
+                    "bron": "24 jr"
+                  },
+                  "periode": null,
+                  "bron": "zijn leeftijd is kleiner of gelijk aan 24 jr"
+                },
+                {
+                  "node": "RoleMembership",
+                  "factType": "Vlucht van natuurlijke personen",
+                  "role": "passagier",
+                  "negated": false,
+                  "bron": "hij is een passagier"
+                }
+              ],
+              "bron": "hij aan alle volgende voorwaarden voldoet: - zijn leeftijd is groter of gelijk aan de volwassenleeftijd - zijn leeftijd is kleiner of gelijk aan 24 jr - hij is een passagier."
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Startpunt variabele periode op datum van vertrek",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "startpunt variabele periode van 3 maanden",
+              "objecttype": "Vlucht",
+              "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "datum van vertrek",
+              "objecttype": "Vlucht",
+              "bron": "de datum van vertrek van de reis"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Startpunt variabele periode op datum van vertrek min reserveringstermijn",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "startpunt variabele periode van 3 maanden",
+              "objecttype": "Vlucht",
+              "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "MIN",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "datum van vertrek",
+                "objecttype": "Vlucht",
+                "bron": "de datum van vertrek van de reis"
+              },
+              "rechts": {
+                "node": "ParameterRef",
+                "parameter": "STANDAARDTERMIJN VOOR RESERVERING",
+                "bron": "de STANDAARDTERMIJN VOOR RESERVERING"
+              },
+              "type": null,
+              "bron": "de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Woonregio factor 1",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "woonregio factor",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "de woonregio factor van een Natuurlijk persoon"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "1"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "1"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 1,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Friesland"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Friesland\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Friesland\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Groningen"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Groningen\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Groningen\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Drenthe"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Drenthe\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Drenthe\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Zeeland"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Zeeland\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Zeeland\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Limburg"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Limburg\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Limburg\""
+                }
+              ],
+              "bron": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Friesland\" \u2022 zijn woonprovincie gelijk is aan \"Groningen\" \u2022 zijn woonprovincie gelijk is aan \"Drenthe\" \u2022 zijn woonprovincie gelijk is aan \"Zeeland\" \u2022 zijn woonprovincie gelijk is aan \"Limburg\"."
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Woonregio factor 2",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "woonregio factor",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "de woonregio factor van een Natuurlijk persoon"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "2"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "2"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 1,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Noord-Brabant"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Noord-Brabant\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Noord-Brabant\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Gelderland"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Gelderland\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Gelderland\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Overijssel"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Overijssel\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Overijssel\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Flevoland"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Flevoland\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Flevoland\""
+                }
+              ],
+              "bron": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Noord-Brabant\" \u2022 zijn woonprovincie gelijk is aan \"Gelderland\" \u2022 zijn woonprovincie gelijk is aan \"Overijssel\" \u2022 zijn woonprovincie gelijk is aan \"Flevoland\"."
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Woonregio factor 3",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "woonregio factor",
+              "objecttype": "Natuurlijk persoon",
+              "bron": "de woonregio factor van een Natuurlijk persoon"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "3"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "3"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 1,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Noord-Holland"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Noord-Holland\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Noord-Holland\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Zuid-Holland"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Zuid-Holland\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Zuid-Holland\""
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "woonprovincie",
+                    "objecttype": "Natuurlijk persoon",
+                    "bron": "zijn woonprovincie"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "Utrecht"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "\"Utrecht\""
+                  },
+                  "periode": null,
+                  "bron": "zijn woonprovincie gelijk is aan \"Utrecht\""
+                }
+              ],
+              "bron": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Noord-Holland\" \u2022 zijn woonprovincie gelijk is aan \"Zuid-Holland\" \u2022 zijn woonprovincie gelijk is aan \"Utrecht\"."
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [
@@ -2523,12 +2610,11 @@
               "node": "Vergelijking",
               "op": "GELIJK",
               "links": {
-                "node": "Functie",
+                "node": "BuiltinCall",
                 "kind": "MAAND_UIT",
-                "argumenten": [
+                "arguments": [
                   {
-                    "node": "Constante",
-                    "naam": "de dag",
+                    "node": "BoundDay",
                     "type": {
                       "node": "Date",
                       "precision": "day"
@@ -2536,22 +2622,19 @@
                     "bron": "de dag"
                   }
                 ],
-                "elementObjecttype": null,
-                "leegwaarde": null,
-                "filter": null,
-                "dimensieSelectie": null,
                 "type": {
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "de maand uit (de dag)",
-                "granulariteit": null
+                "bron": "de maand uit (de dag)"
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "12",
+                "value": {
+                  "number": "12"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,
@@ -2572,12 +2655,11 @@
                   "node": "Vergelijking",
                   "op": "GELIJK",
                   "links": {
-                    "node": "Functie",
+                    "node": "BuiltinCall",
                     "kind": "DAG_UIT",
-                    "argumenten": [
+                    "arguments": [
                       {
-                        "node": "Constante",
-                        "naam": "de dag",
+                        "node": "BoundDay",
                         "type": {
                           "node": "Date",
                           "precision": "day"
@@ -2585,22 +2667,19 @@
                         "bron": "de dag"
                       }
                     ],
-                    "elementObjecttype": null,
-                    "leegwaarde": null,
-                    "filter": null,
-                    "dimensieSelectie": null,
                     "type": {
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
                       "sign": "NIET_NEGATIEF"
                     },
-                    "bron": "de dag uit (de dag)",
-                    "granulariteit": null
+                    "bron": "de dag uit (de dag)"
                   },
                   "rechts": {
                     "node": "Literal",
-                    "waarde": "25",
+                    "value": {
+                      "number": "25"
+                    },
                     "type": {
                       "node": "Number",
                       "whole": true,
@@ -2616,12 +2695,11 @@
                   "node": "Vergelijking",
                   "op": "GELIJK",
                   "links": {
-                    "node": "Functie",
+                    "node": "BuiltinCall",
                     "kind": "DAG_UIT",
-                    "argumenten": [
+                    "arguments": [
                       {
-                        "node": "Constante",
-                        "naam": "de dag",
+                        "node": "BoundDay",
                         "type": {
                           "node": "Date",
                           "precision": "day"
@@ -2629,22 +2707,19 @@
                         "bron": "de dag"
                       }
                     ],
-                    "elementObjecttype": null,
-                    "leegwaarde": null,
-                    "filter": null,
-                    "dimensieSelectie": null,
                     "type": {
                       "node": "Number",
                       "whole": true,
                       "decimals": 0,
                       "sign": "NIET_NEGATIEF"
                     },
-                    "bron": "de dag uit (de dag)",
-                    "granulariteit": null
+                    "bron": "de dag uit (de dag)"
                   },
                   "rechts": {
                     "node": "Literal",
-                    "waarde": "26",
+                    "value": {
+                      "number": "26"
+                    },
                     "type": {
                       "node": "Number",
                       "whole": true,
@@ -2671,292 +2746,240 @@
     ],
     "objectCreaties": [
       {
-        "node": "ResolvedObjectCreatie",
-        "naam": "vastgestelde contingent treinmiles",
-        "nieuwType": "Contingent treinmiles",
-        "subject": "Vlucht",
-        "toekenningen": [
+        "node": "ObjectCreation",
+        "name": "vastgestelde contingent treinmiles",
+        "versions": [
           {
-            "node": "Toekenning",
-            "attribuut": "aantal treinmiles op basis van aantal passagiers",
-            "waarde": {
-              "node": "Binair",
-              "op": "MAAL",
-              "links": {
-                "node": "Functie",
-                "kind": "AANTAL",
-                "argumenten": [
-                  {
-                    "node": "AttribuutRef",
-                    "attribuut": "passagier",
-                    "objecttype": "Vlucht",
-                    "bron": "passagiers van de Vlucht"
-                  }
-                ],
-                "elementObjecttype": "Natuurlijk persoon",
-                "leegwaarde": null,
-                "filter": null,
-                "dimensieSelectie": null,
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
+            "createdType": "Contingent treinmiles",
+            "subject": "Vlucht",
+            "initialisations": [
+              {
+                "node": "Toekenning",
+                "attribuut": "aantal treinmiles op basis van aantal passagiers",
+                "waarde": {
+                  "node": "Binair",
+                  "op": "MAAL",
+                  "links": {
+                    "node": "Aggregation",
+                    "kind": "AANTAL",
+                    "arguments": [
+                      {
+                        "node": "AttribuutRef",
+                        "attribuut": "passagier",
+                        "objecttype": "Vlucht",
+                        "bron": "passagiers van de Vlucht"
+                      }
+                    ],
+                    "elementType": "Natuurlijk persoon",
+                    "sourceRole": {
+                      "node": "RolBinding",
+                      "feittype": "Vlucht van natuurlijke personen",
+                      "rol": "passagier"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    },
+                    "bron": "het aantal passagiers van de Vlucht"
+                  },
+                  "rechts": {
+                    "node": "ParameterRef",
+                    "parameter": "aantal treinmiles per passagier voor contingent",
+                    "bron": "het aantal treinmiles per passagier voor contingent"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "het aantal passagiers van de Vlucht maal het aantal treinmiles per passagier voor contingent"
                 },
-                "bron": "het aantal passagiers van de Vlucht",
-                "granulariteit": null,
-                "bronRol": {
-                  "node": "RolBinding",
-                  "feittype": "Vlucht van natuurlijke personen",
-                  "rol": "passagier"
-                }
-              },
-              "rechts": {
-                "node": "ParameterRef",
-                "parameter": "aantal treinmiles per passagier voor contingent",
-                "bron": "het aantal treinmiles per passagier voor contingent"
-              },
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "het aantal passagiers van de Vlucht maal het aantal treinmiles per passagier voor contingent"
-            },
-            "kenmerk": false
+                "kenmerk": false
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            }
           }
-        ],
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "verdelingen": [
       {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeling treinmiles in gelijke delen",
-        "bronType": "Contingent treinmiles",
-        "bronAttribuut": "totaal aantal treinmiles",
-        "doelType": "Natuurlijk persoon",
-        "doelAttribuut": "treinmiles",
-        "methode": "GELIJKE_DELEN",
-        "ratoAttribuut": null,
-        "maximumAttribuut": null,
-        "afrondingDecimalen": null,
-        "restantAttribuut": null,
-        "groepeerAttribuut": null,
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "verdeling contingent treinmiles over passagiers",
-          "rol": "passagier met recht op treinmiles"
-        }
+        "node": "Allocation",
+        "name": "verdeling treinmiles in gelijke delen",
+        "versions": [
+          {
+            "sourceType": "Contingent treinmiles",
+            "sourceAttribute": "totaal aantal treinmiles",
+            "targetType": "Natuurlijk persoon",
+            "targetAttribute": "treinmiles",
+            "method": "GELIJKE_DELEN",
+            "descending": false,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "verdeling contingent treinmiles over passagiers",
+              "rol": "passagier met recht op treinmiles"
+            }
+          }
+        ]
       },
       {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeling treinmiles op basis van woonregio factor",
-        "bronType": "Contingent treinmiles",
-        "bronAttribuut": "totaal aantal treinmiles",
-        "doelType": "Natuurlijk persoon",
-        "doelAttribuut": "treinmiles",
-        "methode": "NAAR_RATO",
-        "ratoAttribuut": "woonregio factor",
-        "maximumAttribuut": null,
-        "afrondingDecimalen": null,
-        "restantAttribuut": null,
-        "groepeerAttribuut": null,
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "verdeling contingent treinmiles over passagiers",
-          "rol": "passagier met recht op treinmiles"
-        }
+        "node": "Allocation",
+        "name": "verdeling treinmiles op basis van woonregio factor",
+        "versions": [
+          {
+            "sourceType": "Contingent treinmiles",
+            "sourceAttribute": "totaal aantal treinmiles",
+            "targetType": "Natuurlijk persoon",
+            "targetAttribute": "treinmiles",
+            "method": "NAAR_RATO",
+            "ratioAttribute": "woonregio factor",
+            "descending": false,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "verdeling contingent treinmiles over passagiers",
+              "rol": "passagier met recht op treinmiles"
+            }
+          }
+        ]
       },
       {
-        "node": "ResolvedVerdeling",
-        "naam": "Verdeling treinmiles op basis van leeftijd en woonregio factor",
-        "bronType": "Contingent treinmiles",
-        "bronAttribuut": "totaal aantal treinmiles",
-        "doelType": "Natuurlijk persoon",
-        "doelAttribuut": "treinmiles",
-        "methode": "OP_VOLGORDE",
-        "ratoAttribuut": "woonregio factor",
-        "maximumAttribuut": null,
-        "afrondingDecimalen": null,
-        "restantAttribuut": "restant na verdeling",
-        "groepeerAttribuut": "leeftijd",
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "verdeling contingent treinmiles over passagiers",
-          "rol": "passagier met recht op treinmiles"
-        }
+        "node": "Allocation",
+        "name": "Verdeling treinmiles op basis van leeftijd en woonregio factor",
+        "versions": [
+          {
+            "sourceType": "Contingent treinmiles",
+            "sourceAttribute": "totaal aantal treinmiles",
+            "targetType": "Natuurlijk persoon",
+            "targetAttribute": "treinmiles",
+            "method": "OP_VOLGORDE",
+            "ratioAttribute": "woonregio factor",
+            "remainderAttribute": "restant na verdeling",
+            "orderingAttribute": "leeftijd",
+            "descending": false,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "verdeling contingent treinmiles over passagiers",
+              "rol": "passagier met recht op treinmiles"
+            }
+          }
+        ]
       },
       {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeling treinmiles op basis van woonregio factor en met maximum waarde",
-        "bronType": "Contingent treinmiles",
-        "bronAttribuut": "totaal aantal treinmiles",
-        "doelType": "Natuurlijk persoon",
-        "doelAttribuut": "treinmiles",
-        "methode": "COMPLEX",
-        "ratoAttribuut": "woonregio factor",
-        "maximumAttribuut": null,
-        "afrondingDecimalen": null,
-        "restantAttribuut": "restant na verdeling",
-        "groepeerAttribuut": null,
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "verdeling contingent treinmiles over passagiers",
-          "rol": "passagier met recht op treinmiles"
-        }
-      },
-      {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeling treinmiles op basis van woonregio factor met afronding",
-        "bronType": "Contingent treinmiles",
-        "bronAttribuut": "totaal aantal treinmiles",
-        "doelType": "Natuurlijk persoon",
-        "doelAttribuut": "treinmiles",
-        "methode": "NAAR_RATO",
-        "ratoAttribuut": "woonregio factor",
-        "maximumAttribuut": null,
-        "afrondingDecimalen": 0,
-        "restantAttribuut": "restant na verdeling",
-        "groepeerAttribuut": null,
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "verdeling contingent treinmiles over passagiers",
-          "rol": "passagier met recht op treinmiles"
-        }
-      },
-      {
-        "node": "ResolvedVerdeling",
-        "naam": "Verdeling treinmiles op basis van leeftijd, woonregio factor, met maximum waarde en afronding",
-        "bronType": "Contingent treinmiles",
-        "bronAttribuut": "totaal aantal treinmiles",
-        "doelType": "Natuurlijk persoon",
-        "doelAttribuut": "treinmiles",
-        "methode": "COMPLEX",
-        "ratoAttribuut": "woonregio factor",
-        "maximumAttribuut": null,
-        "afrondingDecimalen": 0,
-        "restantAttribuut": "restant na verdeling",
-        "groepeerAttribuut": "leeftijd",
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "verdeling contingent treinmiles over passagiers",
-          "rol": "passagier met recht op treinmiles"
-        }
+        "node": "Allocation",
+        "name": "verdeling treinmiles op basis van woonregio factor met afronding",
+        "versions": [
+          {
+            "sourceType": "Contingent treinmiles",
+            "sourceAttribute": "totaal aantal treinmiles",
+            "targetType": "Natuurlijk persoon",
+            "targetAttribute": "treinmiles",
+            "method": "NAAR_RATO",
+            "ratioAttribute": "woonregio factor",
+            "roundingDecimals": 0,
+            "remainderAttribute": "restant na verdeling",
+            "descending": false,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "verdeling contingent treinmiles over passagiers",
+              "rol": "passagier met recht op treinmiles"
+            }
+          }
+        ]
       }
     ],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Controleer of vlucht geen rondvlucht is",
-        "subject": "Vlucht",
-        "assertie": {
-          "node": "Vergelijking",
-          "op": "ONGELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "luchthaven van vertrek",
-            "objecttype": "Vlucht",
-            "bron": "De luchthaven van vertrek van een vlucht"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "luchthaven van bestemming",
-            "objecttype": "Vlucht",
-            "bron": "de luchthaven van bestemming van de vlucht"
-          },
-          "periode": null,
-          "bron": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht"
-        },
-        "bron": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht",
-        "line": 197,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Consistency",
+        "name": "Controleer of vlucht geen rondvlucht is",
+        "versions": [
+          {
+            "subject": "Vlucht",
+            "assertion": {
+              "node": "Vergelijking",
+              "op": "ONGELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "luchthaven van vertrek",
+                "objecttype": "Vlucht",
+                "bron": "De luchthaven van vertrek van een vlucht"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "luchthaven van bestemming",
+                "objecttype": "Vlucht",
+                "bron": "de luchthaven van bestemming van de vlucht"
+              },
+              "periode": null,
+              "bron": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht",
+            "line": 197
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [
       {
-        "node": "ResolvedFeitCreatie",
-        "naam": "passagier met recht op treinmiles",
-        "anker": "Contingent treinmiles",
-        "doel": "Natuurlijk persoon",
-        "tussenstappen": [
+        "node": "FactCreation",
+        "name": "passagier met recht op treinmiles",
+        "versions": [
           {
-            "node": "Tussenstap",
-            "rolBinding": {
-              "node": "RolBinding",
-              "feittype": "reis met contingent treinmiles",
-              "rol": "reis met treinmiles"
+            "factType": "verdeling contingent treinmiles over passagiers",
+            "anchorRole": "te verdelen contingent treinmiles",
+            "targetRole": "passagier met recht op treinmiles",
+            "anchor": "Contingent treinmiles",
+            "path": [
+              {
+                "node": "RolBinding",
+                "feittype": "reis met contingent treinmiles",
+                "rol": "reis met treinmiles"
+              },
+              {
+                "node": "RolBinding",
+                "feittype": "Vlucht van natuurlijke personen",
+                "rol": "passagier"
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             }
           }
-        ],
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "feittype": "verdeling contingent treinmiles over passagiers",
-        "ankerRol": "te verdelen contingent treinmiles",
-        "doelRol": "passagier met recht op treinmiles",
-        "joinRol": {
-          "node": "RolBinding",
-          "feittype": "Vlucht van natuurlijke personen",
-          "rol": "passagier"
-        }
+        ]
       }
     ],
     "resolvedStartpunten": [
@@ -2981,6 +3004,18 @@
       "severity": "WARNING",
       "message": "onopgelost: de geschreven naam bindt geen kenmerk en geen rol van het onderwerp (\u00a78.1.7/\u00a78.1.8), dus er is geen lidmaatschap om te toetsen \u2014 'hij is een passagier jonger dan 18 jaar' blijft als marker op de wire staan",
       "line": 287
+    },
+    {
+      "node": "Diagnostic",
+      "severity": "WARNING",
+      "message": "verdeling 'verdeling treinmiles op basis van woonregio factor en met maximum waarde' wordt niet geschreven: de frontend bepaalde voor haar geen van de drie verdeelmethoden (in gelijke delen, naar rato, op volgorde), en een verdeling zonder methode heeft geen spelling in uchar-ir-v1",
+      "line": 0
+    },
+    {
+      "node": "Diagnostic",
+      "severity": "WARNING",
+      "message": "verdeling 'Verdeling treinmiles op basis van leeftijd, woonregio factor, met maximum waarde en afronding' wordt niet geschreven: de frontend bepaalde voor haar geen van de drie verdeelmethoden (in gelijke delen, naar rato, op volgorde), en een verdeling zonder methode heeft geen spelling in uchar-ir-v1",
+      "line": 0
     }
   ]
 }

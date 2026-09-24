@@ -151,6 +151,33 @@ stays honest about where it no longer proves toolchain agreement.
   (45 fragments, holdouts unchanged): every reconstructed fraction is the
   declared one. The original toolchain still writes the v0 type system, so for
   these nodes too the comparison proves "frontend == the recorded state".
+- **2026-09-24 — the zone is in the L4 shape of `uchar-ir-v1`.** Executed by the
+  L4 card (`20260924-l4-regel-en-expressielaag.md` in `backlog/`). The rule layer
+  and the expression layer moved and nothing else: the six named forms are
+  `{node, name, versions}` (a version record without `node`, its `validity`
+  always written), a rule version writes its kind as `initialisation` and
+  `presentation`, a fact creation's target type left the wire and its steps and
+  final hop became one `path`, the two uniqueness lists became one, a function
+  node became an `Aggregation` or a `BuiltinCall`, a literal writes the typed
+  `value` its type names, and a constant became a `BoundDay` or a
+  `ContextValue`. In `casus/ir.json` that rewrote 20 rules (20 forms of one
+  version each: 6 `BEREKENING`, 6 `GELIJKSTELLING`, 1 initialisation, 7
+  characteristic attributions), 4 allocations, 1 object creation, 1 fact
+  creation (a path of 2), 1 consistency, 5 aggregations, 10 builtin calls, 31
+  literals (11 `number`, 8 `boolean`, 12 `text`) and 3 bound days; 16 null
+  conditions and 13 null allocation fields were left out. **Two allocations
+  left the dump:** the ones the frontend could not give a method, at
+  `/rules/verdelingen/3` and `/rules/verdelingen/5` of the L3 dump, which the L4
+  method set does not carry. The emitter leaves such an allocation out and
+  appends a WARNING naming it, with line 0, after the model's own diagnostics,
+  so the dump's `diagnostics` grew from 2 entries to 4. The 29 `cases/` slices
+  carry no such allocation and were migrated mechanically
+  (`spec/proposals/v1-migratie/m4.py`); `casus/ir.json` was re-emitted by uchar's
+  frontend (45 fragments, holdouts unchanged) and is byte-identical to that
+  script's migration of a copy of the L3 dump without those two allocations and
+  with the two diagnostics appended. The original toolchain still writes the v0
+  rule and expression layers, so for these nodes too the comparison proves
+  "frontend == the recorded state".
 - The precedent runs the other way: `toka-45` (decision 16Y, 2026-08-29) is held
   **out** of the re-emission rather than re-pinned, because uchar's unit typing
   rejects the fragment as written. Divergence by holdout and divergence by
