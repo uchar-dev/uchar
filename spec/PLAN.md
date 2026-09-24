@@ -732,6 +732,15 @@ wrapper, the `regels` stubs gone, `diagnostics` kept under WF-113; 21
 negatief witnesses removed with reason, one rewritten; all fourteen gates
 green on the landing (gate 12 pins 185/164 with the WF-113 golden
 `jutterswet-kaletabel`).
+**L2 landed (2026-09-24, `fd3f0a73`, card `backlog/done/20260923-l2-referentielaag.md`):**
+the reference layer — every reference symbolic (B11 one explicit path, B13 no
+`type` on the five reference positions, B12 bindings required with WF-048
+retired, B7/B8 bean fields gone, B9 one `RoleMembership` with the optional
+`counterpartType`, B16 `Onbekend` gone, `Kenmerk.navigatie` gone); migration
+`spec/proposals/v1-migratie/m2.py`; negatief 444 → 400 with the stamp list and
+a per-witness `expect.txt` arm fragment checked by gate 3; gate 13 revised to
+the derived positions (38 twists); gate 12 pins 188/166; two red cases became
+goldens; all fourteen gates green on the landing.
 
 ## 10. Rough effort
 

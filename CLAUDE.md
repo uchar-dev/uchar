@@ -127,7 +127,12 @@ green. Current gates:
    builds; every `corpus/golden/**/ir.json` and `corpus/rood/**/ir.json`
    is verifier-clean; every
    `corpus/negatief/<wf###-slug>/ir.json` is rejected, citing the WF
-   rule its directory name declares; an empty negatief corpus is a
+   rule its directory name declares — and, since L2 of the v1 wire
+   migration (2026-09-24), on the ARM its `expect.txt` names where that
+   file is present (one literal fragment of the verifier's sentence,
+   pointer-free; a blank or multi-line file fails; the count carries a
+   floor `EXPECTED_MIN_EXPECT`), so a witness that drifts to another arm
+   of its own rule no longer passes unseen; an empty negatief corpus is a
    failure, never silently green.
 4. `scripts/check-case-schema.sh` — the case schema
    (`spec/schema/uchar-case-v0.schema.json`) is metaschema-valid; every
@@ -263,8 +268,12 @@ green. Current gates:
 
 13. `scripts/check-reftype-derivation.sh` — the annotation-indifference
     harness (maintainer decision 2026-09-04). For every golden with case
-    files, every unit-bearing `type` annotation on reference and
-    composite positions is deterministically twisted (a convertible
+    files, every unit-bearing `type` annotation on the derived (composite)
+    positions that still carry one — since L2 of the v1 wire migration
+    (2026-09-24) the reference positions carry no `type` at all (B13),
+    so the twist table lost `AttribuutRef`, `ParameterRef`, `DimensieCel`
+    and `BinderRef` and `EXPECTED_MIN_TWISTS` was re-measured (V15 (b)) —
+    is deterministically twisted (a convertible
     sister unit, or decimals+1) and ref, clingo and BOTH Drools
     transpiler branches (the exec-model gate-12 path and, since
     2026-09-04, the classic DRL-text branch behind the runner's own
