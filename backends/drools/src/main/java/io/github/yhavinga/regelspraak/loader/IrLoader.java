@@ -1300,9 +1300,7 @@ public final class IrLoader {
                     // written whole or not at all, never empty (IR-SPEC ch. 4.1a): an empty list would read as the
                     // subject's own attribute
                     List<RolBindingRef> stappen = rolBindingLijst(n, p, "path");
-                    if (stappen.isEmpty())
-                        throw new Documentfout(p + "/path", "an empty navigation: a read without"
-                                + " bindings leaves the field out");
+                    if (stappen.isEmpty()) throw new Documentfout(p + "/path", PAD_ZONDER_STAP);
                     navigatieBindingen.put(a, List.copyOf(stappen));
                 }
                 yield a;
@@ -1582,6 +1580,9 @@ public final class IrLoader {
         return "context value '" + naam + "' is not one of the two admissible names evaluationDate, evaluationYear:"
                 + " the context-value name is a closed set, spelled byte for byte";
     }
+
+    /** The shared loader's sentence for a path without a hop: a read without navigation leaves the field out. */
+    static final String PAD_ZONDER_STAP = "an empty path is not a navigation";
 
     /** The shared loader's sentences for the name and the datatype the two context nodes require. */
     static final String CONTEXTWAARDE_NAAM = "a ContextValue carries its name as a string";

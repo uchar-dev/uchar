@@ -48,12 +48,12 @@ class LaderWeigeringWitnessTest {
     /** cwd under surefire is the module dir (backends/drools); the corpus is two levels up. */
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
 
-    /** One object type, Bakenmeester: temporal attributes (JAAR and MAAND) and the temporal characteristic
+    /** One object type, Bakenmeester: temporal attributes (year and month) and the temporal characteristic
      *  'dienstdoend'. One case, both branches PLAYED. */
     private static final String BAKENMEESTER = "jutterswet-bakenmeester";
     /** Klipjutter declares the supertype Jutter. One case, both branches PLAYED. */
     private static final String ERFWACHT = "jutterswet-erfwacht";
-    /** The Enumeratie domain Vondstklasse. Three cases, both branches PLAYED. */
+    /** The Enumeration domain Vondstklasse. Three cases, both branches PLAYED. */
     private static final String VONDSTKLASSE = "jutterswet-vondstklasse";
     /** The kernel anchor of inheritance: Strandrecht -&gt; Wrakrecht plus an aggregating Kustgemeente. */
     private static final String KETEN = "anchor/jutterswet-strandrechtketen";
@@ -219,11 +219,11 @@ class LaderWeigeringWitnessTest {
         // The old fixture's startpuntbepaling is gone: the facet is refused while the object types are read,
         // before any rule is.
         ObjectNode ir = golden(KETEN);
-        IrPad.modelLijst(ir, "timelines").add(JSON.createObjectNode().put("node", "Tijdlijn").put("naam", "boekjaar")
-                .put("variabelStartpunt", true).putNull("granulariteit").put("aantal", 1));
+        IrPad.modelLijst(ir, "timelines").add(JSON.createObjectNode().put("node", "Timeline").put("name", "boekjaar")
+                .put("variableStart", true).putNull("granularity").put("count", 1));
         ObjectNode peilwaarde = IrPad.addAttribute(IrPad.objectType(ir, "Strandrecht"), "peilwaarde",
                 JSON.createObjectNode().put("node", "Number").put("whole", true).put("decimals", 0)
-                        .put("sign", "NIET_NEGATIEF"));
+                        .put("sign", "nonNegative"));
         peilwaarde.putObject("timeline").put("node", "TimelineFacet").put("count", 1).put("timelineName", "boekjaar");
         ontbreekt(ir, lidPad(ir, "Strandrecht", "attributes", "peilwaarde") + "/timeline", "granularity");
     }
@@ -255,11 +255,14 @@ class LaderWeigeringWitnessTest {
         IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").remove("kind");
         ontbreekt(ir, kenmerk, "kind");
 
-        // the v0 spelling of the value stays until M8, and its lower-case twin is no member
-        ir = golden(BAKENMEESTER);
-        IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").put("kind", "bijvoeglijk");
-        IrLoader.Documentfout e = weigert(ir, kenmerk + "/kind");
-        assertTrue(e.getMessage().contains("'bijvoeglijk'") && e.getMessage().contains("BIJVOEGLIJK"), e.getMessage());
+        // the v0 spelling of the value is no member since L5, and neither is a word outside the family: both are
+        // refused in the shared loader's sentence
+        for (String soort : List.of("BIJVOEGLIJK", "bijvoeglijk", "Adjectival")) {
+            ir = golden(BAKENMEESTER);
+            IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").put("kind", soort);
+            IrLoader.Documentfout e = weigert(ir, kenmerk + "/kind");
+            assertTrue(e.getMessage().endsWith(": unknown kind value \"" + soort + "\""), e.getMessage());
+        }
     }
 
     @Test void een_onbekende_sectie_weigert_en_functionDefs_blijft_een_vorm() throws Exception {
@@ -309,12 +312,12 @@ class LaderWeigeringWitnessTest {
     }
 
     @Test void een_domeindatatype_draagt_precies_de_velden_van_zijn_soort() throws Exception {
-        // the key check the Enumeratie, SumType and StructType arms already had, for the kinds without an arm;
+        // the key check the Enumeration, SumType and StructType arms already had, for the kinds without an arm;
         // no golden declares a number domain, so one is added: clean it loads, with a stray field it is refused
         ObjectNode ir = golden(BAKENMEESTER);
         ArrayNode domeinen = IrPad.modelLijst(ir, "domains");
         ObjectNode getal = domeinen.addObject().put("node", "Domain").put("name", "Bedrag").putObject("datatype")
-                .put("node", "Number").put("whole", false).put("decimals", 2).put("sign", "ONBEPAALD");
+                .put("node", "Number").put("whole", false).put("decimals", 2).put("sign", "unspecified");
         IrLoader.loadAll(ir);
         getal.put("naam", "Bedrag");
         weigert(ir, "/model/domains/" + (domeinen.size() - 1) + "/datatype/naam");
@@ -325,7 +328,7 @@ class LaderWeigeringWitnessTest {
         // and a message that are strings, an integer line
         ObjectNode ir = golden(BAKENMEESTER);
         ArrayNode diagnoses = (ArrayNode) ir.get("diagnostics");
-        diagnoses.addObject().put("node", "Diagnostic").put("severity", "WARNING").put("message", "een melding")
+        diagnoses.addObject().put("node", "Diagnostic").put("severity", "warning").put("message", "een melding")
                 .put("line", 1);
         IrLoader.loadAll(ir);
         String d = "/diagnostics/" + (diagnoses.size() - 1);
@@ -448,27 +451,33 @@ class LaderWeigeringWitnessTest {
 
     @Test void een_enumeratiedomein_met_achtergebleven_zelfnaam_weigert() throws Exception {
         // IR-SPEC ch. 2.3 / delta B2: the Domain wrapper holds the name, and a self-name beside it is a second
-        // spelling of one name.
-        ObjectNode ir = golden(VONDSTKLASSE);
-        String domein = "/model/domains/" + index(IrPad.modelLijst(ir, "domains"), "name", "Vondstklasse");
-        ((ObjectNode) IrPad.domain(ir, "Vondstklasse").get("datatype")).put("domein", "Vondstklasse");
-        weigert(ir, domein + "/datatype/domein");
+        // spelling of one name — under the key an Enumeration carries it at a reference position, and under its v0
+        // key, which is no key of the node since L5.
+        for (String sleutel : List.of("domain", "domein")) {
+            ObjectNode ir = golden(VONDSTKLASSE);
+            String domein = "/model/domains/" + index(IrPad.modelLijst(ir, "domains"), "name", "Vondstklasse");
+            ((ObjectNode) IrPad.domain(ir, "Vondstklasse").get("datatype")).put(sleutel, "Vondstklasse");
+            weigert(ir, domein + "/datatype/" + sleutel);
+        }
     }
 
     // ---------------- what a refusal says ----------------
 
     @Test void een_onbekende_waarde_noemt_veld_en_waarde_en_geen_java_klasse() throws Exception {
         // Before: "No enum constant io.github.yhavinga.regelspraak.model.RegelSpraakModel.Granulariteit.jaar",
-        // the JDK's sentence, naming a Java class and no position in the document.
-        ObjectNode ir = golden(BAKENMEESTER);
-        String attr = lidPad(ir, "Bakenmeester", "attributes", "onderhoudstarief");
-        ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
-                .put("granularity", "jaar");
-        IrLoader.Documentfout e = weigert(ir, attr + "/timeline/granularity");
-        assertTrue(e.getMessage().contains("'jaar'"), e.getMessage());
-        assertTrue(e.getMessage().contains("JAAR"), "de melding noemt de toegestane waarden: " + e.getMessage());
-        assertFalse(e.getMessage().contains("No enum constant"), e.getMessage());
-        assertFalse(e.getMessage().contains("io.github"), e.getMessage());
+        // the JDK's sentence, naming a Java class and no position in the document. Since L5 the value is read
+        // through the translation table and refused in the shared loader's sentence, which names the field and the
+        // value, the v0 spelling included.
+        for (String waarde : List.of("jaar", "JAAR")) {
+            ObjectNode ir = golden(BAKENMEESTER);
+            String attr = lidPad(ir, "Bakenmeester", "attributes", "onderhoudstarief");
+            ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
+                    .put("granularity", waarde);
+            IrLoader.Documentfout e = weigert(ir, attr + "/timeline/granularity");
+            assertTrue(e.getMessage().endsWith(": unknown granularity value \"" + waarde + "\""), e.getMessage());
+            assertFalse(e.getMessage().contains("No enum constant"), e.getMessage());
+            assertFalse(e.getMessage().contains("io.github"), e.getMessage());
+        }
     }
 
     @Test void een_documentfout_bereikt_het_uitsluitkanaal_niet() throws Exception {

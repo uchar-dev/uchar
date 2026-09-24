@@ -47,13 +47,13 @@ class ZelfnaamTerugvalWitnessTest {
     }
 
     @Test void feittype_zonder_naam_wordt_geweigerd() throws Exception {
-        weigertZonderNaam("jutterswet-vondsttelling", "factTypes", "naam", "vondstaanmelding");
+        weigertZonderNaam("jutterswet-vondsttelling", "factTypes", "name", "vondstaanmelding");
     }
 
     /** The dimension arm has no PLAYABLE witness — the goldens carrying a {@code dimensions} list have no case
      *  file — so the loader level is the only place its refusal can be pinned at all. */
     @Test void dimensie_zonder_naam_wordt_geweigerd() throws Exception {
-        weigertZonderNaam("jutterswet-seizoenvondst", "dimensions", "naam", "seizoen");
+        weigertZonderNaam("jutterswet-seizoenvondst", "dimensions", "name", "seizoen");
     }
 
     /** Loads a golden with ONE declaration's name replaced by null and demands the refusal at that field. */

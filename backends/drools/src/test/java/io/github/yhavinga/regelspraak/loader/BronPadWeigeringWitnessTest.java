@@ -66,7 +66,7 @@ class BronPadWeigeringWitnessTest {
     @Test void een_bronpad_naast_een_bronrol_wordt_geweigerd() throws Exception {
         ObjectNode root = (ObjectNode) anker();
         ((ObjectNode) vouw(root)).putObject("sourceRole")
-                .put("node", "RolBinding").put("feittype", "berging").put("rol", "geborgen vondst");
+                .put("node", "RoleBinding").put("factType", "berging").put("role", "geborgen vondst");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root));
         assertTrue(e.plek().endsWith("/sourcePath") && e.getMessage().contains(IrLoader.BEREIK_TWEEMAAL),
                 "het eenstapsbereik HEET sourceRole, dus de twee velden sluiten elkaar uit: " + e.getMessage());
@@ -93,8 +93,8 @@ class BronPadWeigeringWitnessTest {
         // Since L2's fix round a malformed document, not a form this backend declines: WF-102 (c) makes the
         // position part of the shape, in the verifier's one sentence for both halves of it.
         ObjectNode root = (ObjectNode) anker();
-        ((ObjectNode) vouw(root).get("arguments").get(0)).putArray("navigatieBindingen").addObject()
-                .put("node", "RolBinding").put("feittype", "bemanning").put("rol", "gevoerde boot");
+        ((ObjectNode) vouw(root).get("arguments").get(0)).putArray("path").addObject()
+                .put("node", "RoleBinding").put("factType", "bemanning").put("role", "gevoerde boot");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root),
                 "alleen de bron van een eenargumentsvouw draagt een bereik");
         assertEquals("/rules/rules/0/versions/0/value/sourcePath", e.plek(), e.getMessage());

@@ -11,6 +11,7 @@ import io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie;
 import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
 import io.github.yhavinga.regelspraak.ir.ResolvedUniciteit;
 import io.github.yhavinga.regelspraak.ir.ResolvedUniciteitUnie;
+import io.github.yhavinga.regelspraak.ir.Spelling;
 import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.RolBindingRef;
@@ -62,7 +63,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
     /** cwd under surefire is the module dir (backends/drools); the corpus is two levels up. */
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
 
-    /** Rule 0 computes an attribute of a Vondst (BEREKENING) from a Number literal; rule 1 has a period condition. */
+    /** Rule 0 computes an attribute of a Vondst (calculation) from a Number literal; rule 1 has a period condition. */
     private static final String PREMIEVENSTER = "jutterswet-premievenster";
     /** Rule 0 attributes the characteristic penninggerechtigd of a Jutter, under a condition. */
     private static final String PENNINGDREMPEL = "jutterswet-penningdrempel";
@@ -72,7 +73,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
     private static final String HARDHEIDSOVERSCHOT = "jutterswet-hardheidsoverschot";
     /** Rule 1 is an initialisation. */
     private static final String WAARDERING = "anchor/jutterswet-waardering-v0vorm";
-    /** Rule 3 writes an enumeration literal under its Enumeratie type. */
+    /** Rule 3 writes an enumeration literal under its Enumeration type. */
     private static final String KEURSTAAT = "jutterswet-keurstaat";
     /** Allocation 0, with every optional field but an ordering attribute. */
     private static final String BERGING = "jutterswet-berging";
@@ -82,11 +83,11 @@ class RegelEnExpressielaagWeigeringWitnessTest {
     private static final String MASTSEIN = "jutterswet-mastsein";
     /** Uniquenesses 0 and 1 of one source, each scoped; 2 and 3 of two sources. */
     private static final String KUSTREGISTER = "anchor/jutterswet-kustregister";
-    /** Rule 0's value is a TIJDSEVENREDIG_DEEL with a granularity and a filter. */
+    /** Rule 0's value is a timeProportionalPart with a granularity and a filter. */
     private static final String PACHTVENSTER = "jutterswet-pachtvenster";
-    /** Rule 0's value is a JAAR_UIT over a date attribute, without a granularity. */
+    /** Rule 0's value is a yearOf over a date attribute, without a granularity. */
     private static final String PAASVONDST = "jutterswet-paasvondst";
-    /** Rule 0's value is a MINIMUM over a two-step path; rule 1's a SOM with an empty fallback. */
+    /** Rule 0's value is a minimum over a two-step path; rule 1's a sum with an empty fallback. */
     private static final String BOOTBERGING = "anchor/jutterswet-bootberging";
     /** Day kind 0 compares the bound day. */
     private static final String HAVENROOSTER = "jutterswet-havenrooster";
@@ -113,7 +114,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
                 { KUSTREGISTER, "/rules/uniquenesses/0", "ResolvedUniciteit", "Uniqueness" },
                 { KUSTREGISTER, "/rules/uniquenesses/2", "ResolvedUniciteitUnie", "Uniqueness" },
                 // a step of the path and a source of a union, the two child nodes the L4 shape replaced
-                { MASTSEIN, "/rules/factCreations/0/versions/0/path/0", "Tussenstap", "RolBinding" },
+                { MASTSEIN, "/rules/factCreations/0/versions/0/path/0", "Tussenstap", "RoleBinding" },
                 { KUSTREGISTER, "/rules/uniquenesses/2/versions/0/sources/0", "Bron", "Source" } };
         for (String[] v : vormen) {
             ObjectNode ir = golden(v[0]);
@@ -174,7 +175,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
             }
         // a session value, which no loadable golden carries, at a rule's value
         ObjectNode ir = golden(PREMIEVENSTER);
-        zet(ir, WAARDE, contextwaarde("Rekendatum").put("naam", "x").toString());
+        zet(ir, WAARDE, contextwaarde("evaluationDate").put("naam", "x").toString());
         onbekendVeld(ir, WAARDE + "/naam", "ContextValue");
     }
 
@@ -192,8 +193,8 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         assertTrue(weigert(ir, VERSIE + "/presentation").getMessage()
                 .endsWith(": unknown presentation value \"KENMERKTOEKENNING\""));
         // a kind of the other function node is as unknown as a kind of none
-        String[][] soorten = { { BOOTBERGING, "WORTEL" }, { BOOTBERGING, "GEMIDDELDE" }, { PACHTVENSTER, "SOM" },
-                { PACHTVENSTER, "AANTAL_GEVULDE" } };
+        String[][] soorten = { { BOOTBERGING, "squareRoot" }, { BOOTBERGING, "GEMIDDELDE" }, { PACHTVENSTER, "sum" },
+                { PACHTVENSTER, "filledCount" } };
         for (String[] s : soorten) {
             ir = golden(s[0]);
             ((ObjectNode) ir.at(WAARDE)).put("kind", s[1]);
@@ -230,11 +231,11 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         String[][] typen = {
                 { NUMBER, "a Number", "number" },
                 { procent, "a Number", "number" },
-                { "{\"node\":\"Boolean\"}", "a Booleaan", "boolean" },
-                { "{\"node\":\"Text\"}", "a Tekst", "text" },
+                { "{\"node\":\"Boolean\"}", "a Boolean", "boolean" },
+                { "{\"node\":\"Text\"}", "a Text", "text" },
                 { DAG, "a day-precision Date", "date" },
                 { "{\"node\":\"Date\",\"precision\":\"millisecond\"}", "a millisecond-precision Date", "dateTime" },
-                { enumeratie, "an Enumeratie", "enumeration" } };
+                { enumeratie, "an Enumeration", "enumeration" } };
         Map<String, String> varianten = new LinkedHashMap<>();
         varianten.put("number", "{\"number\":\"5\"}");
         varianten.put("boolean", "{\"boolean\":true}");
@@ -334,19 +335,19 @@ class RegelEnExpressielaagWeigeringWitnessTest {
     // ---------------- the builtin's granularity ----------------
 
     /** WF-037's sentence on the builtin node: a granularity belongs to the two bucketing builtins. Before this check
-     *  both branches played jutterswet-paasvondst with MAAND on its JAAR_UIT as if the facet were not written (PLAYED 5
+     *  both branches played jutterswet-paasvondst with month on its yearOf as if the facet were not written (PLAYED 5
      *  in each), where the verifier refuses it; every other builtin kind is refused the same way, and the two bucketing
      *  kinds keep it. */
     @Test void een_granulariteit_staat_alleen_op_een_emmerende_builtin() throws Exception {
         ObjectNode ir = golden(PAASVONDST);
-        ((ObjectNode) ir.at(WAARDE)).put("granularity", "MAAND");
+        ((ObjectNode) ir.at(WAARDE)).put("granularity", "month");
         assertTrue(weigert(ir, WAARDE).getMessage().endsWith(": granularity facet on a non-bucketing kind"));
         int geweigerd = 0;
         for (Expr.FunctieKind kind : Expr.FunctieKind.values()) {
+            // the folds: a kind of the other node, refused by name above
+            if (Spelling.AGGREGATION_KIND.rijen().containsKey(kind)) continue;
             ir = golden(PACHTVENSTER);
-            ((ObjectNode) ir.at(WAARDE)).put("kind", kind.name());
-            if (List.of("SOM", "TOTAAL", "AANTAL", "MINIMUM", "MAXIMUM", "EERSTE", "LAATSTE", "AANTAL_GEVULDE")
-                    .contains(kind.name())) continue;   // the folds: a kind of the other node, refused by name above
+            ((ObjectNode) ir.at(WAARDE)).put("kind", Spelling.BUILTIN_KIND.spelling(kind));
             if (kind == Expr.FunctieKind.TIJDSEVENREDIG_DEEL || kind == Expr.FunctieKind.AANTAL_DAGEN_IN) {
                 assertNotNull(IrLoader.load(ir), kind.name());
                 continue;
@@ -360,19 +361,23 @@ class RegelEnExpressielaagWeigeringWitnessTest {
 
     // ---------------- the context nodes ----------------
 
+    /** WF-098: the two wire names, byte for byte — the v0 names of the two among the refused since L5 — and the record
+     *  holds the v0 name the translation table gives for each. */
     @Test void een_contextwaarde_draagt_een_van_de_twee_namen() throws Exception {
-        for (String naam : List.of("de dag", "rekendatum", "Rekendatum ", "Peildatum")) {
+        for (String naam : List.of("de dag", "rekendatum", "Rekendatum ", "Peildatum", "Rekendatum", "Rekenjaar",
+                "EvaluationDate", "evaluationDate ")) {
             ObjectNode ir = golden(PREMIEVENSTER);
             zet(ir, WAARDE, contextwaarde(naam).toString());
             assertTrue(weigert(ir, WAARDE + "/name").getMessage().endsWith(": context value '" + naam + "' is not one"
-                    + " of the two admissible names Rekendatum, Rekenjaar: the context-value name is a closed set,"
-                    + " spelled byte for byte"), naam);
+                    + " of the two admissible names evaluationDate, evaluationYear: the context-value name is a closed"
+                    + " set, spelled byte for byte"), naam);
         }
-        for (String naam : List.of("Rekendatum", "Rekenjaar")) {
+        String[][] namen = { { "evaluationDate", "Rekendatum" }, { "evaluationYear", "Rekenjaar" } };
+        for (String[] naam : namen) {
             ObjectNode ir = golden(PREMIEVENSTER);
-            zet(ir, WAARDE, contextwaarde(naam).toString());
+            zet(ir, WAARDE, contextwaarde(naam[0]).toString());
             Expr.Constante c = assertInstanceOf(Expr.Constante.class, IrLoader.load(ir).resolvedRegels.get(0).waarde());
-            assertEquals(naam, c.naam());
+            assertEquals(naam[1], c.naam());
             assertInstanceOf(Datatype.DatumInDagen.class, c.type());
         }
     }
@@ -380,13 +385,13 @@ class RegelEnExpressielaagWeigeringWitnessTest {
     @Test void de_contextknopen_dragen_hun_naam_en_hun_datatype() throws Exception {
         for (String naam : List.of("null", "5")) {
             ObjectNode ir = golden(PREMIEVENSTER);
-            ObjectNode c = contextwaarde("Rekendatum");
+            ObjectNode c = contextwaarde("evaluationDate");
             c.set("name", JSON.readTree(naam));
             zet(ir, WAARDE, c.toString());
             assertTrue(weigert(ir, WAARDE + "/name").getMessage().endsWith(": " + IrLoader.CONTEXTWAARDE_NAAM), naam);
         }
         ObjectNode ir = golden(PREMIEVENSTER);
-        zet(ir, WAARDE, contextwaarde("Rekendatum").putNull("type").toString());
+        zet(ir, WAARDE, contextwaarde("evaluationDate").putNull("type").toString());
         assertTrue(weigert(ir, WAARDE + "/type").getMessage().endsWith(": " + IrLoader.CONTEXTWAARDE_TYPE));
         ir = golden(HAVENROOSTER);
         ((ObjectNode) ir.at(BOUNDDAY)).putNull("type");
@@ -460,7 +465,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
             ObjectNode ir = golden(PREMIEVENSTER);
             zet(ir, VERSIE + "/target", doel);
             assertTrue(weigert(ir, VERSIE + "/target").getMessage()
-                    .endsWith(": the target of a rule version is an AttribuutRef"), doel);
+                    .endsWith(": the target of a rule version is an AttributeReference"), doel);
         }
     }
 
@@ -468,7 +473,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         String zin = ": presentation beside initialisation true: a presentation tags a computing version, never an"
                 + " initialisation";
         ObjectNode ir = golden(WAARDERING);
-        ((ObjectNode) ir.at("/rules/rules/1/versions/0")).put("presentation", "BEREKENING");
+        ((ObjectNode) ir.at("/rules/rules/1/versions/0")).put("presentation", "calculation");
         assertTrue(weigert(ir, "/rules/rules/1/versions/0/presentation").getMessage().endsWith(zin));
         ir = golden(PREMIEVENSTER);
         ((ObjectNode) ir.at(VERSIE)).put("initialisation", true);
@@ -486,7 +491,7 @@ class RegelEnExpressielaagWeigeringWitnessTest {
                 + " is an attribute of 'Vondst'"));
         // a characteristic attribution given a tag, or made an initialisation, writes an attribute
         ir = golden(PENNINGDREMPEL);
-        ((ObjectNode) ir.at(VERSIE)).put("presentation", "GELIJKSTELLING");
+        ((ObjectNode) ir.at(VERSIE)).put("presentation", "equation");
         String zin = ": a version with a presentation or with initialisation true writes an attribute, so its target"
                 + " MUST name one, and 'penninggerechtigd' is a characteristic of 'Jutter'";
         assertTrue(weigert(ir, VERSIE + "/target").getMessage().endsWith(zin));
@@ -495,8 +500,8 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         assertTrue(weigert(ir, VERSIE + "/target").getMessage().endsWith(zin));
         // the name of the target as the target writes it
         ir = golden(PENNINGDREMPEL);
-        ((ObjectNode) ir.at(VERSIE)).put("presentation", "GELIJKSTELLING");
-        ((ObjectNode) ir.at(VERSIE + "/target")).put("attribuut", "Penninggerechtigd").put("objecttype", "jutter");
+        ((ObjectNode) ir.at(VERSIE)).put("presentation", "equation");
+        ((ObjectNode) ir.at(VERSIE + "/target")).put("attribute", "Penninggerechtigd").put("subjectType", "jutter");
         assertTrue(weigert(ir, VERSIE + "/target").getMessage().endsWith(": a version with a presentation or with"
                 + " initialisation true writes an attribute, so its target MUST name one, and 'Penninggerechtigd' is a"
                 + " characteristic of 'jutter'"));
@@ -505,9 +510,9 @@ class RegelEnExpressielaagWeigeringWitnessTest {
             ir = golden(TOELAGEGRONDEN);
             ObjectNode regel = (ObjectNode) JSON.readTree(golden(PENNINGDREMPEL).at(REGEL).toString());
             ObjectNode v = (ObjectNode) regel.at("/versions/0");
-            ((ObjectNode) v.get("target")).put("attribuut", "toelage").put("objecttype", "Jutter");
+            ((ObjectNode) v.get("target")).put("attribute", "toelage").put("subjectType", "Jutter");
             v.remove("condition");
-            if (tag) v.put("presentation", "GELIJKSTELLING");
+            if (tag) v.put("presentation", "equation");
             IrPad.rulesLijst(ir, "rules").add(regel);
             assertTrue(weigert(ir, VERSIE + "/target").getMessage().endsWith(": target 'toelage' names both an"
                     + " attribute and a characteristic of 'Jutter': which member a rule writes decides its kind, and"
@@ -571,9 +576,9 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         assertEquals(ResolvedRegel.Soort.KENMERKTOEKENNING,
                 IrLoader.load(golden(PENNINGDREMPEL)).resolvedRegels.get(0).soort());
         assertEquals(ResolvedRegel.Soort.INITIALISATIE, IrLoader.load(golden(WAARDERING)).resolvedRegels.get(1).soort());
-        // the tag is read as written: GELIJKSTELLING on the same version is the other computing kind
+        // the tag is read as written: equation on the same version is the other computing kind
         ObjectNode ir = golden(PREMIEVENSTER);
-        ((ObjectNode) ir.at(VERSIE)).put("presentation", "GELIJKSTELLING");
+        ((ObjectNode) ir.at(VERSIE)).put("presentation", "equation");
         assertEquals(ResolvedRegel.Soort.GELIJKSTELLING, IrLoader.load(ir).resolvedRegels.get(0).soort());
     }
 
@@ -637,7 +642,8 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         Expr.Functie deel = assertInstanceOf(Expr.Functie.class,
                 IrLoader.load(golden(PACHTVENSTER)).resolvedRegels.get(0).waarde());
         assertEquals(Expr.FunctieKind.TIJDSEVENREDIG_DEEL, deel.kind());
-        assertEquals(RegelSpraakModel.Granulariteit.valueOf(golden(PACHTVENSTER).at(WAARDE + "/granularity").asText()),
+        assertEquals(Spelling.GRANULARITY.waarde("BuiltinCall.granularity",
+                        golden(PACHTVENSTER).at(WAARDE + "/granularity").asText()),
                 deel.granulariteit());
         assertNotNull(deel.filter(), "filter");
         assertNull(deel.elementObjecttype(), "a builtin carries none of the fold's fields");

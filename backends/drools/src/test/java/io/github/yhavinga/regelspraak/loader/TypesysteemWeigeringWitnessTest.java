@@ -209,7 +209,7 @@ class TypesysteemWeigeringWitnessTest {
 
         // a percentage is written unsigned: the record has no sign to hold a restriction
         ir = golden(VONDSTTARIEF);
-        ((ObjectNode) ir.at(TARIEF)).put("sign", "POSITIEF");
+        ((ObjectNode) ir.at(TARIEF)).put("sign", "positive");
         assertTrue(weigert(ir, TARIEF + "/sign").getMessage().contains(IrLoader.PROCENT_MET_TEKEN));
     }
 
@@ -288,7 +288,7 @@ class TypesysteemWeigeringWitnessTest {
 
     @Test void de_lader_legt_de_wire_een_op_een_op_de_records() throws Exception {
         RegelSpraakModel m = IrLoader.load(golden(PENNINGJAAR));
-        // a number declared without a sign reads as ONBEPAALD, the sign the wire writes for it
+        // a number declared without a sign restriction reads as the record's ONBEPAALD, the wire's unspecified
         Datatype.Numeriek drempel = assertInstanceOf(Datatype.Numeriek.class, m.parameters.get("vondstdrempel").datatype());
         assertEquals(Datatype.Teken.ONBEPAALD, drempel.teken());
         assertNull(drempel.eenheid());

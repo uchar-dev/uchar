@@ -48,10 +48,10 @@ class OnbekendeFunctieKindWitnessTest {
     /** A kind of the other function node is as unknown as a kind of none: the node decides the set. */
     @Test void een_soort_van_de_andere_knoop_is_onbekend() throws Exception {
         ObjectNode root = (ObjectNode) golden();
-        ((ObjectNode) vouw(root)).put("kind", "WORTEL");
+        ((ObjectNode) vouw(root)).put("kind", "squareRoot");
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root));
         assertEquals(KIND, e.plek(), e.getMessage());
-        assertTrue(e.getMessage().endsWith(": unknown kind value \"WORTEL\""), e.getMessage());
+        assertTrue(e.getMessage().endsWith(": unknown kind value \"squareRoot\""), e.getMessage());
     }
 
     /** The control: untouched, the same document loads. The refusal above is about the kind and
@@ -72,7 +72,7 @@ class OnbekendeFunctieKindWitnessTest {
         Path ir = CORPUS.resolve("jutterswet-vondsttelling").resolve("ir.json");
         assertTrue(Files.exists(ir), "golden ir.json present: " + ir.toAbsolutePath());
         JsonNode root = JSON.readTree(Files.readString(ir));
-        assertEquals("AANTAL", vouw(root).get("kind").asText(),
+        assertEquals("count", vouw(root).get("kind").asText(),
                 "deze getuige verspelt de soort van deze vouw, dus zij moet hem eerst vinden");
         return root;
     }

@@ -113,18 +113,18 @@ class BronrecordWeigeringWitnessTest {
     @Test void de_knoopsoorten_zonder_golden_lezen_hun_record_ook() throws Exception {
         String w = WAARDE, v = VOORWAARDE, bronrecord = "\"source\":{\"snippet\":\"x\",\"file\":\"jutterswet.rgs\"}";
         Map<String, String[]> rijen = new java.util.LinkedHashMap<>();
-        rijen.put("TekstReeks", new String[] { w, "{\"node\":\"TextComposition\",\"parts\":[],\"type\":{\"node\":\"Text\"},"
+        rijen.put("TextComposition", new String[] { w, "{\"node\":\"TextComposition\",\"parts\":[],\"type\":{\"node\":\"Text\"},"
                 + bronrecord + "}", w });
-        rijen.put("VariabeleRef", new String[] { w, "{\"node\":\"VariableReference\",\"name\":\"x\"," + bronrecord + "}", w });
-        rijen.put("DimensieSelectie", new String[] { w, "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[],"
+        rijen.put("VariableReference", new String[] { w, "{\"node\":\"VariableReference\",\"name\":\"x\"," + bronrecord + "}", w });
+        rijen.put("DimensionSelection", new String[] { w, "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[],"
                 + "\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"d\",\"labels\":[]," + bronrecord
                 + "},\"type\":null,\"source\":{\"snippet\":\"x\"}}", w + "/dimensionSelection" });
         rijen.put("ContextValue", new String[] { w, "{\"node\":\"ContextValue\",\"name\":\"evaluationDate\",\"type\":"
                 + "{\"node\":\"Date\",\"precision\":\"day\"}," + bronrecord + "}", w });
-        rijen.put("Onopgelost (expressie)", new String[] { w, "{\"node\":\"Unresolved\"," + bronrecord + "}", w });
+        rijen.put("Unresolved (expression)", new String[] { w, "{\"node\":\"Unresolved\"," + bronrecord + "}", w });
         rijen.put("Regelversie", new String[] { v, "{\"node\":\"Regelversie\",\"regel\":\"x\",\"inconsistent\":false,"
                 + bronrecord + "}", v });
-        rijen.put("Onopgelost (conditie)", new String[] { v, "{\"node\":\"Unresolved\"," + bronrecord + "}", v });
+        rijen.put("Unresolved (condition)", new String[] { v, "{\"node\":\"Unresolved\"," + bronrecord + "}", v });
         for (Map.Entry<String, String[]> r : rijen.entrySet()) {
             ObjectNode ir = golden(PENNINGDREMPEL);
             zet(ir, r.getValue()[0], r.getValue()[1]);
@@ -139,11 +139,11 @@ class BronrecordWeigeringWitnessTest {
         onbekendVeld(ir, CONSISTENTIE + "/line", " on ConsistencyVersion");
         ir = golden(WACHTERSKETEN);
         ((ObjectNode) ir.at(GROEP)).put("line", 5);
-        onbekendVeld(ir, GROEP + "/line", " on ResolvedRegelGroep");
+        onbekendVeld(ir, GROEP + "/line", " on RuleGroup");
         ir = golden(WACHTERSKETEN);
         ((ObjectNode) ir.at(GROEP)).set("source", IrPad.bronrecord("berging").put("line", 5));
         ((ObjectNode) ir.at(GROEP)).put("line", 5);
-        onbekendVeld(ir, GROEP + "/line", " on ResolvedRegelGroep");
+        onbekendVeld(ir, GROEP + "/line", " on RuleGroup");
     }
 
     // ---------------- the record's own form ----------------

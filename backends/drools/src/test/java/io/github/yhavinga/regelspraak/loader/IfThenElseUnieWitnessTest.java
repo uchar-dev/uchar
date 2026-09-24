@@ -144,14 +144,14 @@ class IfThenElseUnieWitnessTest {
     /** The ch. 10.2 node as the LEFT operand of an ordinary Binair — so the walk must pass an ordinary node
      *  first and the form cannot be found by looking at the value root alone. */
     private static String genesteldModel() {
-        String keuze = ite(verg("GROTER", attr("grondslag", num(2)), lit("1.00", num(2))),
+        String keuze = ite(verg("greater", attr("grondslag", num(2)), lit("1.00", num(2))),
                 attr("laag", num(2)), attr("hoog", num(2)), num(2));
-        return doc(binair("PLUS", keuze, lit("0.00", num(2)), num(2)));
+        return doc(binair("plus", keuze, lit("0.00", num(2)), num(2)));
     }
 
     /** The same form under a Let body, its guard reading the binder. */
     private static String onderLetModel() {
-        String keuze = ite(verg("GROTER", bref("g", num(2)), lit("1.00", num(2))),
+        String keuze = ite(verg("greater", bref("g", num(2)), lit("1.00", num(2))),
                 attr("laag", num(2)), attr("hoog", num(2)), num(2));
         return doc(let("g", attr("grondslag", num(2)), keuze, num(2)));
     }

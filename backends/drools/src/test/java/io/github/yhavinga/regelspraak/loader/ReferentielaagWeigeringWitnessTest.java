@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * without its fact type or role, a narrowing written as {@code null}, the datatype {@code Onbekend} at every kind
  * of position, and a marker's type written as {@code null}. And the reference-layer shapes every executor refuses by
  * name: a role check naming no link the subject can be in (WF-034), a fold's set source its kind cannot consume
- * (WF-093, WF-080, WF-102 (c), WF-034), a TOTAAL without a range over another type than its subject (WF-083 (c)),
+ * (WF-093, WF-080, WF-102 (c), WF-034), a {@code total} without a range over another type than its subject (WF-083 (c)),
  * and a characteristic read at a value position (WF-080). The fields of an
  * attribute read, a creation, a uniqueness and a characteristic check are pinned where their bindings are
  * ({@code NavigatiebindingWitnessTest}, {@code BonenveldWitnessTest}); a fold, a quantifier fold and a selection
@@ -56,7 +56,7 @@ class ReferentielaagWeigeringWitnessTest {
     private static final String MUNTTELLING = "jutterswet-munttelling";
     /** Rule 0 folds over the two-step path Jutter -> Boot -> Vondst. */
     private static final String BOOTBERGING = "anchor/jutterswet-bootberging";
-    /** Rule 2 totals the Jutter's own timeline, a TOTAAL without a range over the subject type. */
+    /** Rule 2 totals the Jutter's own timeline, a {@code total} without a range over the subject type. */
     private static final String TEMPOTOTAAL = "jutterswet-tempototaal";
 
     private static final String NUMERIEK =
@@ -68,9 +68,9 @@ class ReferentielaagWeigeringWitnessTest {
     @Test void een_type_op_een_verwijzing_wordt_bij_naam_geweigerd() throws Exception {
         // the attribute read has its own row with its four other fields (NavigatiebindingWitnessTest)
         ObjectNode ir = golden(PENNINGDREMPEL);
-        Treffer p = vind(ir, "ParameterRef");
+        Treffer p = vind(ir, "ParameterReference");
         p.knoop().set("type", JSON.readTree(NUMERIEK));
-        onbekendVeld(ir, p.pad() + "/type", "ParameterRef");
+        onbekendVeld(ir, p.pad() + "/type", "ParameterReference");
 
         ir = golden(BERGINGSTOESLAG);
         Treffer b = vind(ir, "BinderRef");
@@ -83,10 +83,10 @@ class ReferentielaagWeigeringWitnessTest {
         String waarde = "/rules/rules/0/versions/0/value";
         regel.set("value", JSON.readTree("{\"node\":\"DimensionCellRead\",\"attribute\":" + regel.get("target")
                 + ",\"labels\":[\"noord\"],\"source\":{\"snippet\":\"de cel noord\"},\"type\":" + NUMERIEK + "}"));
-        onbekendVeld(ir, waarde + "/type", "DimensieCel");
+        onbekendVeld(ir, waarde + "/type", "DimensionCellRead");
         regel.set("value", JSON.readTree("{\"node\":\"VariableReference\",\"name\":\"x\",\"source\":{\"snippet\":\"x\"},\"type\":"
                 + NUMERIEK + "}"));
-        onbekendVeld(ir, waarde + "/type", "VariabeleRef");
+        onbekendVeld(ir, waarde + "/type", "VariableReference");
     }
 
     // ---------------- the role check is one node ----------------
@@ -235,16 +235,16 @@ class ReferentielaagWeigeringWitnessTest {
 
     @Test void een_telling_over_een_attribuut_van_het_elementtype_weigert() throws Exception {
         ObjectNode ir = golden(MUNTTELLING);
-        bron(ir, 0).put("attribuut", "gewicht").put("objecttype", "Munt");
+        bron(ir, 0).put("attribute", "gewicht").put("subjectType", "Munt");
         IrLoader.Documentfout e = weigert(ir, "/rules/rules/0/versions/0/value/arguments/0");
-        assertTrue(e.getMessage().contains("the source of this AANTAL aggregation reads 'gewicht', a member of the"
+        assertTrue(e.getMessage().contains("the source of this count aggregation reads 'gewicht', a member of the"
                 + " element type 'Munt': a count folds INSTANCES, so its source is a count source naming the relation's"
                 + " role, never a value read per contributor (WF-093)"), e.getMessage());
     }
 
     @Test void een_waardevouw_over_een_rolnaam_weigert() throws Exception {
         ObjectNode ir = golden(MUNTTELLING);
-        bron(ir, 1).put("attribuut", "vondsten").put("objecttype", "Jutter");
+        bron(ir, 1).put("attribute", "vondsten").put("subjectType", "Jutter");
         IrLoader.Documentfout e = weigert(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("value aggregation over \"vondsten\", which is no attribute of \"Munt\":"
                 + " a value fold reads an attribute per contributor, and a role name is a count source only a count"
@@ -252,7 +252,7 @@ class ReferentielaagWeigeringWitnessTest {
 
         // a name that is neither an attribute nor a role declares nothing (WF-034)
         ir = golden(MUNTTELLING);
-        bron(ir, 1).put("attribuut", "glans");
+        bron(ir, 1).put("attribute", "glans");
         e = weigert(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("'glans' is not a declared attribute of 'Munt'"), e.getMessage());
     }
@@ -262,7 +262,7 @@ class ReferentielaagWeigeringWitnessTest {
         // relation, so under the value fold the name is no count source but an undeclared member (WF-034), as the
         // verifier's source reading judges it. Until the fix round's second pass any declared role name counted.
         ObjectNode ir = golden(MUNTTELLING);
-        bron(ir, 1).put("attribuut", "aanmelder").put("objecttype", "Jutter");
+        bron(ir, 1).put("attribute", "aanmelder").put("subjectType", "Jutter");
         IrLoader.Documentfout e = weigert(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("'aanmelder' is not a declared attribute of 'Munt': a value fold's source"
                 + " reads an attribute of each contributor (WF-034)"), e.getMessage());
@@ -279,7 +279,7 @@ class ReferentielaagWeigeringWitnessTest {
         assertEquals("Jutter", w.get("elementType").asText(), "de golden totaliseert de eigen tijdlijn");
         w.put("elementType", "Vondst");
         IrLoader.Documentfout e = weigert(ir, "/rules/rules/2/versions/0/value/elementType");
-        assertTrue(e.getMessage().contains("the elementType 'Vondst' of a TOTAAL without a range is not the fold"
+        assertTrue(e.getMessage().contains("the elementType 'Vondst' of a total without a range is not the fold"
                 + " subject 'Jutter': without a range the fold is the subject's own read, so its elementType must"
                 + " name the subject type"), e.getMessage());
     }
@@ -287,8 +287,8 @@ class ReferentielaagWeigeringWitnessTest {
     @Test void een_kenmerk_als_bron_van_een_waardevouw_weigert() throws Exception {
         ObjectNode ir = golden(MUNTTELLING);
         IrPad.objectType(ir, "Munt").withArray("characteristics").addObject().put("node", "Characteristic")
-                .put("name", "gangbaar").put("kind", "BIJVOEGLIJK");
-        bron(ir, 1).put("attribuut", "gangbaar");
+                .put("name", "gangbaar").put("kind", "adjectival");
+        bron(ir, 1).put("attribute", "gangbaar");
         IrLoader.Documentfout e = weigert(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("'gangbaar' is a characteristic of 'Munt', not an attribute — a"
                 + " characteristic endpoint is ill-formed in an aggregation source position (WF-080)"), e.getMessage());
@@ -299,8 +299,8 @@ class ReferentielaagWeigeringWitnessTest {
         // the reached role it names a range of two steps where a count's range is one
         ObjectNode ir = golden(BOOTBERGING);
         ObjectNode w = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("value");
-        w.put("kind", "AANTAL");
-        bron(ir, 0).put("attribuut", "geborgen vondsten").put("objecttype", "Jutter");
+        w.put("kind", "count");
+        bron(ir, 0).put("attribute", "geborgen vondsten").put("subjectType", "Jutter");
         IrLoader.Documentfout e = weigert(ir, "/rules/rules/0/versions/0/value/sourcePath");
         assertTrue(e.getMessage().contains("a sourcePath is admissible only as the range of a single-argument VALUE"
                 + " fold's set source — a count's range is one step, spelled sourceRole"), e.getMessage());
@@ -308,7 +308,7 @@ class ReferentielaagWeigeringWitnessTest {
         // ...whatever the source reads: with a null name the source check has nothing to judge, and until the
         // advisory round the count then passed and was counted along the path (the lens measured "verwacht 2,
         // werkelijk 3" on the exec branch)
-        bron(ir, 0).putNull("attribuut");
+        bron(ir, 0).putNull("attribute");
         e = weigert(ir, "/rules/rules/0/versions/0/value/sourcePath");
         assertTrue(e.getMessage().contains("a count's range is one step, spelled sourceRole"), e.getMessage());
     }

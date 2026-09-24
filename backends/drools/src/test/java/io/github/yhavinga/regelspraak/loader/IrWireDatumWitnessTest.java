@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The REFUSING half of this backend's IR-wire date reader: the {@code vanaf}/{@code tot} bounds of a
- * {@code Geldigheid}, which is the ONE place a date reaches the loader as a lexeme. The sister classes
+ * The REFUSING half of this backend's IR-wire date reader: the {@code from}/{@code to} bounds of a
+ * {@code Validity}, which is the ONE place a date reaches the loader as a lexeme. The sister classes
  * {@code CaseWireDatumWitnessTest} and {@code CaseWireDatumTijdWitnessTest} do the same on the case wire;
  * this one exists because the IR wire held a bare {@code LocalDate.parse} on both bounds until 2026-09-11
  * and — unlike the case wire — has NO schema pattern behind it either, so nothing anywhere refused a
@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>What the laxness cost, measured 2026-09-11</b> on a hand-edited copy of
  * {@code jutterswet-vensterheffing} (two rule versions, an in-window case and a before-window case), with
- * the {@code vanaf} of the first version replaced:
+ * the lower bound of the first version replaced:
  *
  * <pre>
  *   +012026-01-01   verifier PASS   interpreter/ASP: the version APPLIES   here: it did NOT (year 12026)
@@ -212,40 +212,40 @@ class IrWireDatumWitnessTest {
 
     @Test void beide_grenzen_noemen_hun_eigen_veld_en_hun_eigen_drager() throws Exception {
         // A document carries hundreds of validity bounds (848 in the corpus as it stands), so a refusal that
-        // named only "vanaf" would leave a producer searching. Both coordinates are asserted here: which
+        // named only "from" would leave a producer searching. Both coordinates are asserted here: which
         // bound, and which of the many carriers it belongs to.
         String onder = weigering(() -> vanafGelezen("+012026-01-01"), "+012026-01-01", "a malformed lower bound");
-        assertTrue(onder.contains("'" + VENSTERVERSIE + "/vanaf'"),
+        assertTrue(onder.contains("'" + VENSTERVERSIE + "/from'"),
                 "the refusal names the bound it arrived on, on the version that carries it: " + onder);
-        assertFalse(onder.contains("tot"), "and does not name the other bound: " + onder);
+        assertFalse(onder.contains("/to'"), "and does not name the other bound: " + onder);
 
         String boven = weigering(() -> totGelezen("+012026-12-31"), "+012026-12-31", "a malformed upper bound");
-        assertTrue(boven.contains("'" + VENSTERVERSIE + "/tot'"),
+        assertTrue(boven.contains("'" + VENSTERVERSIE + "/to'"),
                 "the other bound names itself and its carrier just as precisely: " + boven);
     }
 
     @Test void een_naamloze_drager_valt_terug_op_zijn_knoopsoort() throws Exception {
-        // The two carriers that keep the v0 field — a day-kind definition and a defaults group — name themselves
-        // by their `naam`, which is ["string","null"], so a nameless carrier is a legal wire document; no corpus
-        // document is one, which is why the fall-back would otherwise never be exercised and could silently
-        // degrade to a bare "geldigheid.vanaf" that locates nothing. The refusal names the node kind instead, and
+        // The two carriers outside the named forms — a day-kind definition and a defaults group — name themselves
+        // by their name field (dayKind, name), which is ["string","null"], so a nameless carrier is a legal wire
+        // document; no corpus document is one, which is why the fall-back would otherwise never be exercised and
+        // could silently degrade to a bare "validity.from" that locates nothing. The refusal names the node kind instead, and
         // still names the bound. A version of a named form needs no such fall-back: it is named by its pointer,
         // with or without a name on its form.
         JsonNode root = wire("jutterswet-schouwkalender");
         JsonNode dagsoort = root.path("rules").path("dayKindDefinitions").path(0);
-        ((ObjectNode) dagsoort).putNull("naam");
-        ((ObjectNode) dagsoort.path("geldigheid")).put("vanaf", "+012026-01-01");
+        ((ObjectNode) dagsoort).putNull("dayKind");
+        ((ObjectNode) dagsoort.path("validity")).put("from", "+012026-01-01");
         String melding = weigering(() -> IrLoader.load(root), "+012026-01-01", "a bound on a nameless carrier");
-        assertTrue(melding.contains("ResolvedDagsoort"), "the refusal names the node kind: " + melding);
-        assertTrue(melding.contains("geldigheid.vanaf"), "and still names the bound: " + melding);
-        assertFalse(melding.contains("'geldigheid.vanaf'"),
+        assertTrue(melding.contains("DayKindDefinition"), "the refusal names the node kind: " + melding);
+        assertTrue(melding.contains("validity.from"), "and still names the bound: " + melding);
+        assertFalse(melding.contains("'validity.from'"),
                 "and never degrades to the bare field, which locates nothing: " + melding);
 
         JsonNode venster = wire(VENSTER);
         ((ObjectNode) IrPad.rulesLijst(venster, "rules").get(0)).putNull("name");
-        ((ObjectNode) IrPad.versie(venster, "rules", 0, 0).get("validity")).put("vanaf", "+012026-01-01");
+        ((ObjectNode) IrPad.versie(venster, "rules", 0, 0).get("validity")).put("from", "+012026-01-01");
         String versie = weigering(() -> IrLoader.load(venster), "+012026-01-01", "a bound on a nameless form");
-        assertTrue(versie.contains("'" + VENSTERVERSIE + "/vanaf'"), "the version names its place: " + versie);
+        assertTrue(versie.contains("'" + VENSTERVERSIE + "/from'"), "the version names its place: " + versie);
     }
 
     // ---------------- the reach: every node kind that carries a window ----------------
@@ -268,7 +268,7 @@ class IrWireDatumWitnessTest {
                         soort + " — the refusal states the form it expected: " + melding);
             }
         }
-        assertEquals(Set.of("PrioritizedDefaults", "ResolvedDagsoort", "Allocation", "Consistency", "FactCreation",
+        assertEquals(Set.of("PrioritizedDefaults", "DayKindDefinition", "Allocation", "Consistency", "FactCreation",
                         "ObjectCreation", "Rule", "Uniqueness", "Uniqueness (union)"),
                 gedekt, "every kind of carrier a validity window stands on is read through the clamp");
     }
@@ -294,22 +294,22 @@ class IrWireDatumWitnessTest {
     private static Geldigheid grensGelezen(String grens, String lexeem) throws Exception {
         JsonNode root = wire(VENSTER);
         JsonNode g = IrPad.versie(root, "rules", 0, 0).path("validity");
-        assertTrue(g.isObject(), "the twisted rule version carries a Geldigheid node");
+        assertTrue(g.isObject(), "the twisted rule version carries a Validity node");
         ((ObjectNode) g).put(grens, lexeem);
         return venster(IrLoader.load(root));
     }
 
     private static LocalDate vanafGelezen(String lexeem) throws Exception {
-        return grensGelezen("vanaf", lexeem).vanaf();
+        return grensGelezen("from", lexeem).vanaf();
     }
 
     private static LocalDate totGelezen(String lexeem) throws Exception {
-        return grensGelezen("tot", lexeem).tot();
+        return grensGelezen("to", lexeem).tot();
     }
 
     /** The kinds of carrier in {@code golden} a validity window stands on, in document order: the versions of a
      *  named form under the form's node kind (a uniqueness version with two or more sources as its union), and a
-     *  node that keeps the v0 {@code geldigheid} under its own. */
+     *  node outside the named forms that carries its own {@code validity} under its own. */
     private static List<String> dragerSoorten(String golden) throws Exception {
         List<String> uit = new ArrayList<>();
         verzamel(wire(golden), uit);
@@ -318,8 +318,8 @@ class IrWireDatumWitnessTest {
 
     private static void verzamel(JsonNode n, List<String> uit) {
         if (n.isObject()) {
-            JsonNode g = n.get("geldigheid");
-            if (g != null && g.isObject() && "Geldigheid".equals(g.path("node").asText()))
+            JsonNode g = n.get("validity");
+            if (n.has("node") && g != null && g.isObject() && "Validity".equals(g.path("node").asText()))
                 uit.add(n.path("node").asText());
             if (n.path("versions").isArray())
                 for (JsonNode v : n.get("versions"))
@@ -346,16 +346,16 @@ class IrWireDatumWitnessTest {
 
     private static boolean twist(JsonNode n, String soort, String lexeem) {
         if (n.isObject()) {
-            JsonNode g = n.get("geldigheid");
-            if (g != null && g.isObject() && "Geldigheid".equals(g.path("node").asText())
+            JsonNode g = n.get("validity");
+            if (n.has("node") && g != null && g.isObject() && "Validity".equals(g.path("node").asText())
                     && soort.equals(n.path("node").asText())) {
-                ((ObjectNode) g).put("vanaf", lexeem);
+                ((ObjectNode) g).put("from", lexeem);
                 return true;
             }
             if (n.path("versions").isArray())
                 for (JsonNode v : n.get("versions"))
                     if (v.path("validity").isObject() && soort.equals(drager(n, v))) {
-                        ((ObjectNode) v.get("validity")).put("vanaf", lexeem);
+                        ((ObjectNode) v.get("validity")).put("from", lexeem);
                         return true;
                     }
         }

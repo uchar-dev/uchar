@@ -87,7 +87,7 @@ class InstantieUnieWitnessTest {
                         "{\"node\":\"InstanceSetBranch\",\"elementType\":\"Vondst\",\"sourceRole\":null,"
                                 + "\"filter\":null,\"source\":{\"snippet\":\"geborgen vondsten van de Jutter\"}}"))));
         assertTrue(f.plek().endsWith("/branches/1/sourceRole"), f.plek());
-        assertTrue(f.getMessage().contains("expected a RolBinding"), f.getMessage());
+        assertTrue(f.getMessage().contains("expected a RoleBinding"), f.getMessage());
     }
 
     @Test void een_unie_met_een_enkele_selectie_wordt_benoemd_geweigerd() {

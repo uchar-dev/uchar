@@ -27,9 +27,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>Before L2's fix round most rule-side node kinds — the fold, the quantifier fold, the verdeling and a union's
  * selection among them, and the condition marker, which also admitted a {@code type} — loaded with the unknown field
- * and ignored it. The sweep reaches 64 kinds (measured 2026-09-24 on L4): 58 node kinds by their discriminator — the
- * eleven rule- and expression-layer kinds L4 replaced gave way to its eleven, but {@code ContextValue} stands only in
- * a golden refused as a form not carried — and the six version records of the named forms, which carry no
+ * and ignored it. The sweep reaches 64 kinds (measured 2026-09-24 on L4, and again 2026-09-25 on L5, where the
+ * renamed kinds took the places of their v0 names one for one): 58 node kinds by their discriminator — the eleven
+ * rule- and expression-layer kinds L4 replaced gave way to its eleven, but {@code ContextValue} stands only in a
+ * golden refused as a form not carried — and the six version records of the named forms, which carry no
  * discriminator and are swept under their form's kind ({@code RuleVersion}, …). The exact factor has no discriminator
  * either and its rows stand in {@code TypesysteemWeigeringWitnessTest}. Fifteen more kinds occur only in goldens this
  * backend refuses as forms it does not carry (the list, sum, struct and function forms, {@code TemporalRead},
@@ -54,7 +55,8 @@ class OnbekendVeldWitnessTest {
             try { IrLoader.loadAll(doc); } catch (IrLoader.Refusal r) { continue; }
             verzamel(doc, "", ir, eerste);
         }
-        // 64 kinds, measured 2026-09-24 on L4; the goldens that carry the rest are refused as forms not carried
+        // 64 kinds, measured 2026-09-24 on L4 and 2026-09-25 on L5; the goldens that carry the rest are refused as
+        // forms not carried
         assertTrue(eerste.size() >= 64, () -> "te weinig knoopsoorten gevonden: " + eerste.keySet());
         List<String> doorgelaten = new ArrayList<>();
         for (Map.Entry<String, Plek> e : eerste.entrySet()) {
@@ -79,25 +81,25 @@ class OnbekendVeldWitnessTest {
         String w = "/rules/rules/0/versions/0/value", v = "/rules/rules/0/versions/0/condition";
         String literal = "{\"node\":\"Literal\",\"value\":{\"text\":\"x\"},\"type\":{\"node\":\"Text\"},\"source\":{\"snippet\":\"x\"}}";
         Map<String, String[]> rijen = new java.util.LinkedHashMap<>();
-        rijen.put("TekstReeks", new String[] { w, "{\"node\":\"TextComposition\",\"parts\":[],\"type\":{\"node\":\"Text\"},"
+        rijen.put("TextComposition", new String[] { w, "{\"node\":\"TextComposition\",\"parts\":[],\"type\":{\"node\":\"Text\"},"
                 + "\"source\":{\"snippet\":\"x\"},\"" + VREEMD + "\":1}", w });
-        rijen.put("Letterlijk", new String[] { w, "{\"node\":\"TextComposition\",\"parts\":[{\"node\":\"LiteralChunk\","
+        rijen.put("LiteralChunk", new String[] { w, "{\"node\":\"TextComposition\",\"parts\":[{\"node\":\"LiteralChunk\","
                 + "\"text\":\"x\",\"" + VREEMD + "\":1}],\"type\":{\"node\":\"Text\"},\"source\":{\"snippet\":\"x\"}}",
                 w + "/parts/0" });
-        rijen.put("Ingevoegd", new String[] { w, "{\"node\":\"TextComposition\",\"parts\":[{\"node\":\"EmbeddedExpression\",\"expr\":"
+        rijen.put("EmbeddedExpression", new String[] { w, "{\"node\":\"TextComposition\",\"parts\":[{\"node\":\"EmbeddedExpression\",\"expr\":"
                 + literal + ",\"" + VREEMD + "\":1}],\"type\":{\"node\":\"Text\"},\"source\":{\"snippet\":\"x\"}}", w + "/parts/0" });
-        rijen.put("VariabeleRef", new String[] { w, "{\"node\":\"VariableReference\",\"name\":\"x\",\"source\":{\"snippet\":\"x\"},\""
+        rijen.put("VariableReference", new String[] { w, "{\"node\":\"VariableReference\",\"name\":\"x\",\"source\":{\"snippet\":\"x\"},\""
                 + VREEMD + "\":1}", w });
-        rijen.put("Onopgelost (expressie)", new String[] { w, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"x\"},\"" + VREEMD
+        rijen.put("Unresolved (expression)", new String[] { w, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"x\"},\"" + VREEMD
                 + "\":1}", w });
-        rijen.put("DimensieSelectie", new String[] { w, "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[],"
+        rijen.put("DimensionSelection", new String[] { w, "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[],"
                 + "\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"d\",\"labels\":[],"
                 + "\"source\":{\"snippet\":\"x\"},\"" + VREEMD + "\":1},\"type\":null,\"source\":{\"snippet\":\"x\"}}", w + "/dimensionSelection" });
         rijen.put("ContextValue", new String[] { w, "{\"node\":\"ContextValue\",\"name\":\"evaluationDate\",\"type\":"
                 + "{\"node\":\"Date\",\"precision\":\"day\"},\"source\":{\"snippet\":\"de Rekendatum\"},\"" + VREEMD + "\":1}", w });
         rijen.put("Regelversie", new String[] { v, "{\"node\":\"Regelversie\",\"regel\":\"x\",\"inconsistent\":false,"
                 + "\"source\":{\"snippet\":\"x\"},\"" + VREEMD + "\":1}", v });
-        rijen.put("Onopgelost (conditie)", new String[] { v, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"x\"},\"" + VREEMD
+        rijen.put("Unresolved (condition)", new String[] { v, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"x\"},\"" + VREEMD
                 + "\":1}", v });
         for (Map.Entry<String, String[]> r : rijen.entrySet()) {
             JsonNode doc = golden(PENNINGDREMPEL);
@@ -120,7 +122,7 @@ class OnbekendVeldWitnessTest {
                 "{\"node\":\"Unresolved\",\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
         IrLoader.Documentfout f = weigert(doc, "conditiemarker met type");
         assertEquals("/rules/rules/0/versions/0/condition/type", f.plek(), f.getMessage());
-        assertTrue(f.getMessage().contains("unknown field on Onopgelost"), f.getMessage());
+        assertTrue(f.getMessage().contains("unknown field on Unresolved"), f.getMessage());
 
         doc = golden(WACHTERSKETEN);
         ((ObjectNode) doc.at("/rules/objectCreations/0/versions/0")).putNull("connectingRole");
@@ -129,7 +131,7 @@ class OnbekendVeldWitnessTest {
         assertTrue(f.getMessage().contains("null is neither"), f.getMessage());
     }
 
-    /** The derived positions whose record computes its own type — a rounding, a clamp, a text sequence — still
+    /** The derived positions whose record computes its own type — a rounding, a clamp, a text composition — still
      *  carry a wire type that is a datatype or null; until the advisory round of L2 it was not read at all, so an
      *  {@code Onbekend} there loaded. */
     @Test void een_onbekend_type_op_een_afgeleide_positie_weigert() throws Exception {
@@ -138,11 +140,11 @@ class OnbekendVeldWitnessTest {
                 + "\"decimals\":0,\"sign\":\"unspecified\"},\"source\":{\"snippet\":\"2\"}}";
         String onbekend = "{\"node\":\"Onbekend\",\"reden\":\"niet opgelost\"}";
         Map<String, String> rijen = new java.util.LinkedHashMap<>();
-        rijen.put("Afgerond", "{\"node\":\"Rounding\",\"base\":" + literal + ",\"mode\":\"halfAwayFromZero\","
+        rijen.put("Rounding", "{\"node\":\"Rounding\",\"base\":" + literal + ",\"mode\":\"halfAwayFromZero\","
                 + "\"decimals\":0,\"type\":" + onbekend + ",\"source\":{\"snippet\":\"x\"}}");
-        rijen.put("Begrensd", "{\"node\":\"Clamp\",\"base\":" + literal + ","
+        rijen.put("Clamp", "{\"node\":\"Clamp\",\"base\":" + literal + ","
                 + "\"type\":" + onbekend + ",\"source\":{\"snippet\":\"x\"}}");
-        rijen.put("TekstReeks", "{\"node\":\"TextComposition\",\"parts\":[],\"type\":" + onbekend + ",\"source\":{\"snippet\":\"x\"}}");
+        rijen.put("TextComposition", "{\"node\":\"TextComposition\",\"parts\":[],\"type\":" + onbekend + ",\"source\":{\"snippet\":\"x\"}}");
         for (Map.Entry<String, String> r : rijen.entrySet()) {
             JsonNode doc = golden(PENNINGDREMPEL);
             ((ObjectNode) doc.at("/rules/rules/0/versions/0")).set("value", JSON.readTree(r.getValue()));
@@ -155,7 +157,7 @@ class OnbekendVeldWitnessTest {
     }
 
     /** A scalar where a node stands is refused at its own pointer. Jackson shares small numbers, so a scalar has no
-     *  place of its own to look up; until the advisory round of L2 {@code geldigheid: 1} ended in an
+     *  place of its own to look up; until the advisory round of L2 a validity of 1 ended in an
      *  IllegalStateException that named no place, and a scalar expression in a placeholder place. */
     @Test void een_scalair_op_de_plek_van_een_knoop_weigert_met_een_plek() throws Exception {
         String[][] rijen = {
