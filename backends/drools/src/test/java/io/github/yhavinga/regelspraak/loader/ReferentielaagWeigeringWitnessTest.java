@@ -280,8 +280,8 @@ class ReferentielaagWeigeringWitnessTest {
         w.put("elementObjecttype", "Vondst");
         IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/2/waarde/elementObjecttype");
         assertTrue(e.getMessage().contains("the elementObjecttype 'Vondst' of a TOTAAL without a range is not the fold"
-                + " subject 'Jutter': without a range the fold is the subject's own read, so the type it folds over is"
-                + " the subject type, and the executors never read this field there (WF-083 (c))"), e.getMessage());
+                + " subject 'Jutter': without a range the fold is the subject's own read, so its elementObjecttype must"
+                + " name the subject type (WF-083 (c))"), e.getMessage());
     }
 
     @Test void een_kenmerk_als_bron_van_een_waardevouw_weigert() throws Exception {

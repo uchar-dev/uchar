@@ -1293,8 +1293,7 @@ public final class IrLoader {
         if (Namen.norm(el.naam).equals(Namen.norm(s.naam))) return;
         throw new Documentfout(plekken.get(f) + "/elementObjecttype", "the elementObjecttype '" + el.naam
                 + "' of a TOTAAL without a range is not the fold subject '" + s.naam + "': without a range the fold is"
-                + " the subject's own read, so the type it folds over is the subject type, and the executors never"
-                + " read this field there (WF-083 (c))");
+                + " the subject's own read, so its elementObjecttype must name the subject type (WF-083 (c))");
     }
 
     /** The fold kinds that read a VALUE per contributor (IR-SPEC ch. 4.3) — every aggregation kind but
