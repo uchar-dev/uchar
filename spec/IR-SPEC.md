@@ -59,14 +59,15 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   extension fields: `connectingRole` (ch. 3.2; and on object creation,
   ch. 3.3 — the back-link role), `sourceRole` and `sourcePath` (ch. 4.3 —
   the fold source's range, one relation or a path of them; the quantifier
-  fold of ch. 4.5 keeps the v0 names `bronRol` and `bronPad` until its own
-  landing), the symbolic fact-creation fields (ch. 3.4),
-  `navigatieBindingen` on the attribute reference and `navigatieBinding` on
+  fold of ch. 4.5 carries the same two fields), the symbolic fact-creation
+  fields (ch. 3.4), `path` on the attribute reference and `navigation` on
   the characteristic check (ch. 4.1a — the navigation hops), `scope` on the
   scoped uniqueness (ch. 3.6, WF-054), `statuteAnnotations` on the rule
   (ch. 3.1, WF-082 — the statute annotations); until L4 the wire spelled
   them `verbindendeRol`, `bronRol`, `bronPad`, `scopeRol` and
-  `bronAnnotaties`, the names the pin-bump history below uses; current extension nodes and
+  `bronAnnotaties`, and until L5 the navigation hops `navigatieBindingen`
+  and `navigatieBinding` and the quantifier fold's range `bronRol` and
+  `bronPad` — the names the pin-bump history below uses; current extension nodes and
   forms: `TemporalRead` (ch. 4.3a), the `prioritizedDefaults` list
   (ch. 6.1), the sum-type family — the `SumType` datatype
   (ch. 2.4) with the `Construct`/`Match`/`BinderRef` expression nodes
@@ -129,6 +130,14 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   attributes, roles, labels as authored in a source document — are carried
   verbatim, in whatever language the source declares (Dutch in the
   Jutterswet corpus).
+- Enumeration values on the wire are English identifiers in lowerCamel
+  case: one word in lower case (`sum`, `year`), several words joined with
+  each further word capitalised (`nonNegative`, `equalShares`,
+  `filledCount`); no upper-case start, no hyphen, no space, no Dutch. The
+  case format spells its kinds the same way (`attributeValue`,
+  `characteristicPresent`). Each family's table lists its v0 values. (The
+  wire has carried this spelling since landing L5, step M8; until then it
+  kept the v0 values.)
 - Versioning: semantic-versioned from the first normative release; v0.x
   while the mirror-then-diverge phase runs.
 
