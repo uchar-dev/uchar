@@ -1023,51 +1023,93 @@ waardevol zijn" — waardevol derived as gewicht > 10 — counts 1; a
 jutter whose only vondst fails the filter reads the fallback 0 and
 count 0.
 
-**The self-denoting fold source (WF-083).** The written form "het
-aantal `<rol>` van de `<onderwerp>`" may name the fold subject by its
-own role name ("het aantal vondsten van de aanmelder", evaluated on
-the Jutter who *is* the aanmelder). The wire carries that written role
-in the fold-source argument's `navigatieRol`; the field is
-presentation of the written form, not navigation (`IR-SPEC.md`
-ch. 4.3) — no hop happens, and the fold evaluates exactly as the bare
-subject-anchored form: the subject's own linked instances of the
-element type are the contributors.
+**The count source: the range selects, the written name does not.** Under
+`AANTAL` the fold's one argument is the COUNT SOURCE. Since L2 a count over
+one source argument carries its range (`sourceRole`, one step — a
+`sourcePath` belongs to a value fold's set source alone, `IR-SPEC.md`
+WF-102 (c)), and the count folds the instances that range reaches from the
+subject, narrowed by `elementObjecttype` as above. The argument's
+`attribuut` is the WRITTEN name of the bound role and selects nothing: it
+MUST denote the bound role by its declared name or its declared plural
+(`IR-SPEC.md` WF-047), and where the written form did not, the migration to
+the L2 wire and the emitter write the declared role name in its place (the
+L2 card, `backlog/done/20260923-l2-referentielaag.md`). A written name that
+matches roles on several fact types the subject reaches therefore decides
+nothing: `corpus/golden/ambiguous-fold-role-name` writes `vriend`, declared
+as a role on two fact types the Jutter reaches, and its count reads the one
+relation its `sourceRole` names (gates 5, 6 and 12). Until L2 the range of
+a count without a binding was derived from the written name, a name
+matching several reachable roles faulted in both executors, and that
+document was a red case.
 
-Worked example (the `jutterswet-aanmeldertelling` emitter golden,
-verbatim in gates 5–6 and as WV-3.4a-zelfbron in `ref/` tests): a
-Jutter linked to two Vondsten — one with gewicht 2,50 kg, one whose
-gewicht is leeg — counts **2**: a count folds instances, not values,
-so a leeg element attribute still counts (the aggregation row of
-ch. 1.2: a count, never empty). A Jutter with zero linked Vondsten
-counts **0**, never leeg.
+**The count source is recognised at the source itself.** Its `attribuut`
+names a role of the fold subject and no member of the element type
+(`IR-SPEC.md` WF-093, in both directions: such a source is the source of
+`AANTAL` and of nothing else, and `AANTAL` reads nothing but such a
+source). Since L2 no field on the node records which reading applies, so a
+collision of names is decided by the declarations: a count whose written
+name is also an attribute of the element type is no count source — it
+reads as that attribute, and a count over an attribute is refused (WF-093
+(b); `ref` and the ASP backend fault with `a count over …, which is an
+attribute of …`). A role whose declared name and declared plural both name
+attributes of the element type, or whose name does while it declares no
+plural, therefore cannot be counted; where only one of the two spellings
+collides, the count is written with the other. Until L2 the recognition
+keyed on the unknown-type sentinel on the source's own `type` (B13, B16).
 
-**The type-pair fallback for the fold-source role name (WF-034).** A
-written fold-source name that resolves to no declared role (ci,
-declared name or declared plural) folds over the **unique connecting
-role** derived from the type pair — exactly one fact type connects the
-fold subject type to the element type, and it is not a self-typed
-two-role fact type, whose two roles are both candidates and so block the
-derivation (the ch. 4.1 type-pair block); zero or multiple connecting
-roles, or a name matching several reachable roles, keep the loud fault —
-never a spelling guess (`IR-SPEC.md` ch. 4.3; uniqueness is counted in
-candidate roles, not fact types; the `+s`/`+en` plural synthesis is an
-unmirrored delta).
+**The self-denoting written form is a plain count source.** The written
+form "het aantal `<rol>` van de `<onderwerp>`" may name the fold subject by
+its own role name ("het aantal vondsten van de aanmelder", evaluated on the
+Jutter who *is* the aanmelder). The wire carries nothing of that written
+role: the count carries its range and reads the subject's own linked
+instances of the element type, anchored on the subject like every count
+source (`IR-SPEC.md` WF-083 (c)); no hop happens. Until L2 the written role
+stood in the source argument's `navigatieRol`, as presentation and not
+navigation, and the executors tested that it denoted the subject.
 
-Worked example (the `jutterswet-kaveltelling` golden, verbatim in
-gates 5–6 and as WV-3.4a-typenpaar in `ref/` tests): the role
-`duinkavel` (kaveltoewijzing) declares no plural, and the written
-source "het aantal duinkavels van de Jutter" resolves nowhere — the
-unique Jutter/Duinkavel fact type is the source, so a Jutter linked
-to three Duinkavels counts **3**; the written singular "het aantal
-vat van de Jutter" resolves by declared role name against `vat`
-(vatberging, declared plural `vaten`) and counts that Jutter's two
-Vaten as **2** — in the ASP backend both counts key the connecting
-role's canonical name (`duinkavel`, `vaten`), never the written
-lexeme, which as a raw `rol/3` key silently counted 0. A Jutter with
-no links counts **0** and **0**; with a second fact type connecting
-Jutter to Duinkavel the unresolved written form faults loudly
-(the `wf034-ambigu-typenpaar` rejection at the well-formedness
-layer).
+Worked example (the `jutterswet-aanmeldertelling` emitter golden, verbatim
+in gates 5–6 and as WV-3.4a-telbron in `ref/` tests; on the wire the count
+binds `vondstaanmelding`/`vondst` and its argument names `vondsten`, the
+role's declared plural): a Jutter linked to two Vondsten — one with
+gewicht 2,50 kg, one whose gewicht is leeg — counts **2**: a count folds
+instances, not values, so a leeg element attribute still counts (the
+aggregation row of ch. 1.2: a count, never empty). A Jutter with zero
+linked Vondsten counts **0**, never leeg. A count without its range does
+not load, and `ref` faults on one handed to it directly
+(WV-3.4a-telbron-zonder-bereik).
+
+*History until L2 — the type-pair fallback for the fold-source role name
+(WF-034).* A written fold-source name that resolved to no declared role
+(ci, declared name or declared plural) folded over the **unique connecting
+role** derived from the type pair: exactly one fact type connecting the
+fold subject type to the element type, and not a self-typed two-role fact
+type, whose two roles were both candidates and so blocked the derivation
+(the ch. 4.1 type-pair block); zero or multiple connecting roles, or a
+name matching several reachable roles, kept the loud fault, and uniqueness
+was counted in candidate roles, not fact types. Since L2 (B12) a count
+carries its range, so nothing is derived and nothing falls back. The
+migration derived the missing ranges once, with this derivation, and
+refused the documents where it found zero or several candidates
+(`wf034-ambigu-typenpaar`, removed at L2 on that ground,
+`corpus/negatief/README.md`).
+
+Worked example (the `jutterswet-kaveltelling` golden, verbatim in gates
+5–6 and as WV-3.4a-typenpaar in `ref/` tests), in its L2 form. The role
+`duinkavel` (kaveltoewijzing) declares no plural, so the written source
+"het aantal duinkavels van de Jutter" denotes no role; until L2 this was
+the type-pair fallback's example. Since L2 the count binds
+`kaveltoewijzing`/`duinkavel` and its argument names `duinkavel`, the
+declared role name the migration wrote in place of the written plural (see
+above): a Jutter linked to three Duinkavels counts **3**. The written
+singular "het aantal vat van de Jutter" names the role `vat` (vatberging,
+declared plural `vaten`) by its declared name and binds `vatberging`/`vat`:
+that Jutter's two Vaten count **2**. A Jutter with no links counts **0**
+and **0**. In the ASP backend both counts key the bound role's canonical
+name (`duinkavel`, `vaten`), never the written lexeme, which as a raw
+`rol/3` key silently counted 0. With a second fact type connecting Jutter
+to Duinkavel the count still reads the relation its binding names and
+counts **3** (WV-3.4a-typenpaar-tweede-feittype-bindt); until L2 the
+bindingless written form faulted loudly there.
 
 ### 3.4b The multi-step fold source — the flat union (WF-102)
 
