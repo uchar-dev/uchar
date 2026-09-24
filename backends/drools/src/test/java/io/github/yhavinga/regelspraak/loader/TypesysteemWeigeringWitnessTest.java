@@ -31,16 +31,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * factor that is not an exact fraction {@code {num, den}} of two integers at least 1, a number without its sign, a
  * percentage with a sign, a presentation tag other than "percentage", on a number that is no percentage or at a type
  * annotation, a date without its precision, a spelling where a unit occurs or an empty list of them, and a parameter
- * without its datatype or with a timeline name — the new sentences in the words of the shared OCaml loader and the
- * verifier. Read: a number with the unit '%' as the record's percentage and any other as its number, a precision as
+ * without its datatype, with a timeline name or with a timeline count other than 1 — the new sentences in the words of
+ * the shared OCaml loader and the verifier. Read: a number with the unit '%' as the record's percentage and any other as its number, a precision as
  * the two date records, a fraction as the record's decimal factor with the fraction itself kept in the unit system (a
  * fraction not in lowest terms too, as the shared loader reads it; WF-092 is the verifier's), a unit's spellings as
  * the system's aliases, a parameter's timeline facet as its granularity.
  *
  * <p>Every fixture is a corpus golden with ONE twist in memory; the corpus file is read and never written. Each
- * refusal of a malformed document is an {@link IrLoader.Documentfout} at a JSON pointer, never an
- * {@link IrLoader.Refusal}; the one form this backend does not carry — a parameter timeline of more than one period
- * — is a Refusal, because that document is well-formed.
+ * refusal is an {@link IrLoader.Documentfout} at a JSON pointer, never an {@link IrLoader.Refusal}: every twisted
+ * document here is ill-formed, a parameter timeline of more than one period included, which the verifier refuses
+ * (WF-005) while multi-period grids are open.
  */
 class TypesysteemWeigeringWitnessTest {
 
@@ -263,10 +263,17 @@ class TypesysteemWeigeringWitnessTest {
         ((ObjectNode) ir.at("/model/parameters/1")).putNull("timeline");
         assertTrue(weigert(ir, facet).getMessage().contains("null is neither"));
 
-        ObjectNode tweeJaar = golden(PENNINGJAAR);
-        ((ObjectNode) tweeJaar.at(facet)).put("count", 2);
-        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(tweeJaar));
-        assertEquals("Parameter.timeline", r.form(), r.getMessage());
+        // WF-005: a parameter's timeline is one period, in the verifier's two sentences
+        ir = golden(PENNINGJAAR);
+        ((ObjectNode) ir.at(facet)).put("count", 2);
+        assertTrue(weigert(ir, facet + "/count").getMessage().endsWith(": the timeline facet of parameter 'penningbedrag'"
+                + " has count 2 > 1: a parameter's timeline is one period while multi-period grids are open"
+                + " (RUNTIME-SEMANTICS ch. 3.12)"));
+
+        ir = golden(PENNINGJAAR);
+        ((ObjectNode) ir.at(facet)).put("count", 0);
+        assertTrue(weigert(ir, facet + "/count").getMessage()
+                .endsWith(": the timeline facet of parameter 'penningbedrag' has count 0 < 1"));
     }
 
     // ---------------- read back one to one ----------------

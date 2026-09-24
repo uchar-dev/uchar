@@ -882,8 +882,9 @@ public final class IrLoader {
             Map.entry("Enumeratie", List.of("node", "domein", "waarden")));
 
     /** IR-SPEC ch. 2.10: a parameter, its datatype, and when it is time-dependent its timeline facet. The datatype is
-     *  required, and the facet carries no timeline name; the model's parameter holds the granularity, so a facet of
-     *  more than one period is a form this backend does not carry. */
+     *  required, and the facet carries no timeline name and a count of 1: a parameter's timeline is one period while
+     *  multi-period grids are open (RUNTIME-SEMANTICS ch. 3.12), so another count is no document (WF-005), refused in
+     *  the verifier's words. The model's parameter holds the granularity. */
     private Parameter parameter(String pad, JsonNode n) {
         velden(n, pad, "Parameter", List.of("node", "name", "datatype"), List.of("timeline"));
         String naam = naam(n, pad, "name");
@@ -897,9 +898,13 @@ public final class IrLoader {
             velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of());
             granulariteit = enumOf(Granulariteit.class, tekst(tl, tp, "granularity"), tp + "/granularity");
             int aantal = geheel(tl, tp, "count", "TimelineFacet.count");
-            if (aantal != 1)
-                throw new Refusal("Parameter.timeline", "a parameter timeline of " + aantal + " periods at '" + tp
-                        + "'; this backend carries a parameter's timeline of one period");
+            if (aantal < 1)
+                throw new Documentfout(tp + "/count", "the timeline facet of parameter '" + naam + "' has count "
+                        + aantal + " < 1");
+            if (aantal > 1)
+                throw new Documentfout(tp + "/count", "the timeline facet of parameter '" + naam + "' has count "
+                        + aantal + " > 1: a parameter's timeline is one period while multi-period grids are open"
+                        + " (RUNTIME-SEMANTICS ch. 3.12)");
         }
         return new Parameter(naam, datatype, granulariteit);
     }
