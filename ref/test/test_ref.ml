@@ -4296,7 +4296,7 @@ let () =
   | exception Value.Fault m ->
       check ("WV-5.8b-B-ambigue-gastheer-weigert (got: " ^ m ^ ")")
         (Case.contains ~needle:"reaches BOTH objects the fact creation binds" m
-        && Case.contains ~needle:"anker \"Kustvak\", doel \"Sein\"" m)
+        && Case.contains ~needle:"anchor \"Kustvak\", target \"Sein\"" m)
   | _ -> check "WV-5.8b-B-ambigue-gastheer-weigert (no fault at all)" false
 
 (* --- ch. 3.9: the whole-period qualifier over a characteristic ----------
