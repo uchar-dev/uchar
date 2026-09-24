@@ -442,8 +442,9 @@ any conversion factor* (ch. 2.6):
   `eff_unit` carries that adopted unit onward so a restating position
   consuming the product still sees the real unit. The operand admitted
   AS the unitless side must be **provably** unit-free (`provably_unitless`
-  — a declaration whose datatype is Numeriek/Percentage with `eenheid`
-  null, or a sum/product of such), never merely one whose unit `eff_unit`
+  — a declaration whose datatype is a `Number` without a `unit`, or a
+  sum/product of such; until L3 also a v0 `Percentage` without an `eenheid`,
+  which since L3 carries the unit `%`), never merely one whose unit `eff_unit`
   cannot resolve: a unit hidden behind an unanalysable node (a `Let`, a
   field access, a division) would otherwise become a silent unit×unit
   product with no downstream unit to fence it, so it stays loud. A
@@ -458,8 +459,8 @@ any conversion factor* (ch. 2.6):
   unchanged. The proof obligation mirrors `provably_unitless` but proves the
   unit rather than its absence (`provably_pure_pct`): the effective unit,
   derived from the literal/attribute/parameter declaration, is the singleton
-  `%` — `afkorting` and `canoniek` both `%`, `factorNaarCanoniek` exactly 1,
-  no denominator. A hidden or unknown unit is NOT proven pure-% and stays a
+  `%` — `abbreviation` and `canonical` both `%`, `factorToCanonical` exactly 1
+  (a rational whose `num` equals its `den`), no denominator. A hidden or unknown unit is NOT proven pure-% and stays a
   loud fault; any other unit on the left (e.g. `km`), and any `%`-spelling
   whose factor is not 1, keeps faulting with the unit-carrying multiplicative
   message. The **right** operand rule is unchanged — every unit-carrying right
@@ -488,8 +489,8 @@ hand-computed absolute values).
 (PRIORITIZED-DEFAULTS-EVOLUTIE §8, Q9; `backends/clingo/lib/normalise.ml`).** The wire keeps its source units;
 the clingo leg runs a wire→wire lowering BEFORE emission (composed with the
 ch. 7.7 desugaring at the `translate` entry) that canonicalises each declared
-`eenheidstelsel` to its **finest base unit** — the declared unit `u_min` of
-smallest `factorNaarCanoniek`. Restating INTO the finest MULTIPLIES (2,5 km ⇒
+unit system (`UnitSystem`) to its **finest base unit** — the declared unit
+`u_min` of smallest `factorToCanonical`. Restating INTO the finest MULTIPLIES (2,5 km ⇒
 2500 m, ×1000; 2 jaar ⇒ 24 maand, ×12): exact and integer-encodable, whereas
 restating to a coarser unit would divide, possibly non-terminating — the
 property clingo's integer encoding cannot hold. The rule is normative for the
@@ -507,11 +508,14 @@ clingo leg:
   comparison positions are NEVER descended: a mixed-unit comparison keeps the
   loud refusal. The write boundary writes the finest unit into a finest
   target.
-- **Proof obligations, fault-loud.** Each declared factor must have an exact
-  short-decimal reading (`Arith.q_of_wire_number`; a binary-double tail faults,
-  never a silent conversion); and every declared unit must restate into the
-  finest by a positive INTEGER (a stelsel with sibling factors like 2 and 3
-  admits no such finest and faults — never a silently divide-down canonical).
+- **Proof obligations, fault-loud.** Each declared factor is the exact
+  rational the wire writes (`Arith.factor` reads `{num, den}` as that rational,
+  the reading `ref` uses, so no binary double stands between the declaration
+  and the scale; until L3 the factor was a JSON number that needed an exact
+  short-decimal reading, and a binary-double tail faulted); and every declared
+  unit must restate into the finest by a positive INTEGER (a unit system with
+  sibling factors like 2 and 3 admits no such finest and faults — never a
+  silently divide-down canonical).
 - **What still refuses, loudly and unchanged.** A target NOT in the finest unit
   (the restated finer value has no divide-down write-back the encoding can
   hold); a coarser operand carried by an attribute/parameter rather than a
@@ -637,18 +641,20 @@ and this backend); declared factors and stelsel never enter.
     read and a **`Let`/`BinderRef`-bound** datum-tijd (with the residual
     `VariabeleRef`) stay the dt_term catch-all's loud flank. The last two
     were measured on 2026-09-06 and are each a live shape, not a
-    hypothetical: a document whose ordering reads a declared `DatumTijd`
-    parameter, and one whose left operand is a `Let` binding the datum-tijd
+    hypothetical: a document whose ordering reads a declared
+    millisecond-precision `Date` parameter (v0 `DatumTijd`), and one whose
+    left operand is a `Let` binding the datum-tijd
     attribute and reading it back as a `BinderRef`, are both
     `verifier: PASS` and both replay in ref (`oracle: PASS`), while clingo
     answers `TRANSLATION FAULT` at this catch-all. That is this backend
     declining a form the wire admits — one executor short of a
     differential, recorded rather than hidden.
   - **the datum-tijd ORDERING comparison** (ch. 1.2e, 2026-09-06). Before
-    it, a datetime ordering carrying no literal at all — two `DatumTijd`
-    attributes under `EERDER` — faulted `unscalable datatype in the ASP
-    translation` while ref replayed the same document exactly: the
-    comparison arms harmonise INTEGER SCALES, and a `DatumTijd` has none.
+    it, a datetime ordering carrying no literal at all — two
+    millisecond-precision `Date` attributes (v0 `DatumTijd`) under `EERDER` —
+    faulted `unscalable datatype in the ASP translation` while ref replayed
+    the same document exactly: the comparison arms harmonise INTEGER SCALES,
+    and a millisecond-precision date has none.
     It has a pair instead, so the comparison is **lexicographic** over it,
     and a disjunction cannot stand in an ASP body, so the two cases become
     two rules for one helper: `dtcmpN(S) :- is_a(S,ot), ⟨operand atoms⟩,
@@ -661,7 +667,8 @@ and this backend); declared factors and stelsel never enter.
     below gets it. Mixed precision faults (WF-036: one instant, one
     representation).
   - **the datum-tijd LITERAL** (2026-09-06, WF-095). A `Literal` typed
-    `DatumTijd` lowers to the GROUND pair `(⟨⟩, D, MS)` — no atoms — its
+    `Date` with `precision: millisecond` (v0 `DatumTijd`) lowers to the GROUND
+    pair `(⟨⟩, D, MS)` — no atoms — its
     lexeme read by ref's shared datum-tijd reader and split by the same
     `split_datetime` a case value takes. It is never an absolute ms
     integer, and the measurement is why: `2026-03-15T12:00:00.000` is
@@ -2412,8 +2419,9 @@ literal joined them 2026-09-06 through the `dtcmpN` helper),
 and for text/enum/boolean **parameters**, which ref executes but the
 ASP parameter emission scales through `decimals_of_datatype` —
 ref-only until a corpus case demands a symbolic parameter carriage,
-and with a **`DatumTijd` parameter** as their sibling: a declared
-datum-tijd parameter that the case SUPPLIES A VALUE FOR faults in the
+and with a **millisecond-precision `Date` parameter** (v0 `DatumTijd`) as
+their sibling: a declared datum-tijd parameter that the case SUPPLIES A
+VALUE FOR faults in the
 same parameter emission with the same words even when **no rule reads
 it at all** (measured 2026-09-06: `verifier: PASS`, ref
 `oracle: PASS (6 expectations)`, clingo
