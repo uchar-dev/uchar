@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.github.yhavinga.regelspraak.loader.IrLoader;
+
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -47,8 +49,8 @@ class KwantorvouwBereikWitnessTest {
     private static final String KEURPLOEG = "jutterswet-keurploeg";
 
     @Test void de_kwantorvouw_over_een_uniek_paar_blijft_spelen() throws Exception {
-        // The regression mirror: the golden as it stands, one feittype over the pair, so the by-pair search
-        // answers and the wire binding is never consulted. Green before this card as well.
+        // The regression mirror: the golden as it stands, one feittype over the pair. Green before this card as
+        // well; since L2 of the v1 wire migration the binding decides here too, as it does everywhere.
         Path p = tijdelijk("kwantorvouw-uniek", lees());
         for (Path zaak : zaken()) speelBeide(p, zaak);
     }
@@ -61,19 +63,20 @@ class KwantorvouwBereikWitnessTest {
         for (Path zaak : zaken()) speelBeide(p, zaak);
     }
 
-    @Test void de_kwantorvouw_zonder_binding_blijft_op_een_herhaald_paar_geweigerd() throws Exception {
+    @Test void de_kwantorvouw_zonder_binding_is_een_documentfout() throws Exception {
         // THE GUARD AGAINST WIDENING THE FIX INTO A GUESS. Strip the range off the wire and two feittypen are
-        // left with nothing to choose between; neither branch may pick a winner.
+        // left with nothing to choose between; neither branch may pick a winner. Since L2 of the v1 wire
+        // migration the range is required on this node (IR-SPEC ch. 4.5), so the stripped document is no
+        // uchar-ir-v1 document at all: the loader refuses it at the fold, before either branch lowers a thing.
         ObjectNode ir = herhaaldPaar();
         for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels")) stripBronRol(r);
         Path p = tijdelijk("kwantorvouw-geen-binding", ir);
         JsonNode c = JSON.readTree(Files.readString(zaken().get(1)));
         for (boolean viaDrl : new boolean[] { false, true }) {
-            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
                     () -> CaseRunner.speelCase(p, c, viaDrl),
-                    (viaDrl ? "drl-tekst" : "exec-model") + " refuses a bindingless quantifier fold");
-            assertTrue(e.getMessage().contains("geen verbindende rol tussen Keurploeg en Keurmeester"),
-                    e.getMessage());
+                    (viaDrl ? "drl-tekst" : "exec-model") + " never lowers a bindingless quantifier fold");
+            assertTrue(e.getMessage().contains("missing field 'bronRol'"), e.getMessage());
         }
     }
 

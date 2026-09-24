@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.github.yhavinga.regelspraak.loader.IrLoader;
+
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -70,9 +72,9 @@ class TemporeleSetvouwBereikWitnessTest {
         """;
 
     @Test void de_temporele_setvouw_over_een_uniek_paar_blijft_spelen() throws Exception {
-        // The regression mirror: ONE feittype over the pair, so the by-pair search answers and the wire binding
-        // is never consulted. Green before this card as well — the row that says the new arm reached only the
-        // case the old one could not answer.
+        // The regression mirror: ONE feittype over the pair. Green before this card as well — the row that says
+        // the new arm reached only the case the old one could not answer; since L2 of the v1 wire migration the
+        // binding decides here too.
         BeideTakken.groen(tijdelijk("setvouw-uniek", setvouw()), JSON.readTree(ZAAK),
                 "per-period sum over a uniquely connected pair: 19 / 17 / 12");
     }
@@ -85,20 +87,22 @@ class TemporeleSetvouwBereikWitnessTest {
                 "the wire's range carries the fold over a repeated type pair");
     }
 
-    @Test void de_setvouw_zonder_binding_blijft_op_een_herhaald_paar_geweigerd() throws Exception {
+    @Test void de_setvouw_zonder_binding_is_een_documentfout() throws Exception {
         // THE GUARD AGAINST WIDENING THE FIX INTO A GUESS. Strip the range off the wire and two feittypen are
-        // left with nothing to choose between; neither branch may pick a winner. (The verifier refuses this
-        // document outright — "WF-048 FAIL … 2 fact types relate 'Jutter' to 'Vondst' — not uniquely derivable"
-        // — so it is not merely unplayed here, it is ill-formed everywhere.)
+        // left with nothing to choose between; neither branch may pick a winner. Since L2 of the v1 wire
+        // migration a SOM over one source with an element type carries its range by schema (IR-SPEC ch. 4.3),
+        // so the stripped document is ill-formed everywhere and this loader refuses it at the fold, before
+        // either branch lowers a thing.
         ObjectNode ir = herhaaldPaar();
         ((ObjectNode) ir.get("rules").get("resolvedRegels").get(0).get("waarde")).remove("bronRol");
         Path p = tijdelijk("setvouw-geen-binding", ir);
         JsonNode c = JSON.readTree(ZAAK);
         for (boolean viaDrl : new boolean[] { false, true }) {
-            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
                     () -> CaseRunner.speelCase(p, c, viaDrl),
-                    (viaDrl ? "drl-tekst" : "exec-model") + " refuses a bindingless temporal set fold");
-            assertTrue(e.getMessage().contains("bewaarlast van een jutter"), e.getMessage());
+                    (viaDrl ? "drl-tekst" : "exec-model") + " never lowers a bindingless temporal set fold");
+            assertTrue(e.plek().equals("/rules/resolvedRegels/0/waarde")
+                    && e.getMessage().contains("missing field 'bronRol'"), e.getMessage());
         }
     }
 

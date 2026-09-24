@@ -51,7 +51,7 @@ class RolveldlezerWitnessTest {
     private static final String TEMPOVOUW = "jutterswet-tempovouw";
     /** A §13.4.7 feitcreatie with one tussenstap: Kustvak -> Post -> Sein, writing Sein.seinvak. */
     private static final String POSTWACHT = "jutterswet-postwacht";
-    /** A §13.4.7 feitcreatie whose tussenstap reads the ANKER's own field (viaOuderVeld) — a field Gemeente lacks. */
+    /** A §13.4.7 feitcreatie with one tussenstap, whose join runs over a fact type with both roles to-many. */
     private static final String GEMEENTEBERGING = "anchor/jutterswet-gemeenteberging";
     /** A §9.5 consistentie counting a to-one role ("het aantal houder van de Penning"). */
     private static final String PENNINGUITGIFTE = "anchor/jutterswet-penninguitgifte";
@@ -68,18 +68,19 @@ class RolveldlezerWitnessTest {
         //     clingo  : TRANSLATION FAULT: condition kind not translated (no corpus case exercises it)
         //     Drools exec-model : ERROR ConstraintEvaluationException: Error evaluating constraint ''
         //     Drools DRL-tekst  : EXCLUDE drl compile: Unable to Analyse Expression werf == $subject
-        // ref and clingo carry NO far-side rolcheck at all, so no golden of this shape can enter the corpus and the
-        // differential square can never arbitrate this reader. What the gate buys is therefore the DIAGNOSIS, not a
-        // value: an unclassified fault and a bare compiler message both become the one §13.3.9 sentence.
+        // ref and clingo carried NO far-side rolcheck at all then, so no golden of this shape could enter the
+        // corpus and the differential square could not arbitrate this reader. What the gate buys is therefore the
+        // DIAGNOSIS, not a value: an unclassified fault and a bare compiler message both become the one §13.3.9
+        // sentence. Since L2 of the v1 wire migration the check is one node, RoleMembership, and where its link is
+        // stored is one derivation (FactModelGenerator.lidmaatschapsopslag) with one sentence for both branches.
         Path ir = verreRolcheck(), c = geval(werfEnSchuit(false, "{}", "{ \"kind\": \"attributeEmpty\","
                 + " \"label\": \"W1\", \"attribute\": \"wachtgeld\" }"));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
-        assertTrue(e.getMessage().contains("verre rollidmaatschapscheck"), e.getMessage());
-        assertTrue(e.getMessage().contains("het beanmodel leidt voor de rol 'werf' op Schuit geen referentieveld"
-                + " naar Werf af"), e.getMessage());
-        assertTrue(e.getMessage().contains("§13.3.9 opslagrichting"), e.getMessage());
-        assertTrue(drlReden(ir, c).contains("verre rollidmaatschapscheck"), drlReden(ir, c));
+        String zin = "rollidmaatschap (ligplaats, werf): beide rollen zijn meervoudig, dus geen bean draagt de link"
+                + " (§13.3.9 opslagrichting)";
+        assertTrue(e.getMessage().contains(zin), e.getMessage());
+        assertTrue(drlReden(ir, c).contains(zin), drlReden(ir, c));
     }
 
     // ---------------- 2. the two fold joins outside the gated aggregation ----------------
@@ -96,14 +97,16 @@ class RolveldlezerWitnessTest {
         // Like the far-side rolcheck: no golden of this shape can exist (ref writes no temporal target), so the gate
         // is for the diagnosis. The refusal ALSO had to reach the caller's note — the temporal write arm printed the
         // generic Phase-F scope line and swallowed the reason until this card wired navReden through it.
+        // Since L2 of the v1 wire migration the fold's join is its binding's, read by the one derivation every
+        // fold seam shares (FactModelGenerator.bereikjoin), so the refusal is that derivation's sentence.
         Path ir = temporeleSetSommatie(), c = geval(tempovouwGeval());
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
-        assertTrue(e.getMessage().contains("temporele set-sommatie"), e.getMessage());
-        assertTrue(e.getMessage().contains("het beanmodel leidt voor de rol 'bewarende jutter' op Vondst geen"
-                + " referentieveld naar Jutter af"), e.getMessage());
+        String zin = "aggregatie-bereik: de wire-binding wijst de rol 'vondst' aan, wiens zusterrol 'bewarende jutter'"
+                + " MEERVOUDIG is";
+        assertTrue(e.getMessage().contains(zin), e.getMessage());
         assertTrue(e.getMessage().contains("§13.3.9 opslagrichting"), e.getMessage());
-        assertTrue(drlReden(ir, c).contains("temporele set-sommatie"), drlReden(ir, c));
+        assertTrue(drlReden(ir, c).contains(zin), drlReden(ir, c));
     }
 
     // The §8.2 whole-period fold over a NAVIGATED SET (geheelPeriodeAlle) gets no gate and no witness, and the reason
@@ -317,16 +320,14 @@ class RolveldlezerWitnessTest {
         regel.put("node", "ResolvedRegel").put("naam", "wachtgeld van een werf").put("soort", "GELIJKSTELLING");
         ObjectNode doel = regel.putObject("doel");
         doel.put("node", "AttribuutRef").put("attribuut", "wachtgeld").put("objecttype", "Werf")
-            .put("onderwerpBron", "een Werf").putNull("navigatieRol");
-        doel.set("type", numeriek());
-        doel.put("bron", "Het wachtgeld van een Werf").put("set", false);
-        doel.putArray("navigatiePad");
+            .put("bron", "Het wachtgeld van een Werf");
         ObjectNode waarde = regel.putObject("waarde");
         waarde.put("node", "Literal").put("waarde", "8");
         waarde.set("type", numeriek());
         waarde.put("bron", "8");
-        regel.putObject("voorwaarde").put("node", "VerreRollidmaatschap").put("filler", "Schuit")
-             .put("backref", "werf").put("negatie", false).put("bron", "de Werf een schuit heeft");
+        // "de Werf heeft een schuit": the subject Werf fills `werf` in ligplaats
+        regel.putObject("voorwaarde").put("node", "RoleMembership").put("factType", "ligplaats")
+             .put("role", "werf").put("negated", false).put("bron", "de Werf een schuit heeft");
         regel.putObject("geldigheid").put("node", "Geldigheid").putNull("vanaf").putNull("tot");
         return model("verre-rolcheck-zonder-veld", ir);
     }
@@ -345,13 +346,10 @@ class RolveldlezerWitnessTest {
         regel.put("soort", "GELIJKSTELLING");
         ObjectNode eigen = JSON.createObjectNode();
         eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit")
-             .put("onderwerpBron", "de Schuit").putNull("navigatieRol");
-        eigen.set("type", numeriek());
-        eigen.put("bron", "de lengte van de Schuit").put("set", false);
-        eigen.putArray("navigatiePad");
+             .put("bron", "de lengte van de Schuit");
         regel.set("waarde", eigen);
         ObjectNode check = JSON.createObjectNode();
-        check.put("node", "Kenmerk").put("kenmerk", "bedrijvig").put("navigatie", "werf")
+        check.put("node", "Kenmerk").put("kenmerk", "bedrijvig")
              .put("negatie", false).putNull("eigenaar");
         check.putObject("periode").put("node", "GeheelPeriode").put("jaar", true).put("niet", false);
         check.put("bron", "de werf van de Schuit gedurende het gehele jaar bedrijvig is");
@@ -392,7 +390,7 @@ class RolveldlezerWitnessTest {
             }
         }
         ObjectNode regel = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0);
-        ((ObjectNode) regel.get("doel")).set("type", elemType.deepCopy());
+        // the target's datatype is bewaarlast's declaration above; only the fold carries an annotation of its own
         ObjectNode fold = (ObjectNode) regel.get("waarde");
         fold.put("kind", "SOM").put("bron", "de som van het bewaartarief van alle vondsten van de Jutter");
         fold.set("type", elemType.deepCopy());
@@ -476,7 +474,7 @@ class RolveldlezerWitnessTest {
     }
 
     /** anchor/jutterswet-gemeenteberging reduced to its feitcreatie — the fold that refuses first is dropped, so the
-     *  viaOuderVeld tussenstap is the position reached. Verifier-clean and ref-clean. */
+     *  creation's own path is the position reached. Verifier-clean and ref-clean. */
     private static Path feitcreatieTussenstap() throws Exception {
         ObjectNode ir = goldenIr(GEMEENTEBERGING);
         houdRegels(ir, Set.of("berging door de kustgemeente"));
@@ -511,11 +509,9 @@ class RolveldlezerWitnessTest {
         rules.putArray("objectCreaties"); rules.putArray("resolvedRegels"); rules.putArray("regelGroepen");
         rules.putArray("uniciteiten");
         ObjectNode arg = JSON.createObjectNode();
+        // the count source: its written name is the element role's declared plural, read at the fold subject
         arg.put("node", "AttribuutRef").put("attribuut", "penningen").put("objecttype", "Jutter")
-           .put("onderwerpBron", "de Jutter").putNull("navigatieRol");
-        arg.putObject("type").put("node", "Onbekend").put("reden", "niet opgelost");
-        arg.put("bron", "penningen van de Jutter").put("set", false);
-        arg.putArray("navigatiePad");
+           .put("bron", "penningen van de Jutter");
         ObjectNode aantal = JSON.createObjectNode();
         aantal.put("node", "Functie").put("kind", "AANTAL");
         aantal.putArray("argumenten").add(arg);

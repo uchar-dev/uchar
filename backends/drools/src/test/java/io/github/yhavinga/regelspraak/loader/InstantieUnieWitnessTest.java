@@ -78,13 +78,16 @@ class InstantieUnieWitnessTest {
         assertTrue(r.getMessage().contains("elementType"), r.getMessage());
     }
 
-    @Test void een_selectie_zonder_relatie_wordt_benoemd_geweigerd() {
-        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
+    @Test void een_selectie_zonder_relatie_is_een_documentfout() {
+        // Since L2 of the v1 wire migration a selection's relation is required and non-null (IR-SPEC ch. 4.3):
+        // a selection without one is not a form this backend declines but a document that is not uchar-ir-v1,
+        // so it is a defect at its pointer, never the gate's auto-excluded channel.
+        IrLoader.Documentfout f = assertThrows(IrLoader.Documentfout.class,
                 () -> tellingVan(doc(unie(TAK_AANGEMELD,
                         "{\"node\":\"InstanceSetBranch\",\"elementType\":\"Vondst\",\"sourceRole\":null,"
                                 + "\"filter\":null,\"bron\":\"geborgen vondsten van de Jutter\"}"))));
-        assertEquals("InstanceSetBranch", r.form());
-        assertTrue(r.getMessage().contains("sourceRole"), r.getMessage());
+        assertTrue(f.plek().endsWith("/branches/1/sourceRole"), f.plek());
+        assertTrue(f.getMessage().contains("expected a RolBinding"), f.getMessage());
     }
 
     @Test void een_unie_met_een_enkele_selectie_wordt_benoemd_geweigerd() {

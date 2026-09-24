@@ -155,8 +155,7 @@ class VensterNestingWitnessTest {
     private static String som(String filter) {
         return "{ \"node\": \"Functie\", \"kind\": \"SOM\", \"argumenten\": [ { \"node\": \"AttribuutRef\","
                 + " \"attribuut\": \"dienstjaren\", \"objecttype\": \"Strandwacht\","
-                + " "
-                + " \"bron\": \"de dienstjaren van de wachten\", \"set\": true } ],"
+                + " \"bron\": \"de dienstjaren van de wachten\" } ],"
                 + " \"elementObjecttype\": \"Strandwacht\", \"leegwaarde\": null, \"filter\": " + filter + ","
                 + " \"dimensieSelectie\": null, \"type\": " + NUM + ", \"bron\": \"de som van de dienstjaren\","
                 + " \"granulariteit\": null, \"bronRol\": " + WACHT + " }";

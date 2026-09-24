@@ -51,12 +51,20 @@ class LeegNegatieWitnessTest {
                 "niet leeg / niet gevuld on an own attribute and over one bound navigation step");
     }
 
-    /** The same document with the navigation's wire binding removed: the written single step alone. */
-    @Test void de_negatie_speelt_over_een_ongebonden_stap() throws Exception {
+    /** The same document with the navigation's wire binding removed. Since L2 of the v1 wire migration a read
+     *  without bindings IS the subject's own (IR-SPEC ch. 4.1a), and this one names Werf under a Schuit subject —
+     *  ill-formed (WF-053) — so neither branch may walk a relation of its own choosing: both refuse the rule. */
+    @Test void de_ongebonden_lezing_van_een_ander_type_weigert_in_beide_takken() throws Exception {
         ObjectNode ir = ir();
         for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
             ((ObjectNode) r.get("voorwaarde").get("operand")).remove("navigatieBindingen");
-        BeideTakken.groen(tijdelijk(ir), geval(), "niet leeg over an unbound written step");
+        Path p = tijdelijk(ir);
+        JsonNode c = geval();
+        for (boolean viaDrl : new boolean[] { false, true }) {
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(p, c, viaDrl),
+                    (viaDrl ? "drl-tekst" : "exec-model") + " walks no relation the wire does not name");
+            assertTrue(e.getMessage().contains("werfpremie van een schuit"), e.getMessage());
+        }
     }
 
     /** CONTROL: the unnegated twin must still answer the plain test — every expectation mirrored. A lowering that

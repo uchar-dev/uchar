@@ -4207,7 +4207,10 @@ public final class ExecModelTranspiler {
         // on the other end is not a fact-only leaf -> null (handled as an exists-join above).
         if (c instanceof Conditie.Rollidmaatschap r) {
             FactModelGenerator.Lidmaatschapsopslag o = FactModelGenerator.lidmaatschapsopslag(model, rolBindingen.get(r));
-            if (subject == null || o.weigering() != null || !o.opSubject()) return null;
+            // no bean holds the link: the storage question's own sentence replaces the generic scope note, the one
+            // the DRL-text branch marks the same check with
+            if (o.weigering() != null) { navReden = o.weigering(); return null; }
+            if (subject == null || !o.opSubject()) return null;
             String veld = o.beanveld();
             // ...and the field must be the REFERENCE, not a declared member that took its name. This reader does not
             // navigate — it null-TESTS the field — which is exactly why it was missed with the four navigated ones:

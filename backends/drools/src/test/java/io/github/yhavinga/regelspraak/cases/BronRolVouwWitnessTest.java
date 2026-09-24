@@ -186,16 +186,18 @@ class BronRolVouwWitnessTest {
         // The row above says both branches refuse; THIS one says they refuse in the SAME WORDS. Until
         // 2026-09-19 they did not: one fold-join cardinality failure had two generic names — the exec branch's
         // "aggregatie buiten Phase-C scope" and the DRL-text branch's bare "TODO aggregatie SOM" — and neither
-        // named the cause. A producer reading the gate report should not have to know which branch answered, so
-        // the sentence comes from FactModelGenerator.bereikjoin, the same place both branches now take the
-        // derivation from. No corpus golden reaches this arm (measured, whole corpus, both branches), which is
-        // exactly why the branches were free to drift here.
+        // named the cause. A producer reading the gate report should not have to know which branch answered.
+        // Since L2 of the v1 wire migration the binding is the fold's only range, so both branches read the role
+        // pair from it and ask the one join-field question; the sentence is the shared cardinality diagnosis,
+        // FactModelGenerator.geenJoinveldReden. No corpus golden reaches this arm (measured, whole corpus, both
+        // branches), which is exactly why the branches were free to drift here.
         ObjectNode ir = somModel();
         for (JsonNode r : IrPad.declaratie(ir, "factTypes", "thuisligging").get("rollen"))
             ((ObjectNode) r).put("meervoudig", true);
         BeideTakken.geweigerd(tijdelijk("bronrol-gedeelde-zin", ir),
                 JSON.readTree(zaak("liggertal", "19", "20", null)),
-                "wiens zusterrol 'thuishaven' MEERVOUDIG is",
+                "de rol 'thuishaven' op Schuit is meervoudig, dus haar opslag is het veld aan de overzijde, en ook"
+                        + " daar leidt het beanmodel er geen af (beide zijden meervoudig)",
                 "one cardinality refusal, one sentence");
     }
 

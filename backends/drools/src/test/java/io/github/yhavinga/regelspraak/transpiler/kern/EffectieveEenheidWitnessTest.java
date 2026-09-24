@@ -87,14 +87,16 @@ class EffectieveEenheidWitnessTest {
                 "de declaratie (kg) is de bron; de annotatie (t) is haar herhaling");
     }
 
-    @Test void zonder_opzoekbare_declaratie_blijft_de_annotatie_staan() {
-        // The resolver left the objecttype unbound: there IS no declaration to consult here, and the
-        // derivation says so rather than inventing one (a null unit would silently disable every
-        // restatement downstream).
+    @Test void zonder_opzoekbare_declaratie_claimt_de_lezing_niets() {
+        // The resolver left the objecttype unbound, or the type declares no member of that name (a count
+        // source names a role): there IS no declaration to consult. Since L2 of the v1 wire migration a
+        // reference carries no annotation either — the record's type slot is never filled from the wire — so
+        // the derivation claims no unit and no datatype rather than reading the slot.
         Expr.AttribuutRef losse = new Expr.AttribuutRef("gewicht", null, "iets", null, num(TON), bron());
-        assertEquals(TON, kaal().eenheidVan(losse));
+        assertNull(kaal().eenheidVan(losse));
+        assertTrue(kaal().van(losse).isOnbekend(), "geen declaratie, dus geen datatype");
         Objecttype leeg = new Objecttype("Vondst");   // declares no member of that name
-        assertEquals(TON, kaal().eenheidVan(new Expr.AttribuutRef("gewicht", leeg, "een vondst", null, num(TON), bron())));
+        assertNull(kaal().eenheidVan(new Expr.AttribuutRef("gewicht", leeg, "een vondst", null, num(TON), bron())));
     }
 
     @Test void een_parameterref_leest_de_parameterdeclaratie() {
@@ -229,11 +231,12 @@ class EffectieveEenheidWitnessTest {
         assertNull(eff.van(lezing).eenheidOf(), "ook op de datatype-route (van) blijft de eenheid weg");
     }
 
-    @Test void een_ongebonden_binderlezing_houdt_haar_annotatie() {
-        // No Let of that name anywhere: there is nothing to derive from, so the annotation stands —
-        // the same honest fallback as an AttribuutRef without a declaration.
+    @Test void een_ongebonden_binderlezing_claimt_niets() {
+        // No Let of that name anywhere: there is nothing to derive from, and since L2 the read carries no
+        // annotation of its own, so it claims no unit — the same answer as an AttribuutRef without a declaration.
         Expr lezing = new Expr.BinderRef("onbekend", num(TON), bron());
-        assertEquals(TON, overLets().eenheidVan(lezing));
+        assertNull(overLets().eenheidVan(lezing));
+        assertTrue(overLets().van(lezing).isOnbekend(), "geen binding, dus geen datatype");
     }
 
     @Test void een_keuze_leest_de_tak_niet_haar_eigen_claim() {
@@ -319,19 +322,25 @@ class EffectieveEenheidWitnessTest {
     }
 
     @Test void alleen_de_eenheid_wordt_geent_de_rest_van_de_annotatie_blijft() {
-        // The derivation replaces exactly one facet. Soort and precision are equally repetitions, but this
-        // backend reads neither for a restatement (it reads Afgerond.decimalen, a NODE field), so grafting
-        // more than the unit would move behaviour the clause does not ask to move.
-        Expr.AttribuutRef ref = new Expr.AttribuutRef("gewicht", vondst(), "een vondst", null,
+        // The derivation replaces exactly one facet of a derived position's annotation. Soort and precision
+        // are equally repetitions, but this backend reads neither for a restatement (it reads
+        // Afgerond.decimalen, a NODE field), so grafting more than the unit would move behaviour the clause
+        // does not ask to move. (A reference has no annotation to graft onto since L2: its datatype is its
+        // declaration's, whole.)
+        Objecttype ot = vondst();
+        Expr.Binair som = new Expr.Binair(Expr.BinOp.PLUS, liegendeRef(ot), liegendeRef(ot),
                 new Datatype.Numeriek(true, 7, Datatype.Teken.POSITIEF, TON), bron());
-        Datatype uit = kaal().van(ref);
+        Datatype uit = kaal().van(som);
         assertEquals(new Datatype.Numeriek(true, 7, Datatype.Teken.POSITIEF, KG), uit);
+        assertSame(ot.attribuut("gewicht"), kaal().van(liegendeRef(ot)), "de lezing draagt de declaratie zelf");
     }
 
     @Test void een_annotatie_die_al_klopt_levert_hetzelfde_object_op() {
         // The no-op path a verifier-clean document takes: nothing is rebuilt, so a document that obeys
         // WF-091 lowers exactly as it did before this derivation existed.
-        Expr.AttribuutRef eerlijk = new Expr.AttribuutRef("gewicht", vondst(), "een vondst", null, num(KG), bron());
+        Objecttype ot = vondst();
+        Expr.AttribuutRef lezing = new Expr.AttribuutRef("gewicht", ot, "een vondst", null, null, bron());
+        Expr.Binair eerlijk = new Expr.Binair(Expr.BinOp.PLUS, lezing, lezing, num(KG), bron());
         assertSame(eerlijk.type(), kaal().van(eerlijk));
     }
 }

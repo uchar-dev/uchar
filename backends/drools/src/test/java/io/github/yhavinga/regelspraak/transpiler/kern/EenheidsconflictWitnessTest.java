@@ -297,9 +297,11 @@ class EenheidsconflictWitnessTest {
     }
 
     /**
-     * The harness's own direction, at the same position: move only the ANNOTATION of that same reference to the
-     * same foreign unit. The declaration is the source, so nothing may fault and the DRL text may not move by a
-     * character — this is the property that keeps {@code check-reftype-derivation.sh} green under the fence.
+     * The harness's own direction: move only an ANNOTATION to the same foreign unit. Since L2 of the v1 wire
+     * migration a reference carries none — its datatype is its declaration's — so the nearest annotation is the
+     * additive composite's own, the derived position the two reads meet in. The declarations are the source, so
+     * nothing may fault and the DRL text may not move by a character — this is the property that keeps
+     * {@code check-reftype-derivation.sh} green under the fence.
      */
     @Test void een_liegende_annotatie_boven_een_kloppende_declaratie_verandert_niets() throws Exception {
         int gezien = 0;
@@ -317,6 +319,25 @@ class EenheidsconflictWitnessTest {
         }
         assertTrue(gezien > 0, "geen enkele golden bood een verdraaibare annotatie op deze positie");
         assertEquals(List.of(), bewogen, "de annotatie is niet de bron: een leugen daar mag niets bewegen");
+    }
+
+    /** The reference itself can no longer lie: an annotation written on it is a field the wire does not have, and
+     *  the loader refuses it by name, at its pointer, before any branch lowers a thing. */
+    @Test void een_annotatie_op_de_lezing_zelf_weigert_de_lader_bij_naam() throws Exception {
+        int gezien = 0;
+        for (Path ir : goldens()) {
+            JsonNode kopie = JSON.readTree(Files.readString(ir));
+            ObjectNode ref = additieveRechterRef(kopie);
+            if (ref == null) continue;
+            gezien++;
+            ref.putObject("type").put("node", "Numeriek").put("geheel", false).put("decimalen", 2)
+                    .put("teken", "ONBEPAALD").set("eenheid", JSON.readTree(VREEMD));
+            IrLoader.Documentfout f = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(kopie),
+                    naam(ir));
+            assertTrue(f.plek().endsWith("/waarde/rechts/type") && f.getMessage().contains("unknown field"),
+                    naam(ir) + ": " + f.getMessage());
+        }
+        assertTrue(gezien > 0, "geen enkele golden droeg een optelling van twee gedeclareerde lezingen");
     }
 
     // ---------------- twisting ----------------
@@ -403,12 +424,12 @@ class EenheidsconflictWitnessTest {
         return kopie;
     }
 
-    /** A copy whose right addend's ANNOTATED unit is foreign — the declaration untouched. */
+    /** A copy whose additive composite's ANNOTATED unit is foreign — the declarations untouched. */
     private static JsonNode metVerdraaideAnnotatie(JsonNode ir) throws Exception {
         JsonNode kopie = ir.deepCopy();
-        ObjectNode ref = additieveRechterRef(kopie);
-        if (ref == null) return null;
-        ((ObjectNode) ref.get("type")).set("eenheid", JSON.readTree(VREEMD));
+        JsonNode regel = additieveRegel(kopie);
+        if (regel == null || !(regel.get("waarde").get("type") instanceof ObjectNode type)) return null;
+        type.set("eenheid", JSON.readTree(VREEMD));
         return kopie;
     }
 

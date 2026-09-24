@@ -302,7 +302,7 @@ class LaderWeigeringWitnessTest {
         ontbreekt(ir, domein + "/datatype", "node");
 
         ir = golden(BAKENMEESTER);
-        ((ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("doel").get("type")).remove("node");
+        ((ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("waarde").get("type")).remove("node");
         IrLoader.Documentfout e = weigert(ir, "Datatype.node");
         assertTrue(e.getMessage().contains("missing field 'node'"), e.getMessage());
     }
