@@ -49,9 +49,9 @@ class EigenLezingWitnessTest {
     private static void weigert(ObjectNode ir, String type) {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir), type);
         assertEquals("/rules/rules/0/versions/0/value", e.plek(), e.getMessage());
-        assertTrue(e.getMessage().contains("an attribute reference without a path is the subject's own"
+        assertTrue(e.getMessage().endsWith(": an attribute reference without a path is the subject's own"
                 + " read, so its subjectType is the subject type 'Munt' — '" + type + "' names another type, which only"
-                + " a navigation reaches (WF-053)"), e.getMessage());
+                + " a navigation reaches"), e.getMessage());
     }
 
     // ---------------- fixtures ----------------

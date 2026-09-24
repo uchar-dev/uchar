@@ -237,9 +237,9 @@ class ReferentielaagWeigeringWitnessTest {
         ObjectNode ir = golden(MUNTTELLING);
         bron(ir, 0).put("attribute", "gewicht").put("subjectType", "Munt");
         IrLoader.Documentfout e = weigert(ir, "/rules/rules/0/versions/0/value/arguments/0");
-        assertTrue(e.getMessage().contains("the source of this count aggregation reads 'gewicht', a member of the"
+        assertTrue(e.getMessage().endsWith(": the source of this count aggregation reads 'gewicht', a member of the"
                 + " element type 'Munt': a count folds INSTANCES, so its source is a count source naming the relation's"
-                + " role, never a value read per contributor (WF-093)"), e.getMessage());
+                + " role, never a value read per contributor"), e.getMessage());
     }
 
     @Test void een_waardevouw_over_een_rolnaam_weigert() throws Exception {

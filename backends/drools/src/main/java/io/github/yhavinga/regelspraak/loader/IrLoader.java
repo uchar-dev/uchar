@@ -436,7 +436,7 @@ public final class IrLoader {
                         && !Namen.norm(ot.naam).equals(Namen.norm(s.naam)))
                     throw new Documentfout(plekken.get(a), "an attribute reference without a path is the subject's"
                             + " own read, so its subjectType is the subject type '" + s.naam + "' — '"
-                            + ot.naam + "' names another type, which only a navigation reaches (WF-053)");
+                            + ot.naam + "' names another type, which only a navigation reaches");
             }
             case Expr.Functie f -> {
                 boolean setbron = f.elementObjecttype() != null && f.argumenten().size() == 1
@@ -1656,7 +1656,7 @@ public final class IrLoader {
             if (attribuut || kenmerk)
                 throw new Documentfout(plek, "the source of this count aggregation reads '" + a + "', a member of the"
                         + " element type '" + el.naam + "': a count folds INSTANCES, so its source is a count source"
-                        + " naming the relation's role, never a value read per contributor (WF-093)");
+                        + " naming the relation's role, never a value read per contributor");
             return;
         }
         if (WAARDEVOUWEN.contains(fk) && kenmerk)

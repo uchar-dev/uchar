@@ -64,8 +64,8 @@ class LeegNegatieWitnessTest {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
                 "no branch walks a relation the wire does not name");
         assertEquals("/rules/rules/2/versions/0/condition/operand", e.plek(), e.getMessage());
-        assertTrue(e.getMessage().contains("its subjectType is the subject type 'Schuit' — 'Werf' names another type,"
-                + " which only a navigation reaches (WF-053)"), e.getMessage());
+        assertTrue(e.getMessage().endsWith("its subjectType is the subject type 'Schuit' — 'Werf' names another type,"
+                + " which only a navigation reaches"), e.getMessage());
     }
 
     /** CONTROL: the unnegated twin must still answer the plain test — every expectation mirrored. A lowering that

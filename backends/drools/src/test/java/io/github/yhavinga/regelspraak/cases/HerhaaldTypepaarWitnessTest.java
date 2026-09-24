@@ -157,8 +157,8 @@ class HerhaaldTypepaarWitnessTest {
         JsonNode ir = JSON.readTree(Files.readString(creatieVariant(doelVergelijking("romplengte", "8"), true)));
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
         assertEquals("/rules/factCreations/0/versions/0/condition/left", e.plek(), e.getMessage());
-        assertTrue(e.getMessage().contains("its subjectType is the subject type 'Haven' — 'Schuit' names another type,"
-                + " which only a navigation reaches (WF-053)"), e.getMessage());
+        assertTrue(e.getMessage().endsWith("its subjectType is the subject type 'Haven' — 'Schuit' names another type,"
+                + " which only a navigation reaches"), e.getMessage());
     }
 
     @Test void feitcreatie_binnen_en_voor_het_geldigheidsvenster() throws Exception {
