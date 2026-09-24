@@ -1,0 +1,1 @@
+day-kind condition reads the session value 'Rekendatum'
