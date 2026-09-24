@@ -3342,14 +3342,18 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         "a bronPad is admissible only as the range of a single-argument VALUE fold's set source \
          — a count's range is one step, spelled bronRol (WF-102)"
   | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol = Some _ as bron_rol; filter; _ } ->
-      (* D9, ref's arm word for word: a count source names a role; a name that
-         is an attribute of the element type reads a value per member, which a
-         count does not fold *)
+      (* WF-093 (b), the verifier's sentence and ref's arm: a count source
+         names a role; a name that is a MEMBER of the element type — an
+         attribute or a characteristic — reads a value per contributor, which
+         a count does not fold *)
       (match attribuut with
-      | Some a when Ir_v0.Checks.find_ci (objecttype ctx el).attributen a <> None ->
+      | Some a
+        when Ir_v0.Checks.find_ci (objecttype ctx el).attributen a <> None
+             || Ir_v0.Checks.has_kenmerk (objecttype ctx el) a ->
           fault
-            "a count over %S, which is an attribute of %S: a count source names the counted \
-             role, and a value read per member is a value fold's source (WF-093)"
+            "the source of this AANTAL aggregation reads '%s', a member of the element type '%s': \
+             a count folds INSTANCES, so its source is a count source naming the relation's \
+             role, never a value read per contributor (WF-093)"
             a el
       | _ -> ());
       (* D8 (ii), the count source: the single argument of a count that

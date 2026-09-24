@@ -6872,7 +6872,22 @@ let () =
   faults_with ~name:"AANTAL over an attribute name refuses (D9)"
     ~ir:(vervang ir ~waar:{|"kind": "AANTAL_GEVULDE"|} ~door:{|"kind": "AANTAL"|})
     ~case_text:aantalgevulde_case
-    ~needle:"a count over \"gewicht\", which is an attribute of \"Vondst\""
+    ~needle:"reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES";
+  (* WF-093 (b) names a MEMBER of the element type, a characteristic as much
+     as an attribute *)
+  faults_with ~name:"AANTAL over a characteristic name refuses (WF-093)"
+    ~ir:
+      (vervang
+         (vervang
+            (vervang ir ~waar:{|"kind": "AANTAL_GEVULDE"|} ~door:{|"kind": "AANTAL"|})
+            ~waar:{|{ "node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst",|}
+            ~door:{|{ "node": "AttribuutRef", "attribuut": "gekeurd", "objecttype": "Vondst",|})
+         ~waar:{|"characteristics": [] } ],
+    "factTypes"|}
+         ~door:{|"characteristics": [ { "node": "Characteristic", "name": "gekeurd", "kind": "BIJVOEGLIJK" } ] } ],
+    "factTypes"|})
+    ~case_text:aantalgevulde_case
+    ~needle:"reads 'gekeurd', a member of the element type 'Vondst': a count folds INSTANCES"
 
 (* ch. 3.4c's one exclusion, and the pin a red case rests on *)
 let () =

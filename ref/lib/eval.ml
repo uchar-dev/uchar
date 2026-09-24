@@ -1494,14 +1494,19 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
     match (element_objecttype, argumenten) with
     | Some el, [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ]
       when ranged && kind = Aantal ->
-        (* D9: a count source names a role; a name that is an attribute of
-           the element type reads a value per member, which a count does not
-           fold — refused rather than counted as though it named the role *)
+        (* WF-093 (b), the verifier's sentence: a count source names a role;
+           a name that is a MEMBER of the element type — an attribute or a
+           characteristic — reads a value per contributor, which a count does
+           not fold, so it is refused rather than counted as though it named
+           the role *)
         (match attribuut with
-        | Some a when Ir_v0.Checks.find_ci (objecttype env el).attributen a <> None ->
+        | Some a
+          when Ir_v0.Checks.find_ci (objecttype env el).attributen a <> None
+               || Ir_v0.Checks.has_kenmerk (objecttype env el) a ->
             Value.fault
-              "a count over %S, which is an attribute of %S: a count source names the counted \
-               role, and a value read per member is a value fold's source (WF-093)"
+              "the source of this AANTAL aggregation reads '%s', a member of the element type \
+               '%s': a count folds INSTANCES, so its source is a count source naming the \
+               relation's role, never a value read per contributor (WF-093)"
               a el
         | _ -> ());
         `Instances
