@@ -4395,6 +4395,25 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                       ~what:(Printf.sprintf "the %s aggregation" kn)
                       ~decl:(ty a) ~typ:f.typ)
                   f.argumenten))
+      (* WF-083 (c), the element type of the subject's own read (IR-SPEC
+         ch. 4.3, L2 fix round). A TOTAAL without a range is the subject's
+         own read, so the type it folds over IS the subject type: the
+         executors read the subject's own timeline there and never this
+         field. Before this arm a foreign type in it was verifier-clean and
+         moved no answer (measured by the lens on the union of the L2
+         card), so the field could state a type nothing checked. Equality
+         in the WF-001 form, the comparison the source's own anchor makes
+         in [aggregation_source_check]. *)
+      @ (match (f.kind, f.element_objecttype, subject) with
+         | Totaal, Some el, Some st when source_position && (not ranged) && norm el <> norm st ->
+             [ v "WF-083" (sub "elementObjecttype")
+                 (Printf.sprintf
+                    "the elementObjecttype '%s' of a TOTAAL without a range is not the fold \
+                     subject '%s': without a range the fold is the subject's own read, so the \
+                     type it folds over is the subject type, and the executors never read this \
+                     field there"
+                    el st) ]
+         | _ -> [])
       (* the operands: the source position is judged by the fold-source rules
          ([aggregation_source_check]), every other operand is walked as the
          ordinary read it is — with two or more arguments the node is the
