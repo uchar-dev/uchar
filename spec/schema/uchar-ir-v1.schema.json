@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uchar.dev/schema/uchar-ir-v1.schema.json",
   "title": "uchar-ir-v1",
-  "description": "Structural schema for the 'uchar-ir-v1' format in its L4 shape with the source record of L5 (spec/proposals/V1-WIREMIGRATIE.md, section 7, landings L1 to L4 and step M7 of L5): the former 'regelspraak-ir-v0' dump of the reference frontend's fully resolved model with its CONTAINER restructured (L1), its REFERENCE LAYER reduced to the symbolic form (L2), its TYPE SYSTEM in the v1 nodes (L3), its RULE AND EXPRESSION LAYER in the v1 forms (L4) and its SOURCE TEXTS in the source record (M7), and nothing else. The root nests {format, model, rules, diagnostics} (decision V3 (b)): 'model' is the declaration set of IR-SPEC ch. 2, as lists in declaration order (WF-019), with no map keys; 'rules' carries the rule lists under their v0 keys, in v0 order, the single-source and union uniqueness forms in the one list 'uniciteiten'; 'diagnostics' is the producer's own account (WF-113). An ObjectType carries its members as Attribute and Characteristic nodes with their own facets (TimelineFacet), and a Domain wraps a name and a datatype that carries no self-name at the declaration position (domainDatatype). A reference carries only its symbolic form (L2): the five reference classes carry no type annotation, because the declaration is the one source; an attribute reference names its navigation by role bindings alone; the range of an instance fold, a quantifier fold and an allocation is written, never derived; one RoleMembership node names the fact type and the role the subject fills; a fact creation and a scoped uniqueness carry their symbolic fields alone; and the datatype union has no member for an unknown type (B16). The type system is the v1 one (L3): a number is a Number, and a percentage a Number with the unit '%' that carries the presentation tag 'percentage' at a declaration (B14); a date is one Date node with its precision (B15); a unit is a Unit whose conversion factor is an exact rational {num, den} (B17 (i)) and whose declaration carries its spellings; a unit system is a list of units; a day kind is a DayKind node with its plural; and a parameter carries the attribute's timeline facet without a timeline name (B18). The rule and expression layer is the v1 one (L4): each of the six named forms (Rule, Allocation, ObjectCreation, FactCreation, Consistency, Uniqueness) is {node, name, versions}, its version records carrying no node discriminator (B19); a rule version carries the 'initialisation' flag and, on a computing version, the dialect tag 'presentation', and whether it writes an attribute or a characteristic is its target's declaration (B20); a uniqueness names its sources, one or more (B27); a fact creation reaches its target along a 'path' of role bindings; an aggregation and a builtin call are two nodes, each with its own fields (B21); a literal carries a typed value in the variants of the case format, a decimal point where the source wrote a comma (B22); and the bound day of a day-kind definition and the two session values are BoundDay and ContextValue (B23). Every source text is in the source record (M7, B26): the optional field 'source' (sourceReference: a non-empty 'snippet', and 'line' where a consistency version or a rule group has one) stands where the v0 field 'bron' stood, on every node that carried one, and is required on an Onopgelost marker; a node without source text carries none. Every other node keeps its v0 name, field spellings and enum values until its own landing. Canonical key order is the 'properties' order of this schema: the migration script and every emitter write exactly that order, and every node L1 left untouched keeps the order its v0 emitter wrote, less the keys L2 removed. Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (connectingRole on an object creation, the fold ranges sourceRole and sourcePath on an Aggregation and bronRol and bronPad on a Kwantorvouw, and statuteAnnotations — of each range pair the second is the multi-step fold-source range of IR-SPEC ch. 4.3 / WF-102, two or more RolBindings subject-outwards and mutually exclusive with the first, which is the one-step spelling of the same field; and statuteAnnotations carries the statute annotations on a Rule, when present a non-empty list of non-empty strings and absent otherwise) are optional where L2 makes none of them required (the allocation's connectingRole and the range of a fold and of a quantifier fold, under the conditions stated on those nodes), the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md §2), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess, the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength) and the value-level binding Let (spec/proposals/PHASE5C-TUTORIAL.md §6), and the optional lists functionDefs (under 'model') and prioritizedDefaults (under 'rules') carry the named-logic and prioritized-defaults extensions, and a Default carries the optional excepties field — its nested exception groups (RUNTIME-SEMANTICS ch. 7.9) — the v0 emitter produces none of them EXCEPT Let and BinderRef, which the RegelSpraak frontend has emitted for a §13.4.2.10 variabelendeel since the let-lowering card (2026-09-01); when present they are all written whole, never null. Wire epoch v0.10 (the rename epoch, 2026-08-29): the prioritized-defaults spellings (prioritizedDefaults/Default/ExceptionGroup and the defaults list) are the only valid ones; a file in the pre-rename spelling (see the formerly notes, IR-SPEC ch. 6.1 and RUNTIME-SEMANTICS ch. 7.1) fails loudly against the closed objects. Section citations (e.g. §13.3.3) point into the source language spec by number only.",
+  "description": "Structural schema for the 'uchar-ir-v1' format in its L5 shape (spec/proposals/V1-WIREMIGRATIE.md, section 7, landings L1 to L5): the former 'regelspraak-ir-v0' dump of the reference frontend's fully resolved model with its CONTAINER restructured (L1), its REFERENCE LAYER reduced to the symbolic form (L2), its TYPE SYSTEM in the v1 nodes (L3), its RULE AND EXPRESSION LAYER in the v1 forms (L4), and its SOURCE TEXTS in the source record and its NAMES in the spelling of IR-SPEC (L5). The root nests {format, model, rules, diagnostics} (decision V3 (b)): 'model' is the declaration set of IR-SPEC ch. 2, as lists in declaration order (WF-019), with no map keys; 'rules' carries one list per rule-form kind, in the order of IR-SPEC ch. 2 (Rules), the single-source and union uniqueness forms in the one list 'uniquenesses'; 'diagnostics' is the producer's own account (WF-113). An ObjectType carries its members as Attribute and Characteristic nodes with their own facets (TimelineFacet), and a Domain wraps a name and a datatype that carries no self-name at the declaration position (domainDatatype). A reference carries only its symbolic form (L2): the five reference classes carry no type annotation, because the declaration is the one source; an attribute reference names its navigation by role bindings alone; the range of an instance fold, a quantifier fold and an allocation is written, never derived; one RoleMembership node names the fact type and the role the subject fills; a fact creation and a scoped uniqueness carry their symbolic fields alone; and the datatype union has no member for an unknown type (B16). The type system is the v1 one (L3): a number is a Number, and a percentage a Number with the unit '%' that carries the presentation tag 'percentage' at a declaration (B14); a date is one Date node with its precision (B15); a unit is a Unit whose conversion factor is an exact rational {num, den} (B17 (i)) and whose declaration carries its spellings; a unit system is a list of units; a day kind is a DayKind node with its plural; and a parameter carries the attribute's timeline facet without a timeline name (B18). The rule and expression layer is the v1 one (L4): each of the six named forms (Rule, Allocation, ObjectCreation, FactCreation, Consistency, Uniqueness) is {node, name, versions}, its version records carrying no node discriminator (B19); a rule version carries the 'initialisation' flag and, on a computing version, the dialect tag 'presentation', and whether it writes an attribute or a characteristic is its target's declaration (B20); a uniqueness names its sources, one or more (B27); a fact creation reaches its target along a 'path' of role bindings; an aggregation and a builtin call are two nodes, each with its own fields (B21); a literal carries a typed value in the variants of the case format, a decimal point where the source wrote a comma (B22); and the bound day of a day-kind definition and the two session values are BoundDay and ContextValue (B23). Every source text is in the source record (B26): the optional field 'source' (sourceReference: a non-empty 'snippet', and 'line' where a consistency version or a rule group has one) stands where the v0 field 'bron' stood, on every node that carried one, and is required on an Unresolved marker; a node without source text carries none. Every node, field and enum value carries its IR-SPEC name (B6, B10), the enum values in the spelling of IR-SPEC's Conventions (English, lowerCamel), and a field IR-SPEC names optional is absent rather than null on the renamed nodes; the one exception is the rule-status check, which keeps its v0 node Regelversie with its fields regel and inconsistent until its v1 form lands (B25). Canonical key order is the 'properties' order of this schema: the migration script and every emitter write exactly that order, and every node no landing restructured keeps the order its v0 emitter wrote, less the keys L2 removed, with its keys renamed in place. Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (connectingRole on an object creation, the fold ranges sourceRole and sourcePath on an Aggregation and a QuantifierFold, and statuteAnnotations — of each range pair the second is the multi-step fold-source range of IR-SPEC ch. 4.3 / WF-102, two or more RoleBindings subject-outwards and mutually exclusive with the first, which is the one-step spelling of the same field; and statuteAnnotations carries the statute annotations on a Rule, when present a non-empty list of non-empty strings and absent otherwise) are optional where L2 makes none of them required (the allocation's connectingRole and the range of a fold and of a quantifier fold, under the conditions stated on those nodes), the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md §2), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess, the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength) and the value-level binding Let (spec/proposals/PHASE5C-TUTORIAL.md §6), and the optional lists functionDefs (under 'model') and prioritizedDefaults (under 'rules') carry the named-logic and prioritized-defaults extensions, and a Default carries the optional exceptions field — its nested exception groups (RUNTIME-SEMANTICS ch. 7.9) — the v0 emitter produces none of them EXCEPT Let and BinderRef, which the RegelSpraak frontend has emitted for a §13.4.2.10 variabelendeel since the let-lowering card (2026-09-01); when present they are all written whole, never null. Wire epoch v0.10 (the rename epoch, 2026-08-29): the prioritized-defaults spellings (prioritizedDefaults/Default/ExceptionGroup and the defaults list) are the only valid ones; a file in the pre-rename spelling (see the formerly notes, IR-SPEC ch. 6.1 and RUNTIME-SEMANTICS ch. 7.1) fails loudly against the closed objects. Section citations (e.g. §13.3.3) point into the source language spec by number only.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -16,7 +16,7 @@
       "const": "uchar-ir-v1"
     },
     "model": {
-      "description": "The model layer: the declaration set of IR-SPEC ch. 2. The six former v0 registries are lists in declaration order, each entry carrying its name on its node (there is no map key); timelines are unchanged from v0; the day kinds are a list of DayKind nodes, each carrying its own spellings (L3). functionDefs is an extension list: optional, written whole or not at all.",
+      "description": "The model layer: the declaration set of IR-SPEC ch. 2. The six former v0 registries are lists in declaration order, each entry carrying its name on its node (there is no map key); the timelines were a list in v0 already; the day kinds are a list of DayKind nodes, each carrying its own spellings (L3). functionDefs is an extension list: optional, written whole or not at all.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -39,7 +39,7 @@
         "factTypes": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/Feittype"
+            "$ref": "#/$defs/FactType"
           }
         },
         "parameters": {
@@ -63,13 +63,13 @@
         "dimensions": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/Dimensie"
+            "$ref": "#/$defs/Dimension"
           }
         },
         "timelines": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/Tijdlijn"
+            "$ref": "#/$defs/Timeline"
           }
         },
         "dayKinds": {
@@ -88,73 +88,73 @@
       }
     },
     "rules": {
-      "description": "The rule layer: the rule lists under their v0 keys and in v0 order (the keys land later). Since L4 the six named forms are in their v1 shape (IR-SPEC ch. 3, Versioning): each entry is one form with its versions, and the single-source and union uniqueness forms share the one list uniciteiten (delta B27; the v0 list uniciteitUnies is gone, and the migration and the emitters write the single-source forms first, then the unions, each in v0 order). The day-kind definitions, start-point determinations and rule groups keep their v0 content until their own landing. prioritizedDefaults is an extension list: optional, written whole or not at all.",
+      "description": "The rule layer: one list per rule-form kind, in the order of IR-SPEC ch. 2 (Rules); the lists carried their v0 keys until L5. Since L4 the six named forms are in their v1 shape (IR-SPEC ch. 3, Versioning): each entry is one form with its versions, and the single-source and union uniqueness forms share the one list uniquenesses (delta B27; the migration and the emitters write the single-source forms first, then the unions, each in v0 order). prioritizedDefaults is an extension list: optional, written whole or not at all.",
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "resolvedRegels",
-        "resolvedDagsoorten",
-        "objectCreaties",
-        "verdelingen",
-        "consistenties",
-        "uniciteiten",
-        "feitCreaties",
-        "resolvedStartpunten",
-        "regelGroepen"
+        "rules",
+        "dayKindDefinitions",
+        "objectCreations",
+        "allocations",
+        "consistencies",
+        "uniquenesses",
+        "factCreations",
+        "startPointDeterminations",
+        "ruleGroups"
       ],
       "properties": {
-        "resolvedRegels": {
+        "rules": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/Rule"
           }
         },
-        "resolvedDagsoorten": {
+        "dayKindDefinitions": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/ResolvedDagsoort"
+            "$ref": "#/$defs/DayKindDefinition"
           }
         },
-        "objectCreaties": {
+        "objectCreations": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/ObjectCreation"
           }
         },
-        "verdelingen": {
+        "allocations": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/Allocation"
           }
         },
-        "consistenties": {
+        "consistencies": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/Consistency"
           }
         },
-        "uniciteiten": {
+        "uniquenesses": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/Uniqueness"
           }
         },
-        "feitCreaties": {
+        "factCreations": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/FactCreation"
           }
         },
-        "resolvedStartpunten": {
+        "startPointDeterminations": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/ResolvedStartpunt"
+            "$ref": "#/$defs/StartPointDetermination"
           }
         },
-        "regelGroepen": {
+        "ruleGroups": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/ResolvedRegelGroep"
+            "$ref": "#/$defs/RuleGroup"
           }
         },
         "prioritizedDefaults": {
@@ -175,7 +175,7 @@
   },
   "$defs": {
     "Number": {
-      "description": "A number (IR-SPEC ch. 2.4). 'whole' and 'decimals' carry the precision form; which combinations are well-formed is WF-007, a verifier check, so the schema admits any integer for 'decimals'. 'sign' is always written and keeps its v0 enum spelling until its own landing; a number declared without a sign is ONBEPAALD. 'unit' absent: the number carries no unit. A percentage is a Number whose unit is '%' (or a rate with '%' as its numerator), delta B14 of spec/proposals/V1-WIREMIGRATIE.md and CONSTRUCTS row 27; 'presentation' is its dialect(regelspraak) presentation tag, the one value 'percentage', written only at a declaration position (the datatype of an attribute, a parameter or a domain, a sum-type payload, a list element, a struct field, a function or lambda parameter, a function result) and never on a type annotation, where the verifier refuses it (WF-007). The tag carries no meaning for evaluation. Key order is this 'properties' order.",
+      "description": "A number (IR-SPEC ch. 2.4). 'whole' and 'decimals' carry the precision form; which combinations are well-formed is WF-007, a verifier check, so the schema admits any integer for 'decimals'. 'sign' is always written; a number declared without a sign is unspecified. 'unit' absent: the number carries no unit. A percentage is a Number whose unit is '%' (or a rate with '%' as its numerator), delta B14 of spec/proposals/V1-WIREMIGRATIE.md and CONSTRUCTS row 27; 'presentation' is its dialect(regelspraak) presentation tag, the one value 'percentage', written only at a declaration position (the datatype of an attribute, a parameter or a domain, a sum-type payload, a list element, a struct field, a function or lambda parameter, a function result) and never on a type annotation, where the verifier refuses it (WF-007). The tag carries no meaning for evaluation. Key order is this 'properties' order.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -196,10 +196,10 @@
         },
         "sign": {
           "enum": [
-            "ONBEPAALD",
-            "NEGATIEF",
-            "NIET_NEGATIEF",
-            "POSITIEF"
+            "unspecified",
+            "negative",
+            "nonNegative",
+            "positive"
           ]
         },
         "unit": {
@@ -210,7 +210,7 @@
         }
       }
     },
-    "Tekst": {
+    "Text": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -218,11 +218,11 @@
       ],
       "properties": {
         "node": {
-          "const": "Tekst"
+          "const": "Text"
         }
       }
     },
-    "Booleaan": {
+    "Boolean": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -230,7 +230,7 @@
       ],
       "properties": {
         "node": {
-          "const": "Booleaan"
+          "const": "Boolean"
         }
       }
     },
@@ -254,25 +254,25 @@
         }
       }
     },
-    "Enumeratie": {
+    "Enumeration": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "domein",
-        "waarden"
+        "domain",
+        "values"
       ],
       "properties": {
         "node": {
-          "const": "Enumeratie"
+          "const": "Enumeration"
         },
-        "domein": {
+        "domain": {
           "type": [
             "string",
             "null"
           ]
         },
-        "waarden": {
+        "values": {
           "type": "array",
           "items": {
             "type": [
@@ -390,16 +390,16 @@
           "$ref": "#/$defs/Number"
         },
         {
-          "$ref": "#/$defs/Tekst"
+          "$ref": "#/$defs/Text"
         },
         {
-          "$ref": "#/$defs/Booleaan"
+          "$ref": "#/$defs/Boolean"
         },
         {
           "$ref": "#/$defs/Date"
         },
         {
-          "$ref": "#/$defs/Enumeratie"
+          "$ref": "#/$defs/Enumeration"
         },
         {
           "$ref": "#/$defs/SumType"
@@ -413,22 +413,22 @@
       ]
     },
     "domainDatatype": {
-      "description": "The datatype at the DECLARATION position, Domain.datatype (IR-SPEC ch. 2.3). It admits the same datatype nodes as 'datatype', except that Enumeratie, SumType and StructType appear here in a form without their self-name field ('domein' on Enumeratie, 'domain' on SumType and StructType): the Domain wrapper carries the name, and a second spelling of it cannot be written. At every REFERENCE position (attributes, parameters, expressions, payloads, fields, elements) the 'datatype' union applies unchanged: there that field is the domain reference of IR-SPEC ch. 2.4 (WF-003), not a self-name, and stays required. The three declaration forms share their remaining field schemas with the reference forms by JSON pointer, so each field is defined once.",
+      "description": "The datatype at the DECLARATION position, Domain.datatype (IR-SPEC ch. 2.3). It admits the same datatype nodes as 'datatype', except that Enumeration, SumType and StructType appear here in a form without their self-name field 'domain': the Domain wrapper carries the name, and a second spelling of it cannot be written. At every REFERENCE position (attributes, parameters, expressions, payloads, fields, elements) the 'datatype' union applies unchanged: there that field is the domain reference of IR-SPEC ch. 2.4 (WF-003), not a self-name, and stays required. The three declaration forms share their remaining field schemas with the reference forms by JSON pointer, so each field is defined once.",
       "oneOf": [
         {
           "$ref": "#/$defs/Number"
         },
         {
-          "$ref": "#/$defs/Tekst"
+          "$ref": "#/$defs/Text"
         },
         {
-          "$ref": "#/$defs/Booleaan"
+          "$ref": "#/$defs/Boolean"
         },
         {
           "$ref": "#/$defs/Date"
         },
         {
-          "$ref": "#/$defs/DomainEnumeratie"
+          "$ref": "#/$defs/DomainEnumeration"
         },
         {
           "$ref": "#/$defs/DomainSumType"
@@ -441,20 +441,20 @@
         }
       ]
     },
-    "DomainEnumeratie": {
-      "description": "Enumeratie at the declaration position of a Domain: the 'domein' self-name is absent (see domainDatatype); 'waarden' is the reference form's own field schema.",
+    "DomainEnumeration": {
+      "description": "Enumeration at the declaration position of a Domain: the 'domain' self-name is absent (see domainDatatype); 'values' is the reference form's own field schema.",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "waarden"
+        "values"
       ],
       "properties": {
         "node": {
-          "const": "Enumeratie"
+          "const": "Enumeration"
         },
-        "waarden": {
-          "$ref": "#/$defs/Enumeratie/properties/waarden"
+        "values": {
+          "$ref": "#/$defs/Enumeration/properties/values"
         }
       }
     },
@@ -721,22 +721,22 @@
         }
       ]
     },
-    "TekstReeks": {
+    "TextComposition": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "delen",
+        "parts",
         "type"
       ],
       "properties": {
         "node": {
-          "const": "TekstReeks"
+          "const": "TextComposition"
         },
-        "delen": {
+        "parts": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/TekstReeksDeel"
+            "$ref": "#/$defs/TextCompositionPart"
           }
         },
         "type": {
@@ -754,33 +754,33 @@
         }
       }
     },
-    "Binair": {
+    "Binary": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
         "op",
-        "links",
-        "rechts",
+        "left",
+        "right",
         "type"
       ],
       "properties": {
         "node": {
-          "const": "Binair"
+          "const": "Binary"
         },
         "op": {
           "enum": [
-            "PLUS",
-            "MIN",
-            "VERMINDERD_MET",
-            "MAAL",
-            "GEDEELD_DOOR",
-            "GEDEELD_DOOR_ABS",
-            "TOT_DE_MACHT",
-            "PERCENTAGE_VAN"
+            "plus",
+            "minus",
+            "reducedBy",
+            "times",
+            "dividedBy",
+            "dividedByAbs",
+            "power",
+            "percentageOf"
           ]
         },
-        "links": {
+        "left": {
           "anyOf": [
             {
               "$ref": "#/$defs/expr"
@@ -790,7 +790,7 @@
             }
           ]
         },
-        "rechts": {
+        "right": {
           "anyOf": [
             {
               "$ref": "#/$defs/expr"
@@ -830,14 +830,14 @@
         },
         "kind": {
           "enum": [
-            "SOM",
-            "TOTAAL",
-            "AANTAL",
-            "MINIMUM",
-            "MAXIMUM",
-            "EERSTE",
-            "LAATSTE",
-            "AANTAL_GEVULDE"
+            "sum",
+            "total",
+            "count",
+            "minimum",
+            "maximum",
+            "first",
+            "last",
+            "filledCount"
           ]
         },
         "arguments": {
@@ -850,21 +850,21 @@
           "type": "string"
         },
         "filter": {
-          "$ref": "#/$defs/conditie"
+          "$ref": "#/$defs/condition"
         },
         "emptyFallback": {
           "$ref": "#/$defs/expr"
         },
         "dimensionSelection": {
-          "$ref": "#/$defs/DimensieSelectie"
+          "$ref": "#/$defs/DimensionSelection"
         },
         "sourceRole": {
-          "$ref": "#/$defs/RolBinding"
+          "$ref": "#/$defs/RoleBinding"
         },
         "sourcePath": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/RolBinding"
+            "$ref": "#/$defs/RoleBinding"
           }
         },
         "type": {
@@ -892,7 +892,7 @@
             "properties": {
               "kind": {
                 "not": {
-                  "const": "TOTAAL"
+                  "const": "total"
                 }
               },
               "arguments": {
@@ -925,7 +925,7 @@
           }
         }
       ],
-      "description": "An aggregation (IR-SPEC ch. 4.3): the eight fold kinds, with only the fields a fold carries (delta B21); an absent optional field is none. The RANGE of an instance fold is written, never derived (delta B12; CONSTRUCTS row 4): with an elementType, exactly one argument and a kind other than TOTAAL, exactly one of sourceRole (the one-step range) and sourcePath (the multi-step range, WF-102) is present. A TOTAAL without either is the subject's own read over its own attribute (the verifier holds that it is, WF-083), and no fold carries both. With two or more arguments the node is the listed value fold, whose operands are ordinary reads: it has no range, whatever elementType it carries. Which kind admits emptyFallback and dimensionSelection is WF-037's."
+      "description": "An aggregation (IR-SPEC ch. 4.3): the eight fold kinds, with only the fields a fold carries (delta B21); an absent optional field is none. The RANGE of an instance fold is written, never derived (delta B12; CONSTRUCTS row 4): with an elementType, exactly one argument and a kind other than total, exactly one of sourceRole (the one-step range) and sourcePath (the multi-step range, WF-102) is present. A total without either is the subject's own read over its own attribute (the verifier holds that it is, WF-083), and no fold carries both. With two or more arguments the node is the listed value fold, whose operands are ordinary reads: it has no range, whatever elementType it carries. Which kind admits emptyFallback and dimensionSelection is WF-037's."
     },
     "BuiltinCall": {
       "type": "object",
@@ -942,23 +942,23 @@
         },
         "kind": {
           "enum": [
-            "WORTEL",
-            "ABSOLUTE_WAARDE",
-            "CONCATENATIE",
-            "TIJDSDUUR",
-            "ABSOLUTE_TIJDSDUUR",
-            "EERSTE_PAASDAG",
-            "TIJDSEVENREDIG_DEEL",
-            "AANTAL_DAGEN_IN",
-            "JAAR_UIT",
-            "MAAND_UIT",
-            "DAG_UIT",
-            "UUR_UIT",
-            "MINUUT_UIT",
-            "SECONDE_UIT",
-            "MILLISECONDE_UIT",
-            "DATUM_MET",
-            "DATUMTIJD_MET"
+            "squareRoot",
+            "absoluteValue",
+            "concatenation",
+            "duration",
+            "absoluteDuration",
+            "easterSunday",
+            "timeProportionalPart",
+            "dayCount",
+            "yearOf",
+            "monthOf",
+            "dayOf",
+            "hourOf",
+            "minuteOf",
+            "secondOf",
+            "millisecondOf",
+            "dateWith",
+            "dateTimeWith"
           ]
         },
         "arguments": {
@@ -968,15 +968,15 @@
           }
         },
         "filter": {
-          "$ref": "#/$defs/conditie"
+          "$ref": "#/$defs/condition"
         },
         "granularity": {
           "enum": [
-            "DAG",
-            "WEEK",
-            "MAAND",
-            "KWARTAAL",
-            "JAAR"
+            "day",
+            "week",
+            "month",
+            "quarter",
+            "year"
           ]
         },
         "type": {
@@ -993,23 +993,23 @@
           "$ref": "#/$defs/sourceReference"
         }
       },
-      "description": "A builtin call (IR-SPEC ch. 4.3): the seventeen scalar, text and date builtins, with plain arguments and only the fields a builtin carries (delta B21): no element type, range, empty fallback or dimension selection, which are an Aggregation's. 'granularity' is the bucket and 'filter' the condition of TIJDSEVENREDIG_DEEL and AANTAL_DAGEN_IN; which kind requires or admits them is WF-037's and WF-056's."
+      "description": "A builtin call (IR-SPEC ch. 4.3): the seventeen scalar, text and date builtins, with plain arguments and only the fields a builtin carries (delta B21): no element type, range, empty fallback or dimension selection, which are an Aggregation's. 'granularity' is the bucket and 'filter' the condition of timeProportionalPart and dayCount; which kind requires or admits them is WF-037's and WF-056's."
     },
-    "Afgerond": {
+    "Rounding": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "basis",
-        "modus",
-        "decimalen",
+        "base",
+        "mode",
+        "decimals",
         "type"
       ],
       "properties": {
         "node": {
-          "const": "Afgerond"
+          "const": "Rounding"
         },
-        "basis": {
+        "base": {
           "anyOf": [
             {
               "$ref": "#/$defs/expr"
@@ -1019,16 +1019,16 @@
             }
           ]
         },
-        "modus": {
+        "mode": {
           "enum": [
-            "NAAR_BENEDEN",
-            "NAAR_BOVEN",
-            "REKENKUNDIG",
-            "RICHTING_NUL",
-            "WEG_VAN_NUL"
+            "floor",
+            "ceiling",
+            "halfAwayFromZero",
+            "towardZero",
+            "awayFromZero"
           ]
         },
-        "decimalen": {
+        "decimals": {
           "type": "integer"
         },
         "type": {
@@ -1046,21 +1046,19 @@
         }
       }
     },
-    "Begrensd": {
+    "Clamp": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "basis",
-        "minimum",
-        "maximum",
+        "base",
         "type"
       ],
       "properties": {
         "node": {
-          "const": "Begrensd"
+          "const": "Clamp"
         },
-        "basis": {
+        "base": {
           "anyOf": [
             {
               "$ref": "#/$defs/expr"
@@ -1071,24 +1069,10 @@
           ]
         },
         "minimum": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/expr"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/$defs/expr"
         },
         "maximum": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/expr"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/$defs/expr"
         },
         "type": {
           "anyOf": [
@@ -1103,27 +1087,28 @@
         "source": {
           "$ref": "#/$defs/sourceReference"
         }
-      }
+      },
+      "description": "A clamp (IR-SPEC ch. 4.2): 'base' bounded below by 'minimum' and above by 'maximum'; an absent bound is no bound on that side."
     },
-    "AttribuutRef": {
+    "AttributeReference": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "attribuut",
-        "objecttype"
+        "attribute",
+        "subjectType"
       ],
       "properties": {
         "node": {
-          "const": "AttribuutRef"
+          "const": "AttributeReference"
         },
-        "attribuut": {
+        "attribute": {
           "type": [
             "string",
             "null"
           ]
         },
-        "objecttype": {
+        "subjectType": {
           "type": [
             "string",
             "null"
@@ -1132,29 +1117,29 @@
         "source": {
           "$ref": "#/$defs/sourceReference"
         },
-        "navigatieBindingen": {
+        "path": {
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/RolBinding"
+            "$ref": "#/$defs/RoleBinding"
           },
-          "description": "The navigation hops as symbolic role bindings, subject-outward, one binding per hop — the bound role is the role the hop reaches (the far role). Present exactly when the reference reads off the subject: a reference without it is the subject's own read, whose objecttype is the subject type (WF-053); the zero-hop self-reference of IR-SPEC ch. 4.1a is such a read. Written whole or not at all, never null."
+          "description": "The navigation hops as symbolic role bindings, subject-outward, one binding per hop — the bound role is the role the hop reaches (the far role). Present exactly when the reference reads off the subject: a reference without it is the subject's own read, whose subjectType is the subject type (WF-053); the zero-hop self-reference of IR-SPEC ch. 4.1a is such a read. Written whole or not at all, never null."
         }
       }
     },
-    "DimensieCel": {
+    "DimensionCellRead": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "attribuut",
+        "attribute",
         "labels"
       ],
       "properties": {
         "node": {
-          "const": "DimensieCel"
+          "const": "DimensionCellRead"
         },
-        "attribuut": {
+        "attribute": {
           "anyOf": [
             {
               "$ref": "#/$defs/expr"
@@ -1178,7 +1163,7 @@
         }
       }
     },
-    "ParameterRef": {
+    "ParameterReference": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -1187,7 +1172,7 @@
       ],
       "properties": {
         "node": {
-          "const": "ParameterRef"
+          "const": "ParameterReference"
         },
         "parameter": {
           "type": [
@@ -1200,18 +1185,18 @@
         }
       }
     },
-    "VariabeleRef": {
+    "VariableReference": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "naam"
+        "name"
       ],
       "properties": {
         "node": {
-          "const": "VariabeleRef"
+          "const": "VariableReference"
         },
-        "naam": {
+        "name": {
           "type": [
             "string",
             "null"
@@ -1244,7 +1229,7 @@
           "$ref": "#/$defs/sourceReference"
         }
       },
-      "description": "A session value (IR-SPEC ch. 4.1; delta B23): 'name' is the evaluation date Rekendatum or the evaluation year Rekenjaar, in that spelling. The schema leaves the name a free string on purpose: the name set is closed and crossed byte for byte by WF-098, which gives a name outside it a witness of its own, 'de dag' included (the bound day is BoundDay)."
+      "description": "A session value (IR-SPEC ch. 4.1; delta B23): 'name' is the evaluation date evaluationDate or the evaluation year evaluationYear, in that spelling. The schema leaves the name a free string on purpose: the name set is closed and crossed byte for byte by WF-098, which gives a name outside it a witness of its own, 'de dag' and the v0 spelling 'Rekendatum' included (the bound day is BoundDay)."
     },
     "BoundDay": {
       "type": "object",
@@ -1266,7 +1251,7 @@
       },
       "description": "The bound day of a day-kind definition (IR-SPEC ch. 3.7 and 4.1; delta B23): the day the definition is about, not a session value. It carries no name. Outside a day-kind definition it denotes nothing, and every executor faults on it by name (RUNTIME-SEMANTICS ch. 3.8)."
     },
-    "ExprOnopgelost": {
+    "ExprUnresolved": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -1275,7 +1260,7 @@
       ],
       "properties": {
         "node": {
-          "const": "Onopgelost"
+          "const": "Unresolved"
         },
         "type": {
           "$ref": "#/$defs/datatype"
@@ -1291,18 +1276,18 @@
       "additionalProperties": false,
       "required": [
         "node",
-        "basis",
-        "datum",
+        "base",
+        "date",
         "type"
       ],
       "properties": {
         "node": {
           "const": "TemporalRead"
         },
-        "basis": {
+        "base": {
           "$ref": "#/$defs/expr"
         },
-        "datum": {
+        "date": {
           "$ref": "#/$defs/expr"
         },
         "type": {
@@ -1312,7 +1297,7 @@
           "$ref": "#/$defs/sourceReference"
         }
       },
-      "description": "Extension node (v1, CONSTRUCTS row 11): the point-in-time read read(tl, d) of spec/RUNTIME-SEMANTICS.md ch. 3.3. Never emitter-produced; basis, datum and type are required and non-null."
+      "description": "Extension node (v1, CONSTRUCTS row 11): the point-in-time read read(tl, d) of spec/RUNTIME-SEMANTICS.md ch. 3.3. Never emitter-produced; base, date and type are required and non-null."
     },
     "Construct": {
       "type": "object",
@@ -1419,7 +1404,7 @@
           "$ref": "#/$defs/sourceReference"
         }
       },
-      "description": "Extension node (IR-SPEC Method; wire node BinderRef, EMITTER-PRODUCED since the let-lowering card, 2026-09-01): reads the nearest enclosing binder of its name \u2014 a match arm's, a lambda/function parameter, or a Let binder (CONSTRUCTS rows 36 and 24; spec/RUNTIME-SEMANTICS.md ch. 9.2 / ch. 10.6). The RegelSpraak emitter produces one for every read of a \u00a713.4.2.10 variabele in a rule's result part. Deliberately distinct from VariabeleRef, which since that card survives only as the residual marker for a variable the resolver could NOT bind (row 24). 'name' is required and non-null; the read carries no type of its own, the binder's declaration is the one source (B13)."
+      "description": "Extension node (IR-SPEC Method; wire node BinderRef, EMITTER-PRODUCED since the let-lowering card, 2026-09-01): reads the nearest enclosing binder of its name — a match arm's, a lambda/function parameter, or a Let binder (CONSTRUCTS rows 36 and 24; spec/RUNTIME-SEMANTICS.md ch. 9.2 / ch. 10.6). The RegelSpraak emitter produces one for every read of a §13.4.2.10 variabele in a rule's result part. Deliberately distinct from VariableReference, which since that card survives only as the residual marker for a variable the resolver could NOT bind (row 24). 'name' is required and non-null; the read carries no type of its own, the binder's declaration is the one source (B13)."
     },
     "StructLiteral": {
       "type": "object",
@@ -1578,7 +1563,7 @@
           "$ref": "#/$defs/datatype"
         },
         "condition": {
-          "$ref": "#/$defs/conditie"
+          "$ref": "#/$defs/condition"
         },
         "then": {
           "$ref": "#/$defs/expr"
@@ -1721,7 +1706,7 @@
           "type": "string"
         },
         "condition": {
-          "$ref": "#/$defs/conditie"
+          "$ref": "#/$defs/condition"
         },
         "source": {
           "$ref": "#/$defs/sourceReference"
@@ -1805,12 +1790,12 @@
           ]
         },
         "sourceRole": {
-          "$ref": "#/$defs/RolBinding"
+          "$ref": "#/$defs/RoleBinding"
         },
         "filter": {
           "anyOf": [
             {
-              "$ref": "#/$defs/conditie"
+              "$ref": "#/$defs/condition"
             },
             {
               "type": "null"
@@ -1844,7 +1829,7 @@
           "$ref": "#/$defs/sourceReference"
         }
       },
-      "description": "Extension node (IR-SPEC Method; wire node InstanceSetUnion, EMITTER-PRODUCED): the §5.7 concatenation of subject expressions as a set of INSTANCES — the source of an instance count (CONSTRUCTS row 1; spec/IR-SPEC.md ch. 4.3, semantics spec/RUNTIME-SEMANTICS.md ch. 3.4d). It carries no 'type': it denotes instances, not a value, so there is no annotation to twist and none to believe. Admissible ONLY as the single argument of an AANTAL aggregation, with at least two branches, and the count carrying it names no source of its own — WF-110. The members are the UNION of the branches' contributors, deduplicated on instance identity."
+      "description": "Extension node (IR-SPEC Method; wire node InstanceSetUnion, EMITTER-PRODUCED): the §5.7 concatenation of subject expressions as a set of INSTANCES — the source of an instance count (CONSTRUCTS row 1; spec/IR-SPEC.md ch. 4.3, semantics spec/RUNTIME-SEMANTICS.md ch. 3.4d). It carries no 'type': it denotes instances, not a value, so there is no annotation to twist and none to believe. Admissible ONLY as the single argument of an Aggregation of kind count, with at least two branches, and the count carrying it names no source of its own — WF-110. The members are the UNION of the branches' contributors, deduplicated on instance identity."
     },
     "FunctionDef": {
       "type": "object",
@@ -1888,10 +1873,10 @@
           "$ref": "#/$defs/Literal"
         },
         {
-          "$ref": "#/$defs/TekstReeks"
+          "$ref": "#/$defs/TextComposition"
         },
         {
-          "$ref": "#/$defs/Binair"
+          "$ref": "#/$defs/Binary"
         },
         {
           "$ref": "#/$defs/Aggregation"
@@ -1900,22 +1885,22 @@
           "$ref": "#/$defs/BuiltinCall"
         },
         {
-          "$ref": "#/$defs/Afgerond"
+          "$ref": "#/$defs/Rounding"
         },
         {
-          "$ref": "#/$defs/Begrensd"
+          "$ref": "#/$defs/Clamp"
         },
         {
-          "$ref": "#/$defs/AttribuutRef"
+          "$ref": "#/$defs/AttributeReference"
         },
         {
-          "$ref": "#/$defs/DimensieCel"
+          "$ref": "#/$defs/DimensionCellRead"
         },
         {
-          "$ref": "#/$defs/ParameterRef"
+          "$ref": "#/$defs/ParameterReference"
         },
         {
-          "$ref": "#/$defs/VariabeleRef"
+          "$ref": "#/$defs/VariableReference"
         },
         {
           "$ref": "#/$defs/ContextValue"
@@ -1924,7 +1909,7 @@
           "$ref": "#/$defs/BoundDay"
         },
         {
-          "$ref": "#/$defs/ExprOnopgelost"
+          "$ref": "#/$defs/ExprUnresolved"
         },
         {
           "$ref": "#/$defs/TemporalRead"
@@ -1976,18 +1961,18 @@
         }
       ]
     },
-    "Letterlijk": {
+    "LiteralChunk": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "tekst"
+        "text"
       ],
       "properties": {
         "node": {
-          "const": "Letterlijk"
+          "const": "LiteralChunk"
         },
-        "tekst": {
+        "text": {
           "type": [
             "string",
             "null"
@@ -1995,7 +1980,7 @@
         }
       }
     },
-    "Ingevoegd": {
+    "EmbeddedExpression": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -2004,7 +1989,7 @@
       ],
       "properties": {
         "node": {
-          "const": "Ingevoegd"
+          "const": "EmbeddedExpression"
         },
         "expr": {
           "anyOf": [
@@ -2018,30 +2003,30 @@
         }
       }
     },
-    "TekstReeksDeel": {
+    "TextCompositionPart": {
       "description": "A part of a text sequence: a literal fragment or an interpolated expression.",
       "oneOf": [
         {
-          "$ref": "#/$defs/Letterlijk"
+          "$ref": "#/$defs/LiteralChunk"
         },
         {
-          "$ref": "#/$defs/Ingevoegd"
+          "$ref": "#/$defs/EmbeddedExpression"
         }
       ]
     },
-    "DimensieSelectie": {
+    "DimensionSelection": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "dimensie",
+        "dimension",
         "labels"
       ],
       "properties": {
         "node": {
-          "const": "DimensieSelectie"
+          "const": "DimensionSelection"
         },
-        "dimensie": {
+        "dimension": {
           "type": [
             "string",
             "null"
@@ -2061,35 +2046,34 @@
         }
       }
     },
-    "Vergelijking": {
+    "Comparison": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
         "op",
-        "links",
-        "rechts",
-        "periode"
+        "left",
+        "right"
       ],
       "properties": {
         "node": {
-          "const": "Vergelijking"
+          "const": "Comparison"
         },
         "op": {
           "enum": [
-            "KLEINER",
-            "KLEINER_OF_GELIJK",
-            "GROTER",
-            "GROTER_OF_GELIJK",
-            "GELIJK",
-            "ONGELIJK",
-            "EERDER",
-            "EERDER_OF_GELIJK",
-            "LATER",
-            "LATER_OF_GELIJK"
+            "less",
+            "lessOrEqual",
+            "greater",
+            "greaterOrEqual",
+            "equal",
+            "notEqual",
+            "earlier",
+            "earlierOrEqual",
+            "later",
+            "laterOrEqual"
           ]
         },
-        "links": {
+        "left": {
           "anyOf": [
             {
               "$ref": "#/$defs/expr"
@@ -2099,7 +2083,7 @@
             }
           ]
         },
-        "rechts": {
+        "right": {
           "anyOf": [
             {
               "$ref": "#/$defs/expr"
@@ -2109,44 +2093,35 @@
             }
           ]
         },
-        "periode": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/GeheelPeriode"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "wholePeriod": {
+          "$ref": "#/$defs/WholePeriod"
         },
         "source": {
           "$ref": "#/$defs/sourceReference"
         }
       }
     },
-    "Predicaat": {
+    "Predicate": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "soort",
+        "kind",
         "operand",
-        "dagsoort",
-        "negatie",
-        "cijfers",
-        "periode"
+        "negated",
+        "digits"
       ],
       "properties": {
         "node": {
-          "const": "Predicaat"
+          "const": "Predicate"
         },
-        "soort": {
+        "kind": {
           "enum": [
-            "LEEG",
-            "GEVULD",
-            "ELFPROEF",
-            "NUMERIEK_MET_EXACT",
-            "DAGSOORT"
+            "empty",
+            "filled",
+            "elevenTest",
+            "exactDigits",
+            "dayKind"
           ]
         },
         "operand": {
@@ -2159,77 +2134,55 @@
             }
           ]
         },
-        "dagsoort": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "dayKind": {
+          "type": "string"
         },
-        "negatie": {
+        "negated": {
           "type": "boolean"
         },
-        "cijfers": {
+        "digits": {
           "type": "integer"
         },
-        "periode": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/GeheelPeriode"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "wholePeriod": {
+          "$ref": "#/$defs/WholePeriod"
         },
         "source": {
           "$ref": "#/$defs/sourceReference"
         }
       }
     },
-    "Kenmerk": {
+    "CharacteristicCheck": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "kenmerk",
-        "negatie",
-        "eigenaar",
-        "periode"
+        "characteristic",
+        "negated"
       ],
       "properties": {
         "node": {
-          "const": "Kenmerk"
+          "const": "CharacteristicCheck"
         },
-        "kenmerk": {
+        "characteristic": {
           "type": [
             "string",
             "null"
           ]
         },
-        "negatie": {
+        "negated": {
           "type": "boolean"
         },
-        "eigenaar": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "host": {
+          "type": "string"
         },
-        "periode": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/GeheelPeriode"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "wholePeriod": {
+          "$ref": "#/$defs/WholePeriod"
         },
         "source": {
           "$ref": "#/$defs/sourceReference"
         },
-        "navigatieBinding": {
-          "$ref": "#/$defs/RolBinding",
+        "navigation": {
+          "$ref": "#/$defs/RoleBinding",
           "description": "The one navigation hop of a navigated characteristic check as a symbolic role binding — the bound role is the role the hop reaches, and the characteristic lives on the type it reaches. Absent: the check reads the subject itself (IR-SPEC ch. 4.1a and ch. 4.5). Written whole or not at all, never null."
         }
       }
@@ -2265,40 +2218,24 @@
       },
       "description": "The role check (IR-SPEC ch. 4.5): true iff a link of the declared fact type 'factType' exists in which the subject fills 'role', named by its declared name, and whose other role is filled by an instance of 'counterpartType'; 'negated': no such link exists. 'counterpartType' is optional: absent, the other role's declared filler type is meant; present, it names a declared object type that is a subtype of, or equal to, the declared filler type of the other role (WF-034, IR-SPEC ch. 4.6 (o)); the migration and the emitter write the field only where it narrows (the L2 card, backlog/done/20260923-l2-referentielaag.md, U12). One node for both directions of the check (delta B9 of spec/proposals/V1-WIREMIGRATIE.md; CONSTRUCTS row 5); its key order is this 'properties' order."
     },
-    "Periode": {
+    "TimeWindow": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "vanaf",
-        "tot",
-        "totInclusief"
+        "toInclusive"
       ],
       "properties": {
         "node": {
-          "const": "Periode"
+          "const": "TimeWindow"
         },
-        "vanaf": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/expr"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "from": {
+          "$ref": "#/$defs/expr"
         },
-        "tot": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/expr"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "to": {
+          "$ref": "#/$defs/expr"
         },
-        "totInclusief": {
+        "toInclusive": {
           "type": "boolean"
         },
         "source": {
@@ -2306,36 +2243,36 @@
         }
       }
     },
-    "Samengesteld": {
+    "Compound": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "kwantor",
-        "drempel",
-        "onderdelen"
+        "quantifier",
+        "threshold",
+        "parts"
       ],
       "properties": {
         "node": {
-          "const": "Samengesteld"
+          "const": "Compound"
         },
-        "kwantor": {
+        "quantifier": {
           "enum": [
-            "DE",
-            "ALLE",
-            "GEEN",
-            "TEN_MINSTE",
-            "TEN_HOOGSTE",
-            "PRECIES"
+            "the",
+            "all",
+            "none",
+            "atLeast",
+            "atMost",
+            "exactly"
           ]
         },
-        "drempel": {
+        "threshold": {
           "type": "integer"
         },
-        "onderdelen": {
+        "parts": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/conditie"
+            "$ref": "#/$defs/condition"
           }
         },
         "source": {
@@ -2343,36 +2280,35 @@
         }
       }
     },
-    "Kwantorvouw": {
+    "QuantifierFold": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "kwantor",
-        "elementObjecttype",
-        "filter",
-        "toets"
+        "quantifier",
+        "elementType",
+        "test"
       ],
       "properties": {
         "node": {
-          "const": "Kwantorvouw"
+          "const": "QuantifierFold"
         },
-        "kwantor": {
+        "quantifier": {
           "enum": [
-            "ALLE",
-            "GEEN",
-            "TEN_MINSTE",
-            "TEN_HOOGSTE",
-            "PRECIES"
+            "all",
+            "none",
+            "atLeast",
+            "atMost",
+            "exactly"
           ],
-          "description": "The quantifier over the instance range. ALLE = every contributor satisfies 'toets'; GEEN = none does; the three counting forms compare the NUMBER of contributors that satisfy it with 'drempel' (TEN_MINSTE: count >= drempel; TEN_HOOGSTE: count <= drempel; PRECIES: count == drempel). The vocabulary is Samengesteld's, over instances instead of parts. DE is NOT admitted here: the bare definite describes ONE member and is not a quantification over a set (WF-108 (a) refuses a hand-written one by name)."
+          "description": "The quantifier over the instance range. all = every contributor satisfies 'test'; none = none does; the three counting forms compare the NUMBER of contributors that satisfy it with 'threshold' (atLeast: count >= threshold; atMost: count <= threshold; exactly: count == threshold). The vocabulary is Compound's, over instances instead of parts. the is NOT admitted here: the bare definite describes ONE member and is not a quantification over a set (WF-108 (a) refuses a hand-written one by name)."
         },
-        "drempel": {
+        "threshold": {
           "type": "integer",
           "minimum": 1,
-          "description": "The counting quantifier's threshold — Samengesteld's field, under Samengesteld's rule (WF-041: at least 1). Written EXACTLY under TEN_MINSTE / TEN_HOOGSTE / PRECIES and omitted under ALLE / GEEN, which is where this node diverges from Samengesteld (there the field is always present and a zero nobody reads): a field that is meaningful in one position and inert everywhere else can say anything. The conditional below is the wire half of WF-108 (e); the verifier cites the rule."
+          "description": "The counting quantifier's threshold — Compound's field, under Compound's rule (WF-041: at least 1). Written EXACTLY under atLeast / atMost / exactly and omitted under all / none, which is where this node diverges from Compound (there the field is always present and a zero nobody reads): a field that is meaningful in one position and inert everywhere else can say anything. The conditional below is the wire half of WF-108 (e); the verifier cites the rule."
         },
-        "elementObjecttype": {
+        "elementType": {
           "type": [
             "string",
             "null"
@@ -2380,20 +2316,13 @@
           "description": "The instance type quantified over — the POPULATION, extensionally (IR-SPEC ch. 2.2): the contributors are the instances the range reaches whose type is the subtype-or-equal of this one."
         },
         "filter": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/conditie"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "The die/dat subselection, evaluated PER CONTRIBUTOR with the element as subject — the same field, the same reading and the same machinery as Aggregation.filter (RUNTIME-SEMANTICS ch. 3.4a). It selects WHICH members are quantified over; 'toets' is what each selected member must satisfy."
+          "$ref": "#/$defs/condition",
+          "description": "The die/dat subselection, evaluated PER CONTRIBUTOR with the element as subject — the same field, the same reading and the same machinery as Aggregation.filter (RUNTIME-SEMANTICS ch. 3.4a). It selects WHICH members are quantified over; 'test' is what each selected member must satisfy. Absent: no subselection."
         },
-        "toets": {
+        "test": {
           "anyOf": [
             {
-              "$ref": "#/$defs/conditie"
+              "$ref": "#/$defs/condition"
             },
             {
               "type": "null"
@@ -2404,43 +2333,43 @@
         "source": {
           "$ref": "#/$defs/sourceReference"
         },
-        "bronRol": {
-          "$ref": "#/$defs/RolBinding",
-          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the one-step range — the connecting relation with the role whose filler instances the quantifier RANGES OVER bound. Spelled exactly as Aggregation.sourceRole. Exactly one of bronRol and bronPad is present: the range is written, never derived (B12). Never null."
+        "sourceRole": {
+          "$ref": "#/$defs/RoleBinding",
+          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the one-step range — the connecting relation with the role whose filler instances the quantifier RANGES OVER bound. Spelled exactly as Aggregation.sourceRole. Exactly one of sourceRole and sourcePath is present: the range is written, never derived (B12). Never null."
         },
-        "bronPad": {
+        "sourcePath": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/RolBinding"
+            "$ref": "#/$defs/RoleBinding"
           },
-          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the MULTI-STEP range, the relations walked subject-outwards, each step spelled exactly as bronRol is. Two or more steps; the one-step range IS bronRol and the two fields are mutually exclusive (WF-108 (c), the WF-102 discipline under this node's own rule)."
+          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the MULTI-STEP range, the relations walked subject-outwards, each step spelled exactly as sourceRole is. Two or more steps; the one-step range IS sourceRole and the two fields are mutually exclusive (WF-108 (c), the WF-102 discipline under this node's own rule)."
         }
       },
       "allOf": [
         {
           "if": {
             "required": [
-              "kwantor"
+              "quantifier"
             ],
             "properties": {
-              "kwantor": {
+              "quantifier": {
                 "enum": [
-                  "TEN_MINSTE",
-                  "TEN_HOOGSTE",
-                  "PRECIES"
+                  "atLeast",
+                  "atMost",
+                  "exactly"
                 ]
               }
             }
           },
           "then": {
             "required": [
-              "drempel"
+              "threshold"
             ]
           },
           "else": {
             "not": {
               "required": [
-                "drempel"
+                "threshold"
               ]
             }
           }
@@ -2449,18 +2378,18 @@
           "oneOf": [
             {
               "required": [
-                "bronRol"
+                "sourceRole"
               ]
             },
             {
               "required": [
-                "bronPad"
+                "sourcePath"
               ]
             }
           ]
         }
       ],
-      "description": "Extension node (IR-SPEC Method; wire node Kwantorvouw): the QUANTIFIER FOLD — first-order quantification of a condition over the members of a linked instance set (IR-SPEC ch. 4.5; RUNTIME-SEMANTICS ch. 3.9a). The first-order sibling of Samengesteld, which quantifies over PARTS of one subject; this one quantifies over INSTANCES, and takes its range fields from the instance fold (ch. 4.3) unchanged."
+      "description": "Extension node (IR-SPEC Method; wire node QuantifierFold): the QUANTIFIER FOLD — first-order quantification of a condition over the members of a linked instance set (IR-SPEC ch. 4.5; RUNTIME-SEMANTICS ch. 3.9a). The first-order sibling of Compound, which quantifies over PARTS of one subject; this one quantifies over INSTANCES, and takes its range fields from the instance fold (ch. 4.3) unchanged."
     },
     "Regelversie": {
       "type": "object",
@@ -2486,9 +2415,10 @@
         "source": {
           "$ref": "#/$defs/sourceReference"
         }
-      }
+      },
+      "description": "The rule-status check (IR-SPEC ch. 4.5, RuleStatusCheck): the wire keeps its v0 node Regelversie with its v0 fields regel and inconsistent until the v1 form lands (B25); its source text is in 'source' since L5."
     },
-    "ConditieOnopgelost": {
+    "ConditionUnresolved": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -2497,7 +2427,7 @@
       ],
       "properties": {
         "node": {
-          "const": "Onopgelost"
+          "const": "Unresolved"
         },
         "source": {
           "$ref": "#/$defs/sourceReference"
@@ -2505,86 +2435,82 @@
       },
       "description": "A condition the resolver could not resolve; surfaces as an explicit marker. 'source' is required: a marker is accounted for by the diagnostic that quotes its snippet (WF-113 (b))."
     },
-    "conditie": {
+    "condition": {
       "description": "A resolved condition, discriminated on 'node'.",
       "oneOf": [
         {
-          "$ref": "#/$defs/Vergelijking"
+          "$ref": "#/$defs/Comparison"
         },
         {
-          "$ref": "#/$defs/Predicaat"
+          "$ref": "#/$defs/Predicate"
         },
         {
-          "$ref": "#/$defs/Kenmerk"
+          "$ref": "#/$defs/CharacteristicCheck"
         },
         {
           "$ref": "#/$defs/RoleMembership"
         },
         {
-          "$ref": "#/$defs/Periode"
+          "$ref": "#/$defs/TimeWindow"
         },
         {
-          "$ref": "#/$defs/Samengesteld"
+          "$ref": "#/$defs/Compound"
         },
         {
-          "$ref": "#/$defs/Kwantorvouw"
+          "$ref": "#/$defs/QuantifierFold"
         },
         {
           "$ref": "#/$defs/Regelversie"
         },
         {
-          "$ref": "#/$defs/ConditieOnopgelost"
+          "$ref": "#/$defs/ConditionUnresolved"
         }
       ]
     },
-    "GeheelPeriode": {
+    "WholePeriod": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "jaar",
-        "niet"
+        "granularity",
+        "negated"
       ],
       "properties": {
         "node": {
-          "const": "GeheelPeriode"
+          "const": "WholePeriod"
         },
-        "jaar": {
-          "type": "boolean"
+        "granularity": {
+          "enum": [
+            "year",
+            "month"
+          ]
         },
-        "niet": {
+        "negated": {
           "type": "boolean"
         }
-      }
+      },
+      "description": "The whole-period qualifier (IR-SPEC ch. 4.5): 'granularity' is the period the qualifier spans, year or month, and 'negated' negates it. It stands in the optional field 'wholePeriod' of a Comparison, a Predicate and a CharacteristicCheck; an absent 'wholePeriod' is no qualifier."
     },
-    "Geldigheid": {
+    "Validity": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "node",
-        "vanaf",
-        "tot"
+        "node"
       ],
       "properties": {
         "node": {
-          "const": "Geldigheid"
+          "const": "Validity"
         },
-        "vanaf": {
-          "type": [
-            "string",
-            "null"
-          ],
+        "from": {
+          "type": "string",
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
         },
-        "tot": {
-          "type": [
-            "string",
-            "null"
-          ],
+        "to": {
+          "type": "string",
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
         }
       },
-      "description": "A validity window; 'vanaf'/'tot' are strict ISO dates (four-two-two digit fields, digits only, no sign and no extended year — WF-084's date-literal grammar, IR-SPEC ch. 4.1) or null for open-ended. The pattern is load-bearing, not decoration: the verifier holds a bound as an OPAQUE STRING and orders it lexicographically for WF-021's overlap check (which states the assumption in as many words), and that ordering is sound only inside this lexeme. The interpreter and the ASP backend held bounds the same way until 2026-09-23; since then they read the evaluation date and both bounds through the strict date reader, compare day numbers and refuse a non-date naming its position. Measured 2026-09-11 without the pattern: '+012026-01-01' as a bound made the interpreter and the ASP backend apply a rule version that the Drools backend, which parses the lexeme, did not — one document, two answers — while 'niet-een-datum' passed every reader in the house. A pattern cannot check the calendar; '2026-02-30' matches here and is refused one field deeper, by WF-101 in the verifier and by each executor's date reader."
+      "description": "A validity window; 'from'/'to' are strict ISO dates (four-two-two digit fields, digits only, no sign and no extended year — WF-084's date-literal grammar, IR-SPEC ch. 4.1), and an absent bound is open-ended: a Validity with neither bound is always. The pattern is load-bearing, not decoration: the verifier holds a bound as an OPAQUE STRING and orders it lexicographically for WF-021's overlap check (which states the assumption in as many words), and that ordering is sound only inside this lexeme. The interpreter and the ASP backend held bounds the same way until 2026-09-23; since then they read the evaluation date and both bounds through the strict date reader, compare day numbers and refuse a non-date naming its position. Measured 2026-09-11 without the pattern: '+012026-01-01' as a bound made the interpreter and the ASP backend apply a rule version that the Drools backend, which parses the lexeme, did not — one document, two answers — while 'niet-een-datum' passed every reader in the house. A pattern cannot check the calendar; '2026-02-30' matches here and is refused one field deeper, by WF-101 in the verifier and by each executor's date reader."
     },
     "ObjectType": {
       "description": "An object type (IR-SPEC ch. 2.2). Since M1 each attribute and characteristic is a node carrying its own facets; v0 carried those facets in eight side-maps keyed by member name, so a facet without a member can no longer be written. 'plural' absent = none declared.",
@@ -2670,7 +2596,7 @@
       }
     },
     "Characteristic": {
-      "description": "A characteristic of an ObjectType (IR-SPEC ch. 2.2), in declaration order. 'kind' is the presentation tag and is always written; a characteristic untagged in v0 is ZELFSTANDIG. The values keep their v0 spelling until M8. 'timeline' absent = not time-dependent.",
+      "description": "A characteristic of an ObjectType (IR-SPEC ch. 2.2), in declaration order. 'kind' is the presentation tag and is always written; a characteristic untagged in v0 is nominal. 'timeline' absent = not time-dependent.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -2687,9 +2613,9 @@
         },
         "kind": {
           "enum": [
-            "BIJVOEGLIJK",
-            "BEZITTELIJK",
-            "ZELFSTANDIG"
+            "adjectival",
+            "possessive",
+            "nominal"
           ]
         },
         "timeline": {
@@ -2698,7 +2624,7 @@
       }
     },
     "TimelineFacet": {
-      "description": "The time-dependence of one member (IR-SPEC ch. 2.2). 'granularity' is required and non-null, so a facet without a grid cannot be written; the values keep their v0 spelling until M8. 'count' is always written (1 = single-period). That it is at least 1 is WF-005, a verifier check, so the schema admits any integer here. 'timelineName' is present iff the attribute was declared via a named timeline; a Characteristic's facet is CharacteristicTimelineFacet, which has no such field.",
+      "description": "The time-dependence of one member (IR-SPEC ch. 2.2). 'granularity' is required and non-null, so a facet without a grid cannot be written. 'count' is always written (1 = single-period). That it is at least 1 is WF-005, a verifier check, so the schema admits any integer here. 'timelineName' is present iff the attribute was declared via a named timeline; a Characteristic's facet is CharacteristicTimelineFacet, which has no such field.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -2712,11 +2638,11 @@
         },
         "granularity": {
           "enum": [
-            "DAG",
-            "WEEK",
-            "MAAND",
-            "KWARTAAL",
-            "JAAR"
+            "day",
+            "week",
+            "month",
+            "quarter",
+            "year"
           ]
         },
         "count": {
@@ -2838,29 +2764,29 @@
         }
       }
     },
-    "Feittype": {
+    "FactType": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "naam",
-        "wederkerig",
-        "rollen"
+        "name",
+        "reciprocal",
+        "roles"
       ],
       "properties": {
         "node": {
-          "const": "Feittype"
+          "const": "FactType"
         },
-        "naam": {
+        "name": {
           "type": "string"
         },
-        "wederkerig": {
+        "reciprocal": {
           "type": "boolean"
         },
-        "rollen": {
+        "roles": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/Rol"
+            "$ref": "#/$defs/Role"
           }
         }
       }
@@ -2869,53 +2795,41 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "node",
-        "besluit",
-        "voorwaarde"
+        "node"
       ],
       "properties": {
         "node": {
           "const": "Default"
         },
-        "besluit": {
-          "type": [
-            "boolean",
-            "null"
-          ],
-          "description": "Characteristic defaults only: attribute (true) or do-not-attribute (false); null on attribute defaults."
+        "decision": {
+          "type": "boolean",
+          "description": "Characteristic defaults only: attribute (true) or do-not-attribute (false); absent on attribute defaults."
         },
-        "voorwaarde": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/conditie"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "The justification; null only on the initialisation default (its justification is input-emptiness, ch. 7.3)."
+        "justification": {
+          "$ref": "#/$defs/condition",
+          "description": "The justification; absent only on the initialisation default (its justification is input-emptiness, ch. 7.3) and on a group-default (ch. 7.9)."
         },
-        "consequentie": {
+        "consequence": {
           "$ref": "#/$defs/expr",
           "description": "Attribute defaults only: the default's value; a leeg-evaluating consequence falls through."
         },
-        "initialisatie": {
+        "initialisation": {
           "type": "boolean",
           "description": "The initialisation default (lowest only): justified iff the target is empty in the input facts."
         },
-        "excepties": {
+        "exceptions": {
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "ongeordend",
-            "leden"
+            "unordered",
+            "members"
           ],
           "properties": {
-            "ongeordend": {
+            "unordered": {
               "type": "boolean",
               "description": "Declared-unordered (ch. 7.9): two or more exception groups require this marking, the root regime applied at every level; a differing-deciding exception group propagates the conflict to the root (WF-075)."
             },
-            "leden": {
+            "members": {
               "type": "array",
               "minItems": 1,
               "items": {
@@ -2923,7 +2837,7 @@
               }
             }
           },
-          "description": "Extension field (v1, Phase 5c): the nested exception groups of RUNTIME-SEMANTICS ch. 7.9 — a default's exception slot as a rose tree. A default carrying excepties is either a group-default (no own besluit/consequentie — its exception groups are its decision, carrying a multi-member base or exception group as a chain position) or a form-a default (own besluit/consequentie too — the exception groups decide first, its own consequence the fall-back when they decide nothing). The initialisation and input defaults are root-only. Never emitter-produced."
+          "description": "Extension field (v1, Phase 5c): the nested exception groups of RUNTIME-SEMANTICS ch. 7.9 — a default's exception slot as a rose tree. A default carrying exceptions is either a group-default (no own decision/consequence — its exception groups are its decision, carrying a multi-member base or exception group as a chain position) or a form-a default (own decision/consequence too — the exception groups decide first, its own consequence the fall-back when they decide nothing). The initialisation and input defaults are root-only. Never emitter-produced."
         },
         "source": {
           "$ref": "#/$defs/sourceReference"
@@ -2947,49 +2861,45 @@
           "items": {
             "$ref": "#/$defs/Default"
           },
-          "description": "One exception group — a member of a Default's excepties: a default chain (descending, highest first) inheriting the root group's target, itself possibly nesting via Default.excepties. Carries no target of its own."
+          "description": "One exception group — a member of a Default's exceptions: a default chain (descending, highest first) inheriting the root group's target, itself possibly nesting via Default.exceptions. Carries no target of its own."
         },
         "source": {
           "$ref": "#/$defs/sourceReference"
         }
       },
-      "description": "Extension node (v1, Phase 5c): one exception group — a member of a Default's excepties (RUNTIME-SEMANTICS ch. 7.9). Never emitter-produced."
+      "description": "Extension node (v1, Phase 5c): one exception group — a member of a Default's exceptions (RUNTIME-SEMANTICS ch. 7.9). Never emitter-produced."
     },
     "PrioritizedDefaults": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "naam",
-        "onderwerp",
-        "kenmerk",
+        "name",
+        "subject",
         "defaults",
-        "geldigheid"
+        "validity"
       ],
       "properties": {
         "node": {
           "const": "PrioritizedDefaults"
         },
-        "naam": {
+        "name": {
           "type": [
             "string",
             "null"
           ]
         },
-        "onderwerp": {
+        "subject": {
           "type": "string"
         },
-        "kenmerk": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "characteristic": {
+          "type": "string"
         },
-        "attribuut": {
+        "attribute": {
           "type": "string",
-          "description": "Attribute-defaults target; a group carries exactly one of kenmerk/attribuut (WF-050)."
+          "description": "Attribute-defaults target; a group carries exactly one of characteristic/attribute (WF-050)."
         },
-        "ongeordend": {
+        "unordered": {
           "type": "boolean",
           "description": "Declared-unordered (ch. 7.2): multiple defaults groups on one target are admissible iff every one carries this marking; differing simultaneous decisions route to the \u00a79.5 channel."
         },
@@ -3002,10 +2912,10 @@
         "source": {
           "$ref": "#/$defs/sourceReference"
         },
-        "geldigheid": {
+        "validity": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Geldigheid"
+              "$ref": "#/$defs/Validity"
             },
             {
               "type": "null"
@@ -3013,95 +2923,83 @@
           ]
         }
       },
-      "description": "Extension node (v1, Phase 4): the prioritized-defaults group \u2014 defaults in descending priority; the highest default that decides wins. Characteristic target: besluit (true = attribute, false = do-not-attribute); attribute target: consequentie (a leeg-evaluating consequence falls through); the initialisation default (lowest) is justified iff the target is empty in the input."
+      "description": "Extension node (v1, Phase 4): the prioritized-defaults group — defaults in descending priority; the highest default that decides wins. Characteristic target: decision (true = attribute, false = do-not-attribute); attribute target: consequence (a leeg-evaluating consequence falls through); the initialisation default (lowest) is justified iff the target is empty in the input."
     },
-    "RolBinding": {
+    "RoleBinding": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "feittype",
-        "rol"
+        "factType",
+        "role"
       ],
       "properties": {
         "node": {
-          "const": "RolBinding"
+          "const": "RoleBinding"
         },
-        "feittype": {
+        "factType": {
           "type": "string"
         },
-        "rol": {
+        "role": {
           "type": "string"
         }
       }
     },
-    "Rol": {
+    "Role": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "naam",
-        "objecttypeNaam",
-        "meervoud",
-        "meervoudig"
+        "name",
+        "objectType",
+        "many"
       ],
       "properties": {
         "node": {
-          "const": "Rol"
+          "const": "Role"
         },
-        "naam": {
+        "name": {
           "type": [
             "string",
             "null"
           ]
         },
-        "objecttypeNaam": {
+        "objectType": {
           "type": [
             "string",
             "null"
           ]
         },
-        "meervoud": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "plural": {
+          "type": "string"
         },
-        "meervoudig": {
+        "many": {
           "type": "boolean"
         }
       }
     },
-    "Dimensie": {
+    "Dimension": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "naam",
-        "naamMeervoud",
-        "voorzetsel",
-        "waarden"
+        "name",
+        "labels"
       ],
       "properties": {
         "node": {
-          "const": "Dimensie"
+          "const": "Dimension"
         },
-        "naam": {
+        "name": {
           "type": "string"
         },
-        "naamMeervoud": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "plural": {
+          "type": "string"
         },
-        "voorzetsel": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "preposition": {
+          "type": "string"
         },
-        "waarden": {
+        "labels": {
           "type": "array",
           "items": {
             "type": [
@@ -3112,40 +3010,40 @@
         }
       }
     },
-    "Tijdlijn": {
+    "Timeline": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "naam",
-        "variabelStartpunt",
-        "granulariteit",
-        "aantal"
+        "name",
+        "variableStart",
+        "granularity",
+        "count"
       ],
       "properties": {
         "node": {
-          "const": "Tijdlijn"
+          "const": "Timeline"
         },
-        "naam": {
+        "name": {
           "type": [
             "string",
             "null"
           ]
         },
-        "variabelStartpunt": {
+        "variableStart": {
           "type": "boolean"
         },
-        "granulariteit": {
+        "granularity": {
           "enum": [
-            "DAG",
-            "WEEK",
-            "MAAND",
-            "KWARTAAL",
-            "JAAR",
+            "day",
+            "week",
+            "month",
+            "quarter",
+            "year",
             null
           ]
         },
-        "aantal": {
+        "count": {
           "type": "integer"
         }
       }
@@ -3223,24 +3121,24 @@
       ],
       "properties": {
         "validity": {
-          "$ref": "#/$defs/Geldigheid"
+          "$ref": "#/$defs/Validity"
         },
         "target": {
-          "$ref": "#/$defs/AttribuutRef"
+          "$ref": "#/$defs/AttributeReference"
         },
         "value": {
           "$ref": "#/$defs/expr"
         },
         "condition": {
-          "$ref": "#/$defs/conditie"
+          "$ref": "#/$defs/condition"
         },
         "initialisation": {
           "type": "boolean"
         },
         "presentation": {
           "enum": [
-            "GELIJKSTELLING",
-            "BEREKENING"
+            "equation",
+            "calculation"
           ]
         }
       },
@@ -3255,41 +3153,41 @@
           }
         }
       },
-      "description": "One version of a Rule (IR-SPEC ch. 3.1), without a node discriminator: a version is part of its form. 'validity' is always written; a Geldigheid with both bounds null is always. 'target' is an attribute reference, and whether it names an attribute or a characteristic is its declaration's (delta B20). 'initialisation' is always written. 'presentation' is the dialect tag of a computing version, in its v0 spelling until its own landing, and never stands beside initialisation true; which member kind each combination writes is WF-022's. An absent condition is unconditional."
+      "description": "One version of a Rule (IR-SPEC ch. 3.1), without a node discriminator: a version is part of its form. 'validity' is always written; a Validity with neither bound is always. 'target' is an attribute reference, and whether it names an attribute or a characteristic is its declaration's (delta B20). 'initialisation' is always written. 'presentation' is the dialect tag of a computing version and never stands beside initialisation true; which member kind each combination writes is WF-022's. An absent condition is unconditional."
     },
-    "ResolvedDagsoort": {
+    "DayKindDefinition": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "naam",
-        "voorwaarde",
-        "geldigheid"
+        "dayKind",
+        "condition",
+        "validity"
       ],
       "properties": {
         "node": {
-          "const": "ResolvedDagsoort"
+          "const": "DayKindDefinition"
         },
-        "naam": {
+        "dayKind": {
           "type": [
             "string",
             "null"
           ]
         },
-        "voorwaarde": {
+        "condition": {
           "anyOf": [
             {
-              "$ref": "#/$defs/conditie"
+              "$ref": "#/$defs/condition"
             },
             {
               "type": "null"
             }
           ]
         },
-        "geldigheid": {
+        "validity": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Geldigheid"
+              "$ref": "#/$defs/Validity"
             },
             {
               "type": "null"
@@ -3298,26 +3196,26 @@
         }
       }
     },
-    "Toekenning": {
+    "MemberInit": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "attribuut",
-        "waarde",
-        "kenmerk"
+        "member",
+        "value",
+        "characteristic"
       ],
       "properties": {
         "node": {
-          "const": "Toekenning"
+          "const": "MemberInit"
         },
-        "attribuut": {
+        "member": {
           "type": [
             "string",
             "null"
           ]
         },
-        "waarde": {
+        "value": {
           "anyOf": [
             {
               "$ref": "#/$defs/expr"
@@ -3327,7 +3225,7 @@
             }
           ]
         },
-        "kenmerk": {
+        "characteristic": {
           "type": "boolean"
         }
       }
@@ -3382,21 +3280,21 @@
         "initialisations": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/Toekenning"
+            "$ref": "#/$defs/MemberInit"
           }
         },
         "condition": {
-          "$ref": "#/$defs/conditie"
+          "$ref": "#/$defs/condition"
         },
         "validity": {
-          "$ref": "#/$defs/Geldigheid"
+          "$ref": "#/$defs/Validity"
         },
         "connectingRole": {
-          "$ref": "#/$defs/RolBinding",
+          "$ref": "#/$defs/RoleBinding",
           "description": "Extension field (wire-entry discipline, IR-SPEC Method): the created-side role of the back-link, named explicitly; required where the type-pair derivation is role-ambiguous (a self-typed pair). Absent, the back-link is derived (RUNTIME-SEMANTICS ch. 5.5). Written whole or not at all, never null."
         }
       },
-      "description": "One version of an ObjectCreation (IR-SPEC ch. 3.3), without a node discriminator. 'subject' is nullable because WF-034 holds its presence; each initialisation is a Toekenning, its v0 node until its own landing."
+      "description": "One version of an ObjectCreation (IR-SPEC ch. 3.3), without a node discriminator. 'subject' is nullable because WF-034 holds its presence; each initialisation is a MemberInit."
     },
     "Allocation": {
       "type": "object",
@@ -3463,9 +3361,9 @@
         },
         "method": {
           "enum": [
-            "GELIJKE_DELEN",
-            "NAAR_RATO",
-            "OP_VOLGORDE"
+            "equalShares",
+            "proportional",
+            "ordered"
           ]
         },
         "ratioAttribute": {
@@ -3487,17 +3385,17 @@
           "type": "boolean"
         },
         "condition": {
-          "$ref": "#/$defs/conditie"
+          "$ref": "#/$defs/condition"
         },
         "validity": {
-          "$ref": "#/$defs/Geldigheid"
+          "$ref": "#/$defs/Validity"
         },
         "connectingRole": {
-          "$ref": "#/$defs/RolBinding",
+          "$ref": "#/$defs/RoleBinding",
           "description": "The recipient relation: the connecting fact type with the role the targetType instances fill bound. Required: the allocation's relation is written, never derived (delta B12; CONSTRUCTS row 4)."
         }
       },
-      "description": "One version of an Allocation (IR-SPEC ch. 3.2), without a node discriminator. 'method' is one of the three real methods, in its v0 spelling until its own landing: the v0 placeholder for an unhandled form cannot be written. The four type and attribute fields are nullable because WF-034 holds their presence; an absent optional attribute field is none, an empty string stays WF-034's."
+      "description": "One version of an Allocation (IR-SPEC ch. 3.2), without a node discriminator. 'method' is one of the three real methods: the v0 placeholder for an unhandled form cannot be written. The four type and attribute fields are nullable because WF-034 holds their presence; an absent optional attribute field is none, an empty string stays WF-034's."
     },
     "Consistency": {
       "type": "object",
@@ -3540,10 +3438,10 @@
           ]
         },
         "assertion": {
-          "$ref": "#/$defs/conditie"
+          "$ref": "#/$defs/condition"
         },
         "validity": {
-          "$ref": "#/$defs/Geldigheid"
+          "$ref": "#/$defs/Validity"
         },
         "source": {
           "$ref": "#/$defs/sourceReference"
@@ -3592,11 +3490,11 @@
           }
         },
         "scope": {
-          "$ref": "#/$defs/RolBinding",
+          "$ref": "#/$defs/RoleBinding",
           "description": "The scope-parent role of a parent-scoped uniqueness, named symbolically: the bound role is the role the scope hop reaches (its filler is the scope parent). Its presence IS the scoping: a uniqueness without it is unscoped (B8). Only a single-source uniqueness carries it: a scoped union is an open design question (IR-SPEC ch. 3.6). Written whole or not at all, never null."
         },
         "validity": {
-          "$ref": "#/$defs/Geldigheid"
+          "$ref": "#/$defs/Validity"
         },
         "source": {
           "$ref": "#/$defs/sourceReference"
@@ -3702,45 +3600,45 @@
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/RolBinding"
+            "$ref": "#/$defs/RoleBinding"
           },
-          "description": "How the targets are reached from the anchor: one RolBinding per hop, in order, the last being the hop that reaches the target type."
+          "description": "How the targets are reached from the anchor: one RoleBinding per hop, in order, the last being the hop that reaches the target type."
         },
         "condition": {
-          "$ref": "#/$defs/conditie"
+          "$ref": "#/$defs/condition"
         },
         "validity": {
-          "$ref": "#/$defs/Geldigheid"
+          "$ref": "#/$defs/Validity"
         }
       },
       "description": "One version of a FactCreation (IR-SPEC ch. 3.4), without a node discriminator. The target type is not written: it is the declared filler of targetRole in factType. A step of the path is the role binding itself, with no node around it."
     },
-    "ResolvedStartpunt": {
+    "StartPointDetermination": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "tijdlijn",
-        "objecttype",
-        "lid"
+        "timeline",
+        "objectType",
+        "member"
       ],
       "properties": {
         "node": {
-          "const": "ResolvedStartpunt"
+          "const": "StartPointDetermination"
         },
-        "tijdlijn": {
+        "timeline": {
           "type": [
             "string",
             "null"
           ]
         },
-        "objecttype": {
+        "objectType": {
           "type": [
             "string",
             "null"
           ]
         },
-        "lid": {
+        "member": {
           "type": [
             "string",
             "null"
@@ -3748,29 +3646,29 @@
         }
       }
     },
-    "ResolvedRegelGroep": {
+    "RuleGroup": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "naam",
-        "recursief",
-        "leden"
+        "name",
+        "recursive",
+        "members"
       ],
       "properties": {
         "node": {
-          "const": "ResolvedRegelGroep"
+          "const": "RuleGroup"
         },
-        "naam": {
+        "name": {
           "type": [
             "string",
             "null"
           ]
         },
-        "recursief": {
+        "recursive": {
           "type": "boolean"
         },
-        "leden": {
+        "members": {
           "type": "array",
           "items": {
             "type": [
@@ -3785,7 +3683,7 @@
       }
     },
     "Diagnostic": {
-      "description": "The producer's own account of what stayed unresolved in a document it did write (WF-113). 'severity' is WARNING only: an ERROR means the producer refused to write the document, and INFO is not a wire severity. A 'message' that is neither empty nor blank, a 'line' of at least 0 (0 = no source position, a hand-built document) and the accounting of every Onopgelost node are verifier checks (WF-113), so 'line' admits any integer here.",
+      "description": "The producer's own account of what stayed unresolved in a document it did write (WF-113). 'severity' is warning only: a severity error means the producer refused to write the document, and info is not a wire severity. A 'message' that is neither empty nor blank, a 'line' of at least 0 (0 = no source position, a hand-built document) and the accounting of every Unresolved node are verifier checks (WF-113), so 'line' admits any integer here.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -3800,7 +3698,7 @@
         },
         "severity": {
           "enum": [
-            "WARNING"
+            "warning"
           ]
         },
         "message": {
