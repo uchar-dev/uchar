@@ -2835,7 +2835,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 
 | Subject | Status |
 |---|---|
-| Multi-period grids (`count` ≥ 2): all reads and writes | refused (mirrored); OPEN — specify producers or restrict `count` = 1 |
+| Multi-period grids (`count` ≥ 2): all reads and writes | refused (mirrored); OPEN — specify producers or restrict `count` = 1. A parameter's facet is restricted to `count` = 1 since L3 (`IR-SPEC.md` ch. 2.10, WF-005), because no executor evaluates a parameter's count |
 | Bucketing by day/week/quarter | absent (mirrored); OPEN with the grid decision |
 | Fixed start point off the calendar grid (§13.3.6.3–.7) | no wire field; the RegelSpraak frontend refuses the source at emission by name (ch. 3.2); the calendar start point is omitted without loss; OPEN — a v1 wire card carries it or keeps the refusal |
 | Point-in-time read (the "op dat tijdstip" node) | **landed (v1 extension)**: `read(tl, d)` is `IR-SPEC.md` ch. 4.3a (`TemporalRead`, WF-049; ch. 3.3, row 11), anchor-witnessed and replayed by both executors |

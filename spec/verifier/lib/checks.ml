@@ -677,13 +677,26 @@ let wf005 ctx =
           ot.attribuut_tijdlijn_naam)
     ctx.doc.objecttypen
   (* a parameter's facet (WF-018 defers to this rule): the count clause; a
-     parameter's facet names no timeline *)
+     parameter's facet names no timeline.
+
+     Above 1 as well, while multi-period grids are OPEN (RUNTIME-SEMANTICS
+     ch. 3.12): no executor evaluates a parameter's count — `ref` and the ASP
+     backend take the granularity alone, the Drools loader refuses a count
+     other than 1 (measured 2026-09-24) — so two executors treat a
+     two-period facet as a one-period one and the third refuses it. *)
   @ List.concat_map
       (fun (p, (par : parameter)) ->
         match par.par_tijdlijn_aantal with
         | Some n when n < 1 ->
             [ v "WF-005" ("/parameters/" ^ p ^ "/timeline/count")
                 (Printf.sprintf "the timeline facet of parameter '%s' has count %d < 1" p n) ]
+        | Some n when n > 1 ->
+            [ v "WF-005" ("/parameters/" ^ p ^ "/timeline/count")
+                (Printf.sprintf
+                   "the timeline facet of parameter '%s' has count %d > 1: a parameter's \
+                    timeline is one period while multi-period grids are open \
+                    (RUNTIME-SEMANTICS ch. 3.12)"
+                   p n) ]
         | _ -> [])
       ctx.doc.parameters
 
@@ -739,9 +752,10 @@ let rec ggd a b = if b = 0 then a else ggd b (a mod b)
    wire form).
 
    The rule exists because neither half is reachable by a neighbour.
-   WF-009 walks the declared systems but only ever looks at a factor it
-   FINDS (positivity) and at a canonical chain it can FOLLOW; a missing
-   half is simply nothing to look at. WF-035/WF-023 cross units for
+   WF-009 walks the declared systems but only ever follows a canonical
+   chain it can FOLLOW (until L3 it also tested a factor it FOUND for
+   positivity, since then the factor's wire form); a missing half is simply
+   nothing to look at. WF-035/WF-023 cross units for
    COMPATIBILITY through [units_convertible], which reads a missing
    [canoniek] as the abbreviation and a missing factor not at all — so a
    half-filled unit is compatible with its whole sibling by construction.
@@ -890,10 +904,34 @@ let wf007_presentatie ctx =
    own system. A canonical name resolves against the system's units by
    abbreviation, under the WF-001 identity. That a factor is positive is its
    wire form since L3 (two integers of at least 1, refused at load
-   otherwise), so no arm here reads the factor. *)
+   otherwise), so no arm here reads the factor.
+
+   The same identity makes an abbreviation name ONE unit of its system
+   (IR-SPEC ch. 2.5: one Unit per abbreviation). The v0 map key made a second
+   declaration unwritable; the L3 list can write it, and then the readers
+   part: this verifier, `ref` and the ASP backend passed a second `t` with
+   another factor while the Drools loader refused the document (measured
+   2026-09-24). So the second declaration is refused here, at its own
+   position, in the sentence the Drools loader writes too. *)
 let wf009 ctx =
   List.concat_map
     (fun (sn, es) ->
+      let twice =
+        dups_by norm
+          (List.concat
+             (List.mapi
+                (fun j (d : gedeclareerde_eenheid) ->
+                  match d.ge_eenheid.afkorting with
+                  | Some a -> [ (a, Printf.sprintf "/eenheidstelsels/%s/units/%d/abbreviation" sn j) ]
+                  | None -> [])
+                es.eenheden))
+        |> List.map (fun (_, a, at) ->
+               v "WF-009" at
+                 (Printf.sprintf
+                    "the unit '%s' is declared twice in the unit system '%s': one Unit per \
+                     abbreviation (WF-009)"
+                    a sn))
+      in
       let lookup c =
         List.find_map
           (fun (d : gedeclareerde_eenheid) ->
@@ -919,7 +957,8 @@ let wf009 ctx =
                      | Some next -> follow (norm c :: seen) next)
              in
              follow (Option.to_list (Option.map norm d.ge_eenheid.afkorting)) d.ge_eenheid)
-           es.eenheden))
+           es.eenheden)
+      @ twice)
     ctx.doc.eenheidstelsels
 
 let wf011 ctx =
