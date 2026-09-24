@@ -31,8 +31,11 @@ multi-step range, flat.
 ## Producer route, measured 2026-09-22
 
 No `bron.rgs`. Each sentence above, fed through the RegelSpraak frontend
-(`make -C frontends/regelspraak ir FILE=…`), is refused with the WF-096
-error "setlezing buiten een vouwbron": the frontend's quantifier lowering
+(`make -C frontends/regelspraak ir FILE=…`), is refused with the error
+"setlezing buiten een vouwbron", which cited WF-096 until L2 and cites WF-053
+since (measured again 2026-09-24, on both sentences: `… hier wordt één waarde
+verwacht, en een meervoudige stap in een lezing vraagt een aggregatie (WF-053,
+IR-SPEC ch. 4.1a)`): the frontend's quantifier lowering
 declines a written range that resolved to a multi-step path rather than
 bind its first step (the `bereikPad` guard in `RuleChecker.kwantorvouw`),
 and the same holds with "van de gevoerde boten" instead of "van alle".

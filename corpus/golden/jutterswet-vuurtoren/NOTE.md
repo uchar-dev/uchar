@@ -26,9 +26,11 @@ Het lampental van een Vuurtoren moet berekend worden als het aantal lampen
 
 For the same reason `jutterswet-schouwploeg` was, measured again and unchanged
 at the time: `RuleChecker.kwantorvouw` opened with "only the §8.2-QUALIFIED
-condition" and declined everything else, so the unqualified comparison raised
-WF-096 (`setlezing buiten een vouwbron`) and the characteristic spelling
-resolved to `Onopgelost`. The counting quantifiers did not move that gate.
+condition" and declined everything else, so the unqualified comparison was
+refused (`setlezing buiten een vouwbron`, a message that cited WF-096 until L2;
+since L2 the same refusal cites WF-053, measured 2026-09-24 on this document's
+first sentence with "ten minste 0 van de lampen", a form the lowering still
+declines) and the characteristic spelling resolved to `Onopgelost`. The counting quantifiers did not move that gate.
 The frontend card that did move it landed on 2026-09-19, and `bron.rgs` now
 sits beside this document and re-emits it byte for byte. The hand-written IR
 is unchanged; gate 10 sees it.

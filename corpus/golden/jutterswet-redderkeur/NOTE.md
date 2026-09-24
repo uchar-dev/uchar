@@ -38,12 +38,21 @@ evaluated per contributor with the element as subject — a composite is one.
 
 ## Why this ir.json is hand-written and carries no bron.rgs
 
-The same reason its two siblings are, measured again and unchanged:
-`RuleChecker.kwantorvouw` lowers only the §8.2-QUALIFIED condition, so an
-unqualified comparison raises WF-096 (`setlezing buiten een vouwbron`) and the
-characteristic spelling resolves to `Onopgelost`. Widening that is a frontend
-card of its own; this document is written by hand against the schema, and gate
-10 does not see it.
+When it was written, for the reason its two siblings were:
+`RuleChecker.kwantorvouw` lowered only the §8.2-QUALIFIED condition, so an
+unqualified comparison was refused (`setlezing buiten een vouwbron`, a message
+that cited WF-096 until L2) and the characteristic spelling resolved to
+`Onopgelost`. Measured again at L2 (2026-09-24) on the frontend of this
+repository: both of those spellings now lower to a `Kwantorvouw` without a
+diagnostic, but this document's own form, a composite matrix under the
+quantifier, still does not. Each bullet is resolved against the rule subject,
+the Reddingspost, which declares neither `dienstjaren`, `conditie` nor
+`gediplomeerd`, so every bullet becomes an `Onopgelost` marker with a WARNING
+(`onopgelost: de naam 'zijn dienstjaren' is geen gedeclareerde parameter, …`
+and `onopgelost: de geschreven naam bindt geen kenmerk en geen rol van het
+onderwerp …`); no set reading is written, so no setlezing error arises. Widening
+that is a frontend card of its own; this document is written by hand against
+the schema, and gate 10 does not see it.
 
 ## What it covers that the other four do not
 

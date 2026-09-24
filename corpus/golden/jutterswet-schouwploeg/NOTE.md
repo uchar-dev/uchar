@@ -32,12 +32,17 @@ were written:
 - the comparison form without the §8.2 qualifier — *"indien de
   dienstjaren van alle wachten van de Schouwploeg groter zijn dan 5"* —
   was refused: `setlezing buiten een vouwbron … hier wordt één waarde
-  verwacht (WF-096, IR-SPEC ch. 4.3)`. The lowering to `Kwantorvouw`
-  opened with "only the §8.2-qualified condition" and declined everything
-  else;
+  verwacht (WF-096, IR-SPEC ch. 4.3)`, the message until L2. Since L2 the
+  same refusal cites WF-053: `… hier wordt één waarde verwacht, en een
+  meervoudige stap in een lezing vraagt een aggregatie (WF-053, IR-SPEC
+  ch. 4.1a)`, measured 2026-09-24 on this sentence with "ten minste 0 van
+  de wachten", a form the lowering still declines. The lowering to
+  `Kwantorvouw` opened with "only the §8.2-qualified condition" and
+  declined everything else;
 - the characteristic form — *"indien alle wachten van de Schouwploeg
   gediplomeerd zijn"* — resolved to `Onopgelost`, and did so silently:
-  there is no set reading in that spelling for WF-096 to name.
+  there is no set reading in that spelling for the set fence (WF-096
+  until L2) to name.
 
 Since 2026-09-19 the frontend carries both. Quantification and the
 whole-period check are independent productions in v2.3.0, so the

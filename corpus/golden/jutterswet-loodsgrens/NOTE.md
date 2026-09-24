@@ -26,10 +26,16 @@ Het loodstal van een Loodspost moet berekend worden als het aantal loodsen van
 
 ## Why this ir.json is hand-written and carries no bron.rgs
 
-The same reason the rest of the non-temporal family is: `RuleChecker.kwantorvouw`
-lowers only the §8.2-QUALIFIED condition, so the unqualified comparison raises
-WF-096 (`setlezing buiten een vouwbron`). This document is written by hand
-against the schema; gate 10 does not see it.
+When it was written, for the reason the rest of the non-temporal family was:
+`RuleChecker.kwantorvouw` lowered only the §8.2-QUALIFIED condition, so the
+unqualified comparison was refused (`setlezing buiten een vouwbron`, a message
+that cited WF-096 until L2). Measured again at L2 (2026-09-24) on the frontend
+of this repository: all five sentences above now lower, the four conditions to
+a `Kwantorvouw`, without a diagnostic; where the lowering declines — measured
+with "ten minste 0 van de loodsen" — the refusal cites WF-053 since L2 (`… hier
+wordt één waarde verwacht, en een meervoudige stap in een lezing vraagt een
+aggregatie (WF-053, IR-SPEC ch. 4.1a)`). The document is still the hand-written
+one and carries no `bron.rgs`, so gate 10 does not see it.
 
 ## What it covers that the others do not
 
