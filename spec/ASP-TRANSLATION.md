@@ -191,7 +191,7 @@ A `ResolvedRegel` translates by kind. **Characteristic attribution**
 (`KENMERKTOEKENNING`, value `waar`): `heeft(S,k) :- is_a(S,ot),
 ⟨condition atoms⟩.` — negation-as-failure gives the absent case for
 free, and WF-045/046 stratification makes the negated reads sound.
-**Computation/equation** (`BEREKENING`/`GELIJKSTELLING`) to a scalar
+**Computation/equation** (`calculation`/`equation`) to a scalar
 attribute target:
 
 ```
@@ -255,7 +255,7 @@ Every value expression lowers to a triple ⟨body atoms, integer term,
 scale⟩ (`expr_term`). **Literal**: the scaled constant, scale from its
 lexeme's decimals; a **date literal** (`|2000-01-01|`) is its civil day
 number at scale 1 — the *same* encoding as a date attribute read
-(`val/3`), the point read and the Rekendatum constant, so a date
+(`val/3`), the point read and the evaluationDate context value, so a date
 comparison harmonises day numbers directly and needs no second date
 encoding (B2). Date *arithmetic* rides the same day numbers through
 the S6a calendar chains (`numeric_ok` still gates the multiplicative
@@ -270,27 +270,27 @@ term `P`; granular parameters are refused in scalar slots (ch. 3.3/8).
 reference (ch. 5.8) chains one `rol/3` atom per to-one hop before the
 final `val` — the shared variable is the join, and an absent link
 simply leaves the body underivable. The hops are the reference's role
-bindings (`navigatieBindingen`, since L2 the only spelling of a hop), each
+bindings (`path`, since L2 the only spelling of a hop), each
 resolved through the reference interpreter's own `Eval.bound_role`, so
 both executors resolve navigation identically. A reference without
 bindings is the subject's own read (ch. 5.8 rule 4): no `rol/3` atom is
 emitted at all and the `val` atom reads the subject itself — the
 unconditional own read, structurally (witness
-`jutterswet-aanmelderkrediet`) — and its `objecttype` must be the subject
+`jutterswet-aanmelderkrediet`) — and its `subjectType` must be the subject
 type itself, anything else refused by name (WF-053). *Until L2* the
 translator also resolved written hop names (`Eval.connecting_role`,
 `Eval.nav_single_step`), and the zero-hop self-reference was a written
-step that resolved to an empty hop list. **Rekendatum** (ch. 8.2): the session's evaluation date
+step that resolved to an empty hop list. **evaluationDate** (ch. 8.2): the session's evaluation date
 as a compile-time civil day number; a case without `asOfDate` faults.
 **Temporal point read** (ch. 3.3): a `tl/5`/`param_tl/4` atom with
 `F <= D, D < T` — the gap and the empty-index corner are the
-underivable body, for free (more in S9). **Onopgelost**: translation
-faults with "Onopgelost reached" — the WF-044 unsolved-state guard;
+underivable body, for free (more in S9). **Unresolved**: translation
+faults with "Unresolved reached" — the WF-044 unsolved-state guard;
 the rule fails observably (gate-8 witness
 `corpus/rood/wf044-onopgelost-reached`).
 
 Witnesses: navigation by `synth-navigatiepremie`,
-`jutterswet-vindersloon`, `jutterswet-borgdeel`; Rekendatum and point
+`jutterswet-vindersloon`, `jutterswet-borgdeel`; evaluationDate and point
 reads by `jutterswet-penningvintage`, `jutterswet-aanmeldquotum`.
 
 ### S5. Emptiness: the three encodings
@@ -637,9 +637,9 @@ and this backend); declared factors and stelsel never enter.
     `agg_eerste`/`agg_laatste` over `scalar_cmp`). A non-datum-tijd or
     mixed-granularity operand faults loudly (ref faults the unordered
     comparison); a set-typed datum-tijd fold, a navigated datum-tijd read,
-    the `DATUM_MET`/`DATUMTIJD_MET` constructor, a datum-tijd **parameter**
+    the `dateWith`/`dateTimeWith` constructor, a datum-tijd **parameter**
     read and a **`Let`/`BinderRef`-bound** datum-tijd (with the residual
-    `VariabeleRef`) stay the dt_term catch-all's loud flank. The last two
+    `VariableReference`) stay the dt_term catch-all's loud flank. The last two
     were measured on 2026-09-06 and are each a live shape, not a
     hypothetical: a document whose ordering reads a declared
     millisecond-precision `Date` parameter (v0 `DatumTijd`), and one whose
@@ -651,7 +651,7 @@ and this backend); declared factors and stelsel never enter.
     differential, recorded rather than hidden.
   - **the datum-tijd ORDERING comparison** (ch. 1.2e, 2026-09-06). Before
     it, a datetime ordering carrying no literal at all — two
-    millisecond-precision `Date` attributes (v0 `DatumTijd`) under `EERDER` —
+    millisecond-precision `Date` attributes (v0 `DatumTijd`) under `earlier` —
     faulted `unscalable datatype in the ASP translation` while ref replayed
     the same document exactly: the comparison arms harmonise INTEGER SCALES,
     and a millisecond-precision date has none.
@@ -679,7 +679,7 @@ and this backend); declared factors and stelsel never enter.
     so this arm adds no fence at all. The WIRE lexeme is the canonical
     ISO form alone since 2026-09-22 (WF-095, IR-SPEC ch. 4.1), and since
     2026-09-23 the shared reader reads that form alone too: a day-first
-    source snippet in `waarde` faults at translation time, quoting the
+    source snippet in `value` faults at translation time, quoting the
     lexeme (`malformed datum-tijd lexeme "…": not the canonical ISO
     form …`), before any program is grounded.
   - **Fences**: the sub-day paths carry a `viol/2` range guard so the
@@ -693,19 +693,19 @@ and this backend); declared factors and stelsel never enter.
   (RUNTIME-SEMANTICS ch. 3.8). This backend does NOT walk: the reach fence
   is 40 000 days and a ground per-day walk would materialise that many
   days per step and per subject. It uses WF-031's purity clause instead —
-  a day-kind voorwaarde reaches no fact base and no session value, and the
+  a day-kind condition reaches no fact base and no session value, and the
   translation is per case, so the predicate can be EVALUATED here, at
   translation time, over a window; what reaches the solver is the day
   kind's EXTENSION, `dkt<i>(D, R)`, its matching days each with their
   rank. **What this backend evaluates is a NAMED SUBSET of what WF-031
   admits**, and the difference is a backend limit rather than a semantic
-  one: comparisons, composites with any kwantor, leeg/gevuld tests, nested
+  one: comparisons, composites with any quantifier, leeg/gevuld tests, nested
   day-kind tests on the bound day, and as operands the bound day, a
   literal, a parameter, the date-part extractors and eerste-paasdag. A
-  voorwaarde built from anything else WF-031 lets through — arithmetic on
-  the day (`Binair`), a rounding, a clamp, an `IfThenElse`, a `Let`, a
+  condition built from anything else WF-031 lets through — arithmetic on
+  the day (`Binary`), a rounding, a clamp, an `IfThenElse`, a `Let`, a
   `Match` — is verifier-clean and `ref` evaluates it, while this backend
-  REFUSES it by name ("a day-kind voorwaarde carries an expression this
+  REFUSES it by name ("a day-kind condition carries an expression this
   backend does not evaluate"). The boundary is a straightforwardly
   extensible one: each missing form is one arm in the same evaluator.
   A parameter the case does not bind is a FAULT here, in `ref`'s own words
@@ -720,10 +720,10 @@ and this backend); declared factors and stelsel never enter.
   refused here where ref computes it — never answered from a table that
   does not reach. The DATUM-TIJD step form is carried (the day kind is
   judged on the civil day part of the pair term and the ms-of-day rides
-  through unchanged); the datum-tijd TIJDSDUUR stays refused, naming the
+  through unchanged); the datum-tijd `duration` stays refused, naming the
   same form `ref` names and giving the same reason for it.
 - **Loud flanks**: the
-  `DATUM_MET`/`DATUMTIJD_MET` constructors, the sub-day part extractors
+  `dateWith`/`dateTimeWith` constructors, the sub-day part extractors
   (`uur/minuut/seconde/milliseconde-uit`), and datum-tijd
   **(on)gelijk-aan** still fault at translation — outside the arithmetic,
   the fold ordering and (since 2026-09-06) the scalar ordering the pair
@@ -743,11 +743,11 @@ uren = 34 and hele dagen = 1, and their negatives — beside datetime +
 26 uur across the leap day and + 1 maand preserving the ms-of-day,
 hand-computed and replayed by gates 5–6 as the pair-term square). The
 datum-tijd ordering fold rides golden `jutterswet-hoogwaterpaar`
-(EERSTE/LAATSTE over a datum-tijd pair — the ms-of-day tie-break on one
+(`first`/`last` over a datum-tijd pair — the ms-of-day tie-break on one
 civil day, the civil-day-first ordering where the earlier day carries the
 later ms-of-day, and the empty-skip and all-empty corners; hand-computed
 from ch. 3.8, ref ≡ clingo). The datum-tijd scalar ORDERING and the
-datum-tijd LITERAL ride golden `jutterswet-meldstip` (EERDER and LATER
+datum-tijd LITERAL ride golden `jutterswet-meldstip` (`earlier` and `later`
 against one canonical-lexeme literal at a SUBDAG threshold — a
 millisecond either side of it, the instant exactly on it, and a whole day
 either side, so neither the ms-of-day alone nor the civil day alone can
@@ -807,7 +807,7 @@ was a join over the connecting role derived from the type pair
 (`Eval.connecting_role`, shared with ref), and a to-many connecting
 reference was v0's marker, refused loudly; the far-side
 `VerreRollidmaatschap` was the separate exists-join.
-**Composite** (samengesteld, the ALLE and singular DE quantifiers):
+**Composite** (samengesteld, the `all` and singular `the` quantifiers):
 concatenation of the parts' atoms — both quantifiers are conjunctions
 over their parts. Other condition kinds fault (S19).
 
@@ -867,7 +867,7 @@ Sites outside `cond_atoms` — the write boundary's fit fence, the
 to-one-filler `viol`, and the allocation's `viol`/`inconsistent` family —
 are not part of this claim and carry no prefix.
 
-For **ALLE / DE** the guard needs nothing new: member *i* is read exactly
+For **`all` / `the`** the guard needs nothing new: member *i* is read exactly
 where members 1…*i*−1 all held, so the accumulated **prefix atoms are the
 guard**. Translating member *i* with `rule_guard = ⟨saved⟩ ∪ atoms(1…i−1)`
 turns the §11.1 pattern into ASP for free — `ploegomvang ≠ 0` in member 1
@@ -875,11 +875,11 @@ appears in the body of the divide-by-zero `viol` that member 2 emits, so
 the constraint cannot fire on the very instances member 1 excluded.
 Witness `jutterswet-ploegaandeel`.
 
-**Composite, counting** (samengesteld — GEEN, TEN MINSTE, TEN
-HOOGSTE, PRECIES; the decision-table desugar's disjunctive row is
-TEN MINSTE 1): ref counts the members that evaluate true (its hits)
-and compares against the threshold — GEEN hits = 0, TEN MINSTE
-hits >= d, TEN HOOGSTE hits <= d, PRECIES hits = d. Encoded per
+**Composite, counting** (samengesteld — `none`, `atLeast`,
+`atMost`, `exactly`; the decision-table desugar's disjunctive row is
+`atLeast` 1): ref counts the members that evaluate true (its hits)
+and compares against the threshold — `none` hits = 0, `atLeast`
+hits >= d, `atMost` hits <= d, `exactly` hits = d. Encoded per
 composite: each member *i* becomes its own helper rule
 `cqK_m<i>(S) :- is_a(S,ot), ⟨member atoms⟩` — derivable exactly where
 ref counts a hit, so a leeg member operand counts false through the
@@ -900,9 +900,9 @@ could not appear.
 The chain replaces the single `#count` aggregate this branch used
 before, for the short circuit's sake: member *i*'s guard is the ch. 5.10
 stop triggers **negated** over the prefix count, i.e. `cqK_h<i-1>(S,H)`
-plus ground comparisons on `H` (`H == 0` for GEEN; `H < d, H ≥ d−r` for
+plus ground comparisons on `H` (`H == 0` for `none`; `H < d, H ≥ d−r` for
 TEN MINSTE; `H ≤ d, H ≥ d−r+1` for TEN HOOGSTE; `H ≤ d, H ≥ d−r` for
-PRECIES, with *r* = *n* − (*i*−1) the unread rest, ground at translation
+`exactly`, with *r* = *n* − (*i*−1) the unread rest, ground at translation
 time). TEN HOOGSTE's guard is **two-sided** since its true-side trigger
 landed (maintainer decision 2026-09-07): member *i* is read only while
 the hits have not exceeded *d* **and** the unread rest can still push
@@ -913,7 +913,7 @@ true at-most emits nothing at all.
 **Member 1 is guarded too**, against the chain's own base `cqK_h0(S,0)`.
 It is tempting to special-case it as always-read, and this translation
 did until the fix round of 2026-09-07 — wrongly: at TEN MINSTE and
-PRECIES with a threshold ABOVE the member count the out-of-reach trigger
+`exactly` with a threshold ABOVE the member count the out-of-reach trigger
 fires on the EMPTY prefix (ch. 5.10), so ref reads nothing while a
 translation that skipped the guard read member 1 and emitted its fence.
 Measured as a ref ≡ clingo split on `TEN MINSTE 5` over two members and
@@ -934,21 +934,21 @@ Silencing a settled member cannot move the verdict: *h* only grows and
 *h* + *r* only shrinks, so any trigger that fired already decides the
 comparison, and a member the guard silences only ever loses a hit the
 verdict no longer reads (the ch. 5.10 stability argument, in the
-translation's own terms). The non-monotone quantifiers (GEEN / TEN
-HOOGSTE / PRECIES behave like negation) stay sound because the verifier's
+translation's own terms). The non-monotone quantifiers (`none` / `atMost`
+/ `exactly` behave like negation) stay sound because the verifier's
 WF-045/046 dependency walk conservatively marks their members as negative
 edges. A counting composite without members faults, and every member
-kind keeps its own fault (S19). Witness `jutterswet-wachtdeling` (GEEN
+kind keeps its own fault (S19). Witness `jutterswet-wachtdeling` (`none`
 and TEN MINSTE 1 over the same two members: a stop that fixes the
 outcome false and one that fixes it true).
 
 Witnesses (gate 6): `jutterswet-rubriektabel` (TEN MINSTE 1 — the
 disjunctive decision-table row over text equalities — and TEN MINSTE
 2 over mixed kenmerk/comparison members, threshold boundary
-included), `jutterswet-vrijgavetoets` (GEEN, with the
+included), `jutterswet-vrijgavetoets` (`none`, with the
 leeg-member-counts-false corner), `jutterswet-sluimerwacht` (TEN
 HOOGSTE, hits 1/2/3 around threshold 1), `jutterswet-tweevoudkeur`
-(PRECIES, hits 2 against 3). Further: `jutterswet-hardheid`,
+(`exactly`, hits 2 against 3). Further: `jutterswet-hardheid`,
 `jutterswet-uitsluiting`,
 `jutterswet-vormenkabinet`; the WF-053 negatiefs pin the navigation
 well-formedness the verifier enforces before translation.
@@ -964,9 +964,9 @@ from the declared plural that keys the facts (the written singular of a
 to-many role, or an undeclared synthesized plural; hardened 2026-08-26,
 witnessed by `jutterswet-kaveltelling`). A count source whose written
 name is a member of the element type (an attribute or a characteristic)
-is refused by name (`the source of this AANTAL aggregation reads '…', a
+is refused by name (`the source of this count aggregation reads '…', a
 member of the element type '…'`, WF-093 (b)), and so is a count that
-carries a `bronPad` (WF-102 (c): a count source's range is one step).
+carries a `sourcePath` (WF-102 (c): a count source's range is one step).
 *Until L2* a count without a binding resolved its written source name
 against the declared roles (name or plural, ci) or fell back to the
 unique connecting fact type. The `die/dat` filter is lowered by
@@ -974,7 +974,7 @@ unique connecting fact type. The `die/dat` filter is lowered by
 cannot derive contributes no tuple: the contributor skip is the join,
 for free.
 The **self-denoting** source (WF-083, RS ch. 3.4a) is, since L2, a
-plain count source: the count carries its `bronRol` and translates as
+plain count source: the count carries its `sourceRole` and translates as
 every other count. *Until L2* the written role stood in the argument's
 `navigatieRol`, which translated identically — the field was
 presentation, not navigation — behind the ref mirror's
@@ -1007,7 +1007,7 @@ too, where `ref` answers without ever performing an addition — the
 single member itself at one contributor, and leeg (som) or 0 (totaal)
 at none. Those two edges are where the two executors part; both are
 recorded in `corpus/rood/datumsetbron-totaalvouw`. Witnesses
-`corpus/rood/datumsetbron-somvouw` and its TOTAAL twin. The *sum* is doubly fenced: each contributor at 46340
+`corpus/rood/datumsetbron-somvouw` and its `total` twin. The *sum* is doubly fenced: each contributor at 46340
 *and* the contributor count at 46340 (`viol` when `46340 < #count{...}`),
 so the accumulated sum provably stays inside 2^31. The bare count
 carries no fence — a `#count` cannot approach 2^31 before grounding
@@ -1016,7 +1016,7 @@ itself becomes infeasible (recorded, not guarded; ch. 6c).
 `agg_min`/`agg_max`/`agg_eerste`/`agg_laatste`):
 the SAME contributor gathering as the som over its set source (since
 L2 the argument of a fold that carries a range; until L2 a set-typed
-`AttribuutRef`), aggregated with `V = #min { G : ⟨body⟩ }` (resp.
+`AttributeReference`), aggregated with `V = #min { G : ⟨body⟩ }` (resp.
 `#max`) at the element attribute's scale. An empty contributor is
 skipped (the join is the skip, as for the som), and the extreme IS one
 contributed value — no accumulation, so no range fence — with a
@@ -1039,12 +1039,12 @@ and refused at the som: these folds RETURN one contributed value, so
 a day number goes in and the same day number comes out, and the
 ordering over day numbers IS the ordering over dates. Witness
 `jutterswet-vondstbereik` (hand-computed absolute dates; the same two
-cases as `jutterswet-vondstvenster`, whose EERSTE/LAATSTE are the
+cases as `jutterswet-vondstvenster`, whose `first`/`last` are the
 same fold under another name).
 
 Every fold join closes with `isa(X,el)` on the ELEMENT variable — the
 ch. 2.2 population, joined against the reach the `rol/3` atoms deliver.
-It is emitted unconditionally, including for a `bronPad` (where it lands
+It is emitted unconditionally, including for a `sourcePath` (where it lands
 on the last step only, never on an intermediate), and it is the same
 chain-closed `isa/2` the allocation's `vdN_ontv` joins on. On a document
 without a supertype edge the atom is satisfied by every instance the
@@ -1055,7 +1055,7 @@ clip predicates a fold over the subject's *own* temporal attribute on
 a condition timeline. Per clip N: the condition segments (the
 `ktl/4` atoms read directly for the kenmerk shape, or — for the
 per-segment comparison of an own temporal attribute — an
-intermediate `clN_cond(S,V2,T2)` predicate; a FLAT composite ALLE
+intermediate `clN_cond(S,V2,T2)` predicate; a FLAT composite `all`
 condition over characteristic members intersects them pairwise
 through `clN_and` helper predicates, the same four-case max/min as
 below — v0 nests per-member clips over such flat lists, and
@@ -1070,9 +1070,9 @@ ch. 3.6). Fences: |W| ≤ 46340, the endpoint span at 46340 whole
 units (segments are disjoint slices of one timeline, so |ΣW×N| ≤
 46340² holds), and the comparison harmonisation bounds of S6.
 
-**The negated clip member** (`negatie: true` on a characteristic
+**The negated clip member** (`negated: true` on a characteristic
 check, either as the whole condition or as a member of the composite
-ALLE — carried since 2026-09-09, maintainer decision; before that the
+`all` — carried since 2026-09-09, maintainer decision; before that the
 form was refused here while ref answered, which was a live ref ≢
 clingo on a verifier-clean document): the complement of the
 characteristic's periods within the clip horizon. ref takes that
@@ -1121,7 +1121,7 @@ total over a case-supplied *full* timeline faults, loudly.
 **The articulated eerste/laatste fold** (RS ch. 1.2e: the ordering
 fold over ≥ 2 listed operands; dispatched by argument shape within
 v0's listed family minimum/maximum/eerste/laatste only — the vestigial
-`elementObjecttype` v0 stamps on a listed fold names no instance
+`elementType` v0 stamps on a listed fold names no instance
 source, while a multi-operand som/totaal/aantal keeps its loud fault
 in both executors *where that stamp is present*, v0's accumulate
 consuming the element there; the
@@ -1152,13 +1152,13 @@ keep the loud S19 fault.
 *Where the stamp is ABSENT, the som parts company with that row*
 (measured 2026-09-19 on `corpus/rood/som-fallback-always-evaluated`,
 which is exactly this shape): `ref` CARRIES the listed som — its
-contributor arm reads the operand list whenever `elementObjecttype` is
+contributor arm reads the operand list whenever `elementType` is
 absent, whatever the kind — while this backend does not, since every
 som arm it has ranges a `#sum` over an instance source a listed fold
 never supplies. That refusal is now a NAMED one (`a som over listed
 operands is not translated …`) rather than the expression fall-through,
 for the reason the catch-all inventory below records. Its guard takes
-TWO wire fields, not one: an absent `elementObjecttype` means listed
+TWO wire fields, not one: an absent `elementType` means listed
 *or* dimension cell, because WF-037 grants the DIMENSION som an
 explicit arity exemption (one operand, a `dimensieSelectie`, no stamp),
 and that form is not listed — `ref` refuses it earlier and on its own
@@ -1174,7 +1174,7 @@ source by `jutterswet-aanmeldertelling`; sum by
 `jutterswet-getijdenwacht`, `jutterswet-penningjaar`,
 `synth2-clip-over-prorata`, `synth2-clip-cond-over-prorata`; the
 negated clip by `jutterswet-tegenwacht` (both forms from one source —
-the bare negated check and the ALLE composite with one negated member
+the bare negated check and the `all` composite with one negated member
 — over six cases: the overlap, the disjoint pair, the characteristic
 with no timeline at all, the split periods, a value timeline with a
 gap and two values which pins the per-segment walk, and the ch. 3.6
@@ -1262,7 +1262,7 @@ arm), and the head fires under the group's conflict guard:
 disagreement between members derives
 `inconsistent("onderwerp.target",S) :- dlI_dec(S,X), dlJ_dec(S,Y),
 X != Y` — the §9.5 channel, never an arbitrary pick (a singleton
-group elides the conflict machinery entirely). An `initialisatie`
+group elides the conflict machinery entirely). An `initialisation`
 default additionally requires `not grpG_has_input(S)`: initialisation
 yields to case input by definition (RS ch. 7.3, and the virtual
 input default of ch. 7.8 that sits above it).
@@ -1451,7 +1451,7 @@ executors — the case format's rule pin reads both identically:
 | division: empty divisor under filled dividend | the enclosing rule's name |
 | consistency assertion failure | the consistency's name |
 | uniqueness / uniqueness-union collision | the uniqueness form's name |
-| default-group conflict (equal-priority disagreement) | `onderwerp.target` |
+| default-group conflict (equal-priority disagreement) | `subject.target` |
 | allocation: weightless recipient, empty ordered tie weight, cap holes | the allocation's name |
 
 A channel head embedded in a rule's *value expression* — the
@@ -1567,7 +1567,7 @@ identity of IR-SPEC ch. 2.4 guarantees, for both variants, every half of
 what the scrutinee is: WF-089 (read half) that the domain a use site's
 `type` names is the domain of the source it takes its value from — the
 declaration a reference *reads from*, and the operand an
-element-passing fold (`EERSTE`/`LAATSTE`/`MINIMUM`/`MAXIMUM`) hands
+element-passing fold (`first`/`last`/`minimum`/`maximum`) hands
 through — and WF-023/WF-067 (write half) that every value **entering**
 that declaration — at a rule target, an object-creation member, a
 defaults consequence, a function body — names that domain too. Together
@@ -1703,7 +1703,7 @@ scale.
       body (golden `jutterswet-kinderprocent`, `acc + (x% van grondslag)`,
       `[10,25]/200 → 70.00`).
     - **The money × rate product** rounded to the cent
-      (`Afgerond{REKENKUNDIG,2}` over a 2-decimal money × 4-decimal rate,
+      (`Rounding{halfAwayFromZero,2}` over a 2-decimal money × 4-decimal rate,
       `money_mult_shape`) is the split encoding of S18(c) — the shared
       `money_mult_fences`/`money_mult_body`, with the four fences (two
       negative-operand, two range) keyed by the list-id and the `A`/`C`
@@ -1901,12 +1901,12 @@ true on leeg). The anchor's `dubbel` / `afwijkend` rules are exactly
 these forms — `heeft(S,dubbel) :- …, val(S,dossier,B), B == dossier(12050,3).`
 and `heeft(S,afwijkend) :- …, val(S,dossier,B), B != dossier(12050,3).`
 
-The **gevuld gate** (`Predicaat` soort `Gevuld`, ref: value ≠ leeg) is the
+The **gevuld gate** (`Predicate` kind `filled`, ref: value ≠ leeg) is the
 operand's binding atoms as a **positive join**: a struct operand rides
 `struct_term`'s `val/3` atom, any other rides `expr_term`; either way an
 absent value leaves the atoms unbound, so the gated rule does not fire —
 leeg-on-absence for free (the anchor's `premie` rule reads
-`GEVULD(dossier)`).
+`filled(dossier)`).
 
 On the check side, `model.ml` builds a record-valued `attributeValue`
 expectation by the **same** `struct_value_term` emission (each field
@@ -1971,7 +1971,7 @@ flat-term encoding (S19).
 ### S17. Nested exception groups
 
 The flat defaults chain of S10 is the unary case of a rose tree (RS
-ch. 7.9, the ratified option i). A default's `excepties` field
+ch. 7.9, the ratified option i). A default's `exceptions` field
 generalises the `decides_m` lowering recursively; the translation is a real extension of
 S10, not an application of it.
 
@@ -1979,7 +1979,7 @@ S10, not an application of it.
 member or an exception group — lowers to two predicates: an outcome
 `T_out(S,V)` (the highest *settling* default's decision: the 0/1 besluit on
 characteristic defaults, the scaled consequence term on attribute defaults)
-and a conflict flag `T_cfl(S)`. A *group* — a default's `excepties` field,
+and a conflict flag `T_cfl(S)`. A *group* — a default's `exceptions` field,
 or the root member set — reconciles its member chains exactly as S10's root
 group reconciles:
 
@@ -1998,7 +1998,7 @@ A member conflict propagates *before* differing decisions are read
 (`not mK_cfl` — the conflict-first ordering of ch. 7.9), so a deeper key
 wins over a shallower one.
 
-**The default.** A default carrying `excepties` reads its group first:
+**The default.** A default carrying `exceptions` reads its group first:
 
 ```
 tN_dec(S,V) :- gU_out(S,V).                                        % adopt the sub decision
@@ -2023,7 +2023,7 @@ exception group takes precedence.
 atom `grpG_eff`: differing exception groups therefore write nothing on the
 target and leave any case input standing (S10's `inputval` path), while
 the sole §9.5 fact is the `inconsistent` its *own* group deposits under a
-**path key** — `onderwerp.target` plus the default-index path
+**path key** — `subject.target` plus the default-index path
 (`Jutter.heffing/0` for the exception groups of root default 0,
 `Jutter.heffing/1` for default 1's base group). The root's own differing
 decisions keep the bare key `Jutter.heffing` (S10). One conflict, one fact, one place —
@@ -2204,7 +2204,7 @@ family unchanged (a cast is a pass-through re-typing — the value is
 already exact-rational).
 
 The one new arithmetic encoding is the money product Catala rounds to the
-cent (`Mult_mon_rat`; the plugin wraps it in `Afgerond {REKENKUNDIG, 2}`).
+cent (`Mult_mon_rat`; the plugin wraps it in `Rounding {halfAwayFromZero, 2}`).
 The naive scale-6 product **wraps clingo's machine integers at tutorial
 magnitude** — €20.000 × 21% is 2000000 × 2100 = 4.2·10⁹ > 2³¹ — so a
 2-decimal money `M` times a 4-decimal rate `R` is encoded **split**, the
@@ -2345,10 +2345,10 @@ outside the ch. 3.7/3.8 fold shapes; the ten-minste-1 composite union (v0
 clips to the union of member regions; loud in both executors); the
 static-comparison composite member (v0 partitions it into a
 value-side guard; loud in both executors) and the nested composite
-bullet (v0 markers it as Onopgelost; loud in both executors);
+bullet (v0 markers it as Unresolved; loud in both executors);
 gedurende condition shapes beyond WF-055; temporal
 totals over case-supplied full timelines, and non-year total
-granularity; rounded roots in term positions (`Begrensd`
+granularity; rounded roots in term positions (`Clamp`
 clip/min-max now translates — the integer min/max identities on the
 harmonised scale, S6, `jutterswet-grensbedrag` — save a bound needing a
 real unit conversion factor or a non-ground, possibly-empty bound, which
@@ -2357,7 +2357,7 @@ genuinely non-numeric arithmetic operands (text/enum/boolean, or a
 date reaching the numeric path) — narrowed 2026-08-28 for the v0
 **`Onbekend` typing-inability sentinel** (a composite unit the
 frontend could not name, not an actual non-numeric value), which then
-translated when the node was a PROVABLY-numeric arithmetic `Binair`
+translated when the node was a PROVABLY-numeric arithmetic `Binary`
 whose operands passed the numeric checks recursively; that arm was
 retired again on 2026-08-29 with the unit-identity typing fix
 (decisions 16Y and 17b), and since L2 `Onbekend` is no datatype at all (B16): a
@@ -2380,8 +2380,8 @@ square, ref ≡ clingo) and, since 2026-09-19, the day-kind (dagsoort)
 durations and tijdsduren (the extension table above, goldens
 `jutterswet-bergingsklok` and `jutterswet-getijklok`, the latter over
 datum-tijd operands); what stays loud in the date family is the day-kind
-TIJDSDUUR over DATUM-TIJD operands,
-`DATUM_MET`/`DATUMTIJD_MET`, the sub-day part extractors
+`duration` over DATUM-TIJD operands,
+`dateWith`/`dateTimeWith`, the sub-day part extractors
 (uur/minuut/seconde/milliseconde-uit, still under the catch-all;
 outside ref too — the extractor slice is not the ms layer's
 arithmetic), and a datum-tijd operand in an EQUALITY comparison
@@ -2469,7 +2469,7 @@ unpinned overwrite order); to-many navigation in scalar slots (WF-053);
 bean-field-only fact creations (the symbolic ch. 3.4 form is what
 executes); the expression/condition catch-alls ("not translated — no
 corpus case exercises it") — narrowed 2026-08-25: the *scalar*
-counting composites (GEEN / TEN MINSTE / TEN HOOGSTE / PRECIES, the
+counting composites (`none` / `atLeast` / `atMost` / `exactly`, the
 decision-table desugar's disjunctive condition kinds among them) now
 translate through the cqN count encoding (S7:
 `jutterswet-rubriektabel`, `jutterswet-vrijgavetoets`,
@@ -2479,7 +2479,7 @@ catch-all, as did the articulated eerste/laatste fold (S8,
 SET-typed source now translate too — the `#min`/`#max` aggregation
 arm, S8, `jutterswet-vondstpiek` and `jutterswet-vondstvenster` — while
 minimum/maximum over LISTED operands stay under this catch-all: the
-same listed-fold encoding would serve, no corpus case; the AANTAL set
+same listed-fold encoding would serve, no corpus case; the `count` set
 source stayed under it too until L2, and from 2026-09-19 it was the one
 entry in this inventory that would never leave the catch-all by being
 translated — the maintainer took option (ii) of
@@ -2489,7 +2489,7 @@ refused the form (`IR-SPEC.md` WF-096, negatiefs
 strictest of the three readings, is what the verifier came round to.
 Since L2 the form has a named arm instead: WF-096 retired with the set
 flag, and a count whose source names a member of the element type is
-refused as WF-093's (`the source of this AANTAL aggregation reads '…', a
+refused as WF-093's (`the source of this count aggregation reads '…', a
 member of the element type '…'`; negatief
 `wf093-telling-over-attribuutbron`), on the same ground: a
 count folds the contributors, and such a source hands it values). The LISTED
@@ -2500,7 +2500,7 @@ the catch-all's own sentence:
 `corpus/rood/som-fallback-always-evaluated` fell here, so "no corpus
 case exercises it" was false while that witness stood — the same
 untruth WF-044's condition arm had just removed from the condition
-half. The form is `SOM` with an absent `elementObjecttype` AND an
+half. The form is `sum` with an absent `elementType` AND an
 absent `dimensieSelectie`: the first rules out the instance folds
 (every som arm this backend carries demands the stamp present), and the
 second is needed because absence of the stamp alone means listed *or*
@@ -2510,29 +2510,29 @@ contributors come from. Its three boundaries — the kind, the stamp and
 the dimension selection — are pinned in the backend's own suite and
 cannot be pinned by the corpus: a red witness for any of them would
 re-falsify the sentence by exercising the catch-all again. What keeps
-the catch-all keeps it truthfully: TOTAAL's temporal subject-own arms
-carry an absent `elementObjecttype`, so absence does not mean "listed"
-there; the AANTAL listed form is no som; and no document in any zone
+the catch-all keeps it truthfully: `total`'s temporal subject-own arms
+carry an absent `elementType`, so absence does not mean "listed"
+there; the `count` listed form is no som; and no document in any zone
 carries a `dimensieSelectie` on a `Functie` at all (measured
 2026-09-19: zero over corpus and parity);
 what remains under it for composites is the member-less
 counting list (`a counting composite without members is not
 translated (no corpus case)`) and every member kind that keeps its
-own fault (a Periode member — the vormenkabinet's peiling rule, still
-refused by both executors — an Onopgelost bullet, a
+own fault (a TimeWindow member — the vormenkabinet's peiling rule, still
+refused by both executors — an Unresolved bullet, a
 comparison carrying a periode, the negated gevuld predicate; the role
 check rides the S7 `rol/3` join, above, with no to-many exception since
 L2 — until L2 the near-side `Rollidmaatschap`'s **to-many connecting
 reference** faulted loudly in both executors (`the rolcheck's
 connecting reference to … is the to-many role …`; the red case
 `near-side-rolcheck-to-many`, since L2 a golden, RUNTIME-SEMANTICS
-ch. 5.8a)). The **day-kind (DAGSOORT) predicate** — a
+ch. 5.8a)). The **day-kind (`dayKind`) predicate** — a
 reference to a declared day kind used as a condition — is itself a loud
 non-translation here: clingo reaches this condition catch-all and ref
 refuses the predicate by name, so a reference to a day kind faults loudly
 in both executors, never silently, even though a day kind's own definition
 is well-formed (WF-031). Since 2026-09-19 that holds of the predicate as a
-RULE condition only: INSIDE a day-kind voorwaarde the nested reference is
+RULE condition only: INSIDE a day-kind condition the nested reference is
 the §9.8 composition and both executors evaluate it, which is what WF-085's
 reference graph is about.
 
@@ -2787,8 +2787,8 @@ multiplication (S18) — shapes and fences without a corpus case:* a
 (`a value-position IfThenElse condition is a comparison over bound
 operands (WF-077; no corpus case for more)`) — a predicate or composite
 condition has no corpus case. Its comparison operands may READ binders,
-parameters and literals, and arithmetic combinators (`Binair`,
-`Afgerond`, `Begrensd`, `Tekst_reeks`) over those are admissible:
+parameters and literals, and arithmetic combinators (`Binary`,
+`Rounding`, `Clamp`, `TextComposition`) over those are admissible:
 `value_condition` lowers each operand through `expr_term` and harmonises
 the two operand scales exactly as the closed-body comparison route does,
 so the operand backstop (`… must read only binders, parameters or
@@ -2826,10 +2826,10 @@ vraag 3-A: intermediate values are exact-rational, the scale binds
 declarations and write boundaries, never a step) becomes a **loud backend
 limit**. The minimised synthesis find: a `Let` binding the
 **non-terminating** quotient `100 ÷ 3 = 33,333…`, read at an endpoint
-`Afgerond op 2 rekenkundig`. ref carries the exact rational through the
-`Let` and the single endpoint `Afgerond` collapses it once to 33,33; the
+`Rounding` to 2 decimals, `halfAwayFromZero`. ref carries the exact rational through the
+`Let` and the single endpoint `Rounding` collapses it once to 33,33; the
 ASP side translates the binder's value as a **bare** division (the
-`Afgerond`-over-division fold of this section fires only when the round
+`Rounding`-over-division fold of this section fires only when the round
 wraps the division *directly*, not through a binder read), whose
 `non-exact division (an explicit rounding is mandated before precision is
 lost)` fence trips because `100/3` terminates at **no** finite scale. So
@@ -2846,7 +2846,7 @@ backslash-quote / doubled-backslash, S2; WF-057's backstop, sole cover
 for case labels); values that do
 not fit their declared decimals or exceed 2^31−1; scales beyond 10^9;
 unknown object types, attributes, parameters; malformed or missing
-`asOfDate` under Rekendatum; granular parameters in scalar slots and
+`asOfDate` under evaluationDate; granular parameters in scalar slots and
 their timelines missing from the case.
 
 Gate 8 keeps the observable-fault subset honest
