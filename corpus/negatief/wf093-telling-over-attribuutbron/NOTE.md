@@ -17,7 +17,7 @@ count's half of WF-096 went into WF-093, which since L2 keys on the source
 itself (D9): a count source names a role of the fold subject and no
 attribute of the element type, and this source names an attribute. The
 document is the migration's translation
-(`spec/proposals/v1-migratie/m2.py`). `expect.txt` pins the arm (U1).
+(`spec/proposals/v1-migratie/m2.py`).
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,

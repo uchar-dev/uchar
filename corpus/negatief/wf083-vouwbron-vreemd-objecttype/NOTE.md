@@ -62,8 +62,7 @@ exactly one report changes, this one, which turns clean.
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the source
 lost its own `type` (B13); a `TOTAAL` without a range reads the subject's
 own attribute (D8 (iv)), so its anchor is the fold subject, and its
-`objecttype` still names another type. The rule still fires on the same arm,
-and `expect.txt` pins it (U1).
+`objecttype` still names another type. The rule still fires on the same arm.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,

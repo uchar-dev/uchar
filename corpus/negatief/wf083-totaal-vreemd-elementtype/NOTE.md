@@ -35,8 +35,6 @@ Falsifiable, arm-exact: remove the `TOTAAL` element-type arm from the
 turns clean; no other report over golden, rood, negatief and the parity zone
 changes (measured: the arm fires on this document alone).
 
-`expect.txt` pins the arm.
-
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a

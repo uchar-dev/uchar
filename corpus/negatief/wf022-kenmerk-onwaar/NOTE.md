@@ -1,7 +1,7 @@
 Violates WF-022 (`spec/IR-SPEC.md`), its second clause: a characteristic
 target's value must be the boolean constant true. The flat rule
 `geen herleving` attributes the characteristic `herleefd` with the literal
-`onwaar`.
+`{"boolean": false}` (`onwaar` in the source).
 
 The document is the one proposed in
 `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md` §7.3: one object type

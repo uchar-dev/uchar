@@ -16,7 +16,6 @@ an `elementObjecttype` carries a range under every kind but `TOTAAL` (U2),
 so the migration had to derive one and refused: nothing derives a range
 beside a union. Written by hand with the first selection's relation as
 `bronRol`; the clause now names both halves of the count's own source.
-`expect.txt` pins the arm (U1).
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,

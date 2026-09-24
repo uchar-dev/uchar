@@ -22,7 +22,7 @@ reference, and a role name there resolved to no attribute. That spelling
 left the wire with L2 (B13), and WF-093 recognises the count source at the
 source itself (D9), so the migration's translation
 (`spec/proposals/v1-migratie/m2.py`) falls on WF-093, the rule this
-directory now names. `expect.txt` pins the arm (U1).
+directory now names.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,

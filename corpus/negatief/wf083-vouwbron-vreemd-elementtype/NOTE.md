@@ -13,11 +13,11 @@ members being folded.
     declarations
 
 The document. A Jutter-subject `TOTAAL` over the Jutter's finds —
-`elementType: "Vondst"`, `sourceRole` bound to the role `vondst` (which
-makes the operand the set source, D8 (i)), no navigation — whose operand names `kistgeld` with
-`objecttype: "Jutter"`. `Jutter` declares `kistgeld`; `Vondst` does not. Every
-declaration cross in the document is satisfied, which is exactly why the form
-was verifier-clean.
+`elementType: "Vondst"`, `sourceRole` bound to the role `vondst` (which makes
+the operand the set source, D8 (i)), no navigation — whose operand names
+`kistgeld` with `objecttype: "Jutter"`. `Jutter` declares `kistgeld`; `Vondst`
+does not. Every declaration cross in the document is satisfied, which is
+exactly why the form was verifier-clean.
 
 Why this one is the worst of the four. It is the case where the two OCaml
 executors DISAGREE under a well-formed document:
@@ -54,9 +54,9 @@ and so do the two self-denotation cases.
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
 migration's translation (`spec/proposals/v1-migratie/m2.py`): the set source
 lost its own `type` and set reading (B11, B13); it is the set source because
-the fold carries a range (D8 (i)), so its anchor is the element type, and
-its `objecttype` still names the fold subject. The rule still fires on the
-same arm, and `expect.txt` pins it (U1).
+the fold carries a range (D8 (i)), so its anchor is the element type, and its
+`objecttype` still names the fold subject. The rule still fires on the same
+arm.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,

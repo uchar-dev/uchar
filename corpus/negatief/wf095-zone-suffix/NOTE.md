@@ -1,8 +1,8 @@
 # Violates WF-095 — a zone suffix on a millisecond-precision date lexeme
 
 The Gelijkstelling assigns the millisecond-precision date literal
-`"2026-03-15T12:00:00Z"`. The canonical ISO lexeme carries **no zone
-suffix and no offset**: an instant on the wire is a local civil
+`{"dateTime": "2026-03-15T12:00:00Z"}`. The canonical ISO lexeme carries **no
+zone suffix and no offset**: an instant on the wire is a local civil
 date-and-time, and a `Z` claims something the millisecond layer does not
 represent.
 
@@ -20,8 +20,7 @@ is a `Date` with `precision: millisecond` (delta B15 of
 `spec/proposals/V1-WIREMIGRATIE.md`), and that precision is what makes WF-095
 the lexeme's rule; the document is the translation of
 `spec/proposals/v1-migratie/m3.py`. The report is unchanged but for the
-name of the date, which the message now gives by its precision. `expect.txt`
-pins the arm.
+name of the date, which the message now gives by its precision.
 
 Since L4 the literal's value is typed (delta B22): the ill-formed string sits
 in its `dateTime` variant, which the rule reads, and the report cites

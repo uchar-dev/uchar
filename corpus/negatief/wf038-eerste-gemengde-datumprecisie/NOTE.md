@@ -52,7 +52,7 @@ equality-only cases stay red.
 representations are one `Date` node with a `precision`, `day` or
 `millisecond` (delta B15 of `spec/proposals/V1-WIREMIGRATIE.md`); the
 document is the translation of `spec/proposals/v1-migratie/m3.py`, and the
-arm reads the precision. `expect.txt` pins the arm.
+arm reads the precision.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,

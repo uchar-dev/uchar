@@ -11,7 +11,7 @@ migration's translation of its L1 form.) Until L2 the scope
 was the written field `kavel` without a binding, and the verifier derived
 the role by name. Since L2 the binding IS the scoping (B8, D12): the
 migration wrote `scopeRol` from the written name, and the to-many role is
-what remains. `expect.txt` pins the arm (U1).
+what remains.
 
 Since L4 the uniqueness is a `Uniqueness` with one `Source` (delta B27), and
 the scope binding is the version's `scope` (`scopeRol` until L4), which the

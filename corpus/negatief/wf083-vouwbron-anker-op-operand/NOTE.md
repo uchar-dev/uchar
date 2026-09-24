@@ -20,8 +20,7 @@ position (D8) — this document is the witness of the count-source anchor,
 beside `wf083-vouwbron-vreemd-elementtype` (a value fold's set source
 anchored on the subject) and `wf083-vouwbron-vreemd-objecttype` (a subject's
 own read anchored elsewhere). `wf096-aantal-setbron-wrat` translated to the
-same shape and was removed as a duplicate of this one. `expect.txt` pins the
-arm (U1).
+same shape and was removed as a duplicate of this one.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,

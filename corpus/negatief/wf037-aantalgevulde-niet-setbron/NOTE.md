@@ -21,7 +21,7 @@ enforced at load. What the verifier still decides is a range beside a source
 that is no attribute reference, and this document pins that. The card
 expected a rewrite without range and without `elementObjecttype`; measured,
 that shape is `wf037-aantalgevulde-zonder-elementtype`'s arm, already
-witnessed, while this arm had none. `expect.txt` pins the arm (U1).
+witnessed, while this arm had none.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,

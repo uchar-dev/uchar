@@ -20,7 +20,7 @@ source of this EERSTE aggregation").
 migration's translation of its L1 form.) As
 `wf093-aantalgevulde-wrat`, under `EERSTE`: the sentinel spelling of the
 count source left the wire (B13), WF-093 keys on the source itself (D9), and
-the document is the migration's translation. `expect.txt` pins the arm (U1).
+the document is the migration's translation.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,

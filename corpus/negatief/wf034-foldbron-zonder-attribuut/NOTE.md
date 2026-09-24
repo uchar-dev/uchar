@@ -87,10 +87,10 @@ the parity zone (718 documents) no other report changes. The arm is the only
 fence on this shape again, as the "Falsifiable" paragraph above first said.
 
 **Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
-migration's translation (`spec/proposals/v1-migratie/m2.py`): the fold
-source lost its own `type` (B13), and with it the WF-091 line its unit lie
-drew beside this one; the source still names no attribute. The rule still
-fires on the same arm, and `expect.txt` pins it (U1).
+migration's translation (`spec/proposals/v1-migratie/m2.py`): the fold source
+lost its own `type` (B13), and with it the WF-091 line its unit lie drew
+beside this one; the source still names no attribute. The rule still fires on
+the same arm.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,

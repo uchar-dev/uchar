@@ -26,7 +26,7 @@ reference (B13) and the count source is recognised at the source itself
 the element type. The document is the migration's translation
 (`spec/proposals/v1-migratie/m2.py`), which also wrote the range the schema
 demands; measured without the re-keying the verifier would have fallen back
-on WF-034's name resolution. `expect.txt` pins the arm (U1).
+on WF-034's name resolution.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,
