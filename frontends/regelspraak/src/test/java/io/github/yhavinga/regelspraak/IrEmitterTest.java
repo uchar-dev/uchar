@@ -263,6 +263,22 @@ class IrEmitterTest {
         assertEquals(4, c.split("\"spellings\"", -1).length - 1, () -> "spellingen alleen in het stelsel:\n" + c);
     }
 
+    @Test void twee_afkortingen_die_een_naam_zijn_in_een_stelsel_worden_geweigerd() {
+        // WF-009: one Unit per abbreviation under the name identity. The model keys its units on the exact spelling,
+        // so kg and KG declared apart are two units there; the wire would carry one name twice, which every reader
+        // refuses — so the emitter refuses the model instead of writing that document.
+        RegelSpraakModel m = Resolver.resolve("""
+            Eenheidsysteem Gewicht
+                het kilogram kg
+                de kilo KG = 1 kg
+            Objecttype de Vondst
+                het gewicht Numeriek (geheel getal) met eenheid kg;
+            """);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
+        assertTrue(e.getMessage().contains("'kg' en 'KG'") && e.getMessage().contains("(WF-009)"), e.getMessage());
+    }
+
     @Test void percentage_literal_lexeme_is_kaal() {
         // Same WF-081 fence for the '%' suffix: "21%" emits waarde "21", its type a number with the unit '%'.
         // The presentation tag belongs to the declaration and never to a type annotation (IR-SPEC ch. 2.4).

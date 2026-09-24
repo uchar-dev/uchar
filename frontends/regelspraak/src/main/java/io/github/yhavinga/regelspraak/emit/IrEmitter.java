@@ -415,8 +415,8 @@ public final class IrEmitter {
      *  spellings on it. The model keeps two maps — every written abbreviation, and the unit words and plurals
      *  (normalised) — and a key of either that is not the unit's own abbreviation is one of its spellings, the map's
      *  keys before the aliases; a spelling is never the abbreviation itself. What the list cannot carry — an alias of
-     *  a unit the system does not declare, one abbreviation for two different units, a spelling reached twice — is a
-     *  frontend defect, refused rather than dropped. */
+     *  a unit the system does not declare, one abbreviation for two different units (under the name identity too), a
+     *  spelling reached twice — is a frontend defect, refused rather than dropped. */
     private void unitSystem(Eenheidstelsel es) {
         Map<String, Eenheid> eenheden = new java.util.LinkedHashMap<>();
         Map<String, List<String>> spellingen = new java.util.LinkedHashMap<>();
@@ -436,6 +436,16 @@ public final class IrEmitter {
                         + en.getKey() + "' toe aan de eenheid '" + e.afkorting() + "', die het niet zo declareert; een "
                         + "spelling staat alleen op een gedeclareerde eenheid");
             if (!en.getKey().equals(e.afkorting())) spellingen.get(e.afkorting()).add(en.getKey());
+        }
+        // one Unit per abbreviation under the name identity (WF-009): the model keys its units on the exact
+        // spelling, so two declarations whose abbreviations differ in case alone are two units here and one name there
+        Map<String, String> perNaam = new java.util.HashMap<>();
+        for (String a : eenheden.keySet()) {
+            String ander = perNaam.putIfAbsent(norm(a), a);
+            if (ander != null)
+                throw new IllegalStateException("IrEmitter: eenheidstelsel '" + es.naam + "' declareert de eenheden '"
+                        + ander + "' en '" + a + "', die onder de naamidentiteit één afkorting zijn; de lijst draagt één "
+                        + "eenheid per afkorting (WF-009)");
         }
         w.beginObject();
         w.key("node").value("UnitSystem");
