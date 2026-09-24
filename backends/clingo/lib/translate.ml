@@ -9185,7 +9185,7 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
   let env =
     { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
   in
-  let role rname = Eval.bound_role env { rb_feittype = ftn; rb_rol = rname } in
+  let role rname = Eval.created_role env ~fact_type:ftn ~role:rname in
   let anker_rol = role fc.anker_rol in
   let doel_rol = role fc.doel_rol in
   let anker = req "FactCreationVersion.anchor" fc.anker in

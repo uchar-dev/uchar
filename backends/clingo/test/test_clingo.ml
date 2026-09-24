@@ -11484,6 +11484,31 @@ let () =
             (bevinding = [ { Ir_v0.Checks.wf = "WF-081"; at; reason = m } ]))
     getallen
 
+(* A fact creation's two named roles, over the wire: the loader reads a
+   creation whose target role does not resolve (its target type stays empty,
+   and WF-028 refuses the document), so an executor meets it; ref and this
+   backend then refuse it in WF-028's own sentence — the one the verifier and
+   the Drools loader speak — and never in the generic binding sentence. *)
+let () =
+  List.iter
+    (fun (naam, waar, door, zin) ->
+      let doc, case =
+        load_pair ~ir:(vervang (gastheer_doc ~eigenaar:"null" ()) ~waar ~door)
+          ~case_text:(gastheer_case ~aantal:{|"2"|} ())
+      in
+      (match ref_report doc case with
+      | (_ : string list) -> check (naam ^ ": ref weigert (kreeg een wereld)") false
+      | exception Uchar_ref.Value.Fault m -> check (naam ^ ": ref weigert (" ^ m ^ ")") (m = zin));
+      match translate doc case with
+      | (_ : string) -> check (naam ^ ": clingo weigert (kreeg een programma)") false
+      | exception Uchar_ref.Value.Fault m -> check (naam ^ ": clingo weigert (" ^ m ^ ")") (m = zin))
+    [ ( "WF-028 onbekende doelrol", {|"targetRole": "vaksein"|}, {|"targetRole": "onbekend"|},
+        "'onbekend' is not a role of 'vakbeseining'" );
+      ( "WF-028 onbekende ankerrol", {|"anchorRole": "seinvak"|}, {|"anchorRole": "onbekend"|},
+        "'onbekend' is not a role of 'vakbeseining'" );
+      ( "WF-028 onbekend feittype", {|"factType": "vakbeseining"|}, {|"factType": "onbekendfeit"|},
+        "created fact type 'onbekendfeit' is not declared" ) ]
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

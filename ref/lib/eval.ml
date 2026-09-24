@@ -508,6 +508,28 @@ let bound_role env (rb : rol_binding) =
           Value.fault "role binding names unknown role %S of fact type %S" rb.rb_rol
             rb.rb_feittype)
 
+(* The two named roles of a fact creation (IR-SPEC ch. 3.4) resolve as
+   WF-028 resolves them: the created fact type is declared and has exactly
+   two roles, and exactly one of them carries the name. The verifier refuses
+   anything else; a node that reaches an executor without that check is
+   refused in WF-028's own sentences, which the Drools loader speaks for the
+   target role too, rather than in the binding sentences above. *)
+let created_role env ~fact_type ~role =
+  match Ir_v0.Checks.find_ci env.doc.feittypen fact_type with
+  | None -> Value.fault "created fact type '%s' is not declared" fact_type
+  | Some (ft : feittype) -> (
+      match ft.rollen with
+      | [ a; b ] -> (
+          let named (r : rol) =
+            match r.rol_naam with Some n -> norm n = norm role | None -> false
+          in
+          match (named a, named b) with
+          | true, false -> a
+          | false, true -> b
+          | true, true -> Value.fault "role '%s' is ambiguous within '%s'" role fact_type
+          | false, false -> Value.fault "'%s' is not a role of '%s'" role fact_type)
+      | _ -> Value.fault "created fact type '%s' does not have exactly two roles" fact_type)
+
 (* the storage keys a role's links may sit under, in read-preference
    order: the case may key them by the role's plural or its name *)
 let role_keys (r : rol) = List.filter_map (fun k -> k) [ r.rol_meervoud; r.rol_naam ]
@@ -2788,7 +2810,7 @@ let run_feit_creatie env world (fc : resolved_feit_creatie) =
        the doel is a characteristic check and reads no attribute *)
     let env = { env with subj = fc.anker } in
     let ftn = fc.fc_feittype in
-    let role rname = bound_role env { rb_feittype = ftn; rb_rol = rname } in
+    let role rname = created_role env ~fact_type:ftn ~role:rname in
     let anker_rol = role fc.anker_rol in
     let doel_rol = role fc.doel_rol in
     (* ch. 5.5: the host splits the guard into the two readings this position

@@ -4278,6 +4278,39 @@ let () =
     List.length (Eval.role_links final (World.get final "v1") vaksein_rol)
   in
   check "WV-5.8b-B-supertype-gastheer-leest-het-doel" (super_vakseinen (Some "Baken") = 1);
+  (* --- the two named roles resolve as WF-028 resolves them ---
+     A creation whose anchorRole or targetRole names no role of the created
+     fact type, names one of two roles that share it, or whose fact type is
+     undeclared or has not exactly two roles, is refused in WF-028's own
+     sentence, never read as the role the name resembles. The verifier
+     refuses such a document first; this is what a node built past it meets. *)
+  let met_creatie f =
+    let d = doc_of None in
+    { d with feit_creaties = List.map f d.feit_creaties }
+  in
+  let met_rollen rollen =
+    let d = doc_of None in
+    { d with
+      feittypen =
+        List.map
+          (fun (n, (x : Ir_v0.Ast.feittype)) -> if n = "vakbeseining" then (n, { x with rollen }) else (n, x))
+          d.feittypen }
+  in
+  let weigert naam doc zin = expect_fault_msg naam (fun () -> Eval.evaluate (env_of doc) w) zin in
+  weigert "WF-028-onbekende-doelrol-weigert"
+    (met_creatie (fun fc -> { fc with doel_rol = "onbekend" }))
+    "'onbekend' is not a role of 'vakbeseining'";
+  weigert "WF-028-onbekende-ankerrol-weigert"
+    (met_creatie (fun fc -> { fc with anker_rol = "onbekend" }))
+    "'onbekend' is not a role of 'vakbeseining'";
+  weigert "WF-028-onbekend-feittype-weigert"
+    (met_creatie (fun fc -> { fc with fc_feittype = "onbekendfeit" }))
+    "created fact type 'onbekendfeit' is not declared";
+  weigert "WF-028-gedeelde-rolnaam-weigert"
+    (met_rollen [ rol "seinvak" "Kustvak" "seinvakken" false; rol "seinvak" "Sein" "vakseinen" true ])
+    "role 'seinvak' is ambiguous within 'vakbeseining'";
+  weigert "WF-028-feittype-zonder-twee-rollen-weigert" (met_rollen [ vaksein_rol ])
+    "created fact type 'vakbeseining' does not have exactly two roles";
   (* --- the AMBIGUOUS host faults, and says which two objects it reached ---
      Populations are extensional: with `Sein ⊑ Kustvak` a concrete Sein fills an
      anker declared Kustvak, so a `Sein` host designates the anker AND the doel.
