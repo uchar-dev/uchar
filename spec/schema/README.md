@@ -15,9 +15,10 @@ The move to v1 is one break carried out in steps (`../proposals/V1-WIREMIGRATIE.
 (`../CONSTRUCTS.md`), never a silent rewrite. Rationale and method:
 `../IR-SPEC.md`.
 
-The schema carries the **L3 shape**: the container is restructured (L1), the
-reference layer is reduced to its symbolic form (L2), and the type system is in
-its v1 nodes (L3); nothing else.
+The schema carries the **L4 shape**: the container is restructured (L1), the
+reference layer is reduced to its symbolic form (L2), the type system is in its
+v1 nodes (L3), and the rule layer and the expression layer are in their v1
+forms (L4); nothing else.
 
 Shape, in brief:
 
@@ -28,11 +29,12 @@ Shape, in brief:
   `dimensions`, `timelines`, `dayKinds`, then the optional extension list
   `functionDefs`. A list entry carries its name on its node; there is no map
   key, so each name is written once.
-- `rules` carries the resolved rule lists under their v0 keys and in v0 order
+- `rules` carries the rule lists under their v0 keys and in v0 order
   (`resolvedRegels`, `resolvedDagsoorten`, `objectCreaties`, `verdelingen`,
-  `consistenties`, `uniciteiten`, `uniciteitUnies`, `feitCreaties`,
-  `resolvedStartpunten`, `regelGroepen`), then the optional extension list
-  `prioritizedDefaults`. The v0 `regels` stubs are gone.
+  `consistenties`, `uniciteiten`, `feitCreaties`, `resolvedStartpunten`,
+  `regelGroepen`), then the optional extension list `prioritizedDefaults`. The
+  v0 `regels` stubs are gone, and since L4 so is `uniciteitUnies`: the
+  single-source and union uniqueness forms share `uniciteiten`.
 - `diagnostics` is the producer's own account of what stayed unresolved in a
   document it did write (WF-113); `severity` is `WARNING` only.
 - An `ObjectType` (`name`, `supertype`?, `animate`, `plural`?, `attributes`,
@@ -56,21 +58,29 @@ Shape, in brief:
   filler type is meant. The migration and the emitter write the field only
   where it narrows (the L2 card,
   `../../backlog/done/20260923-l2-referentielaag.md`, U12). A fact creation
-  carries its symbolic fields alone, a scoped uniqueness its `scopeRol`, a
-  navigated characteristic check its hop as `navigatieBinding`.
+  carries its symbolic fields alone, a scoped uniqueness its scope binding
+  (`scope` since L4), a navigated characteristic check its hop as
+  `navigatieBinding`.
   An unresolved expression's `type` is optional (absent: unknown), and the
   datatype union has no member for an unknown type (B16). The written ranges
   have their own section below.
 - The type system is the v1 one (L3): `Number`, `Date`, `Unit`,
   `UnitSystem`, `Parameter` and `DayKind`, in their own section below.
+- The rule layer and the expression layer are the v1 ones (L4): the six named
+  forms with their versions, `Aggregation` and `BuiltinCall`, the typed
+  `Literal` value, `ContextValue` and `BoundDay`, in their own section below.
 - Every other node — `Feittype`, `Dimensie`, `Tijdlijn`, the datatypes L3
   leaves alone (`Tekst`, `Booleaan`, `Enumeratie`, `SumType`, `ListType`,
-  `StructType`), the expression and condition families, every `Resolved*`
-  node — keeps its v0 name, field spellings and enum values until its own
-  landing, less the keys L2 removed; `RoleMembership` is the one node L2
-  renames (it restructures two). So do the enum values inside the new nodes
-  (`DAG` … `JAAR`, `BIJVOEGLIJK`/`BEZITTELIJK`/`ZELFSTANDIG`, and a
-  `Number`'s `sign`).
+  `StructType`), the expression and condition families except the four
+  nodes L4 rewrites, the child nodes `Geldigheid`, `RolBinding`, `Toekenning`
+  and `DimensieSelectie`, and the rule-layer nodes `ResolvedDagsoort`,
+  `ResolvedStartpunt` and `ResolvedRegelGroep` — keeps its v0 name, field
+  spellings and enum values until its own landing, less the keys L2 removed;
+  `RoleMembership` is the one node L2 renames (it restructures two). So do
+  the enum values inside the new nodes (`DAG` … `JAAR`,
+  `BIJVOEGLIJK`/`BEZITTELIJK`/`ZELFSTANDIG`, a `Number`'s `sign`, a rule
+  version's `presentation`, an allocation's `method`, and the `kind` of an
+  aggregation or a builtin call).
 - One field of four model-list declarations changed at M1: the name of a
   parameter, of a unit system, of a `Feittype` and of a `Dimensie` is a
   non-null string (on the first two it is spelled `name` since L3). With the
@@ -86,18 +96,22 @@ Shape, in brief:
 Canonical form. **Key order is the `properties` order of the object's schema
 definition.** The migration scripts write the M1 containers and nodes (the
 root, `model`, `rules`, `ObjectType`, `Attribute`, `Characteristic`,
-`TimelineFacet`, `Domain`), `RoleMembership` and the six L3 nodes (`Number`,
-`Date`, `Unit`, `UnitSystem`, `Parameter`, `DayKind`) in exactly that order, and
-every emitter must, so that gate 2's round-trip and the byte-identical
-re-emission gates (9, 10, 11, 14) prove one and the same form. A node carried
-over from v0 keeps the order its producer wrote, less the keys L2 removed; a
-binding L2 derives is appended after the node's last key, where every
-producer already writes it. Measured
-2026-09-24 on the L3 shape, 23 of the 10802 node objects in `corpus/golden` and
+`TimelineFacet`, `Domain`), `RoleMembership`, the six L3 nodes (`Number`,
+`Date`, `Unit`, `UnitSystem`, `Parameter`, `DayKind`) and the L4 nodes and
+version records (the six named forms and their versions, `Source`,
+`Aggregation`, `BuiltinCall`, `Literal`, `ContextValue`, `BoundDay`) in exactly
+that order, and every emitter must, so that gate 2's round-trip and the
+byte-identical re-emission gates (9, 10, 11, 14) prove one and the same form. A
+node carried over from v0 keeps the order its producer wrote, less the keys L2
+removed; a binding L2 derives is appended after the node's last key, where
+every producer already writes it. Measured 2026-09-24 on the L4 shape, 20 of
+the 11509 node objects and version records in `corpus/golden` and
 `corpus/rood` deviate from their definition's `properties` order (kinds
-`Default`, `PrioritizedDefaults`, `Functie`, `Kwantorvouw`, `Let`; none of the
-six L3 nodes). Gate 2 does not check
-key order: its round-trip preserves the order of the document it reads.
+`Default`, `PrioritizedDefaults`, `Kwantorvouw`, `Let`; none of the L3 or L4
+nodes and no version record; on the L3 shape the three function nodes among
+the 23 deviating objects were the only ones of a node L4 rewrites). Gate 2
+does not check key order: its round-trip preserves the order of the document
+it reads.
 Beyond key order: two-space indentation, empty containers inline, numbers in
 plain (non-exponential) form, non-ASCII and control characters escaped as
 `\uXXXX`. This makes a document byte-stable for a given input.
@@ -161,24 +175,28 @@ instance fold, a quantifier fold, an allocation or a union selection reads is a
 `RolBinding` on the node, and a reader that finds none has no type-pair
 derivation to fall back on. The schema states the obligation where it can:
 
-- `ResolvedVerdeling.verbindendeRol` and `InstanceSetBranch.sourceRole` are
-  required and non-null: both nodes read a relation, always.
+- `AllocationVersion.connectingRole` (`ResolvedVerdeling.verbindendeRol`
+  until L4) and `InstanceSetBranch.sourceRole` are required and non-null: both
+  read a relation, always.
 - `Kwantorvouw` carries exactly one of `bronRol` (the one-step range) and
   `bronPad` (the multi-step range): a quantifier fold ranges over linked
   instances, always.
-- `Functie` carries exactly one of the two when it has an `elementObjecttype`,
+- `Aggregation` (the aggregation kinds of the v0 `Functie`, since L4) carries
+  exactly one of `sourceRole` and `sourcePath` when it has an `elementType`,
   exactly one argument and a kind other than `TOTAAL` (an `if`/`then` with a
-  `oneOf` over `required`), and never both, under any kind.
+  `oneOf` over `required`), and never both, under any kind. A `BuiltinCall`
+  carries neither field, nor an `elementType`.
 
-The `Functie` condition is narrower than "has an `elementObjecttype`" on two
-sides, each for a measured reason (2026-09-23). A bindingless `TOTAAL` is the
+The `Aggregation` condition is narrower than "has an `elementType`" on two
+sides, each for a measured reason (2026-09-23, on the v0 names `Functie`,
+`elementObjecttype`, `bronRol` and `bronPad`). A bindingless `TOTAAL` is the
 subject's own read over its own attribute, the timeline total (IR-SPEC ch. 4.3,
 reading (iv)): fifteen folds in the golden and red zones carry it, they read no
 relation, and the verifier holds that such a node really is the own read
 (WF-083) — which depends on the declarations, so the schema cannot state it. A
 fold with two or more arguments is the listed value fold, which reads its
 operands and not a relation; the RegelSpraak frontend stamps an
-`elementObjecttype` on some of them anyway (five folds in two golden documents,
+element type on some of them anyway (five folds in two golden documents,
 two in the parity zone), so a condition on the element type alone would demand
 a range such a fold does not have. The single-argument scope is IR-SPEC
 ch. 4.3's own (the `sourceRole` row): a range belongs to a fold with one
@@ -229,6 +247,76 @@ L3 moves the datatypes and the units to their v1 nodes and changes no meaning
   day kind's name and plural are every spelling it has on the wire; there is
   no registry of spellings beside the day kinds (IR-SPEC ch. 2.9).
 
+## The rule and expression layer (L4)
+
+L4 moves the rule layer and the expression layer to their v1 forms and changes
+no meaning (deltas B19–B23 and B27 of `../proposals/V1-WIREMIGRATIE.md`; the L4
+card, `../../backlog/done/20260924-l4-regel-en-expressielaag.md`):
+
+- **The six named forms** (IR-SPEC ch. 3, Versioning): `Rule`, `Allocation`,
+  `ObjectCreation`, `FactCreation`, `Consistency` and `Uniqueness` are each
+  `{node, name, versions}`, with at least one version (B19). A version record
+  carries no `node`: it is part of its form. `name` is nullable, because a
+  missing or blank name is WF-107's with its own witnesses; a name ending in a
+  space, `#` and digits cannot be written (the `formName` pattern), because
+  that is how the v0 wire, and the readers in memory, spell one version of a
+  form with several. `Rule` carries the extension field `statuteAnnotations`
+  on the form, one list for all its versions.
+- **`validity` on every version**, never null: a `Geldigheid` with both bounds
+  null is always. An absent `condition` is unconditional.
+- **`RuleVersion`** (`validity`, `target`, `value`, `condition`?,
+  `initialisation`, `presentation`?). The target is an `AttribuutRef` and
+  nothing else; whether it names an attribute or a characteristic is its
+  declaration's (B20), so the v0 rule kind is no field: a computing version
+  writes `initialisation: false` with the tag `presentation` (`GELIJKSTELLING`
+  or `BEREKENING`, in their v0 spelling until their own landing), an
+  initialisation writes `initialisation: true` without a tag, and a
+  characteristic write carries neither. The tag beside `initialisation: true`
+  cannot be written (a `not` over both fields); whether the combination fits
+  the target's member kind is WF-022's.
+- **`AllocationVersion`**: the fields of IR-SPEC ch. 3.2 under their IR-SPEC
+  names. `method` is one of the three real methods: the v0 placeholder of an
+  unhandled form cannot be written. The four type and attribute fields are
+  nullable because WF-034 holds their presence, and an empty attribute name
+  stays WF-034's; an absent optional field is none.
+- **`ObjectCreationVersion`** (`createdType`, `subject`, `initialisations`,
+  `condition`?, `validity`, `connectingRole`?): absent, the back-link is
+  derived (RUNTIME-SEMANTICS ch. 5.5). Each initialisation is still a v0
+  `Toekenning`.
+- **`FactCreationVersion`** (`factType`, `anchorRole`, `targetRole`,
+  `anchor`, `path`, `condition`?, `validity`): the target type is not written,
+  because it is the declared filler of `targetRole`, and `path` is a non-empty
+  list of `RolBinding`s, the last reaching the target type.
+- **`ConsistencyVersion`** carries `bron` and `line`, and
+  **`UniquenessVersion`** `bron`, under their v0 names until the source record
+  lands. A uniqueness names its `sources`, at least one, each a `Source` (`objectType`,
+  `keys`, at least one key); one source is the single-type form, two or more
+  the union (B27). `scope` stands only beside one source: a scoped union is an
+  open design question (IR-SPEC ch. 3.6), so the schema closes the position.
+- **`Aggregation` and `BuiltinCall`** (B21) split the v0 function node by
+  kind: the eight fold kinds carry `elementType`?, `filter`?,
+  `emptyFallback`?, `dimensionSelection`?, `sourceRole`? and `sourcePath`?,
+  the seventeen builtins `filter`? and `granularity`? (its five v0 buckets). A
+  field of the one node on the other, and a kind of the other node, cannot be
+  written; which kind within a node requires or admits a field is WF-037's and
+  WF-056's. The written ranges of the section above hold on `Aggregation`.
+- **`Literal.value`** (B22) is exactly one variant of the case format's value
+  union (`uchar-case-v0.schema.json`), with its patterns: `number` (an exact
+  decimal with a point, or a rational `a/b`, never a JSON number), `boolean`,
+  `text`, `date`, `dateTime`, `enumeration`, `constructor` (without a
+  payload). The source's spelling, a decimal comma included, stays in `bron`.
+  The patterns are shape tests: a calendar day and a clock are WF-084's and
+  WF-095's, and that the variant is the one the literal's `type` names is
+  WF-114's, because one datatype union serves every literal. `type` stays
+  nullable: a typeless value node is WF-034's. The text variant admits the
+  empty string, as the case format's does.
+- **`ContextValue`** (`name`, `type`, `bron`) and **`BoundDay`** (`type`,
+  `bron`) split the v0 constant (B23): the evaluation date and year keep their
+  v0 spellings `Rekendatum` and `Rekenjaar`, and the bound day of a day-kind
+  definition carries no name. `ContextValue.name` is a required string and
+  otherwise free: the name set is closed and crossed byte for byte by WF-098,
+  which gives a name outside it a witness of its own, `de dag` included.
+
 ## `uchar-ir-v1.schema.json`
 
 JSON Schema (draft 2020-12) for the format. It is strict: every object sets
@@ -254,12 +342,12 @@ node (the row-11 point read), and the `prioritizedDefaults` list under
 `rules` (the Phase-4 defaults groups). When present they are written whole,
 never null; the loaders admit exactly these keys and nothing else. Since L2
 part of that set is required, because the fields it superseded left the wire:
-`verbindendeRol` on `ResolvedVerdeling`, the symbolic fact-creation fields
-(`feittype`/`ankerRol`/`doelRol`/`joinRol`, `Tussenstap.rolBinding`), and the
-ranges of the section above. The rest stays optional where its absence has a
-meaning of its own: no `navigatieBindingen` is the subject's own read, no
-`scopeRol` an unscoped uniqueness, no `navigatieBinding` a check on the subject
-itself. The non-additive cleanup (renames; dropping the superseded fields) is
+the allocation's connecting role (`connectingRole` since L4), the symbolic
+fact-creation fields (since L4 `factType`, `anchorRole`, `targetRole` and the
+`path`), and the ranges of the section above. The rest stays optional where
+its absence has a meaning of its own: no `navigatieBindingen` is the subject's
+own read, no `scope` an unscoped uniqueness, no `navigatieBinding` a check on
+the subject itself. The non-additive cleanup (renames; dropping the superseded fields) is
 the v1 migration itself, landed step by step.
 
 **Migration.** `../proposals/v1-migratie/m1.py` converts a `regelspraak-ir-v0`
@@ -307,6 +395,28 @@ maps, an alias of a unit the system does not declare, a percentage whose unit
 is not `%`. One line on stderr per migrated document counts what was
 rewritten; a document already in the L3 shape is left untouched.
 
+`../proposals/v1-migratie/m4.py` converts an L3 document to the L4 shape, with
+the same interface and the same serialiser. It groups the flattened versions
+of one v0 list back under one name (the suffixes of a group exactly `" #1"` to
+`" #n"`, contiguous, at least two, with equal statute annotations), maps the
+v0 rule kind onto the flag and the tag, writes a null validity as always and
+leaves a null condition or optional field out, builds a fact creation's path
+from its steps and joining hop and drops its target type after checking it
+against the declared filler of the target role, merges the two uniqueness
+lists, splits the function node by kind, chooses a literal's value variant by
+its type (a decimal comma written as a point, `bron` untouched), and splits
+the constant into the bound day and the context values. It refuses, with the
+file name and a JSON pointer into the L3 input, every L3 value the L4 shape
+cannot carry: a group whose suffixes break those rules, a null or unknown rule
+kind, a target that is not an `AttribuutRef`, a null value or assertion, the
+method `COMPLEX` or a null method, a target type that is not the declared
+filler, an empty key or source list, a bucket on an aggregation or a fold
+field on a builtin, a literal without a lexeme or a type, of a type no variant
+carries, or with a boolean lexeme other than `waar`/`onwaar`, and a constant
+without a name or type. One line on stderr per migrated document counts what
+was rewritten; a document already in the L4 shape is left untouched, and one
+mixing the two shapes is refused.
+
 ## Gate: `../../scripts/check-ir-schema.sh`
 
 The repo's second CI gate. It performs three checks, and two self-tests:
@@ -314,17 +424,26 @@ The repo's second CI gate. It performs three checks, and two self-tests:
 1. **Metaschema** — the schema is itself a valid draft 2020-12 schema.
    - **Self-tests** — what the schema refuses by itself has no corpus witness
      (golden and rood must validate, negatief is not validated here), so it is
-     held against the schema directly, in both polarities: the date patterns
-     against a lexeme table, and the positions the M1, L2 and L3 shapes
-     close against one small valid document per shape with one mutation per
-     row. The rows that must pass pin the three admissions above, the two
-     narrowings of the written ranges, a `RoleMembership` carrying
-     `counterpartType`, an `Onopgelost` without `type` (the unknown type
-     since L2), and in the L3 shape the presentation tag on a type annotation
-     and a factor not in lowest terms (both refused by the verifier), a
-     percentage without the tag, a declared unit without spellings, the bare
-     unit, a factor at the bound 2^62 − 1, and a parameter without a facet and
-     a day kind without a plural.
+     held against the schema directly, in both polarities: the patterns (the
+     validity bounds, and since L4 a literal's number, date and dateTime
+     values and the form name) against a lexeme table per kind, and the
+     positions the M1, L2, L3 and L4 shapes close against one small valid
+     document per shape with one mutation per row. The rows that must pass
+     pin the three admissions above, the two narrowings of the written
+     ranges, a `RoleMembership` carrying `counterpartType`, an `Onopgelost`
+     without `type` (the unknown type since L2), in the L3 shape the
+     presentation tag on a type annotation and a factor not in lowest terms
+     (both refused by the verifier), a percentage without the tag, a declared
+     unit without spellings, the bare unit, a factor at the bound 2^62 − 1,
+     and a parameter without a facet and a day kind without a plural, and in
+     the L4 shape the admissions the verifier refuses with a witness of its
+     own (a nameless or blank form, a null reference name, an empty allocation
+     attribute, a padded statute annotation, a builtin call without a type, a
+     typeless literal, a value variant its type does not name, a context value
+     named outside the closed set) and the absences with a meaning of their
+     own (no annotations, no condition, no optional allocation field, no
+     connecting role on an object creation, no scope, an initialisation, a
+     characteristic write, an empty text).
 2. **Validation** — every `corpus/golden/**/ir.json` validates against the
    schema. The file count is reported; an empty corpus passes and says so.
 3. **Round-trip** — each such file is parsed (preserving the original number
