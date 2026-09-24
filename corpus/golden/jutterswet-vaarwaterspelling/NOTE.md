@@ -30,6 +30,9 @@ verifier-clean only because the comparison is ci.
         domain 'Vaarwater' (one namespace: a domain has one variant)
 
     while every negatief case keeps failing for its own declared rule.
+    The report carries the pointer of the wire it was taken on; since L4 a
+    rule's value sits at `/rules/resolvedRegels/<r>/versions/<v>/value`
+    (delta B19).
 
 Deliberately carries no `bron.rgs` and no `bron.catala_en`: the drift is
 a wire-level spelling that neither frontend emits — both derive a

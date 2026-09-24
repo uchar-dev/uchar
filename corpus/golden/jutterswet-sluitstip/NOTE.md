@@ -5,8 +5,9 @@ precision. Until
 2026-09-22 the RegelSpraak emitter wrote the day-first source snippet into
 a datum-tijd literal's `waarde`, and WF-095 admitted it as a second
 spelling for that reason. The emitter now writes the canonical ISO lexeme
-into `waarde` and keeps the snippet in `bron`, as it already did for a
-day-precision date (WF-084), and WF-095 admits the ISO lexeme alone. This
+into the literal's value — since L4 the `dateTime` variant of `value` — and
+keeps the snippet in `bron`, as it already did for a day-precision date
+(WF-084), and WF-095 admits the ISO lexeme alone. This
 golden holds that route: gate 10 re-emits it from `bron.rgs`
 byte-identically, gate 3 holds it WF-095-clean, and gates 5, 6 and 12
 replay it on the values below.
@@ -16,7 +17,7 @@ replay it on the values below.
 The source writes the depot's closing instant three ways, and every one
 emits the same lexeme `2026-07-01T08:30:00.000`:
 
-| rule | source spelling (`bron`) | `waarde` |
+| rule | source spelling (`bron`) | `value.dateTime` |
 |---|---|---|
 | `Sluitstip` (a write) | `dd. 1-7-2026 08:30:00.000` | `2026-07-01T08:30:00.000` |
 | `Kenmerktoekenning tijdig` (EERDER) | `01-07-2026 08:30:00.000` | `2026-07-01T08:30:00.000` |

@@ -33,12 +33,14 @@ carries the full table. The four things this document needs from it:
 
 The method is the one Phase 5d used for the `-catala` pair: put the two
 emitted documents side by side and account for **every** difference.
-Against `corpus/golden/jutterswet-wrakrecht/ir.json` there are **39
-differing lines**, counted on the twin's side of the diff (re-measured at L2
-and again at L3, 2026-09-24), in three categories — 19 + 12 + 8 — and no fourth. Until the v1
-wire there were 52: the 8 `onderwerpBron` lines left the wire at L2
-(`spec/proposals/V1-WIREMIGRATIE.md` B11), and the 5 lines of category (iv)
-left with the `regels` index (B3).
+Against `corpus/golden/jutterswet-wrakrecht/ir.json` there are **35
+differing lines**, counted on the twin's side of the diff (re-measured at L2,
+at L3 and at L4, 2026-09-24), in three categories — 19 + 8 + 8 — and no
+fourth. Until the v1 wire there were 52: the 8 `onderwerpBron` lines left the
+wire at L2 (`spec/proposals/V1-WIREMIGRATIE.md` B11), the 5 lines of category
+(iv) left with the `regels` index (B3), and 4 lines of category (ii) left at
+L4, when both documents came to write the literal's value with a point
+(B22).
 
 **(i) Source provenance — `bron` (19 lines).**
 Every such string differs, because each document quotes its own source: `"zijn grondslag"`
@@ -52,11 +54,14 @@ writes `null`, because an unconditional Horn rule states no justification
 to quote. The node itself — `ALLE` over no parts, the shape WF-050 asks
 for — is identical in both.
 
-**(ii) Literal spelling and the literal's own type annotation (12 lines:
-4 `waarde`, 4 `whole`, 4 `decimals`).** `"5,00"` against `"5.00"`, and with it the annotation `whole/decimals` on the
-literal node (`true/0` against `false/2`). The Dutch decimal comma is
-RegelSpraak's lexeme; F-logic writes the point, and the frontend derives
-the literal's scale from the lexeme it was given. This difference already
+**(ii) The literal's own type annotation (8 lines: 4 `whole`, 4
+`decimals`).** `"5,00"` against `"5.00"`, and with it the annotation
+`whole/decimals` on the literal node (`true/0` against `false/2`). The Dutch
+decimal comma is RegelSpraak's lexeme; F-logic writes the point, and the
+frontend derives the literal's scale from the lexeme it was given. Since L4
+the two spellings stand in `bron` only (category (i)): both documents write
+the value with a point, `{"number": "5.00"}` (B22), where until L4 the
+`waarde` lexemes differed too (4 more lines). This difference already
 exists between the hand-written anchor and the RegelSpraak twin — the
 anchor also spells `5.00` with scale 2 — and all four executors pin the
 same absolute values across it. That is the effective-type law of
@@ -66,14 +71,14 @@ enforces mechanically.
 
 **(iii) Declared surface names F-logic has no grammar for (8 lines:
 3 object-type `plural`, 1 `animate`, the role's `naam` and `meervoud`, 2
-`bronRol.rol`).** The three object types carry no `plural`, the to-many
+`sourceRole.rol`).** The three object types carry no `plural`, the to-many
 role's `meervoud` is `null`, and `animate` is `false` on the Kustgemeente. F-logic declares neither grammatical number
 nor animacy, so the frontend leaves them unset rather than inventing them.
 The role is consequently named by one label, `geregistreerde
 strandrechten`, where the RegelSpraak twin carries the singular/plural pair
 — and the shared case files key on exactly that string, which the twin
 matches on `Rol.meervoud` and this document on `Rol.naam` (the reference
-interpreter matches a role by either). `bronRol.rol` follows the same
+interpreter matches a role by either). `sourceRole.rol` follows the same
 label. The shape "to-many with no declared plural" is not new here:
 `corpus/golden/jutterswet-kaveltelling` already carries it and plays in
 every executor.
@@ -88,10 +93,10 @@ source order — where each exception follows the base it qualifies.
 **No semantic difference.** Everything else is byte-identical: the three
 object types with the same attributes, characteristics, datatypes and
 `supertype`; the fact type with the same name and the same role fillers;
-the same three `ResolvedRegel`s; the same two `PrioritizedDefaults` groups
+the same three `Rule` forms; the same two `PrioritizedDefaults` groups
 with the same members in the same order (exception above base); the same
-conditions; the same SOM and AANTAL with the same `elementObjecttype` and
-the same `bronRol.feittype`. A semantic difference here would be a defect
+conditions; the same SOM and AANTAL with the same `elementType` and
+the same `sourceRole.feittype`. A semantic difference here would be a defect
 in the lowering, not a finding about the languages.
 
 ## External executor: Flora-2 on the inheritance skeleton

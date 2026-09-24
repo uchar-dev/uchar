@@ -13,10 +13,12 @@ Chosen grammar positions (both admitted, verified by a quick emit test):
 
 1. **berekening RHS** (`gelijkstelling : attribuutVanOnderwerp
    WORDT_BEREKEND_ALS expressie`): `Het bergingstarief van een Vondst moet
-   berekend worden als 21%.` → `Literal{waarde:"21", type: Number with unit %}`.
+   berekend worden als 21%.` →
+   `Literal{value: {"number": "21"}, type: Number with unit %}`.
 2. **comparison RHS** (`vergelijkingsTekenGesplitst : GELIJK IS AAN`):
    `… indien het vondsttarief van de Vondst gelijk is aan 21%.` →
-   the comparison's `rechts` is `Literal{waarde:"21", type: Number with unit %}`.
+   the comparison's `rechts` is
+   `Literal{value: {"number": "21"}, type: Number with unit %}`.
 
 The frontend types a `Percentage (geheel getal)` attribute and a bare `21%`
 literal with the `%` unit (abbreviation `%`, canonical `%`, factor 1/1); both

@@ -65,6 +65,10 @@ What does NOT pin it, both variants measured under that same mutant:
         WF-090 FAIL /rules/resolvedRegels/1/waarde/fields/1/value/base/type:
         ... (idem)
 
+Both measured reports carry the pointers of the wire they were taken on;
+since L4 a rule's value sits at `/rules/resolvedRegels/<r>/versions/<v>/value`
+(delta B19).
+
 Only drift at a use site against an unchanged declaration pins the ci
 clause — which is what this document, and only this document, carries.
 

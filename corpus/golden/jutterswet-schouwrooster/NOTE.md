@@ -91,19 +91,24 @@ document the spelling lives in, not a document that computes with it.
 
 ## Firsts this golden puts on the wire
 
-- **A `Constante` named `de dag`.** Before this golden, `Rekendatum` was the
-  only `Constante` name in golden, rood and negatief together (2 occurrences
-  in 2 documents). `spec/IR-SPEC.md` ch. 4.1 enumerates the ContextValue row
-  as `Rekendatum` or `Rekenjaar` and nothing else, so the day-kind reference
-  is a third name that row does not name. Nothing checks it either: rename it
-  to `de dagX` in all four positions and all four consumers stay green on the
-  same values. The verifier and the two OCaml executors never look at the
-  field; the Drools day-kind compiler keys on the literal string
-  (`"de dag".equalsIgnoreCase(...)` in its day-kind operand compiler), so a
-  misspelling there degrades to an unrecognised operand, not to a diagnosis.
-  This is also the first day-kind condition in the corpus that reads the day
-  at all: the two pre-existing definitions compare two literals to each other
-  and degenerate to a constant.
+- **The bound day, read.** The four day-kind operands are `BoundDay` nodes,
+  the day a day-kind definition is about (`spec/IR-SPEC.md` ch. 3.7 and 4.1,
+  delta B23). This is the first day-kind condition in the corpus that reads
+  the day at all: the two pre-existing definitions compare two literals to
+  each other and degenerate to a constant. Until the L4 landing the four
+  positions were a `Constante` named `de dag`. Before this golden,
+  `Rekendatum` was the only `Constante` name in golden, rood and negatief
+  together (2 occurrences in 2 documents), and ch. 4.1 enumerated the
+  context-value row as `Rekendatum` or `Rekenjaar` and nothing else, so the
+  day-kind reference was a third name that row did not name. Nothing checked
+  it either: renamed to `de dagX` in all four positions, all four consumers
+  stayed green on the same values. The verifier and the two OCaml executors
+  never looked at the field; the Drools day-kind compiler keyed on the
+  literal string (`"de dag".equalsIgnoreCase(...)` in its day-kind operand
+  compiler), so a misspelling there degraded to an unrecognised operand, not
+  to a diagnosis. Since L4 the bound day carries no name, so that mutant has
+  no wire form, and a `ContextValue` named `de dag` is refused by WF-098
+  (`corpus/negatief/wf098-de-dag-als-contextwaarde`).
 - **A bare `LATER` comparison.** `LATER_OF_GELIJK` already existed (3
   documents); the strict `LATER` existed nowhere in the repository. It arrives
   inside a day-kind condition, which no executor evaluates — so the operator

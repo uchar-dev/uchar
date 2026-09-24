@@ -35,7 +35,7 @@ carries the full table. What this document needs from it:
   membership conclusion. A fold is a CONDITION, and until this card the
   slice could only write attribute values, so there was nothing for a fold
   to be the condition OF. A characteristic target stays a standing norm with
-  its condition as the rule's `voorwaarde`, and that is NOT because a
+  its condition as the rule version's `condition`, and that is NOT because a
   characteristic cannot be over-determined — on the wire it can, since a
   defaults group carries a `kenmerk` target and a default carries `besluit`,
   so attribute and do-not-attribute are two decisions a stack does order.
@@ -43,7 +43,7 @@ carries the full table. What this document needs from it:
   are refused), so within F-logic two definitions of one characteristic
   cannot conflict; and because it is the shape the RegelSpraak frontend
   gives the same sentence — a conditional characteristic assignment lowers
-  to a `ResolvedRegel` there too, not to a group;
+  to a `Rule` there too, not to a group;
 - `torenindeling : feittype.` with two role signatures — the relation
   reified as a class, the cardinality braces saying which end is to-many.
 
@@ -56,7 +56,8 @@ quantifier over no condition would violate WF-108 (d).
 The method is the one the `-catala` and `-flogic` pairs used before: put the
 two documents side by side and account for **every** difference. Against
 `corpus/golden/jutterswet-vuurtoren/ir.json` there are **67 differing
-lines**, counted on both sides of the diff (re-measured at L2, 2026-09-24),
+lines**, counted on both sides of the diff (re-measured at L2 and at L4,
+2026-09-24),
 in three categories — 48 + 16 + 3 — and no fourth. Until the v1 wire there
 were 89: the 20 `onderwerpBron` lines left the wire at L2
 (`spec/proposals/V1-WIREMIGRATIE.md` B11), and this document omits the two
@@ -71,8 +72,8 @@ Vuurtoren is helder"` against `"?T : helder"`, `"gekeurd zijn"` against
 sub-case is the **absence** of a citation rather than a different one (8 of
 those 48 lines): on each characteristic assignment's implied value the twin
 quotes `"waar"` where this document writes `null`, because an isa head
-writes no lexeme for the value it gives. The `Literal` node itself — `waar`
-at type `Booleaan` — is identical in both.
+writes no lexeme for the value it gives. The `Literal` node itself — the
+value `{"boolean": true}` at type `Booleaan` — is identical in both.
 
 The member's own variable reaches the wire as `?V` whatever letter the
 author chose, so one comprehension has one spelling; that is the same
@@ -81,15 +82,15 @@ existed.
 
 **(ii) Declared surface names F-logic has no grammar for (16 lines:
 2 object-type `plural`, the role's `meervoud` ×2 and `naam` ×2, 10
-`bronRol.rol`).** The two object types carry no `plural` and the to-many
-role's `meervoud` is `null`. F-logic declares no
-grammatical number, so the frontend leaves it unset rather than inventing
-it. The role is consequently named by one label, `lampen`, where the twin
+`rol` in the range bindings).** The two object types carry no `plural` and
+the to-many role's `meervoud` is `null`. F-logic declares no grammatical
+number, so the frontend leaves it unset rather than inventing it. The role is consequently named by one label, `lampen`, where the twin
 carries the singular/plural pair `lamp`/`lampen` — and the shared case files
 key on exactly that string, which the twin matches on `Rol.meervoud` and
 this document on `Rol.naam` (the reference interpreter matches a role by
-either). The five `bronRol.rol` fields — four folds and the instance fold —
-follow the same label. `bezield` is `false` in both, so it is not a
+either). The five range bindings — the `bronRol` of the four quantifier
+folds and the `sourceRole` of the instance fold — follow the same label in
+their `rol`. `bezield` is `false` in both, so it is not a
 difference here.
 
 **(iii) The trailing `prioritizedDefaults` (3 lines).** This frontend's
@@ -100,13 +101,13 @@ them identically.
 **No semantic difference.** Everything else is byte-identical: the two
 object types with the same attributes, characteristics, datatypes and
 `kenmerkSoorten`; the fact type with the same name and the same role
-fillers; the same five `ResolvedRegel`s with the same names, the same
-`soort` and in the same order; the same four `Kwantorvouw` nodes with the
-same `kwantor`, the same `drempel` where a counting quantifier has one and
+fillers; the same five `Rule` forms with the same names, the same
+`initialisation` and `presentation` and in the same order; the same four
+`Kwantorvouw` nodes with the same `kwantor`, the same `drempel` where a counting quantifier has one and
 none where it would contradict the quantifier (WF-108 (e)), the same
 `elementObjecttype`, the same filter on `keurig` and none on the other
 three, the same matrix; and the same AANTAL with the same
-`elementObjecttype` and `bronRol.feittype`. A semantic difference here would
+`elementType` and `sourceRole.feittype`. A semantic difference here would
 be a defect in the lowering, not a finding about the languages.
 
 ## The cells
