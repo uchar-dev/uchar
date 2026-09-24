@@ -1845,10 +1845,6 @@ let expr_type ctx ~(binders : (string * datatype option) list) (e : expr) =
   | Variabele_ref _ -> None
   | _ -> annotation e
 
-(* The same answer for a consumer that holds a document rather than a check
-   context, as [effective_ot] below does for the chain. *)
-let declared_type doc ~binders e = expr_type { doc } ~binders e
-
 let wf027 ctx =
   List.concat_map
     (fun (i, r) ->
@@ -2123,27 +2119,13 @@ let rec eenheid_render (u : eenheid) =
 
 let unit_render = function None -> "no unit" | Some u -> eenheid_render u
 
-let teken_render = function
-  | None -> "no sign restriction"
-  | Some Onbepaald -> "ONBEPAALD"
-  | Some Negatief -> "NEGATIEF"
-  | Some Niet_negatief -> "NIET_NEGATIEF"
-  | Some Positief -> "POSITIEF"
-
-(* The numeric facets a type turns on. A Percentage carries no sign
-   restriction on the wire, so its sign facet is vacuously "none". *)
-type num_facets = {
-  nf_geheel : bool;
-  nf_decimalen : int;
-  nf_teken : teken option;
-  nf_eenheid : eenheid option;
-}
+(* The numeric facets a type turns on. The sign is not among them: see the
+   note on [use_site_identity]. *)
+type num_facets = { nf_geheel : bool; nf_decimalen : int; nf_eenheid : eenheid option }
 
 let num_facets_of = function
-  | Numeriek { geheel; decimalen; teken; eenheid } ->
-      Some { nf_geheel = geheel; nf_decimalen = decimalen; nf_teken = teken; nf_eenheid = eenheid }
-  | Percentage { geheel; decimalen; eenheid } ->
-      Some { nf_geheel = geheel; nf_decimalen = decimalen; nf_teken = None; nf_eenheid = eenheid }
+  | Numeriek { geheel; decimalen; eenheid; _ } | Percentage { geheel; decimalen; eenheid } ->
+      Some { nf_geheel = geheel; nf_decimalen = decimalen; nf_eenheid = eenheid }
   | _ -> None
 
 (* the numeric facets are read THROUGH matching ListType layers, exactly as
@@ -2154,60 +2136,12 @@ let rec peel_lists a b =
   | List_type { element = x }, List_type { element = y } -> peel_lists x y
   | _ -> (a, b)
 
-(* The residual facet's comparison form: the datatype with every DOMAIN name
-   folded to the WF-001 form. Two goldens pin exactly that spelling freedom
-   between a use site and its declaration. The three UNIT names are left
-   alone — the same split [eenheid_identical] makes, so the backstop refuses
-   exactly the spellings the unit facet refuses and lets through exactly the
-   ones it lets through. *)
-let rec dt_ci = function
-  | Enumeratie { domein; waarden } ->
-      Enumeratie
-        { domein = Option.map norm domein; waarden = List.map (Option.map norm) waarden }
-  | Sum_type { domein; constructoren } ->
-      Sum_type
-        { domein = norm domein;
-          constructoren = List.map (fun (n, p) -> (norm n, Option.map dt_ci p)) constructoren }
-  | Struct_type { domein; velden } ->
-      Struct_type
-        { domein = norm domein; velden = List.map (fun (n, d) -> (norm n, dt_ci d)) velden }
-  | List_type { element } -> List_type { element = dt_ci element }
-  | other -> other
-
-(* the whole structure spelled out — what the residual facet reports, where
-   [datatype_detail]'s summary would render a difference as "X vs X" *)
-let rec datatype_full = function
-  | Numeriek { geheel; decimalen; teken; eenheid } ->
-      Printf.sprintf "number(%s, %d decimals, %s, %s)"
-        (if geheel then "whole" else "fractional")
-        decimalen (teken_render teken) (unit_render eenheid)
-  | Percentage { geheel; decimalen; eenheid } ->
-      Printf.sprintf "percentage(%s, %d decimals, %s)"
-        (if geheel then "whole" else "fractional")
-        decimalen (unit_render eenheid)
-  | Enumeratie { domein; waarden } ->
-      Printf.sprintf "enumeration '%s' [%s]"
-        (Option.value domein ~default:"?")
-        (String.concat ", " (List.map (Option.value ~default:"?") waarden))
-  | Sum_type { domein; constructoren } ->
-      Printf.sprintf "sumtype '%s' [%s]" domein
-        (String.concat ", "
-           (List.map
-              (fun (n, p) -> match p with None -> n | Some d -> n ^ " of " ^ datatype_full d)
-              constructoren))
-  | Struct_type { domein; velden } ->
-      Printf.sprintf "struct '%s' {%s}" domein
-        (String.concat ", " (List.map (fun (n, d) -> n ^ ": " ^ datatype_full d) velden))
-  | List_type { element } -> "list of " ^ datatype_full element
-  | other -> datatype_kind other
-
 (* WF-091 (derived-type identity, IR-SPEC ch. 4.1) and the numbers it
    defers to. ONE comparison of a derived node's annotation against the
    type its operands derive ([composite_expectation] below), facet by facet
-   in one fixed order — soort, domain, unit, decimals, wholeness, sign,
-   residual structure — of which the FIRST differing facet is reported,
-   once: one divergence is one message per comparison, never two facets for
-   one comparison.
+   in one fixed order — soort, domain, unit, decimals, wholeness — of which
+   the FIRST differing facet is reported, once: one divergence is one
+   message per comparison, never two facets for one comparison.
 
    The rule NUMBER follows the facet, not this function. The domain facet is
    WF-089 (keuzetype family) and WF-090 (struct domains); every facet
@@ -2225,10 +2159,17 @@ let rec datatype_full = function
 
    [skip] names facets this comparison does NOT make: the expectation is a
    formula over the operands, and a formula may be silent on a facet while
-   speaking on the rest. Every entry is reason-carrying at its call site; a
-   caller that skips a NAMED facet also skips [residual], since the
-   backstop would otherwise re-report the very facet the caller declined to
-   claim. *)
+   speaking on the rest. Every entry is reason-carrying at its call site.
+
+   Until the L2 fix round the order ended in two more facets, the sign and
+   the residual structure (the whole datatype, domain names folded ci),
+   which stood behind the named ones for the reference-type arms. Those
+   arms left with the reference's own type (B13), and at the one caller
+   left, the derived position, every arm skipped both — the sign because a
+   derivation mostly under-claims it (see the note on
+   [composite_expectation]), the residual because it would re-report the
+   facets an arm declines. Measured at removal: all sixteen skip lists
+   named both, so neither facet could report anything. *)
 let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) at ~what ~decl
     ~typ =
   match (decl, typ) with
@@ -2275,14 +2216,6 @@ let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) a
           "wholeness"
           (fun f -> if f.nf_geheel then "whole" else "fractional")
       in
-      let sign_facet () =
-        numeric (fun f -> f.nf_teken) "sign" (fun f -> teken_render f.nf_teken)
-      in
-      let residual_facet () =
-        if dt_ci t <> dt_ci d then
-          mismatch "residual structure" (datatype_full t) (datatype_full d)
-        else []
-      in
       let rec first = function
         | [] -> []
         | f :: rest -> ( match f () with [] -> first rest | vs -> vs)
@@ -2291,8 +2224,7 @@ let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) a
         (List.filter_map
            (fun (n, f) -> if List.mem n skip then None else Some f)
            [ ("soort", soort_facet); ("domain", domain_facet); ("unit", unit_facet);
-             ("decimals", decimals_facet); ("wholeness", whole_facet); ("sign", sign_facet);
-             ("residual", residual_facet) ])
+             ("decimals", decimals_facet); ("wholeness", whole_facet) ])
 
 (* --- the DERIVED expectation on composite positions (WF-091) ------------ *)
 
@@ -2325,9 +2257,9 @@ let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) a
    escape and stays OPEN: it does not switch the cross off, it feeds it a
    premise.
 
-   The SIGN is claimed at no arm below, and therefore neither is [residual]:
-   the backstop would re-report exactly the facet every formula here declines.
-   A derivation mostly under-claims a sign restriction while a document
+   The SIGN is claimed at no arm below, and the facet engine has no sign
+   facet since the L2 fix round, for this reason: a derivation mostly
+   under-claims a sign restriction while a document
    narrows it truthfully (a clamp with a minimum of 0 IS non-negative whatever
    its base says), and it over-claims at the AANTAL arm, where two anchor
    goldens widen NIET_NEGATIEF to ONBEPAALD. Measured 2026-09-04: crossing it
@@ -2422,7 +2354,7 @@ let composite_expectation ctx ~binders (e : expr) :
             (* date +/- duration (ch. 2.2): the result IS the date operand's
                type, unchanged — the duration operand carries the calendar
                unit and contributes nothing to the result type *)
-            Some (what, "the type derived from its date operand", l, [ "sign"; "residual" ])
+            Some (what, "the type derived from its date operand", l, [])
           else if
             is_number_like l && is_number_like r && units_compatible (unit_of l) (unit_of r)
           then
@@ -2436,7 +2368,7 @@ let composite_expectation ctx ~binders (e : expr) :
                     decimalen = max (dt_decimals l) (dt_decimals r);
                     teken = Some Onbepaald;
                     eenheid = unit_of l },
-                [ "sign"; "residual" ] )
+                [] )
           else
             (* a one-sided unit pair: WF-035's literal-adoption clause
                (ch. 4.6) admits the shape, but the four sources of the
@@ -2461,7 +2393,7 @@ let composite_expectation ctx ~binders (e : expr) :
               Some
                 ( "the MAAL composite", "the type derived from its operands",
                   Numeriek { geheel = false; decimalen = 0; teken = Some Onbepaald; eenheid = u },
-                  [ "decimals"; "wholeness"; "sign"; "residual" ] ))
+                  [ "decimals"; "wholeness" ] ))
       | _ -> None)
   | Afgerond { basis = Some b; decimalen; _ } -> (
       (* ch. 2.4 clause 2: a rounding changes the FACING precision to its own
@@ -2472,7 +2404,7 @@ let composite_expectation ctx ~binders (e : expr) :
           Some
             ( "the rounding", "the type derived from its base and its decimal count",
               Numeriek { geheel = decimalen = 0; decimalen; teken; eenheid },
-              [ "sign"; "residual" ] )
+              [] )
       | Some (Percentage { eenheid; _ }) ->
           (* the percentage arm carries NO corpus witness (measured 2026-09-04:
              zero roundings over a percentage base in any zone); it keeps the
@@ -2482,16 +2414,16 @@ let composite_expectation ctx ~binders (e : expr) :
           Some
             ( "the rounding", "the type derived from its base and its decimal count",
               Percentage { geheel = decimalen = 0; decimalen; eenheid },
-              [ "sign"; "residual" ] )
+              [] )
       | Some other ->
-          Some ("the rounding", "the type derived from its base", other, [ "sign"; "residual" ])
+          Some ("the rounding", "the type derived from its base", other, [])
       | None -> None)
   | Begrensd { basis = Some b; _ } -> (
       (* ch. 2.7: a clamp returns one of three values of the base's own type.
          Its SIGN is the sharpest case for the exclusion the header states: a
          clamp with a minimum of 0 IS non-negative whatever its base says. *)
       match ty b with
-      | Some d -> Some ("the clamp", "the type derived from its base", d, [ "sign"; "residual" ])
+      | Some d -> Some ("the clamp", "the type derived from its base", d, [])
       | None -> None)
   | Functie { kind = Aantal; _ } ->
       (* ch. 2.3: a count is a whole, non-negative, unitless number. Two
@@ -2500,7 +2432,7 @@ let composite_expectation ctx ~binders (e : expr) :
       Some
         ( "the AANTAL aggregation", "the type a count derives",
           Numeriek { geheel = true; decimalen = 0; teken = Some Niet_negatief; eenheid = None },
-          [ "sign"; "residual" ] )
+          [] )
   | Functie { kind = Aantal_gevulde; _ } ->
       (* The SAME derivation, and it needs its own arm because this engine
          matches on the kind: the filled count answers a CARDINALITY, so
@@ -2516,7 +2448,7 @@ let composite_expectation ctx ~binders (e : expr) :
       Some
         ( "the AANTAL_GEVULDE aggregation", "the type a filled count derives",
           Numeriek { geheel = true; decimalen = 0; teken = Some Niet_negatief; eenheid = None },
-          [ "sign"; "residual" ] )
+          [] )
   | Functie { kind = (Som | Eerste | Laatste | Totaal | Minimum | Maximum) as k;
               argumenten = a0 :: rest; bron_rol; bron_pad; _ } -> (
       let name =
@@ -2531,7 +2463,7 @@ let composite_expectation ctx ~binders (e : expr) :
           match k with
           | Som ->
               (* §4.6 Eenheid1: a sum is its first operand's type, unchanged *)
-              Some (what, "the type derived from its first operand", t0, [ "sign"; "residual" ])
+              Some (what, "the type derived from its first operand", t0, [])
           | Eerste | Laatste ->
               (* an element-passing fold returns a contributor unchanged. The
                  DOMAIN facet is skipped here and only here because it is
@@ -2540,7 +2472,7 @@ let composite_expectation ctx ~binders (e : expr) :
                  cross adds the facets that arm deliberately left out. *)
               Some
                 ( what, "the type derived from its first operand", t0,
-                  [ "domain"; "sign"; "residual" ] )
+                  [ "domain" ] )
           | Totaal -> (
               (* §4.20: the temporal total INTEGRATES a rate over time, so the
                  result drops the /tijdseenheid and keeps the numerator — but
@@ -2561,7 +2493,7 @@ let composite_expectation ctx ~binders (e : expr) :
               match set_lezing ctx ~ranged:(bron_rol <> None || bron_pad <> None) (a0 :: rest) with
               | None -> None
               | Some true ->
-                  Some (what, "the type derived from its first operand", t0, [ "sign"; "residual" ])
+                  Some (what, "the type derived from its first operand", t0, [])
               | Some false ->
                   let d =
                     match t0 with
@@ -2569,12 +2501,12 @@ let composite_expectation ctx ~binders (e : expr) :
                         Numeriek { n with eenheid = Some { u with noemer = None } }
                     | other -> other
                   in
-                  Some (what, "the type derived from its first operand", d, [ "sign"; "residual" ]))
+                  Some (what, "the type derived from its first operand", d, []))
           | Minimum | Maximum ->
               if rest = [] then
                 Some
                   ( what, "the type derived from its operand", t0,
-                    [ "domain"; "sign"; "residual" ] )
+                    [ "domain" ] )
               else
                 let ts = List.map ty (a0 :: rest) in
                 if List.exists (fun x -> x = None) ts then None
@@ -2591,11 +2523,11 @@ let composite_expectation ctx ~binders (e : expr) :
                                decimalen =
                                  List.fold_left (fun m x -> min m (dt_decimals x)) max_int ts;
                                teken; eenheid },
-                           [ "domain"; "sign"; "residual" ] )
+                           [ "domain" ] )
                    | _ ->
                        Some
                          ( what, "the type derived from its first operand", t0,
-                           [ "domain"; "sign"; "residual" ] ))
+                           [ "domain" ] ))
           | _ -> None))
   | _ -> None
 
