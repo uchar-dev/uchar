@@ -733,8 +733,9 @@ let check_number_form at = function
       else []
   | _ -> []
 
-(* the declared unit systems, by name — the table every unit's `stelsel`
-   back-reference resolves against (WF-034, ch. 4.6 (r)). *)
+(* the declared unit systems, by name — the table every unit's `system`
+   back-reference (in memory [stelsel]) resolves against (WF-034,
+   ch. 4.6 (r)). *)
 let stelsel_namen ctx = List.map fst ctx.doc.eenheidstelsels
 
 (* A factor as a message writes it: a whole number bare, any other as
@@ -767,11 +768,11 @@ let rec ggd a b = if b = 0 then a else ggd b (a mod b)
    WF-091 compares two units BYTE for byte, which passes the moment the
    half-form is copied consistently across the arms it crosses.
 
-   This function also carries WF-034's arm on the unit's `stelsel`
+   This function also carries WF-034's arm on the unit's `system`
    (maintainer decision 2026-09-05, sixth wave; IR-SPEC ch. 4.6 (r)), for the
    same reason WF-092 lives here: [check_eenheid_form] is the ONE walk that
    reaches every unit record in a document, denominators included, and the
-   `stelsel` is a reference like any other — it names the declared unit system
+   `system` is a reference like any other — it names the declared unit system
    whose conversion table gives the unit its meaning. [stelsels] is the
    declared-system name list, threaded from the context; it is a required
    argument rather than an optional one so a new call site cannot silently opt
@@ -2211,7 +2212,7 @@ let derived_number ~geheel ~decimalen (eenheid : eenheid option) =
    maal jr = €"). The third shape — two plain units — is ch. 2.5's opaque
    PRODUCT, whose algebra the spec fixes (sorted multiset of atomic factors,
    no canonical, no factor) but whose wire SPELLING it does not: an identity
-   cross there would pin an `afkorting` and a `stelsel` ch. 2.5 does not
+   cross there would pin an `abbreviation` and a `system` ch. 2.5 does not
    require. The fourth — an unspellable rate factor — is the shape the
    frontend refuses outright (RUNTIME-SEMANTICS ch. 2.10). This function
    makes no claim at either, and the corpus carries zero of both (measured

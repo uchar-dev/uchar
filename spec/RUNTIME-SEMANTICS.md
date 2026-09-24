@@ -511,7 +511,7 @@ exact-rational, so the plugin emits the operand unchanged, with no cast
 node of its own, and the result type is borne by the surrounding
 mixed-decimals arithmetic — and no percentage (a `Number` whose unit is `%`) is involved (Catala
 pre-divides — `20%` arrives as the rational `1/5`). But because the ASP
-side scales every value by its declared `decimalen`, an *unbounded*
+side scales every value by its declared `decimals`, an *unbounded*
 decimal form would be integer-only there. The pin: a Catala-decimal
 declaration carries a **finite scale `decimals = S`, with S = 4**
 (chosen against the tutorial, fixed here) — the frontend maps `TRat` to
@@ -529,7 +529,7 @@ with the executor card).
 
 **The scale is a boundary, not a step (maintainer decision 2026-08-24,
 vraag 3-A).** A declared scale `S` — the pin above, or any attribute's
-own `decimalen` — binds only a *declaration* and the *write boundary* it
+own `decimals` — binds only a *declaration* and the *write boundary* it
 guards (ch. 2.4); every intermediate value stays the exact rational of
 ch. 2.1 — a `Let` binder (ch. 10.6) and a `Match`-arm result
 (ch. 9.2) among them, rounded to no scale — and a declared scale is never
@@ -673,7 +673,7 @@ rule (or a fence) — never a wider licence to read the wire.
 
 Two further readings are recorded rather than blessed, because they are a
 backend's encoding rather than a semantic claim: the ASP translator sizes
-its integer scale from a `Fold`'s and a `Match`'s own annotated `decimalen`
+its integer scale from a `Fold`'s and a `Match`'s own annotated `decimals`
 (`value_scale`, the scaled-integer encoding of `ASP-TRANSLATION.md` S2 and
 the `expr_term` triple of S4 — *not* S19, which is the not-translated
 inventory). They stay legitimate only while that scale is
