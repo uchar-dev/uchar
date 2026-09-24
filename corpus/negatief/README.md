@@ -538,10 +538,10 @@ and they are the five removed below. A rewritten witness of the card's
 stamp list carries `expect.txt`; so does every witness added here. The arm
 column quotes the pinned fragment, shortened where it is long. Every NOTE
 citation was taken again from the L4 verifier's output. The negatief zone went
-from 407 to 414 documents (five removed, twelve added: seven with the landing,
-five in its fix round); the floor `EXPECTED_MIN_NEGATIEF` did not have to
-move, and `EXPECTED_MIN_EXPECT` rose from 165 to 220 with the landing and to
-225 in its fix round (`scripts/check-verifier.sh`).
+from 407 to 417 documents (five removed, fifteen added: seven with the
+landing, eight in its fix round); the floor `EXPECTED_MIN_NEGATIEF` did not
+have to move, and `EXPECTED_MIN_EXPECT` rose from 165 to 220 with the landing
+and to 228 in its fix round (`scripts/check-verifier.sh`).
 
 | directory | rule | delta | stamp | arm | reason |
 | --- | --- | --- | --- | --- | --- |
@@ -698,10 +698,12 @@ and no other document of golden, rood and negatief moves (698 compared).
 The lens of the landing found five arms the L4 wire still reaches without a
 witness: two lost theirs with the removals above, and three never had one (no
 `wf030-*` directory in the repository's history pinned the two WF-030 arms,
-and no corpus file ever carried the sentence of the bucketing arm). One
-witness each, with `expect.txt` and `NOTE.md`. Each is arm-exact: with its arm
-emptied it turns clean and no other document of golden, rood and negatief
-moves (703 compared).
+and no corpus file ever carried the sentence of the bucketing arm). The fix
+round found three more WF-037 arms without a witness — the two builtin
+arities and the operand count of a value fold; no negatief document reported
+them. One witness each, eight in all, with `expect.txt` and `NOTE.md`. Each is
+arm-exact: with its arm emptied it turns clean and no other document of
+golden, rood and negatief moves (706 compared, for all eight).
 
 | directory | rule | delta | stamp | arm | reason |
 | --- | --- | --- | --- | --- | --- |
@@ -710,3 +712,6 @@ moves (703 compared).
 | `wf047-bereik-op-opgesomde-vouw` | WF-047 | B21 | toegevoegd | a fold-source role binding on a node that is not an instance fold over a relation | the arm lost its witness with `wf047-bereik-op-builtin`; `corpus/golden/jutterswet-sluitsom` with a `sourceRole` on its listed `LAATSTE` (the relation its second operand navigates) |
 | `wf030-brontype-niet-gedeclareerd` | WF-030 | B27 | toegevoegd | source type 'Vondsten' is not declared | the arm had no witness; `corpus/golden/jutterswet-vondstnummer` with the source's `objectType` spelled as the declared plural |
 | `wf030-sleutel-geen-attribuut` | WF-030 | B27 | toegevoegd | key 'vondstnummers' is not a declared attribute of 'Vondst' | the arm had no witness; `corpus/golden/jutterswet-vondstnummer` with the source's key spelled as the attribute's declared plural |
+| `wf037-jaar-uit-twee-operanden` | WF-037 | B21 | toegevoegd | builtin arity 2, expected 1 | the arm had no witness; `corpus/golden/jutterswet-paasvondst` with the one argument of its `JAAR_UIT` repeated as a second |
+| `wf037-tijdsduur-een-operand` | WF-037 | B21 | toegevoegd | builtin arity 1, expected 2 | the arm had no witness; `corpus/golden/jutterswet-getijdenpaar` with the second argument of its `TIJDSDUUR` removed |
+| `wf037-eerste-een-operand` | WF-037 | B21 | toegevoegd | value fold with fewer than two operands | the arm had no witness; `corpus/golden/jutterswet-hoogwaterpaar` with the second operand of its listed `EERSTE` removed |
