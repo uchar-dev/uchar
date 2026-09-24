@@ -1238,9 +1238,9 @@ public final class IrLoader {
         boolean attribuut = el.attribuut(a) != null, kenmerk = !attribuut && el.kenmerkNaam(a) != null;
         if (fk == Expr.FunctieKind.AANTAL) {
             if (attribuut || kenmerk)
-                throw new Documentfout(plek, "a count over \"" + a + "\", which is "
-                        + (attribuut ? "an attribute" : "a characteristic") + " of \"" + el.naam + "\": a count source"
-                        + " names the counted role, and a value read per member is a value fold's source (WF-093 (b))");
+                throw new Documentfout(plek, "the source of this AANTAL aggregation reads '" + a + "', a member of the"
+                        + " element type '" + el.naam + "': a count folds INSTANCES, so its source is a count source"
+                        + " naming the relation's role, never a value read per contributor (WF-093)");
             return;
         }
         if (WAARDEVOUWEN.contains(fk) && kenmerk)
@@ -1264,7 +1264,7 @@ public final class IrLoader {
         if (s == null ? isRolnaam(a) : isRolnaamVanaf(s, a))
             throw new Documentfout(plek, "value aggregation over \"" + a + "\", which is no attribute of \""
                     + el.naam + "\": a value fold reads an attribute per contributor, and a role name is a count source"
-                    + " only a count folds (WF-093 (a))");
+                    + " only a count folds (WF-093)");
         throw new Documentfout(plek, "'" + a + "' is not a declared attribute of '" + el.naam + "': a value fold's"
                 + " source reads an attribute of each contributor (WF-034)");
     }

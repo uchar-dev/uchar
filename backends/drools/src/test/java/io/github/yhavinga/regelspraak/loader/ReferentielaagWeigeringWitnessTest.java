@@ -237,9 +237,9 @@ class ReferentielaagWeigeringWitnessTest {
         ObjectNode ir = golden(MUNTTELLING);
         bron(ir, 0).put("attribuut", "gewicht").put("objecttype", "Munt");
         IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/0/waarde/argumenten/0");
-        assertTrue(e.getMessage().contains("a count over \"gewicht\", which is an attribute of \"Munt\": a count"
-                + " source names the counted role, and a value read per member is a value fold's source (WF-093 (b))"),
-                e.getMessage());
+        assertTrue(e.getMessage().contains("the source of this AANTAL aggregation reads 'gewicht', a member of the"
+                + " element type 'Munt': a count folds INSTANCES, so its source is a count source naming the relation's"
+                + " role, never a value read per contributor (WF-093)"), e.getMessage());
     }
 
     @Test void een_waardevouw_over_een_rolnaam_weigert() throws Exception {
@@ -248,7 +248,7 @@ class ReferentielaagWeigeringWitnessTest {
         IrLoader.Documentfout e = weigert(ir, "/rules/resolvedRegels/1/waarde/argumenten/0");
         assertTrue(e.getMessage().contains("value aggregation over \"vondsten\", which is no attribute of \"Munt\":"
                 + " a value fold reads an attribute per contributor, and a role name is a count source only a count"
-                + " folds (WF-093 (a))"), e.getMessage());
+                + " folds (WF-093)"), e.getMessage());
 
         // a name that is neither an attribute nor a role declares nothing (WF-034)
         ir = golden(MUNTTELLING);
