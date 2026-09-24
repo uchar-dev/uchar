@@ -4191,7 +4191,7 @@ written role stays in `bron`.
   clause had to name its kind half, so every document already citing WF-096
   restates one line.
 
-**The count source (WF-093; two-sided since L2, 2026-09-24, D9).** A
+**The count source (WF-093; two-sided since L2, 2026-09-24, B11, B13).** A
 single-argument instance fold's set source is the COUNT source when its
 `attribute` names no member — no attribute and no characteristic — of the
 element type: it then names a role of the fold subject's relation, the
@@ -4201,7 +4201,12 @@ linked INSTANCES rather than a value per contributor. That is exactly what
 `TOTAAL`, `MINIMUM`, `MAXIMUM`, `EERSTE`, `LAATSTE` and the filled count
 read a value PER CONTRIBUTOR. The recognition reads the source and never the
 node's kind, which is what lets the rule say both directions without being
-circular.
+circular. It reads the name alone, and that has one consequence a document
+can meet: a role whose written name — the declared name or the declared
+plural, whichever the source writes — is also the name of a member of the
+element type is read as that member, so a count over it is refused by
+(b) below, and the count has to be written with the role's other declared
+spelling where that one does not collide (ch. 2.6).
 
 - **WF-093** For the single argument of an aggregation carrying an
   `elementType` and a range: (a) a count source — an `attribute` that
@@ -4227,7 +4232,7 @@ circular.
   in a bare and a set spelling (maintainer decision 2026-09-06) — and had
   direction (a) alone; direction (b), a set reading under `AANTAL`, was
   WF-096's since 2026-09-19. With the sentinel gone (B13) and the set flag
-  gone (B11) the recognition moved to the source itself (D9), and WF-096's
+  gone (B11) the recognition moved to the source itself, and WF-096's
   count half became (b). The paragraphs below record the rule as it stood
   on the L1 wire.
 
@@ -4305,8 +4310,9 @@ sentence.
 
 **The set reading (WF-096) — removed at L2 (2026-09-24), history.** Since L2
 the set source is a POSITION, not a field: the single argument of an
-instance fold that carries a range (D8 (i)). No read can state a collection
-elsewhere, so WF-096 has nothing left to refuse (B11). What it refused at an
+instance fold that carries a range (the reading of the source, (i)). No
+other position can state a collection, so the forms WF-096 refused
+cannot be written (B11). What it refused at an
 ordinary read is since L2 a navigated read with a to-many hop, WF-053's
 to-many clause (`wf053-to-many-regelwaarde`, `wf053-to-many-plusoperand`,
 `wf053-to-many-lijstvouwoperand`); what it refused under `AANTAL` is WF-093
@@ -4402,7 +4408,8 @@ entered the semantics.
 
 - **WF-096** *(removed at L2, 2026-09-24 — history.)* Landed L2
   2026-09-24: the set flag left the wire (B11), and the set source is the
-  argument of a fold that carries a range (D8). Until then an
+  argument of a fold that carries a range (ch. 4.3, the reading of the
+  source). Until then an
   `AttributeReference` with `set: true` was admissible ONLY as the SOURCE
   of a single-argument **VALUE** fold (seven value-folding kinds since
   2026-09-20, the filled count among them), and ill-formed at every other
@@ -4526,12 +4533,13 @@ of it that card's follow-up finding rather than this rule's business.
 
 **The count source's role name (WF-047; landed L2, 2026-09-24).** The
 count source writes a role name in its argument's `attribute` slot: the
-written name of the role its range binds (D8 (ii)). That name MUST denote
+written name of the role its range binds (the reading of the source,
+(ii)). That name MUST denote
 the bound role, case-insensitively on declared name or declared plural —
 never a synthesized plural (the ch. 2.6 decision) — and WF-047 crosses it
 against the range. Where the written name denoted neither, the L2
 migration and the emitter write the declared name of the bound role and
-keep the written spelling in `bron` (U11, ch. 2.6). A value fold's source
+keep the written spelling in `bron` (ch. 2.6, WF-047). A value fold's source
 reads an attribute value and resolves as an ordinary attribute reference
 on its anchor (WF-034, ch. 4.6 (l)). Semantics: `RUNTIME-SEMANTICS.md`
 ch. 3.4a; the ASP backend keys the count by the connecting role's
@@ -4569,14 +4577,14 @@ is added and no field is given a new meaning:**
 
 | Field | On `AANTAL_GEVULDE` |
 |---|---|
-| `arguments` | exactly ONE, an `AttributeReference` — the set source, which the fold's range makes it (D8 (i); the set flag until L2) |
+| `arguments` | exactly ONE, an `AttributeReference` — the set source, which the fold's range makes it (the reading of the source, (i); the set flag until L2) |
 | `elementType` | required: the population, exactly as ch. 3.4a reads it for every instance fold |
 | `filter` | the die/dat subselection, per contributor, unchanged |
 | `emptyFallback` | always absent — a count has no empty to fall back from |
 | `dimensionSelection` | always absent — **postponed, not rejected** (below) |
 | `granularity` | always absent — it buckets nothing |
 | `type` | a whole, unitless number: a cardinality — **derived**, so the annotation is crossed against it under WF-091 exactly as a count's is, never believed (negatief `wf091-aantalgevulde-eenheid`) |
-| `sourceRole` / `sourcePath` | the range, one step or many, exactly as on the value folds (WF-102); required, as on every single-argument fold with an `elementType` under a kind other than `TOTAAL` (U2) |
+| `sourceRole` / `sourcePath` | the range, one step or many, exactly as on the value folds (WF-102); required, as on every single-argument fold with an `elementType` under a kind other than `TOTAAL` (B12) |
 
 *Why no node of its own.* The v1 split of row 1 separates aggregation-with-a-
 source from ordinary builtin call. This kind falls on the aggregation side
@@ -4611,16 +4619,18 @@ this kind, because there is no written form for one to mirror
 (`wf037-aantalgevulde-tweede-argument`). (ii) An `elementType`: it is an
 instance fold and without one its argument is no source at all
 (`wf037-aantalgevulde-zonder-elementtype`). (iii) That one argument MUST be
-the set source. Since L2 (2026-09-24) the range makes it one (D8 (i)), and
-the schema and every loader demand the range of a single-argument fold with
-an `elementType` under every kind but `TOTAAL` (U2): the subject's own read
+the set source. Since L2 (2026-09-24) the range makes it one (the reading
+of the source, (i)), and the schema and every loader demand the range of a
+single-argument fold with an `elementType` under every kind but `TOTAAL`
+(B12): the subject's own read
 cannot reach this kind at all, so the set-source demand is enforced at load.
 What the verifier still decides under (iii) is a range beside a source that
 is no attribute reference (`wf037-aantalgevulde-niet-setbron`, since L2 a
 literal source). The own read has ONE value, so its filled count would be 0
 or 1 — a form no author writes — and a count source hands the fold instances
 instead of values, which WF-093 (a) refuses and `ref` refuses at evaluation
-(`value aggregation over a bare role source`). The three facets the kind
+(`value aggregation over <name>, which is no attribute of <element type>`;
+until L2 `value aggregation over a bare role source`). The three facets the kind
 never carries are refused by WF-037's existing, positively written clauses
 without an amendment, and each has its witness:
 `wf037-aantalgevulde-leegwaarde`, `-dimensieselectie`, `-granulariteit`.
@@ -4796,13 +4806,13 @@ where 2026-09-19 and 2026-09-11 left it. Named open flank, not a closed one.
   (`wf110-unie-een-tak`); **(c)** the count carrying it names no source of
   its own — no `elementType`, `sourceRole`, `sourcePath` or `filter` on that
   node (`wf110-unie-naast-vouwbron`; since L2 an `elementType` on a
-  single-argument count comes with a range, U2, and the clause names both);
+  single-argument count comes with a range, B12, and the clause names both);
   **(d)** every selection names the SAME
   `elementType`, and it is declared (`wf110-unie-ongelijke-elementtypes`;
   an undeclared one is WF-034 at the new position); **(e)** every selection
   names its `elementType` (`wf110-unie-tak-zonder-elementtype`), and its
   `sourceRole` resolves under WF-047 at the new position, as WF-102 (d)
-  applies it per step. Since L2 (2026-09-24, D5 (c)) `sourceRole` is
+  applies it per step. Since L2 (2026-09-24, B12) `sourceRole` is
   required and non-null in the schema and every loader, so (e)'s arm for a
   missing relation is enforced at load; its witness
   `wf110-unie-tak-zonder-bronrol` was removed with reason. Semantics:
@@ -4947,13 +4957,14 @@ Semantics and worked examples, including the three empty corners:
   (a) *(Enforced at load since L2, 2026-09-24.)* `sourcePath` and
   `sourceRole` do not both appear — the one-step range is `sourceRole`,
   and one meaning has one spelling; since L2 the schema and every loader
-  refuse a fold carrying both (U2), and the clause's witness
+  refuse a fold carrying both (B12), and the clause's witness
   `wf102-bronpad-naast-bronrol` was removed with reason.
   (b) A present `sourcePath` MUST carry at least TWO steps; the empty list
   and the single step are ill-formed.
   (c) `sourcePath` is admissible ONLY as the range of a VALUE fold's set
   source: the single argument of an aggregation of one of the seven
-  value-folding kinds, which the range makes the set source (D8 (i)). On
+  value-folding kinds, which the range makes the set source (the reading
+  of the source, (i)). On
   a listed value fold, on a builtin, and on the count source — whose range
   is one step, `sourceRole` — it is ill-formed.
   (d) Every step MUST resolve (WF-047) and the steps MUST JOIN: step 1's
@@ -5037,10 +5048,10 @@ never guess.
 contract): an expression variant carrying an optional `type` and the
 source slice, and a condition variant carrying the source slice. The
 expression variant's `type` is absent when the type is unknown and, when
-present, a real datatype — never null (D14); there is no declared-unknown
+present, a real datatype — never null; there is no declared-unknown
 type (ch. 2.4). A well-formed IR MAY contain Unresolved nodes; what it may
-never do is hide them (WF-044, unchanged). **Landed L2 (2026-09-24, D14,
-U10):** until L2 the expression variant carried the unknown-type node (or
+never do is hide them (WF-044, unchanged). **Landed L2 (2026-09-24, B16;
+the L2 card, `backlog/done/20260923-l2-referentielaag.md`):** until L2 the expression variant carried the unknown-type node (or
 null) as its `type`; the migration removed it, and a real datatype stays
 (`corpus/rood/wf044-onopgelost-reached` carries `Numeriek` and keeps it).
 Every reader takes an absent `type` as unknown, never as a default
@@ -5055,8 +5066,8 @@ negatief corpus fixes the taxonomy's values.
 |---|---|---|
 | Comparison | `op`, `left`, `right`, `wholePeriod?`, `source` | operator set: ordering, equality, date ordering (ch. 2.2 inventory); v1 may unify date ordering under typed ordering — carried as-is in the mirror |
 | Predicate | `kind` ∈ empty, filled, elfproef, exact-digits (`digits`), day-kind (`dayKind`), `operand`, `negated`, `wholePeriod?`, `source` | empty/filled are core kernel (three-valued rules in `RUNTIME-SEMANTICS.md` ch. 1.2); the other three are dialect builtins |
-| CharacteristicCheck | `characteristic`, `navigation?` (one to-one hop, a RoleBinding), `negated`, `wholePeriod?`, `source` | **Delta (`CONSTRUCTS.md` ch. 2.2):** v0's `eigenaar` field is the check's GASTHEER — the object type the check lives on — and the v1 wire is expected to say so by name; the DELTA is the spelling, not the field (`proposals/V1-WIREMIGRATIE.md`, a proposal). While it rides the v0 wire under its v0 name it carries three obligations: **WF-034 requires a present `eigenaar` to name a declared object type** (ch. 4.6 (q)) — it is the node key of the dependency edge the check contributes, and a bean-model executor re-attributes an unresolvable one to the subject in silence; **WF-100 requires the named type to DECLARE the characteristic** (ch. 4.6 (q1), maintainer decision 2026-09-10), the field and not the subject being the key of every declaration a reader consults; and **WF-109 requires it to DESIGNATE exactly one of the objects bound at the check's position** (ch. 4.6 (q2), maintainer decision 2026-09-19): exactly one of them satisfies it (`T ⊑ O`) and no second one overlaps it (some object could be both). One object everywhere, two at the guard of a fact creation (the anker and the doel), so that every executor reads the object the field names instead of refusing it (`RUNTIME-SEMANTICS.md` ch. 5.8b). Inside a `gedurende` clip the field is not fenced but REFUSED — WF-097 (below) — because the clip reads the subject's own characteristic timeline and consults no owner at all **Landed (2026-08-18):** the navigated check carries its one hop symbolically in the `navigatieBinding` extension field (ch. 4.1a, WF-053); semantics `RUNTIME-SEMANTICS.md` ch. 5.8 — an absent link is false, negated or not. **Landed L2 (2026-09-24, D53):** the written hop name, the `navigatie` field, left the wire; `navigatieBinding` IS the hop, and a check without it reads the subject itself (the migration derived the binding for the three checks that carried only the written name) |
-| RoleMembership | `factType`, `role` (the role the subject plays), `counterpartType?`, `negated`, `source` | **Delta (row 5), landed L2 (2026-09-24, B9, D11, U12):** one existential node, wire `RoleMembership {node, factType, role, counterpartType?, negated, bron}` (keys in that order), replaces v0's near-side and far-side role checks; true iff a link of the declared fact type `factType` exists in which the subject fills `role`, named by its declared name, and the filler of the OTHER role of `factType` is an instance of `counterpartType` (`negated`: no such link exists). `counterpartType` is optional and written only where it narrows: it names an object type ⊑ the declared filler of the other role, and absent it IS that declared filler (U12). The far side's top-level-only restriction is dropped with it. WF-034's role arm crosses the node (ch. 4.6 (o)): the fact type is declared, `role` is one of its roles by declared name, the subject fills that role, and a written `counterpartType` is a declared object type ⊑ the other role's filler. *Migration (U12):* `counterpartType` comes from the far-side node's `filler` and the near-side node's filler type where either named a strict subtype of the other role's declared filler, and from nothing else; `corpus/golden/jutterswet-postbezetting` carries it on its two Strandjutter checks. *(History until L2:)* the near-side node (`Rollidmaatschap`) resolved through a filler type alone (`anderTeFiller`; its written role was presentation) and the far-side node (`VerreRollidmaatschap`) through a filler and a back-reference (`filler`, `backref`) that had to meet on one declared fact type (ch. 4.6 (t), 2026-09-20, first carried by `corpus/golden/jutterswet-postbezetting`); the migration derived `factType` and `role` with exactly those two derivations and refused where they found no single candidate |
+| CharacteristicCheck | `characteristic`, `navigation?` (one to-one hop, a RoleBinding), `negated`, `wholePeriod?`, `source` | **Delta (`CONSTRUCTS.md` ch. 2.2):** v0's `eigenaar` field is the check's GASTHEER — the object type the check lives on — and the v1 wire is expected to say so by name; the DELTA is the spelling, not the field (`proposals/V1-WIREMIGRATIE.md`, a proposal). While it rides the v0 wire under its v0 name it carries three obligations: **WF-034 requires a present `eigenaar` to name a declared object type** (ch. 4.6 (q)) — it is the node key of the dependency edge the check contributes, and a bean-model executor re-attributes an unresolvable one to the subject in silence; **WF-100 requires the named type to DECLARE the characteristic** (ch. 4.6 (q1), maintainer decision 2026-09-10), the field and not the subject being the key of every declaration a reader consults; and **WF-109 requires it to DESIGNATE exactly one of the objects bound at the check's position** (ch. 4.6 (q2), maintainer decision 2026-09-19): exactly one of them satisfies it (`T ⊑ O`) and no second one overlaps it (some object could be both). One object everywhere, two at the guard of a fact creation (the anker and the doel), so that every executor reads the object the field names instead of refusing it (`RUNTIME-SEMANTICS.md` ch. 5.8b). Inside a `gedurende` clip the field is not fenced but REFUSED — WF-097 (below) — because the clip reads the subject's own characteristic timeline and consults no owner at all **Landed (2026-08-18):** the navigated check carries its one hop symbolically in the `navigatieBinding` extension field (ch. 4.1a, WF-053); semantics `RUNTIME-SEMANTICS.md` ch. 5.8 — an absent link is false, negated or not. **Landed L2 (2026-09-24, B11; the L2 card):** the written hop name, the `navigatie` field, left the wire; `navigatieBinding` IS the hop, and a check without it reads the subject itself (the migration derived the binding for the four checks, in three documents, that carried only the written name) |
+| RoleMembership | `factType`, `role` (the role the subject plays), `counterpartType?`, `negated`, `source` | **Delta (row 5), landed L2 (2026-09-24, B9):** one existential node, wire `RoleMembership {node, factType, role, counterpartType?, negated, bron}` (keys in that order), replaces v0's near-side and far-side role checks; true iff a link of the declared fact type `factType` exists in which the subject fills `role`, named by its declared name, and the filler of the OTHER role of `factType` is an instance of `counterpartType` (`negated`: no such link exists). `counterpartType` is optional: it names a declared object type ⊑ the declared filler of the other role, and absent it IS that declared filler. The relation is ⊑, so a `counterpartType` equal to the filler is well-formed and means what its absence means; a producer writes the field only where it narrows, to a strict subtype, and the migration and the emitter write it only there. The far side's top-level-only restriction is dropped with it. WF-034's role arm crosses the node (ch. 4.6 (o)): the fact type is declared, `role` is one of its roles by declared name, the subject fills that role, and a written `counterpartType` is a declared object type ⊑ the other role's filler. *Migration:* `counterpartType` comes from the far-side node's `filler` and the near-side node's filler type where either named a strict subtype of the other role's declared filler, and from nothing else; `corpus/golden/jutterswet-postbezetting` carries it on its two Strandjutter checks. *(History until L2:)* the near-side node (`Rollidmaatschap`) resolved through a filler type alone (`anderTeFiller`; its written role was presentation) and the far-side node (`VerreRollidmaatschap`) through a filler and a back-reference (`filler`, `backref`) that had to meet on one declared fact type (ch. 4.6 (t), 2026-09-20, first carried by `corpus/golden/jutterswet-postbezetting`); the migration derived `factType` and `role` with exactly those two derivations and refused where they found no single candidate |
 | Compound | `quantifier` ∈ all, none, the, at-least (`threshold`), at-most (`threshold`), exactly (`threshold`), `parts`, `source` | all/none/the are kernel; the counting forms are sugar (count-and-compare, row on `Kwantor`, `CONSTRUCTS.md` ch. 2.2) — mirrored as quantifiers. Quantifies over **parts of one subject** — propositional. Its first-order sibling is the row below |
 | QuantifierFold | `quantifier` ∈ all, none, at-least (`threshold`), at-most (`threshold`), exactly (`threshold`), `elementType`, `filter?`, `test`, `sourceRole?`, `sourcePath?`, `source` | **extension node** (wire `Kwantorvouw`), `layer: core`: quantification of a condition over the members of a linked **instance set** — "…indien de `<attribuut>` van ALLE `<leden>` van de `<onderwerp>` gedurende het gehele jaar groter is dan `<grens>`". The range fields are the instance fold's (ch. 4.3) unchanged — `elementType` is the POPULATION extensionally (ch. 2.2), `sourceRole`/`sourcePath` the REACH, `filter` the die/dat subselection evaluated per contributor — and `test` is the quantified matrix, evaluated per contributor with the element as subject. The counting quantifiers are the row above's, over instances instead of parts, and they carry that row's `threshold` under the same rule: the verdict COUNTS the contributors whose matrix holds and compares that number with it. WF-108, WF-041; semantics `RUNTIME-SEMANTICS.md` ch. 3.9a |
 | TimeWindow | `from?`, `to?`, `toInclusive`, `source` | from inclusive, to exclusive unless `toInclusive`; never both absent; each bound a date literal or the subject's own scalar date attribute (WF-111); never under `none` or a counting quantifier (WF-112) |
@@ -5220,7 +5231,8 @@ instance fold's meanings and the instance fold's rules. The contributors
 are `reach ∩ population`, then the `filter` survivors, per
 `RUNTIME-SEMANTICS.md` ch. 3.4a/3.4b — one definition, not two. The
 verifier reaches them through the SAME helpers the fold's arms call
-(`wf047_binding`, `wf048_derivable`, `resolve_binding`), on the WF-097
+(`wf047_binding`, `resolve_binding`; until L2 also `wf048_derivable`,
+which left with WF-048), on the WF-097
 shared-helper discipline: what the rule requires is one engine, not one
 call site. An unresolvable binding therefore still reports **WF-047**,
 exactly as a fold's does, and only the shape questions this node
@@ -5275,7 +5287,7 @@ is a v0 mirror this node does not have to inherit. The absence is checked
   at least two steps, its steps form a connected walk from the
   quantifier's subject, and its last step lands on a role whose filler is
   ⊑-compatible with `elementType`; a `sourceRole` resolves and agrees
-  under WF-047. Since L2 (2026-09-24, B12, U2) the node carries EXACTLY
+  under WF-047. Since L2 (2026-09-24, B12) the node carries EXACTLY
   ONE of the two, and the schema and every loader refuse it with both
   or with neither: the arm for both spellings at once is enforced at
   load (its witness `wf108-kwantorvouw-bereik-dubbel` was removed with
@@ -5300,7 +5312,7 @@ is a v0 mirror this node does not have to inherit. The absence is checked
 
 **What this did NOT move** *(history until L2, when WF-096 left with the
 set flag — the set source is since then the argument of a fold that
-carries a range, D8)*. WF-096 stood unamended and unweakened: a
+carries a range, ch. 4.3)*. WF-096 stood unamended and unweakened: a
 set reading was still admissible only as an instance fold's source. The
 reclaimed route does not become an exemption to it — the lowered
 document contains **no set reading at all**, because the quantifier
@@ -5324,7 +5336,8 @@ ch. 3.12), and it belongs to whoever measures it.
   scoped exception is the COUNT source's role name (ch. 4.3): the single
   argument of an aggregation carrying an `elementType` and a range, whose
   `attribute` names no member of the element type, writes the name of the
-  role its range binds (D8 (ii), D9), and WF-047 — not this rule — crosses
+  role its range binds (ch. 4.3, the reading of the source, (ii), and
+  WF-093's recognition), and WF-047 — not this rule — crosses
   that name against the range. **Outside** the count source a fold-source
   argument is an ordinary attribute reference and resolves like one
   (ch. 4.6 (l)); a role name at a value fold's source is WF-093 (a).
@@ -5556,8 +5569,9 @@ ch. 3.12), and it belongs to whoever measures it.
   recipient, and the three facets read per recipient). (f) asks whether the
   field is there and (i) whether it is more than blanks; (j) asks the
   question the rule is about. An *undeclared* type is another rule's business
-  (WF-047 on the bound form, WF-048 on the bindingless one, both **rules**
-  measured loud — the executors are not: an undeclared `bronType` leaves `ref`
+  (WF-047 on the bound form — since L2 the only form — and until L2 WF-048
+  on the bindingless one, both **rules** measured loud — the executors are
+  not: an undeclared `bronType` leaves `ref`
   silent, every share *leeg* where 300/200/300 and a 400 remainder are pinned,
   while the ASP backend refuses; only an undeclared `doelType` faults in both),
   so the clause resolves only where there is a scope to resolve in. A name that
@@ -5581,15 +5595,16 @@ ch. 3.12), and it belongs to whoever measures it.
   The observability rows are (i)'s exactly, one spelling on. (k) An
   **allocation** MUST name its `bronType` and its `doelType`. The
   empty-reference class of (a)–(f), one field further along: an *undeclared*
-  type is caught by WF-047/WF-048, but both of those read a present name, and
-  a null takes with it WF-025's ordering-key datatype, WF-050's defaults
+  type is caught by WF-047 (and until L2 by WF-048), but those rules read a
+  present name, and a null takes with it WF-025's ordering-key datatype, WF-050's defaults
   overlap, the dependency graph's read and write edges, and (j)'s own
   resolution scope. 11 of 11 golden allocations survived emptying either
   type, and none does now; both executors fault by the field's own name
   (`missing bronType`, `missing doelType`). (l) A **fold-source argument
   that is not the count source** MUST resolve as an ordinary attribute
   reference on its anchor (ch. 4.3, WF-083 (c)): since L2 (2026-09-24) the
-  count source's written role name is WF-047's (D8 (ii)) and the type-pair
+  count source's written role name is WF-047's (ch. 4.3, the reading of
+  the source, (ii)) and the type-pair
   fallback no longer exists (B12), so a name that is no attribute of the
   anchor is this arm's report ("is not a declared attribute of …"), and a
   role name at a value fold's source is WF-093 (a). *(History until L2:)*
@@ -5746,21 +5761,27 @@ ch. 3.12), and it belongs to whoever measures it.
   *Still open, measured and named:* `subject: null` is equally verifier-clean
   and there both executors are loud (`missing ObjectCreatie.subject`) — the
   empty-reference class of the earlier waves, with no witness yet. (o) A
-  **role check** — `RoleMembership {factType, role, negated}`, since L2
-  (2026-09-24, B9, D11) one node for both directions of ch. 5.8a — MUST
-  name a declared fact type in `factType` and one of its roles, by declared
-  name, in `role` (the plural does not name a role here, as in a role
-  binding), and the check's SUBJECT MUST fill that role: the subject type
+  **role check** — `RoleMembership {factType, role, counterpartType?,
+  negated}`, since L2 (2026-09-24, B9) one node for both directions of
+  ch. 5.8a — MUST name a declared fact type in `factType` and one of its
+  roles, by declared name, in `role` (the plural does not name a role
+  here, as in a role binding: `wf034-rollidmaatschap-rol-als-meervoud`
+  writes the declared plural of the role the subject fills), and the
+  check's SUBJECT MUST fill that role: the subject type
   is ⊑ the role's declared filler, the one-sided near-side test every hop
   in this chapter uses. A role of the right fact type on the wrong side
   names a link the subject can never be in, and every name in it resolves
   (`wf034-verre-rolcheck-verkeerde-zijde`, the red-first proof V4 (b)
   asked of this arm); an undeclared fact type resolves against nothing
-  (`wf034-rolcheck-onbekend-feittype`). A written `counterpartType` (U12)
-  MUST be a declared object type ⊑ the declared filler of the OTHER role of
-  `factType` (the reciprocal role is its own other end): a type outside
-  that filler's chain names a link whose other end can never be one
-  (`wf034-rollidmaatschap-vreemde-vullersklasse`). A position without a subject (a
+  (`wf034-rolcheck-onbekend-feittype`). A written `counterpartType` MUST
+  be a declared object type (`wf034-rollidmaatschap-vullersklasse-onbekend`)
+  ⊑ the declared filler of the OTHER role of `factType` (the reciprocal
+  role is its own other end): a type outside that filler's chain names a
+  link whose other end can never be one
+  (`wf034-rollidmaatschap-vreemde-vullersklasse`). The relation is ⊑, not
+  strict: a `counterpartType` equal to that filler is well-formed and
+  means what its absence means, and a producer writes the field only
+  where it narrows (the migration and the emitter do exactly that). A position without a subject (a
   day-kind condition) crosses the declarations only, and WF-031 refuses a
   role-state read there at all (`wf031-dagsoort-leest-rolstaat`).
   *(History until L2: the near-side node carried a written role that was
@@ -6167,7 +6188,8 @@ ch. 3.12), and it belongs to whoever measures it.
   **Seventh wave 2026-09-06** (maintainer decision) — *removed at L2
   (2026-09-24, B13, B16), history*: a fold operand is walked as the ordinary
   read it is since L2, a reference carries no type, and the unknown-type
-  node is no datatype, so the fence has nothing left to refuse. Its
+  node is no datatype, so none of the forms the fence refused can be
+  written. Its
   witnesses were removed, or moved to the rule their translation falls on
   (`wf034-sentinel-*` in `corpus/negatief/README.md`, L2). As it stood, it
   closed the unknown-type fence rather than the naming class: (r) **the unknown type is
@@ -6371,17 +6393,17 @@ ch. 3.12), and it belongs to whoever measures it.
   clauses and negatiefs of their own. Off corpus each is one edit from the host
   golden and is refused by its own message.
   **2026-09-20** (maintainer decision) — *(t) merged into (o) at L2
-  (2026-09-24, B9, D11), history.* The far-side node left the wire: the
+  (2026-09-24, B9), history.* The far-side node left the wire: the
   migration derived its `factType` and its `role` (the subject's side) with
   exactly this crossing, and refused the documents where it found no single
-  candidate. **The narrowing, carried since U12 (2026-09-24):** the far-side
-  node's `filler` also NARROWED the population (a strict subtype of the far
-  role's type counts only the objects of that subtype, `RUNTIME-SEMANTICS.md`
-  ch. 5.8a rule 2). The first L2 form of `RoleMembership` had no field for
-  it, and on `corpus/golden/jutterswet-postbezetting` the two Strandjutter
-  checks migrated to the same node as its two Jutter checks, losing the
-  narrowing `case3-strandwacht` pins; `counterpartType` carries it (clause
-  (o) above). The clause as it stood: the naming class once more and the one
+  candidate. **The narrowing, carried by `counterpartType` since L2
+  (2026-09-24):** the far-side node's `filler` also NARROWED the population
+  (a strict subtype of the far role's type counts only the objects of that
+  subtype, `RUNTIME-SEMANTICS.md` ch. 5.8a). `RoleMembership` as B9 states
+  it has no field for that, and on `corpus/golden/jutterswet-postbezetting`
+  the two Strandjutter checks would have migrated to the same node as its
+  two Jutter checks, losing the narrowing `case3-strandwacht` pins;
+  `counterpartType` carries it (clause (o) above). The clause as it stood: the naming class once more and the one
   entry of the open list above that stood there for want of a WITNESS rather
   than for want of a rule: (t) **a far-side role check MUST carry both a
   `filler` and a `backref`, and the two MUST MEET ON ONE DECLARED FACT
@@ -6687,7 +6709,7 @@ ch. 3.12), and it belongs to whoever measures it.
   written that way because the alternatives are occupied rather than
   absent: the subject's own read has one value, and a count source hands
   the fold instances, and neither has a filled count. **Since L2
-  (2026-09-24, D8, U2) the set-source arm reads "carries a range":** the
+  (2026-09-24, B11, B12) the set-source arm reads "carries a range":** the
   range makes the single argument the set source, and the schema and every
   loader demand it of a single-argument fold with an `elementType` under
   every kind but `TOTAAL`, so a filled count without one is refused at
@@ -6825,7 +6847,7 @@ ch. 3.12), and it belongs to whoever measures it.
   takes the parity document below out of the picture entirely. What the defer
   held open, then, was the wart itself — an instance ordering fold over a
   bare role source, which
-  was verifier-clean until L2, when WF-093 (a) took it, and which **no** executor carries (measured:
+  was verifier-clean until 2026-09-06, when WF-093 (a) took it, and which **no** executor carries (measured:
   `ref` faults `value aggregation over a bare role source`, the ASP
   backend refuses the expression kind, the Drools backend throws a
   constraint-evaluation exception). That is an **open flank recorded
@@ -7043,7 +7065,8 @@ nothing, so neither node has an enumeration reading.
   the binder's declared datatype — a match arm binder's constructor
   payload, a lambda or `FunctionDef` parameter's declared type, a `Let`
   binder's value type, a filter binder's element type — so a binder read
-  cannot state another soort, and the rule has nothing left to cross.
+  cannot state another soort, and there is no copy for the rule to
+  compare.
   Until then a `BinderRef`'s serialized `type`, where present, had to agree
   in **soort** with the datatype of the binder it resolves to — the soort
   facet of the reference-type identity at this arm, beside WF-089/WF-090
