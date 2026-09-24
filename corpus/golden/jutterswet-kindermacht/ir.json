@@ -47,76 +47,107 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "machttotaal van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "machttotaal",
-          "objecttype": "Jutter",
-          "bron": "Het machttotaal van een Jutter"
-        },
-        "waarde": {
-          "node": "Fold",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "list": {
-            "node": "ParameterRef",
-            "parameter": "kindertallen",
-            "bron": "de kindertallen"
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "acc",
-                "datatype": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                }
+        "node": "Rule",
+        "name": "machttotaal van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "machttotaal",
+              "objecttype": "Jutter",
+              "bron": "Het machttotaal van een Jutter"
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
-              {
-                "name": "x",
-                "datatype": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
-                }
-              }
-            ],
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "acc",
-                "bron": "het opgetelde punt"
+              "list": {
+                "node": "ParameterRef",
+                "parameter": "kindertallen",
+                "bron": "de kindertallen"
               },
-              "rechts": {
-                "node": "Binair",
-                "op": "TOT_DE_MACHT",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "x",
-                  "bron": "het kindertal"
-                },
-                "rechts": {
-                  "node": "Literal",
-                  "waarde": "3",
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "bron": "het opgetelde punt"
+                  },
+                  "rechts": {
+                    "node": "Binair",
+                    "op": "TOT_DE_MACHT",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "x",
+                      "bron": "het kindertal"
+                    },
+                    "rechts": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "3"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "3"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "het kindertal tot de macht 3"
+                  },
                   "type": {
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "3"
+                  "bron": "het opgetelde punt plus het kindpunt"
+                },
+                "bron": "de kinddelen opgeteld"
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
                 },
                 "type": {
                   "node": "Number",
@@ -124,37 +155,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "het kindertal tot de macht 3"
+                "bron": "0"
               },
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "het opgetelde punt plus het kindpunt"
+              "bron": "de kindertallen gevouwen tot het machttotaal"
             },
-            "bron": "de kinddelen opgeteld"
-          },
-          "init": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "0"
-          },
-          "bron": "de kindertallen gevouwen tot het machttotaal"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -162,7 +170,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

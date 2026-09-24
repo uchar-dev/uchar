@@ -106,50 +106,50 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal eigen vondsten",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal eigen vondsten",
-          "objecttype": "Jutter",
-          "bron": "Het aantal eigen vondsten van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "aantal eigen vondsten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vondsten",
+              "attribuut": "aantal eigen vondsten",
               "objecttype": "Jutter",
-              "bron": "vondsten van de aanmelder"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal vondsten van de aanmelder",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+              "bron": "Het aantal eigen vondsten van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vondsten",
+                  "objecttype": "Jutter",
+                  "bron": "vondsten van de aanmelder"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal vondsten van de aanmelder"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -157,7 +157,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

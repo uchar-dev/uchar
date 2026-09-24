@@ -126,65 +126,67 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal gevulde vondstgewichten",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal gevulde vondstgewichten",
-          "objecttype": "Jutter",
-          "bron": "Het aantal gevulde vondstgewichten van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL_GEVULDE",
-          "argumenten": [
-            {
-              "node": "Literal",
-              "waarde": "2.5",
+        "node": "Rule",
+        "name": "aantal gevulde vondstgewichten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aantal gevulde vondstgewichten",
+              "objecttype": "Jutter",
+              "bron": "Het aantal gevulde vondstgewichten van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL_GEVULDE",
+              "arguments": [
+                {
+                  "node": "Literal",
+                  "value": {
+                    "number": "2.5"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD",
+                    "unit": {
+                      "node": "Unit",
+                      "abbreviation": "kg",
+                      "system": "Gewicht",
+                      "canonical": "kg",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  },
+                  "bron": "2,5 kg"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
               "type": {
                 "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "kg",
-                  "system": "Gewicht",
-                  "canonical": "kg",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
-                  }
-                }
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
               },
-              "bron": "2,5 kg"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+              "bron": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -192,7 +194,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

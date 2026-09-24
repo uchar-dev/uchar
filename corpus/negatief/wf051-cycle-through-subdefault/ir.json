@@ -43,7 +43,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],
@@ -86,7 +85,9 @@
                       },
                       "consequentie": {
                         "node": "Literal",
-                        "waarde": "10.00",
+                        "value": {
+                          "number": "10.00"
+                        },
                         "type": {
                           "node": "Number",
                           "whole": false,

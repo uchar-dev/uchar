@@ -50,79 +50,88 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Kenmerktoekenning jutter penninggerechtigd",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "penninggerechtigd",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is penninggerechtigd"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GROTER_OF_GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aantal aangemelde vondsten",
-            "objecttype": "Jutter",
-            "bron": "zijn aantal aangemelde vondsten"
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "vondstdrempel",
-            "bron": "de vondstdrempel"
-          },
-          "periode": null,
-          "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "Kenmerktoekenning jutter penninggerechtigd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "penninggerechtigd",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is penninggerechtigd"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GROTER_OF_GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aantal aangemelde vondsten",
+                "objecttype": "Jutter",
+                "bron": "zijn aantal aangemelde vondsten"
+              },
+              "rechts": {
+                "node": "ParameterRef",
+                "parameter": "vondstdrempel",
+                "bron": "de vondstdrempel"
+              },
+              "periode": null,
+              "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
     "objectCreaties": [],
     "verdelingen": [],
     "consistenties": [],
-    "uniciteiten": [],
-    "uniciteitUnies": [
+    "uniciteiten": [
       {
-        "node": "ResolvedUniciteitUnie",
-        "naam": "Uniciteit vondstnummer",
-        "bronnen": [
+        "node": "Uniqueness",
+        "name": "Uniciteit vondstnummer",
+        "versions": [
           {
-            "node": "Bron",
-            "type": "Jutter",
-            "sleutels": [
-              "aantal aangemelde vondsten"
-            ]
-          },
-          {
-            "node": "Bron",
-            "type": "Jutter",
-            "sleutels": [
-              "aantal aangemelde vondsten",
-              "aantal aangemelde vondsten"
-            ]
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Jutter",
+                "keys": [
+                  "aantal aangemelde vondsten"
+                ]
+              },
+              {
+                "node": "Source",
+                "objectType": "Jutter",
+                "keys": [
+                  "aantal aangemelde vondsten",
+                  "aantal aangemelde vondsten"
+                ]
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": null
           }
-        ],
-        "bron": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "feitCreaties": [],

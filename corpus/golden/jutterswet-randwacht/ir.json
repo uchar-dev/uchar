@@ -73,156 +73,174 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "gelijkteken van een randwacht",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "gelijkteken",
-          "objecttype": "Randwacht",
-          "bron": "Het gelijkteken van een Randwacht"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "1",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "1"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "ploegomvang",
-                "objecttype": "Randwacht",
-                "bron": "zijn ploegomvang"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "0",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0"
-              },
-              "periode": null,
-              "bron": "zijn ploegomvang is gelijk aan 0"
+        "node": "Rule",
+        "name": "gelijkteken van een randwacht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "grootgetal",
-                "objecttype": "Randwacht",
-                "bron": "zijn grootgetal"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "gelijkteken",
+              "objecttype": "Randwacht",
+              "bron": "Het gelijkteken van een Randwacht"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "1"
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "bedrag",
-                "objecttype": "Randwacht",
-                "bron": "zijn bedrag"
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
-              "periode": null,
-              "bron": "zijn grootgetal is gelijk aan zijn bedrag"
-            }
-          ],
-          "bron": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is gelijk aan zijn bedrag."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "1"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "ploegomvang",
+                    "objecttype": "Randwacht",
+                    "bron": "zijn ploegomvang"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0"
+                  },
+                  "periode": null,
+                  "bron": "zijn ploegomvang is gelijk aan 0"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "grootgetal",
+                    "objecttype": "Randwacht",
+                    "bron": "zijn grootgetal"
+                  },
+                  "rechts": {
+                    "node": "AttribuutRef",
+                    "attribuut": "bedrag",
+                    "objecttype": "Randwacht",
+                    "bron": "zijn bedrag"
+                  },
+                  "periode": null,
+                  "bron": "zijn grootgetal is gelijk aan zijn bedrag"
+                }
+              ],
+              "bron": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is gelijk aan zijn bedrag."
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "ordeteken van een randwacht",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "ordeteken",
-          "objecttype": "Randwacht",
-          "bron": "Het ordeteken van een Randwacht"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "1",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "1"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "ploegomvang",
-                "objecttype": "Randwacht",
-                "bron": "zijn ploegomvang"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "0",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0"
-              },
-              "periode": null,
-              "bron": "zijn ploegomvang is gelijk aan 0"
+        "node": "Rule",
+        "name": "ordeteken van een randwacht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "grootgetal",
-                "objecttype": "Randwacht",
-                "bron": "zijn grootgetal"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "ordeteken",
+              "objecttype": "Randwacht",
+              "bron": "Het ordeteken van een Randwacht"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "1"
               },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "bedrag",
-                "objecttype": "Randwacht",
-                "bron": "zijn bedrag"
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
-              "periode": null,
-              "bron": "zijn grootgetal is groter dan zijn bedrag"
-            }
-          ],
-          "bron": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is groter dan zijn bedrag."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "1"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "ploegomvang",
+                    "objecttype": "Randwacht",
+                    "bron": "zijn ploegomvang"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0"
+                  },
+                  "periode": null,
+                  "bron": "zijn ploegomvang is gelijk aan 0"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "grootgetal",
+                    "objecttype": "Randwacht",
+                    "bron": "zijn grootgetal"
+                  },
+                  "rechts": {
+                    "node": "AttribuutRef",
+                    "attribuut": "bedrag",
+                    "objecttype": "Randwacht",
+                    "bron": "zijn bedrag"
+                  },
+                  "periode": null,
+                  "bron": "zijn grootgetal is groter dan zijn bedrag"
+                }
+              ],
+              "bron": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is groter dan zijn bedrag."
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -230,7 +248,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -126,116 +126,119 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal aangemelde vondsten",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal aangemelde vondsten",
-          "objecttype": "Jutter",
-          "bron": "Het aantal aangemelde vondsten van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "aantal aangemelde vondsten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vondsten",
+              "attribuut": "aantal aangemelde vondsten",
               "objecttype": "Jutter",
-              "bron": "vondsten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal vondsten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+              "bron": "Het aantal aangemelde vondsten van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vondsten",
+                  "objecttype": "Jutter",
+                  "bron": "vondsten van de Jutter"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal vondsten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "aangemeld gewicht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aangemeld gewicht",
-          "objecttype": "Jutter",
-          "bron": "Het aangemeld gewicht van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "SOM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": null,
-              "objecttype": "Vondst",
-              "bron": "het gewicht van alle vondsten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "aangemeld gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "0"
-          },
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "kg",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "de som van het gewicht van alle vondsten van de Jutter of 0 als die er niet zijn",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aangemeld gewicht",
+              "objecttype": "Jutter",
+              "bron": "Het aangemeld gewicht van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "SOM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": null,
+                  "objecttype": "Vondst",
+                  "bron": "het gewicht van alle vondsten van de Jutter"
+                }
+              ],
+              "elementType": "Vondst",
+              "emptyFallback": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "0"
+              },
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "de som van het gewicht van alle vondsten van de Jutter of 0 als die er niet zijn"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -243,7 +246,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

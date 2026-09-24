@@ -312,64 +312,68 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "uittarief van de Jutter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uittarief",
-          "objecttype": "Jutter",
-          "bron": "De uittarief van een Jutter"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "MAAL",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "tarief",
-            "objecttype": "Jutter",
-            "bron": "de tarief van de Jutter"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "duur",
-            "objecttype": "Jutter",
-            "bron": "de duur van de Jutter"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "EUR",
-              "system": "Munt",
-              "canonical": "EUR",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
+        "node": "Rule",
+        "name": "uittarief van de Jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "uittarief",
+              "objecttype": "Jutter",
+              "bron": "De uittarief van een Jutter"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "MAAL",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "tarief",
+                "objecttype": "Jutter",
+                "bron": "de tarief van de Jutter"
               },
-              "denominator": {
-                "node": "Unit",
-                "abbreviation": "jr",
-                "system": "Tijd",
-                "canonical": "jr",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "duur",
+                "objecttype": "Jutter",
+                "bron": "de duur van de Jutter"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "denominator": {
+                    "node": "Unit",
+                    "abbreviation": "jr",
+                    "system": "Tijd",
+                    "canonical": "jr",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
                 }
-              }
-            }
-          },
-          "bron": "het tarief van de Jutter maal de duur van de Jutter"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              },
+              "bron": "het tarief van de Jutter maal de duur van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -377,7 +381,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

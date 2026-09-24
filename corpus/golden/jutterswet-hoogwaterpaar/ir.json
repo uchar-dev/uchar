@@ -55,94 +55,92 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "eerste hoogwater van een getijdendag",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "eerstehoogwater",
-          "objecttype": "Getijdendag",
-          "bron": "Het eerstehoogwater van een Getijdendag"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "EERSTE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "ochtendhoogwater",
-              "objecttype": "Getijdendag",
-              "bron": "zijn ochtendhoogwater"
+        "node": "Rule",
+        "name": "eerste hoogwater van een getijdendag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "avondhoogwater",
+              "attribuut": "eerstehoogwater",
               "objecttype": "Getijdendag",
-              "bron": "zijn avondhoogwater"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Date",
-            "precision": "millisecond"
-          },
-          "bron": "de eerste van zijn ochtendhoogwater en zijn avondhoogwater",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "Het eerstehoogwater van een Getijdendag"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "EERSTE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "ochtendhoogwater",
+                  "objecttype": "Getijdendag",
+                  "bron": "zijn ochtendhoogwater"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "avondhoogwater",
+                  "objecttype": "Getijdendag",
+                  "bron": "zijn avondhoogwater"
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "bron": "de eerste van zijn ochtendhoogwater en zijn avondhoogwater"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "laatste hoogwater van een getijdendag",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "laatstehoogwater",
-          "objecttype": "Getijdendag",
-          "bron": "Het laatstehoogwater van een Getijdendag"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "LAATSTE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "ochtendhoogwater",
-              "objecttype": "Getijdendag",
-              "bron": "zijn ochtendhoogwater"
+        "node": "Rule",
+        "name": "laatste hoogwater van een getijdendag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "avondhoogwater",
+              "attribuut": "laatstehoogwater",
               "objecttype": "Getijdendag",
-              "bron": "zijn avondhoogwater"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Date",
-            "precision": "millisecond"
-          },
-          "bron": "de laatste van zijn ochtendhoogwater en zijn avondhoogwater",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "Het laatstehoogwater van een Getijdendag"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "LAATSTE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "ochtendhoogwater",
+                  "objecttype": "Getijdendag",
+                  "bron": "zijn ochtendhoogwater"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "avondhoogwater",
+                  "objecttype": "Getijdendag",
+                  "bron": "zijn avondhoogwater"
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "bron": "de laatste van zijn ochtendhoogwater en zijn avondhoogwater"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -150,7 +148,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

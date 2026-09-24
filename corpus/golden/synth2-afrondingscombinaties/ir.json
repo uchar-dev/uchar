@@ -123,34 +123,64 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "totaal van een partij",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "totaal",
-          "objecttype": "Partij",
-          "bron": "Het totaal van een Partij"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "Afgerond",
-            "basis": {
+        "node": "Rule",
+        "name": "totaal van een partij",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "totaal",
+              "objecttype": "Partij",
+              "bron": "Het totaal van een Partij"
+            },
+            "value": {
               "node": "Binair",
-              "op": "GEDEELD_DOOR",
+              "op": "PLUS",
               "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vracht",
-                "objecttype": "Partij",
-                "bron": "de vracht van de Partij"
+                "node": "Afgerond",
+                "basis": {
+                  "node": "Binair",
+                  "op": "GEDEELD_DOOR",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "vracht",
+                    "objecttype": "Partij",
+                    "bron": "de vracht van de Partij"
+                  },
+                  "rechts": {
+                    "node": "AttribuutRef",
+                    "attribuut": "eenheden",
+                    "objecttype": "Partij",
+                    "bron": "de eenheden van de Partij"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "de vracht van de Partij gedeeld door de eenheden van de Partij"
+                },
+                "modus": "NAAR_BENEDEN",
+                "decimalen": 0,
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "de vracht van de Partij gedeeld door de eenheden van de Partij naar beneden afgerond op 0 decimalen"
               },
               "rechts": {
                 "node": "AttribuutRef",
-                "attribuut": "eenheden",
+                "attribuut": "toeslag",
                 "objecttype": "Partij",
-                "bron": "de eenheden van de Partij"
+                "bron": "de toeslag van de Partij"
               },
               "type": {
                 "node": "Number",
@@ -158,68 +188,72 @@
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de vracht van de Partij gedeeld door de eenheden van de Partij"
+              "bron": "de vracht van de Partij gedeeld door de eenheden van de Partij naar beneden afgerond op 0 decimalen plus de toeslag van de Partij"
             },
-            "modus": "NAAR_BENEDEN",
-            "decimalen": 0,
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "de vracht van de Partij gedeeld door de eenheden van de Partij naar beneden afgerond op 0 decimalen"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "toeslag",
-            "objecttype": "Partij",
-            "bron": "de toeslag van de Partij"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de vracht van de Partij gedeeld door de eenheden van de Partij naar beneden afgerond op 0 decimalen plus de toeslag van de Partij"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "marge van een partij",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "marge",
-          "objecttype": "Partij",
-          "bron": "De marge van een Partij"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "VERMINDERD_MET",
-          "links": {
-            "node": "Afgerond",
-            "basis": {
+        "node": "Rule",
+        "name": "marge van een partij",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "marge",
+              "objecttype": "Partij",
+              "bron": "De marge van een Partij"
+            },
+            "value": {
               "node": "Binair",
-              "op": "GEDEELD_DOOR",
+              "op": "VERMINDERD_MET",
               "links": {
-                "node": "AttribuutRef",
-                "attribuut": "omzet",
-                "objecttype": "Partij",
-                "bron": "de omzet van de Partij"
+                "node": "Afgerond",
+                "basis": {
+                  "node": "Binair",
+                  "op": "GEDEELD_DOOR",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "omzet",
+                    "objecttype": "Partij",
+                    "bron": "de omzet van de Partij"
+                  },
+                  "rechts": {
+                    "node": "AttribuutRef",
+                    "attribuut": "posten",
+                    "objecttype": "Partij",
+                    "bron": "de posten van de Partij"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 1,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "de omzet van de Partij gedeeld door de posten van de Partij"
+                },
+                "modus": "REKENKUNDIG",
+                "decimalen": 1,
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 1,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "de omzet van de Partij gedeeld door de posten van de Partij rekenkundig afgerond op 1 decimaal"
               },
               "rechts": {
                 "node": "AttribuutRef",
-                "attribuut": "posten",
+                "attribuut": "aftrek",
                 "objecttype": "Partij",
-                "bron": "de posten van de Partij"
+                "bron": "de aftrek van de Partij"
               },
               "type": {
                 "node": "Number",
@@ -227,104 +261,84 @@
                 "decimals": 1,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de omzet van de Partij gedeeld door de posten van de Partij"
+              "bron": "de omzet van de Partij gedeeld door de posten van de Partij rekenkundig afgerond op 1 decimaal verminderd met de aftrek van de Partij"
             },
-            "modus": "REKENKUNDIG",
-            "decimalen": 1,
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 1,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "de omzet van de Partij gedeeld door de posten van de Partij rekenkundig afgerond op 1 decimaal"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "aftrek",
-            "objecttype": "Partij",
-            "bron": "de aftrek van de Partij"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 1,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de omzet van de Partij gedeeld door de posten van de Partij rekenkundig afgerond op 1 decimaal verminderd met de aftrek van de Partij"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "premie van een partij",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "premie",
-          "objecttype": "Partij",
-          "bron": "De premie van een Partij"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PERCENTAGE_VAN",
-          "links": {
-            "node": "Literal",
-            "waarde": "20",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "%",
-                "canonical": "%",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
-                }
-              }
+        "node": "Rule",
+        "name": "premie van een partij",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "20%"
-          },
-          "rechts": {
-            "node": "Afgerond",
-            "basis": {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "grondslag",
+              "attribuut": "premie",
               "objecttype": "Partij",
-              "bron": "de grondslag van de Partij"
+              "bron": "De premie van een Partij"
             },
-            "modus": "NAAR_BENEDEN",
-            "decimalen": 0,
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+            "value": {
+              "node": "Binair",
+              "op": "PERCENTAGE_VAN",
+              "links": {
+                "node": "Literal",
+                "value": {
+                  "number": "20"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "%",
+                    "canonical": "%",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "20%"
+              },
+              "rechts": {
+                "node": "Afgerond",
+                "basis": {
+                  "node": "AttribuutRef",
+                  "attribuut": "grondslag",
+                  "objecttype": "Partij",
+                  "bron": "de grondslag van de Partij"
+                },
+                "modus": "NAAR_BENEDEN",
+                "decimalen": 0,
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "de grondslag van de Partij naar beneden afgerond op 0 decimalen"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "20% van de grondslag van de Partij naar beneden afgerond op 0 decimalen"
             },
-            "bron": "de grondslag van de Partij naar beneden afgerond op 0 decimalen"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "20% van de grondslag van de Partij naar beneden afgerond op 0 decimalen"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -332,7 +346,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

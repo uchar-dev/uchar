@@ -43,80 +43,95 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "keuring naar keurmerk",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "gekeurd",
-          "objecttype": "Vondst",
-          "bron": "Een Vondst is gekeurd"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "keurmerk",
-            "objecttype": "Vondst",
-            "bron": "het keurmerk van de Vondst"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "merk \"AA\"",
-            "type": {
-              "node": "Tekst"
+        "node": "Rule",
+        "name": "keuring naar keurmerk",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "'merk \"AA\"'"
-          },
-          "periode": null,
-          "bron": "haar keurmerk gelijk is aan 'merk \"AA\"'"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "gekeurd",
+              "objecttype": "Vondst",
+              "bron": "Een Vondst is gekeurd"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "keurmerk",
+                "objecttype": "Vondst",
+                "bron": "het keurmerk van de Vondst"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "text": "merk \"AA\""
+                },
+                "type": {
+                  "node": "Tekst"
+                },
+                "bron": "'merk \"AA\"'"
+              },
+              "periode": null,
+              "bron": "haar keurmerk gelijk is aan 'merk \"AA\"'"
+            },
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "afslag van een gekeurde vondst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "afslag",
-          "objecttype": "Vondst",
-          "bron": "De afslag van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "veiling \"Zee\"",
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "'veiling \"Zee\"'"
-        },
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": null,
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "de Vondst is gekeurd"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "afslag van een gekeurde vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "afslag",
+              "objecttype": "Vondst",
+              "bron": "De afslag van een Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "text": "veiling \"Zee\""
+              },
+              "type": {
+                "node": "Tekst"
+              },
+              "bron": "'veiling \"Zee\"'"
+            },
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "de Vondst is gekeurd"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -124,7 +139,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

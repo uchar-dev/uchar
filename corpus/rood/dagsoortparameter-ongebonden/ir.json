@@ -100,98 +100,101 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "streefdatum van een havenmeester",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "streefdatum",
-          "objecttype": "Havenmeester",
-          "bron": "De streefdatum van een Havenmeester"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aanvraagdatum",
-            "objecttype": "Havenmeester",
-            "bron": "zijn aanvraagdatum"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "doorlooptijd",
-            "objecttype": "Havenmeester",
-            "bron": "zijn doorlooptijd"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "zijn aanvraagdatum plus zijn doorlooptijd"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "streefdatum van een havenmeester",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "streefdatum",
+              "objecttype": "Havenmeester",
+              "bron": "De streefdatum van een Havenmeester"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aanvraagdatum",
+                "objecttype": "Havenmeester",
+                "bron": "zijn aanvraagdatum"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "doorlooptijd",
+                "objecttype": "Havenmeester",
+                "bron": "zijn doorlooptijd"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "zijn aanvraagdatum plus zijn doorlooptijd"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "havenspanne van een havenmeester",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "havenspanne",
-          "objecttype": "Havenmeester",
-          "bron": "De havenspanne van een Havenmeester"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSDUUR",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "aanvraagdatum",
-              "objecttype": "Havenmeester",
-              "bron": "zijn aanvraagdatum"
+        "node": "Rule",
+        "name": "havenspanne van een havenmeester",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "sluitdatum",
+              "attribuut": "havenspanne",
               "objecttype": "Havenmeester",
-              "bron": "zijn sluitdatum"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "havendagen",
-              "canonical": "havendagen",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "de tijdsduur van zijn aanvraagdatum tot zijn sluitdatum in hele havendagen",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De havenspanne van een Havenmeester"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSDUUR",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "aanvraagdatum",
+                  "objecttype": "Havenmeester",
+                  "bron": "zijn aanvraagdatum"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "sluitdatum",
+                  "objecttype": "Havenmeester",
+                  "bron": "zijn sluitdatum"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "havendagen",
+                  "canonical": "havendagen",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "de tijdsduur van zijn aanvraagdatum tot zijn sluitdatum in hele havendagen"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [
@@ -207,8 +210,7 @@
               "node": "Vergelijking",
               "op": "LATER",
               "links": {
-                "node": "Constante",
-                "naam": "de dag",
+                "node": "BoundDay",
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -227,12 +229,11 @@
               "node": "Vergelijking",
               "op": "GELIJK",
               "links": {
-                "node": "Functie",
+                "node": "BuiltinCall",
                 "kind": "DAG_UIT",
-                "argumenten": [
+                "arguments": [
                   {
-                    "node": "Constante",
-                    "naam": "de dag",
+                    "node": "BoundDay",
                     "type": {
                       "node": "Date",
                       "precision": "day"
@@ -240,22 +241,19 @@
                     "bron": "de dag"
                   }
                 ],
-                "elementObjecttype": null,
-                "leegwaarde": null,
-                "filter": null,
-                "dimensieSelectie": null,
                 "type": {
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "de dag uit de dag",
-                "granulariteit": null
+                "bron": "de dag uit de dag"
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "1",
+                "value": {
+                  "number": "1"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,
@@ -281,7 +279,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

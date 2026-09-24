@@ -84,196 +84,220 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "berekening vaarwatertarief",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vaarwatertarief",
-          "objecttype": "Bergingstoeslag",
-          "bron": "de vaarwatertarief"
-        },
-        "waarde": {
-          "node": "Match",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "scrutinee": {
-            "node": "AttribuutRef",
-            "attribuut": "vaarwater",
-            "objecttype": "Bergingstoeslag",
-            "bron": "de vaarwater"
-          },
-          "arms": [
-            {
-              "constructor": "Wad",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "3",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "3"
-              }
+        "node": "Rule",
+        "name": "berekening vaarwatertarief",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "constructor": "Zeegat",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "7",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "7"
-              }
-            },
-            {
-              "constructor": "Ruimzee",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "12",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "12"
-              }
-            }
-          ],
-          "bron": "match Vaarwater"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "berekening bergingstoeslag",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bergingstoeslag",
-          "objecttype": "Bergingstoeslag",
-          "bron": "de bergingstoeslag"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "Binair",
-            "op": "MAAL",
-            "links": {
+            "target": {
               "node": "AttribuutRef",
               "attribuut": "vaarwatertarief",
               "objecttype": "Bergingstoeslag",
               "bron": "de vaarwatertarief"
             },
-            "rechts": {
-              "node": "AttribuutRef",
-              "attribuut": "geborgen_tonnage",
-              "objecttype": "Bergingstoeslag",
-              "bron": "de geborgen_tonnage"
+            "value": {
+              "node": "Match",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "scrutinee": {
+                "node": "AttribuutRef",
+                "attribuut": "vaarwater",
+                "objecttype": "Bergingstoeslag",
+                "bron": "de vaarwater"
+              },
+              "arms": [
+                {
+                  "constructor": "Wad",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "3"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "3"
+                  }
+                },
+                {
+                  "constructor": "Zeegat",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "7"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "7"
+                  }
+                },
+                {
+                  "constructor": "Ruimzee",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "12"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "12"
+                  }
+                }
+              ],
+              "bron": "match Vaarwater"
             },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": null
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "15",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "15"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "kenmerktoekenning zeewaardige_berging",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "zeewaardige_berging",
-          "objecttype": "Bergingstoeslag",
-          "bron": "de zeewaardige_berging"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "vaarwater",
-            "objecttype": "Bergingstoeslag",
-            "bron": "de vaarwater"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "Ruimzee",
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Vaarwater",
-              "waarden": [
-                "Wad",
-                "Zeegat",
-                "Ruimzee"
-              ]
+        "node": "Rule",
+        "name": "berekening bergingstoeslag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "Ruimzee"
-          },
-          "periode": null,
-          "bron": null
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bergingstoeslag",
+              "objecttype": "Bergingstoeslag",
+              "bron": "de bergingstoeslag"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "Binair",
+                "op": "MAAL",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "vaarwatertarief",
+                  "objecttype": "Bergingstoeslag",
+                  "bron": "de vaarwatertarief"
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "geborgen_tonnage",
+                  "objecttype": "Bergingstoeslag",
+                  "bron": "de geborgen_tonnage"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": null
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "15"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "15"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": null
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "kenmerktoekenning zeewaardige_berging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "zeewaardige_berging",
+              "objecttype": "Bergingstoeslag",
+              "bron": "de zeewaardige_berging"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "vaarwater",
+                "objecttype": "Bergingstoeslag",
+                "bron": "de vaarwater"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "enumeration": "Ruimzee"
+                },
+                "type": {
+                  "node": "Enumeratie",
+                  "domein": "Vaarwater",
+                  "waarden": [
+                    "Wad",
+                    "Zeegat",
+                    "Ruimzee"
+                  ]
+                },
+                "bron": "Ruimzee"
+              },
+              "periode": null,
+              "bron": null
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -281,7 +305,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],

@@ -74,50 +74,50 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "liggertal van een haven",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "liggertal",
-          "objecttype": "Haven",
-          "bron": "Het liggertal van een Haven"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "liggertal van een haven",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "ligger",
+              "attribuut": "liggertal",
               "objecttype": "Haven",
-              "bron": "ligger van de Haven"
-            }
-          ],
-          "elementObjecttype": "Schuit",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal ligger van de Haven",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "ligplaats",
-            "rol": "ligger"
+              "bron": "Het liggertal van een Haven"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "ligger",
+                  "objecttype": "Haven",
+                  "bron": "ligger van de Haven"
+                }
+              ],
+              "elementType": "Schuit",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "ligplaats",
+                "rol": "ligger"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal ligger van de Haven"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -125,7 +125,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

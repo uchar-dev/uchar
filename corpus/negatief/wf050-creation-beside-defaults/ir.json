@@ -74,40 +74,44 @@
     "resolvedDagsoorten": [],
     "objectCreaties": [
       {
-        "node": "ResolvedObjectCreatie",
-        "naam": "maak jutter aan",
-        "nieuwType": "Jutter",
-        "subject": "Strandvondst",
-        "toekenningen": [
+        "node": "ObjectCreation",
+        "name": "maak jutter aan",
+        "versions": [
           {
-            "node": "Toekenning",
-            "attribuut": "waardering",
-            "waarde": {
-              "node": "Literal",
-              "waarde": "10",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "10"
-            },
-            "kenmerk": false
+            "createdType": "Jutter",
+            "subject": "Strandvondst",
+            "initialisations": [
+              {
+                "node": "Toekenning",
+                "attribuut": "waardering",
+                "waarde": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "10"
+                },
+                "kenmerk": false
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            }
           }
-        ],
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],
@@ -163,7 +167,9 @@
             "voorwaarde": null,
             "consequentie": {
               "node": "Literal",
-              "waarde": "25",
+              "value": {
+                "number": "25"
+              },
               "type": {
                 "node": "Number",
                 "whole": true,

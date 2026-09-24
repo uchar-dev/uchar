@@ -102,91 +102,101 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "premie",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "premie",
-          "objecttype": "Schuit",
-          "bron": "de premie"
-        },
-        "waarde": {
-          "node": "Match",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "scrutinee": {
-            "node": "AttribuutRef",
-            "attribuut": "vaarwater",
-            "objecttype": "Werf",
-            "bron": "de vaarwater",
-            "navigatieBindingen": [
-              {
-                "node": "RolBinding",
-                "feittype": "ligplaats",
-                "rol": "werf"
-              }
-            ]
-          },
-          "arms": [
-            {
-              "constructor": "Noord",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "3",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "3"
-              }
+        "node": "Rule",
+        "name": "premie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "constructor": "Zuid",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "7",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "7"
-              }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "premie",
+              "objecttype": "Schuit",
+              "bron": "de premie"
             },
-            {
-              "constructor": "West",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "12",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
+            "value": {
+              "node": "Match",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "scrutinee": {
+                "node": "AttribuutRef",
+                "attribuut": "vaarwater",
+                "objecttype": "Werf",
+                "bron": "de vaarwater",
+                "navigatieBindingen": [
+                  {
+                    "node": "RolBinding",
+                    "feittype": "ligplaats",
+                    "rol": "werf"
+                  }
+                ]
+              },
+              "arms": [
+                {
+                  "constructor": "Noord",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "3"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "3"
+                  }
                 },
-                "bron": "12"
-              }
-            }
-          ],
-          "bron": "match"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "constructor": "Zuid",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "7"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "7"
+                  }
+                },
+                {
+                  "constructor": "West",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "12"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "12"
+                  }
+                }
+              ],
+              "bron": "match"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -194,7 +204,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

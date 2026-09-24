@@ -116,34 +116,38 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "maatgevend gewicht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "maatgevend gewicht",
-          "objecttype": "Jutter",
-          "bron": "Het maatgevend gewicht van een Jutter"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "gewicht",
-          "objecttype": "Vondst",
-          "bron": "het gewicht van alle vondsten van de Jutter",
-          "navigatieBindingen": [
-            {
-              "node": "RolBinding",
-              "feittype": "vondstaanmelding",
-              "rol": "vondst"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "maatgevend gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "maatgevend gewicht",
+              "objecttype": "Jutter",
+              "bron": "Het maatgevend gewicht van een Jutter"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "gewicht",
+              "objecttype": "Vondst",
+              "bron": "het gewicht van alle vondsten van de Jutter",
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "vondstaanmelding",
+                  "rol": "vondst"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -151,7 +155,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

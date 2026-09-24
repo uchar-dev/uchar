@@ -33,29 +33,35 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "etiket van een kavel",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "etiket",
-          "objecttype": "Kavel",
-          "bron": "Het etiket van een Kavel"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "strand",
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "'strand'"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "etiket van een kavel",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "etiket",
+              "objecttype": "Kavel",
+              "bron": "Het etiket van een Kavel"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "text": "strand"
+              },
+              "type": {
+                "node": "Tekst"
+              },
+              "bron": "'strand'"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -63,7 +69,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

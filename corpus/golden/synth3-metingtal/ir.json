@@ -67,236 +67,316 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bovental van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bovental",
-          "objecttype": "Jutter",
-          "bron": "Het bovental van een Jutter"
-        },
-        "waarde": {
-          "node": "Fold",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "list": {
-            "node": "MapList",
-            "type": {
-              "node": "ListType",
-              "element": {
+        "node": "Rule",
+        "name": "bovental van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bovental",
+              "objecttype": "Jutter",
+              "bron": "Het bovental van een Jutter"
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
                 "sign": "ONBEPAALD"
-              }
-            },
-            "list": {
-              "node": "AttribuutRef",
-              "attribuut": "metingen",
-              "objecttype": "Jutter",
-              "bron": "zijn metingen"
-            },
-            "function": {
-              "node": "Lambda",
-              "parameters": [
-                {
-                  "name": "m",
-                  "datatype": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
-                  }
-                }
-              ],
-              "body": {
-                "node": "IfThenElse",
+              },
+              "list": {
+                "node": "MapList",
                 "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "node": "ListType",
+                  "element": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  }
                 },
-                "condition": {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
+                "list": {
+                  "node": "AttribuutRef",
+                  "attribuut": "metingen",
+                  "objecttype": "Jutter",
+                  "bron": "zijn metingen"
+                },
+                "function": {
+                  "node": "Lambda",
+                  "parameters": [
+                    {
+                      "name": "m",
+                      "datatype": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
+                      }
+                    }
+                  ],
+                  "body": {
+                    "node": "IfThenElse",
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "condition": {
+                      "node": "Vergelijking",
+                      "op": "GROTER",
+                      "links": {
+                        "node": "BinderRef",
+                        "name": "m",
+                        "bron": "de meting"
+                      },
+                      "rechts": {
+                        "node": "ParameterRef",
+                        "parameter": "drempel",
+                        "bron": "de drempel"
+                      },
+                      "periode": null,
+                      "bron": "de meting groter dan de drempel"
+                    },
+                    "then": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "1"
+                    },
+                    "else": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "0"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "0"
+                    },
+                    "bron": "1 als de meting boven de drempel ligt anders 0"
+                  },
+                  "bron": "de indicatoren per meting"
+                },
+                "bron": null
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binair",
+                  "op": "PLUS",
                   "links": {
                     "node": "BinderRef",
-                    "name": "m",
-                    "bron": "de meting"
+                    "name": "acc",
+                    "bron": "het opgetelde aantal"
                   },
                   "rechts": {
-                    "node": "ParameterRef",
-                    "parameter": "drempel",
-                    "bron": "de drempel"
+                    "node": "BinderRef",
+                    "name": "x",
+                    "bron": "de indicator"
                   },
-                  "periode": null,
-                  "bron": "de meting groter dan de drempel"
-                },
-                "then": {
-                  "node": "Literal",
-                  "waarde": "1",
                   "type": {
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "1"
+                  "bron": "het opgetelde aantal plus de indicator"
                 },
-                "else": {
-                  "node": "Literal",
-                  "waarde": "0",
-                  "type": {
-                    "node": "Number",
-                    "whole": true,
-                    "decimals": 0,
-                    "sign": "ONBEPAALD"
-                  },
-                  "bron": "0"
-                },
-                "bron": "1 als de meting boven de drempel ligt anders 0"
+                "bron": "de indicatoren opgeteld"
               },
-              "bron": "de indicatoren per meting"
-            },
-            "bron": null
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "acc",
-                "datatype": {
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
                   "sign": "ONBEPAALD"
-                }
+                },
+                "bron": "0"
               },
-              {
-                "name": "x",
-                "datatype": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                }
-              }
-            ],
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "acc",
-                "bron": "het opgetelde aantal"
-              },
-              "rechts": {
-                "node": "BinderRef",
-                "name": "x",
-                "bron": "de indicator"
-              },
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "het opgetelde aantal plus de indicator"
+              "bron": "het aantal metingen boven de drempel"
             },
-            "bron": "de indicatoren opgeteld"
-          },
-          "init": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "0"
-          },
-          "bron": "het aantal metingen boven de drempel"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "somverhoogd van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "somverhoogd",
-          "objecttype": "Jutter",
-          "bron": "De somverhoogd van een Jutter"
-        },
-        "waarde": {
-          "node": "Fold",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "list": {
-            "node": "MapList",
-            "type": {
-              "node": "ListType",
-              "element": {
+        "node": "Rule",
+        "name": "somverhoogd van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "somverhoogd",
+              "objecttype": "Jutter",
+              "bron": "De somverhoogd van een Jutter"
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
                 "sign": "ONBEPAALD"
-              }
-            },
-            "list": {
-              "node": "AttribuutRef",
-              "attribuut": "metingen",
-              "objecttype": "Jutter",
-              "bron": "zijn metingen"
-            },
-            "function": {
-              "node": "Lambda",
-              "parameters": [
-                {
-                  "name": "m",
-                  "datatype": {
+              },
+              "list": {
+                "node": "MapList",
+                "type": {
+                  "node": "ListType",
+                  "element": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
+                    "sign": "ONBEPAALD"
                   }
-                }
-              ],
-              "body": {
-                "node": "Binair",
-                "op": "PLUS",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "m",
-                  "bron": "de meting"
                 },
-                "rechts": {
-                  "node": "Literal",
-                  "waarde": "1.00",
+                "list": {
+                  "node": "AttribuutRef",
+                  "attribuut": "metingen",
+                  "objecttype": "Jutter",
+                  "bron": "zijn metingen"
+                },
+                "function": {
+                  "node": "Lambda",
+                  "parameters": [
+                    {
+                      "name": "m",
+                      "datatype": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
+                      }
+                    }
+                  ],
+                  "body": {
+                    "node": "Binair",
+                    "op": "PLUS",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "m",
+                      "bron": "de meting"
+                    },
+                    "rechts": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1.00"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "1.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "de meting plus 1.00"
+                  },
+                  "bron": "de opgehoogde metingen"
+                },
+                "bron": null
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "bron": "de opgetelde som"
+                  },
+                  "rechts": {
+                    "node": "BinderRef",
+                    "name": "x",
+                    "bron": "de opgehoogde meting"
+                  },
                   "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "1.00"
+                  "bron": "de opgetelde som plus de opgehoogde meting"
+                },
+                "bron": "de opgehoogde metingen opgeteld"
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0.00"
                 },
                 "type": {
                   "node": "Number",
@@ -304,76 +384,14 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de meting plus 1.00"
+                "bron": "0.00"
               },
-              "bron": "de opgehoogde metingen"
+              "bron": "de som van de opgehoogde metingen"
             },
-            "bron": null
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "acc",
-                "datatype": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                }
-              },
-              {
-                "name": "x",
-                "datatype": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                }
-              }
-            ],
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "acc",
-                "bron": "de opgetelde som"
-              },
-              "rechts": {
-                "node": "BinderRef",
-                "name": "x",
-                "bron": "de opgehoogde meting"
-              },
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "de opgetelde som plus de opgehoogde meting"
-            },
-            "bron": "de opgehoogde metingen opgeteld"
-          },
-          "init": {
-            "node": "Literal",
-            "waarde": "0.00",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "0.00"
-          },
-          "bron": "de som van de opgehoogde metingen"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -381,7 +399,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

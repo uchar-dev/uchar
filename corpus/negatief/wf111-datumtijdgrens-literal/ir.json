@@ -107,54 +107,65 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "vondstpremie van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vondstpremie",
-          "objecttype": "Vondst",
-          "bron": "De vondstpremie van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "50",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "50"
-        },
-        "voorwaarde": {
-          "node": "Periode",
-          "vanaf": {
-            "node": "Literal",
-            "waarde": "2024-01-01T00:00:00.000",
-            "type": {
-              "node": "Date",
-              "precision": "millisecond"
+        "node": "Rule",
+        "name": "vondstpremie van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1 januari 2024 om 00:00"
-          },
-          "tot": {
-            "node": "Literal",
-            "waarde": "2025-01-01",
-            "type": {
-              "node": "Date",
-              "precision": "day"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vondstpremie",
+              "objecttype": "Vondst",
+              "bron": "De vondstpremie van een Vondst"
             },
-            "bron": "2025-01-01"
-          },
-          "totInclusief": false,
-          "bron": "van 1 januari 2024 tot 1 januari 2025"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "50"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "50"
+            },
+            "condition": {
+              "node": "Periode",
+              "vanaf": {
+                "node": "Literal",
+                "value": {
+                  "dateTime": "2024-01-01T00:00:00.000"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "millisecond"
+                },
+                "bron": "1 januari 2024 om 00:00"
+              },
+              "tot": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-01-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "2025-01-01"
+              },
+              "totInclusief": false,
+              "bron": "van 1 januari 2024 tot 1 januari 2025"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -162,7 +173,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

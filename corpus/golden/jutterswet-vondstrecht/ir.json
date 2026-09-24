@@ -105,80 +105,84 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "vondstrecht van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vondstrecht",
-          "objecttype": "Vondst",
-          "bron": "Het vondstrecht van een Vondst"
-        },
-        "waarde": {
-          "node": "Let",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "EUR",
-              "system": "Munt",
-              "canonical": "EUR",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "binder": "toeslag",
-          "value": {
-            "node": "AttribuutRef",
-            "attribuut": "meerprijs",
-            "objecttype": "Vondst",
-            "bron": "de meerprijs van de Vondst"
-          },
-          "body": {
-            "node": "Binair",
-            "op": "PLUS",
-            "links": {
+        "node": "Rule",
+        "name": "vondstrecht van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "grondrecht",
+              "attribuut": "vondstrecht",
               "objecttype": "Vondst",
-              "bron": "het grondrecht van de Vondst"
+              "bron": "Het vondstrecht van een Vondst"
             },
-            "rechts": {
-              "node": "BinderRef",
-              "name": "toeslag",
-              "bron": "de toeslag"
-            },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              },
+              "binder": "toeslag",
+              "value": {
+                "node": "AttribuutRef",
+                "attribuut": "meerprijs",
+                "objecttype": "Vondst",
+                "bron": "de meerprijs van de Vondst"
+              },
+              "body": {
+                "node": "Binair",
+                "op": "PLUS",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "grondrecht",
+                  "objecttype": "Vondst",
+                  "bron": "het grondrecht van de Vondst"
+                },
+                "rechts": {
+                  "node": "BinderRef",
+                  "name": "toeslag",
+                  "bron": "de toeslag"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "het grondrecht van de Vondst plus de toeslag"
+              },
+              "bron": "de toeslag is de meerprijs van de Vondst."
             },
-            "bron": "het grondrecht van de Vondst plus de toeslag"
-          },
-          "bron": "de toeslag is de meerprijs van de Vondst."
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -186,7 +190,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

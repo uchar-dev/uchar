@@ -114,57 +114,56 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal gewogen posten",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal gewogen posten",
-          "objecttype": "Jutter",
-          "bron": "Het aantal gewogen posten van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "gewogen vangst",
-              "objecttype": "Jutter",
-              "bron": "het gewogen vangst van de Jutter"
+        "node": "Rule",
+        "name": "aantal gewogen posten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "gewogen bijvangst",
+              "attribuut": "aantal gewogen posten",
               "objecttype": "Jutter",
-              "bron": "het gewogen bijvangst van de Jutter"
+              "bron": "Het aantal gewogen posten van een Jutter"
             },
-            {
-              "node": "AttribuutRef",
-              "attribuut": "gewogen wrakhout",
-              "objecttype": "Jutter",
-              "bron": "het gewogen wrakhout van de Jutter"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal van het gewogen vangst van de Jutter en het gewogen bijvangst van de Jutter en het gewogen wrakhout van de Jutter",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "gewogen vangst",
+                  "objecttype": "Jutter",
+                  "bron": "het gewogen vangst van de Jutter"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "gewogen bijvangst",
+                  "objecttype": "Jutter",
+                  "bron": "het gewogen bijvangst van de Jutter"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "gewogen wrakhout",
+                  "objecttype": "Jutter",
+                  "bron": "het gewogen wrakhout van de Jutter"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal van het gewogen vangst van de Jutter en het gewogen bijvangst van de Jutter en het gewogen wrakhout van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -172,7 +171,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

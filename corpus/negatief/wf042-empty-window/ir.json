@@ -50,35 +50,41 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Kenmerktoekenning jutter penninggerechtigd",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "penninggerechtigd",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is penninggerechtigd"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Periode",
-          "vanaf": null,
-          "tot": null,
-          "totInclusief": false,
-          "bron": "gedurende de periode"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "Kenmerktoekenning jutter penninggerechtigd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "penninggerechtigd",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is penninggerechtigd"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Periode",
+              "vanaf": null,
+              "tot": null,
+              "totInclusief": false,
+              "bron": "gedurende de periode"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -86,7 +92,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

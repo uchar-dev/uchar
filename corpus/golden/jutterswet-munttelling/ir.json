@@ -146,116 +146,119 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal munten",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal munten",
-          "objecttype": "Jutter",
-          "bron": "Het aantal munten van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "aantal munten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vondsten",
+              "attribuut": "aantal munten",
               "objecttype": "Jutter",
-              "bron": "vondsten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Munt",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal munten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+              "bron": "Het aantal munten van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vondsten",
+                  "objecttype": "Jutter",
+                  "bron": "vondsten van de Jutter"
+                }
+              ],
+              "elementType": "Munt",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal munten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "muntgewicht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "muntgewicht",
-          "objecttype": "Jutter",
-          "bron": "Het muntgewicht van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "SOM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "gewicht",
-              "objecttype": "Munt",
-              "bron": "het gewicht van alle munten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Munt",
-          "leegwaarde": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "muntgewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "0"
-          },
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "kg",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "de som van het gewicht van alle munten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "muntgewicht",
+              "objecttype": "Jutter",
+              "bron": "Het muntgewicht van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "SOM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "gewicht",
+                  "objecttype": "Munt",
+                  "bron": "het gewicht van alle munten van de Jutter"
+                }
+              ],
+              "elementType": "Munt",
+              "emptyFallback": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "0"
+              },
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "de som van het gewicht van alle munten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -263,7 +266,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

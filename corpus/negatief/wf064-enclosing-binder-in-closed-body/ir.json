@@ -61,89 +61,113 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "MaalInFoldInLet",
-        "subject": "Jutter",
-        "assertie": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "uitkering",
-            "objecttype": "Jutter",
-            "bron": null
-          },
-          "rechts": {
-            "node": "Let",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "binder": "f",
-            "bron": "f is de factor",
-            "value": {
-              "node": "ParameterRef",
-              "parameter": "factor",
-              "bron": "de factor"
-            },
-            "body": {
-              "node": "Fold",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
+        "node": "Consistency",
+        "name": "MaalInFoldInLet",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "uitkering",
+                "objecttype": "Jutter",
+                "bron": null
               },
-              "list": {
-                "node": "ParameterRef",
-                "parameter": "bedragen",
-                "bron": "de bedragen"
-              },
-              "function": {
-                "node": "Lambda",
-                "parameters": [
-                  {
-                    "name": "acc",
-                    "datatype": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 2,
-                      "sign": "ONBEPAALD"
-                    }
-                  },
-                  {
-                    "name": "x",
-                    "datatype": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 2,
-                      "sign": "ONBEPAALD"
-                    }
-                  }
-                ],
-                "bron": "de vouwstap",
+              "rechts": {
+                "node": "Let",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "binder": "f",
+                "bron": "f is de factor",
+                "value": {
+                  "node": "ParameterRef",
+                  "parameter": "factor",
+                  "bron": "de factor"
+                },
                 "body": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
-                    "node": "BinderRef",
-                    "name": "acc",
-                    "bron": "de opgetelde waarde"
+                  "node": "Fold",
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
                   },
-                  "rechts": {
-                    "node": "Binair",
-                    "op": "MAAL",
-                    "links": {
-                      "node": "BinderRef",
-                      "name": "x",
-                      "bron": "het bedrag"
-                    },
-                    "rechts": {
-                      "node": "BinderRef",
-                      "name": "f",
-                      "bron": "de factor"
+                  "list": {
+                    "node": "ParameterRef",
+                    "parameter": "bedragen",
+                    "bron": "de bedragen"
+                  },
+                  "function": {
+                    "node": "Lambda",
+                    "parameters": [
+                      {
+                        "name": "acc",
+                        "datatype": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "ONBEPAALD"
+                        }
+                      },
+                      {
+                        "name": "x",
+                        "datatype": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "ONBEPAALD"
+                        }
+                      }
+                    ],
+                    "bron": "de vouwstap",
+                    "body": {
+                      "node": "Binair",
+                      "op": "PLUS",
+                      "links": {
+                        "node": "BinderRef",
+                        "name": "acc",
+                        "bron": "de opgetelde waarde"
+                      },
+                      "rechts": {
+                        "node": "Binair",
+                        "op": "MAAL",
+                        "links": {
+                          "node": "BinderRef",
+                          "name": "x",
+                          "bron": "het bedrag"
+                        },
+                        "rechts": {
+                          "node": "BinderRef",
+                          "name": "f",
+                          "bron": "de factor"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "ONBEPAALD"
+                        },
+                        "bron": "het bedrag maal de factor"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "de opgetelde waarde plus het bedrag maal de factor"
+                    }
+                  },
+                  "init": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0.00"
                     },
                     "type": {
                       "node": "Number",
@@ -151,41 +175,26 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     },
-                    "bron": "het bedrag maal de factor"
+                    "bron": "0"
                   },
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  },
-                  "bron": "de opgetelde waarde plus het bedrag maal de factor"
+                  "bron": "de gevouwen som"
                 }
               },
-              "init": {
-                "node": "Literal",
-                "waarde": "0.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0"
-              },
-              "bron": "de gevouwen som"
-            }
-          },
-          "periode": null,
-          "bron": null
-        },
-        "bron": null,
-        "line": 1,
-        "geldigheid": null
+              "periode": null,
+              "bron": null
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": null,
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -107,43 +107,50 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bergloon van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bergloon",
-          "objecttype": "Vondst",
-          "bron": "Het bergloon van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "5",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "5"
-        },
-        "voorwaarde": {
-          "node": "Periode",
-          "vanaf": {
-            "node": "AttribuutRef",
-            "attribuut": "meldatum",
-            "objecttype": "Vondst",
-            "bron": "de meldatum van de Vondst"
-          },
-          "tot": null,
-          "totInclusief": false,
-          "bron": "vanaf de meldatum van de Vondst"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "bergloon van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bergloon",
+              "objecttype": "Vondst",
+              "bron": "Het bergloon van een Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "5"
+            },
+            "condition": {
+              "node": "Periode",
+              "vanaf": {
+                "node": "AttribuutRef",
+                "attribuut": "meldatum",
+                "objecttype": "Vondst",
+                "bron": "de meldatum van de Vondst"
+              },
+              "tot": null,
+              "totInclusief": false,
+              "bron": "vanaf de meldatum van de Vondst"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -151,7 +158,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

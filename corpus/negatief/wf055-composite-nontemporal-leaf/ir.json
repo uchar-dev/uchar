@@ -84,68 +84,69 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "dubbelwachtsom van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "dubbelwachtsom",
-          "objecttype": "Jutter",
-          "bron": "De dubbelwachtsom van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TOTAAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "dubbelwachtsom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "wachtvergoeding per maand",
+              "attribuut": "dubbelwachtsom",
               "objecttype": "Jutter",
-              "bron": "zijn wachtvergoeding per maand"
-            }
-          ],
-          "elementObjecttype": "Jutter",
-          "leegwaarde": null,
-          "filter": {
-            "node": "Samengesteld",
-            "kwantor": "ALLE",
-            "drempel": 0,
-            "onderdelen": [
-              {
-                "node": "Kenmerk",
-                "kenmerk": "borgplichtig",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
-                "bron": "gedurende de tijd dat hij borgplichtig is"
+              "bron": "De dubbelwachtsom van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "TOTAAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "wachtvergoeding per maand",
+                  "objecttype": "Jutter",
+                  "bron": "zijn wachtvergoeding per maand"
+                }
+              ],
+              "elementType": "Jutter",
+              "filter": {
+                "node": "Samengesteld",
+                "kwantor": "ALLE",
+                "drempel": 0,
+                "onderdelen": [
+                  {
+                    "node": "Kenmerk",
+                    "kenmerk": "borgplichtig",
+                    "negatie": false,
+                    "eigenaar": null,
+                    "periode": null,
+                    "bron": "gedurende de tijd dat hij borgplichtig is"
+                  },
+                  {
+                    "node": "Kenmerk",
+                    "kenmerk": "erkend",
+                    "negatie": false,
+                    "eigenaar": null,
+                    "periode": null,
+                    "bron": "gedurende de tijd dat hij erkend is"
+                  }
+                ],
+                "bron": "gedurende de tijd dat hij borgplichtig en erkend is"
               },
-              {
-                "node": "Kenmerk",
-                "kenmerk": "erkend",
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
-                "bron": "gedurende de tijd dat hij erkend is"
-              }
-            ],
-            "bron": "gedurende de tijd dat hij borgplichtig en erkend is"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij borgplichtig en aangesteld is",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij borgplichtig en aangesteld is"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -153,7 +154,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

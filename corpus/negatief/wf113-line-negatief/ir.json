@@ -37,49 +37,57 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Kenmerktoekenning verjaard",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "verjaard",
-          "objecttype": "Vondst",
-          "bron": "Een Vondst is verjaard"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "EERDER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "vondstdag",
-            "objecttype": "Vondst",
-            "bron": "zijn vondstdag"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "2024-01-31",
-            "type": {
-              "node": "Date",
-              "precision": "day"
+        "node": "Rule",
+        "name": "Kenmerktoekenning verjaard",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "31-01-2024"
-          },
-          "periode": null,
-          "bron": "zijn vondstdag eerder is dan 31-01-2024"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "verjaard",
+              "objecttype": "Vondst",
+              "bron": "Een Vondst is verjaard"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "EERDER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "vondstdag",
+                "objecttype": "Vondst",
+                "bron": "zijn vondstdag"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "date": "2024-01-31"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "31-01-2024"
+              },
+              "periode": null,
+              "bron": "zijn vondstdag eerder is dan 31-01-2024"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -87,7 +95,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

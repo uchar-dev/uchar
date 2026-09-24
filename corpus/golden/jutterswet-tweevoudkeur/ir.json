@@ -61,98 +61,111 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "oordeel bij tweevoudige keur",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "oordeel",
-          "objecttype": "Keurstuk",
-          "bron": "Het oordeel van een Keurstuk"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "tweevoudig",
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "'tweevoudig'"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "PRECIES",
-          "drempel": 2,
-          "onderdelen": [
-            {
-              "node": "Kenmerk",
-              "kenmerk": "gemerkt",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "het Keurstuk gemerkt is"
+        "node": "Rule",
+        "name": "oordeel bij tweevoudige keur",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Kenmerk",
-              "kenmerk": "gewogen",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "het Keurstuk gewogen is"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "oordeel",
+              "objecttype": "Keurstuk",
+              "bron": "Het oordeel van een Keurstuk"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "zegels",
-                "objecttype": "Keurstuk",
-                "bron": "de zegels van het Keurstuk"
+            "value": {
+              "node": "Literal",
+              "value": {
+                "text": "tweevoudig"
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "2",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
+              "type": {
+                "node": "Tekst"
+              },
+              "bron": "'tweevoudig'"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "PRECIES",
+              "drempel": 2,
+              "onderdelen": [
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "gemerkt",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "het Keurstuk gemerkt is"
                 },
-                "bron": "2"
-              },
-              "periode": null,
-              "bron": "zijn zegels groter of gelijk zijn aan 2"
-            }
-          ],
-          "bron": "precies twee van: gemerkt, gewogen, zegels vanaf 2"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "gewogen",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "het Keurstuk gewogen is"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER_OF_GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "zegels",
+                    "objecttype": "Keurstuk",
+                    "bron": "de zegels van het Keurstuk"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "2"
+                  },
+                  "periode": null,
+                  "bron": "zijn zegels groter of gelijk zijn aan 2"
+                }
+              ],
+              "bron": "precies twee van: gemerkt, gewogen, zegels vanaf 2"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "afschrift van de zegels",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "zegelafschrift",
-          "objecttype": "Keurstuk",
-          "bron": "Het zegelafschrift van een Keurstuk"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "zegels",
-          "objecttype": "Keurstuk",
-          "bron": "de zegels van het Keurstuk"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "afschrift van de zegels",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "zegelafschrift",
+              "objecttype": "Keurstuk",
+              "bron": "Het zegelafschrift van een Keurstuk"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "zegels",
+              "objecttype": "Keurstuk",
+              "bron": "de zegels van het Keurstuk"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -160,7 +173,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

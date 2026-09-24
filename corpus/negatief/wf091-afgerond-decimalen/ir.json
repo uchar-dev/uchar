@@ -312,39 +312,43 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "uitfijn van de Jutter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uitfijn",
-          "objecttype": "Jutter",
-          "bron": "De uitfijn van een Jutter"
-        },
-        "waarde": {
-          "node": "Afgerond",
-          "basis": {
-            "node": "AttribuutRef",
-            "attribuut": "fijn",
-            "objecttype": "Jutter",
-            "bron": "de fijn van de Jutter"
-          },
-          "modus": "REKENKUNDIG",
-          "decimalen": 0,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 4,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het fijn van de Jutter afgerond op 0 decimalen"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "uitfijn van de Jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "uitfijn",
+              "objecttype": "Jutter",
+              "bron": "De uitfijn van een Jutter"
+            },
+            "value": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "AttribuutRef",
+                "attribuut": "fijn",
+                "objecttype": "Jutter",
+                "bron": "de fijn van de Jutter"
+              },
+              "modus": "REKENKUNDIG",
+              "decimalen": 0,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 4,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het fijn van de Jutter afgerond op 0 decimalen"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -352,7 +356,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

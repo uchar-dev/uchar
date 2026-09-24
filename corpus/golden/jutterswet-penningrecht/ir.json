@@ -44,84 +44,32 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "penninggerechtigd bij drempel",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "penninggerechtigd",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is penninggerechtigd"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GROTER_OF_GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aantal aangemelde vondsten",
-            "objecttype": "Jutter",
-            "bron": "zijn aantal aangemelde vondsten"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "12",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "penninggerechtigd bij drempel",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "12"
-          },
-          "periode": null,
-          "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan 12"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "penninggerechtigd bij hardheid",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "penninggerechtigd",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is penninggerechtigd"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Kenmerk",
-              "kenmerk": "hardheid toegepast",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "hij is hardheid toegepast"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "penninggerechtigd",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is penninggerechtigd"
             },
-            {
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
               "node": "Vergelijking",
               "op": "GROTER_OF_GELIJK",
               "links": {
@@ -132,26 +80,94 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "6",
+                "value": {
+                  "number": "12"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "6"
+                "bron": "12"
               },
               "periode": null,
-              "bron": "zijn aantal aangemelde vondsten is groter of gelijk aan 6"
-            }
-          ],
-          "bron": "hij aan alle volgende voorwaarden voldoet: - hij is hardheid toegepast - zijn aantal aangemelde vondsten is groter of gelijk aan 6."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan 12"
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "penninggerechtigd bij hardheid",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "penninggerechtigd",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is penninggerechtigd"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "hardheid toegepast",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "hij is hardheid toegepast"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER_OF_GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "aantal aangemelde vondsten",
+                    "objecttype": "Jutter",
+                    "bron": "zijn aantal aangemelde vondsten"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "6"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "6"
+                  },
+                  "periode": null,
+                  "bron": "zijn aantal aangemelde vondsten is groter of gelijk aan 6"
+                }
+              ],
+              "bron": "hij aan alle volgende voorwaarden voldoet: - hij is hardheid toegepast - zijn aantal aangemelde vondsten is groter of gelijk aan 6."
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -159,7 +175,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

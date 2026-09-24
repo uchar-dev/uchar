@@ -150,7 +150,9 @@
               "binder": null,
               "body": {
                 "node": "Literal",
-                "waarde": "0.00",
+                "value": {
+                  "number": "0.00"
+                },
                 "type": {
                   "node": "Number",
                   "whole": false,
@@ -170,46 +172,188 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "erkende som van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "erkende som",
-          "objecttype": "Jutter",
-          "bron": "De erkende som van een Jutter"
-        },
-        "waarde": {
-          "node": "Fold",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "list": {
-            "node": "MapList",
-            "type": {
-              "node": "ListType",
-              "element": {
+        "node": "Rule",
+        "name": "erkende som van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "erkende som",
+              "objecttype": "Jutter",
+              "bron": "De erkende som van een Jutter"
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
-                "sign": "NIET_NEGATIEF"
-              }
+                "sign": "ONBEPAALD"
+              },
+              "list": {
+                "node": "MapList",
+                "type": {
+                  "node": "ListType",
+                  "element": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "NIET_NEGATIEF"
+                  }
+                },
+                "list": {
+                  "node": "AttribuutRef",
+                  "attribuut": "aanspraken",
+                  "objecttype": "Jutter",
+                  "bron": "zijn aanspraken"
+                },
+                "function": {
+                  "node": "Lambda",
+                  "parameters": [
+                    {
+                      "name": "a",
+                      "datatype": {
+                        "node": "SumType",
+                        "domain": "aanspraak",
+                        "constructors": [
+                          {
+                            "name": "Erkend",
+                            "payload": {
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "NIET_NEGATIEF"
+                            }
+                          },
+                          {
+                            "name": "Vervallen",
+                            "payload": null
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "body": {
+                    "node": "Invoke",
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
+                    },
+                    "function": "aanspraakwaarde",
+                    "arguments": [
+                      {
+                        "node": "BinderRef",
+                        "name": "a",
+                        "bron": "de aanspraak"
+                      }
+                    ],
+                    "bron": "de waarde van de aanspraak"
+                  },
+                  "bron": "de waarde per aanspraak"
+                },
+                "bron": "de waarden van zijn aanspraken"
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "bron": "de opgetelde som"
+                  },
+                  "rechts": {
+                    "node": "BinderRef",
+                    "name": "x",
+                    "bron": "de aanspraakwaarde"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "de opgetelde som plus de aanspraakwaarde"
+                },
+                "bron": "de som van de aanspraakwaarden"
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "0.00"
+              },
+              "bron": "de aanspraakwaarden opgeteld"
             },
-            "list": {
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal erkend van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "aanspraken",
+              "attribuut": "aantal erkend",
               "objecttype": "Jutter",
-              "bron": "zijn aanspraken"
+              "bron": "Het aantal erkend van een Jutter"
             },
-            "function": {
-              "node": "Lambda",
-              "parameters": [
-                {
-                  "name": "a",
-                  "datatype": {
+            "value": {
+              "node": "ListLength",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "list": {
+                "node": "FilterList",
+                "type": {
+                  "node": "ListType",
+                  "element": {
                     "node": "SumType",
                     "domain": "aanspraak",
                     "constructors": [
@@ -228,190 +372,58 @@
                       }
                     ]
                   }
-                }
-              ],
-              "body": {
-                "node": "Invoke",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
                 },
-                "function": "aanspraakwaarde",
-                "arguments": [
-                  {
+                "list": {
+                  "node": "AttribuutRef",
+                  "attribuut": "aanspraken",
+                  "objecttype": "Jutter",
+                  "bron": "zijn aanspraken"
+                },
+                "binder": "a",
+                "condition": {
+                  "node": "Vergelijking",
+                  "op": "ONGELIJK",
+                  "links": {
                     "node": "BinderRef",
                     "name": "a",
                     "bron": "de aanspraak"
-                  }
-                ],
-                "bron": "de waarde van de aanspraak"
-              },
-              "bron": "de waarde per aanspraak"
-            },
-            "bron": "de waarden van zijn aanspraken"
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "acc",
-                "datatype": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                }
-              },
-              {
-                "name": "x",
-                "datatype": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
-                }
-              }
-            ],
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "acc",
-                "bron": "de opgetelde som"
-              },
-              "rechts": {
-                "node": "BinderRef",
-                "name": "x",
-                "bron": "de aanspraakwaarde"
-              },
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "de opgetelde som plus de aanspraakwaarde"
-            },
-            "bron": "de som van de aanspraakwaarden"
-          },
-          "init": {
-            "node": "Literal",
-            "waarde": "0.00",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "0.00"
-          },
-          "bron": "de aanspraakwaarden opgeteld"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "aantal erkend van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal erkend",
-          "objecttype": "Jutter",
-          "bron": "Het aantal erkend van een Jutter"
-        },
-        "waarde": {
-          "node": "ListLength",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "list": {
-            "node": "FilterList",
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "SumType",
-                "domain": "aanspraak",
-                "constructors": [
-                  {
-                    "name": "Erkend",
-                    "payload": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
-                    }
                   },
-                  {
-                    "name": "Vervallen",
-                    "payload": null
-                  }
-                ]
-              }
-            },
-            "list": {
-              "node": "AttribuutRef",
-              "attribuut": "aanspraken",
-              "objecttype": "Jutter",
-              "bron": "zijn aanspraken"
-            },
-            "binder": "a",
-            "condition": {
-              "node": "Vergelijking",
-              "op": "ONGELIJK",
-              "links": {
-                "node": "BinderRef",
-                "name": "a",
-                "bron": "de aanspraak"
-              },
-              "rechts": {
-                "node": "Construct",
-                "type": {
-                  "node": "SumType",
-                  "domain": "aanspraak",
-                  "constructors": [
-                    {
-                      "name": "Erkend",
-                      "payload": {
-                        "node": "Number",
-                        "whole": false,
-                        "decimals": 2,
-                        "sign": "NIET_NEGATIEF"
-                      }
+                  "rechts": {
+                    "node": "Construct",
+                    "type": {
+                      "node": "SumType",
+                      "domain": "aanspraak",
+                      "constructors": [
+                        {
+                          "name": "Erkend",
+                          "payload": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "NIET_NEGATIEF"
+                          }
+                        },
+                        {
+                          "name": "Vervallen",
+                          "payload": null
+                        }
+                      ]
                     },
-                    {
-                      "name": "Vervallen",
-                      "payload": null
-                    }
-                  ]
+                    "constructor": "Vervallen",
+                    "argument": null,
+                    "bron": "vervallen"
+                  },
+                  "periode": null,
+                  "bron": "de aanspraak ongelijk is aan vervallen"
                 },
-                "constructor": "Vervallen",
-                "argument": null,
-                "bron": "vervallen"
+                "bron": "zijn erkende aanspraken"
               },
-              "periode": null,
-              "bron": "de aanspraak ongelijk is aan vervallen"
+              "bron": "het aantal erkende aanspraken"
             },
-            "bron": "zijn erkende aanspraken"
-          },
-          "bron": "het aantal erkende aanspraken"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -419,7 +431,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -64,42 +64,46 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "vervaldatum van een baken",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vervaldatum",
-          "objecttype": "Baken",
-          "bron": "De vervaldatum van een Baken"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "peildatum",
-            "objecttype": "Baken",
-            "bron": "zijn peildatum"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "termijn",
-            "objecttype": "Baken",
-            "bron": "zijn termijn"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "zijn peildatum plus zijn termijn"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "vervaldatum van een baken",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vervaldatum",
+              "objecttype": "Baken",
+              "bron": "De vervaldatum van een Baken"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "peildatum",
+                "objecttype": "Baken",
+                "bron": "zijn peildatum"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "termijn",
+                "objecttype": "Baken",
+                "bron": "zijn termijn"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "zijn peildatum plus zijn termijn"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [
@@ -110,12 +114,11 @@
           "node": "Vergelijking",
           "op": "GELIJK",
           "links": {
-            "node": "Functie",
+            "node": "BuiltinCall",
             "kind": "MAAND_UIT",
-            "argumenten": [
+            "arguments": [
               {
-                "node": "Constante",
-                "naam": "de dag",
+                "node": "BoundDay",
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -123,22 +126,19 @@
                 "bron": "de dag"
               }
             ],
-            "elementObjecttype": null,
-            "leegwaarde": null,
-            "filter": null,
-            "dimensieSelectie": null,
             "type": {
               "node": "Number",
               "whole": true,
               "decimals": 0,
               "sign": "NIET_NEGATIEF"
             },
-            "bron": "de maand uit de dag",
-            "granulariteit": null
+            "bron": "de maand uit de dag"
           },
           "rechts": {
             "node": "Literal",
-            "waarde": "13",
+            "value": {
+              "number": "13"
+            },
             "type": {
               "node": "Number",
               "whole": true,
@@ -161,7 +161,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

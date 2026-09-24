@@ -68,7 +68,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],
@@ -124,7 +123,9 @@
             "voorwaarde": null,
             "consequentie": {
               "node": "Literal",
-              "waarde": "25",
+              "value": {
+                "number": "25"
+              },
               "type": {
                 "node": "Number",
                 "whole": true,

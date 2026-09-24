@@ -67,7 +67,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],
@@ -93,7 +92,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "2",
+                "value": {
+                  "number": "2"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,
@@ -130,7 +131,9 @@
                 },
                 "rechts": {
                   "node": "Literal",
-                  "waarde": "100.00",
+                  "value": {
+                    "number": "100.00"
+                  },
                   "type": {
                     "node": "Number",
                     "whole": false,
@@ -163,7 +166,9 @@
             },
             "consequentie": {
               "node": "Literal",
-              "waarde": "0.00",
+              "value": {
+                "number": "0.00"
+              },
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -216,7 +221,9 @@
               },
               "body": {
                 "node": "Literal",
-                "waarde": "42.00",
+                "value": {
+                  "number": "42.00"
+                },
                 "type": {
                   "node": "Number",
                   "whole": false,
@@ -241,7 +248,9 @@
             },
             "consequentie": {
               "node": "Literal",
-              "waarde": "0.00",
+              "value": {
+                "number": "0.00"
+              },
               "type": {
                 "node": "Number",
                 "whole": false,

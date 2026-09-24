@@ -115,61 +115,68 @@
     "objectCreaties": [],
     "verdelingen": [],
     "consistenties": [],
-    "uniciteiten": [],
-    "uniciteitUnies": [
+    "uniciteiten": [
       {
-        "node": "ResolvedUniciteitUnie",
-        "naam": "eenmalig vondstnummer",
-        "bronnen": [
+        "node": "Uniqueness",
+        "name": "eenmalig vondstnummer",
+        "versions": [
           {
-            "node": "Bron",
-            "type": "Strandvondst",
-            "sleutels": [
-              "vondstnummer"
-            ]
-          },
-          {
-            "node": "Bron",
-            "type": "Wrakvondst",
-            "sleutels": [
-              "vondstnummer"
-            ]
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Strandvondst",
+                "keys": [
+                  "vondstnummer"
+                ]
+              },
+              {
+                "node": "Source",
+                "objectType": "Wrakvondst",
+                "keys": [
+                  "vondstnummer"
+                ]
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "Strandvondst verenigd met Wrakvondst moeten uniek zijn."
           }
-        ],
-        "bron": "Strandvondst verenigd met Wrakvondst moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedUniciteitUnie",
-        "naam": "eenmalige reekscode",
-        "bronnen": [
+        "node": "Uniqueness",
+        "name": "eenmalige reekscode",
+        "versions": [
           {
-            "node": "Bron",
-            "type": "Strandvondst",
-            "sleutels": [
-              "reekscode",
-              "volgnummer"
-            ]
-          },
-          {
-            "node": "Bron",
-            "type": "Wrakvondst",
-            "sleutels": [
-              "reekscode",
-              "volgnummer"
-            ]
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Strandvondst",
+                "keys": [
+                  "reekscode",
+                  "volgnummer"
+                ]
+              },
+              {
+                "node": "Source",
+                "objectType": "Wrakvondst",
+                "keys": [
+                  "reekscode",
+                  "volgnummer"
+                ]
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "De reekscode met het volgnummer van Strandvondst verenigd met Wrakvondst moeten uniek zijn."
           }
-        ],
-        "bron": "De reekscode met het volgnummer van Strandvondst verenigd met Wrakvondst moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "feitCreaties": [],

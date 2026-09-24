@@ -125,26 +125,29 @@
     "objectCreaties": [],
     "verdelingen": [],
     "consistenties": [],
-    "uniciteiten": [],
-    "uniciteitUnies": [
+    "uniciteiten": [
       {
-        "node": "ResolvedUniciteitUnie",
-        "naam": "eenmalig vondstnummer",
-        "bronnen": [
+        "node": "Uniqueness",
+        "name": "eenmalig vondstnummer",
+        "versions": [
           {
-            "node": "Bron",
-            "type": "Strandvondst",
-            "sleutels": [
-              "vondstnummer"
-            ]
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Strandvondst",
+                "keys": [
+                  "vondstnummer"
+                ]
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "Strandvondst moeten uniek zijn."
           }
-        ],
-        "bron": "Strandvondst moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "feitCreaties": [],

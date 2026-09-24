@@ -127,26 +127,34 @@
     "consistenties": [],
     "uniciteiten": [
       {
-        "node": "ResolvedUniciteit",
-        "naam": "eenmalig kaveletiket",
-        "subject": "Kavel",
-        "sleutels": [
-          "etiket"
-        ],
-        "bron": "De etiket van alle Kavel van de gemeente moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "scopeRol": {
-          "node": "RolBinding",
-          "feittype": "wijkindeling",
-          "rol": "gemeente"
-        }
+        "node": "Uniqueness",
+        "name": "eenmalig kaveletiket",
+        "versions": [
+          {
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Kavel",
+                "keys": [
+                  "etiket"
+                ]
+              }
+            ],
+            "scope": {
+              "node": "RolBinding",
+              "feittype": "wijkindeling",
+              "rol": "gemeente"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "De etiket van alle Kavel van de gemeente moeten uniek zijn."
+          }
+        ]
       }
     ],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

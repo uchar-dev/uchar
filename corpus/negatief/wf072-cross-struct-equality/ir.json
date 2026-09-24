@@ -120,34 +120,41 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Kruiscontrole",
-        "subject": "Jutter",
-        "assertie": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "dossier",
-            "objecttype": "Jutter",
-            "bron": null
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "kaart",
-            "objecttype": "Jutter",
-            "bron": null
-          },
-          "periode": null,
-          "bron": null
-        },
-        "bron": null,
-        "line": 1,
-        "geldigheid": null
+        "node": "Consistency",
+        "name": "Kruiscontrole",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "dossier",
+                "objecttype": "Jutter",
+                "bron": null
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "kaart",
+                "objecttype": "Jutter",
+                "bron": null
+              },
+              "periode": null,
+              "bron": null
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": null,
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

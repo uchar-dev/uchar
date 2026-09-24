@@ -117,94 +117,104 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "schouwplicht van een strandmeester",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "schouwplicht",
-          "objecttype": "Strandmeester",
-          "bron": "De schouwplicht van een Strandmeester"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "vaste schouwlast",
-            "objecttype": "Strandmeester",
-            "bron": "zijn vaste schouwlast"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "extra schouwlast",
-            "objecttype": "Strandmeester",
-            "bron": "zijn extra schouwlast"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "schouwdagen",
-              "canonical": "schouwdagen",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "zijn vaste schouwlast plus zijn extra schouwlast"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "schouwplicht van een strandmeester",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "schouwplicht",
+              "objecttype": "Strandmeester",
+              "bron": "De schouwplicht van een Strandmeester"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "vaste schouwlast",
+                "objecttype": "Strandmeester",
+                "bron": "zijn vaste schouwlast"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "extra schouwlast",
+                "objecttype": "Strandmeester",
+                "bron": "zijn extra schouwlast"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "schouwdagen",
+                  "canonical": "schouwdagen",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "zijn vaste schouwlast plus zijn extra schouwlast"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Kenmerktoekenning schouwvrij",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "schouwvrij",
-          "objecttype": "Strandmeester",
-          "bron": "Een Strandmeester is schouwvrij"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "KLEINER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "schouwplicht",
-            "objecttype": "Strandmeester",
-            "bron": "zijn schouwplicht"
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "schouwdrempel",
-            "bron": "de schouwdrempel"
-          },
-          "periode": null,
-          "bron": "zijn schouwplicht kleiner is dan de schouwdrempel"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "Kenmerktoekenning schouwvrij",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "schouwvrij",
+              "objecttype": "Strandmeester",
+              "bron": "Een Strandmeester is schouwvrij"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "KLEINER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "schouwplicht",
+                "objecttype": "Strandmeester",
+                "bron": "zijn schouwplicht"
+              },
+              "rechts": {
+                "node": "ParameterRef",
+                "parameter": "schouwdrempel",
+                "bron": "de schouwdrempel"
+              },
+              "periode": null,
+              "bron": "zijn schouwplicht kleiner is dan de schouwdrempel"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [
@@ -220,8 +230,8 @@
               "node": "Vergelijking",
               "op": "LATER",
               "links": {
-                "node": "Constante",
-                "naam": "de dagX",
+                "node": "ContextValue",
+                "name": "de dagX",
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -230,7 +240,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "2026-02-28",
+                "value": {
+                  "date": "2026-02-28"
+                },
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -244,8 +256,7 @@
               "node": "Vergelijking",
               "op": "EERDER",
               "links": {
-                "node": "Constante",
-                "naam": "de dag",
+                "node": "BoundDay",
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -254,7 +265,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "2026-10-01",
+                "value": {
+                  "date": "2026-10-01"
+                },
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -285,8 +298,7 @@
               "node": "Vergelijking",
               "op": "LATER",
               "links": {
-                "node": "Constante",
-                "naam": "de dag",
+                "node": "BoundDay",
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -295,7 +307,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "2026-09-30",
+                "value": {
+                  "date": "2026-09-30"
+                },
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -309,8 +323,7 @@
               "node": "Vergelijking",
               "op": "EERDER",
               "links": {
-                "node": "Constante",
-                "naam": "de dag",
+                "node": "BoundDay",
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -319,7 +332,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "2027-03-01",
+                "value": {
+                  "date": "2027-03-01"
+                },
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -343,7 +358,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

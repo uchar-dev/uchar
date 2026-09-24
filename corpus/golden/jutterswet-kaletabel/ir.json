@@ -53,49 +53,55 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "wrakkenloon van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "wrakkenloon",
-          "objecttype": "Jutter",
-          "bron": "Het wrakkenloon van een Jutter"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "MAAL",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "wrakkental",
-            "objecttype": "Jutter",
-            "bron": "het wrakkental van de Jutter"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "15",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "wrakkenloon van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "15"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het wrakkental van de Jutter maal 15"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "wrakkenloon",
+              "objecttype": "Jutter",
+              "bron": "Het wrakkenloon van een Jutter"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "MAAL",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "wrakkental",
+                "objecttype": "Jutter",
+                "bron": "het wrakkental van de Jutter"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "15"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "15"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het wrakkental van de Jutter maal 15"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -103,7 +109,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

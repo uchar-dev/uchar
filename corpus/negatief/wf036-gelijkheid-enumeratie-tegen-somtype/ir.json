@@ -70,66 +70,75 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "tarief",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "tarief",
-          "objecttype": "Berging",
-          "bron": "de tarief"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "5",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "5"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "vaarwater",
-            "objecttype": "Berging",
-            "bron": "de vaarwater"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "Wad",
-            "type": {
-              "node": "SumType",
-              "domain": "Vaarwater",
-              "constructors": [
-                {
-                  "name": "Wad",
-                  "payload": null
-                },
-                {
-                  "name": "Zeegat",
-                  "payload": null
-                },
-                {
-                  "name": "Ruimzee",
-                  "payload": null
-                }
-              ]
+        "node": "Rule",
+        "name": "tarief",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "Wad"
-          },
-          "periode": null,
-          "bron": null
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "tarief",
+              "objecttype": "Berging",
+              "bron": "de tarief"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "5"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "vaarwater",
+                "objecttype": "Berging",
+                "bron": "de vaarwater"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "constructor": "Wad"
+                },
+                "type": {
+                  "node": "SumType",
+                  "domain": "Vaarwater",
+                  "constructors": [
+                    {
+                      "name": "Wad",
+                      "payload": null
+                    },
+                    {
+                      "name": "Zeegat",
+                      "payload": null
+                    },
+                    {
+                      "name": "Ruimzee",
+                      "payload": null
+                    }
+                  ]
+                },
+                "bron": "Wad"
+              },
+              "periode": null,
+              "bron": null
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -137,7 +146,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

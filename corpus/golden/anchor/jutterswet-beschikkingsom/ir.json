@@ -146,275 +146,299 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "uitkering van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uitkering",
-          "objecttype": "Jutter",
-          "bron": "De uitkering van een Jutter"
-        },
-        "waarde": {
-          "node": "Match",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "scrutinee": {
-            "node": "AttribuutRef",
-            "attribuut": "beschikking",
-            "objecttype": "Jutter",
-            "bron": "zijn beschikking"
-          },
-          "arms": [
-            {
+        "node": "Rule",
+        "name": "uitkering van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "uitkering",
+              "objecttype": "Jutter",
+              "bron": "De uitkering van een Jutter"
+            },
+            "value": {
+              "node": "Match",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "scrutinee": {
+                "node": "AttribuutRef",
+                "attribuut": "beschikking",
+                "objecttype": "Jutter",
+                "bron": "zijn beschikking"
+              },
+              "arms": [
+                {
+                  "constructor": "Toegekend",
+                  "binder": "bedrag",
+                  "body": {
+                    "node": "Binair",
+                    "op": "PLUS",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "bedrag",
+                      "bron": "het toegekende bedrag"
+                    },
+                    "rechts": {
+                      "node": "ParameterRef",
+                      "parameter": "vaste voet",
+                      "bron": "de vaste voet"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "het toegekende bedrag plus de vaste voet"
+                  }
+                },
+                {
+                  "constructor": "Afgewezen",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0.00"
+                  }
+                },
+                {
+                  "constructor": "Aangehouden",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "12.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "12.00"
+                  }
+                }
+              ],
+              "bron": "afhankelijk van zijn beschikking"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bevoorschot bij aangehouden beschikking",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bevoorschot",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is bevoorschot"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "beschikking",
+                "objecttype": "Jutter",
+                "bron": "zijn beschikking"
+              },
+              "rechts": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "beschikking",
+                  "constructors": [
+                    {
+                      "name": "Toegekend",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
+                      }
+                    },
+                    {
+                      "name": "Afgewezen",
+                      "payload": null
+                    },
+                    {
+                      "name": "Aangehouden",
+                      "payload": null
+                    }
+                  ]
+                },
+                "constructor": "Aangehouden",
+                "argument": null,
+                "bron": "aangehouden"
+              },
+              "periode": null,
+              "bron": "zijn beschikking gelijk is aan aangehouden"
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afgehandeld bij besliste beschikking",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "afgehandeld",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is afgehandeld"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "ONGELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "beschikking",
+                "objecttype": "Jutter",
+                "bron": "zijn beschikking"
+              },
+              "rechts": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "beschikking",
+                  "constructors": [
+                    {
+                      "name": "Toegekend",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
+                      }
+                    },
+                    {
+                      "name": "Afgewezen",
+                      "payload": null
+                    },
+                    {
+                      "name": "Aangehouden",
+                      "payload": null
+                    }
+                  ]
+                },
+                "constructor": "Aangehouden",
+                "argument": null,
+                "bron": "aangehouden"
+              },
+              "periode": null,
+              "bron": "zijn beschikking ongelijk is aan aangehouden"
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "herbeschikking van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "herbeschikking",
+              "objecttype": "Jutter",
+              "bron": "De herbeschikking van een Jutter"
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "beschikking",
+                "constructors": [
+                  {
+                    "name": "Toegekend",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  },
+                  {
+                    "name": "Afgewezen",
+                    "payload": null
+                  },
+                  {
+                    "name": "Aangehouden",
+                    "payload": null
+                  }
+                ]
+              },
               "constructor": "Toegekend",
-              "binder": "bedrag",
-              "body": {
-                "node": "Binair",
-                "op": "PLUS",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "bedrag",
-                  "bron": "het toegekende bedrag"
-                },
-                "rechts": {
-                  "node": "ParameterRef",
-                  "parameter": "vaste voet",
-                  "bron": "de vaste voet"
-                },
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "het toegekende bedrag plus de vaste voet"
-              }
-            },
-            {
-              "constructor": "Afgewezen",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "0.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0.00"
-              }
-            },
-            {
-              "constructor": "Aangehouden",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "12.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "12.00"
-              }
-            }
-          ],
-          "bron": "afhankelijk van zijn beschikking"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "bevoorschot bij aangehouden beschikking",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bevoorschot",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is bevoorschot"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "beschikking",
-            "objecttype": "Jutter",
-            "bron": "zijn beschikking"
-          },
-          "rechts": {
-            "node": "Construct",
-            "type": {
-              "node": "SumType",
-              "domain": "beschikking",
-              "constructors": [
-                {
-                  "name": "Toegekend",
-                  "payload": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
-                  }
-                },
-                {
-                  "name": "Afgewezen",
-                  "payload": null
-                },
-                {
-                  "name": "Aangehouden",
-                  "payload": null
-                }
-              ]
-            },
-            "constructor": "Aangehouden",
-            "argument": null,
-            "bron": "aangehouden"
-          },
-          "periode": null,
-          "bron": "zijn beschikking gelijk is aan aangehouden"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "afgehandeld bij besliste beschikking",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "afgehandeld",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is afgehandeld"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "ONGELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "beschikking",
-            "objecttype": "Jutter",
-            "bron": "zijn beschikking"
-          },
-          "rechts": {
-            "node": "Construct",
-            "type": {
-              "node": "SumType",
-              "domain": "beschikking",
-              "constructors": [
-                {
-                  "name": "Toegekend",
-                  "payload": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
-                  }
-                },
-                {
-                  "name": "Afgewezen",
-                  "payload": null
-                },
-                {
-                  "name": "Aangehouden",
-                  "payload": null
-                }
-              ]
-            },
-            "constructor": "Aangehouden",
-            "argument": null,
-            "bron": "aangehouden"
-          },
-          "periode": null,
-          "bron": "zijn beschikking ongelijk is aan aangehouden"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "herbeschikking van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "herbeschikking",
-          "objecttype": "Jutter",
-          "bron": "De herbeschikking van een Jutter"
-        },
-        "waarde": {
-          "node": "Construct",
-          "type": {
-            "node": "SumType",
-            "domain": "beschikking",
-            "constructors": [
-              {
-                "name": "Toegekend",
-                "payload": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
-                }
+              "argument": {
+                "node": "AttribuutRef",
+                "attribuut": "borg",
+                "objecttype": "Jutter",
+                "bron": "zijn borg"
               },
-              {
-                "name": "Afgewezen",
-                "payload": null
-              },
-              {
-                "name": "Aangehouden",
-                "payload": null
-              }
-            ]
-          },
-          "constructor": "Toegekend",
-          "argument": {
-            "node": "AttribuutRef",
-            "attribuut": "borg",
-            "objecttype": "Jutter",
-            "bron": "zijn borg"
-          },
-          "bron": "toegekend zijn borg"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "toegekend zijn borg"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -422,7 +446,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

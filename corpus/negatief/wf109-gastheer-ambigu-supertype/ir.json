@@ -146,96 +146,96 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "seinaantal van een post",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "seinaantal",
-          "objecttype": "Post",
-          "bron": "Het seinaantal van een Post"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "seinaantal van een post",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "seinen",
+              "attribuut": "seinaantal",
               "objecttype": "Post",
-              "bron": "seinen van de post"
-            }
-          ],
-          "elementObjecttype": "Sein",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal seinen van de post",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "seinvoering",
-            "rol": "sein"
+              "bron": "Het seinaantal van een Post"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "seinen",
+                  "objecttype": "Post",
+                  "bron": "seinen van de post"
+                }
+              ],
+              "elementType": "Sein",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "seinvoering",
+                "rol": "sein"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal seinen van de post"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "vakseinaantal van een kustvak",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vakseinaantal",
-          "objecttype": "Kustvak",
-          "bron": "Het vakseinaantal van een Kustvak"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "vakseinaantal van een kustvak",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vakseinen",
+              "attribuut": "vakseinaantal",
               "objecttype": "Kustvak",
-              "bron": "vakseinen van het kustvak"
-            }
-          ],
-          "elementObjecttype": "Sein",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal vakseinen van het kustvak",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vakbeseining",
-            "rol": "vaksein"
+              "bron": "Het vakseinaantal van een Kustvak"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vakseinen",
+                  "objecttype": "Kustvak",
+                  "bron": "vakseinen van het kustvak"
+                }
+              ],
+              "elementType": "Sein",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vakbeseining",
+                "rol": "vaksein"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal vakseinen van het kustvak"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -243,44 +243,43 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [
       {
-        "node": "ResolvedFeitCreatie",
-        "naam": "vakbeseining door het kustvak",
-        "anker": "Kustvak",
-        "doel": "Sein",
-        "tussenstappen": [
+        "node": "FactCreation",
+        "name": "vakbeseining door het kustvak",
+        "versions": [
           {
-            "node": "Tussenstap",
-            "rolBinding": {
-              "node": "RolBinding",
-              "feittype": "kustligging",
-              "rol": "post"
+            "factType": "vakbeseining",
+            "anchorRole": "seinvak",
+            "targetRole": "vaksein",
+            "anchor": "Kustvak",
+            "path": [
+              {
+                "node": "RolBinding",
+                "feittype": "kustligging",
+                "rol": "post"
+              },
+              {
+                "node": "RolBinding",
+                "feittype": "seinvoering",
+                "rol": "sein"
+              }
+            ],
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "gehesen",
+              "negatie": false,
+              "eigenaar": "Baken",
+              "periode": null,
+              "bron": "het sein gehesen is"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             }
           }
-        ],
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "gehesen",
-          "negatie": false,
-          "eigenaar": "Baken",
-          "periode": null,
-          "bron": "het sein gehesen is"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "feittype": "vakbeseining",
-        "ankerRol": "seinvak",
-        "doelRol": "vaksein",
-        "joinRol": {
-          "node": "RolBinding",
-          "feittype": "seinvoering",
-          "rol": "sein"
-        }
+        ]
       }
     ],
     "resolvedStartpunten": [],

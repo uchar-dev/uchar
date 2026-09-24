@@ -58,84 +58,94 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "berekening kadegeld",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "kadegeld",
-          "objecttype": "Kadeplaats",
-          "bron": "de kadegeld"
-        },
-        "waarde": {
-          "node": "Match",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "scrutinee": {
-            "node": "AttribuutRef",
-            "attribuut": "vaarwater",
-            "objecttype": "Kadeplaats",
-            "bron": "de vaarwater"
-          },
-          "arms": [
-            {
-              "constructor": "Wad",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "2",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "2"
-              }
+        "node": "Rule",
+        "name": "berekening kadegeld",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "constructor": "Zeegat",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "5",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "5"
-              }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "kadegeld",
+              "objecttype": "Kadeplaats",
+              "bron": "de kadegeld"
             },
-            {
-              "constructor": "Ruimzee",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "9",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
+            "value": {
+              "node": "Match",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "scrutinee": {
+                "node": "AttribuutRef",
+                "attribuut": "vaarwater",
+                "objecttype": "Kadeplaats",
+                "bron": "de vaarwater"
+              },
+              "arms": [
+                {
+                  "constructor": "Wad",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "2"
+                  }
                 },
-                "bron": "9"
-              }
-            }
-          ],
-          "bron": "match VAARWATER"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "constructor": "Zeegat",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "5"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "5"
+                  }
+                },
+                {
+                  "constructor": "Ruimzee",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "9"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "9"
+                  }
+                }
+              ],
+              "bron": "match VAARWATER"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -143,7 +153,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],

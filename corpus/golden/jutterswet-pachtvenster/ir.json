@@ -112,196 +112,210 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "jaarpacht van een strandpachter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "jaarpacht",
-          "objecttype": "Strandpachter",
-          "bron": "De jaarpacht van een Strandpachter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSEVENREDIG_DEEL",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "pachttarief",
-              "objecttype": "Strandpachter",
-              "bron": "zijn pachttarief"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "vergund",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "gedurende de tijd dat hij vergund is"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het tijdsevenredig deel per jaar van zijn pachttarief gedurende de tijd dat hij vergund is",
-          "granulariteit": "JAAR"
-        },
-        "voorwaarde": {
-          "node": "Periode",
-          "vanaf": {
-            "node": "Literal",
-            "waarde": "2025-01-01",
-            "type": {
-              "node": "Date",
-              "precision": "day"
+        "node": "Rule",
+        "name": "jaarpacht van een strandpachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1 januari 2025"
-          },
-          "tot": null,
-          "totInclusief": false,
-          "bron": "vanaf 1 januari 2025"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "jaarpacht",
+              "objecttype": "Strandpachter",
+              "bron": "De jaarpacht van een Strandpachter"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSEVENREDIG_DEEL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "pachttarief",
+                  "objecttype": "Strandpachter",
+                  "bron": "zijn pachttarief"
+                }
+              ],
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "vergund",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "gedurende de tijd dat hij vergund is"
+              },
+              "granularity": "JAAR",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het tijdsevenredig deel per jaar van zijn pachttarief gedurende de tijd dat hij vergund is"
+            },
+            "condition": {
+              "node": "Periode",
+              "vanaf": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-01-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "1 januari 2025"
+              },
+              "tot": null,
+              "totInclusief": false,
+              "bron": "vanaf 1 januari 2025"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "maandpacht van een strandpachter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "maandpacht",
-          "objecttype": "Strandpachter",
-          "bron": "De maandpacht van een Strandpachter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSEVENREDIG_DEEL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "maandpacht van een strandpachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "pachttarief",
+              "attribuut": "maandpacht",
               "objecttype": "Strandpachter",
-              "bron": "zijn pachttarief"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "vergund",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "gedurende de tijd dat hij vergund is"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het tijdsevenredig deel per maand van zijn pachttarief gedurende de tijd dat hij vergund is",
-          "granulariteit": "MAAND"
-        },
-        "voorwaarde": {
-          "node": "Periode",
-          "vanaf": {
-            "node": "Literal",
-            "waarde": "2025-03-01",
-            "type": {
-              "node": "Date",
-              "precision": "day"
+              "bron": "De maandpacht van een Strandpachter"
             },
-            "bron": "1 maart 2025"
-          },
-          "tot": {
-            "node": "Literal",
-            "waarde": "2025-04-30",
-            "type": {
-              "node": "Date",
-              "precision": "day"
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSEVENREDIG_DEEL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "pachttarief",
+                  "objecttype": "Strandpachter",
+                  "bron": "zijn pachttarief"
+                }
+              ],
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "vergund",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "gedurende de tijd dat hij vergund is"
+              },
+              "granularity": "MAAND",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het tijdsevenredig deel per maand van zijn pachttarief gedurende de tijd dat hij vergund is"
             },
-            "bron": "30 april 2025"
-          },
-          "totInclusief": true,
-          "bron": "van 1 maart 2025 tot en met 30 april 2025"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "condition": {
+              "node": "Periode",
+              "vanaf": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-03-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "1 maart 2025"
+              },
+              "tot": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-04-30"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "30 april 2025"
+              },
+              "totInclusief": true,
+              "bron": "van 1 maart 2025 tot en met 30 april 2025"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "zomerdagen van een strandpachter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "zomerdagen",
-          "objecttype": "Strandpachter",
-          "bron": "De zomerdagen van een Strandpachter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL_DAGEN_IN",
-          "argumenten": [],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "aanwezig",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "gedurende de tijd dat hij aanwezig is"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "granulariteit": "MAAND",
-          "bron": "het aantal dagen in de maand dat hij aanwezig is"
-        },
-        "voorwaarde": {
-          "node": "Periode",
-          "vanaf": {
-            "node": "AttribuutRef",
-            "attribuut": "ingangsdatum",
-            "objecttype": "Strandpachter",
-            "bron": "de ingangsdatum van de Strandpachter"
-          },
-          "tot": {
-            "node": "Literal",
-            "waarde": "2025-09-01",
-            "type": {
-              "node": "Date",
-              "precision": "day"
+        "node": "Rule",
+        "name": "zomerdagen van een strandpachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1 september 2025"
-          },
-          "totInclusief": false,
-          "bron": "vanaf de ingangsdatum van de Strandpachter tot 1 september 2025"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "zomerdagen",
+              "objecttype": "Strandpachter",
+              "bron": "De zomerdagen van een Strandpachter"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "AANTAL_DAGEN_IN",
+              "arguments": [],
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "aanwezig",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "gedurende de tijd dat hij aanwezig is"
+              },
+              "granularity": "MAAND",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal dagen in de maand dat hij aanwezig is"
+            },
+            "condition": {
+              "node": "Periode",
+              "vanaf": {
+                "node": "AttribuutRef",
+                "attribuut": "ingangsdatum",
+                "objecttype": "Strandpachter",
+                "bron": "de ingangsdatum van de Strandpachter"
+              },
+              "tot": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-09-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "1 september 2025"
+              },
+              "totInclusief": false,
+              "bron": "vanaf de ingangsdatum van de Strandpachter tot 1 september 2025"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -309,7 +323,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

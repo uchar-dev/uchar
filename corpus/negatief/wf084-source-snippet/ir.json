@@ -31,30 +31,36 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "ijk",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "ijkdatum",
-          "objecttype": "Vondst",
-          "bron": "De ijkdatum van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "dd. 31-01-2024",
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "dd. 31-01-2024"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "ijk",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "ijkdatum",
+              "objecttype": "Vondst",
+              "bron": "De ijkdatum van een Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "date": "dd. 31-01-2024"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "dd. 31-01-2024"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -62,7 +68,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

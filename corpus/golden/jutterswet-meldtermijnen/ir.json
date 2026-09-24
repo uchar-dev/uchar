@@ -173,100 +173,23 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "meldpositie van een meldplicht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "meldpositie",
-          "objecttype": "Meldplicht",
-          "bron": "De meldpositie van een Meldplicht"
-        },
-        "waarde": {
-          "node": "Fold",
-          "type": {
-            "node": "SumType",
-            "domain": "meldstatus",
-            "constructors": [
-              {
-                "name": "Openstaand",
-                "payload": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                }
-              },
-              {
-                "name": "Vervuld",
-                "payload": null
-              },
-              {
-                "name": "Geschonden",
-                "payload": null
-              }
-            ]
-          },
-          "list": {
-            "node": "AttribuutRef",
-            "attribuut": "meldreeks",
-            "objecttype": "Meldplicht",
-            "bron": "de meldreeks van de meldplicht"
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "stand",
-                "datatype": {
-                  "node": "SumType",
-                  "domain": "meldstatus",
-                  "constructors": [
-                    {
-                      "name": "Openstaand",
-                      "payload": {
-                        "node": "Number",
-                        "whole": true,
-                        "decimals": 0,
-                        "sign": "ONBEPAALD"
-                      }
-                    },
-                    {
-                      "name": "Vervuld",
-                      "payload": null
-                    },
-                    {
-                      "name": "Geschonden",
-                      "payload": null
-                    }
-                  ]
-                }
-              },
-              {
-                "name": "gebeurtenis",
-                "datatype": {
-                  "node": "SumType",
-                  "domain": "gebeurtenis",
-                  "constructors": [
-                    {
-                      "name": "Dagverloop",
-                      "payload": {
-                        "node": "Number",
-                        "whole": true,
-                        "decimals": 0,
-                        "sign": "ONBEPAALD"
-                      }
-                    },
-                    {
-                      "name": "Melding",
-                      "payload": null
-                    }
-                  ]
-                }
-              }
-            ],
-            "body": {
-              "node": "Match",
+        "node": "Rule",
+        "name": "meldpositie van een meldplicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "meldpositie",
+              "objecttype": "Meldplicht",
+              "bron": "De meldpositie van een Meldplicht"
+            },
+            "value": {
+              "node": "Fold",
               "type": {
                 "node": "SumType",
                 "domain": "meldstatus",
@@ -290,18 +213,18 @@
                   }
                 ]
               },
-              "scrutinee": {
-                "node": "BinderRef",
-                "name": "stand",
-                "bron": "de stand van de meldplicht"
+              "list": {
+                "node": "AttribuutRef",
+                "attribuut": "meldreeks",
+                "objecttype": "Meldplicht",
+                "bron": "de meldreeks van de meldplicht"
               },
-              "arms": [
-                {
-                  "constructor": "Openstaand",
-                  "binder": "resterend",
-                  "body": {
-                    "node": "Match",
-                    "type": {
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "stand",
+                    "datatype": {
                       "node": "SumType",
                       "domain": "meldstatus",
                       "constructors": [
@@ -323,384 +246,388 @@
                           "payload": null
                         }
                       ]
-                    },
-                    "scrutinee": {
-                      "node": "BinderRef",
-                      "name": "gebeurtenis",
-                      "bron": "de gebeurtenis"
-                    },
-                    "arms": [
+                    }
+                  },
+                  {
+                    "name": "gebeurtenis",
+                    "datatype": {
+                      "node": "SumType",
+                      "domain": "gebeurtenis",
+                      "constructors": [
+                        {
+                          "name": "Dagverloop",
+                          "payload": {
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "ONBEPAALD"
+                          }
+                        },
+                        {
+                          "name": "Melding",
+                          "payload": null
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Match",
+                  "type": {
+                    "node": "SumType",
+                    "domain": "meldstatus",
+                    "constructors": [
                       {
-                        "constructor": "Dagverloop",
-                        "binder": "dagen",
-                        "body": {
-                          "node": "IfThenElse",
-                          "type": {
-                            "node": "SumType",
-                            "domain": "meldstatus",
-                            "constructors": [
-                              {
-                                "name": "Openstaand",
-                                "payload": {
-                                  "node": "Number",
-                                  "whole": true,
-                                  "decimals": 0,
-                                  "sign": "ONBEPAALD"
-                                }
-                              },
-                              {
-                                "name": "Vervuld",
-                                "payload": null
-                              },
-                              {
-                                "name": "Geschonden",
-                                "payload": null
-                              }
-                            ]
-                          },
-                          "condition": {
-                            "node": "Vergelijking",
-                            "op": "KLEINER_OF_GELIJK",
-                            "links": {
-                              "node": "BinderRef",
-                              "name": "dagen",
-                              "bron": "het aantal verstreken dagen"
-                            },
-                            "rechts": {
-                              "node": "BinderRef",
-                              "name": "resterend",
-                              "bron": "de resterende termijn"
-                            },
-                            "periode": null,
-                            "bron": "het aantal verstreken dagen kleiner of gelijk aan de resterende termijn"
-                          },
-                          "then": {
-                            "node": "Construct",
-                            "type": {
-                              "node": "SumType",
-                              "domain": "meldstatus",
-                              "constructors": [
-                                {
-                                  "name": "Openstaand",
-                                  "payload": {
-                                    "node": "Number",
-                                    "whole": true,
-                                    "decimals": 0,
-                                    "sign": "ONBEPAALD"
-                                  }
-                                },
-                                {
-                                  "name": "Vervuld",
-                                  "payload": null
-                                },
-                                {
-                                  "name": "Geschonden",
-                                  "payload": null
-                                }
-                              ]
-                            },
-                            "constructor": "Openstaand",
-                            "argument": {
-                              "node": "Binair",
-                              "op": "MIN",
-                              "links": {
-                                "node": "BinderRef",
-                                "name": "resterend",
-                                "bron": "de resterende termijn"
-                              },
-                              "rechts": {
-                                "node": "BinderRef",
-                                "name": "dagen",
-                                "bron": "het aantal verstreken dagen"
-                              },
-                              "type": {
+                        "name": "Openstaand",
+                        "payload": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "ONBEPAALD"
+                        }
+                      },
+                      {
+                        "name": "Vervuld",
+                        "payload": null
+                      },
+                      {
+                        "name": "Geschonden",
+                        "payload": null
+                      }
+                    ]
+                  },
+                  "scrutinee": {
+                    "node": "BinderRef",
+                    "name": "stand",
+                    "bron": "de stand van de meldplicht"
+                  },
+                  "arms": [
+                    {
+                      "constructor": "Openstaand",
+                      "binder": "resterend",
+                      "body": {
+                        "node": "Match",
+                        "type": {
+                          "node": "SumType",
+                          "domain": "meldstatus",
+                          "constructors": [
+                            {
+                              "name": "Openstaand",
+                              "payload": {
                                 "node": "Number",
                                 "whole": true,
                                 "decimals": 0,
                                 "sign": "ONBEPAALD"
-                              },
-                              "bron": "de resterende termijn min het aantal verstreken dagen"
+                              }
                             },
-                            "bron": "Openstaand met de verminderde termijn"
-                          },
-                          "else": {
-                            "node": "Construct",
-                            "type": {
-                              "node": "SumType",
-                              "domain": "meldstatus",
-                              "constructors": [
-                                {
-                                  "name": "Openstaand",
-                                  "payload": {
+                            {
+                              "name": "Vervuld",
+                              "payload": null
+                            },
+                            {
+                              "name": "Geschonden",
+                              "payload": null
+                            }
+                          ]
+                        },
+                        "scrutinee": {
+                          "node": "BinderRef",
+                          "name": "gebeurtenis",
+                          "bron": "de gebeurtenis"
+                        },
+                        "arms": [
+                          {
+                            "constructor": "Dagverloop",
+                            "binder": "dagen",
+                            "body": {
+                              "node": "IfThenElse",
+                              "type": {
+                                "node": "SumType",
+                                "domain": "meldstatus",
+                                "constructors": [
+                                  {
+                                    "name": "Openstaand",
+                                    "payload": {
+                                      "node": "Number",
+                                      "whole": true,
+                                      "decimals": 0,
+                                      "sign": "ONBEPAALD"
+                                    }
+                                  },
+                                  {
+                                    "name": "Vervuld",
+                                    "payload": null
+                                  },
+                                  {
+                                    "name": "Geschonden",
+                                    "payload": null
+                                  }
+                                ]
+                              },
+                              "condition": {
+                                "node": "Vergelijking",
+                                "op": "KLEINER_OF_GELIJK",
+                                "links": {
+                                  "node": "BinderRef",
+                                  "name": "dagen",
+                                  "bron": "het aantal verstreken dagen"
+                                },
+                                "rechts": {
+                                  "node": "BinderRef",
+                                  "name": "resterend",
+                                  "bron": "de resterende termijn"
+                                },
+                                "periode": null,
+                                "bron": "het aantal verstreken dagen kleiner of gelijk aan de resterende termijn"
+                              },
+                              "then": {
+                                "node": "Construct",
+                                "type": {
+                                  "node": "SumType",
+                                  "domain": "meldstatus",
+                                  "constructors": [
+                                    {
+                                      "name": "Openstaand",
+                                      "payload": {
+                                        "node": "Number",
+                                        "whole": true,
+                                        "decimals": 0,
+                                        "sign": "ONBEPAALD"
+                                      }
+                                    },
+                                    {
+                                      "name": "Vervuld",
+                                      "payload": null
+                                    },
+                                    {
+                                      "name": "Geschonden",
+                                      "payload": null
+                                    }
+                                  ]
+                                },
+                                "constructor": "Openstaand",
+                                "argument": {
+                                  "node": "Binair",
+                                  "op": "MIN",
+                                  "links": {
+                                    "node": "BinderRef",
+                                    "name": "resterend",
+                                    "bron": "de resterende termijn"
+                                  },
+                                  "rechts": {
+                                    "node": "BinderRef",
+                                    "name": "dagen",
+                                    "bron": "het aantal verstreken dagen"
+                                  },
+                                  "type": {
                                     "node": "Number",
                                     "whole": true,
                                     "decimals": 0,
                                     "sign": "ONBEPAALD"
+                                  },
+                                  "bron": "de resterende termijn min het aantal verstreken dagen"
+                                },
+                                "bron": "Openstaand met de verminderde termijn"
+                              },
+                              "else": {
+                                "node": "Construct",
+                                "type": {
+                                  "node": "SumType",
+                                  "domain": "meldstatus",
+                                  "constructors": [
+                                    {
+                                      "name": "Openstaand",
+                                      "payload": {
+                                        "node": "Number",
+                                        "whole": true,
+                                        "decimals": 0,
+                                        "sign": "ONBEPAALD"
+                                      }
+                                    },
+                                    {
+                                      "name": "Vervuld",
+                                      "payload": null
+                                    },
+                                    {
+                                      "name": "Geschonden",
+                                      "payload": null
+                                    }
+                                  ]
+                                },
+                                "constructor": "Geschonden",
+                                "argument": null,
+                                "bron": "Geschonden"
+                              },
+                              "bron": "de termijn verminderd of geschonden"
+                            }
+                          },
+                          {
+                            "constructor": "Melding",
+                            "binder": null,
+                            "body": {
+                              "node": "Construct",
+                              "type": {
+                                "node": "SumType",
+                                "domain": "meldstatus",
+                                "constructors": [
+                                  {
+                                    "name": "Openstaand",
+                                    "payload": {
+                                      "node": "Number",
+                                      "whole": true,
+                                      "decimals": 0,
+                                      "sign": "ONBEPAALD"
+                                    }
+                                  },
+                                  {
+                                    "name": "Vervuld",
+                                    "payload": null
+                                  },
+                                  {
+                                    "name": "Geschonden",
+                                    "payload": null
                                   }
-                                },
-                                {
-                                  "name": "Vervuld",
-                                  "payload": null
-                                },
-                                {
-                                  "name": "Geschonden",
-                                  "payload": null
-                                }
-                              ]
-                            },
-                            "constructor": "Geschonden",
-                            "argument": null,
-                            "bron": "Geschonden"
-                          },
-                          "bron": "de termijn verminderd of geschonden"
-                        }
-                      },
-                      {
-                        "constructor": "Melding",
-                        "binder": null,
-                        "body": {
-                          "node": "Construct",
-                          "type": {
-                            "node": "SumType",
-                            "domain": "meldstatus",
-                            "constructors": [
-                              {
-                                "name": "Openstaand",
-                                "payload": {
-                                  "node": "Number",
-                                  "whole": true,
-                                  "decimals": 0,
-                                  "sign": "ONBEPAALD"
-                                }
+                                ]
                               },
-                              {
-                                "name": "Vervuld",
-                                "payload": null
-                              },
-                              {
-                                "name": "Geschonden",
-                                "payload": null
-                              }
-                            ]
-                          },
-                          "constructor": "Vervuld",
-                          "argument": null,
-                          "bron": "Vervuld"
-                        }
+                              "constructor": "Vervuld",
+                              "argument": null,
+                              "bron": "Vervuld"
+                            }
+                          }
+                        ],
+                        "bron": "de gebeurtenis toegepast op een openstaande meldplicht"
                       }
-                    ],
-                    "bron": "de gebeurtenis toegepast op een openstaande meldplicht"
-                  }
-                },
-                {
-                  "constructor": "Vervuld",
-                  "binder": null,
-                  "body": {
-                    "node": "Construct",
-                    "type": {
-                      "node": "SumType",
-                      "domain": "meldstatus",
-                      "constructors": [
-                        {
-                          "name": "Openstaand",
-                          "payload": {
-                            "node": "Number",
-                            "whole": true,
-                            "decimals": 0,
-                            "sign": "ONBEPAALD"
-                          }
-                        },
-                        {
-                          "name": "Vervuld",
-                          "payload": null
-                        },
-                        {
-                          "name": "Geschonden",
-                          "payload": null
-                        }
-                      ]
                     },
-                    "constructor": "Vervuld",
-                    "argument": null,
-                    "bron": "Vervuld"
-                  }
-                },
-                {
-                  "constructor": "Geschonden",
-                  "binder": null,
-                  "body": {
-                    "node": "Construct",
-                    "type": {
-                      "node": "SumType",
-                      "domain": "meldstatus",
-                      "constructors": [
-                        {
-                          "name": "Openstaand",
-                          "payload": {
-                            "node": "Number",
-                            "whole": true,
-                            "decimals": 0,
-                            "sign": "ONBEPAALD"
-                          }
+                    {
+                      "constructor": "Vervuld",
+                      "binder": null,
+                      "body": {
+                        "node": "Construct",
+                        "type": {
+                          "node": "SumType",
+                          "domain": "meldstatus",
+                          "constructors": [
+                            {
+                              "name": "Openstaand",
+                              "payload": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "ONBEPAALD"
+                              }
+                            },
+                            {
+                              "name": "Vervuld",
+                              "payload": null
+                            },
+                            {
+                              "name": "Geschonden",
+                              "payload": null
+                            }
+                          ]
                         },
-                        {
-                          "name": "Vervuld",
-                          "payload": null
-                        },
-                        {
-                          "name": "Geschonden",
-                          "payload": null
-                        }
-                      ]
+                        "constructor": "Vervuld",
+                        "argument": null,
+                        "bron": "Vervuld"
+                      }
                     },
-                    "constructor": "Geschonden",
-                    "argument": null,
-                    "bron": "Geschonden"
-                  }
-                }
-              ],
-              "bron": "de stand van de meldplicht bijgewerkt"
-            },
-            "bron": "de vouwstap over een gebeurtenis"
-          },
-          "init": {
-            "node": "Construct",
-            "type": {
-              "node": "SumType",
-              "domain": "meldstatus",
-              "constructors": [
-                {
-                  "name": "Openstaand",
-                  "payload": {
-                    "node": "Number",
-                    "whole": true,
-                    "decimals": 0,
-                    "sign": "ONBEPAALD"
-                  }
+                    {
+                      "constructor": "Geschonden",
+                      "binder": null,
+                      "body": {
+                        "node": "Construct",
+                        "type": {
+                          "node": "SumType",
+                          "domain": "meldstatus",
+                          "constructors": [
+                            {
+                              "name": "Openstaand",
+                              "payload": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "ONBEPAALD"
+                              }
+                            },
+                            {
+                              "name": "Vervuld",
+                              "payload": null
+                            },
+                            {
+                              "name": "Geschonden",
+                              "payload": null
+                            }
+                          ]
+                        },
+                        "constructor": "Geschonden",
+                        "argument": null,
+                        "bron": "Geschonden"
+                      }
+                    }
+                  ],
+                  "bron": "de stand van de meldplicht bijgewerkt"
                 },
-                {
-                  "name": "Vervuld",
-                  "payload": null
+                "bron": "de vouwstap over een gebeurtenis"
+              },
+              "init": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "meldstatus",
+                  "constructors": [
+                    {
+                      "name": "Openstaand",
+                      "payload": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
+                      }
+                    },
+                    {
+                      "name": "Vervuld",
+                      "payload": null
+                    },
+                    {
+                      "name": "Geschonden",
+                      "payload": null
+                    }
+                  ]
                 },
-                {
-                  "name": "Geschonden",
-                  "payload": null
-                }
-              ]
+                "constructor": "Openstaand",
+                "argument": {
+                  "node": "AttribuutRef",
+                  "attribuut": "termijn",
+                  "objecttype": "Meldplicht",
+                  "bron": "de termijn van de meldplicht"
+                },
+                "bron": "Openstaand met de eigen termijn"
+              },
+              "bron": "de meldreeks van de meldplicht gevouwen tot haar meldpositie"
             },
-            "constructor": "Openstaand",
-            "argument": {
-              "node": "AttribuutRef",
-              "attribuut": "termijn",
-              "objecttype": "Meldplicht",
-              "bron": "de termijn van de meldplicht"
-            },
-            "bron": "Openstaand met de eigen termijn"
-          },
-          "bron": "de meldreeks van de meldplicht gevouwen tot haar meldpositie"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "standaardpositie van een meldplicht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "standaardpositie",
-          "objecttype": "Meldplicht",
-          "bron": "De standaardpositie van een Meldplicht"
-        },
-        "waarde": {
-          "node": "Fold",
-          "type": {
-            "node": "SumType",
-            "domain": "meldstatus",
-            "constructors": [
-              {
-                "name": "Openstaand",
-                "payload": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                }
-              },
-              {
-                "name": "Vervuld",
-                "payload": null
-              },
-              {
-                "name": "Geschonden",
-                "payload": null
-              }
-            ]
-          },
-          "list": {
-            "node": "AttribuutRef",
-            "attribuut": "meldreeks",
-            "objecttype": "Meldplicht",
-            "bron": "de meldreeks van de meldplicht"
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "stand",
-                "datatype": {
-                  "node": "SumType",
-                  "domain": "meldstatus",
-                  "constructors": [
-                    {
-                      "name": "Openstaand",
-                      "payload": {
-                        "node": "Number",
-                        "whole": true,
-                        "decimals": 0,
-                        "sign": "ONBEPAALD"
-                      }
-                    },
-                    {
-                      "name": "Vervuld",
-                      "payload": null
-                    },
-                    {
-                      "name": "Geschonden",
-                      "payload": null
-                    }
-                  ]
-                }
-              },
-              {
-                "name": "gebeurtenis",
-                "datatype": {
-                  "node": "SumType",
-                  "domain": "gebeurtenis",
-                  "constructors": [
-                    {
-                      "name": "Dagverloop",
-                      "payload": {
-                        "node": "Number",
-                        "whole": true,
-                        "decimals": 0,
-                        "sign": "ONBEPAALD"
-                      }
-                    },
-                    {
-                      "name": "Melding",
-                      "payload": null
-                    }
-                  ]
-                }
-              }
-            ],
-            "body": {
-              "node": "Match",
+        "node": "Rule",
+        "name": "standaardpositie van een meldplicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "standaardpositie",
+              "objecttype": "Meldplicht",
+              "bron": "De standaardpositie van een Meldplicht"
+            },
+            "value": {
+              "node": "Fold",
               "type": {
                 "node": "SumType",
                 "domain": "meldstatus",
@@ -724,18 +651,18 @@
                   }
                 ]
               },
-              "scrutinee": {
-                "node": "BinderRef",
-                "name": "stand",
-                "bron": "de stand van de meldplicht"
+              "list": {
+                "node": "AttribuutRef",
+                "attribuut": "meldreeks",
+                "objecttype": "Meldplicht",
+                "bron": "de meldreeks van de meldplicht"
               },
-              "arms": [
-                {
-                  "constructor": "Openstaand",
-                  "binder": "resterend",
-                  "body": {
-                    "node": "Match",
-                    "type": {
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "stand",
+                    "datatype": {
                       "node": "SumType",
                       "domain": "meldstatus",
                       "constructors": [
@@ -757,287 +684,368 @@
                           "payload": null
                         }
                       ]
-                    },
-                    "scrutinee": {
-                      "node": "BinderRef",
-                      "name": "gebeurtenis",
-                      "bron": "de gebeurtenis"
-                    },
-                    "arms": [
+                    }
+                  },
+                  {
+                    "name": "gebeurtenis",
+                    "datatype": {
+                      "node": "SumType",
+                      "domain": "gebeurtenis",
+                      "constructors": [
+                        {
+                          "name": "Dagverloop",
+                          "payload": {
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "ONBEPAALD"
+                          }
+                        },
+                        {
+                          "name": "Melding",
+                          "payload": null
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Match",
+                  "type": {
+                    "node": "SumType",
+                    "domain": "meldstatus",
+                    "constructors": [
                       {
-                        "constructor": "Dagverloop",
-                        "binder": "dagen",
-                        "body": {
-                          "node": "IfThenElse",
-                          "type": {
-                            "node": "SumType",
-                            "domain": "meldstatus",
-                            "constructors": [
-                              {
-                                "name": "Openstaand",
-                                "payload": {
-                                  "node": "Number",
-                                  "whole": true,
-                                  "decimals": 0,
-                                  "sign": "ONBEPAALD"
-                                }
-                              },
-                              {
-                                "name": "Vervuld",
-                                "payload": null
-                              },
-                              {
-                                "name": "Geschonden",
-                                "payload": null
-                              }
-                            ]
-                          },
-                          "condition": {
-                            "node": "Vergelijking",
-                            "op": "KLEINER_OF_GELIJK",
-                            "links": {
-                              "node": "BinderRef",
-                              "name": "dagen",
-                              "bron": "het aantal verstreken dagen"
-                            },
-                            "rechts": {
-                              "node": "BinderRef",
-                              "name": "resterend",
-                              "bron": "de resterende termijn"
-                            },
-                            "periode": null,
-                            "bron": "het aantal verstreken dagen kleiner of gelijk aan de resterende termijn"
-                          },
-                          "then": {
-                            "node": "Construct",
-                            "type": {
-                              "node": "SumType",
-                              "domain": "meldstatus",
-                              "constructors": [
-                                {
-                                  "name": "Openstaand",
-                                  "payload": {
-                                    "node": "Number",
-                                    "whole": true,
-                                    "decimals": 0,
-                                    "sign": "ONBEPAALD"
-                                  }
-                                },
-                                {
-                                  "name": "Vervuld",
-                                  "payload": null
-                                },
-                                {
-                                  "name": "Geschonden",
-                                  "payload": null
-                                }
-                              ]
-                            },
-                            "constructor": "Openstaand",
-                            "argument": {
-                              "node": "Binair",
-                              "op": "MIN",
-                              "links": {
-                                "node": "BinderRef",
-                                "name": "resterend",
-                                "bron": "de resterende termijn"
-                              },
-                              "rechts": {
-                                "node": "BinderRef",
-                                "name": "dagen",
-                                "bron": "het aantal verstreken dagen"
-                              },
-                              "type": {
+                        "name": "Openstaand",
+                        "payload": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "ONBEPAALD"
+                        }
+                      },
+                      {
+                        "name": "Vervuld",
+                        "payload": null
+                      },
+                      {
+                        "name": "Geschonden",
+                        "payload": null
+                      }
+                    ]
+                  },
+                  "scrutinee": {
+                    "node": "BinderRef",
+                    "name": "stand",
+                    "bron": "de stand van de meldplicht"
+                  },
+                  "arms": [
+                    {
+                      "constructor": "Openstaand",
+                      "binder": "resterend",
+                      "body": {
+                        "node": "Match",
+                        "type": {
+                          "node": "SumType",
+                          "domain": "meldstatus",
+                          "constructors": [
+                            {
+                              "name": "Openstaand",
+                              "payload": {
                                 "node": "Number",
                                 "whole": true,
                                 "decimals": 0,
                                 "sign": "ONBEPAALD"
-                              },
-                              "bron": "de resterende termijn min het aantal verstreken dagen"
+                              }
                             },
-                            "bron": "Openstaand met de verminderde termijn"
-                          },
-                          "else": {
-                            "node": "Construct",
-                            "type": {
-                              "node": "SumType",
-                              "domain": "meldstatus",
-                              "constructors": [
-                                {
-                                  "name": "Openstaand",
-                                  "payload": {
+                            {
+                              "name": "Vervuld",
+                              "payload": null
+                            },
+                            {
+                              "name": "Geschonden",
+                              "payload": null
+                            }
+                          ]
+                        },
+                        "scrutinee": {
+                          "node": "BinderRef",
+                          "name": "gebeurtenis",
+                          "bron": "de gebeurtenis"
+                        },
+                        "arms": [
+                          {
+                            "constructor": "Dagverloop",
+                            "binder": "dagen",
+                            "body": {
+                              "node": "IfThenElse",
+                              "type": {
+                                "node": "SumType",
+                                "domain": "meldstatus",
+                                "constructors": [
+                                  {
+                                    "name": "Openstaand",
+                                    "payload": {
+                                      "node": "Number",
+                                      "whole": true,
+                                      "decimals": 0,
+                                      "sign": "ONBEPAALD"
+                                    }
+                                  },
+                                  {
+                                    "name": "Vervuld",
+                                    "payload": null
+                                  },
+                                  {
+                                    "name": "Geschonden",
+                                    "payload": null
+                                  }
+                                ]
+                              },
+                              "condition": {
+                                "node": "Vergelijking",
+                                "op": "KLEINER_OF_GELIJK",
+                                "links": {
+                                  "node": "BinderRef",
+                                  "name": "dagen",
+                                  "bron": "het aantal verstreken dagen"
+                                },
+                                "rechts": {
+                                  "node": "BinderRef",
+                                  "name": "resterend",
+                                  "bron": "de resterende termijn"
+                                },
+                                "periode": null,
+                                "bron": "het aantal verstreken dagen kleiner of gelijk aan de resterende termijn"
+                              },
+                              "then": {
+                                "node": "Construct",
+                                "type": {
+                                  "node": "SumType",
+                                  "domain": "meldstatus",
+                                  "constructors": [
+                                    {
+                                      "name": "Openstaand",
+                                      "payload": {
+                                        "node": "Number",
+                                        "whole": true,
+                                        "decimals": 0,
+                                        "sign": "ONBEPAALD"
+                                      }
+                                    },
+                                    {
+                                      "name": "Vervuld",
+                                      "payload": null
+                                    },
+                                    {
+                                      "name": "Geschonden",
+                                      "payload": null
+                                    }
+                                  ]
+                                },
+                                "constructor": "Openstaand",
+                                "argument": {
+                                  "node": "Binair",
+                                  "op": "MIN",
+                                  "links": {
+                                    "node": "BinderRef",
+                                    "name": "resterend",
+                                    "bron": "de resterende termijn"
+                                  },
+                                  "rechts": {
+                                    "node": "BinderRef",
+                                    "name": "dagen",
+                                    "bron": "het aantal verstreken dagen"
+                                  },
+                                  "type": {
                                     "node": "Number",
                                     "whole": true,
                                     "decimals": 0,
                                     "sign": "ONBEPAALD"
+                                  },
+                                  "bron": "de resterende termijn min het aantal verstreken dagen"
+                                },
+                                "bron": "Openstaand met de verminderde termijn"
+                              },
+                              "else": {
+                                "node": "Construct",
+                                "type": {
+                                  "node": "SumType",
+                                  "domain": "meldstatus",
+                                  "constructors": [
+                                    {
+                                      "name": "Openstaand",
+                                      "payload": {
+                                        "node": "Number",
+                                        "whole": true,
+                                        "decimals": 0,
+                                        "sign": "ONBEPAALD"
+                                      }
+                                    },
+                                    {
+                                      "name": "Vervuld",
+                                      "payload": null
+                                    },
+                                    {
+                                      "name": "Geschonden",
+                                      "payload": null
+                                    }
+                                  ]
+                                },
+                                "constructor": "Geschonden",
+                                "argument": null,
+                                "bron": "Geschonden"
+                              },
+                              "bron": "de termijn verminderd of geschonden"
+                            }
+                          },
+                          {
+                            "constructor": "Melding",
+                            "binder": null,
+                            "body": {
+                              "node": "Construct",
+                              "type": {
+                                "node": "SumType",
+                                "domain": "meldstatus",
+                                "constructors": [
+                                  {
+                                    "name": "Openstaand",
+                                    "payload": {
+                                      "node": "Number",
+                                      "whole": true,
+                                      "decimals": 0,
+                                      "sign": "ONBEPAALD"
+                                    }
+                                  },
+                                  {
+                                    "name": "Vervuld",
+                                    "payload": null
+                                  },
+                                  {
+                                    "name": "Geschonden",
+                                    "payload": null
                                   }
-                                },
-                                {
-                                  "name": "Vervuld",
-                                  "payload": null
-                                },
-                                {
-                                  "name": "Geschonden",
-                                  "payload": null
-                                }
-                              ]
-                            },
-                            "constructor": "Geschonden",
-                            "argument": null,
-                            "bron": "Geschonden"
-                          },
-                          "bron": "de termijn verminderd of geschonden"
-                        }
-                      },
-                      {
-                        "constructor": "Melding",
-                        "binder": null,
-                        "body": {
-                          "node": "Construct",
-                          "type": {
-                            "node": "SumType",
-                            "domain": "meldstatus",
-                            "constructors": [
-                              {
-                                "name": "Openstaand",
-                                "payload": {
-                                  "node": "Number",
-                                  "whole": true,
-                                  "decimals": 0,
-                                  "sign": "ONBEPAALD"
-                                }
+                                ]
                               },
-                              {
-                                "name": "Vervuld",
-                                "payload": null
-                              },
-                              {
-                                "name": "Geschonden",
-                                "payload": null
-                              }
-                            ]
-                          },
-                          "constructor": "Vervuld",
-                          "argument": null,
-                          "bron": "Vervuld"
-                        }
+                              "constructor": "Vervuld",
+                              "argument": null,
+                              "bron": "Vervuld"
+                            }
+                          }
+                        ],
+                        "bron": "de gebeurtenis toegepast op een openstaande meldplicht"
                       }
-                    ],
-                    "bron": "de gebeurtenis toegepast op een openstaande meldplicht"
-                  }
-                },
-                {
-                  "constructor": "Vervuld",
-                  "binder": null,
-                  "body": {
-                    "node": "Construct",
-                    "type": {
-                      "node": "SumType",
-                      "domain": "meldstatus",
-                      "constructors": [
-                        {
-                          "name": "Openstaand",
-                          "payload": {
-                            "node": "Number",
-                            "whole": true,
-                            "decimals": 0,
-                            "sign": "ONBEPAALD"
-                          }
-                        },
-                        {
-                          "name": "Vervuld",
-                          "payload": null
-                        },
-                        {
-                          "name": "Geschonden",
-                          "payload": null
-                        }
-                      ]
                     },
-                    "constructor": "Vervuld",
-                    "argument": null,
-                    "bron": "Vervuld"
-                  }
-                },
-                {
-                  "constructor": "Geschonden",
-                  "binder": null,
-                  "body": {
-                    "node": "Construct",
-                    "type": {
-                      "node": "SumType",
-                      "domain": "meldstatus",
-                      "constructors": [
-                        {
-                          "name": "Openstaand",
-                          "payload": {
-                            "node": "Number",
-                            "whole": true,
-                            "decimals": 0,
-                            "sign": "ONBEPAALD"
-                          }
+                    {
+                      "constructor": "Vervuld",
+                      "binder": null,
+                      "body": {
+                        "node": "Construct",
+                        "type": {
+                          "node": "SumType",
+                          "domain": "meldstatus",
+                          "constructors": [
+                            {
+                              "name": "Openstaand",
+                              "payload": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "ONBEPAALD"
+                              }
+                            },
+                            {
+                              "name": "Vervuld",
+                              "payload": null
+                            },
+                            {
+                              "name": "Geschonden",
+                              "payload": null
+                            }
+                          ]
                         },
-                        {
-                          "name": "Vervuld",
-                          "payload": null
-                        },
-                        {
-                          "name": "Geschonden",
-                          "payload": null
-                        }
-                      ]
+                        "constructor": "Vervuld",
+                        "argument": null,
+                        "bron": "Vervuld"
+                      }
                     },
-                    "constructor": "Geschonden",
-                    "argument": null,
-                    "bron": "Geschonden"
-                  }
-                }
-              ],
-              "bron": "de stand van de meldplicht bijgewerkt"
-            },
-            "bron": "de vouwstap over een gebeurtenis"
-          },
-          "init": {
-            "node": "Construct",
-            "type": {
-              "node": "SumType",
-              "domain": "meldstatus",
-              "constructors": [
-                {
-                  "name": "Openstaand",
-                  "payload": {
-                    "node": "Number",
-                    "whole": true,
-                    "decimals": 0,
-                    "sign": "ONBEPAALD"
-                  }
+                    {
+                      "constructor": "Geschonden",
+                      "binder": null,
+                      "body": {
+                        "node": "Construct",
+                        "type": {
+                          "node": "SumType",
+                          "domain": "meldstatus",
+                          "constructors": [
+                            {
+                              "name": "Openstaand",
+                              "payload": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "ONBEPAALD"
+                              }
+                            },
+                            {
+                              "name": "Vervuld",
+                              "payload": null
+                            },
+                            {
+                              "name": "Geschonden",
+                              "payload": null
+                            }
+                          ]
+                        },
+                        "constructor": "Geschonden",
+                        "argument": null,
+                        "bron": "Geschonden"
+                      }
+                    }
+                  ],
+                  "bron": "de stand van de meldplicht bijgewerkt"
                 },
-                {
-                  "name": "Vervuld",
-                  "payload": null
+                "bron": "de vouwstap over een gebeurtenis"
+              },
+              "init": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "meldstatus",
+                  "constructors": [
+                    {
+                      "name": "Openstaand",
+                      "payload": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
+                      }
+                    },
+                    {
+                      "name": "Vervuld",
+                      "payload": null
+                    },
+                    {
+                      "name": "Geschonden",
+                      "payload": null
+                    }
+                  ]
                 },
-                {
-                  "name": "Geschonden",
-                  "payload": null
-                }
-              ]
+                "constructor": "Openstaand",
+                "argument": {
+                  "node": "ParameterRef",
+                  "parameter": "standaardtermijn",
+                  "bron": "de standaardtermijn"
+                },
+                "bron": "Openstaand met de standaardtermijn"
+              },
+              "bron": "de meldreeks van de meldplicht gevouwen tot haar standaardpositie"
             },
-            "constructor": "Openstaand",
-            "argument": {
-              "node": "ParameterRef",
-              "parameter": "standaardtermijn",
-              "bron": "de standaardtermijn"
-            },
-            "bron": "Openstaand met de standaardtermijn"
-          },
-          "bron": "de meldreeks van de meldplicht gevouwen tot haar standaardpositie"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -1045,7 +1053,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

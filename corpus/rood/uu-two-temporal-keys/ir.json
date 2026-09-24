@@ -95,35 +95,38 @@
     "objectCreaties": [],
     "verdelingen": [],
     "consistenties": [],
-    "uniciteiten": [],
-    "uniciteitUnies": [
+    "uniciteiten": [
       {
-        "node": "ResolvedUniciteitUnie",
-        "naam": "dubbel temporeel",
-        "bronnen": [
+        "node": "Uniqueness",
+        "name": "dubbel temporeel",
+        "versions": [
           {
-            "node": "Bron",
-            "type": "Strandvondst",
-            "sleutels": [
-              "vondstnummer",
-              "volgnummer"
-            ]
-          },
-          {
-            "node": "Bron",
-            "type": "Wrakvondst",
-            "sleutels": [
-              "vondstnummer",
-              "volgnummer"
-            ]
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Strandvondst",
+                "keys": [
+                  "vondstnummer",
+                  "volgnummer"
+                ]
+              },
+              {
+                "node": "Source",
+                "objectType": "Wrakvondst",
+                "keys": [
+                  "vondstnummer",
+                  "volgnummer"
+                ]
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "Het vondstnummer met het volgnummer van Strandvondst verenigd met Wrakvondst moeten uniek zijn."
           }
-        ],
-        "bron": "Het vondstnummer met het volgnummer van Strandvondst verenigd met Wrakvondst moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "feitCreaties": [],

@@ -214,35 +214,36 @@
     "objectCreaties": [],
     "verdelingen": [
       {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeel de opbrengst van een berging",
-        "bronType": "Berging",
-        "bronAttribuut": "opbrengst",
-        "doelType": "Berger",
-        "doelAttribuut": "bergingsaandeel",
-        "methode": "NAAR_RATO",
-        "ratoAttribuut": "geborgen gewicht",
-        "maximumAttribuut": "",
-        "afrondingDecimalen": 0,
-        "restantAttribuut": "onverdeelde rest",
-        "groepeerAttribuut": null,
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "bergingsdeelname",
-          "rol": "berger"
-        }
+        "node": "Allocation",
+        "name": "verdeel de opbrengst van een berging",
+        "versions": [
+          {
+            "sourceType": "Berging",
+            "sourceAttribute": "opbrengst",
+            "targetType": "Berger",
+            "targetAttribute": "bergingsaandeel",
+            "method": "NAAR_RATO",
+            "ratioAttribute": "geborgen gewicht",
+            "maximumAttribute": "",
+            "roundingDecimals": 0,
+            "remainderAttribute": "onverdeelde rest",
+            "descending": false,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "bergingsdeelname",
+              "rol": "berger"
+            }
+          }
+        ]
       }
     ],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -41,48 +41,46 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "jaartal van een baken",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "jaartal",
-          "objecttype": "Baken",
-          "bron": "Het jaartal van een Baken"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "JAAR_UIT",
-          "argumenten": [
-            {
-              "node": "Constante",
-              "naam": "de dag",
+        "node": "Rule",
+        "name": "jaartal van een baken",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "jaartal",
+              "objecttype": "Baken",
+              "bron": "Het jaartal van een Baken"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "JAAR_UIT",
+              "arguments": [
+                {
+                  "node": "BoundDay",
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "bron": "de dag"
+                }
+              ],
               "type": {
-                "node": "Date",
-                "precision": "day"
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
               },
-              "bron": "de dag"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het jaar uit de dag",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "het jaar uit de dag"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -90,7 +88,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

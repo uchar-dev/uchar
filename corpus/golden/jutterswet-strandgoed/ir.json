@@ -90,182 +90,197 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "waardevol bij gewicht",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "waardevol",
-          "objecttype": "Vondst",
-          "bron": "Een Vondst is waardevol"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GROTER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "gewicht",
-            "objecttype": "Vondst",
-            "bron": "het gewicht van de Vondst"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "10",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "waardevol bij gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "10"
-          },
-          "periode": null,
-          "bron": "het gewicht van de Vondst groter is dan 10"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "waardevol",
+              "objecttype": "Vondst",
+              "bron": "Een Vondst is waardevol"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "gewicht",
+                "objecttype": "Vondst",
+                "bron": "het gewicht van de Vondst"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "10"
+              },
+              "periode": null,
+              "bron": "het gewicht van de Vondst groter is dan 10"
+            },
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "zwaargewicht van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "zwaargewicht",
-          "objecttype": "Jutter",
-          "bron": "Het zwaargewicht van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "SOM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "gewicht",
-              "objecttype": "Vondst",
-              "bron": "het gewicht van alle vondsten van de Jutter die groter zijn dan 5"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "zwaargewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "0"
-          },
-          "filter": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "gewicht",
-              "objecttype": "Vondst",
-              "bron": "groter zijn dan 5"
+              "attribuut": "zwaargewicht",
+              "objecttype": "Jutter",
+              "bron": "Het zwaargewicht van een Jutter"
             },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "5",
+            "value": {
+              "node": "Aggregation",
+              "kind": "SOM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "gewicht",
+                  "objecttype": "Vondst",
+                  "bron": "het gewicht van alle vondsten van de Jutter die groter zijn dan 5"
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "gewicht",
+                  "objecttype": "Vondst",
+                  "bron": "groter zijn dan 5"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "5"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "5"
+                },
+                "periode": null,
+                "bron": "groter zijn dan 5"
+              },
+              "emptyFallback": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "0"
+              },
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "aanmelding",
+                "rol": "vondst"
+              },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "5"
+              "bron": "de som van het gewicht van alle vondsten van de Jutter die groter zijn dan 5 of 0 als die er niet zijn"
             },
-            "periode": null,
-            "bron": "groter zijn dan 5"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de som van het gewicht van alle vondsten van de Jutter die groter zijn dan 5 of 0 als die er niet zijn",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "aanmelding",
-            "rol": "vondst"
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "pronkstukaantal van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "pronkstukaantal",
-          "objecttype": "Jutter",
-          "bron": "Het pronkstukaantal van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "pronkstukaantal van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vondsten",
+              "attribuut": "pronkstukaantal",
               "objecttype": "Jutter",
-              "bron": "vondsten van de Jutter die waardevol zijn"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "waardevol",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "waardevol zijn"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal vondsten van de Jutter die waardevol zijn",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "aanmelding",
-            "rol": "vondst"
+              "bron": "Het pronkstukaantal van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vondsten",
+                  "objecttype": "Jutter",
+                  "bron": "vondsten van de Jutter die waardevol zijn"
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "waardevol",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "waardevol zijn"
+              },
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "aanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal vondsten van de Jutter die waardevol zijn"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -273,7 +288,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

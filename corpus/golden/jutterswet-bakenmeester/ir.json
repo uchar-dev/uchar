@@ -64,52 +64,53 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "onderhoudsbijdrage van een bakenmeester",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "onderhoudsbijdrage",
-          "objecttype": "Bakenmeester",
-          "bron": "De onderhoudsbijdrage van een Bakenmeester"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSEVENREDIG_DEEL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "onderhoudsbijdrage van een bakenmeester",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "onderhoudstarief",
+              "attribuut": "onderhoudsbijdrage",
               "objecttype": "Bakenmeester",
-              "bron": "zijn onderhoudstarief"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "dienstdoend",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "gedurende de tijd dat hij dienstdoend is"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het tijdsevenredig deel per maand van zijn onderhoudstarief gedurende de tijd dat hij dienstdoend is",
-          "granulariteit": "MAAND"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De onderhoudsbijdrage van een Bakenmeester"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSEVENREDIG_DEEL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "onderhoudstarief",
+                  "objecttype": "Bakenmeester",
+                  "bron": "zijn onderhoudstarief"
+                }
+              ],
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "dienstdoend",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "gedurende de tijd dat hij dienstdoend is"
+              },
+              "granularity": "MAAND",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het tijdsevenredig deel per maand van zijn onderhoudstarief gedurende de tijd dat hij dienstdoend is"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -117,7 +118,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -39,51 +39,57 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening toetsdatum",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "toetsdatum",
-          "objecttype": "Vondst",
-          "bron": "De toetsdatum van een Vondst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "MIN",
-          "links": {
-            "node": "Literal",
-            "waarde": "2",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "wk"
-              }
+        "node": "Rule",
+        "name": "Berekening toetsdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "2 weken"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "aangiftedatum",
-            "objecttype": "Vondst",
-            "bron": "zijn aangiftedatum"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "2 weken min zijn aangiftedatum"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "toetsdatum",
+              "objecttype": "Vondst",
+              "bron": "De toetsdatum van een Vondst"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "MIN",
+              "links": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "wk"
+                  }
+                },
+                "bron": "2 weken"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "aangiftedatum",
+                "objecttype": "Vondst",
+                "bron": "zijn aangiftedatum"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "2 weken min zijn aangiftedatum"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -91,7 +97,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

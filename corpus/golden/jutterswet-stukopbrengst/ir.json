@@ -115,81 +115,85 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "opbrengst van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "opbrengst",
-          "objecttype": "Vondst",
-          "bron": "De opbrengst van een Vondst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "basisbedrag",
-            "objecttype": "Vondst",
-            "bron": "het basisbedrag van de Vondst"
-          },
-          "rechts": {
-            "node": "Binair",
-            "op": "MAAL",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "stuktal",
-              "objecttype": "Vondst",
-              "bron": "het stuktal van de Vondst"
+        "node": "Rule",
+        "name": "opbrengst van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "rechts": {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "stukprijs",
+              "attribuut": "opbrengst",
               "objecttype": "Vondst",
-              "bron": "de stukprijs van de Vondst"
+              "bron": "De opbrengst van een Vondst"
             },
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "basisbedrag",
+                "objecttype": "Vondst",
+                "bron": "het basisbedrag van de Vondst"
+              },
+              "rechts": {
+                "node": "Binair",
+                "op": "MAAL",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "stuktal",
+                  "objecttype": "Vondst",
+                  "bron": "het stuktal van de Vondst"
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "stukprijs",
+                  "objecttype": "Vondst",
+                  "bron": "de stukprijs van de Vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "het stuktal van de Vondst maal de stukprijs van de Vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              },
+              "bron": "het basisbedrag van de Vondst plus het stuktal van de Vondst maal de stukprijs van de Vondst"
             },
-            "bron": "het stuktal van de Vondst maal de stukprijs van de Vondst"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "EUR",
-              "system": "Munt",
-              "canonical": "EUR",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het basisbedrag van de Vondst plus het stuktal van de Vondst maal de stukprijs van de Vondst"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -197,7 +201,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -26,85 +26,100 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Losse als-dan-anders",
-        "subject": "Jutter",
-        "assertie": {
-          "node": "Predicaat",
-          "soort": "GEVULD",
-          "operand": {
-            "node": "IfThenElse",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "condition": {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "Literal",
-                "waarde": "1.00",
+        "node": "Consistency",
+        "name": "Losse als-dan-anders",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "Predicaat",
+              "soort": "GEVULD",
+              "operand": {
+                "node": "IfThenElse",
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": null
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "1.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
+                "condition": {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": null
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": null
+                  },
+                  "periode": null,
+                  "bron": null
+                },
+                "then": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": null
+                },
+                "else": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "0.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": null
                 },
                 "bron": null
               },
+              "dagsoort": null,
+              "negatie": false,
+              "cijfers": 0,
               "periode": null,
               "bron": null
             },
-            "then": {
-              "node": "Literal",
-              "waarde": "10.00",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "bron": null
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "else": {
-              "node": "Literal",
-              "waarde": "0.00",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "bron": null
-            },
-            "bron": null
-          },
-          "dagsoort": null,
-          "negatie": false,
-          "cijfers": 0,
-          "periode": null,
-          "bron": null
-        },
-        "bron": null,
-        "line": 1,
-        "geldigheid": null
+            "bron": null,
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -45,78 +45,77 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "vaartduur van een vaart",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vaartduur",
-          "objecttype": "Vaart",
-          "bron": "De vaartduur van een Vaart"
-        },
-        "waarde": {
-          "node": "Let",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "dagen"
-            }
-          },
-          "binder": "vertrekdatum",
-          "value": {
-            "node": "AttribuutRef",
-            "attribuut": "vertrek",
-            "objecttype": "Vaart",
-            "bron": "zijn vertrek"
-          },
-          "body": {
-            "node": "Functie",
-            "kind": "TIJDSDUUR",
-            "argumenten": [
-              {
-                "node": "Constante",
-                "naam": "Rekendatum",
-                "type": {
-                  "node": "Date",
-                  "precision": "day"
-                },
-                "bron": "de rekendatum"
-              },
-              {
-                "node": "BinderRef",
-                "name": "vertrekdatum",
-                "bron": "de vertrekdatum"
-              }
-            ],
-            "elementObjecttype": null,
-            "leegwaarde": null,
-            "filter": null,
-            "dimensieSelectie": null,
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "dagen"
-              }
+        "node": "Rule",
+        "name": "vaartduur van een vaart",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "de tijdsduur van de rekendatum tot de vertrekdatum in hele dagen",
-            "granulariteit": null
-          },
-          "bron": "de vertrekdatum is zijn vertrek"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vaartduur",
+              "objecttype": "Vaart",
+              "bron": "De vaartduur van een Vaart"
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "dagen"
+                }
+              },
+              "binder": "vertrekdatum",
+              "value": {
+                "node": "AttribuutRef",
+                "attribuut": "vertrek",
+                "objecttype": "Vaart",
+                "bron": "zijn vertrek"
+              },
+              "body": {
+                "node": "BuiltinCall",
+                "kind": "TIJDSDUUR",
+                "arguments": [
+                  {
+                    "node": "ContextValue",
+                    "name": "Rekendatum",
+                    "type": {
+                      "node": "Date",
+                      "precision": "day"
+                    },
+                    "bron": "de rekendatum"
+                  },
+                  {
+                    "node": "BinderRef",
+                    "name": "vertrekdatum",
+                    "bron": "de vertrekdatum"
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "dagen"
+                  }
+                },
+                "bron": "de tijdsduur van de rekendatum tot de vertrekdatum in hele dagen"
+              },
+              "bron": "de vertrekdatum is zijn vertrek"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -124,7 +123,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

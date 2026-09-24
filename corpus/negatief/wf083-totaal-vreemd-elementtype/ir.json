@@ -241,187 +241,187 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bewaarlast van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bewaarlast",
-          "objecttype": "Jutter",
-          "bron": "De bewaarlast van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TOTAAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "bewaarlast van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "bewaartarief",
-              "objecttype": "Vondst",
-              "bron": "het bewaartarief van alle vondsten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "EUR",
-              "system": "Munt",
-              "canonical": "EUR",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              },
-              "denominator": {
-                "node": "Unit",
-                "abbreviation": "mnd",
-                "system": "Bewaartijd",
-                "canonical": "mnd",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
-                }
-              }
-            }
-          },
-          "bron": "het totaal van het bewaartarief van alle vondsten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "bewaring",
-            "rol": "vondst"
-          }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "bewaarsom van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bewaarsom",
-          "objecttype": "Jutter",
-          "bron": "De bewaarsom van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "SOM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "bewaartarief",
-              "objecttype": "Vondst",
-              "bron": "het bewaartarief van alle vondsten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "EUR",
-              "system": "Munt",
-              "canonical": "EUR",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              },
-              "denominator": {
-                "node": "Unit",
-                "abbreviation": "mnd",
-                "system": "Bewaartijd",
-                "canonical": "mnd",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
-                }
-              }
-            }
-          },
-          "bron": "de som van het bewaartarief van alle vondsten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "bewaring",
-            "rol": "vondst"
-          }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "bewaargeld van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bewaargeld",
-          "objecttype": "Jutter",
-          "bron": "Het bewaargeld van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TOTAAL",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "bewaarvergoeding per maand",
+              "attribuut": "bewaarlast",
               "objecttype": "Jutter",
-              "bron": "zijn bewaarvergoeding per maand"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "EUR",
-              "system": "Munt",
-              "canonical": "EUR",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het totaal van zijn bewaarvergoeding per maand",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De bewaarlast van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "TOTAAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "bewaartarief",
+                  "objecttype": "Vondst",
+                  "bron": "het bewaartarief van alle vondsten van de Jutter"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "bewaring",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "denominator": {
+                    "node": "Unit",
+                    "abbreviation": "mnd",
+                    "system": "Bewaartijd",
+                    "canonical": "mnd",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                }
+              },
+              "bron": "het totaal van het bewaartarief van alle vondsten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bewaarsom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bewaarsom",
+              "objecttype": "Jutter",
+              "bron": "De bewaarsom van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "SOM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "bewaartarief",
+                  "objecttype": "Vondst",
+                  "bron": "het bewaartarief van alle vondsten van de Jutter"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "bewaring",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "denominator": {
+                    "node": "Unit",
+                    "abbreviation": "mnd",
+                    "system": "Bewaartijd",
+                    "canonical": "mnd",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                }
+              },
+              "bron": "de som van het bewaartarief van alle vondsten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bewaargeld van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bewaargeld",
+              "objecttype": "Jutter",
+              "bron": "Het bewaargeld van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "TOTAAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "bewaarvergoeding per maand",
+                  "objecttype": "Jutter",
+                  "bron": "zijn bewaarvergoeding per maand"
+                }
+              ],
+              "elementType": "Vondst",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "het totaal van zijn bewaarvergoeding per maand"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -429,7 +429,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

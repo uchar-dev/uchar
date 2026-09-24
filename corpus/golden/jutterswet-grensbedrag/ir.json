@@ -63,149 +63,169 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "ondergrens van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "ondergrens",
-          "objecttype": "Jutter",
-          "bron": "De ondergrens van een Jutter"
-        },
-        "waarde": {
-          "node": "Begrensd",
-          "basis": {
-            "node": "AttribuutRef",
-            "attribuut": "ruwbedrag",
-            "objecttype": "Jutter",
-            "bron": "het ruwbedrag van de Jutter"
-          },
-          "minimum": {
-            "node": "Literal",
-            "waarde": "10",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "ondergrens van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "10"
-          },
-          "maximum": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het ruwbedrag van de Jutter begrensd op minimaal 10"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "ondergrens",
+              "objecttype": "Jutter",
+              "bron": "De ondergrens van een Jutter"
+            },
+            "value": {
+              "node": "Begrensd",
+              "basis": {
+                "node": "AttribuutRef",
+                "attribuut": "ruwbedrag",
+                "objecttype": "Jutter",
+                "bron": "het ruwbedrag van de Jutter"
+              },
+              "minimum": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "10"
+              },
+              "maximum": null,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het ruwbedrag van de Jutter begrensd op minimaal 10"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "bovengrens van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bovengrens",
-          "objecttype": "Jutter",
-          "bron": "De bovengrens van een Jutter"
-        },
-        "waarde": {
-          "node": "Begrensd",
-          "basis": {
-            "node": "AttribuutRef",
-            "attribuut": "ruwbedrag",
-            "objecttype": "Jutter",
-            "bron": "het ruwbedrag van de Jutter"
-          },
-          "minimum": null,
-          "maximum": {
-            "node": "Literal",
-            "waarde": "100",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "bovengrens van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "100"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het ruwbedrag van de Jutter begrensd op maximaal 100"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bovengrens",
+              "objecttype": "Jutter",
+              "bron": "De bovengrens van een Jutter"
+            },
+            "value": {
+              "node": "Begrensd",
+              "basis": {
+                "node": "AttribuutRef",
+                "attribuut": "ruwbedrag",
+                "objecttype": "Jutter",
+                "bron": "het ruwbedrag van de Jutter"
+              },
+              "minimum": null,
+              "maximum": {
+                "node": "Literal",
+                "value": {
+                  "number": "100"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "100"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het ruwbedrag van de Jutter begrensd op maximaal 100"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "bandbreedte van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bandbreedte",
-          "objecttype": "Jutter",
-          "bron": "De bandbreedte van een Jutter"
-        },
-        "waarde": {
-          "node": "Begrensd",
-          "basis": {
-            "node": "AttribuutRef",
-            "attribuut": "ruwbedrag",
-            "objecttype": "Jutter",
-            "bron": "het ruwbedrag van de Jutter"
-          },
-          "minimum": {
-            "node": "Literal",
-            "waarde": "10",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "bandbreedte van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "10"
-          },
-          "maximum": {
-            "node": "Literal",
-            "waarde": "100",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bandbreedte",
+              "objecttype": "Jutter",
+              "bron": "De bandbreedte van een Jutter"
             },
-            "bron": "100"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het ruwbedrag van de Jutter begrensd op minimaal 10 en maximaal 100"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "value": {
+              "node": "Begrensd",
+              "basis": {
+                "node": "AttribuutRef",
+                "attribuut": "ruwbedrag",
+                "objecttype": "Jutter",
+                "bron": "het ruwbedrag van de Jutter"
+              },
+              "minimum": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "10"
+              },
+              "maximum": {
+                "node": "Literal",
+                "value": {
+                  "number": "100"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "100"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het ruwbedrag van de Jutter begrensd op minimaal 10 en maximaal 100"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -213,7 +233,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

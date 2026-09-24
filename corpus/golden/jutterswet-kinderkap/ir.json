@@ -47,76 +47,107 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "kaptotaal van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "kaptotaal",
-          "objecttype": "Jutter",
-          "bron": "Het kaptotaal van een Jutter"
-        },
-        "waarde": {
-          "node": "Fold",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 5,
-            "sign": "ONBEPAALD"
-          },
-          "list": {
-            "node": "ParameterRef",
-            "parameter": "kindertallen",
-            "bron": "de kindertallen"
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "acc",
-                "datatype": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 5,
-                  "sign": "ONBEPAALD"
-                }
+        "node": "Rule",
+        "name": "kaptotaal van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "kaptotaal",
+              "objecttype": "Jutter",
+              "bron": "Het kaptotaal van een Jutter"
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 5,
+                "sign": "ONBEPAALD"
               },
-              {
-                "name": "x",
-                "datatype": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
-                }
-              }
-            ],
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "acc",
-                "bron": "het opgetelde kapdeel"
+              "list": {
+                "node": "ParameterRef",
+                "parameter": "kindertallen",
+                "bron": "de kindertallen"
               },
-              "rechts": {
-                "node": "Binair",
-                "op": "GEDEELD_DOOR_ABS",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "x",
-                  "bron": "het kindertal"
-                },
-                "rechts": {
-                  "node": "Literal",
-                  "waarde": "3",
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 5,
+                      "sign": "ONBEPAALD"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "bron": "het opgetelde kapdeel"
+                  },
+                  "rechts": {
+                    "node": "Binair",
+                    "op": "GEDEELD_DOOR_ABS",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "x",
+                      "bron": "het kindertal"
+                    },
+                    "rechts": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "3"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "3"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 5,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "het kindertal absoluut gedeeld door 3"
+                  },
                   "type": {
                     "node": "Number",
-                    "whole": true,
-                    "decimals": 0,
+                    "whole": false,
+                    "decimals": 5,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "3"
+                  "bron": "het opgetelde kapdeel plus het kapdeel"
+                },
+                "bron": "de kapdelen opgeteld"
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0.00000"
                 },
                 "type": {
                   "node": "Number",
@@ -124,37 +155,14 @@
                   "decimals": 5,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "het kindertal absoluut gedeeld door 3"
+                "bron": "0.00000"
               },
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 5,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "het opgetelde kapdeel plus het kapdeel"
+              "bron": "de kindertallen gevouwen tot het kaptotaal"
             },
-            "bron": "de kapdelen opgeteld"
-          },
-          "init": {
-            "node": "Literal",
-            "waarde": "0.00000",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 5,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "0.00000"
-          },
-          "bron": "de kindertallen gevouwen tot het kaptotaal"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -162,7 +170,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

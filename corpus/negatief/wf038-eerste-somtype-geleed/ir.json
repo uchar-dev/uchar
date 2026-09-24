@@ -114,64 +114,63 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bergstand van een berging",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bergstand",
-          "objecttype": "Berging",
-          "bron": "de bergstand"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "EERSTE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "bakboordstand",
-              "objecttype": "Berging",
-              "bron": "zijn bakboordstand"
+        "node": "Rule",
+        "name": "bergstand van een berging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "stuurboordstand",
+              "attribuut": "bergstand",
               "objecttype": "Berging",
-              "bron": "zijn stuurboordstand"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "SumType",
-            "domain": "stand",
-            "constructors": [
-              {
-                "name": "Geborgen",
-                "payload": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
+              "bron": "de bergstand"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "EERSTE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "bakboordstand",
+                  "objecttype": "Berging",
+                  "bron": "zijn bakboordstand"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "stuurboordstand",
+                  "objecttype": "Berging",
+                  "bron": "zijn stuurboordstand"
                 }
+              ],
+              "type": {
+                "node": "SumType",
+                "domain": "stand",
+                "constructors": [
+                  {
+                    "name": "Geborgen",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  },
+                  {
+                    "name": "Vermist",
+                    "payload": null
+                  }
+                ]
               },
-              {
-                "name": "Vermist",
-                "payload": null
-              }
-            ]
-          },
-          "bron": "de eerste van zijn bakboordstand en zijn stuurboordstand",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "de eerste van zijn bakboordstand en zijn stuurboordstand"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -179,7 +178,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

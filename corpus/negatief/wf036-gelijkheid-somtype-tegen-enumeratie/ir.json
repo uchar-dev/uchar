@@ -112,57 +112,66 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "uitkering",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uitkering",
-          "objecttype": "Jutter",
-          "bron": "de uitkering"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "5.00",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "5.00"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "beschikking",
-            "objecttype": "Jutter",
-            "bron": "de beschikking"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "Afgewezen",
-            "type": {
-              "node": "Enumeratie",
-              "domein": "beschikking",
-              "waarden": [
-                "Toegekend",
-                "Afgewezen",
-                "Aangehouden"
-              ]
+        "node": "Rule",
+        "name": "uitkering",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "Afgewezen"
-          },
-          "periode": null,
-          "bron": null
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "uitkering",
+              "objecttype": "Jutter",
+              "bron": "de uitkering"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "5.00"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "beschikking",
+                "objecttype": "Jutter",
+                "bron": "de beschikking"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "enumeration": "Afgewezen"
+                },
+                "type": {
+                  "node": "Enumeratie",
+                  "domein": "beschikking",
+                  "waarden": [
+                    "Toegekend",
+                    "Afgewezen",
+                    "Aangehouden"
+                  ]
+                },
+                "bron": "Afgewezen"
+              },
+              "periode": null,
+              "bron": null
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -170,7 +179,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -80,27 +80,31 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "kopie van het gewicht",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "kopie",
-          "objecttype": "Jutter",
-          "bron": "de kopie van de Jutter"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "gewicht",
-          "objecttype": "Jutter",
-          "bron": "het gewicht van de Jutter"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "kopie van het gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "kopie",
+              "objecttype": "Jutter",
+              "bron": "de kopie van de Jutter"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "gewicht",
+              "objecttype": "Jutter",
+              "bron": "het gewicht van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -108,7 +112,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

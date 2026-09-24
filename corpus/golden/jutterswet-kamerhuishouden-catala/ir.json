@@ -303,7 +303,9 @@
             },
             "rechts": {
               "node": "Literal",
-              "waarde": "2",
+              "value": {
+                "number": "2"
+              },
               "type": {
                 "node": "Number",
                 "whole": true,
@@ -327,7 +329,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "0.1500",
+                "value": {
+                  "number": "0.1500"
+                },
                 "type": {
                   "node": "Number",
                   "whole": false,
@@ -366,7 +370,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "0.2000",
+                "value": {
+                  "number": "0.2000"
+                },
                 "type": {
                   "node": "Number",
                   "whole": false,
@@ -527,7 +533,9 @@
             "op": "MAAL",
             "links": {
               "node": "Literal",
-              "waarde": "1000.00",
+              "value": {
+                "number": "1000.00"
+              },
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -541,7 +549,9 @@
               "op": "PLUS",
               "links": {
                 "node": "Literal",
-                "waarde": "1.0000",
+                "value": {
+                  "number": "1.0000"
+                },
                 "type": {
                   "node": "Number",
                   "whole": false,
@@ -571,7 +581,9 @@
                 },
                 "rechts": {
                   "node": "Literal",
-                  "waarde": "4.0000",
+                  "value": {
+                    "number": "4.0000"
+                  },
                   "type": {
                     "node": "Number",
                     "whole": false,
@@ -621,49 +633,1063 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "berekening kamerbedrag",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "kamerbedrag",
-          "objecttype": "JutterAandeel",
-          "bron": "de kamerbedrag"
-        },
-        "waarde": {
-          "node": "Afgerond",
-          "basis": {
-            "node": "Binair",
-            "op": "MAAL",
-            "links": {
-              "node": "Literal",
-              "waarde": "1000.00",
+        "node": "Rule",
+        "name": "berekening kamerbedrag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "kamerbedrag",
+              "objecttype": "JutterAandeel",
+              "bron": "de kamerbedrag"
+            },
+            "value": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "Binair",
+                "op": "MAAL",
+                "links": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "1000.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "1000.00"
+                },
+                "rechts": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1.0000"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 4,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "1.0000"
+                  },
+                  "rechts": {
+                    "node": "Binair",
+                    "op": "GEDEELD_DOOR",
+                    "links": {
+                      "node": "FieldAccess",
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
+                      },
+                      "base": {
+                        "node": "AttribuutRef",
+                        "attribuut": "jutter",
+                        "objecttype": "JutterAandeel",
+                        "bron": "de jutter"
+                      },
+                      "field": "kinderen",
+                      "bron": null
+                    },
+                    "rechts": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "4.0000"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 4,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "4.0000"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 4,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": null
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 4,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": null
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": null
+              },
+              "modus": "REKENKUNDIG",
+              "decimalen": 2,
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "1000.00"
+              "bron": null
             },
-            "rechts": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "berekening aftrek",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aftrek",
+              "objecttype": "JutterAandeel",
+              "bron": "de aftrek"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "bedrag",
+              "objecttype": "Vangstheffing",
+              "bron": "de bedrag van de heffing",
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "JutterAandeel_heffing",
+                  "rol": "heffing"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "berekening totale_aftrek basis",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "totale_aftrek basis",
+              "objecttype": "Kamerheffing",
+              "bron": "de totale_aftrek basis"
+            },
+            "value": {
+              "node": "Match",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "scrutinee": {
+                "node": "Fold",
+                "type": {
+                  "node": "SumType",
+                  "domain": "Optional",
+                  "constructors": [
+                    {
+                      "name": "Absent",
+                      "payload": null
+                    },
+                    {
+                      "name": "Present",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      }
+                    }
+                  ]
+                },
+                "list": {
+                  "node": "MapList",
+                  "type": {
+                    "node": "ListType",
+                    "element": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    }
+                  },
+                  "list": {
+                    "node": "AttribuutRef",
+                    "attribuut": "jutters",
+                    "objecttype": "Kamerheffing",
+                    "bron": "de jutters"
+                  },
+                  "function": {
+                    "node": "Lambda",
+                    "parameters": [
+                      {
+                        "name": "jutter",
+                        "datatype": {
+                          "node": "StructType",
+                          "domain": "Jutter",
+                          "fields": [
+                            {
+                              "name": "vangst",
+                              "datatype": {
+                                "node": "Number",
+                                "whole": false,
+                                "decimals": 2,
+                                "sign": "ONBEPAALD"
+                              }
+                            },
+                            {
+                              "name": "kinderen",
+                              "datatype": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "ONBEPAALD"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "body": {
+                      "node": "Invoke",
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "function": "JutterAandeel aftrek",
+                      "arguments": [
+                        {
+                          "node": "BinderRef",
+                          "name": "jutter",
+                          "bron": "jutter"
+                        }
+                      ],
+                      "bron": "JutterAandeel aftrek"
+                    },
+                    "bron": "jutter"
+                  },
+                  "bron": null
+                },
+                "function": {
+                  "node": "Lambda",
+                  "parameters": [
+                    {
+                      "name": "geaccumuleerde optie",
+                      "datatype": {
+                        "node": "SumType",
+                        "domain": "Optional",
+                        "constructors": [
+                          {
+                            "name": "Absent",
+                            "payload": null
+                          },
+                          {
+                            "name": "Present",
+                            "payload": {
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "ONBEPAALD"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "name": "sum2",
+                      "datatype": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      }
+                    }
+                  ],
+                  "body": {
+                    "node": "Match",
+                    "type": {
+                      "node": "SumType",
+                      "domain": "Optional",
+                      "constructors": [
+                        {
+                          "name": "Absent",
+                          "payload": null
+                        },
+                        {
+                          "name": "Present",
+                          "payload": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "ONBEPAALD"
+                          }
+                        }
+                      ]
+                    },
+                    "scrutinee": {
+                      "node": "BinderRef",
+                      "name": "geaccumuleerde optie",
+                      "bron": "geaccumuleerde optie"
+                    },
+                    "arms": [
+                      {
+                        "constructor": "Absent",
+                        "binder": null,
+                        "body": {
+                          "node": "Construct",
+                          "type": {
+                            "node": "SumType",
+                            "domain": "Optional",
+                            "constructors": [
+                              {
+                                "name": "Absent",
+                                "payload": null
+                              },
+                              {
+                                "name": "Present",
+                                "payload": {
+                                  "node": "Number",
+                                  "whole": false,
+                                  "decimals": 2,
+                                  "sign": "ONBEPAALD"
+                                }
+                              }
+                            ]
+                          },
+                          "constructor": "Present",
+                          "argument": {
+                            "node": "BinderRef",
+                            "name": "sum2",
+                            "bron": "sum2"
+                          },
+                          "bron": "Present"
+                        }
+                      },
+                      {
+                        "constructor": "Present",
+                        "binder": "sum1",
+                        "body": {
+                          "node": "Construct",
+                          "type": {
+                            "node": "SumType",
+                            "domain": "Optional",
+                            "constructors": [
+                              {
+                                "name": "Absent",
+                                "payload": null
+                              },
+                              {
+                                "name": "Present",
+                                "payload": {
+                                  "node": "Number",
+                                  "whole": false,
+                                  "decimals": 2,
+                                  "sign": "ONBEPAALD"
+                                }
+                              }
+                            ]
+                          },
+                          "constructor": "Present",
+                          "argument": {
+                            "node": "Binair",
+                            "op": "PLUS",
+                            "links": {
+                              "node": "BinderRef",
+                              "name": "sum1",
+                              "bron": "sum1"
+                            },
+                            "rechts": {
+                              "node": "BinderRef",
+                              "name": "sum2",
+                              "bron": "sum2"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "ONBEPAALD"
+                            },
+                            "bron": null
+                          },
+                          "bron": "Present"
+                        }
+                      }
+                    ],
+                    "bron": "de volgende vouwstap"
+                  },
+                  "bron": "de vouwstap"
+                },
+                "init": {
+                  "node": "Construct",
+                  "type": {
+                    "node": "SumType",
+                    "domain": "Optional",
+                    "constructors": [
+                      {
+                        "name": "Absent",
+                        "payload": null
+                      },
+                      {
+                        "name": "Present",
+                        "payload": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "ONBEPAALD"
+                        }
+                      }
+                    ]
+                  },
+                  "constructor": "Absent",
+                  "argument": null,
+                  "bron": "Absent"
+                },
+                "bron": "gevouwen tot een optionele waarde"
+              },
+              "arms": [
+                {
+                  "constructor": "Absent",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0.00"
+                  }
+                },
+                {
+                  "constructor": "Present",
+                  "binder": "x",
+                  "body": {
+                    "node": "BinderRef",
+                    "name": "x",
+                    "bron": "x"
+                  }
+                }
+              ],
+              "bron": "de gevouwen waarde uitgepakt"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "berekening totale_aftrek begrensd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "totale_aftrek begrensd",
+              "objecttype": "Kamerheffing",
+              "bron": "de totale_aftrek begrensd"
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "binder": "cap",
+              "value": {
                 "node": "Literal",
-                "waarde": "1.0000",
+                "value": {
+                  "number": "500.00"
+                },
                 "type": {
                   "node": "Number",
                   "whole": false,
-                  "decimals": 4,
+                  "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "1.0000"
+                "bron": "500.00"
               },
-              "rechts": {
-                "node": "Binair",
-                "op": "GEDEELD_DOOR",
-                "links": {
+              "body": {
+                "node": "Let",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "binder": "raw",
+                "value": {
+                  "node": "AttribuutRef",
+                  "attribuut": "totale_aftrek basis",
+                  "objecttype": "Kamerheffing",
+                  "bron": "de totale_aftrek basis"
+                },
+                "body": {
+                  "node": "IfThenElse",
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "condition": {
+                    "node": "Vergelijking",
+                    "op": "GROTER",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "raw",
+                      "bron": "raw"
+                    },
+                    "rechts": {
+                      "node": "BinderRef",
+                      "name": "cap",
+                      "bron": "cap"
+                    },
+                    "periode": null,
+                    "bron": null
+                  },
+                  "then": {
+                    "node": "BinderRef",
+                    "name": "cap",
+                    "bron": "cap"
+                  },
+                  "else": {
+                    "node": "BinderRef",
+                    "name": "raw",
+                    "bron": "raw"
+                  },
+                  "bron": null
+                },
+                "bron": "raw"
+              },
+              "bron": "cap"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "berekening heffing basis",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "heffing basis",
+              "objecttype": "Kamerheffing",
+              "bron": "de heffing basis"
+            },
+            "value": {
+              "node": "Match",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "scrutinee": {
+                "node": "Fold",
+                "type": {
+                  "node": "SumType",
+                  "domain": "Optional",
+                  "constructors": [
+                    {
+                      "name": "Absent",
+                      "payload": null
+                    },
+                    {
+                      "name": "Present",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      }
+                    }
+                  ]
+                },
+                "list": {
+                  "node": "MapList",
+                  "type": {
+                    "node": "ListType",
+                    "element": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    }
+                  },
+                  "list": {
+                    "node": "AttribuutRef",
+                    "attribuut": "jutters",
+                    "objecttype": "Kamerheffing",
+                    "bron": "de jutters"
+                  },
+                  "function": {
+                    "node": "Lambda",
+                    "parameters": [
+                      {
+                        "name": "jutter",
+                        "datatype": {
+                          "node": "StructType",
+                          "domain": "Jutter",
+                          "fields": [
+                            {
+                              "name": "vangst",
+                              "datatype": {
+                                "node": "Number",
+                                "whole": false,
+                                "decimals": 2,
+                                "sign": "ONBEPAALD"
+                              }
+                            },
+                            {
+                              "name": "kinderen",
+                              "datatype": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "ONBEPAALD"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "body": {
+                      "node": "Invoke",
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "function": "JutterAandeel kamerbedrag",
+                      "arguments": [
+                        {
+                          "node": "BinderRef",
+                          "name": "jutter",
+                          "bron": "jutter"
+                        }
+                      ],
+                      "bron": "JutterAandeel kamerbedrag"
+                    },
+                    "bron": "jutter"
+                  },
+                  "bron": null
+                },
+                "function": {
+                  "node": "Lambda",
+                  "parameters": [
+                    {
+                      "name": "geaccumuleerde optie",
+                      "datatype": {
+                        "node": "SumType",
+                        "domain": "Optional",
+                        "constructors": [
+                          {
+                            "name": "Absent",
+                            "payload": null
+                          },
+                          {
+                            "name": "Present",
+                            "payload": {
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "ONBEPAALD"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "name": "sum2",
+                      "datatype": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      }
+                    }
+                  ],
+                  "body": {
+                    "node": "Match",
+                    "type": {
+                      "node": "SumType",
+                      "domain": "Optional",
+                      "constructors": [
+                        {
+                          "name": "Absent",
+                          "payload": null
+                        },
+                        {
+                          "name": "Present",
+                          "payload": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "ONBEPAALD"
+                          }
+                        }
+                      ]
+                    },
+                    "scrutinee": {
+                      "node": "BinderRef",
+                      "name": "geaccumuleerde optie",
+                      "bron": "geaccumuleerde optie"
+                    },
+                    "arms": [
+                      {
+                        "constructor": "Absent",
+                        "binder": null,
+                        "body": {
+                          "node": "Construct",
+                          "type": {
+                            "node": "SumType",
+                            "domain": "Optional",
+                            "constructors": [
+                              {
+                                "name": "Absent",
+                                "payload": null
+                              },
+                              {
+                                "name": "Present",
+                                "payload": {
+                                  "node": "Number",
+                                  "whole": false,
+                                  "decimals": 2,
+                                  "sign": "ONBEPAALD"
+                                }
+                              }
+                            ]
+                          },
+                          "constructor": "Present",
+                          "argument": {
+                            "node": "BinderRef",
+                            "name": "sum2",
+                            "bron": "sum2"
+                          },
+                          "bron": "Present"
+                        }
+                      },
+                      {
+                        "constructor": "Present",
+                        "binder": "sum1",
+                        "body": {
+                          "node": "Construct",
+                          "type": {
+                            "node": "SumType",
+                            "domain": "Optional",
+                            "constructors": [
+                              {
+                                "name": "Absent",
+                                "payload": null
+                              },
+                              {
+                                "name": "Present",
+                                "payload": {
+                                  "node": "Number",
+                                  "whole": false,
+                                  "decimals": 2,
+                                  "sign": "ONBEPAALD"
+                                }
+                              }
+                            ]
+                          },
+                          "constructor": "Present",
+                          "argument": {
+                            "node": "Binair",
+                            "op": "PLUS",
+                            "links": {
+                              "node": "BinderRef",
+                              "name": "sum1",
+                              "bron": "sum1"
+                            },
+                            "rechts": {
+                              "node": "BinderRef",
+                              "name": "sum2",
+                              "bron": "sum2"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "ONBEPAALD"
+                            },
+                            "bron": null
+                          },
+                          "bron": "Present"
+                        }
+                      }
+                    ],
+                    "bron": "de volgende vouwstap"
+                  },
+                  "bron": "de vouwstap"
+                },
+                "init": {
+                  "node": "Construct",
+                  "type": {
+                    "node": "SumType",
+                    "domain": "Optional",
+                    "constructors": [
+                      {
+                        "name": "Absent",
+                        "payload": null
+                      },
+                      {
+                        "name": "Present",
+                        "payload": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "ONBEPAALD"
+                        }
+                      }
+                    ]
+                  },
+                  "constructor": "Absent",
+                  "argument": null,
+                  "bron": "Absent"
+                },
+                "bron": "gevouwen tot een optionele waarde"
+              },
+              "arms": [
+                {
+                  "constructor": "Absent",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0.00"
+                  }
+                },
+                {
+                  "constructor": "Present",
+                  "binder": "x",
+                  "body": {
+                    "node": "BinderRef",
+                    "name": "x",
+                    "bron": "x"
+                  }
+                }
+              ],
+              "bron": "de gevouwen waarde uitgepakt"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "berekening heffing na_aftrek",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "heffing na_aftrek",
+              "objecttype": "Kamerheffing",
+              "bron": "de heffing na_aftrek"
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "binder": "basis",
+              "value": {
+                "node": "AttribuutRef",
+                "attribuut": "heffing basis",
+                "objecttype": "Kamerheffing",
+                "bron": "de heffing basis"
+              },
+              "body": {
+                "node": "Let",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "binder": "afgetrokken",
+                "value": {
+                  "node": "AttribuutRef",
+                  "attribuut": "totale_aftrek begrensd",
+                  "objecttype": "Kamerheffing",
+                  "bron": "de totale_aftrek begrensd"
+                },
+                "body": {
+                  "node": "IfThenElse",
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "condition": {
+                    "node": "Vergelijking",
+                    "op": "GROTER",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "afgetrokken",
+                      "bron": "afgetrokken"
+                    },
+                    "rechts": {
+                      "node": "BinderRef",
+                      "name": "basis",
+                      "bron": "basis"
+                    },
+                    "periode": null,
+                    "bron": null
+                  },
+                  "then": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0.00"
+                  },
+                  "else": {
+                    "node": "Binair",
+                    "op": "VERMINDERD_MET",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "basis",
+                      "bron": "basis"
+                    },
+                    "rechts": {
+                      "node": "BinderRef",
+                      "name": "afgetrokken",
+                      "bron": "afgetrokken"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": null
+                  },
+                  "bron": null
+                },
+                "bron": "afgetrokken"
+              },
+              "bron": "basis"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [
+      {
+        "node": "ObjectCreation",
+        "name": "richt heffing op",
+        "versions": [
+          {
+            "createdType": "Vangstheffing",
+            "subject": "JutterAandeel",
+            "initialisations": [
+              {
+                "node": "Toekenning",
+                "attribuut": "vangst",
+                "waarde": {
+                  "node": "FieldAccess",
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "base": {
+                    "node": "AttribuutRef",
+                    "attribuut": "jutter",
+                    "objecttype": "JutterAandeel",
+                    "bron": "de jutter"
+                  },
+                  "field": "vangst",
+                  "bron": null
+                },
+                "kenmerk": false
+              },
+              {
+                "node": "Toekenning",
+                "attribuut": "kinderen",
+                "waarde": {
                   "node": "FieldAccess",
                   "type": {
                     "node": "Number",
@@ -680,1000 +1706,26 @@
                   "field": "kinderen",
                   "bron": null
                 },
-                "rechts": {
-                  "node": "Literal",
-                  "waarde": "4.0000",
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 4,
-                    "sign": "ONBEPAALD"
-                  },
-                  "bron": "4.0000"
-                },
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 4,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": null
-              },
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 4,
-                "sign": "ONBEPAALD"
-              },
-              "bron": null
+                "kenmerk": false
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "bron": null
-          },
-          "modus": "REKENKUNDIG",
-          "decimalen": 2,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "berekening aftrek",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aftrek",
-          "objecttype": "JutterAandeel",
-          "bron": "de aftrek"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "bedrag",
-          "objecttype": "Vangstheffing",
-          "bron": "de bedrag van de heffing",
-          "navigatieBindingen": [
-            {
+            "connectingRole": {
               "node": "RolBinding",
               "feittype": "JutterAandeel_heffing",
               "rol": "heffing"
             }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "berekening totale_aftrek basis",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "totale_aftrek basis",
-          "objecttype": "Kamerheffing",
-          "bron": "de totale_aftrek basis"
-        },
-        "waarde": {
-          "node": "Match",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "scrutinee": {
-            "node": "Fold",
-            "type": {
-              "node": "SumType",
-              "domain": "Optional",
-              "constructors": [
-                {
-                  "name": "Absent",
-                  "payload": null
-                },
-                {
-                  "name": "Present",
-                  "payload": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  }
-                }
-              ]
-            },
-            "list": {
-              "node": "MapList",
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                }
-              },
-              "list": {
-                "node": "AttribuutRef",
-                "attribuut": "jutters",
-                "objecttype": "Kamerheffing",
-                "bron": "de jutters"
-              },
-              "function": {
-                "node": "Lambda",
-                "parameters": [
-                  {
-                    "name": "jutter",
-                    "datatype": {
-                      "node": "StructType",
-                      "domain": "Jutter",
-                      "fields": [
-                        {
-                          "name": "vangst",
-                          "datatype": {
-                            "node": "Number",
-                            "whole": false,
-                            "decimals": 2,
-                            "sign": "ONBEPAALD"
-                          }
-                        },
-                        {
-                          "name": "kinderen",
-                          "datatype": {
-                            "node": "Number",
-                            "whole": true,
-                            "decimals": 0,
-                            "sign": "ONBEPAALD"
-                          }
-                        }
-                      ]
-                    }
-                  }
-                ],
-                "body": {
-                  "node": "Invoke",
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  },
-                  "function": "JutterAandeel aftrek",
-                  "arguments": [
-                    {
-                      "node": "BinderRef",
-                      "name": "jutter",
-                      "bron": "jutter"
-                    }
-                  ],
-                  "bron": "JutterAandeel aftrek"
-                },
-                "bron": "jutter"
-              },
-              "bron": null
-            },
-            "function": {
-              "node": "Lambda",
-              "parameters": [
-                {
-                  "name": "geaccumuleerde optie",
-                  "datatype": {
-                    "node": "SumType",
-                    "domain": "Optional",
-                    "constructors": [
-                      {
-                        "name": "Absent",
-                        "payload": null
-                      },
-                      {
-                        "name": "Present",
-                        "payload": {
-                          "node": "Number",
-                          "whole": false,
-                          "decimals": 2,
-                          "sign": "ONBEPAALD"
-                        }
-                      }
-                    ]
-                  }
-                },
-                {
-                  "name": "sum2",
-                  "datatype": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  }
-                }
-              ],
-              "body": {
-                "node": "Match",
-                "type": {
-                  "node": "SumType",
-                  "domain": "Optional",
-                  "constructors": [
-                    {
-                      "name": "Absent",
-                      "payload": null
-                    },
-                    {
-                      "name": "Present",
-                      "payload": {
-                        "node": "Number",
-                        "whole": false,
-                        "decimals": 2,
-                        "sign": "ONBEPAALD"
-                      }
-                    }
-                  ]
-                },
-                "scrutinee": {
-                  "node": "BinderRef",
-                  "name": "geaccumuleerde optie",
-                  "bron": "geaccumuleerde optie"
-                },
-                "arms": [
-                  {
-                    "constructor": "Absent",
-                    "binder": null,
-                    "body": {
-                      "node": "Construct",
-                      "type": {
-                        "node": "SumType",
-                        "domain": "Optional",
-                        "constructors": [
-                          {
-                            "name": "Absent",
-                            "payload": null
-                          },
-                          {
-                            "name": "Present",
-                            "payload": {
-                              "node": "Number",
-                              "whole": false,
-                              "decimals": 2,
-                              "sign": "ONBEPAALD"
-                            }
-                          }
-                        ]
-                      },
-                      "constructor": "Present",
-                      "argument": {
-                        "node": "BinderRef",
-                        "name": "sum2",
-                        "bron": "sum2"
-                      },
-                      "bron": "Present"
-                    }
-                  },
-                  {
-                    "constructor": "Present",
-                    "binder": "sum1",
-                    "body": {
-                      "node": "Construct",
-                      "type": {
-                        "node": "SumType",
-                        "domain": "Optional",
-                        "constructors": [
-                          {
-                            "name": "Absent",
-                            "payload": null
-                          },
-                          {
-                            "name": "Present",
-                            "payload": {
-                              "node": "Number",
-                              "whole": false,
-                              "decimals": 2,
-                              "sign": "ONBEPAALD"
-                            }
-                          }
-                        ]
-                      },
-                      "constructor": "Present",
-                      "argument": {
-                        "node": "Binair",
-                        "op": "PLUS",
-                        "links": {
-                          "node": "BinderRef",
-                          "name": "sum1",
-                          "bron": "sum1"
-                        },
-                        "rechts": {
-                          "node": "BinderRef",
-                          "name": "sum2",
-                          "bron": "sum2"
-                        },
-                        "type": {
-                          "node": "Number",
-                          "whole": false,
-                          "decimals": 2,
-                          "sign": "ONBEPAALD"
-                        },
-                        "bron": null
-                      },
-                      "bron": "Present"
-                    }
-                  }
-                ],
-                "bron": "de volgende vouwstap"
-              },
-              "bron": "de vouwstap"
-            },
-            "init": {
-              "node": "Construct",
-              "type": {
-                "node": "SumType",
-                "domain": "Optional",
-                "constructors": [
-                  {
-                    "name": "Absent",
-                    "payload": null
-                  },
-                  {
-                    "name": "Present",
-                    "payload": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 2,
-                      "sign": "ONBEPAALD"
-                    }
-                  }
-                ]
-              },
-              "constructor": "Absent",
-              "argument": null,
-              "bron": "Absent"
-            },
-            "bron": "gevouwen tot een optionele waarde"
-          },
-          "arms": [
-            {
-              "constructor": "Absent",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "0.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0.00"
-              }
-            },
-            {
-              "constructor": "Present",
-              "binder": "x",
-              "body": {
-                "node": "BinderRef",
-                "name": "x",
-                "bron": "x"
-              }
-            }
-          ],
-          "bron": "de gevouwen waarde uitgepakt"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "berekening totale_aftrek begrensd",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "totale_aftrek begrensd",
-          "objecttype": "Kamerheffing",
-          "bron": "de totale_aftrek begrensd"
-        },
-        "waarde": {
-          "node": "Let",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "binder": "cap",
-          "value": {
-            "node": "Literal",
-            "waarde": "500.00",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "500.00"
-          },
-          "body": {
-            "node": "Let",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "binder": "raw",
-            "value": {
-              "node": "AttribuutRef",
-              "attribuut": "totale_aftrek basis",
-              "objecttype": "Kamerheffing",
-              "bron": "de totale_aftrek basis"
-            },
-            "body": {
-              "node": "IfThenElse",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "condition": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "raw",
-                  "bron": "raw"
-                },
-                "rechts": {
-                  "node": "BinderRef",
-                  "name": "cap",
-                  "bron": "cap"
-                },
-                "periode": null,
-                "bron": null
-              },
-              "then": {
-                "node": "BinderRef",
-                "name": "cap",
-                "bron": "cap"
-              },
-              "else": {
-                "node": "BinderRef",
-                "name": "raw",
-                "bron": "raw"
-              },
-              "bron": null
-            },
-            "bron": "raw"
-          },
-          "bron": "cap"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "berekening heffing basis",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "heffing basis",
-          "objecttype": "Kamerheffing",
-          "bron": "de heffing basis"
-        },
-        "waarde": {
-          "node": "Match",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "scrutinee": {
-            "node": "Fold",
-            "type": {
-              "node": "SumType",
-              "domain": "Optional",
-              "constructors": [
-                {
-                  "name": "Absent",
-                  "payload": null
-                },
-                {
-                  "name": "Present",
-                  "payload": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  }
-                }
-              ]
-            },
-            "list": {
-              "node": "MapList",
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                }
-              },
-              "list": {
-                "node": "AttribuutRef",
-                "attribuut": "jutters",
-                "objecttype": "Kamerheffing",
-                "bron": "de jutters"
-              },
-              "function": {
-                "node": "Lambda",
-                "parameters": [
-                  {
-                    "name": "jutter",
-                    "datatype": {
-                      "node": "StructType",
-                      "domain": "Jutter",
-                      "fields": [
-                        {
-                          "name": "vangst",
-                          "datatype": {
-                            "node": "Number",
-                            "whole": false,
-                            "decimals": 2,
-                            "sign": "ONBEPAALD"
-                          }
-                        },
-                        {
-                          "name": "kinderen",
-                          "datatype": {
-                            "node": "Number",
-                            "whole": true,
-                            "decimals": 0,
-                            "sign": "ONBEPAALD"
-                          }
-                        }
-                      ]
-                    }
-                  }
-                ],
-                "body": {
-                  "node": "Invoke",
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  },
-                  "function": "JutterAandeel kamerbedrag",
-                  "arguments": [
-                    {
-                      "node": "BinderRef",
-                      "name": "jutter",
-                      "bron": "jutter"
-                    }
-                  ],
-                  "bron": "JutterAandeel kamerbedrag"
-                },
-                "bron": "jutter"
-              },
-              "bron": null
-            },
-            "function": {
-              "node": "Lambda",
-              "parameters": [
-                {
-                  "name": "geaccumuleerde optie",
-                  "datatype": {
-                    "node": "SumType",
-                    "domain": "Optional",
-                    "constructors": [
-                      {
-                        "name": "Absent",
-                        "payload": null
-                      },
-                      {
-                        "name": "Present",
-                        "payload": {
-                          "node": "Number",
-                          "whole": false,
-                          "decimals": 2,
-                          "sign": "ONBEPAALD"
-                        }
-                      }
-                    ]
-                  }
-                },
-                {
-                  "name": "sum2",
-                  "datatype": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  }
-                }
-              ],
-              "body": {
-                "node": "Match",
-                "type": {
-                  "node": "SumType",
-                  "domain": "Optional",
-                  "constructors": [
-                    {
-                      "name": "Absent",
-                      "payload": null
-                    },
-                    {
-                      "name": "Present",
-                      "payload": {
-                        "node": "Number",
-                        "whole": false,
-                        "decimals": 2,
-                        "sign": "ONBEPAALD"
-                      }
-                    }
-                  ]
-                },
-                "scrutinee": {
-                  "node": "BinderRef",
-                  "name": "geaccumuleerde optie",
-                  "bron": "geaccumuleerde optie"
-                },
-                "arms": [
-                  {
-                    "constructor": "Absent",
-                    "binder": null,
-                    "body": {
-                      "node": "Construct",
-                      "type": {
-                        "node": "SumType",
-                        "domain": "Optional",
-                        "constructors": [
-                          {
-                            "name": "Absent",
-                            "payload": null
-                          },
-                          {
-                            "name": "Present",
-                            "payload": {
-                              "node": "Number",
-                              "whole": false,
-                              "decimals": 2,
-                              "sign": "ONBEPAALD"
-                            }
-                          }
-                        ]
-                      },
-                      "constructor": "Present",
-                      "argument": {
-                        "node": "BinderRef",
-                        "name": "sum2",
-                        "bron": "sum2"
-                      },
-                      "bron": "Present"
-                    }
-                  },
-                  {
-                    "constructor": "Present",
-                    "binder": "sum1",
-                    "body": {
-                      "node": "Construct",
-                      "type": {
-                        "node": "SumType",
-                        "domain": "Optional",
-                        "constructors": [
-                          {
-                            "name": "Absent",
-                            "payload": null
-                          },
-                          {
-                            "name": "Present",
-                            "payload": {
-                              "node": "Number",
-                              "whole": false,
-                              "decimals": 2,
-                              "sign": "ONBEPAALD"
-                            }
-                          }
-                        ]
-                      },
-                      "constructor": "Present",
-                      "argument": {
-                        "node": "Binair",
-                        "op": "PLUS",
-                        "links": {
-                          "node": "BinderRef",
-                          "name": "sum1",
-                          "bron": "sum1"
-                        },
-                        "rechts": {
-                          "node": "BinderRef",
-                          "name": "sum2",
-                          "bron": "sum2"
-                        },
-                        "type": {
-                          "node": "Number",
-                          "whole": false,
-                          "decimals": 2,
-                          "sign": "ONBEPAALD"
-                        },
-                        "bron": null
-                      },
-                      "bron": "Present"
-                    }
-                  }
-                ],
-                "bron": "de volgende vouwstap"
-              },
-              "bron": "de vouwstap"
-            },
-            "init": {
-              "node": "Construct",
-              "type": {
-                "node": "SumType",
-                "domain": "Optional",
-                "constructors": [
-                  {
-                    "name": "Absent",
-                    "payload": null
-                  },
-                  {
-                    "name": "Present",
-                    "payload": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 2,
-                      "sign": "ONBEPAALD"
-                    }
-                  }
-                ]
-              },
-              "constructor": "Absent",
-              "argument": null,
-              "bron": "Absent"
-            },
-            "bron": "gevouwen tot een optionele waarde"
-          },
-          "arms": [
-            {
-              "constructor": "Absent",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "0.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0.00"
-              }
-            },
-            {
-              "constructor": "Present",
-              "binder": "x",
-              "body": {
-                "node": "BinderRef",
-                "name": "x",
-                "bron": "x"
-              }
-            }
-          ],
-          "bron": "de gevouwen waarde uitgepakt"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "berekening heffing na_aftrek",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "heffing na_aftrek",
-          "objecttype": "Kamerheffing",
-          "bron": "de heffing na_aftrek"
-        },
-        "waarde": {
-          "node": "Let",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "binder": "basis",
-          "value": {
-            "node": "AttribuutRef",
-            "attribuut": "heffing basis",
-            "objecttype": "Kamerheffing",
-            "bron": "de heffing basis"
-          },
-          "body": {
-            "node": "Let",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "binder": "afgetrokken",
-            "value": {
-              "node": "AttribuutRef",
-              "attribuut": "totale_aftrek begrensd",
-              "objecttype": "Kamerheffing",
-              "bron": "de totale_aftrek begrensd"
-            },
-            "body": {
-              "node": "IfThenElse",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "condition": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "afgetrokken",
-                  "bron": "afgetrokken"
-                },
-                "rechts": {
-                  "node": "BinderRef",
-                  "name": "basis",
-                  "bron": "basis"
-                },
-                "periode": null,
-                "bron": null
-              },
-              "then": {
-                "node": "Literal",
-                "waarde": "0.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0.00"
-              },
-              "else": {
-                "node": "Binair",
-                "op": "VERMINDERD_MET",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "basis",
-                  "bron": "basis"
-                },
-                "rechts": {
-                  "node": "BinderRef",
-                  "name": "afgetrokken",
-                  "bron": "afgetrokken"
-                },
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": null
-              },
-              "bron": null
-            },
-            "bron": "afgetrokken"
-          },
-          "bron": "basis"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      }
-    ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
-      {
-        "node": "ResolvedObjectCreatie",
-        "naam": "richt heffing op",
-        "nieuwType": "Vangstheffing",
-        "subject": "JutterAandeel",
-        "toekenningen": [
-          {
-            "node": "Toekenning",
-            "attribuut": "vangst",
-            "waarde": {
-              "node": "FieldAccess",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "base": {
-                "node": "AttribuutRef",
-                "attribuut": "jutter",
-                "objecttype": "JutterAandeel",
-                "bron": "de jutter"
-              },
-              "field": "vangst",
-              "bron": null
-            },
-            "kenmerk": false
-          },
-          {
-            "node": "Toekenning",
-            "attribuut": "kinderen",
-            "waarde": {
-              "node": "FieldAccess",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "base": {
-                "node": "AttribuutRef",
-                "attribuut": "jutter",
-                "objecttype": "JutterAandeel",
-                "bron": "de jutter"
-              },
-              "field": "kinderen",
-              "bron": null
-            },
-            "kenmerk": false
           }
-        ],
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "JutterAandeel_heffing",
-          "rol": "heffing"
-        }
+        ]
       }
     ],
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],
@@ -1699,7 +1751,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "2",
+                "value": {
+                  "number": "2"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,
@@ -1724,7 +1778,9 @@
                 },
                 "rechts": {
                   "node": "Literal",
-                  "waarde": "0.1500",
+                  "value": {
+                    "number": "0.1500"
+                  },
                   "type": {
                     "node": "Number",
                     "whole": false,
@@ -1776,7 +1832,9 @@
                 },
                 "rechts": {
                   "node": "Literal",
-                  "waarde": "0.2000",
+                  "value": {
+                    "number": "0.2000"
+                  },
                   "type": {
                     "node": "Number",
                     "whole": false,

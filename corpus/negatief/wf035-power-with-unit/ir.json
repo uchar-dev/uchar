@@ -54,67 +54,75 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Kenmerktoekenning jutter penninggerechtigd",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "penninggerechtigd",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is penninggerechtigd"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GROTER_OF_GELIJK",
-          "links": {
-            "node": "Binair",
-            "op": "TOT_DE_MACHT",
-            "links": {
+        "node": "Rule",
+        "name": "Kenmerktoekenning jutter penninggerechtigd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "aantal aangemelde vondsten",
+              "attribuut": "penninggerechtigd",
               "objecttype": "Jutter",
-              "bron": "zijn aantal aangemelde vondsten"
+              "bron": "Een Jutter is penninggerechtigd"
             },
-            "rechts": {
+            "value": {
               "node": "Literal",
-              "waarde": "2",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
+              "value": {
+                "boolean": true
               },
-              "bron": "2"
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
             },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GROTER_OF_GELIJK",
+              "links": {
+                "node": "Binair",
+                "op": "TOT_DE_MACHT",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "aantal aangemelde vondsten",
+                  "objecttype": "Jutter",
+                  "bron": "zijn aantal aangemelde vondsten"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "2"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "tot de macht 2"
+              },
+              "rechts": {
+                "node": "ParameterRef",
+                "parameter": "vondstdrempel",
+                "bron": "de vondstdrempel"
+              },
+              "periode": null,
+              "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
             },
-            "bron": "tot de macht 2"
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "vondstdrempel",
-            "bron": "de vondstdrempel"
-          },
-          "periode": null,
-          "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -122,7 +130,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

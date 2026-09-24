@@ -74,67 +74,75 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "premiegerechtigd bij dagvergoeding",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "premiegerechtigd",
-          "objecttype": "Bergingsploeg",
-          "bron": "Een Bergingsploeg is premiegerechtigd"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "TEN_MINSTE",
-          "elementObjecttype": "Berger",
-          "filter": null,
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
+        "node": "Rule",
+        "name": "premiegerechtigd bij dagvergoeding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "dagvergoeding",
-              "objecttype": "Berger",
-              "bron": "de dagvergoeding van de berger"
+              "attribuut": "premiegerechtigd",
+              "objecttype": "Bergingsploeg",
+              "bron": "Een Bergingsploeg is premiegerechtigd"
             },
-            "rechts": {
+            "value": {
               "node": "Literal",
-              "waarde": "40",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
+              "value": {
+                "boolean": true
               },
-              "bron": "40"
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
             },
-            "periode": {
-              "node": "GeheelPeriode",
-              "jaar": true,
-              "niet": false
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "TEN_MINSTE",
+              "elementObjecttype": "Berger",
+              "filter": null,
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "dagvergoeding",
+                  "objecttype": "Berger",
+                  "bron": "de dagvergoeding van de berger"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "40"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "40"
+                },
+                "periode": {
+                  "node": "GeheelPeriode",
+                  "jaar": true,
+                  "niet": false
+                },
+                "bron": "zijn dagvergoeding gedurende het gehele jaar groter is dan 40"
+              },
+              "bron": "de dagvergoeding van ten minste 2 van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "ploegindeling",
+                "rol": "berger"
+              }
             },
-            "bron": "zijn dagvergoeding gedurende het gehele jaar groter is dan 40"
-          },
-          "bron": "de dagvergoeding van ten minste 2 van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "ploegindeling",
-            "rol": "berger"
+            "initialisation": false
           }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -142,7 +150,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

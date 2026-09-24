@@ -115,270 +115,290 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aanspraken",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aanspraken",
-          "objecttype": "Jutter",
-          "bron": "de aanspraken"
-        },
-        "waarde": {
-          "node": "ListLiteral",
-          "type": {
-            "node": "ListType",
-            "element": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "NIET_NEGATIEF"
-            }
-          },
-          "elements": [
-            {
-              "node": "Literal",
-              "waarde": "10.00",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "NIET_NEGATIEF"
-              },
-              "bron": "10.00"
+        "node": "Rule",
+        "name": "aanspraken",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Literal",
-              "waarde": "25.00",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "NIET_NEGATIEF"
-              },
-              "bron": "25.00"
-            }
-          ],
-          "bron": "lijst"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "som",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "som",
-          "objecttype": "Jutter",
-          "bron": "de som"
-        },
-        "waarde": {
-          "node": "Fold",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "list": {
-            "node": "MapList",
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              }
-            },
-            "list": {
+            "target": {
               "node": "AttribuutRef",
               "attribuut": "aanspraken",
               "objecttype": "Jutter",
               "bron": "de aanspraken"
             },
-            "function": {
-              "node": "Lambda",
-              "parameters": [
+            "value": {
+              "node": "ListLiteral",
+              "type": {
+                "node": "ListType",
+                "element": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "NIET_NEGATIEF"
+                }
+              },
+              "elements": [
                 {
-                  "name": "a",
-                  "datatype": {
-                    "node": "SumType",
-                    "domain": "beschikking",
-                    "constructors": [
+                  "node": "Literal",
+                  "value": {
+                    "number": "10.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "NIET_NEGATIEF"
+                  },
+                  "bron": "10.00"
+                },
+                {
+                  "node": "Literal",
+                  "value": {
+                    "number": "25.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "NIET_NEGATIEF"
+                  },
+                  "bron": "25.00"
+                }
+              ],
+              "bron": "lijst"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "som",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "som",
+              "objecttype": "Jutter",
+              "bron": "de som"
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "list": {
+                "node": "MapList",
+                "type": {
+                  "node": "ListType",
+                  "element": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  }
+                },
+                "list": {
+                  "node": "AttribuutRef",
+                  "attribuut": "aanspraken",
+                  "objecttype": "Jutter",
+                  "bron": "de aanspraken"
+                },
+                "function": {
+                  "node": "Lambda",
+                  "parameters": [
+                    {
+                      "name": "a",
+                      "datatype": {
+                        "node": "SumType",
+                        "domain": "beschikking",
+                        "constructors": [
+                          {
+                            "name": "Toegekend",
+                            "payload": {
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "NIET_NEGATIEF"
+                            }
+                          },
+                          {
+                            "name": "Afgewezen",
+                            "payload": null
+                          },
+                          {
+                            "name": "Aangehouden",
+                            "payload": null
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "body": {
+                    "node": "Match",
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "scrutinee": {
+                      "node": "BinderRef",
+                      "name": "a",
+                      "bron": "a"
+                    },
+                    "arms": [
                       {
-                        "name": "Toegekend",
-                        "payload": {
-                          "node": "Number",
-                          "whole": false,
-                          "decimals": 2,
-                          "sign": "NIET_NEGATIEF"
+                        "constructor": "Toegekend",
+                        "binder": "bedrag",
+                        "body": {
+                          "node": "Binair",
+                          "op": "PLUS",
+                          "links": {
+                            "node": "BinderRef",
+                            "name": "bedrag",
+                            "bron": "bedrag"
+                          },
+                          "rechts": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "25.00"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "ONBEPAALD"
+                            },
+                            "bron": "25.00"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "ONBEPAALD"
+                          },
+                          "bron": null
                         }
                       },
                       {
-                        "name": "Afgewezen",
-                        "payload": null
+                        "constructor": "Afgewezen",
+                        "binder": null,
+                        "body": {
+                          "node": "Literal",
+                          "value": {
+                            "number": "0.00"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "ONBEPAALD"
+                          },
+                          "bron": "0.00"
+                        }
                       },
                       {
-                        "name": "Aangehouden",
-                        "payload": null
+                        "constructor": "Aangehouden",
+                        "binder": null,
+                        "body": {
+                          "node": "Literal",
+                          "value": {
+                            "number": "12.00"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "ONBEPAALD"
+                          },
+                          "bron": "12.00"
+                        }
                       }
-                    ]
+                    ],
+                    "bron": "match"
+                  },
+                  "bron": "lambda"
+                },
+                "bron": "map"
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    }
                   }
-                }
-              ],
-              "body": {
-                "node": "Match",
+                ],
+                "body": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "bron": "acc"
+                  },
+                  "rechts": {
+                    "node": "BinderRef",
+                    "name": "x",
+                    "bron": "x"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": null
+                },
+                "bron": "lambda"
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0.00"
+                },
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "scrutinee": {
-                  "node": "BinderRef",
-                  "name": "a",
-                  "bron": "a"
-                },
-                "arms": [
-                  {
-                    "constructor": "Toegekend",
-                    "binder": "bedrag",
-                    "body": {
-                      "node": "Binair",
-                      "op": "PLUS",
-                      "links": {
-                        "node": "BinderRef",
-                        "name": "bedrag",
-                        "bron": "bedrag"
-                      },
-                      "rechts": {
-                        "node": "Literal",
-                        "waarde": "25.00",
-                        "type": {
-                          "node": "Number",
-                          "whole": false,
-                          "decimals": 2,
-                          "sign": "ONBEPAALD"
-                        },
-                        "bron": "25.00"
-                      },
-                      "type": {
-                        "node": "Number",
-                        "whole": false,
-                        "decimals": 2,
-                        "sign": "ONBEPAALD"
-                      },
-                      "bron": null
-                    }
-                  },
-                  {
-                    "constructor": "Afgewezen",
-                    "binder": null,
-                    "body": {
-                      "node": "Literal",
-                      "waarde": "0.00",
-                      "type": {
-                        "node": "Number",
-                        "whole": false,
-                        "decimals": 2,
-                        "sign": "ONBEPAALD"
-                      },
-                      "bron": "0.00"
-                    }
-                  },
-                  {
-                    "constructor": "Aangehouden",
-                    "binder": null,
-                    "body": {
-                      "node": "Literal",
-                      "waarde": "12.00",
-                      "type": {
-                        "node": "Number",
-                        "whole": false,
-                        "decimals": 2,
-                        "sign": "ONBEPAALD"
-                      },
-                      "bron": "12.00"
-                    }
-                  }
-                ],
-                "bron": "match"
+                "bron": "0.00"
               },
-              "bron": "lambda"
+              "bron": "fold"
             },
-            "bron": "map"
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "acc",
-                "datatype": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                }
-              },
-              {
-                "name": "x",
-                "datatype": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                }
-              }
-            ],
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "acc",
-                "bron": "acc"
-              },
-              "rechts": {
-                "node": "BinderRef",
-                "name": "x",
-                "bron": "x"
-              },
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "bron": null
-            },
-            "bron": "lambda"
-          },
-          "init": {
-            "node": "Literal",
-            "waarde": "0.00",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "0.00"
-          },
-          "bron": "fold"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -386,7 +406,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

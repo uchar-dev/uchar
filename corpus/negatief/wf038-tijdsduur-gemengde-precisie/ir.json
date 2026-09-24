@@ -53,55 +53,54 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening jutleeftijd",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "jutleeftijd",
-          "objecttype": "Jutter",
-          "bron": "De jutleeftijd van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSDUUR",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "geboortedatum",
-              "objecttype": "Jutter",
-              "bron": "zijn geboortedatum"
+        "node": "Rule",
+        "name": "Berekening jutleeftijd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "stempelmoment",
+              "attribuut": "jutleeftijd",
               "objecttype": "Jutter",
-              "bron": "zijn stempelmoment"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "jr"
-            }
-          },
-          "bron": "de tijdsduur van zijn geboortedatum tot zijn stempelmoment in hele jaren",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De jutleeftijd van een Jutter"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSDUUR",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "geboortedatum",
+                  "objecttype": "Jutter",
+                  "bron": "zijn geboortedatum"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "stempelmoment",
+                  "objecttype": "Jutter",
+                  "bron": "zijn stempelmoment"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "jr"
+                }
+              },
+              "bron": "de tijdsduur van zijn geboortedatum tot zijn stempelmoment in hele jaren"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -109,7 +108,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

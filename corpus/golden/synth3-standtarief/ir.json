@@ -107,123 +107,131 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "tarief van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "tarief",
-          "objecttype": "Jutter",
-          "bron": "Het tarief van een Jutter"
-        },
-        "waarde": {
-          "node": "Match",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "scrutinee": {
-            "node": "AttribuutRef",
-            "attribuut": "stand",
-            "objecttype": "Jutter",
-            "bron": "zijn stand"
-          },
-          "arms": [
-            {
-              "constructor": "Geborgen",
-              "binder": "w",
-              "body": {
-                "node": "Binair",
-                "op": "PLUS",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "w",
-                  "bron": "de geborgen waarde"
-                },
-                "rechts": {
-                  "node": "Literal",
-                  "waarde": "0.00",
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  },
-                  "bron": "0.00"
-                },
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "de geborgen waarde plus 0.00"
-              }
+        "node": "Rule",
+        "name": "tarief van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "constructor": "Vermist",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "0.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0.00"
-              }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "tarief",
+              "objecttype": "Jutter",
+              "bron": "Het tarief van een Jutter"
             },
-            {
-              "constructor": "Betwist",
-              "binder": "a",
-              "body": {
-                "node": "Afgerond",
-                "basis": {
-                  "node": "Binair",
-                  "op": "GEDEELD_DOOR",
-                  "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "grondslag",
-                    "objecttype": "Jutter",
-                    "bron": "zijn grondslag"
-                  },
-                  "rechts": {
-                    "node": "BinderRef",
-                    "name": "a",
-                    "bron": "de betwiste noemer"
-                  },
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  },
-                  "bron": "zijn grondslag gedeeld door de betwiste noemer"
+            "value": {
+              "node": "Match",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "scrutinee": {
+                "node": "AttribuutRef",
+                "attribuut": "stand",
+                "objecttype": "Jutter",
+                "bron": "zijn stand"
+              },
+              "arms": [
+                {
+                  "constructor": "Geborgen",
+                  "binder": "w",
+                  "body": {
+                    "node": "Binair",
+                    "op": "PLUS",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "w",
+                      "bron": "de geborgen waarde"
+                    },
+                    "rechts": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "0.00"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "0.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "de geborgen waarde plus 0.00"
+                  }
                 },
-                "modus": "REKENKUNDIG",
-                "decimalen": 2,
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
+                {
+                  "constructor": "Vermist",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0.00"
+                  }
                 },
-                "bron": "zijn grondslag gedeeld door de betwiste noemer rekenkundig afgerond op 2 decimalen"
-              }
-            }
-          ],
-          "bron": "de grondslag afhankelijk van zijn stand"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "constructor": "Betwist",
+                  "binder": "a",
+                  "body": {
+                    "node": "Afgerond",
+                    "basis": {
+                      "node": "Binair",
+                      "op": "GEDEELD_DOOR",
+                      "links": {
+                        "node": "AttribuutRef",
+                        "attribuut": "grondslag",
+                        "objecttype": "Jutter",
+                        "bron": "zijn grondslag"
+                      },
+                      "rechts": {
+                        "node": "BinderRef",
+                        "name": "a",
+                        "bron": "de betwiste noemer"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "zijn grondslag gedeeld door de betwiste noemer"
+                    },
+                    "modus": "REKENKUNDIG",
+                    "decimalen": 2,
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "zijn grondslag gedeeld door de betwiste noemer rekenkundig afgerond op 2 decimalen"
+                  }
+                }
+              ],
+              "bron": "de grondslag afhankelijk van zijn stand"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -231,7 +239,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

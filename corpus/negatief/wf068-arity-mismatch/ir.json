@@ -55,60 +55,71 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Verkeerde ariteit",
-        "subject": "Jutter",
-        "assertie": {
-          "node": "Predicaat",
-          "soort": "GEVULD",
-          "operand": {
-            "node": "Invoke",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "function": "dubbel",
-            "arguments": [
-              {
-                "node": "Literal",
-                "waarde": "1.00",
+        "node": "Consistency",
+        "name": "Verkeerde ariteit",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "Predicaat",
+              "soort": "GEVULD",
+              "operand": {
+                "node": "Invoke",
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
+                "function": "dubbel",
+                "arguments": [
+                  {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": null
+                  },
+                  {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": null
+                  }
+                ],
                 "bron": null
               },
-              {
-                "node": "Literal",
-                "waarde": "2.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": null
-              }
-            ],
-            "bron": null
-          },
-          "dagsoort": null,
-          "negatie": false,
-          "cijfers": 0,
-          "periode": null,
-          "bron": null
-        },
-        "bron": null,
-        "line": 1,
-        "geldigheid": null
+              "dagsoort": null,
+              "negatie": false,
+              "cijfers": 0,
+              "periode": null,
+              "bron": null
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": null,
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

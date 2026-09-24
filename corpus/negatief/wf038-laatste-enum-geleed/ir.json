@@ -74,54 +74,53 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aanlandkust van een berging",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aanlandkust",
-          "objecttype": "Berging",
-          "bron": "de aanlandkust"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "LAATSTE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "bakboordkust",
-              "objecttype": "Berging",
-              "bron": "zijn bakboordkust"
+        "node": "Rule",
+        "name": "aanlandkust van een berging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "stuurboordkust",
+              "attribuut": "aanlandkust",
               "objecttype": "Berging",
-              "bron": "zijn stuurboordkust"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Enumeratie",
-            "domein": "Kust",
-            "waarden": [
-              "Noord",
-              "Zuid",
-              "West"
-            ]
-          },
-          "bron": "de laatste van zijn bakboordkust en zijn stuurboordkust",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "de aanlandkust"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "LAATSTE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "bakboordkust",
+                  "objecttype": "Berging",
+                  "bron": "zijn bakboordkust"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "stuurboordkust",
+                  "objecttype": "Berging",
+                  "bron": "zijn stuurboordkust"
+                }
+              ],
+              "type": {
+                "node": "Enumeratie",
+                "domein": "Kust",
+                "waarden": [
+                  "Noord",
+                  "Zuid",
+                  "West"
+                ]
+              },
+              "bron": "de laatste van zijn bakboordkust en zijn stuurboordkust"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -129,7 +128,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

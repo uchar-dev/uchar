@@ -92,43 +92,47 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "quotum bij aanmelding",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "quotum bij aanmelding",
-          "objecttype": "Jutter",
-          "bron": "Het quotum bij aanmelding van een Jutter"
-        },
-        "waarde": {
-          "node": "TemporalRead",
-          "basis": {
-            "node": "AttribuutRef",
-            "attribuut": "vast quotum",
-            "objecttype": "Jutter",
-            "bron": "zijn vast quotum"
-          },
-          "datum": {
-            "node": "AttribuutRef",
-            "attribuut": "aanmelddatum",
-            "objecttype": "Jutter",
-            "bron": "zijn aanmelddatum"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "zijn jaarquotum op zijn aanmelddatum"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "quotum bij aanmelding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "quotum bij aanmelding",
+              "objecttype": "Jutter",
+              "bron": "Het quotum bij aanmelding van een Jutter"
+            },
+            "value": {
+              "node": "TemporalRead",
+              "basis": {
+                "node": "AttribuutRef",
+                "attribuut": "vast quotum",
+                "objecttype": "Jutter",
+                "bron": "zijn vast quotum"
+              },
+              "datum": {
+                "node": "AttribuutRef",
+                "attribuut": "aanmelddatum",
+                "objecttype": "Jutter",
+                "bron": "zijn aanmelddatum"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "zijn jaarquotum op zijn aanmelddatum"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -136,7 +140,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

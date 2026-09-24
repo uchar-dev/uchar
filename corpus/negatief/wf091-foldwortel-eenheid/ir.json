@@ -312,28 +312,55 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "kopie van het gewicht",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "kopie",
-          "objecttype": "Jutter",
-          "bron": "De kopie van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MAXIMUM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "gewicht",
-              "objecttype": "Jutter",
-              "bron": "de gewicht van de Jutter"
+        "node": "Rule",
+        "name": "kopie van het gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Literal",
-              "waarde": "0",
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "kopie",
+              "objecttype": "Jutter",
+              "bron": "De kopie van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "MAXIMUM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "gewicht",
+                  "objecttype": "Jutter",
+                  "bron": "de gewicht van de Jutter"
+                },
+                {
+                  "node": "Literal",
+                  "value": {
+                    "number": "0"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "NIET_NEGATIEF",
+                    "unit": {
+                      "node": "Unit",
+                      "abbreviation": "kg",
+                      "system": "Gewicht",
+                      "canonical": "kg",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  },
+                  "bron": "0 kg"
+                }
+              ],
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -341,47 +368,21 @@
                 "sign": "NIET_NEGATIEF",
                 "unit": {
                   "node": "Unit",
-                  "abbreviation": "kg",
+                  "abbreviation": "t",
                   "system": "Gewicht",
                   "canonical": "kg",
                   "factorToCanonical": {
-                    "num": 1,
+                    "num": 1000,
                     "den": 1
                   }
                 }
               },
-              "bron": "0 kg"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "NIET_NEGATIEF",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "t",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1000,
-                "den": 1
-              }
-            }
-          },
-          "bron": "de maximale waarde van het gewicht van de Jutter en 0 kg",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "de maximale waarde van het gewicht van de Jutter en 0 kg"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -389,7 +390,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

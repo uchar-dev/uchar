@@ -107,35 +107,36 @@
     "objectCreaties": [],
     "verdelingen": [
       {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeel de kadeopbrengst van een kadeberging",
-        "bronType": "Kadeberging",
-        "bronAttribuut": "kadeopbrengst",
-        "doelType": "Jutter",
-        "doelAttribuut": "kadedeel",
-        "methode": "NAAR_RATO",
-        "ratoAttribuut": "vrachtgewicht",
-        "maximumAttribuut": "kademaximum",
-        "afrondingDecimalen": 2,
-        "restantAttribuut": "kaderest",
-        "groepeerAttribuut": null,
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "kadedeelname",
-          "rol": "kadejutter"
-        }
+        "node": "Allocation",
+        "name": "verdeel de kadeopbrengst van een kadeberging",
+        "versions": [
+          {
+            "sourceType": "Kadeberging",
+            "sourceAttribute": "kadeopbrengst",
+            "targetType": "Jutter",
+            "targetAttribute": "kadedeel",
+            "method": "NAAR_RATO",
+            "ratioAttribute": "vrachtgewicht",
+            "maximumAttribute": "kademaximum",
+            "roundingDecimals": 2,
+            "remainderAttribute": "kaderest",
+            "descending": false,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "kadedeelname",
+              "rol": "kadejutter"
+            }
+          }
+        ]
       }
     ],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

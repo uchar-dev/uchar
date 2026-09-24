@@ -59,69 +59,77 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "waarde naar staat",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "waarde",
-          "objecttype": "Vondst",
-          "bron": "De waarde van een Vondst"
-        },
-        "waarde": {
-          "node": "Match",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "scrutinee": {
-            "node": "AttribuutRef",
-            "attribuut": "staat",
-            "objecttype": "Vondst",
-            "bron": "de staat van de Vondst"
-          },
-          "arms": [
-            {
-              "constructor": "gaaf",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "10.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": null
-              }
+        "node": "Rule",
+        "name": "waarde naar staat",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "constructor": "beschadigd",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "4.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "waarde",
+              "objecttype": "Vondst",
+              "bron": "De waarde van een Vondst"
+            },
+            "value": {
+              "node": "Match",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "scrutinee": {
+                "node": "AttribuutRef",
+                "attribuut": "staat",
+                "objecttype": "Vondst",
+                "bron": "de staat van de Vondst"
+              },
+              "arms": [
+                {
+                  "constructor": "gaaf",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "10.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": null
+                  }
                 },
-                "bron": null
-              }
-            }
-          ],
-          "bron": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "constructor": "beschadigd",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "4.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": null
+                  }
+                }
+              ],
+              "bron": null
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -129,7 +137,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

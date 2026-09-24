@@ -110,123 +110,137 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "tarief",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "tarief",
-          "objecttype": "Berging",
-          "bron": "de tarief"
-        },
-        "waarde": {
-          "node": "Match",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "scrutinee": {
-            "node": "AttribuutRef",
-            "attribuut": "vaarwater",
-            "objecttype": "Berging",
-            "bron": "de vaarwater"
-          },
-          "arms": [
-            {
-              "constructor": "Wad",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "3",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "3"
-              }
-            },
-            {
-              "constructor": "Zeegat",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "7",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "7"
-              }
-            },
-            {
-              "constructor": "Ruimzee",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "12",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "12"
-              }
-            }
-          ],
-          "bron": "match"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      }
-    ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
-      {
-        "node": "ResolvedObjectCreatie",
-        "naam": "berging voor een jutter",
-        "nieuwType": "Berging",
-        "subject": "Jutter",
-        "toekenningen": [
+        "node": "Rule",
+        "name": "tarief",
+        "versions": [
           {
-            "node": "Toekenning",
-            "attribuut": "vaarwater",
-            "waarde": {
-              "node": "Literal",
-              "waarde": "4",
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "tarief",
+              "objecttype": "Berging",
+              "bron": "de tarief"
+            },
+            "value": {
+              "node": "Match",
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "4"
+              "scrutinee": {
+                "node": "AttribuutRef",
+                "attribuut": "vaarwater",
+                "objecttype": "Berging",
+                "bron": "de vaarwater"
+              },
+              "arms": [
+                {
+                  "constructor": "Wad",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "3"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "3"
+                  }
+                },
+                {
+                  "constructor": "Zeegat",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "7"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "7"
+                  }
+                },
+                {
+                  "constructor": "Ruimzee",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "12"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "12"
+                  }
+                }
+              ],
+              "bron": "match"
             },
-            "kenmerk": false
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        ],
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [
+      {
+        "node": "ObjectCreation",
+        "name": "berging voor een jutter",
+        "versions": [
+          {
+            "createdType": "Berging",
+            "subject": "Jutter",
+            "initialisations": [
+              {
+                "node": "Toekenning",
+                "attribuut": "vaarwater",
+                "waarde": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "4"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "4"
+                },
+                "kenmerk": false
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            }
+          }
+        ]
       }
     ],
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

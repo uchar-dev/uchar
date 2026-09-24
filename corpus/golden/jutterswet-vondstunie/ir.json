@@ -84,67 +84,66 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal strandvondsten van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal strandvondsten",
-          "objecttype": "Jutter",
-          "bron": "Het aantal strandvondsten van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
-              "node": "InstanceSetUnion",
-              "branches": [
+        "node": "Rule",
+        "name": "aantal strandvondsten van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aantal strandvondsten",
+              "objecttype": "Jutter",
+              "bron": "Het aantal strandvondsten van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
                 {
-                  "node": "InstanceSetBranch",
-                  "elementType": "Vondst",
-                  "sourceRole": {
-                    "node": "RolBinding",
-                    "feittype": "vondstaanmelding",
-                    "rol": "aangemelde vondst"
-                  },
-                  "filter": null,
-                  "bron": "aangemelde vondsten van de Jutter"
-                },
-                {
-                  "node": "InstanceSetBranch",
-                  "elementType": "Vondst",
-                  "sourceRole": {
-                    "node": "RolBinding",
-                    "feittype": "vondstberging",
-                    "rol": "geborgen vondst"
-                  },
-                  "filter": null,
-                  "bron": "geborgen vondsten van de Jutter"
+                  "node": "InstanceSetUnion",
+                  "branches": [
+                    {
+                      "node": "InstanceSetBranch",
+                      "elementType": "Vondst",
+                      "sourceRole": {
+                        "node": "RolBinding",
+                        "feittype": "vondstaanmelding",
+                        "rol": "aangemelde vondst"
+                      },
+                      "filter": null,
+                      "bron": "aangemelde vondsten van de Jutter"
+                    },
+                    {
+                      "node": "InstanceSetBranch",
+                      "elementType": "Vondst",
+                      "sourceRole": {
+                        "node": "RolBinding",
+                        "feittype": "vondstberging",
+                        "rol": "geborgen vondst"
+                      },
+                      "filter": null,
+                      "bron": "geborgen vondsten van de Jutter"
+                    }
+                  ],
+                  "bron": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter"
                 }
               ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
               "bron": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -152,7 +151,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -119,28 +119,30 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [
       {
-        "node": "ResolvedFeitCreatie",
-        "naam": "leg toezicht vast",
-        "anker": "Berger",
-        "doel": "Berging",
-        "tussenstappen": [],
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "feittype": "bergingstoezicht",
-        "ankerRol": "toezichthouder",
-        "doelRol": "bewaakte berging",
-        "joinRol": {
-          "node": "RolBinding",
-          "feittype": "bergingstoezicht",
-          "rol": "bewaakte berging"
-        }
+        "node": "FactCreation",
+        "name": "leg toezicht vast",
+        "versions": [
+          {
+            "factType": "bergingstoezicht",
+            "anchorRole": "toezichthouder",
+            "targetRole": "bewaakte berging",
+            "anchor": "Berger",
+            "path": [
+              {
+                "node": "RolBinding",
+                "feittype": "bergingstoezicht",
+                "rol": "bewaakte berging"
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            }
+          }
+        ]
       }
     ],
     "resolvedStartpunten": [],

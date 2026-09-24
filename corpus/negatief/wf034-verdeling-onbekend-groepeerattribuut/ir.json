@@ -97,35 +97,35 @@
     "objectCreaties": [],
     "verdelingen": [
       {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeel de sluitpremie van een sluitkas",
-        "bronType": "Sluitkas",
-        "bronAttribuut": "sluitpremie",
-        "doelType": "Jutter",
-        "doelAttribuut": "sluitdeel",
-        "methode": "OP_VOLGORDE",
-        "ratoAttribuut": null,
-        "maximumAttribuut": null,
-        "afrondingDecimalen": 0,
-        "restantAttribuut": "sluitrest",
-        "groepeerAttribuut": "bestaatniet",
-        "afnemend": true,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "sluitdienst",
-          "rol": "sluitjutter"
-        }
+        "node": "Allocation",
+        "name": "verdeel de sluitpremie van een sluitkas",
+        "versions": [
+          {
+            "sourceType": "Sluitkas",
+            "sourceAttribute": "sluitpremie",
+            "targetType": "Jutter",
+            "targetAttribute": "sluitdeel",
+            "method": "OP_VOLGORDE",
+            "roundingDecimals": 0,
+            "remainderAttribute": "sluitrest",
+            "orderingAttribute": "bestaatniet",
+            "descending": true,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "sluitdienst",
+              "rol": "sluitjutter"
+            }
+          }
+        ]
       }
     ],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

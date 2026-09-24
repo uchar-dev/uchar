@@ -40,27 +40,31 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "etiket van een jutter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "etiket",
-          "objecttype": "Jutter",
-          "bron": "het etiket van de Jutter"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "gewicht",
-          "objecttype": "Jutter",
-          "bron": "het gewicht van de Jutter"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "etiket van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "etiket",
+              "objecttype": "Jutter",
+              "bron": "het etiket van de Jutter"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "gewicht",
+              "objecttype": "Jutter",
+              "bron": "het gewicht van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -68,7 +72,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

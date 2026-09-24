@@ -51,42 +51,49 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Keurcontrole",
-        "subject": "Vondst",
-        "assertie": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "keurstatus",
-            "objecttype": "Vondst",
-            "bron": null
-          },
-          "rechts": {
-            "node": "Construct",
-            "type": {
-              "node": "Enumeratie",
-              "domein": "keurstatus",
-              "waarden": [
-                "Gaaf",
-                "Beschadigd"
-              ]
+        "node": "Consistency",
+        "name": "Keurcontrole",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "keurstatus",
+                "objecttype": "Vondst",
+                "bron": null
+              },
+              "rechts": {
+                "node": "Construct",
+                "type": {
+                  "node": "Enumeratie",
+                  "domein": "keurstatus",
+                  "waarden": [
+                    "Gaaf",
+                    "Beschadigd"
+                  ]
+                },
+                "constructor": "Gaaf",
+                "argument": null,
+                "bron": null
+              },
+              "periode": null,
+              "bron": null
             },
-            "constructor": "Gaaf",
-            "argument": null,
-            "bron": null
-          },
-          "periode": null,
-          "bron": null
-        },
-        "bron": null,
-        "line": 1,
-        "geldigheid": null
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": null,
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -63,73 +63,73 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "vangstsom van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vangstsom",
-          "objecttype": "Vangst",
-          "bron": "De vangstsom van een Vangst"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "SOM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "deelvangst",
-              "objecttype": "Vangst",
-              "bron": "zijn deelvangst"
+        "node": "Rule",
+        "name": "vangstsom van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "teller",
+              "attribuut": "vangstsom",
               "objecttype": "Vangst",
-              "bron": "zijn teller"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": {
-            "node": "Binair",
-            "op": "GEDEELD_DOOR",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "teller",
-              "objecttype": "Vangst",
-              "bron": "zijn teller"
+              "bron": "De vangstsom van een Vangst"
             },
-            "rechts": {
-              "node": "AttribuutRef",
-              "attribuut": "noemer",
-              "objecttype": "Vangst",
-              "bron": "zijn noemer"
+            "value": {
+              "node": "Aggregation",
+              "kind": "SOM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "deelvangst",
+                  "objecttype": "Vangst",
+                  "bron": "zijn deelvangst"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "teller",
+                  "objecttype": "Vangst",
+                  "bron": "zijn teller"
+                }
+              ],
+              "emptyFallback": {
+                "node": "Binair",
+                "op": "GEDEELD_DOOR",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "teller",
+                  "objecttype": "Vangst",
+                  "bron": "zijn teller"
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "noemer",
+                  "objecttype": "Vangst",
+                  "bron": "zijn noemer"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "zijn teller gedeeld door zijn noemer"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de som van zijn deelvangst en zijn teller of zijn teller gedeeld door zijn noemer als die er niet zijn"
             },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "zijn teller gedeeld door zijn noemer"
-          },
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de som van zijn deelvangst en zijn teller of zijn teller gedeeld door zijn noemer als die er niet zijn",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -137,7 +137,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

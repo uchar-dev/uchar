@@ -63,270 +63,296 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "vacuumteken van een vacuumwacht",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vacuumteken",
-          "objecttype": "Vacuumwacht",
-          "bron": "Het vacuumteken van een Vacuumwacht"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "1",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "1"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_HOOGSTE",
-          "drempel": 2,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "Afgerond",
-                "basis": {
-                  "node": "Binair",
-                  "op": "GEDEELD_DOOR",
+        "node": "Rule",
+        "name": "vacuumteken van een vacuumwacht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vacuumteken",
+              "objecttype": "Vacuumwacht",
+              "bron": "Het vacuumteken van een Vacuumwacht"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "1"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "1"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_HOOGSTE",
+              "drempel": 2,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER",
                   "links": {
-                    "node": "AttribuutRef",
-                    "attribuut": "vangstwaarde",
-                    "objecttype": "Vacuumwacht",
-                    "bron": "de vangstwaarde van de Vacuumwacht"
+                    "node": "Afgerond",
+                    "basis": {
+                      "node": "Binair",
+                      "op": "GEDEELD_DOOR",
+                      "links": {
+                        "node": "AttribuutRef",
+                        "attribuut": "vangstwaarde",
+                        "objecttype": "Vacuumwacht",
+                        "bron": "de vangstwaarde van de Vacuumwacht"
+                      },
+                      "rechts": {
+                        "node": "AttribuutRef",
+                        "attribuut": "ploegomvang",
+                        "objecttype": "Vacuumwacht",
+                        "bron": "de ploegomvang van de Vacuumwacht"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht"
+                    },
+                    "modus": "NAAR_BENEDEN",
+                    "decimalen": 0,
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht naar beneden afgerond op 0 decimalen"
                   },
                   "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0"
+                  },
+                  "periode": null,
+                  "bron": "het aandeel is groter dan 0"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
                     "node": "AttribuutRef",
                     "attribuut": "ploegomvang",
                     "objecttype": "Vacuumwacht",
-                    "bron": "de ploegomvang van de Vacuumwacht"
+                    "bron": "zijn ploegomvang"
                   },
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 0,
-                    "sign": "ONBEPAALD"
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0"
                   },
-                  "bron": "de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht"
-                },
-                "modus": "NAAR_BENEDEN",
-                "decimalen": 0,
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht naar beneden afgerond op 0 decimalen"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "0",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0"
-              },
-              "periode": null,
-              "bron": "het aandeel is groter dan 0"
+                  "periode": null,
+                  "bron": "zijn ploegomvang is gelijk aan 0"
+                }
+              ],
+              "bron": "hij aan ten hoogste twee van de volgende voorwaarden voldoet: - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0."
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "ploegomvang",
-                "objecttype": "Vacuumwacht",
-                "bron": "zijn ploegomvang"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "0",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0"
-              },
-              "periode": null,
-              "bron": "zijn ploegomvang is gelijk aan 0"
-            }
-          ],
-          "bron": "hij aan ten hoogste twee van de volgende voorwaarden voldoet: - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "stopteken van een vacuumwacht",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "stopteken",
-          "objecttype": "Vacuumwacht",
-          "bron": "Het stopteken van een Vacuumwacht"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "1",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "1"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_HOOGSTE",
-          "drempel": 2,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "ploegomvang",
-                "objecttype": "Vacuumwacht",
-                "bron": "zijn ploegomvang"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "100",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "100"
-              },
-              "periode": null,
-              "bron": "zijn ploegomvang is groter dan 100"
+        "node": "Rule",
+        "name": "stopteken van een vacuumwacht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vangstwaarde",
-                "objecttype": "Vacuumwacht",
-                "bron": "zijn vangstwaarde"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "100000",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "100000"
-              },
-              "periode": null,
-              "bron": "zijn vangstwaarde is groter dan 100000"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "stopteken",
+              "objecttype": "Vacuumwacht",
+              "bron": "Het stopteken van een Vacuumwacht"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "Afgerond",
-                "basis": {
-                  "node": "Binair",
-                  "op": "GEDEELD_DOOR",
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "1"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "1"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_HOOGSTE",
+              "drempel": 2,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "ploegomvang",
+                    "objecttype": "Vacuumwacht",
+                    "bron": "zijn ploegomvang"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "100"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "100"
+                  },
+                  "periode": null,
+                  "bron": "zijn ploegomvang is groter dan 100"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER",
                   "links": {
                     "node": "AttribuutRef",
                     "attribuut": "vangstwaarde",
                     "objecttype": "Vacuumwacht",
-                    "bron": "de vangstwaarde van de Vacuumwacht"
+                    "bron": "zijn vangstwaarde"
                   },
                   "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "100000"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "100000"
+                  },
+                  "periode": null,
+                  "bron": "zijn vangstwaarde is groter dan 100000"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER",
+                  "links": {
+                    "node": "Afgerond",
+                    "basis": {
+                      "node": "Binair",
+                      "op": "GEDEELD_DOOR",
+                      "links": {
+                        "node": "AttribuutRef",
+                        "attribuut": "vangstwaarde",
+                        "objecttype": "Vacuumwacht",
+                        "bron": "de vangstwaarde van de Vacuumwacht"
+                      },
+                      "rechts": {
+                        "node": "AttribuutRef",
+                        "attribuut": "ploegomvang",
+                        "objecttype": "Vacuumwacht",
+                        "bron": "de ploegomvang van de Vacuumwacht"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht"
+                    },
+                    "modus": "NAAR_BENEDEN",
+                    "decimalen": 0,
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht naar beneden afgerond op 0 decimalen"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0"
+                  },
+                  "periode": null,
+                  "bron": "het aandeel is groter dan 0"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
                     "node": "AttribuutRef",
                     "attribuut": "ploegomvang",
                     "objecttype": "Vacuumwacht",
-                    "bron": "de ploegomvang van de Vacuumwacht"
+                    "bron": "zijn ploegomvang"
                   },
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 0,
-                    "sign": "ONBEPAALD"
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0"
                   },
-                  "bron": "de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht"
-                },
-                "modus": "NAAR_BENEDEN",
-                "decimalen": 0,
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht naar beneden afgerond op 0 decimalen"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "0",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0"
-              },
-              "periode": null,
-              "bron": "het aandeel is groter dan 0"
+                  "periode": null,
+                  "bron": "zijn ploegomvang is gelijk aan 0"
+                }
+              ],
+              "bron": "hij aan ten hoogste twee van de volgende voorwaarden voldoet: - zijn ploegomvang is groter dan 100 - zijn vangstwaarde is groter dan 100000 - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0."
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "ploegomvang",
-                "objecttype": "Vacuumwacht",
-                "bron": "zijn ploegomvang"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "0",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0"
-              },
-              "periode": null,
-              "bron": "zijn ploegomvang is gelijk aan 0"
-            }
-          ],
-          "bron": "hij aan ten hoogste twee van de volgende voorwaarden voldoet: - zijn ploegomvang is groter dan 100 - zijn vangstwaarde is groter dan 100000 - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0."
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -334,7 +360,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

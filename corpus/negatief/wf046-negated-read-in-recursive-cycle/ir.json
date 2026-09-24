@@ -38,67 +38,34 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "persoon volwassen",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "volwassen",
-          "objecttype": "Persoon",
-          "bron": "Een Persoon is volwassen"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GROTER_OF_GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "leeftijd",
-            "objecttype": "Persoon",
-            "bron": "zijn leeftijd"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "18",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "18"
-          },
-          "periode": null,
-          "bron": "zijn leeftijd groter of gelijk is aan 18"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      }
-    ],
-    "resolvedDagsoorten": [],
-    "objectCreaties": [
-      {
-        "node": "ResolvedObjectCreatie",
-        "naam": "maak kind",
-        "nieuwType": "Persoon",
-        "subject": "Persoon",
-        "toekenningen": [
+        "node": "Rule",
+        "name": "persoon volwassen",
+        "versions": [
           {
-            "node": "Toekenning",
-            "attribuut": "leeftijd",
-            "waarde": {
-              "node": "Binair",
-              "op": "PLUS",
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "volwassen",
+              "objecttype": "Persoon",
+              "bron": "Een Persoon is volwassen"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GROTER_OF_GELIJK",
               "links": {
                 "node": "AttribuutRef",
                 "attribuut": "leeftijd",
@@ -107,45 +74,91 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "1",
+                "value": {
+                  "number": "18"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "1"
+                "bron": "18"
               },
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "zijn leeftijd plus 1"
+              "periode": null,
+              "bron": "zijn leeftijd groter of gelijk is aan 18"
             },
-            "kenmerk": false
+            "initialisation": false
           }
-        ],
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "volwassen",
-          "negatie": true,
-          "eigenaar": "Persoon",
-          "periode": null,
-          "bron": "hij niet volwassen is"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [
+      {
+        "node": "ObjectCreation",
+        "name": "maak kind",
+        "versions": [
+          {
+            "createdType": "Persoon",
+            "subject": "Persoon",
+            "initialisations": [
+              {
+                "node": "Toekenning",
+                "attribuut": "leeftijd",
+                "waarde": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "leeftijd",
+                    "objecttype": "Persoon",
+                    "bron": "zijn leeftijd"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "1"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "zijn leeftijd plus 1"
+                },
+                "kenmerk": false
+              }
+            ],
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "volwassen",
+              "negatie": true,
+              "eigenaar": "Persoon",
+              "periode": null,
+              "bron": "hij niet volwassen is"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            }
+          }
+        ]
       }
     ],
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [

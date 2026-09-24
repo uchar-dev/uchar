@@ -114,34 +114,38 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "ligdiepte van een schuit",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "ligdiepte",
-          "objecttype": "Schuit",
-          "bron": "De ligdiepte van een Schuit"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "draagvlak",
-          "objecttype": "Ponton",
-          "bron": "het draagvlak van de ligger van de Schuit",
-          "navigatieBindingen": [
-            {
-              "node": "RolBinding",
-              "feittype": "pontonligging",
-              "rol": "ligger"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "ligdiepte van een schuit",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "ligdiepte",
+              "objecttype": "Schuit",
+              "bron": "De ligdiepte van een Schuit"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "draagvlak",
+              "objecttype": "Ponton",
+              "bron": "het draagvlak van de ligger van de Schuit",
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "pontonligging",
+                  "rol": "ligger"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -149,7 +153,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

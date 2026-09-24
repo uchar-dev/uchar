@@ -79,91 +79,94 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "ruim voorzien bij meer dan twee stukken",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "ruim voorzien",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is ruim voorzien"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GROTER",
-          "links": {
-            "node": "Functie",
-            "kind": "AANTAL",
-            "argumenten": [
-              {
-                "node": "InstanceSetUnion",
-                "branches": [
+        "node": "Rule",
+        "name": "ruim voorzien bij meer dan twee stukken",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "ruim voorzien",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is ruim voorzien"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "Aggregation",
+                "kind": "AANTAL",
+                "arguments": [
                   {
-                    "node": "InstanceSetBranch",
-                    "elementType": "Vondst",
-                    "sourceRole": {
-                      "node": "RolBinding",
-                      "feittype": "vondstaanmelding",
-                      "rol": "aangemelde vondst"
-                    },
-                    "filter": null,
-                    "bron": "aangemelde vondsten van de Jutter"
-                  },
-                  {
-                    "node": "InstanceSetBranch",
-                    "elementType": "Vondst",
-                    "sourceRole": {
-                      "node": "RolBinding",
-                      "feittype": "vondstberging",
-                      "rol": "geborgen vondst"
-                    },
-                    "filter": null,
-                    "bron": "geborgen vondsten van de Jutter"
+                    "node": "InstanceSetUnion",
+                    "branches": [
+                      {
+                        "node": "InstanceSetBranch",
+                        "elementType": "Vondst",
+                        "sourceRole": {
+                          "node": "RolBinding",
+                          "feittype": "vondstaanmelding",
+                          "rol": "aangemelde vondst"
+                        },
+                        "filter": null,
+                        "bron": "aangemelde vondsten van de Jutter"
+                      },
+                      {
+                        "node": "InstanceSetBranch",
+                        "elementType": "Vondst",
+                        "sourceRole": {
+                          "node": "RolBinding",
+                          "feittype": "vondstberging",
+                          "rol": "geborgen vondst"
+                        },
+                        "filter": null,
+                        "bron": "geborgen vondsten van de Jutter"
+                      }
+                    ],
+                    "bron": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter"
                   }
                 ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
+                },
                 "bron": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter"
-              }
-            ],
-            "elementObjecttype": null,
-            "leegwaarde": null,
-            "filter": null,
-            "dimensieSelectie": null,
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "2"
+              },
+              "periode": null,
+              "bron": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter groter is dan 2"
             },
-            "bron": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter",
-            "granulariteit": null
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "2",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "2"
-          },
-          "periode": null,
-          "bron": "het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter groter is dan 2"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -171,7 +174,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

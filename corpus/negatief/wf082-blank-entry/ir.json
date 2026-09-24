@@ -63,45 +63,49 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "jaarsom van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "jaarsom",
-          "objecttype": "Jutter",
-          "bron": "De jaarsom van een Jutter"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "drempeloverschot",
-            "objecttype": "Jutter",
-            "bron": "het drempeloverschot van de Jutter"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "hardheidsoverschot",
-            "objecttype": "Jutter",
-            "bron": "het hardheidsoverschot van de Jutter"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het drempeloverschot van de Jutter plus het hardheidsoverschot van de Jutter"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "bronAnnotaties": [
+        "node": "Rule",
+        "name": "jaarsom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "jaarsom",
+              "objecttype": "Jutter",
+              "bron": "De jaarsom van een Jutter"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "drempeloverschot",
+                "objecttype": "Jutter",
+                "bron": "het drempeloverschot van de Jutter"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "hardheidsoverschot",
+                "objecttype": "Jutter",
+                "bron": "het hardheidsoverschot van de Jutter"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het drempeloverschot van de Jutter plus het hardheidsoverschot van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ],
+        "statuteAnnotations": [
           ""
         ]
       }
@@ -111,7 +115,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

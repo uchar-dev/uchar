@@ -100,206 +100,224 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "uitkomst bij hoge score",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uitkomst",
-          "objecttype": "Jutter",
-          "bron": "De uitkomst van een Jutter"
-        },
-        "waarde": {
-          "node": "Construct",
-          "type": {
-            "node": "SumType",
-            "domain": "besluit",
-            "constructors": [
-              {
-                "name": "Toegewezen",
-                "payload": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
-                }
-              },
-              {
-                "name": "Geweigerd",
-                "payload": null
-              }
-            ]
-          },
-          "constructor": "Toegewezen",
-          "argument": {
-            "node": "AttribuutRef",
-            "attribuut": "score",
-            "objecttype": "Jutter",
-            "bron": "zijn score"
-          },
-          "bron": "toegewezen zijn score"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GROTER_OF_GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "score",
-            "objecttype": "Jutter",
-            "bron": "zijn score"
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "drempel",
-            "bron": "de drempel"
-          },
-          "periode": null,
-          "bron": "zijn score groter of gelijk aan de drempel"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "uitkomst bij lage score",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uitkomst",
-          "objecttype": "Jutter",
-          "bron": "De uitkomst van een Jutter"
-        },
-        "waarde": {
-          "node": "Construct",
-          "type": {
-            "node": "SumType",
-            "domain": "besluit",
-            "constructors": [
-              {
-                "name": "Toegewezen",
-                "payload": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
-                }
-              },
-              {
-                "name": "Geweigerd",
-                "payload": null
-              }
-            ]
-          },
-          "constructor": "Geweigerd",
-          "argument": null,
-          "bron": "geweigerd"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "KLEINER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "score",
-            "objecttype": "Jutter",
-            "bron": "zijn score"
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "drempel",
-            "bron": "de drempel"
-          },
-          "periode": null,
-          "bron": "zijn score kleiner dan de drempel"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "bedrag van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bedrag",
-          "objecttype": "Jutter",
-          "bron": "Het bedrag van een Jutter"
-        },
-        "waarde": {
-          "node": "Match",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "scrutinee": {
-            "node": "AttribuutRef",
-            "attribuut": "uitkomst",
-            "objecttype": "Jutter",
-            "bron": "zijn uitkomst"
-          },
-          "arms": [
-            {
-              "constructor": "Toegewezen",
-              "binder": "b",
-              "body": {
-                "node": "Binair",
-                "op": "PLUS",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "b",
-                  "bron": "het toegewezen bedrag"
-                },
-                "rechts": {
-                  "node": "Literal",
-                  "waarde": "10.00",
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  },
-                  "bron": "10.00"
-                },
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "het toegewezen bedrag plus 10.00"
-              }
+        "node": "Rule",
+        "name": "uitkomst bij hoge score",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "uitkomst",
+              "objecttype": "Jutter",
+              "bron": "De uitkomst van een Jutter"
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "besluit",
+                "constructors": [
+                  {
+                    "name": "Toegewezen",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  },
+                  {
+                    "name": "Geweigerd",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "Toegewezen",
+              "argument": {
+                "node": "AttribuutRef",
+                "attribuut": "score",
+                "objecttype": "Jutter",
+                "bron": "zijn score"
+              },
+              "bron": "toegewezen zijn score"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GROTER_OF_GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "score",
+                "objecttype": "Jutter",
+                "bron": "zijn score"
+              },
+              "rechts": {
+                "node": "ParameterRef",
+                "parameter": "drempel",
+                "bron": "de drempel"
+              },
+              "periode": null,
+              "bron": "zijn score groter of gelijk aan de drempel"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "uitkomst bij lage score",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "uitkomst",
+              "objecttype": "Jutter",
+              "bron": "De uitkomst van een Jutter"
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "besluit",
+                "constructors": [
+                  {
+                    "name": "Toegewezen",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  },
+                  {
+                    "name": "Geweigerd",
+                    "payload": null
+                  }
+                ]
+              },
               "constructor": "Geweigerd",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "0.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
+              "argument": null,
+              "bron": "geweigerd"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "KLEINER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "score",
+                "objecttype": "Jutter",
+                "bron": "zijn score"
+              },
+              "rechts": {
+                "node": "ParameterRef",
+                "parameter": "drempel",
+                "bron": "de drempel"
+              },
+              "periode": null,
+              "bron": "zijn score kleiner dan de drempel"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bedrag van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bedrag",
+              "objecttype": "Jutter",
+              "bron": "Het bedrag van een Jutter"
+            },
+            "value": {
+              "node": "Match",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "scrutinee": {
+                "node": "AttribuutRef",
+                "attribuut": "uitkomst",
+                "objecttype": "Jutter",
+                "bron": "zijn uitkomst"
+              },
+              "arms": [
+                {
+                  "constructor": "Toegewezen",
+                  "binder": "b",
+                  "body": {
+                    "node": "Binair",
+                    "op": "PLUS",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "b",
+                      "bron": "het toegewezen bedrag"
+                    },
+                    "rechts": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "10.00"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "10.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "het toegewezen bedrag plus 10.00"
+                  }
                 },
-                "bron": "0.00"
-              }
-            }
-          ],
-          "bron": "afhankelijk van zijn uitkomst"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "constructor": "Geweigerd",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0.00"
+                  }
+                }
+              ],
+              "bron": "afhankelijk van zijn uitkomst"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -307,7 +325,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

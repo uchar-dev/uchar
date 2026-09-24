@@ -128,121 +128,127 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bedragen",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bedragen",
-          "objecttype": "Jutter",
-          "bron": "de bedragen"
-        },
-        "waarde": {
-          "node": "ListLiteral",
-          "type": {
-            "node": "ListType",
-            "element": {
-              "node": "SumType",
-              "domain": "oordeel",
-              "constructors": [
-                {
-                  "name": "Goedgekeurd",
-                  "payload": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
-                  }
-                },
-                {
-                  "name": "Verworpen",
-                  "payload": null
-                },
-                {
-                  "name": "Uitgesteld",
-                  "payload": null
-                }
-              ]
-            }
-          },
-          "elements": [
-            {
-              "node": "Construct",
-              "type": {
-                "node": "SumType",
-                "domain": "oordeel",
-                "constructors": [
-                  {
-                    "name": "Goedgekeurd",
-                    "payload": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
-                    }
-                  },
-                  {
-                    "name": "Verworpen",
-                    "payload": null
-                  },
-                  {
-                    "name": "Uitgesteld",
-                    "payload": null
-                  }
-                ]
-              },
-              "constructor": "Goedgekeurd",
-              "argument": {
-                "node": "Literal",
-                "waarde": "10.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
-                },
-                "bron": "10.00"
-              },
-              "bron": "goedgekeurd"
+        "node": "Rule",
+        "name": "bedragen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Construct",
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bedragen",
+              "objecttype": "Jutter",
+              "bron": "de bedragen"
+            },
+            "value": {
+              "node": "ListLiteral",
               "type": {
-                "node": "SumType",
-                "domain": "oordeel",
-                "constructors": [
-                  {
-                    "name": "Goedgekeurd",
-                    "payload": {
+                "node": "ListType",
+                "element": {
+                  "node": "SumType",
+                  "domain": "oordeel",
+                  "constructors": [
+                    {
+                      "name": "Goedgekeurd",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
+                      }
+                    },
+                    {
+                      "name": "Verworpen",
+                      "payload": null
+                    },
+                    {
+                      "name": "Uitgesteld",
+                      "payload": null
+                    }
+                  ]
+                }
+              },
+              "elements": [
+                {
+                  "node": "Construct",
+                  "type": {
+                    "node": "SumType",
+                    "domain": "oordeel",
+                    "constructors": [
+                      {
+                        "name": "Goedgekeurd",
+                        "payload": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "NIET_NEGATIEF"
+                        }
+                      },
+                      {
+                        "name": "Verworpen",
+                        "payload": null
+                      },
+                      {
+                        "name": "Uitgesteld",
+                        "payload": null
+                      }
+                    ]
+                  },
+                  "constructor": "Goedgekeurd",
+                  "argument": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "10.00"
+                    },
+                    "type": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
                       "sign": "NIET_NEGATIEF"
-                    }
+                    },
+                    "bron": "10.00"
                   },
-                  {
-                    "name": "Verworpen",
-                    "payload": null
+                  "bron": "goedgekeurd"
+                },
+                {
+                  "node": "Construct",
+                  "type": {
+                    "node": "SumType",
+                    "domain": "oordeel",
+                    "constructors": [
+                      {
+                        "name": "Goedgekeurd",
+                        "payload": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "NIET_NEGATIEF"
+                        }
+                      },
+                      {
+                        "name": "Verworpen",
+                        "payload": null
+                      },
+                      {
+                        "name": "Uitgesteld",
+                        "payload": null
+                      }
+                    ]
                   },
-                  {
-                    "name": "Uitgesteld",
-                    "payload": null
-                  }
-                ]
-              },
-              "constructor": "Verworpen",
-              "argument": null,
-              "bron": "verworpen"
-            }
-          ],
-          "bron": "lijst"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                  "constructor": "Verworpen",
+                  "argument": null,
+                  "bron": "verworpen"
+                }
+              ],
+              "bron": "lijst"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -250,7 +256,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

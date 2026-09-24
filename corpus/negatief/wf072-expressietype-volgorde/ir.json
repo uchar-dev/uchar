@@ -83,94 +83,105 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Lees",
-        "subject": "Jutter",
-        "assertie": {
-          "node": "Predicaat",
-          "soort": "GEVULD",
-          "operand": {
-            "node": "FieldAccess",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "NIET_NEGATIEF"
-            },
-            "base": {
-              "node": "StructLiteral",
-              "type": {
-                "node": "StructType",
-                "domain": "dossier",
-                "fields": [
-                  {
-                    "name": "telling",
-                    "datatype": {
-                      "node": "Number",
-                      "whole": true,
-                      "decimals": 0,
-                      "sign": "NIET_NEGATIEF"
-                    }
-                  },
-                  {
-                    "name": "waarde",
-                    "datatype": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
-                    }
-                  }
-                ]
-              },
-              "fields": [
-                {
-                  "name": "waarde",
-                  "value": {
-                    "node": "Literal",
-                    "waarde": "1.50",
-                    "type": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
-                    },
-                    "bron": null
-                  }
+        "node": "Consistency",
+        "name": "Lees",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "Predicaat",
+              "soort": "GEVULD",
+              "operand": {
+                "node": "FieldAccess",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "NIET_NEGATIEF"
                 },
-                {
-                  "name": "telling",
-                  "value": {
-                    "node": "Literal",
-                    "waarde": "3",
-                    "type": {
-                      "node": "Number",
-                      "whole": true,
-                      "decimals": 0,
-                      "sign": "NIET_NEGATIEF"
+                "base": {
+                  "node": "StructLiteral",
+                  "type": {
+                    "node": "StructType",
+                    "domain": "dossier",
+                    "fields": [
+                      {
+                        "name": "telling",
+                        "datatype": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "NIET_NEGATIEF"
+                        }
+                      },
+                      {
+                        "name": "waarde",
+                        "datatype": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "NIET_NEGATIEF"
+                        }
+                      }
+                    ]
+                  },
+                  "fields": [
+                    {
+                      "name": "waarde",
+                      "value": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "1.50"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "NIET_NEGATIEF"
+                        },
+                        "bron": null
+                      }
                     },
-                    "bron": null
-                  }
-                }
-              ],
+                    {
+                      "name": "telling",
+                      "value": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "3"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "NIET_NEGATIEF"
+                        },
+                        "bron": null
+                      }
+                    }
+                  ],
+                  "bron": null
+                },
+                "field": "waarde",
+                "bron": null
+              },
+              "dagsoort": null,
+              "negatie": false,
+              "cijfers": 0,
+              "periode": null,
               "bron": null
             },
-            "field": "waarde",
-            "bron": null
-          },
-          "dagsoort": null,
-          "negatie": false,
-          "cijfers": 0,
-          "periode": null,
-          "bron": null
-        },
-        "bron": null,
-        "line": 1,
-        "geldigheid": null
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": null,
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

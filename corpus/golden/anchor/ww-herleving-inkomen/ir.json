@@ -130,150 +130,159 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "inkomensgrens van een werknemer",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "inkomensgrens",
-          "objecttype": "Werknemer",
-          "bron": "De inkomensgrens van een Werknemer"
-        },
-        "waarde": {
-          "node": "Afgerond",
-          "basis": {
-            "node": "Binair",
-            "op": "MAAL",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "maandloon",
-              "objecttype": "Werknemer",
-              "bron": "het maandloon van de Werknemer"
+        "node": "Rule",
+        "name": "inkomensgrens van een werknemer",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "0.8750",
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "inkomensgrens",
+              "objecttype": "Werknemer",
+              "bron": "De inkomensgrens van een Werknemer"
+            },
+            "value": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "Binair",
+                "op": "MAAL",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "maandloon",
+                  "objecttype": "Werknemer",
+                  "bron": "het maandloon van de Werknemer"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "0.8750"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 4,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "0,8750"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 6,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "het maandloon van de Werknemer maal 0,8750"
+              },
+              "modus": "REKENKUNDIG",
+              "decimalen": 2,
               "type": {
                 "node": "Number",
                 "whole": false,
-                "decimals": 4,
+                "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "0,8750"
+              "bron": "het maandloon van de Werknemer maal 0,8750 rekenkundig afgerond op 2 decimalen"
             },
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 6,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "het maandloon van de Werknemer maal 0,8750"
-          },
-          "modus": "REKENKUNDIG",
-          "decimalen": 2,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het maandloon van de Werknemer maal 0,8750 rekenkundig afgerond op 2 decimalen"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "verstreken periode bij herleving",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "verstreken periode",
-          "objecttype": "Werknemer",
-          "bron": "De verstreken periode van een Werknemer"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSDUUR",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "eindigingsdatum",
-              "objecttype": "Werknemer",
-              "bron": "zijn eindigingsdatum"
+        "node": "Rule",
+        "name": "verstreken periode bij herleving",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vervaldatum",
+              "attribuut": "verstreken periode",
               "objecttype": "Werknemer",
-              "bron": "zijn vervaldatum"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "dag"
-            }
-          },
-          "bron": "de tijdsduur van zijn eindigingsdatum tot zijn vervaldatum in hele dagen",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De verstreken periode van een Werknemer"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSDUUR",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "eindigingsdatum",
+                  "objecttype": "Werknemer",
+                  "bron": "zijn eindigingsdatum"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vervaldatum",
+                  "objecttype": "Werknemer",
+                  "bron": "zijn vervaldatum"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "dag"
+                }
+              },
+              "bron": "de tijdsduur van zijn eindigingsdatum tot zijn vervaldatum in hele dagen"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "nieuwe maxdatum bij herleving",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "nieuwe maxdatum",
-          "objecttype": "Werknemer",
-          "bron": "De nieuwe maxdatum van een Werknemer"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "maxdatum",
-            "objecttype": "Werknemer",
-            "bron": "zijn maxdatum"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "verstreken periode",
-            "objecttype": "Werknemer",
-            "bron": "zijn verstreken periode"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "zijn maxdatum plus zijn verstreken periode"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "nieuwe maxdatum bij herleving",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "nieuwe maxdatum",
+              "objecttype": "Werknemer",
+              "bron": "De nieuwe maxdatum van een Werknemer"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "maxdatum",
+                "objecttype": "Werknemer",
+                "bron": "zijn maxdatum"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "verstreken periode",
+                "objecttype": "Werknemer",
+                "bron": "zijn verstreken periode"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "zijn maxdatum plus zijn verstreken periode"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -281,7 +290,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],

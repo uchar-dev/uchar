@@ -48,49 +48,48 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "peildatum van een berging",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "peildatum",
-          "objecttype": "Berging",
-          "bron": "de peildatum"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "EERSTE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "sluitingsdag",
-              "objecttype": "Berging",
-              "bron": "zijn sluitingsdag"
+        "node": "Rule",
+        "name": "peildatum van een berging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "volgnummer",
+              "attribuut": "peildatum",
               "objecttype": "Berging",
-              "bron": "zijn volgnummer"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "de eerste van zijn sluitingsdag en zijn volgnummer",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "de peildatum"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "EERSTE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "sluitingsdag",
+                  "objecttype": "Berging",
+                  "bron": "zijn sluitingsdag"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "volgnummer",
+                  "objecttype": "Berging",
+                  "bron": "zijn volgnummer"
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "de eerste van zijn sluitingsdag en zijn volgnummer"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -98,7 +97,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

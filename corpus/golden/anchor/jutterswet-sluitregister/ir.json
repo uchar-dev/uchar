@@ -54,88 +54,100 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "sluitend register",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "sluitend",
-          "objecttype": "Register",
-          "bron": "Een Register is sluitend"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "telling",
-            "objecttype": "Register",
-            "bron": "de telling van het Register"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "opgave",
-            "objecttype": "Register",
-            "bron": "de opgave van het Register"
-          },
-          "periode": null,
-          "bron": "zijn telling gelijk is aan zijn opgave"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "sluitend register",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "sluitend",
+              "objecttype": "Register",
+              "bron": "Een Register is sluitend"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "telling",
+                "objecttype": "Register",
+                "bron": "de telling van het Register"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "opgave",
+                "objecttype": "Register",
+                "bron": "de opgave van het Register"
+              },
+              "periode": null,
+              "bron": "zijn telling gelijk is aan zijn opgave"
+            },
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "afwijkend register",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "afwijkend",
-          "objecttype": "Register",
-          "bron": "Een Register is afwijkend"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "ONGELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "telling",
-            "objecttype": "Register",
-            "bron": "de telling van het Register"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "opgave",
-            "objecttype": "Register",
-            "bron": "de opgave van het Register"
-          },
-          "periode": null,
-          "bron": "zijn telling ongelijk is aan zijn opgave"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "afwijkend register",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "afwijkend",
+              "objecttype": "Register",
+              "bron": "Een Register is afwijkend"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "ONGELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "telling",
+                "objecttype": "Register",
+                "bron": "de telling van het Register"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "opgave",
+                "objecttype": "Register",
+                "bron": "de opgave van het Register"
+              },
+              "periode": null,
+              "bron": "zijn telling ongelijk is aan zijn opgave"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -143,7 +155,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -219,327 +219,360 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "ondergewicht van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "ondergewicht",
-          "objecttype": "Vangst",
-          "bron": "Het ondergewicht van een Vangst"
-        },
-        "waarde": {
-          "node": "Begrensd",
-          "basis": {
-            "node": "AttribuutRef",
-            "attribuut": "ruwgewicht",
-            "objecttype": "Vangst",
-            "bron": "het ruwgewicht van de Vangst"
-          },
-          "minimum": {
-            "node": "Literal",
-            "waarde": "1",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "t",
-                "system": "Massa",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1000,
-                  "den": 1
-                }
-              }
+        "node": "Rule",
+        "name": "ondergewicht van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1 t"
-          },
-          "maximum": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "kg",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het ruwgewicht van de Vangst, met een minimum van 1 t"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "spiegelgewicht van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "spiegelgewicht",
-          "objecttype": "Vangst",
-          "bron": "Het spiegelgewicht van een Vangst"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "ruwgewicht",
-          "objecttype": "Vangst",
-          "bron": "het ruwgewicht van de Vangst"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "somgewicht van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "somgewicht",
-          "objecttype": "Vangst",
-          "bron": "Het somgewicht van een Vangst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "ruwgewicht",
-            "objecttype": "Vangst",
-            "bron": "het ruwgewicht van de Vangst"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "spiegelgewicht",
-            "objecttype": "Vangst",
-            "bron": "het spiegelgewicht van de Vangst"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "kg",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het ruwgewicht van de Vangst plus het spiegelgewicht van de Vangst"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "toeslaggewicht van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "toeslaggewicht",
-          "objecttype": "Vangst",
-          "bron": "Het toeslaggewicht van een Vangst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "ruwgewicht",
-            "objecttype": "Vangst",
-            "bron": "het ruwgewicht van de Vangst"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "1",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "t",
-                "system": "Massa",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1000,
-                  "den": 1
-                }
-              }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "ondergewicht",
+              "objecttype": "Vangst",
+              "bron": "Het ondergewicht van een Vangst"
             },
-            "bron": "1 t"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "kg",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het ruwgewicht van de Vangst plus 1 t"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "value": {
+              "node": "Begrensd",
+              "basis": {
+                "node": "AttribuutRef",
+                "attribuut": "ruwgewicht",
+                "objecttype": "Vangst",
+                "bron": "het ruwgewicht van de Vangst"
+              },
+              "minimum": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "t",
+                    "system": "Massa",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1000,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "1 t"
+              },
+              "maximum": null,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "het ruwgewicht van de Vangst, met een minimum van 1 t"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "lastgewicht van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "lastgewicht",
-          "objecttype": "Vangst",
-          "bron": "Het lastgewicht van een Vangst"
-        },
-        "waarde": {
-          "node": "Begrensd",
-          "basis": {
-            "node": "AttribuutRef",
-            "attribuut": "ruwgewicht",
-            "objecttype": "Vangst",
-            "bron": "het ruwgewicht van de Vangst"
-          },
-          "minimum": null,
-          "maximum": {
-            "node": "Literal",
-            "waarde": "2",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "t",
-                "system": "Massa",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1000,
-                  "den": 1
-                }
-              }
+        "node": "Rule",
+        "name": "spiegelgewicht van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "2 t"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "kg",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het ruwgewicht van de Vangst, met een maximum van 2 t"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "spiegelgewicht",
+              "objecttype": "Vangst",
+              "bron": "Het spiegelgewicht van een Vangst"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "ruwgewicht",
+              "objecttype": "Vangst",
+              "bron": "het ruwgewicht van de Vangst"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "keurgewicht van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "keurgewicht",
-          "objecttype": "Vangst",
-          "bron": "Het keurgewicht van een Vangst"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "ruwgewicht",
-          "objecttype": "Vangst",
-          "bron": "het ruwgewicht van de Vangst"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GROTER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "spiegelgewicht",
-            "objecttype": "Vangst",
-            "bron": "het spiegelgewicht van de Vangst"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "1000",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
-                }
-              }
+        "node": "Rule",
+        "name": "somgewicht van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1000 kg"
-          },
-          "periode": null,
-          "bron": "het spiegelgewicht van de Vangst groter is dan 1000 kg"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "somgewicht",
+              "objecttype": "Vangst",
+              "bron": "Het somgewicht van een Vangst"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "ruwgewicht",
+                "objecttype": "Vangst",
+                "bron": "het ruwgewicht van de Vangst"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "spiegelgewicht",
+                "objecttype": "Vangst",
+                "bron": "het spiegelgewicht van de Vangst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "het ruwgewicht van de Vangst plus het spiegelgewicht van de Vangst"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "toeslaggewicht van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "toeslaggewicht",
+              "objecttype": "Vangst",
+              "bron": "Het toeslaggewicht van een Vangst"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "ruwgewicht",
+                "objecttype": "Vangst",
+                "bron": "het ruwgewicht van de Vangst"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "t",
+                    "system": "Massa",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1000,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "1 t"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "het ruwgewicht van de Vangst plus 1 t"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "lastgewicht van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "lastgewicht",
+              "objecttype": "Vangst",
+              "bron": "Het lastgewicht van een Vangst"
+            },
+            "value": {
+              "node": "Begrensd",
+              "basis": {
+                "node": "AttribuutRef",
+                "attribuut": "ruwgewicht",
+                "objecttype": "Vangst",
+                "bron": "het ruwgewicht van de Vangst"
+              },
+              "minimum": null,
+              "maximum": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "t",
+                    "system": "Massa",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1000,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "2 t"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "het ruwgewicht van de Vangst, met een maximum van 2 t"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "keurgewicht van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "keurgewicht",
+              "objecttype": "Vangst",
+              "bron": "Het keurgewicht van een Vangst"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "ruwgewicht",
+              "objecttype": "Vangst",
+              "bron": "het ruwgewicht van de Vangst"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "spiegelgewicht",
+                "objecttype": "Vangst",
+                "bron": "het spiegelgewicht van de Vangst"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "1000"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "1000 kg"
+              },
+              "periode": null,
+              "bron": "het spiegelgewicht van de Vangst groter is dan 1000 kg"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -547,7 +580,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

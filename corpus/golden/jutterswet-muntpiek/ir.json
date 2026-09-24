@@ -105,96 +105,96 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "laagste muntgewicht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "laagste muntgewicht",
-          "objecttype": "Jutter",
-          "bron": "Het laagste muntgewicht van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MINIMUM",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "laagste muntgewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "gewicht",
-              "objecttype": "Munt",
-              "bron": "het gewicht van alle munten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Munt",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de minimale waarde van het gewicht van alle munten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+              "attribuut": "laagste muntgewicht",
+              "objecttype": "Jutter",
+              "bron": "Het laagste muntgewicht van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "MINIMUM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "gewicht",
+                  "objecttype": "Munt",
+                  "bron": "het gewicht van alle munten van de Jutter"
+                }
+              ],
+              "elementType": "Munt",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de minimale waarde van het gewicht van alle munten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "hoogste muntgewicht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "hoogste muntgewicht",
-          "objecttype": "Jutter",
-          "bron": "Het hoogste muntgewicht van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MAXIMUM",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "hoogste muntgewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "gewicht",
-              "objecttype": "Munt",
-              "bron": "het gewicht van alle munten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Munt",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de maximale waarde van het gewicht van alle munten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+              "attribuut": "hoogste muntgewicht",
+              "objecttype": "Jutter",
+              "bron": "Het hoogste muntgewicht van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "MAXIMUM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "gewicht",
+                  "objecttype": "Munt",
+                  "bron": "het gewicht van alle munten van de Jutter"
+                }
+              ],
+              "elementType": "Munt",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de maximale waarde van het gewicht van alle munten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -202,7 +202,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

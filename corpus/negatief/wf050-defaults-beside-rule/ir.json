@@ -48,36 +48,42 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "uitgesloten bij aanwijzing",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uitgesloten",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is uitgesloten"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "vergunning geweigerd",
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "zijn raapvergunning is geweigerd"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "uitgesloten bij aanwijzing",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "uitgesloten",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is uitgesloten"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "vergunning geweigerd",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "zijn raapvergunning is geweigerd"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -85,7 +91,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],

@@ -82,50 +82,50 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "erfvolgeraantal van een wachter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "erfvolgeraantal",
-          "objecttype": "Wachter",
-          "bron": "Het erfvolgeraantal van een Wachter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "erfvolgeraantal van een wachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "erfvolgers",
+              "attribuut": "erfvolgeraantal",
               "objecttype": "Wachter",
-              "bron": "alle erfvolgers van de Wachter"
-            }
-          ],
-          "elementObjecttype": "Wachter",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het aantal erfvolgers van de Wachter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "erflijn",
-            "rol": "erfvolger"
+              "bron": "Het erfvolgeraantal van een Wachter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "erfvolgers",
+                  "objecttype": "Wachter",
+                  "bron": "alle erfvolgers van de Wachter"
+                }
+              ],
+              "elementType": "Wachter",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "erflijn",
+                "rol": "erfvolger"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het aantal erfvolgers van de Wachter"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -133,65 +133,67 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [
       {
-        "node": "ResolvedFeitCreatie",
-        "naam": "erf de directe opvolger",
-        "anker": "Wachter",
-        "doel": "Wachter",
-        "tussenstappen": [],
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "bevoegd",
-          "negatie": false,
-          "eigenaar": "Wachter",
-          "periode": null,
-          "bron": "de Wachter bevoegd is"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "feittype": "erflijn",
-        "ankerRol": "erflater",
-        "doelRol": "erfvolger",
-        "joinRol": {
-          "node": "RolBinding",
-          "feittype": "opvolging",
-          "rol": "opvolger"
-        }
-      },
-      {
-        "node": "ResolvedFeitCreatie",
-        "naam": "erf de lijn door",
-        "anker": "Wachter",
-        "doel": "Wachter",
-        "tussenstappen": [
+        "node": "FactCreation",
+        "name": "erf de directe opvolger",
+        "versions": [
           {
-            "node": "Tussenstap",
-            "rolBinding": {
-              "node": "RolBinding",
-              "feittype": "erflijn",
-              "rol": "erfvolger"
+            "factType": "erflijn",
+            "anchorRole": "erflater",
+            "targetRole": "erfvolger",
+            "anchor": "Wachter",
+            "path": [
+              {
+                "node": "RolBinding",
+                "feittype": "opvolging",
+                "rol": "opvolger"
+              }
+            ],
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "bevoegd",
+              "negatie": false,
+              "eigenaar": "Wachter",
+              "periode": null,
+              "bron": "de Wachter bevoegd is"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             }
           }
-        ],
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "feittype": "erflijn",
-        "ankerRol": "erflater",
-        "doelRol": "erfvolger",
-        "joinRol": {
-          "node": "RolBinding",
-          "feittype": "opvolging",
-          "rol": "opvolger"
-        }
+        ]
+      },
+      {
+        "node": "FactCreation",
+        "name": "erf de lijn door",
+        "versions": [
+          {
+            "factType": "erflijn",
+            "anchorRole": "erflater",
+            "targetRole": "erfvolger",
+            "anchor": "Wachter",
+            "path": [
+              {
+                "node": "RolBinding",
+                "feittype": "erflijn",
+                "rol": "erfvolger"
+              },
+              {
+                "node": "RolBinding",
+                "feittype": "opvolging",
+                "rol": "opvolger"
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            }
+          }
+        ]
       }
     ],
     "resolvedStartpunten": [],

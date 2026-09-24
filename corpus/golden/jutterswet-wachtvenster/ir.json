@@ -107,210 +107,223 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "paraat bij aanstelling",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "paraat",
-          "objecttype": "Schouwploeg",
-          "bron": "Een Schouwploeg is paraat"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "ALLE",
-          "elementObjecttype": "Strandwacht",
-          "filter": null,
-          "toets": {
-            "node": "Periode",
-            "vanaf": {
-              "node": "AttribuutRef",
-              "attribuut": "aanstelling",
-              "objecttype": "Strandwacht",
-              "bron": "hun aanstelling"
+        "node": "Rule",
+        "name": "paraat bij aanstelling",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "tot": null,
-            "totInclusief": false,
-            "bron": "vanaf hun aanstelling"
-          },
-          "bron": "alle wachten van de Schouwploeg vanaf hun aanstelling in dienst zijn",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "schouwindeling",
-            "rol": "wacht"
-          }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "bevoegd bij diploma",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bevoegd",
-          "objecttype": "Schouwploeg",
-          "bron": "Een Schouwploeg is bevoegd"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "ALLE",
-          "elementObjecttype": "Strandwacht",
-          "filter": {
-            "node": "Periode",
-            "vanaf": {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "aanstelling",
-              "objecttype": "Strandwacht",
-              "bron": "hun aanstelling"
-            },
-            "tot": null,
-            "totInclusief": false,
-            "bron": "vanaf hun aanstelling"
-          },
-          "toets": {
-            "node": "Kenmerk",
-            "kenmerk": "gediplomeerd",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "gediplomeerd zijn"
-          },
-          "bron": "alle wachten van de Schouwploeg die vanaf hun aanstelling in dienst zijn, gediplomeerd zijn",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "schouwindeling",
-            "rol": "wacht"
-          }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "dienstwachttal van een schouwploeg",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "dienstwachttal",
-          "objecttype": "Schouwploeg",
-          "bron": "Het dienstwachttal van een Schouwploeg"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "wachten",
+              "attribuut": "paraat",
               "objecttype": "Schouwploeg",
-              "bron": "wachten van de Schouwploeg"
-            }
-          ],
-          "elementObjecttype": "Strandwacht",
-          "leegwaarde": null,
-          "filter": {
-            "node": "Periode",
-            "vanaf": {
-              "node": "AttribuutRef",
-              "attribuut": "aanstelling",
-              "objecttype": "Strandwacht",
-              "bron": "hun aanstelling"
+              "bron": "Een Schouwploeg is paraat"
             },
-            "tot": null,
-            "totInclusief": false,
-            "bron": "vanaf hun aanstelling"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal wachten van de Schouwploeg die vanaf hun aanstelling in dienst zijn",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "schouwindeling",
-            "rol": "wacht"
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "ALLE",
+              "elementObjecttype": "Strandwacht",
+              "filter": null,
+              "toets": {
+                "node": "Periode",
+                "vanaf": {
+                  "node": "AttribuutRef",
+                  "attribuut": "aanstelling",
+                  "objecttype": "Strandwacht",
+                  "bron": "hun aanstelling"
+                },
+                "tot": null,
+                "totInclusief": false,
+                "bron": "vanaf hun aanstelling"
+              },
+              "bron": "alle wachten van de Schouwploeg vanaf hun aanstelling in dienst zijn",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "schouwindeling",
+                "rol": "wacht"
+              }
+            },
+            "initialisation": false
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "wachttal van een schouwploeg",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "wachttal",
-          "objecttype": "Schouwploeg",
-          "bron": "Het wachttal van een Schouwploeg"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "bevoegd bij diploma",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "wachten",
+              "attribuut": "bevoegd",
               "objecttype": "Schouwploeg",
-              "bron": "wachten van de Schouwploeg"
-            }
-          ],
-          "elementObjecttype": "Strandwacht",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal wachten van de Schouwploeg",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "schouwindeling",
-            "rol": "wacht"
+              "bron": "Een Schouwploeg is bevoegd"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "ALLE",
+              "elementObjecttype": "Strandwacht",
+              "filter": {
+                "node": "Periode",
+                "vanaf": {
+                  "node": "AttribuutRef",
+                  "attribuut": "aanstelling",
+                  "objecttype": "Strandwacht",
+                  "bron": "hun aanstelling"
+                },
+                "tot": null,
+                "totInclusief": false,
+                "bron": "vanaf hun aanstelling"
+              },
+              "toets": {
+                "node": "Kenmerk",
+                "kenmerk": "gediplomeerd",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "gediplomeerd zijn"
+              },
+              "bron": "alle wachten van de Schouwploeg die vanaf hun aanstelling in dienst zijn, gediplomeerd zijn",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "schouwindeling",
+                "rol": "wacht"
+              }
+            },
+            "initialisation": false
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "dienstwachttal van een schouwploeg",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "dienstwachttal",
+              "objecttype": "Schouwploeg",
+              "bron": "Het dienstwachttal van een Schouwploeg"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "wachten",
+                  "objecttype": "Schouwploeg",
+                  "bron": "wachten van de Schouwploeg"
+                }
+              ],
+              "elementType": "Strandwacht",
+              "filter": {
+                "node": "Periode",
+                "vanaf": {
+                  "node": "AttribuutRef",
+                  "attribuut": "aanstelling",
+                  "objecttype": "Strandwacht",
+                  "bron": "hun aanstelling"
+                },
+                "tot": null,
+                "totInclusief": false,
+                "bron": "vanaf hun aanstelling"
+              },
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "schouwindeling",
+                "rol": "wacht"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal wachten van de Schouwploeg die vanaf hun aanstelling in dienst zijn"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wachttal van een schouwploeg",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "wachttal",
+              "objecttype": "Schouwploeg",
+              "bron": "Het wachttal van een Schouwploeg"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "wachten",
+                  "objecttype": "Schouwploeg",
+                  "bron": "wachten van de Schouwploeg"
+                }
+              ],
+              "elementType": "Strandwacht",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "schouwindeling",
+                "rol": "wacht"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal wachten van de Schouwploeg"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -318,7 +331,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

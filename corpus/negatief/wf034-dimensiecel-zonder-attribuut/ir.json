@@ -98,29 +98,33 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "voorjaarsgewicht van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "voorjaarsgewicht",
-          "objecttype": "Jutter",
-          "bron": "Het voorjaarsgewicht van een Jutter"
-        },
-        "waarde": {
-          "node": "DimensieCel",
-          "attribuut": null,
-          "labels": [
-            "voorjaar"
-          ],
-          "bron": "zijn vondstgewicht in voorjaar"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "voorjaarsgewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "voorjaarsgewicht",
+              "objecttype": "Jutter",
+              "bron": "Het voorjaarsgewicht van een Jutter"
+            },
+            "value": {
+              "node": "DimensieCel",
+              "attribuut": null,
+              "labels": [
+                "voorjaar"
+              ],
+              "bron": "zijn vondstgewicht in voorjaar"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -128,7 +132,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

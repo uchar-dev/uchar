@@ -98,90 +98,100 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "kenmerktoekenning overzees",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "overzees",
-          "objecttype": "Eigenaar",
-          "bron": "de overzees"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GROTER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "registratiezone",
-            "objecttype": "Eigenaar",
-            "bron": "de registratiezone"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "100",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "kenmerktoekenning overzees",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "100"
-          },
-          "periode": null,
-          "bron": null
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "overzees",
+              "objecttype": "Eigenaar",
+              "bron": "de overzees"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "registratiezone",
+                "objecttype": "Eigenaar",
+                "bron": "de registratiezone"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "100"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "100"
+              },
+              "periode": null,
+              "bron": null
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
     "objectCreaties": [
       {
-        "node": "ResolvedObjectCreatie",
-        "naam": "richt eigenaar op",
-        "nieuwType": "Eigenaar",
-        "subject": "Vondstaanslag",
-        "toekenningen": [
+        "node": "ObjectCreation",
+        "name": "richt eigenaar op",
+        "versions": [
           {
-            "node": "Toekenning",
-            "attribuut": "registratiezone",
-            "waarde": {
-              "node": "AttribuutRef",
-              "attribuut": "registratiezone",
-              "objecttype": "Vondstaanslag",
-              "bron": "de registratiezone"
+            "createdType": "Eigenaar",
+            "subject": "Vondstaanslag",
+            "initialisations": [
+              {
+                "node": "Toekenning",
+                "attribuut": "registratiezone",
+                "waarde": {
+                  "node": "AttribuutRef",
+                  "attribuut": "registratiezone",
+                  "objecttype": "Vondstaanslag",
+                  "bron": "de registratiezone"
+                },
+                "kenmerk": false
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "kenmerk": false
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "Vondstaanslag_eigenaar",
+              "rol": "eigenaar"
+            }
           }
-        ],
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "Vondstaanslag_eigenaar",
-          "rol": "eigenaar"
-        }
+        ]
       }
     ],
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],
@@ -220,7 +230,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "2",
+                "value": {
+                  "number": "2"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,

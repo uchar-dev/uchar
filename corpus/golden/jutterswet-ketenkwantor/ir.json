@@ -103,138 +103,154 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "vondstrijk",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vondstrijk",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is vondstrijk"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 4,
-          "elementObjecttype": "Vondst",
-          "filter": null,
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
+        "node": "Rule",
+        "name": "vondstrijk",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "gewicht",
-              "objecttype": "Vondst",
-              "bron": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter"
+              "attribuut": "vondstrijk",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is vondstrijk"
             },
-            "rechts": {
+            "value": {
               "node": "Literal",
-              "waarde": "1,00",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
+              "value": {
+                "boolean": true
               },
-              "bron": "1,00"
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
             },
-            "periode": null,
-            "bron": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
-          },
-          "bron": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00",
-          "bronPad": [
-            {
-              "node": "RolBinding",
-              "feittype": "bemanning",
-              "rol": "gevoerde boot"
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 4,
+              "elementObjecttype": "Vondst",
+              "filter": null,
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "gewicht",
+                  "objecttype": "Vondst",
+                  "bron": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "1.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "1,00"
+                },
+                "periode": null,
+                "bron": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
+              },
+              "bron": "het gewicht van ten minste 4 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00",
+              "bronPad": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "bemanning",
+                  "rol": "gevoerde boot"
+                },
+                {
+                  "node": "RolBinding",
+                  "feittype": "berging",
+                  "rol": "geborgen vondst"
+                }
+              ]
             },
-            {
-              "node": "RolBinding",
-              "feittype": "berging",
-              "rol": "geborgen vondst"
-            }
-          ]
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "vondstarm",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vondstarm",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is vondstarm"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "TEN_HOOGSTE",
-          "drempel": 3,
-          "elementObjecttype": "Vondst",
-          "filter": null,
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
+        "node": "Rule",
+        "name": "vondstarm",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "gewicht",
-              "objecttype": "Vondst",
-              "bron": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter"
+              "attribuut": "vondstarm",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is vondstarm"
             },
-            "rechts": {
+            "value": {
               "node": "Literal",
-              "waarde": "1,00",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
+              "value": {
+                "boolean": true
               },
-              "bron": "1,00"
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
             },
-            "periode": null,
-            "bron": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
-          },
-          "bron": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00",
-          "bronPad": [
-            {
-              "node": "RolBinding",
-              "feittype": "bemanning",
-              "rol": "gevoerde boot"
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "TEN_HOOGSTE",
+              "drempel": 3,
+              "elementObjecttype": "Vondst",
+              "filter": null,
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "gewicht",
+                  "objecttype": "Vondst",
+                  "bron": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "1.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "1,00"
+                },
+                "periode": null,
+                "bron": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00"
+              },
+              "bron": "het gewicht van ten hoogste 3 van de geborgen vondsten van alle gevoerde boten van de Jutter groter is dan 1,00",
+              "bronPad": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "bemanning",
+                  "rol": "gevoerde boot"
+                },
+                {
+                  "node": "RolBinding",
+                  "feittype": "berging",
+                  "rol": "geborgen vondst"
+                }
+              ]
             },
-            {
-              "node": "RolBinding",
-              "feittype": "berging",
-              "rol": "geborgen vondst"
-            }
-          ]
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -242,7 +258,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -46,136 +46,160 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "afhandeling van een geborgen berging",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "afgehandeld",
-          "objecttype": "Berging",
-          "bron": "Een Berging is afgehandeld"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "geborgd",
-            "objecttype": "Berging",
-            "bron": "de geborgd van de Berging"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "waar",
-            "type": {
-              "node": "Booleaan"
+        "node": "Rule",
+        "name": "afhandeling van een geborgen berging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "waar"
-          },
-          "periode": null,
-          "bron": "haar geborgd gelijk is aan waar"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "afgehandeld",
+              "objecttype": "Berging",
+              "bron": "Een Berging is afgehandeld"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "geborgd",
+                "objecttype": "Berging",
+                "bron": "de geborgd van de Berging"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "boolean": true
+                },
+                "type": {
+                  "node": "Booleaan"
+                },
+                "bron": "waar"
+              },
+              "periode": null,
+              "bron": "haar geborgd gelijk is aan waar"
+            },
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "openstelling van een ongeborgen berging",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "openstaand",
-          "objecttype": "Berging",
-          "bron": "Een Berging is openstaand"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "geborgd",
-            "objecttype": "Berging",
-            "bron": "de geborgd van de Berging"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "onwaar",
-            "type": {
-              "node": "Booleaan"
+        "node": "Rule",
+        "name": "openstelling van een ongeborgen berging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "onwaar"
-          },
-          "periode": null,
-          "bron": "haar geborgd gelijk is aan onwaar"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "openstaand",
+              "objecttype": "Berging",
+              "bron": "Een Berging is openstaand"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "geborgd",
+                "objecttype": "Berging",
+                "bron": "de geborgd van de Berging"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "boolean": false
+                },
+                "type": {
+                  "node": "Booleaan"
+                },
+                "bron": "onwaar"
+              },
+              "periode": null,
+              "bron": "haar geborgd gelijk is aan onwaar"
+            },
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "betwisting bij afwijkende borging",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "betwist",
-          "objecttype": "Berging",
-          "bron": "Een Berging is betwist"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "ONGELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "geborgd",
-            "objecttype": "Berging",
-            "bron": "de geborgd van de Berging"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "waar",
-            "type": {
-              "node": "Booleaan"
+        "node": "Rule",
+        "name": "betwisting bij afwijkende borging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "waar"
-          },
-          "periode": null,
-          "bron": "haar geborgd ongelijk is aan waar"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "betwist",
+              "objecttype": "Berging",
+              "bron": "Een Berging is betwist"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "ONGELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "geborgd",
+                "objecttype": "Berging",
+                "bron": "de geborgd van de Berging"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "boolean": true
+                },
+                "type": {
+                  "node": "Booleaan"
+                },
+                "bron": "waar"
+              },
+              "periode": null,
+              "bron": "haar geborgd ongelijk is aan waar"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -183,7 +207,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

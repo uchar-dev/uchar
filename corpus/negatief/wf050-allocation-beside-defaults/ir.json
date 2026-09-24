@@ -108,35 +108,32 @@
     "objectCreaties": [],
     "verdelingen": [
       {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeel de opbrengst",
-        "bronType": "Berging",
-        "bronAttribuut": "opbrengst",
-        "doelType": "Jutter",
-        "doelAttribuut": "waardering",
-        "methode": "GELIJKE_DELEN",
-        "ratoAttribuut": null,
-        "maximumAttribuut": null,
-        "afrondingDecimalen": null,
-        "restantAttribuut": null,
-        "groepeerAttribuut": null,
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "bergingsdeelname",
-          "rol": "berger"
-        }
+        "node": "Allocation",
+        "name": "verdeel de opbrengst",
+        "versions": [
+          {
+            "sourceType": "Berging",
+            "sourceAttribute": "opbrengst",
+            "targetType": "Jutter",
+            "targetAttribute": "waardering",
+            "method": "GELIJKE_DELEN",
+            "descending": false,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "bergingsdeelname",
+              "rol": "berger"
+            }
+          }
+        ]
       }
     ],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],
@@ -192,7 +189,9 @@
             "voorwaarde": null,
             "consequentie": {
               "node": "Literal",
-              "waarde": "25",
+              "value": {
+                "number": "25"
+              },
               "type": {
                 "node": "Number",
                 "whole": true,

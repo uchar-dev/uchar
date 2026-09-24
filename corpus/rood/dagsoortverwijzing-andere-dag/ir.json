@@ -122,42 +122,46 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "uiterste bergingsdatum van een bergingsploeg",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uiterste bergingsdatum",
-          "objecttype": "Bergingsploeg",
-          "bron": "De uiterste bergingsdatum van een Bergingsploeg"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "meldingsdatum",
-            "objecttype": "Bergingsploeg",
-            "bron": "zijn meldingsdatum"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "bergingsbestek",
-            "objecttype": "Bergingsploeg",
-            "bron": "zijn bergingsbestek"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "zijn meldingsdatum plus zijn bergingsbestek"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "uiterste bergingsdatum van een bergingsploeg",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "uiterste bergingsdatum",
+              "objecttype": "Bergingsploeg",
+              "bron": "De uiterste bergingsdatum van een Bergingsploeg"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "meldingsdatum",
+                "objecttype": "Bergingsploeg",
+                "bron": "zijn meldingsdatum"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "bergingsbestek",
+                "objecttype": "Bergingsploeg",
+                "bron": "zijn bergingsbestek"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "zijn meldingsdatum plus zijn bergingsbestek"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [
@@ -169,7 +173,9 @@
           "soort": "DAGSOORT",
           "operand": {
             "node": "Literal",
-            "waarde": "2026-03-15",
+            "value": {
+              "date": "2026-03-15"
+            },
             "type": {
               "node": "Date",
               "precision": "day"
@@ -195,12 +201,11 @@
           "node": "Vergelijking",
           "op": "GELIJK",
           "links": {
-            "node": "Functie",
+            "node": "BuiltinCall",
             "kind": "DAG_UIT",
-            "argumenten": [
+            "arguments": [
               {
-                "node": "Constante",
-                "naam": "de dag",
+                "node": "BoundDay",
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -208,22 +213,19 @@
                 "bron": "de dag"
               }
             ],
-            "elementObjecttype": null,
-            "leegwaarde": null,
-            "filter": null,
-            "dimensieSelectie": null,
             "type": {
               "node": "Number",
               "whole": true,
               "decimals": 0,
               "sign": "ONBEPAALD"
             },
-            "bron": "de dag_uit uit de dag",
-            "granulariteit": null
+            "bron": "de dag_uit uit de dag"
           },
           "rechts": {
             "node": "Literal",
-            "waarde": "15",
+            "value": {
+              "number": "15"
+            },
             "type": {
               "node": "Number",
               "whole": true,
@@ -246,7 +248,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

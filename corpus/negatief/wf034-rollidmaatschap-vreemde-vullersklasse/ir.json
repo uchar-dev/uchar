@@ -82,130 +82,154 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bemande wachtpost",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bemand",
-          "objecttype": "Wachtpost",
-          "bron": "Een Wachtpost is bemand"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "RoleMembership",
-          "factType": "wachtindeling",
-          "role": "toegewezen wachtpost",
-          "negated": false,
-          "bron": "hij een wachtjutter heeft"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "bemande wachtpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bemand",
+              "objecttype": "Wachtpost",
+              "bron": "Een Wachtpost is bemand"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "wachtindeling",
+              "role": "toegewezen wachtpost",
+              "negated": false,
+              "bron": "hij een wachtjutter heeft"
+            },
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "onbemande wachtpost",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "onbemand",
-          "objecttype": "Wachtpost",
-          "bron": "Een Wachtpost is onbemand"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "RoleMembership",
-          "factType": "wachtindeling",
-          "role": "toegewezen wachtpost",
-          "negated": true,
-          "bron": "hij geen wachtjutter heeft"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "onbemande wachtpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "onbemand",
+              "objecttype": "Wachtpost",
+              "bron": "Een Wachtpost is onbemand"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "wachtindeling",
+              "role": "toegewezen wachtpost",
+              "negated": true,
+              "bron": "hij geen wachtjutter heeft"
+            },
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "strandbemande wachtpost",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "strandbemand",
-          "objecttype": "Wachtpost",
-          "bron": "Een Wachtpost is strandbemand"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "RoleMembership",
-          "factType": "wachtindeling",
-          "role": "toegewezen wachtpost",
-          "counterpartType": "Wachtpost",
-          "negated": false,
-          "bron": "hij een strandjutter heeft"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "strandbemande wachtpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "strandbemand",
+              "objecttype": "Wachtpost",
+              "bron": "Een Wachtpost is strandbemand"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "wachtindeling",
+              "role": "toegewezen wachtpost",
+              "counterpartType": "Wachtpost",
+              "negated": false,
+              "bron": "hij een strandjutter heeft"
+            },
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "strandvrije wachtpost",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "strandvrij",
-          "objecttype": "Wachtpost",
-          "bron": "Een Wachtpost is strandvrij"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "RoleMembership",
-          "factType": "wachtindeling",
-          "role": "toegewezen wachtpost",
-          "counterpartType": "Strandjutter",
-          "negated": true,
-          "bron": "hij geen strandjutter heeft"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "strandvrije wachtpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "strandvrij",
+              "objecttype": "Wachtpost",
+              "bron": "Een Wachtpost is strandvrij"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "wachtindeling",
+              "role": "toegewezen wachtpost",
+              "counterpartType": "Strandjutter",
+              "negated": true,
+              "bron": "hij geen strandjutter heeft"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -213,7 +237,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

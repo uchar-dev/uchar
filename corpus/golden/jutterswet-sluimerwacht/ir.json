@@ -59,98 +59,110 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "sluimerstand bij beperkte dienst",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "sluimerend",
-          "objecttype": "Seinpost",
-          "bron": "Een Seinpost is sluimerend"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_HOOGSTE",
-          "drempel": 1,
-          "onderdelen": [
-            {
-              "node": "Kenmerk",
-              "kenmerk": "bemand",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "de Seinpost bemand is"
+        "node": "Rule",
+        "name": "sluimerstand bij beperkte dienst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Kenmerk",
-              "kenmerk": "verlicht",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "de Seinpost verlicht is"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "sluimerend",
+              "objecttype": "Seinpost",
+              "bron": "Een Seinpost is sluimerend"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "meldingen",
-                "objecttype": "Seinpost",
-                "bron": "de meldingen van de Seinpost"
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "2",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_HOOGSTE",
+              "drempel": 1,
+              "onderdelen": [
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "bemand",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "de Seinpost bemand is"
                 },
-                "bron": "2"
-              },
-              "periode": null,
-              "bron": "haar meldingen groter zijn dan 2"
-            }
-          ],
-          "bron": "ten hoogste \u00e9\u00e9n van: bemand, verlicht, meldingen boven 2"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "verlicht",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "de Seinpost verlicht is"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "meldingen",
+                    "objecttype": "Seinpost",
+                    "bron": "de meldingen van de Seinpost"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "2"
+                  },
+                  "periode": null,
+                  "bron": "haar meldingen groter zijn dan 2"
+                }
+              ],
+              "bron": "ten hoogste \u00e9\u00e9n van: bemand, verlicht, meldingen boven 2"
+            },
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "afschrift van de meldingen",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "meldingsafschrift",
-          "objecttype": "Seinpost",
-          "bron": "Het meldingsafschrift van een Seinpost"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "meldingen",
-          "objecttype": "Seinpost",
-          "bron": "de meldingen van de Seinpost"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "afschrift van de meldingen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "meldingsafschrift",
+              "objecttype": "Seinpost",
+              "bron": "Het meldingsafschrift van een Seinpost"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "meldingen",
+              "objecttype": "Seinpost",
+              "bron": "de meldingen van de Seinpost"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -158,7 +170,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

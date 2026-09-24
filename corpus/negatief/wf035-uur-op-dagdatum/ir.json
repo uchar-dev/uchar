@@ -39,51 +39,57 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening toetsdatum",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "toetsdatum",
-          "objecttype": "Vondst",
-          "bron": "De toetsdatum van een Vondst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aangiftedatum",
-            "objecttype": "Vondst",
-            "bron": "zijn aangiftedatum"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "3",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "uur"
-              }
+        "node": "Rule",
+        "name": "Berekening toetsdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "3 uur"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "zijn aangiftedatum plus 3 uur"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "toetsdatum",
+              "objecttype": "Vondst",
+              "bron": "De toetsdatum van een Vondst"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aangiftedatum",
+                "objecttype": "Vondst",
+                "bron": "zijn aangiftedatum"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "3"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "uur"
+                  }
+                },
+                "bron": "3 uur"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "zijn aangiftedatum plus 3 uur"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -91,7 +97,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

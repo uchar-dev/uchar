@@ -83,200 +83,210 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening uurspanne",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uurspanne",
-          "objecttype": "Getijdenpaar",
-          "bron": "De uurspanne van een Getijdenpaar"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSDUUR",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "aankomst",
-              "objecttype": "Getijdenpaar",
-              "bron": "zijn aankomst"
+        "node": "Rule",
+        "name": "Berekening uurspanne",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vertrek",
+              "attribuut": "uurspanne",
               "objecttype": "Getijdenpaar",
-              "bron": "zijn vertrek"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "uur"
-            }
-          },
-          "bron": "de tijdsduur van zijn aankomst tot zijn vertrek in hele uren",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De uurspanne van een Getijdenpaar"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSDUUR",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "aankomst",
+                  "objecttype": "Getijdenpaar",
+                  "bron": "zijn aankomst"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vertrek",
+                  "objecttype": "Getijdenpaar",
+                  "bron": "zijn vertrek"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "uur"
+                }
+              },
+              "bron": "de tijdsduur van zijn aankomst tot zijn vertrek in hele uren"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening dagspanne",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "dagspanne",
-          "objecttype": "Getijdenpaar",
-          "bron": "De dagspanne van een Getijdenpaar"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSDUUR",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "aankomst",
-              "objecttype": "Getijdenpaar",
-              "bron": "zijn aankomst"
+        "node": "Rule",
+        "name": "Berekening dagspanne",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vertrek",
+              "attribuut": "dagspanne",
               "objecttype": "Getijdenpaar",
-              "bron": "zijn vertrek"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "dagen"
-            }
-          },
-          "bron": "de tijdsduur van zijn aankomst tot zijn vertrek in hele dagen",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De dagspanne van een Getijdenpaar"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSDUUR",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "aankomst",
+                  "objecttype": "Getijdenpaar",
+                  "bron": "zijn aankomst"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vertrek",
+                  "objecttype": "Getijdenpaar",
+                  "bron": "zijn vertrek"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "dagen"
+                }
+              },
+              "bron": "de tijdsduur van zijn aankomst tot zijn vertrek in hele dagen"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening hersteltijd",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "hersteltijd",
-          "objecttype": "Getijdenpaar",
-          "bron": "De hersteltijd van een Getijdenpaar"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aankomst",
-            "objecttype": "Getijdenpaar",
-            "bron": "zijn aankomst"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "26",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "uur"
-              }
+        "node": "Rule",
+        "name": "Berekening hersteltijd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "26 uur"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "millisecond"
-          },
-          "bron": "zijn aankomst plus 26 uur"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "hersteltijd",
+              "objecttype": "Getijdenpaar",
+              "bron": "De hersteltijd van een Getijdenpaar"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aankomst",
+                "objecttype": "Getijdenpaar",
+                "bron": "zijn aankomst"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "26"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "uur"
+                  }
+                },
+                "bron": "26 uur"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "bron": "zijn aankomst plus 26 uur"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening ijkdatum",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "ijkdatum",
-          "objecttype": "Getijdenpaar",
-          "bron": "De ijkdatum van een Getijdenpaar"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aankomst",
-            "objecttype": "Getijdenpaar",
-            "bron": "zijn aankomst"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "1",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "maand"
-              }
+        "node": "Rule",
+        "name": "Berekening ijkdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1 maand"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "millisecond"
-          },
-          "bron": "zijn aankomst plus 1 maand"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "ijkdatum",
+              "objecttype": "Getijdenpaar",
+              "bron": "De ijkdatum van een Getijdenpaar"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aankomst",
+                "objecttype": "Getijdenpaar",
+                "bron": "zijn aankomst"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "maand"
+                  }
+                },
+                "bron": "1 maand"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "bron": "zijn aankomst plus 1 maand"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -284,7 +294,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

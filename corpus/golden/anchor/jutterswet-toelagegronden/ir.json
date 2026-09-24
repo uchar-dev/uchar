@@ -68,7 +68,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],
@@ -93,7 +92,9 @@
             },
             "consequentie": {
               "node": "Literal",
-              "waarde": "10",
+              "value": {
+                "number": "10"
+              },
               "type": {
                 "node": "Number",
                 "whole": true,
@@ -133,7 +134,9 @@
             },
             "consequentie": {
               "node": "Literal",
-              "waarde": "20",
+              "value": {
+                "number": "20"
+              },
               "type": {
                 "node": "Number",
                 "whole": true,
@@ -173,7 +176,9 @@
             },
             "consequentie": {
               "node": "Literal",
-              "waarde": "10",
+              "value": {
+                "number": "10"
+              },
               "type": {
                 "node": "Number",
                 "whole": true,

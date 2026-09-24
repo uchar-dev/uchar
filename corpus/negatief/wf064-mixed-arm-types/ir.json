@@ -91,88 +91,101 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Uitkomstcontrole",
-        "subject": "Jutter",
-        "assertie": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "uitkering",
-            "objecttype": "Jutter",
-            "bron": null
-          },
-          "rechts": {
-            "node": "Match",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "scrutinee": {
-              "node": "AttribuutRef",
-              "attribuut": "beschikking",
-              "objecttype": "Jutter",
+        "node": "Consistency",
+        "name": "Uitkomstcontrole",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "uitkering",
+                "objecttype": "Jutter",
+                "bron": null
+              },
+              "rechts": {
+                "node": "Match",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "scrutinee": {
+                  "node": "AttribuutRef",
+                  "attribuut": "beschikking",
+                  "objecttype": "Jutter",
+                  "bron": null
+                },
+                "arms": [
+                  {
+                    "constructor": "Toegekend",
+                    "binder": "bedrag",
+                    "body": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "0.00"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": null
+                    }
+                  },
+                  {
+                    "constructor": "Afgewezen",
+                    "binder": null,
+                    "body": {
+                      "node": "Literal",
+                      "value": {
+                        "text": "nee"
+                      },
+                      "type": {
+                        "node": "Tekst"
+                      },
+                      "bron": null
+                    }
+                  },
+                  {
+                    "constructor": "Aangehouden",
+                    "binder": null,
+                    "body": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "12.00"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": null
+                    }
+                  }
+                ],
+                "bron": null
+              },
+              "periode": null,
               "bron": null
             },
-            "arms": [
-              {
-                "constructor": "Toegekend",
-                "binder": "bedrag",
-                "body": {
-                  "node": "Literal",
-                  "waarde": "0.00",
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  },
-                  "bron": null
-                }
-              },
-              {
-                "constructor": "Afgewezen",
-                "binder": null,
-                "body": {
-                  "node": "Literal",
-                  "waarde": "nee",
-                  "type": {
-                    "node": "Tekst"
-                  },
-                  "bron": null
-                }
-              },
-              {
-                "constructor": "Aangehouden",
-                "binder": null,
-                "body": {
-                  "node": "Literal",
-                  "waarde": "12.00",
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  },
-                  "bron": null
-                }
-              }
-            ],
-            "bron": null
-          },
-          "periode": null,
-          "bron": null
-        },
-        "bron": null,
-        "line": 1,
-        "geldigheid": null
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": null,
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

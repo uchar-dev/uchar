@@ -183,84 +183,90 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "toeslag van een hoofdberger",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "toeslag",
-          "objecttype": "Hoofdberger",
-          "bron": "De toeslag van een Hoofdberger"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "25",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "EUR",
-              "system": "Munt",
-              "canonical": "EUR",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "25 \u20ac"
-        },
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "gemachtigd",
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "de Hoofdberger gemachtigd is"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "toeslag van een hoofdberger",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "toeslag",
+              "objecttype": "Hoofdberger",
+              "bron": "De toeslag van een Hoofdberger"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "25"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "25 \u20ac"
+            },
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "gemachtigd",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "de Hoofdberger gemachtigd is"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
     "objectCreaties": [],
     "verdelingen": [
       {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeel de opbrengst van een berging",
-        "bronType": "Berging",
-        "bronAttribuut": "opbrengst",
-        "doelType": "Hoofdberger",
-        "doelAttribuut": "bergingsaandeel",
-        "methode": "GELIJKE_DELEN",
-        "ratoAttribuut": null,
-        "maximumAttribuut": null,
-        "afrondingDecimalen": 0,
-        "restantAttribuut": "onverdeelde rest",
-        "groepeerAttribuut": null,
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "hoofdbergingsdeelname",
-          "rol": "hoofdberger"
-        }
+        "node": "Allocation",
+        "name": "verdeel de opbrengst van een berging",
+        "versions": [
+          {
+            "sourceType": "Berging",
+            "sourceAttribute": "opbrengst",
+            "targetType": "Hoofdberger",
+            "targetAttribute": "bergingsaandeel",
+            "method": "GELIJKE_DELEN",
+            "roundingDecimals": 0,
+            "remainderAttribute": "onverdeelde rest",
+            "descending": false,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "hoofdbergingsdeelname",
+              "rol": "hoofdberger"
+            }
+          }
+        ]
       }
     ],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

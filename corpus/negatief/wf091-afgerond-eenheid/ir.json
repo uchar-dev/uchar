@@ -312,49 +312,53 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "kopie van het gewicht",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "kopie",
-          "objecttype": "Jutter",
-          "bron": "De kopie van een Jutter"
-        },
-        "waarde": {
-          "node": "Afgerond",
-          "basis": {
-            "node": "AttribuutRef",
-            "attribuut": "gewicht",
-            "objecttype": "Jutter",
-            "bron": "de gewicht van de Jutter"
-          },
-          "modus": "REKENKUNDIG",
-          "decimalen": 2,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "NIET_NEGATIEF",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "t",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1000,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het gewicht van de Jutter afgerond op 2 decimalen"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "kopie van het gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "kopie",
+              "objecttype": "Jutter",
+              "bron": "De kopie van een Jutter"
+            },
+            "value": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "AttribuutRef",
+                "attribuut": "gewicht",
+                "objecttype": "Jutter",
+                "bron": "de gewicht van de Jutter"
+              },
+              "modus": "REKENKUNDIG",
+              "decimalen": 2,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "t",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1000,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "het gewicht van de Jutter afgerond op 2 decimalen"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -362,7 +366,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

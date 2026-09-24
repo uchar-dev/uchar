@@ -151,50 +151,50 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "kavelaantal van een gemeente",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "kavelaantal",
-          "objecttype": "Gemeente",
-          "bron": "Het kavelaantal van een Gemeente"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "kavelaantal van een gemeente",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "kavels",
+              "attribuut": "kavelaantal",
               "objecttype": "Gemeente",
-              "bron": "alle kavels van de Gemeente"
-            }
-          ],
-          "elementObjecttype": "Kavel",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het aantal kavels van de Gemeente",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "kavelindeling",
-            "rol": "kavel"
+              "bron": "Het kavelaantal van een Gemeente"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "kavels",
+                  "objecttype": "Gemeente",
+                  "bron": "alle kavels van de Gemeente"
+                }
+              ],
+              "elementType": "Kavel",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "kavelindeling",
+                "rol": "kavel"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het aantal kavels van de Gemeente"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -203,96 +203,120 @@
     "consistenties": [],
     "uniciteiten": [
       {
-        "node": "ResolvedUniciteit",
-        "naam": "eenmalig kaveletiket",
-        "subject": "Kavel",
-        "sleutels": [
-          "etiket"
-        ],
-        "bron": "De etiket van alle Kavel van de gemeente moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "scopeRol": {
-          "node": "RolBinding",
-          "feittype": "kavelindeling",
-          "rol": "gemeente"
-        }
+        "node": "Uniqueness",
+        "name": "eenmalig kaveletiket",
+        "versions": [
+          {
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Kavel",
+                "keys": [
+                  "etiket"
+                ]
+              }
+            ],
+            "scope": {
+              "node": "RolBinding",
+              "feittype": "kavelindeling",
+              "rol": "gemeente"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "De etiket van alle Kavel van de gemeente moeten uniek zijn."
+          }
+        ]
       },
       {
-        "node": "ResolvedUniciteit",
-        "naam": "eenmalige sectiecode",
-        "subject": "Kavel",
-        "sleutels": [
-          "sectiecode"
-        ],
-        "bron": "De sectiecode van alle Kavel van de gemeente moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "scopeRol": {
-          "node": "RolBinding",
-          "feittype": "kavelindeling",
-          "rol": "gemeente"
-        }
-      }
-    ],
-    "uniciteitUnies": [
-      {
-        "node": "ResolvedUniciteitUnie",
-        "naam": "eenmalig vondstnummer",
-        "bronnen": [
+        "node": "Uniqueness",
+        "name": "eenmalige sectiecode",
+        "versions": [
           {
-            "node": "Bron",
-            "type": "Strandvondst",
-            "sleutels": [
-              "vondstnummer"
-            ]
-          },
-          {
-            "node": "Bron",
-            "type": "Wrakvondst",
-            "sleutels": [
-              "vondstnummer"
-            ]
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Kavel",
+                "keys": [
+                  "sectiecode"
+                ]
+              }
+            ],
+            "scope": {
+              "node": "RolBinding",
+              "feittype": "kavelindeling",
+              "rol": "gemeente"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "De sectiecode van alle Kavel van de gemeente moeten uniek zijn."
           }
-        ],
-        "bron": "Strandvondst verenigd met Wrakvondst moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedUniciteitUnie",
-        "naam": "eenmalige bakencode",
-        "bronnen": [
+        "node": "Uniqueness",
+        "name": "eenmalig vondstnummer",
+        "versions": [
           {
-            "node": "Bron",
-            "type": "Baken",
-            "sleutels": [
-              "landcode"
-            ]
-          },
-          {
-            "node": "Bron",
-            "type": "Baken",
-            "sleutels": [
-              "zeecode"
-            ]
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Strandvondst",
+                "keys": [
+                  "vondstnummer"
+                ]
+              },
+              {
+                "node": "Source",
+                "objectType": "Wrakvondst",
+                "keys": [
+                  "vondstnummer"
+                ]
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "Strandvondst verenigd met Wrakvondst moeten uniek zijn."
           }
-        ],
-        "bron": "Baken verenigd met Baken moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
+      },
+      {
+        "node": "Uniqueness",
+        "name": "eenmalige bakencode",
+        "versions": [
+          {
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Baken",
+                "keys": [
+                  "landcode"
+                ]
+              },
+              {
+                "node": "Source",
+                "objectType": "Baken",
+                "keys": [
+                  "zeecode"
+                ]
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "Baken verenigd met Baken moeten uniek zijn."
+          }
+        ]
       }
     ],
     "feitCreaties": [],

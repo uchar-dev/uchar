@@ -91,53 +91,53 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aanlandkust van een berging",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aanlandkust",
-          "objecttype": "Berging",
-          "bron": "de aanlandkust"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MINIMUM",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "aanlandkust van een berging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "kust",
-              "objecttype": "Schuit",
-              "bron": "de kust van alle schuiten van de Berging"
-            }
-          ],
-          "elementObjecttype": "Schuit",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Enumeratie",
-            "domein": "Kust",
-            "waarden": [
-              "Noord",
-              "Zuid",
-              "West"
-            ]
-          },
-          "bron": "het minimum kust van alle schuiten van de Berging",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "ligplaats",
-            "rol": "schuit"
+              "attribuut": "aanlandkust",
+              "objecttype": "Berging",
+              "bron": "de aanlandkust"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "MINIMUM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "kust",
+                  "objecttype": "Schuit",
+                  "bron": "de kust van alle schuiten van de Berging"
+                }
+              ],
+              "elementType": "Schuit",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "ligplaats",
+                "rol": "schuit"
+              },
+              "type": {
+                "node": "Enumeratie",
+                "domein": "Kust",
+                "waarden": [
+                  "Noord",
+                  "Zuid",
+                  "West"
+                ]
+              },
+              "bron": "het minimum kust van alle schuiten van de Berging"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -145,7 +145,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

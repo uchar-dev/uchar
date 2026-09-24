@@ -136,34 +136,38 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "uitkijkbonus van een wachter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uitkijkbonus",
-          "objecttype": "Wachter",
-          "bron": "De uitkijkbonus van een Wachter"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "hoogte",
-          "objecttype": "Post",
-          "bron": "de hoogte van zijn posten",
-          "navigatieBindingen": [
-            {
-              "node": "RolBinding",
-              "feittype": "postbezetting",
-              "rol": "post"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "uitkijkbonus van een wachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "uitkijkbonus",
+              "objecttype": "Wachter",
+              "bron": "De uitkijkbonus van een Wachter"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "hoogte",
+              "objecttype": "Post",
+              "bron": "de hoogte van zijn posten",
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "postbezetting",
+                  "rol": "post"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -171,7 +175,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

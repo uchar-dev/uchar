@@ -160,55 +160,63 @@
     "objectCreaties": [],
     "verdelingen": [
       {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeel de opbrengst van een berging over de hoofdbergers",
-        "bronType": "Berging",
-        "bronAttribuut": "opbrengst",
-        "doelType": "Hoofdberger",
-        "doelAttribuut": "bergingsaandeel",
-        "methode": "GELIJKE_DELEN",
-        "ratoAttribuut": null,
-        "maximumAttribuut": null,
-        "afrondingDecimalen": 0,
-        "restantAttribuut": "onverdeelde rest",
-        "groepeerAttribuut": null,
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "bergingsdeelname",
-          "rol": "berger"
-        }
+        "node": "Allocation",
+        "name": "verdeel de opbrengst van een berging over de hoofdbergers",
+        "versions": [
+          {
+            "sourceType": "Berging",
+            "sourceAttribute": "opbrengst",
+            "targetType": "Hoofdberger",
+            "targetAttribute": "bergingsaandeel",
+            "method": "GELIJKE_DELEN",
+            "roundingDecimals": 0,
+            "remainderAttribute": "onverdeelde rest",
+            "descending": false,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "bergingsdeelname",
+              "rol": "berger"
+            }
+          }
+        ]
       }
     ],
     "consistenties": [],
     "uniciteiten": [
       {
-        "node": "ResolvedUniciteit",
-        "naam": "rang per berging",
-        "subject": "Hoofdberger",
-        "sleutels": [
-          "rang"
-        ],
-        "bron": "De rangen van alle Hoofdbergers van de berging moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "scopeRol": {
-          "node": "RolBinding",
-          "feittype": "bergingsdeelname",
-          "rol": "berging"
-        }
+        "node": "Uniqueness",
+        "name": "rang per berging",
+        "versions": [
+          {
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Hoofdberger",
+                "keys": [
+                  "rang"
+                ]
+              }
+            ],
+            "scope": {
+              "node": "RolBinding",
+              "feittype": "bergingsdeelname",
+              "rol": "berging"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "De rangen van alle Hoofdbergers van de berging moeten uniek zijn."
+          }
+        ]
       }
     ],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

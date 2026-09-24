@@ -39,78 +39,89 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "premie van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "premie",
-          "objecttype": "Vondst",
-          "bron": "De premie van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "7",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "7"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "GEEN",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Kenmerk",
-              "kenmerk": "geborgen",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "de Vondst geborgen is"
+        "node": "Rule",
+        "name": "premie van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "premie",
+              "objecttype": "Vondst",
+              "bron": "De premie van een Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "7"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "7"
+            },
+            "condition": {
               "node": "Samengesteld",
-              "kwantor": "ALLE",
+              "kwantor": "GEEN",
               "drempel": 0,
               "onderdelen": [
                 {
-                  "node": "Periode",
-                  "vanaf": {
-                    "node": "Literal",
-                    "waarde": "2024-01-01",
-                    "type": {
-                      "node": "Date",
-                      "precision": "day"
-                    },
-                    "bron": "2024-01-01"
-                  },
-                  "tot": {
-                    "node": "Literal",
-                    "waarde": "2025-01-01",
-                    "type": {
-                      "node": "Date",
-                      "precision": "day"
-                    },
-                    "bron": "2025-01-01"
-                  },
-                  "totInclusief": false,
-                  "bron": "van 1 januari 2024 tot 1 januari 2025"
+                  "node": "Kenmerk",
+                  "kenmerk": "geborgen",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "de Vondst geborgen is"
+                },
+                {
+                  "node": "Samengesteld",
+                  "kwantor": "ALLE",
+                  "drempel": 0,
+                  "onderdelen": [
+                    {
+                      "node": "Periode",
+                      "vanaf": {
+                        "node": "Literal",
+                        "value": {
+                          "date": "2024-01-01"
+                        },
+                        "type": {
+                          "node": "Date",
+                          "precision": "day"
+                        },
+                        "bron": "2024-01-01"
+                      },
+                      "tot": {
+                        "node": "Literal",
+                        "value": {
+                          "date": "2025-01-01"
+                        },
+                        "type": {
+                          "node": "Date",
+                          "precision": "day"
+                        },
+                        "bron": "2025-01-01"
+                      },
+                      "totInclusief": false,
+                      "bron": "van 1 januari 2024 tot 1 januari 2025"
+                    }
+                  ],
+                  "bron": "alle van \u00e9\u00e9n onderdeel"
                 }
               ],
-              "bron": "alle van \u00e9\u00e9n onderdeel"
-            }
-          ],
-          "bron": "kwantor over twee onderdelen"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "kwantor over twee onderdelen"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -118,7 +129,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -154,219 +154,239 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "ondergewicht van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "ondergewicht",
-          "objecttype": "Vangst",
-          "bron": "Het ondergewicht van een Vangst"
-        },
-        "waarde": {
-          "node": "Begrensd",
-          "basis": {
-            "node": "AttribuutRef",
-            "attribuut": "ruwgewicht",
-            "objecttype": "Vangst",
-            "bron": "het ruwgewicht van de Vangst"
-          },
-          "minimum": {
-            "node": "Literal",
-            "waarde": "1",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "t",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1000,
-                  "den": 1
-                }
-              }
+        "node": "Rule",
+        "name": "ondergewicht van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1 t"
-          },
-          "maximum": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "kg",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het ruwgewicht van de Vangst, met een minimum van 1 t"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "ondergewicht",
+              "objecttype": "Vangst",
+              "bron": "Het ondergewicht van een Vangst"
+            },
+            "value": {
+              "node": "Begrensd",
+              "basis": {
+                "node": "AttribuutRef",
+                "attribuut": "ruwgewicht",
+                "objecttype": "Vangst",
+                "bron": "het ruwgewicht van de Vangst"
+              },
+              "minimum": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "t",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1000,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "1 t"
+              },
+              "maximum": null,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "het ruwgewicht van de Vangst, met een minimum van 1 t"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "bovengewicht van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bovengewicht",
-          "objecttype": "Vangst",
-          "bron": "Het bovengewicht van een Vangst"
-        },
-        "waarde": {
-          "node": "Begrensd",
-          "basis": {
-            "node": "AttribuutRef",
-            "attribuut": "ruwgewicht",
-            "objecttype": "Vangst",
-            "bron": "het ruwgewicht van de Vangst"
-          },
-          "minimum": null,
-          "maximum": {
-            "node": "Literal",
-            "waarde": "2,50",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 1,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "t",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1000,
-                  "den": 1
-                }
-              }
+        "node": "Rule",
+        "name": "bovengewicht van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "2,50 t"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "kg",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het ruwgewicht van de Vangst, met een maximum van 2,50 t"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bovengewicht",
+              "objecttype": "Vangst",
+              "bron": "Het bovengewicht van een Vangst"
+            },
+            "value": {
+              "node": "Begrensd",
+              "basis": {
+                "node": "AttribuutRef",
+                "attribuut": "ruwgewicht",
+                "objecttype": "Vangst",
+                "bron": "het ruwgewicht van de Vangst"
+              },
+              "minimum": null,
+              "maximum": {
+                "node": "Literal",
+                "value": {
+                  "number": "2.50"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 1,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "t",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1000,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "2,50 t"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "het ruwgewicht van de Vangst, met een maximum van 2,50 t"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "bandgewicht van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bandgewicht",
-          "objecttype": "Vangst",
-          "bron": "Het bandgewicht van een Vangst"
-        },
-        "waarde": {
-          "node": "Begrensd",
-          "basis": {
-            "node": "AttribuutRef",
-            "attribuut": "ruwgewicht",
-            "objecttype": "Vangst",
-            "bron": "het ruwgewicht van de Vangst"
-          },
-          "minimum": {
-            "node": "Literal",
-            "waarde": "1",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "t",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1000,
-                  "den": 1
-                }
-              }
+        "node": "Rule",
+        "name": "bandgewicht van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1 t"
-          },
-          "maximum": {
-            "node": "Literal",
-            "waarde": "2500",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
-                }
-              }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bandgewicht",
+              "objecttype": "Vangst",
+              "bron": "Het bandgewicht van een Vangst"
             },
-            "bron": "2500 kg"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "kg",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het ruwgewicht van de Vangst, met een minimum van 1 t en een maximum van 2500 kg"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "value": {
+              "node": "Begrensd",
+              "basis": {
+                "node": "AttribuutRef",
+                "attribuut": "ruwgewicht",
+                "objecttype": "Vangst",
+                "bron": "het ruwgewicht van de Vangst"
+              },
+              "minimum": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "t",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1000,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "1 t"
+              },
+              "maximum": {
+                "node": "Literal",
+                "value": {
+                  "number": "2500"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "2500 kg"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "het ruwgewicht van de Vangst, met een minimum van 1 t en een maximum van 2500 kg"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -374,7 +394,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

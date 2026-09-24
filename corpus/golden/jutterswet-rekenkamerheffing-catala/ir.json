@@ -112,124 +112,134 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "berekening bedrag",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bedrag",
-          "objecttype": "Rekenkamer",
-          "bron": "de bedrag"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "VERMINDERD_MET",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "grondslag",
-            "objecttype": "Rekenkamer",
-            "bron": "de grondslag"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "aftrek",
-            "objecttype": "Rekenkamer",
-            "bron": "de aftrek"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "berekening bedrag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bedrag",
+              "objecttype": "Rekenkamer",
+              "bron": "de bedrag"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "VERMINDERD_MET",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "grondslag",
+                "objecttype": "Rekenkamer",
+                "bron": "de grondslag"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "aftrek",
+                "objecttype": "Rekenkamer",
+                "bron": "de aftrek"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": null
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "berekening heffing",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "heffing",
-          "objecttype": "Bergingsaanslag",
-          "bron": "de heffing"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "bedrag",
-          "objecttype": "Rekenkamer",
-          "bron": "de bedrag van de rekenkamer",
-          "navigatieBindingen": [
-            {
-              "node": "RolBinding",
-              "feittype": "Bergingsaanslag_rekenkamer",
-              "rol": "rekenkamer"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "berekening heffing",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "heffing",
+              "objecttype": "Bergingsaanslag",
+              "bron": "de heffing"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "bedrag",
+              "objecttype": "Rekenkamer",
+              "bron": "de bedrag van de rekenkamer",
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "Bergingsaanslag_rekenkamer",
+                  "rol": "rekenkamer"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
     "objectCreaties": [
       {
-        "node": "ResolvedObjectCreatie",
-        "naam": "richt rekenkamer op",
-        "nieuwType": "Rekenkamer",
-        "subject": "Bergingsaanslag",
-        "toekenningen": [
+        "node": "ObjectCreation",
+        "name": "richt rekenkamer op",
+        "versions": [
           {
-            "node": "Toekenning",
-            "attribuut": "grondslag",
-            "waarde": {
-              "node": "AttribuutRef",
-              "attribuut": "bergingswaarde",
-              "objecttype": "Bergingsaanslag",
-              "bron": "de bergingswaarde"
+            "createdType": "Rekenkamer",
+            "subject": "Bergingsaanslag",
+            "initialisations": [
+              {
+                "node": "Toekenning",
+                "attribuut": "grondslag",
+                "waarde": {
+                  "node": "AttribuutRef",
+                  "attribuut": "bergingswaarde",
+                  "objecttype": "Bergingsaanslag",
+                  "bron": "de bergingswaarde"
+                },
+                "kenmerk": false
+              },
+              {
+                "node": "Toekenning",
+                "attribuut": "aftrek",
+                "waarde": {
+                  "node": "AttribuutRef",
+                  "attribuut": "vindersaftrek",
+                  "objecttype": "Bergingsaanslag",
+                  "bron": "de vindersaftrek"
+                },
+                "kenmerk": false
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "kenmerk": false
-          },
-          {
-            "node": "Toekenning",
-            "attribuut": "aftrek",
-            "waarde": {
-              "node": "AttribuutRef",
-              "attribuut": "vindersaftrek",
-              "objecttype": "Bergingsaanslag",
-              "bron": "de vindersaftrek"
-            },
-            "kenmerk": false
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "Bergingsaanslag_rekenkamer",
+              "rol": "rekenkamer"
+            }
           }
-        ],
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "Bergingsaanslag_rekenkamer",
-          "rol": "rekenkamer"
-        }
+        ]
       }
     ],
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],

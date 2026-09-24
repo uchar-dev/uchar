@@ -84,62 +84,22 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "heffing van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "heffing",
-          "objecttype": "Jutter",
-          "bron": "De heffing van een Jutter"
-        },
-        "waarde": {
-          "node": "Let",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "binder": "k",
-          "value": {
-            "node": "AttribuutRef",
-            "attribuut": "inkomen",
-            "objecttype": "Jutter",
-            "bron": "zijn inkomen"
-          },
-          "body": {
-            "node": "Let",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "heffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "binder": "z",
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "heffing",
+              "objecttype": "Jutter",
+              "bron": "De heffing van een Jutter"
+            },
             "value": {
-              "node": "Binair",
-              "op": "GEDEELD_DOOR",
-              "links": {
-                "node": "BinderRef",
-                "name": "k",
-                "bron": "de k"
-              },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "restpost",
-                "objecttype": "Jutter",
-                "bron": "zijn restpost"
-              },
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "de grondslag gedeeld door zijn restpost"
-            },
-            "body": {
               "node": "Let",
               "type": {
                 "node": "Number",
@@ -147,127 +107,14 @@
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "binder": "w",
+              "binder": "k",
               "value": {
-                "node": "Literal",
-                "waarde": "1",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "1,00"
+                "node": "AttribuutRef",
+                "attribuut": "inkomen",
+                "objecttype": "Jutter",
+                "bron": "zijn inkomen"
               },
               "body": {
-                "node": "IfThenElse",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "condition": {
-                  "node": "Vergelijking",
-                  "op": "GROTER",
-                  "links": {
-                    "node": "BinderRef",
-                    "name": "k",
-                    "bron": "de k"
-                  },
-                  "rechts": {
-                    "node": "ParameterRef",
-                    "parameter": "drempel",
-                    "bron": "de drempel"
-                  },
-                  "periode": null,
-                  "bron": "de grondslag boven de grens"
-                },
-                "then": {
-                  "node": "BinderRef",
-                  "name": "w",
-                  "bron": "de w"
-                },
-                "else": {
-                  "node": "BinderRef",
-                  "name": "z",
-                  "bron": "de z"
-                },
-                "bron": "boven de grens het een, daaronder het ander"
-              },
-              "bron": "de w is w"
-            },
-            "bron": "de z is z"
-          },
-          "bron": "de k is k"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "wikkelheffing van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "wikkelheffing",
-          "objecttype": "Jutter",
-          "bron": "De wikkelheffing van een Jutter"
-        },
-        "waarde": {
-          "node": "Let",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "binder": "k",
-          "value": {
-            "node": "AttribuutRef",
-            "attribuut": "inkomen",
-            "objecttype": "Jutter",
-            "bron": "zijn inkomen"
-          },
-          "body": {
-            "node": "Let",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "binder": "z",
-            "value": {
-              "node": "Binair",
-              "op": "GEDEELD_DOOR",
-              "links": {
-                "node": "BinderRef",
-                "name": "k",
-                "bron": "de k"
-              },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "restpost",
-                "objecttype": "Jutter",
-                "bron": "zijn restpost"
-              },
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "de grondslag gedeeld door zijn restpost"
-            },
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
                 "node": "Let",
                 "type": {
                   "node": "Number",
@@ -275,79 +122,244 @@
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "binder": "w",
+                "binder": "z",
                 "value": {
-                  "node": "Literal",
-                  "waarde": "1",
+                  "node": "Binair",
+                  "op": "GEDEELD_DOOR",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "k",
+                    "bron": "de k"
+                  },
+                  "rechts": {
+                    "node": "AttribuutRef",
+                    "attribuut": "restpost",
+                    "objecttype": "Jutter",
+                    "bron": "zijn restpost"
+                  },
                   "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "1,00"
+                  "bron": "de grondslag gedeeld door zijn restpost"
                 },
                 "body": {
-                  "node": "IfThenElse",
+                  "node": "Let",
                   "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "condition": {
-                    "node": "Vergelijking",
-                    "op": "GROTER",
-                    "links": {
+                  "binder": "w",
+                  "value": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "1,00"
+                  },
+                  "body": {
+                    "node": "IfThenElse",
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "condition": {
+                      "node": "Vergelijking",
+                      "op": "GROTER",
+                      "links": {
+                        "node": "BinderRef",
+                        "name": "k",
+                        "bron": "de k"
+                      },
+                      "rechts": {
+                        "node": "ParameterRef",
+                        "parameter": "drempel",
+                        "bron": "de drempel"
+                      },
+                      "periode": null,
+                      "bron": "de grondslag boven de grens"
+                    },
+                    "then": {
                       "node": "BinderRef",
-                      "name": "k",
-                      "bron": "de k"
+                      "name": "w",
+                      "bron": "de w"
                     },
-                    "rechts": {
-                      "node": "ParameterRef",
-                      "parameter": "drempel",
-                      "bron": "de drempel"
+                    "else": {
+                      "node": "BinderRef",
+                      "name": "z",
+                      "bron": "de z"
                     },
-                    "periode": null,
-                    "bron": "de grondslag boven de grens"
+                    "bron": "boven de grens het een, daaronder het ander"
                   },
-                  "then": {
-                    "node": "BinderRef",
-                    "name": "w",
-                    "bron": "de w"
-                  },
-                  "else": {
-                    "node": "BinderRef",
-                    "name": "z",
-                    "bron": "de z"
-                  },
-                  "bron": "boven de grens het een, daaronder het ander"
+                  "bron": "de w is w"
                 },
-                "bron": "de w is w"
+                "bron": "de z is z"
               },
-              "rechts": {
-                "node": "ParameterRef",
-                "parameter": "basisheffing",
-                "bron": "de basisheffing"
-              },
+              "bron": "de k is k"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wikkelheffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "wikkelheffing",
+              "objecttype": "Jutter",
+              "bron": "De wikkelheffing van een Jutter"
+            },
+            "value": {
+              "node": "Let",
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de staffel plus de basisheffing"
+              "binder": "k",
+              "value": {
+                "node": "AttribuutRef",
+                "attribuut": "inkomen",
+                "objecttype": "Jutter",
+                "bron": "zijn inkomen"
+              },
+              "body": {
+                "node": "Let",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "binder": "z",
+                "value": {
+                  "node": "Binair",
+                  "op": "GEDEELD_DOOR",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "k",
+                    "bron": "de k"
+                  },
+                  "rechts": {
+                    "node": "AttribuutRef",
+                    "attribuut": "restpost",
+                    "objecttype": "Jutter",
+                    "bron": "zijn restpost"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "de grondslag gedeeld door zijn restpost"
+                },
+                "body": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "Let",
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "binder": "w",
+                    "value": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "1,00"
+                    },
+                    "body": {
+                      "node": "IfThenElse",
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "condition": {
+                        "node": "Vergelijking",
+                        "op": "GROTER",
+                        "links": {
+                          "node": "BinderRef",
+                          "name": "k",
+                          "bron": "de k"
+                        },
+                        "rechts": {
+                          "node": "ParameterRef",
+                          "parameter": "drempel",
+                          "bron": "de drempel"
+                        },
+                        "periode": null,
+                        "bron": "de grondslag boven de grens"
+                      },
+                      "then": {
+                        "node": "BinderRef",
+                        "name": "w",
+                        "bron": "de w"
+                      },
+                      "else": {
+                        "node": "BinderRef",
+                        "name": "z",
+                        "bron": "de z"
+                      },
+                      "bron": "boven de grens het een, daaronder het ander"
+                    },
+                    "bron": "de w is w"
+                  },
+                  "rechts": {
+                    "node": "ParameterRef",
+                    "parameter": "basisheffing",
+                    "bron": "de basisheffing"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "de staffel plus de basisheffing"
+                },
+                "bron": "de z is z"
+              },
+              "bron": "de k is k"
             },
-            "bron": "de z is z"
-          },
-          "bron": "de k is k"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -355,7 +367,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

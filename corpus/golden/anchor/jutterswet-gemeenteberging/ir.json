@@ -150,152 +150,155 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bergingsgewicht van een gemeente",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bergingsgewicht",
-          "objecttype": "Gemeente",
-          "bron": "Het bergingsgewicht van een Gemeente"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "SOM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "gewicht",
-              "objecttype": "Vondst",
-              "bron": "het gewicht van alle geborgen vondsten van de Gemeente"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "bergingsgewicht van een gemeente",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "0"
-          },
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de som van het gewicht van alle geborgen vondsten van de Gemeente of 0 als die er niet zijn",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "gemeentelijke berging",
-            "rol": "geborgen vondst"
-          }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "bergingsaantal van een gemeente",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bergingsaantal",
-          "objecttype": "Gemeente",
-          "bron": "Het bergingsaantal van een Gemeente"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "geborgen vondsten",
+              "attribuut": "bergingsgewicht",
               "objecttype": "Gemeente",
-              "bron": "geborgen vondsten van de Gemeente"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal geborgen vondsten van de Gemeente",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "gemeentelijke berging",
-            "rol": "geborgen vondst"
+              "bron": "Het bergingsgewicht van een Gemeente"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "SOM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "gewicht",
+                  "objecttype": "Vondst",
+                  "bron": "het gewicht van alle geborgen vondsten van de Gemeente"
+                }
+              ],
+              "elementType": "Vondst",
+              "emptyFallback": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "0"
+              },
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "gemeentelijke berging",
+                "rol": "geborgen vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de som van het gewicht van alle geborgen vondsten van de Gemeente of 0 als die er niet zijn"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal bergende gemeenten van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal bergende gemeenten",
-          "objecttype": "Vondst",
-          "bron": "Het aantal bergende gemeenten van een Vondst"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "bergingsaantal van een gemeente",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "bergende gemeente",
-              "objecttype": "Vondst",
-              "bron": "bergende gemeente van de Vondst"
-            }
-          ],
-          "elementObjecttype": "Gemeente",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal bergende gemeenten van de Vondst",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "gemeentelijke berging",
-            "rol": "bergende gemeente"
+              "attribuut": "bergingsaantal",
+              "objecttype": "Gemeente",
+              "bron": "Het bergingsaantal van een Gemeente"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "geborgen vondsten",
+                  "objecttype": "Gemeente",
+                  "bron": "geborgen vondsten van de Gemeente"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "gemeentelijke berging",
+                "rol": "geborgen vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal geborgen vondsten van de Gemeente"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal bergende gemeenten van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aantal bergende gemeenten",
+              "objecttype": "Vondst",
+              "bron": "Het aantal bergende gemeenten van een Vondst"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "bergende gemeente",
+                  "objecttype": "Vondst",
+                  "bron": "bergende gemeente van de Vondst"
+                }
+              ],
+              "elementType": "Gemeente",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "gemeentelijke berging",
+                "rol": "bergende gemeente"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal bergende gemeenten van de Vondst"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -303,44 +306,43 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [
       {
-        "node": "ResolvedFeitCreatie",
-        "naam": "berging door de kustgemeente",
-        "anker": "Gemeente",
-        "doel": "Vondst",
-        "tussenstappen": [
+        "node": "FactCreation",
+        "name": "berging door de kustgemeente",
+        "versions": [
           {
-            "node": "Tussenstap",
-            "rolBinding": {
-              "node": "RolBinding",
-              "feittype": "inschrijving",
-              "rol": "ingeschreven jutter"
+            "factType": "gemeentelijke berging",
+            "anchorRole": "bergende gemeente",
+            "targetRole": "geborgen vondst",
+            "anchor": "Gemeente",
+            "path": [
+              {
+                "node": "RolBinding",
+                "feittype": "inschrijving",
+                "rol": "ingeschreven jutter"
+              },
+              {
+                "node": "RolBinding",
+                "feittype": "aanmelding",
+                "rol": "aangemelde vondst"
+              }
+            ],
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "kustgemeente",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "de Gemeente is een kustgemeente"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             }
           }
-        ],
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "kustgemeente",
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "de Gemeente is een kustgemeente"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "feittype": "gemeentelijke berging",
-        "ankerRol": "bergende gemeente",
-        "doelRol": "geborgen vondst",
-        "joinRol": {
-          "node": "RolBinding",
-          "feittype": "aanmelding",
-          "rol": "aangemelde vondst"
-        }
+        ]
       }
     ],
     "resolvedStartpunten": [],

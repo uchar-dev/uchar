@@ -89,124 +89,130 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "beslag van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "beslag",
-          "objecttype": "Jutter",
-          "bron": "Het beslag van een Jutter"
-        },
-        "waarde": {
-          "node": "Let",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "binder": "g",
-          "value": {
-            "node": "AttribuutRef",
-            "attribuut": "grondslag",
-            "objecttype": "Jutter",
-            "bron": "zijn grondslag"
-          },
-          "body": {
-            "node": "Match",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "beslag van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "scrutinee": {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "regime",
+              "attribuut": "beslag",
               "objecttype": "Jutter",
-              "bron": "zijn regime"
+              "bron": "Het beslag van een Jutter"
             },
-            "arms": [
-              {
-                "constructor": "Vast",
-                "binder": "v",
-                "body": {
-                  "node": "Binair",
-                  "op": "PLUS",
-                  "links": {
-                    "node": "BinderRef",
-                    "name": "g",
-                    "bron": "de grondslag"
-                  },
-                  "rechts": {
-                    "node": "BinderRef",
-                    "name": "v",
-                    "bron": "het vaste bedrag"
-                  },
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  },
-                  "bron": "de grondslag plus het vaste bedrag"
-                }
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
-              {
-                "constructor": "Variabel",
-                "binder": null,
-                "body": {
-                  "node": "Afgerond",
-                  "basis": {
-                    "node": "Binair",
-                    "op": "MAAL",
-                    "links": {
-                      "node": "BinderRef",
-                      "name": "g",
-                      "bron": "de grondslag"
-                    },
-                    "rechts": {
-                      "node": "Literal",
-                      "waarde": "0.10",
+              "binder": "g",
+              "value": {
+                "node": "AttribuutRef",
+                "attribuut": "grondslag",
+                "objecttype": "Jutter",
+                "bron": "zijn grondslag"
+              },
+              "body": {
+                "node": "Match",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "scrutinee": {
+                  "node": "AttribuutRef",
+                  "attribuut": "regime",
+                  "objecttype": "Jutter",
+                  "bron": "zijn regime"
+                },
+                "arms": [
+                  {
+                    "constructor": "Vast",
+                    "binder": "v",
+                    "body": {
+                      "node": "Binair",
+                      "op": "PLUS",
+                      "links": {
+                        "node": "BinderRef",
+                        "name": "g",
+                        "bron": "de grondslag"
+                      },
+                      "rechts": {
+                        "node": "BinderRef",
+                        "name": "v",
+                        "bron": "het vaste bedrag"
+                      },
                       "type": {
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
                         "sign": "ONBEPAALD"
                       },
-                      "bron": "0.10"
-                    },
-                    "type": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 4,
-                      "sign": "ONBEPAALD"
-                    },
-                    "bron": "de grondslag maal 0.10"
+                      "bron": "de grondslag plus het vaste bedrag"
+                    }
                   },
-                  "modus": "REKENKUNDIG",
-                  "decimalen": 2,
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  },
-                  "bron": "de grondslag maal 0.10 rekenkundig afgerond op 2 decimalen"
-                }
-              }
-            ],
-            "bron": "het beslag afhankelijk van zijn regime"
-          },
-          "bron": "g is de grondslag van de Jutter"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                  {
+                    "constructor": "Variabel",
+                    "binder": null,
+                    "body": {
+                      "node": "Afgerond",
+                      "basis": {
+                        "node": "Binair",
+                        "op": "MAAL",
+                        "links": {
+                          "node": "BinderRef",
+                          "name": "g",
+                          "bron": "de grondslag"
+                        },
+                        "rechts": {
+                          "node": "Literal",
+                          "value": {
+                            "number": "0.10"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "ONBEPAALD"
+                          },
+                          "bron": "0.10"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 4,
+                          "sign": "ONBEPAALD"
+                        },
+                        "bron": "de grondslag maal 0.10"
+                      },
+                      "modus": "REKENKUNDIG",
+                      "decimalen": 2,
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "de grondslag maal 0.10 rekenkundig afgerond op 2 decimalen"
+                    }
+                  }
+                ],
+                "bron": "het beslag afhankelijk van zijn regime"
+              },
+              "bron": "g is de grondslag van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -214,7 +220,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -117,35 +117,37 @@
     "objectCreaties": [],
     "verdelingen": [
       {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeel het penningbudget van een penningkas",
-        "bronType": "Penningkas",
-        "bronAttribuut": "penningbudget",
-        "doelType": "Wachter",
-        "doelAttribuut": "penningtoewijzing",
-        "methode": "OP_VOLGORDE",
-        "ratoAttribuut": "voorranggewicht",
-        "maximumAttribuut": "penningmaximum",
-        "afrondingDecimalen": 0,
-        "restantAttribuut": "onuitgekeerd budget",
-        "groepeerAttribuut": "wachtjaar",
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "wachtdienst",
-          "rol": "wachter"
-        }
+        "node": "Allocation",
+        "name": "verdeel het penningbudget van een penningkas",
+        "versions": [
+          {
+            "sourceType": "Penningkas",
+            "sourceAttribute": "penningbudget",
+            "targetType": "Wachter",
+            "targetAttribute": "penningtoewijzing",
+            "method": "OP_VOLGORDE",
+            "ratioAttribute": "voorranggewicht",
+            "maximumAttribute": "penningmaximum",
+            "roundingDecimals": 0,
+            "remainderAttribute": "onuitgekeerd budget",
+            "orderingAttribute": "wachtjaar",
+            "descending": false,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "wachtdienst",
+              "rol": "wachter"
+            }
+          }
+        ]
       }
     ],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -52,94 +52,106 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bereken de uitkering van een wrakrecht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uitkering",
-          "objecttype": "Wrakrecht",
-          "bron": "de uitkering van een Wrakrecht"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "grondslag",
-            "objecttype": "Wrakrecht",
-            "bron": "de grondslag van het Wrakrecht"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "1,00",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+        "node": "Rule",
+        "name": "bereken de uitkering van een wrakrecht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1,00"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "de grondslag van het Wrakrecht plus 1,00"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "uitkering",
+              "objecttype": "Wrakrecht",
+              "bron": "de uitkering van een Wrakrecht"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "grondslag",
+                "objecttype": "Wrakrecht",
+                "bron": "de grondslag van het Wrakrecht"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "1.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "NIET_NEGATIEF"
+                },
+                "bron": "1,00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "de grondslag van het Wrakrecht plus 1,00"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "bereken de grondslag van een strandrecht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "grondslag",
-          "objecttype": "Strandrecht",
-          "bron": "de grondslag van een Strandrecht"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "uitkering",
-            "objecttype": "Strandrecht",
-            "bron": "de uitkering van het Strandrecht"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "1,00",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "NIET_NEGATIEF"
+        "node": "Rule",
+        "name": "bereken de grondslag van een strandrecht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1,00"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "de uitkering van het Strandrecht plus 1,00"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "grondslag",
+              "objecttype": "Strandrecht",
+              "bron": "de grondslag van een Strandrecht"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "uitkering",
+                "objecttype": "Strandrecht",
+                "bron": "de uitkering van het Strandrecht"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "1.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "NIET_NEGATIEF"
+                },
+                "bron": "1,00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "de uitkering van het Strandrecht plus 1,00"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -147,7 +159,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -106,313 +106,345 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "inzetbaar bij vaartijd",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "inzetbaar",
-          "objecttype": "Reddingsvloot",
-          "bron": "Een Reddingsvloot is inzetbaar"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 2,
-          "elementObjecttype": "Reddingssloep",
-          "filter": null,
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
+        "node": "Rule",
+        "name": "inzetbaar bij vaartijd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vaartijd",
-              "objecttype": "Reddingssloep",
-              "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot"
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "20",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "20"
-            },
-            "periode": {
-              "node": "GeheelPeriode",
-              "jaar": true,
-              "niet": false
-            },
-            "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20"
-          },
-          "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vlootindeling",
-            "rol": "sloep"
-          }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "krap bij vaartijd",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "krap",
-          "objecttype": "Reddingsvloot",
-          "bron": "Een Reddingsvloot is krap"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "TEN_HOOGSTE",
-          "drempel": 1,
-          "elementObjecttype": "Reddingssloep",
-          "filter": null,
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "vaartijd",
-              "objecttype": "Reddingssloep",
-              "bron": "de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot"
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "20",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "20"
-            },
-            "periode": {
-              "node": "GeheelPeriode",
-              "jaar": true,
-              "niet": false
-            },
-            "bron": "de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20"
-          },
-          "bron": "de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vlootindeling",
-            "rol": "sloep"
-          }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "paraat bij vaartijd",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "paraat",
-          "objecttype": "Reddingsvloot",
-          "bron": "Een Reddingsvloot is paraat"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "PRECIES",
-          "drempel": 1,
-          "elementObjecttype": "Reddingssloep",
-          "filter": null,
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "vaartijd",
-              "objecttype": "Reddingssloep",
-              "bron": "de vaartijd van precies 1 van de sloepen van de Reddingsvloot"
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "20",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "20"
-            },
-            "periode": {
-              "node": "GeheelPeriode",
-              "jaar": true,
-              "niet": false
-            },
-            "bron": "de vaartijd van precies 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20"
-          },
-          "bron": "de vaartijd van precies 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vlootindeling",
-            "rol": "sloep"
-          }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "geschikt bij vaartijd",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "geschikt",
-          "objecttype": "Reddingsvloot",
-          "bron": "Een Reddingsvloot is geschikt"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 2,
-          "elementObjecttype": "Reddingssloep",
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "gekeurd",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "gekeurd zijn"
-          },
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "vaartijd",
-              "objecttype": "Reddingssloep",
-              "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn"
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "20",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "20"
-            },
-            "periode": {
-              "node": "GeheelPeriode",
-              "jaar": true,
-              "niet": false
-            },
-            "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn gedurende het gehele jaar groter is dan 20"
-          },
-          "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn gedurende het gehele jaar groter is dan 20",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vlootindeling",
-            "rol": "sloep"
-          }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "sloeptal van een reddingsvloot",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "sloeptal",
-          "objecttype": "Reddingsvloot",
-          "bron": "Het sloeptal van een Reddingsvloot"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "sloepen",
+              "attribuut": "inzetbaar",
               "objecttype": "Reddingsvloot",
-              "bron": "sloepen van de Reddingsvloot"
-            }
-          ],
-          "elementObjecttype": "Reddingssloep",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal sloepen van de Reddingsvloot",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vlootindeling",
-            "rol": "sloep"
+              "bron": "Een Reddingsvloot is inzetbaar"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 2,
+              "elementObjecttype": "Reddingssloep",
+              "filter": null,
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "vaartijd",
+                  "objecttype": "Reddingssloep",
+                  "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "20"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "20"
+                },
+                "periode": {
+                  "node": "GeheelPeriode",
+                  "jaar": true,
+                  "niet": false
+                },
+                "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20"
+              },
+              "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "vlootindeling",
+                "rol": "sloep"
+              }
+            },
+            "initialisation": false
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "krap bij vaartijd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "krap",
+              "objecttype": "Reddingsvloot",
+              "bron": "Een Reddingsvloot is krap"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "TEN_HOOGSTE",
+              "drempel": 1,
+              "elementObjecttype": "Reddingssloep",
+              "filter": null,
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "vaartijd",
+                  "objecttype": "Reddingssloep",
+                  "bron": "de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "20"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "20"
+                },
+                "periode": {
+                  "node": "GeheelPeriode",
+                  "jaar": true,
+                  "niet": false
+                },
+                "bron": "de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20"
+              },
+              "bron": "de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "vlootindeling",
+                "rol": "sloep"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "paraat bij vaartijd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "paraat",
+              "objecttype": "Reddingsvloot",
+              "bron": "Een Reddingsvloot is paraat"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "PRECIES",
+              "drempel": 1,
+              "elementObjecttype": "Reddingssloep",
+              "filter": null,
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "vaartijd",
+                  "objecttype": "Reddingssloep",
+                  "bron": "de vaartijd van precies 1 van de sloepen van de Reddingsvloot"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "20"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "20"
+                },
+                "periode": {
+                  "node": "GeheelPeriode",
+                  "jaar": true,
+                  "niet": false
+                },
+                "bron": "de vaartijd van precies 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20"
+              },
+              "bron": "de vaartijd van precies 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "vlootindeling",
+                "rol": "sloep"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "geschikt bij vaartijd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "geschikt",
+              "objecttype": "Reddingsvloot",
+              "bron": "Een Reddingsvloot is geschikt"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 2,
+              "elementObjecttype": "Reddingssloep",
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "gekeurd",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "gekeurd zijn"
+              },
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "vaartijd",
+                  "objecttype": "Reddingssloep",
+                  "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "20"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "20"
+                },
+                "periode": {
+                  "node": "GeheelPeriode",
+                  "jaar": true,
+                  "niet": false
+                },
+                "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn gedurende het gehele jaar groter is dan 20"
+              },
+              "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn gedurende het gehele jaar groter is dan 20",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "vlootindeling",
+                "rol": "sloep"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "sloeptal van een reddingsvloot",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "sloeptal",
+              "objecttype": "Reddingsvloot",
+              "bron": "Het sloeptal van een Reddingsvloot"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "sloepen",
+                  "objecttype": "Reddingsvloot",
+                  "bron": "sloepen van de Reddingsvloot"
+                }
+              ],
+              "elementType": "Reddingssloep",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vlootindeling",
+                "rol": "sloep"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal sloepen van de Reddingsvloot"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -420,7 +452,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

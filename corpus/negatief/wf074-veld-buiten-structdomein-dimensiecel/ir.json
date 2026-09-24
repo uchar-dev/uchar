@@ -129,45 +129,49 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "tarief van een berging",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "tarief",
-          "objecttype": "Berging",
-          "bron": null
-        },
-        "waarde": {
-          "node": "FieldAccess",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "NIET_NEGATIEF"
-          },
-          "base": {
-            "node": "DimensieCel",
-            "attribuut": {
-              "node": "AttribuutRef",
-              "attribuut": "kern",
-              "objecttype": "Berging",
-              "bron": "de kern"
+        "node": "Rule",
+        "name": "tarief van een berging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "labels": [
-              "voorjaar"
-            ],
-            "bron": "cel"
-          },
-          "field": "bedrag",
-          "bron": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "tarief",
+              "objecttype": "Berging",
+              "bron": null
+            },
+            "value": {
+              "node": "FieldAccess",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
+              },
+              "base": {
+                "node": "DimensieCel",
+                "attribuut": {
+                  "node": "AttribuutRef",
+                  "attribuut": "kern",
+                  "objecttype": "Berging",
+                  "bron": "de kern"
+                },
+                "labels": [
+                  "voorjaar"
+                ],
+                "bron": "cel"
+              },
+              "field": "bedrag",
+              "bron": null
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -175,7 +179,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

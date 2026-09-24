@@ -103,316 +103,340 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "prijs benedenaf van een veilingronde",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "prijsBenedenaf",
-          "objecttype": "Veilingronde",
-          "bron": "De prijs benedenaf van een Veilingronde"
-        },
-        "waarde": {
-          "node": "Afgerond",
-          "basis": {
-            "node": "Binair",
-            "op": "GEDEELD_DOOR",
-            "links": {
+        "node": "Rule",
+        "name": "prijs benedenaf van een veilingronde",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "opbrengst",
+              "attribuut": "prijsBenedenaf",
               "objecttype": "Veilingronde",
-              "bron": "de opbrengst van de Veilingronde"
+              "bron": "De prijs benedenaf van een Veilingronde"
             },
-            "rechts": {
-              "node": "AttribuutRef",
-              "attribuut": "kavels",
-              "objecttype": "Veilingronde",
-              "bron": "de kavels van de Veilingronde"
+            "value": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "Binair",
+                "op": "GEDEELD_DOOR",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "opbrengst",
+                  "objecttype": "Veilingronde",
+                  "bron": "de opbrengst van de Veilingronde"
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "kavels",
+                  "objecttype": "Veilingronde",
+                  "bron": "de kavels van de Veilingronde"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+              },
+              "modus": "NAAR_BENEDEN",
+              "decimalen": 0,
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar beneden afgerond op 0 decimalen"
             },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
-          },
-          "modus": "NAAR_BENEDEN",
-          "decimalen": 0,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar beneden afgerond op 0 decimalen"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "prijs bovenaf van een veilingronde",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "prijsBovenaf",
-          "objecttype": "Veilingronde",
-          "bron": "De prijs bovenaf van een Veilingronde"
-        },
-        "waarde": {
-          "node": "Afgerond",
-          "basis": {
-            "node": "Binair",
-            "op": "GEDEELD_DOOR",
-            "links": {
+        "node": "Rule",
+        "name": "prijs bovenaf van een veilingronde",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "opbrengst",
+              "attribuut": "prijsBovenaf",
               "objecttype": "Veilingronde",
-              "bron": "de opbrengst van de Veilingronde"
+              "bron": "De prijs bovenaf van een Veilingronde"
             },
-            "rechts": {
-              "node": "AttribuutRef",
-              "attribuut": "kavels",
-              "objecttype": "Veilingronde",
-              "bron": "de kavels van de Veilingronde"
+            "value": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "Binair",
+                "op": "GEDEELD_DOOR",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "opbrengst",
+                  "objecttype": "Veilingronde",
+                  "bron": "de opbrengst van de Veilingronde"
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "kavels",
+                  "objecttype": "Veilingronde",
+                  "bron": "de kavels van de Veilingronde"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+              },
+              "modus": "NAAR_BOVEN",
+              "decimalen": 0,
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar boven afgerond op 0 decimalen"
             },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
-          },
-          "modus": "NAAR_BOVEN",
-          "decimalen": 0,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar boven afgerond op 0 decimalen"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "prijs rekenkundig van een veilingronde",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "prijsRekenkundig",
-          "objecttype": "Veilingronde",
-          "bron": "De prijs rekenkundig van een Veilingronde"
-        },
-        "waarde": {
-          "node": "Afgerond",
-          "basis": {
-            "node": "Binair",
-            "op": "GEDEELD_DOOR",
-            "links": {
+        "node": "Rule",
+        "name": "prijs rekenkundig van een veilingronde",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "opbrengst",
+              "attribuut": "prijsRekenkundig",
               "objecttype": "Veilingronde",
-              "bron": "de opbrengst van de Veilingronde"
+              "bron": "De prijs rekenkundig van een Veilingronde"
             },
-            "rechts": {
-              "node": "AttribuutRef",
-              "attribuut": "kavels",
-              "objecttype": "Veilingronde",
-              "bron": "de kavels van de Veilingronde"
+            "value": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "Binair",
+                "op": "GEDEELD_DOOR",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "opbrengst",
+                  "objecttype": "Veilingronde",
+                  "bron": "de opbrengst van de Veilingronde"
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "kavels",
+                  "objecttype": "Veilingronde",
+                  "bron": "de kavels van de Veilingronde"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+              },
+              "modus": "REKENKUNDIG",
+              "decimalen": 0,
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 0 decimalen"
             },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
-          },
-          "modus": "REKENKUNDIG",
-          "decimalen": 0,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 0 decimalen"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "prijs naar nul van een veilingronde",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "prijsNaarNul",
-          "objecttype": "Veilingronde",
-          "bron": "De prijs naar nul van een Veilingronde"
-        },
-        "waarde": {
-          "node": "Afgerond",
-          "basis": {
-            "node": "Binair",
-            "op": "GEDEELD_DOOR",
-            "links": {
+        "node": "Rule",
+        "name": "prijs naar nul van een veilingronde",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "opbrengst",
+              "attribuut": "prijsNaarNul",
               "objecttype": "Veilingronde",
-              "bron": "de opbrengst van de Veilingronde"
+              "bron": "De prijs naar nul van een Veilingronde"
             },
-            "rechts": {
-              "node": "AttribuutRef",
-              "attribuut": "kavels",
-              "objecttype": "Veilingronde",
-              "bron": "de kavels van de Veilingronde"
+            "value": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "Binair",
+                "op": "GEDEELD_DOOR",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "opbrengst",
+                  "objecttype": "Veilingronde",
+                  "bron": "de opbrengst van de Veilingronde"
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "kavels",
+                  "objecttype": "Veilingronde",
+                  "bron": "de kavels van de Veilingronde"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+              },
+              "modus": "RICHTING_NUL",
+              "decimalen": 0,
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde richting nul afgerond op 0 decimalen"
             },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
-          },
-          "modus": "RICHTING_NUL",
-          "decimalen": 0,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde richting nul afgerond op 0 decimalen"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "prijs van nul van een veilingronde",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "prijsVanNul",
-          "objecttype": "Veilingronde",
-          "bron": "De prijs van nul van een Veilingronde"
-        },
-        "waarde": {
-          "node": "Afgerond",
-          "basis": {
-            "node": "Binair",
-            "op": "GEDEELD_DOOR",
-            "links": {
+        "node": "Rule",
+        "name": "prijs van nul van een veilingronde",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "opbrengst",
+              "attribuut": "prijsVanNul",
               "objecttype": "Veilingronde",
-              "bron": "de opbrengst van de Veilingronde"
+              "bron": "De prijs van nul van een Veilingronde"
             },
-            "rechts": {
-              "node": "AttribuutRef",
-              "attribuut": "kavels",
-              "objecttype": "Veilingronde",
-              "bron": "de kavels van de Veilingronde"
+            "value": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "Binair",
+                "op": "GEDEELD_DOOR",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "opbrengst",
+                  "objecttype": "Veilingronde",
+                  "bron": "de opbrengst van de Veilingronde"
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "kavels",
+                  "objecttype": "Veilingronde",
+                  "bron": "de kavels van de Veilingronde"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+              },
+              "modus": "WEG_VAN_NUL",
+              "decimalen": 0,
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde weg van nul afgerond op 0 decimalen"
             },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
-          },
-          "modus": "WEG_VAN_NUL",
-          "decimalen": 0,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde weg van nul afgerond op 0 decimalen"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "prijs fijn van een veilingronde",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "prijsFijn",
-          "objecttype": "Veilingronde",
-          "bron": "De prijs fijn van een Veilingronde"
-        },
-        "waarde": {
-          "node": "Afgerond",
-          "basis": {
-            "node": "Binair",
-            "op": "GEDEELD_DOOR",
-            "links": {
+        "node": "Rule",
+        "name": "prijs fijn van een veilingronde",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "opbrengst",
+              "attribuut": "prijsFijn",
               "objecttype": "Veilingronde",
-              "bron": "de opbrengst van de Veilingronde"
+              "bron": "De prijs fijn van een Veilingronde"
             },
-            "rechts": {
-              "node": "AttribuutRef",
-              "attribuut": "kavels",
-              "objecttype": "Veilingronde",
-              "bron": "de kavels van de Veilingronde"
+            "value": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "Binair",
+                "op": "GEDEELD_DOOR",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "opbrengst",
+                  "objecttype": "Veilingronde",
+                  "bron": "de opbrengst van de Veilingronde"
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "kavels",
+                  "objecttype": "Veilingronde",
+                  "bron": "de kavels van de Veilingronde"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
+              },
+              "modus": "REKENKUNDIG",
+              "decimalen": 1,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 1,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 1 decimaal"
             },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde"
-          },
-          "modus": "REKENKUNDIG",
-          "decimalen": 1,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 1,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 1 decimaal"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -420,7 +444,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -107,295 +107,75 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "basispremie van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "basispremie",
-          "objecttype": "Vondst",
-          "bron": "De basispremie van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "1",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "1"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "basispremie van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "basispremie",
+              "objecttype": "Vondst",
+              "bron": "De basispremie van een Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "1"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "1"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "vondstpremie van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vondstpremie",
-          "objecttype": "Vondst",
-          "bron": "De vondstpremie van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "50",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "50"
-        },
-        "voorwaarde": {
-          "node": "Periode",
-          "vanaf": {
-            "node": "Literal",
-            "waarde": "2024-01-01",
-            "type": {
-              "node": "Date",
-              "precision": "day"
+        "node": "Rule",
+        "name": "vondstpremie van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "2024-01-01"
-          },
-          "tot": {
-            "node": "Literal",
-            "waarde": "2025-01-01",
-            "type": {
-              "node": "Date",
-              "precision": "day"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vondstpremie",
+              "objecttype": "Vondst",
+              "bron": "De vondstpremie van een Vondst"
             },
-            "bron": "2025-01-01"
-          },
-          "totInclusief": false,
-          "bron": "van 1 januari 2024 tot 1 januari 2025"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "naseizoenpremie van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "naseizoenpremie",
-          "objecttype": "Vondst",
-          "bron": "De naseizoenpremie van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "20",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "20"
-        },
-        "voorwaarde": {
-          "node": "Periode",
-          "vanaf": {
-            "node": "Literal",
-            "waarde": "2024-01-01",
-            "type": {
-              "node": "Date",
-              "precision": "day"
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "50"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "50"
             },
-            "bron": "2024-01-01"
-          },
-          "tot": {
-            "node": "Literal",
-            "waarde": "2024-12-31",
-            "type": {
-              "node": "Date",
-              "precision": "day"
-            },
-            "bron": "2024-12-31"
-          },
-          "totInclusief": true,
-          "bron": "van 1 januari 2024 tot en met 31 december 2024"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "overgangspremie van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "overgangspremie",
-          "objecttype": "Vondst",
-          "bron": "De overgangspremie van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "30",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "30"
-        },
-        "voorwaarde": {
-          "node": "Periode",
-          "vanaf": {
-            "node": "Literal",
-            "waarde": "2025-01-01",
-            "type": {
-              "node": "Date",
-              "precision": "day"
-            },
-            "bron": "2025-01-01"
-          },
-          "tot": null,
-          "totInclusief": false,
-          "bron": "vanaf 1 januari 2025"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "aanlooppremie van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aanlooppremie",
-          "objecttype": "Vondst",
-          "bron": "De aanlooppremie van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "10",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "10"
-        },
-        "voorwaarde": {
-          "node": "Periode",
-          "vanaf": null,
-          "tot": {
-            "node": "Literal",
-            "waarde": "2024-01-01",
-            "type": {
-              "node": "Date",
-              "precision": "day"
-            },
-            "bron": "2024-01-01"
-          },
-          "totInclusief": false,
-          "bron": "tot 1 januari 2024"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "bergloon van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bergloon",
-          "objecttype": "Vondst",
-          "bron": "Het bergloon van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "5",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "5"
-        },
-        "voorwaarde": {
-          "node": "Periode",
-          "vanaf": {
-            "node": "AttribuutRef",
-            "attribuut": "meldatum",
-            "objecttype": "Vondst",
-            "bron": "de meldatum van de Vondst"
-          },
-          "tot": null,
-          "totInclusief": false,
-          "bron": "vanaf de meldatum van de Vondst"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "borgpremie van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "borgpremie",
-          "objecttype": "Vondst",
-          "bron": "De borgpremie van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "15",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "15"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Kenmerk",
-              "kenmerk": "geborgen",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "de Vondst geborgen is"
-            },
-            {
+            "condition": {
               "node": "Periode",
               "vanaf": {
                 "node": "Literal",
-                "waarde": "2024-01-01",
+                "value": {
+                  "date": "2024-01-01"
+                },
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -404,7 +184,9 @@
               },
               "tot": {
                 "node": "Literal",
-                "waarde": "2025-01-01",
+                "value": {
+                  "date": "2025-01-01"
+                },
                 "type": {
                   "node": "Date",
                   "precision": "day"
@@ -413,15 +195,297 @@
               },
               "totInclusief": false,
               "bron": "van 1 januari 2024 tot 1 januari 2025"
-            }
-          ],
-          "bron": "de Vondst geborgen is, en van 1 januari 2024 tot 1 januari 2025"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "naseizoenpremie van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "naseizoenpremie",
+              "objecttype": "Vondst",
+              "bron": "De naseizoenpremie van een Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "20"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "20"
+            },
+            "condition": {
+              "node": "Periode",
+              "vanaf": {
+                "node": "Literal",
+                "value": {
+                  "date": "2024-01-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "2024-01-01"
+              },
+              "tot": {
+                "node": "Literal",
+                "value": {
+                  "date": "2024-12-31"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "2024-12-31"
+              },
+              "totInclusief": true,
+              "bron": "van 1 januari 2024 tot en met 31 december 2024"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "overgangspremie van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "overgangspremie",
+              "objecttype": "Vondst",
+              "bron": "De overgangspremie van een Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "30"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "30"
+            },
+            "condition": {
+              "node": "Periode",
+              "vanaf": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-01-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "2025-01-01"
+              },
+              "tot": null,
+              "totInclusief": false,
+              "bron": "vanaf 1 januari 2025"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aanlooppremie van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aanlooppremie",
+              "objecttype": "Vondst",
+              "bron": "De aanlooppremie van een Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "10"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "10"
+            },
+            "condition": {
+              "node": "Periode",
+              "vanaf": null,
+              "tot": {
+                "node": "Literal",
+                "value": {
+                  "date": "2024-01-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "2024-01-01"
+              },
+              "totInclusief": false,
+              "bron": "tot 1 januari 2024"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bergloon van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bergloon",
+              "objecttype": "Vondst",
+              "bron": "Het bergloon van een Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "5"
+            },
+            "condition": {
+              "node": "Periode",
+              "vanaf": {
+                "node": "AttribuutRef",
+                "attribuut": "meldatum",
+                "objecttype": "Vondst",
+                "bron": "de meldatum van de Vondst"
+              },
+              "tot": null,
+              "totInclusief": false,
+              "bron": "vanaf de meldatum van de Vondst"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "borgpremie van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "borgpremie",
+              "objecttype": "Vondst",
+              "bron": "De borgpremie van een Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "15"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "15"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "geborgen",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "de Vondst geborgen is"
+                },
+                {
+                  "node": "Periode",
+                  "vanaf": {
+                    "node": "Literal",
+                    "value": {
+                      "date": "2024-01-01"
+                    },
+                    "type": {
+                      "node": "Date",
+                      "precision": "day"
+                    },
+                    "bron": "2024-01-01"
+                  },
+                  "tot": {
+                    "node": "Literal",
+                    "value": {
+                      "date": "2025-01-01"
+                    },
+                    "type": {
+                      "node": "Date",
+                      "precision": "day"
+                    },
+                    "bron": "2025-01-01"
+                  },
+                  "totInclusief": false,
+                  "bron": "van 1 januari 2024 tot 1 januari 2025"
+                }
+              ],
+              "bron": "de Vondst geborgen is, en van 1 januari 2024 tot 1 januari 2025"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -429,7 +493,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

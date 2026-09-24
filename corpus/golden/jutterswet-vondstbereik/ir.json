@@ -79,92 +79,92 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "vroegste vondstdag van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vroegste vondstdag",
-          "objecttype": "Jutter",
-          "bron": "De vroegste vondstdag van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MINIMUM",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "vroegste vondstdag van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vondstdatum",
-              "objecttype": "Vondst",
-              "bron": "de vondstdatum van alle vondsten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "de minimale waarde van de vondstdatum van alle vondsten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+              "attribuut": "vroegste vondstdag",
+              "objecttype": "Jutter",
+              "bron": "De vroegste vondstdag van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "MINIMUM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vondstdatum",
+                  "objecttype": "Vondst",
+                  "bron": "de vondstdatum van alle vondsten van de Jutter"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "de minimale waarde van de vondstdatum van alle vondsten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "jongste vondstdag van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "jongste vondstdag",
-          "objecttype": "Jutter",
-          "bron": "De jongste vondstdag van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MAXIMUM",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "jongste vondstdag van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vondstdatum",
-              "objecttype": "Vondst",
-              "bron": "de vondstdatum van alle vondsten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "de maximale waarde van de vondstdatum van alle vondsten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+              "attribuut": "jongste vondstdag",
+              "objecttype": "Jutter",
+              "bron": "De jongste vondstdag van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "MAXIMUM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vondstdatum",
+                  "objecttype": "Vondst",
+                  "bron": "de vondstdatum van alle vondsten van de Jutter"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "de maximale waarde van de vondstdatum van alle vondsten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -172,7 +172,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

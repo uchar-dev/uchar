@@ -43,94 +43,110 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bepaal aanslag",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aanslag",
-          "objecttype": "Jutter",
-          "bron": "de aanslag"
-        },
-        "waarde": {
-          "node": "Let",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "binder": "dummy",
-          "value": {
-            "node": "Literal",
-            "waarde": "1.00",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "bepaal aanslag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "een"
-          },
-          "body": {
-            "node": "IfThenElse",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aanslag",
+              "objecttype": "Jutter",
+              "bron": "de aanslag"
             },
-            "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "inkomen",
-                "objecttype": "Jutter",
-                "bron": "het inkomen"
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
               },
-              "rechts": {
+              "binder": "dummy",
+              "value": {
                 "node": "Literal",
-                "waarde": "0.00",
+                "value": {
+                  "number": "1.00"
+                },
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "nul"
+                "bron": "een"
               },
-              "periode": null,
-              "bron": "het inkomen groter dan nul"
-            },
-            "then": {
-              "node": "Literal",
-              "waarde": "10.00",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
+              "body": {
+                "node": "IfThenElse",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "condition": {
+                  "node": "Vergelijking",
+                  "op": "GROTER",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "inkomen",
+                    "objecttype": "Jutter",
+                    "bron": "het inkomen"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "nul"
+                  },
+                  "periode": null,
+                  "bron": "het inkomen groter dan nul"
+                },
+                "then": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "tien"
+                },
+                "else": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "0.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "nul"
+                },
+                "bron": "een als-dan-anders"
               },
-              "bron": "tien"
+              "bron": "een let om de if toe te laten"
             },
-            "else": {
-              "node": "Literal",
-              "waarde": "0.00",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "nul"
-            },
-            "bron": "een als-dan-anders"
-          },
-          "bron": "een let om de if toe te laten"
-        },
-        "voorwaarde": null,
-        "geldigheid": null
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -138,7 +154,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

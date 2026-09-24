@@ -87,35 +87,34 @@
     "objectCreaties": [],
     "verdelingen": [
       {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeel de veilingopbrengst van een strandveiling",
-        "bronType": "Strandveiling",
-        "bronAttribuut": null,
-        "doelType": "Jutter",
-        "doelAttribuut": "veilingdeel",
-        "methode": "GELIJKE_DELEN",
-        "ratoAttribuut": null,
-        "maximumAttribuut": null,
-        "afrondingDecimalen": 0,
-        "restantAttribuut": "veilingrestant",
-        "groepeerAttribuut": null,
-        "afnemend": false,
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "veilingdeelname",
-          "rol": "veilingjutter"
-        }
+        "node": "Allocation",
+        "name": "verdeel de veilingopbrengst van een strandveiling",
+        "versions": [
+          {
+            "sourceType": "Strandveiling",
+            "sourceAttribute": null,
+            "targetType": "Jutter",
+            "targetAttribute": "veilingdeel",
+            "method": "GELIJKE_DELEN",
+            "roundingDecimals": 0,
+            "remainderAttribute": "veilingrestant",
+            "descending": false,
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "veilingdeelname",
+              "rol": "veilingjutter"
+            }
+          }
+        ]
       }
     ],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

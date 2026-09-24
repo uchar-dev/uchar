@@ -96,74 +96,82 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "premiewaardig bij keurvergoeding",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "premiewaardig",
-          "objecttype": "Keurploeg",
-          "bron": "Een Keurploeg is premiewaardig"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "ALLE",
-          "elementObjecttype": "Keurmeester",
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "stilliggend",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "stilliggend zijn"
-          },
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
+        "node": "Rule",
+        "name": "premiewaardig bij keurvergoeding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "keurvergoeding",
-              "objecttype": "Keurmeester",
-              "bron": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn"
+              "attribuut": "premiewaardig",
+              "objecttype": "Keurploeg",
+              "bron": "Een Keurploeg is premiewaardig"
             },
-            "rechts": {
+            "value": {
               "node": "Literal",
-              "waarde": "40",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
+              "value": {
+                "boolean": true
               },
-              "bron": "40"
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
             },
-            "periode": {
-              "node": "GeheelPeriode",
-              "jaar": true,
-              "niet": false
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "ALLE",
+              "elementObjecttype": "Keurmeester",
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "stilliggend",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "stilliggend zijn"
+              },
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "keurvergoeding",
+                  "objecttype": "Keurmeester",
+                  "bron": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "40"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "40"
+                },
+                "periode": {
+                  "node": "GeheelPeriode",
+                  "jaar": true,
+                  "niet": false
+                },
+                "bron": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40"
+              },
+              "bron": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "keurindeling",
+                "rol": "keurmeester"
+              }
             },
-            "bron": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40"
-          },
-          "bron": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "keurindeling",
-            "rol": "keurmeester"
+            "initialisation": false
           }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -171,7 +179,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

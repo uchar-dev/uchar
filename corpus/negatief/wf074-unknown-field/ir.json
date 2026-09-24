@@ -83,42 +83,49 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Lees",
-        "subject": "Jutter",
-        "assertie": {
-          "node": "Predicaat",
-          "soort": "GEVULD",
-          "operand": {
-            "node": "FieldAccess",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "NIET_NEGATIEF"
-            },
-            "base": {
-              "node": "AttribuutRef",
-              "attribuut": "dossier",
-              "objecttype": "Jutter",
+        "node": "Consistency",
+        "name": "Lees",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "Predicaat",
+              "soort": "GEVULD",
+              "operand": {
+                "node": "FieldAccess",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "NIET_NEGATIEF"
+                },
+                "base": {
+                  "node": "AttribuutRef",
+                  "attribuut": "dossier",
+                  "objecttype": "Jutter",
+                  "bron": null
+                },
+                "field": "onbekend",
+                "bron": null
+              },
+              "dagsoort": null,
+              "negatie": false,
+              "cijfers": 0,
+              "periode": null,
               "bron": null
             },
-            "field": "onbekend",
-            "bron": null
-          },
-          "dagsoort": null,
-          "negatie": false,
-          "cijfers": 0,
-          "periode": null,
-          "bron": null
-        },
-        "bron": null,
-        "line": 1,
-        "geldigheid": null
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": null,
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

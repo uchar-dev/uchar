@@ -26,59 +26,70 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Gemengde lijst",
-        "subject": "Jutter",
-        "assertie": {
-          "node": "Predicaat",
-          "soort": "GEVULD",
-          "operand": {
-            "node": "ListLiteral",
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              }
-            },
-            "elements": [
-              {
-                "node": "Literal",
-                "waarde": "12.50",
+        "node": "Consistency",
+        "name": "Gemengde lijst",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "Predicaat",
+              "soort": "GEVULD",
+              "operand": {
+                "node": "ListLiteral",
                 "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
+                  "node": "ListType",
+                  "element": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  }
                 },
+                "elements": [
+                  {
+                    "node": "Literal",
+                    "value": {
+                      "number": "12.50"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": null
+                  },
+                  {
+                    "node": "Literal",
+                    "value": {
+                      "text": "vondst"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": null
+                  }
+                ],
                 "bron": null
               },
-              {
-                "node": "Literal",
-                "waarde": "vondst",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": null
-              }
-            ],
-            "bron": null
-          },
-          "dagsoort": null,
-          "negatie": false,
-          "cijfers": 0,
-          "periode": null,
-          "bron": null
-        },
-        "bron": null,
-        "line": 1,
-        "geldigheid": null
+              "dagsoort": null,
+              "negatie": false,
+              "cijfers": 0,
+              "periode": null,
+              "bron": null
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": null,
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

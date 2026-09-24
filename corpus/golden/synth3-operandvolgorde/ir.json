@@ -63,77 +63,81 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "vangstsom van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vangstsom",
-          "objecttype": "Vangst",
-          "bron": "De vangstsom van een Vangst"
-        },
-        "waarde": {
-          "node": "Let",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "binder": "deel",
-          "value": {
-            "node": "AttribuutRef",
-            "attribuut": "deelvangst",
-            "objecttype": "Vangst",
-            "bron": "zijn deelvangst"
-          },
-          "body": {
-            "node": "Binair",
-            "op": "PLUS",
-            "links": {
-              "node": "BinderRef",
-              "name": "deel",
-              "bron": "het deel"
+        "node": "Rule",
+        "name": "vangstsom van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "rechts": {
-              "node": "Binair",
-              "op": "GEDEELD_DOOR",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "teller",
-                "objecttype": "Vangst",
-                "bron": "zijn teller"
-              },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "noemer",
-                "objecttype": "Vangst",
-                "bron": "zijn noemer"
-              },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vangstsom",
+              "objecttype": "Vangst",
+              "bron": "De vangstsom van een Vangst"
+            },
+            "value": {
+              "node": "Let",
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "zijn teller gedeeld door zijn noemer"
+              "binder": "deel",
+              "value": {
+                "node": "AttribuutRef",
+                "attribuut": "deelvangst",
+                "objecttype": "Vangst",
+                "bron": "zijn deelvangst"
+              },
+              "body": {
+                "node": "Binair",
+                "op": "PLUS",
+                "links": {
+                  "node": "BinderRef",
+                  "name": "deel",
+                  "bron": "het deel"
+                },
+                "rechts": {
+                  "node": "Binair",
+                  "op": "GEDEELD_DOOR",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "teller",
+                    "objecttype": "Vangst",
+                    "bron": "zijn teller"
+                  },
+                  "rechts": {
+                    "node": "AttribuutRef",
+                    "attribuut": "noemer",
+                    "objecttype": "Vangst",
+                    "bron": "zijn noemer"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "zijn teller gedeeld door zijn noemer"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "het deel plus zijn teller gedeeld door zijn noemer"
+              },
+              "bron": "het deel is zijn deelvangst"
             },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "het deel plus zijn teller gedeeld door zijn noemer"
-          },
-          "bron": "het deel is zijn deelvangst"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -141,7 +145,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

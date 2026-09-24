@@ -165,61 +165,61 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "sluitsom van een vondst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "sluitsom",
-          "objecttype": "Vondst",
-          "bron": "De sluitsom van een Vondst"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MAXIMUM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "meldloon",
-              "objecttype": "Vondst",
-              "bron": "haar meldloon"
+        "node": "Rule",
+        "name": "sluitsom van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "bakenloon",
-              "objecttype": "Baken",
-              "bron": "het bakenloon van het Baken"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "EUR",
-              "system": "Munt",
-              "canonical": "EUR",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het maximum van haar meldloon en het bakenloon van het Baken",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "attribuut": "sluitsom",
+              "objecttype": "Vondst",
+              "bron": "De sluitsom van een Vondst"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "MAXIMUM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "meldloon",
+                  "objecttype": "Vondst",
+                  "bron": "haar meldloon"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "bakenloon",
+                  "objecttype": "Baken",
+                  "bron": "het bakenloon van het Baken"
+                }
+              ],
+              "elementType": "Vondst",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "het maximum van haar meldloon en het bakenloon van het Baken"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -227,7 +227,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

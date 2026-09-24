@@ -154,234 +154,234 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal aangemelde vondsten",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal aangemelde vondsten",
-          "objecttype": "Jutter",
-          "bron": "Het aantal aangemelde vondsten van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "aantal aangemelde vondsten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vondsten",
+              "attribuut": "aantal aangemelde vondsten",
               "objecttype": "Jutter",
-              "bron": "vondsten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal vondsten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+              "bron": "Het aantal aangemelde vondsten van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vondsten",
+                  "objecttype": "Jutter",
+                  "bron": "vondsten van de Jutter"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal vondsten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal gevulde vindplaatsen",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal gevulde vindplaatsen",
-          "objecttype": "Jutter",
-          "bron": "Het aantal gevulde vindplaatsen van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL_GEVULDE",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "aantal gevulde vindplaatsen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vindplaats",
-              "objecttype": "Vondst",
-              "bron": "de vindplaats van alle vondsten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal gevulde waarden van de vindplaats van alle vondsten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+              "attribuut": "aantal gevulde vindplaatsen",
+              "objecttype": "Jutter",
+              "bron": "Het aantal gevulde vindplaatsen van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL_GEVULDE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vindplaats",
+                  "objecttype": "Vondst",
+                  "bron": "de vindplaats van alle vondsten van de Jutter"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal gevulde waarden van de vindplaats van alle vondsten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal gevulde vondstdagen",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal gevulde vondstdagen",
-          "objecttype": "Jutter",
-          "bron": "Het aantal gevulde vondstdagen van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL_GEVULDE",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "aantal gevulde vondstdagen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "vondstdag",
-              "objecttype": "Vondst",
-              "bron": "de vondstdag van alle vondsten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal gevulde waarden van de vondstdag van alle vondsten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+              "attribuut": "aantal gevulde vondstdagen",
+              "objecttype": "Jutter",
+              "bron": "Het aantal gevulde vondstdagen van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL_GEVULDE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vondstdag",
+                  "objecttype": "Vondst",
+                  "bron": "de vondstdag van alle vondsten van de Jutter"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal gevulde waarden van de vondstdag van alle vondsten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal gevulde kustvakken",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal gevulde kustvakken",
-          "objecttype": "Jutter",
-          "bron": "Het aantal gevulde kustvakken van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL_GEVULDE",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "aantal gevulde kustvakken",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "kustvak",
-              "objecttype": "Vondst",
-              "bron": "het kustvak van alle vondsten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal gevulde waarden van het kustvak van alle vondsten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+              "attribuut": "aantal gevulde kustvakken",
+              "objecttype": "Jutter",
+              "bron": "Het aantal gevulde kustvakken van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL_GEVULDE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "kustvak",
+                  "objecttype": "Vondst",
+                  "bron": "het kustvak van alle vondsten van de Jutter"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal gevulde waarden van het kustvak van alle vondsten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal gevulde bergingsvlaggen",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal gevulde bergingsvlaggen",
-          "objecttype": "Jutter",
-          "bron": "Het aantal gevulde bergingsvlaggen van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL_GEVULDE",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "aantal gevulde bergingsvlaggen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "geborgen",
-              "objecttype": "Vondst",
-              "bron": "geborgen van alle vondsten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal gevulde waarden van geborgen van alle vondsten van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "vondst"
+              "attribuut": "aantal gevulde bergingsvlaggen",
+              "objecttype": "Jutter",
+              "bron": "Het aantal gevulde bergingsvlaggen van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL_GEVULDE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "geborgen",
+                  "objecttype": "Vondst",
+                  "bron": "geborgen van alle vondsten van de Jutter"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "vondstaanmelding",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal gevulde waarden van geborgen van alle vondsten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -389,7 +389,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

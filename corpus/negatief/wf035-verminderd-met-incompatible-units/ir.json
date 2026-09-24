@@ -116,54 +116,58 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "resultaat van een vat",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "resultaat",
-          "objecttype": "Vat",
-          "bron": "Het resultaat van een Vat"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "VERMINDERD_MET",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "zwaar",
-            "objecttype": "Vat",
-            "bron": "het zwaar van het Vat"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "lang",
-            "objecttype": "Vat",
-            "bron": "het lang van het Vat"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "kg",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het zwaar van het Vat verminderd met het lang van het Vat"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "resultaat van een vat",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "resultaat",
+              "objecttype": "Vat",
+              "bron": "Het resultaat van een Vat"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "VERMINDERD_MET",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "zwaar",
+                "objecttype": "Vat",
+                "bron": "het zwaar van het Vat"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "lang",
+                "objecttype": "Vat",
+                "bron": "het lang van het Vat"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "het zwaar van het Vat verminderd met het lang van het Vat"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -171,7 +175,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

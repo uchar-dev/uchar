@@ -157,210 +157,240 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "uitkijkbonus van een wachter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uitkijkbonus",
-          "objecttype": "Wachter",
-          "bron": "De uitkijkbonus van een Wachter"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "hoogte",
-          "objecttype": "Post",
-          "bron": "de hoogte van zijn post",
-          "navigatieBindingen": [
-            {
-              "node": "RolBinding",
-              "feittype": "postbezetting",
-              "rol": "post"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "risicotoeslag van een wachter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "risicotoeslag",
-          "objecttype": "Wachter",
-          "bron": "De risicotoeslag van een Wachter"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "gevarenklasse",
-          "objecttype": "Kustvak",
-          "bron": "de gevarenklasse van het kustvak van zijn post",
-          "navigatieBindingen": [
-            {
-              "node": "RolBinding",
-              "feittype": "postbezetting",
-              "rol": "post"
+        "node": "Rule",
+        "name": "uitkijkbonus van een wachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "RolBinding",
-              "feittype": "kustligging",
-              "rol": "kustvak"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "vakklasse van een post",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vakklasse",
-          "objecttype": "Post",
-          "bron": "De vakklasse van een Post"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "gevarenklasse",
-          "objecttype": "Kustvak",
-          "bron": "de gevarenklasse van het Kustvak",
-          "navigatieBindingen": [
-            {
-              "node": "RolBinding",
-              "feittype": "kustligging",
-              "rol": "kustvak"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "risicopost bij verraderlijk vak",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "risicopost",
-          "objecttype": "Post",
-          "bron": "Een Post is risicopost"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "verraderlijk",
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "zijn kustvak verraderlijk is",
-          "navigatieBinding": {
-            "node": "RolBinding",
-            "feittype": "kustligging",
-            "rol": "kustvak"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "uitkijkbonus",
+              "objecttype": "Wachter",
+              "bron": "De uitkijkbonus van een Wachter"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "hoogte",
+              "objecttype": "Post",
+              "bron": "de hoogte van zijn post",
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "postbezetting",
+                  "rol": "post"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
           }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "gevarenwacht bij risicopost",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "gevarenwacht",
-          "objecttype": "Wachter",
-          "bron": "Een Wachter is gevarenwacht"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "risicopost",
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "zijn post risicopost is",
-          "navigatieBinding": {
-            "node": "RolBinding",
-            "feittype": "postbezetting",
-            "rol": "post"
+        "node": "Rule",
+        "name": "risicotoeslag van een wachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "risicotoeslag",
+              "objecttype": "Wachter",
+              "bron": "De risicotoeslag van een Wachter"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "gevarenklasse",
+              "objecttype": "Kustvak",
+              "bron": "de gevarenklasse van het kustvak van zijn post",
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "postbezetting",
+                  "rol": "post"
+                },
+                {
+                  "node": "RolBinding",
+                  "feittype": "kustligging",
+                  "rol": "kustvak"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
           }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "rustwacht buiten risicopost",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "rustwacht",
-          "objecttype": "Wachter",
-          "bron": "Een Wachter is rustwacht"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "risicopost",
-          "negatie": true,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "zijn post geen risicopost is",
-          "navigatieBinding": {
-            "node": "RolBinding",
-            "feittype": "postbezetting",
-            "rol": "post"
+        "node": "Rule",
+        "name": "vakklasse van een post",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vakklasse",
+              "objecttype": "Post",
+              "bron": "De vakklasse van een Post"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "gevarenklasse",
+              "objecttype": "Kustvak",
+              "bron": "de gevarenklasse van het Kustvak",
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "kustligging",
+                  "rol": "kustvak"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
           }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "risicopost bij verraderlijk vak",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "risicopost",
+              "objecttype": "Post",
+              "bron": "Een Post is risicopost"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "verraderlijk",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "zijn kustvak verraderlijk is",
+              "navigatieBinding": {
+                "node": "RolBinding",
+                "feittype": "kustligging",
+                "rol": "kustvak"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "gevarenwacht bij risicopost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "gevarenwacht",
+              "objecttype": "Wachter",
+              "bron": "Een Wachter is gevarenwacht"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "risicopost",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "zijn post risicopost is",
+              "navigatieBinding": {
+                "node": "RolBinding",
+                "feittype": "postbezetting",
+                "rol": "post"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "rustwacht buiten risicopost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "rustwacht",
+              "objecttype": "Wachter",
+              "bron": "Een Wachter is rustwacht"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "risicopost",
+              "negatie": true,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "zijn post geen risicopost is",
+              "navigatieBinding": {
+                "node": "RolBinding",
+                "feittype": "postbezetting",
+                "rol": "post"
+              }
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -368,7 +398,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

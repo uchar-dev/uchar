@@ -101,85 +101,91 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "resterende sleepafstand van een berging",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "resterende sleepafstand",
-          "objecttype": "Berging",
-          "bron": "De resterende sleepafstand van een Berging"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "MIN",
-          "links": {
-            "node": "Literal",
-            "waarde": "50",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "resterende sleepafstand van een berging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "50"
-          },
-          "rechts": {
-            "node": "Binair",
-            "op": "MAAL",
-            "links": {
-              "node": "ParameterRef",
-              "parameter": "bergingsfactor",
-              "bron": "de bergingsfactor"
-            },
-            "rechts": {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "sleepafstand",
+              "attribuut": "resterende sleepafstand",
               "objecttype": "Berging",
-              "bron": "de sleepafstand van de Berging"
+              "bron": "De resterende sleepafstand van een Berging"
             },
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "km",
-                "system": "Afstand",
-                "canonical": "m",
-                "factorToCanonical": {
-                  "num": 1000,
-                  "den": 1
+            "value": {
+              "node": "Binair",
+              "op": "MIN",
+              "links": {
+                "node": "Literal",
+                "value": {
+                  "number": "50"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "50"
+              },
+              "rechts": {
+                "node": "Binair",
+                "op": "MAAL",
+                "links": {
+                  "node": "ParameterRef",
+                  "parameter": "bergingsfactor",
+                  "bron": "de bergingsfactor"
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "sleepafstand",
+                  "objecttype": "Berging",
+                  "bron": "de sleepafstand van de Berging"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "km",
+                    "system": "Afstand",
+                    "canonical": "m",
+                    "factorToCanonical": {
+                      "num": 1000,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "de bergingsfactor maal de sleepafstand van de Berging"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "km",
+                  "system": "Afstand",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1000,
+                    "den": 1
+                  }
                 }
-              }
+              },
+              "bron": "50 min de bergingsfactor maal de sleepafstand van de Berging"
             },
-            "bron": "de bergingsfactor maal de sleepafstand van de Berging"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "km",
-              "system": "Afstand",
-              "canonical": "m",
-              "factorToCanonical": {
-                "num": 1000,
-                "den": 1
-              }
-            }
-          },
-          "bron": "50 min de bergingsfactor maal de sleepafstand van de Berging"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -187,7 +193,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

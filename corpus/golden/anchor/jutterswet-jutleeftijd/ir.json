@@ -81,157 +81,154 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening jutleeftijd",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "jutleeftijd",
-          "objecttype": "Jutter",
-          "bron": "De jutleeftijd van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSDUUR",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "geboortedatum",
-              "objecttype": "Jutter",
-              "bron": "zijn geboortedatum"
+        "node": "Rule",
+        "name": "Berekening jutleeftijd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "peildatum",
+              "attribuut": "jutleeftijd",
               "objecttype": "Jutter",
-              "bron": "zijn peildatum"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "jr"
-            }
-          },
-          "bron": "de tijdsduur van zijn geboortedatum tot zijn peildatum in hele jaren",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De jutleeftijd van een Jutter"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSDUUR",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "geboortedatum",
+                  "objecttype": "Jutter",
+                  "bron": "zijn geboortedatum"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "peildatum",
+                  "objecttype": "Jutter",
+                  "bron": "zijn peildatum"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "jr"
+                }
+              },
+              "bron": "de tijdsduur van zijn geboortedatum tot zijn peildatum in hele jaren"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening kwartaalspan",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "kwartaalspan",
-          "objecttype": "Jutter",
-          "bron": "De kwartaalspan van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSDUUR",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "geboortedatum",
-              "objecttype": "Jutter",
-              "bron": "zijn geboortedatum"
+        "node": "Rule",
+        "name": "Berekening kwartaalspan",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "peildatum",
+              "attribuut": "kwartaalspan",
               "objecttype": "Jutter",
-              "bron": "zijn peildatum"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "kw"
-            }
-          },
-          "bron": "de tijdsduur van zijn geboortedatum tot zijn peildatum in hele kwartalen",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De kwartaalspan van een Jutter"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSDUUR",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "geboortedatum",
+                  "objecttype": "Jutter",
+                  "bron": "zijn geboortedatum"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "peildatum",
+                  "objecttype": "Jutter",
+                  "bron": "zijn peildatum"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kw"
+                }
+              },
+              "bron": "de tijdsduur van zijn geboortedatum tot zijn peildatum in hele kwartalen"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening maandafstand",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "maandafstand",
-          "objecttype": "Jutter",
-          "bron": "De maandafstand van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "ABSOLUTE_TIJDSDUUR",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "geboortedatum",
-              "objecttype": "Jutter",
-              "bron": "zijn geboortedatum"
+        "node": "Rule",
+        "name": "Berekening maandafstand",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "peildatum",
+              "attribuut": "maandafstand",
               "objecttype": "Jutter",
-              "bron": "zijn peildatum"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "mnd"
-            }
-          },
-          "bron": "de absolute tijdsduur van zijn geboortedatum tot zijn peildatum in hele maanden",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De maandafstand van een Jutter"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "ABSOLUTE_TIJDSDUUR",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "geboortedatum",
+                  "objecttype": "Jutter",
+                  "bron": "zijn geboortedatum"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "peildatum",
+                  "objecttype": "Jutter",
+                  "bron": "zijn peildatum"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "mnd"
+                }
+              },
+              "bron": "de absolute tijdsduur van zijn geboortedatum tot zijn peildatum in hele maanden"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -239,7 +236,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

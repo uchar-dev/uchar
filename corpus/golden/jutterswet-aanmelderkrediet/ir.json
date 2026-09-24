@@ -108,79 +108,89 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "meldkrediet van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "meldkrediet",
-          "objecttype": "Jutter",
-          "bron": "Het meldkrediet van een Jutter"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "strandtegoed",
-            "objecttype": "Jutter",
-            "bron": "het strandtegoed van de aanmelder"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "2",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "meldkrediet van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "2"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het strandtegoed van de aanmelder plus 2"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "meldkrediet",
+              "objecttype": "Jutter",
+              "bron": "Het meldkrediet van een Jutter"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "strandtegoed",
+                "objecttype": "Jutter",
+                "bron": "het strandtegoed van de aanmelder"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "2"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het strandtegoed van de aanmelder plus 2"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "maatdeling van een jutter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "maatdeling",
-          "objecttype": "Jutter",
-          "bron": "De maatdeling van een Jutter"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "strandtegoed",
-          "objecttype": "Jutter",
-          "bron": "het strandtegoed van zijn strandmaat",
-          "navigatieBindingen": [
-            {
-              "node": "RolBinding",
-              "feittype": "strandmaatschap",
-              "rol": "strandmaat"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "maatdeling van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "maatdeling",
+              "objecttype": "Jutter",
+              "bron": "De maatdeling van een Jutter"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "strandtegoed",
+              "objecttype": "Jutter",
+              "bron": "het strandtegoed van zijn strandmaat",
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "strandmaatschap",
+                  "rol": "strandmaat"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -188,7 +198,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -49,34 +49,39 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Waardestelling",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "geschatte waarde",
-          "objecttype": "Vondst",
-          "bron": "De geschatte waarde van een Vondst"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "taxatiewaarde",
-          "objecttype": "Vondst",
-          "bron": "de taxatiewaarde van de Vondst"
-        },
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "gemeld",
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "de Vondst gemeld is"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "Waardestelling",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "geschatte waarde",
+              "objecttype": "Vondst",
+              "bron": "De geschatte waarde van een Vondst"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "taxatiewaarde",
+              "objecttype": "Vondst",
+              "bron": "de taxatiewaarde van de Vondst"
+            },
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "gemeld",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "de Vondst gemeld is"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -84,7 +89,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

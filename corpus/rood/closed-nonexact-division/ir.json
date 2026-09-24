@@ -47,76 +47,107 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "quotientsom van een deling",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "quotientsom",
-          "objecttype": "Deling",
-          "bron": "Het quoti\u00ebntsom van een Deling"
-        },
-        "waarde": {
-          "node": "Fold",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "list": {
-            "node": "ParameterRef",
-            "parameter": "tellers",
-            "bron": "de tellers"
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "acc",
-                "datatype": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                }
+        "node": "Rule",
+        "name": "quotientsom van een deling",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "quotientsom",
+              "objecttype": "Deling",
+              "bron": "Het quoti\u00ebntsom van een Deling"
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
-              {
-                "name": "x",
-                "datatype": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
-                }
-              }
-            ],
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "acc",
-                "bron": "de opgetelde deling"
+              "list": {
+                "node": "ParameterRef",
+                "parameter": "tellers",
+                "bron": "de tellers"
               },
-              "rechts": {
-                "node": "Binair",
-                "op": "GEDEELD_DOOR",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "x",
-                  "bron": "de teller"
-                },
-                "rechts": {
-                  "node": "Literal",
-                  "waarde": "3",
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "bron": "de opgetelde deling"
+                  },
+                  "rechts": {
+                    "node": "Binair",
+                    "op": "GEDEELD_DOOR",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "x",
+                      "bron": "de teller"
+                    },
+                    "rechts": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "3"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "3"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "de teller gedeeld door 3"
+                  },
                   "type": {
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "3"
+                  "bron": "de opgetelde deling plus de deeluitkomst"
+                },
+                "bron": "de delingen opgeteld"
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
                 },
                 "type": {
                   "node": "Number",
@@ -124,37 +155,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "de teller gedeeld door 3"
+                "bron": "0"
               },
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "de opgetelde deling plus de deeluitkomst"
+              "bron": "de tellers gevouwen tot het quoti\u00ebntsom"
             },
-            "bron": "de delingen opgeteld"
-          },
-          "init": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "0"
-          },
-          "bron": "de tellers gevouwen tot het quoti\u00ebntsom"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -162,7 +170,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

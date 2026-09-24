@@ -136,68 +136,68 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "sluitsom van een vondst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "sluitsom",
-          "objecttype": "Vondst",
-          "bron": "De sluitsom van een Vondst"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "LAATSTE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "meldloon",
-              "objecttype": "Vondst",
-              "bron": "haar meldloon"
+        "node": "Rule",
+        "name": "sluitsom van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "ijkloon",
-              "objecttype": "Jutter",
-              "bron": "het ijkloon van de bewarende jutter",
-              "navigatieBindingen": [
+              "attribuut": "sluitsom",
+              "objecttype": "Vondst",
+              "bron": "De sluitsom van een Vondst"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "LAATSTE",
+              "arguments": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "bewaring",
-                  "rol": "bewarende jutter"
+                  "node": "AttribuutRef",
+                  "attribuut": "meldloon",
+                  "objecttype": "Vondst",
+                  "bron": "haar meldloon"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "ijkloon",
+                  "objecttype": "Jutter",
+                  "bron": "het ijkloon van de bewarende jutter",
+                  "navigatieBindingen": [
+                    {
+                      "node": "RolBinding",
+                      "feittype": "bewaring",
+                      "rol": "bewarende jutter"
+                    }
+                  ]
                 }
-              ]
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "EUR",
-              "system": "Munt",
-              "canonical": "EUR",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "de laatste van haar meldloon en het ijkloon van de bewarende jutter",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              ],
+              "elementType": "Vondst",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "de laatste van haar meldloon en het ijkloon van de bewarende jutter"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -205,7 +205,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

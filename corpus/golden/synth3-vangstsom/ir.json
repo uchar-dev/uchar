@@ -93,183 +93,189 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "totaal van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "totaal",
-          "objecttype": "Jutter",
-          "bron": "Het totaal van een Jutter"
-        },
-        "waarde": {
-          "node": "Fold",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "list": {
-            "node": "AttribuutRef",
-            "attribuut": "vangsten",
-            "objecttype": "Jutter",
-            "bron": "zijn vangsten"
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "acc",
-                "datatype": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                }
-              },
-              {
-                "name": "x",
-                "datatype": {
-                  "node": "SumType",
-                  "domain": "vangst",
-                  "constructors": [
-                    {
-                      "name": "Waardevol",
-                      "payload": {
-                        "node": "Number",
-                        "whole": false,
-                        "decimals": 2,
-                        "sign": "NIET_NEGATIEF"
-                      }
-                    },
-                    {
-                      "name": "Waardeloos",
-                      "payload": null
-                    }
-                  ]
-                }
-              }
-            ],
-            "body": {
-              "node": "Match",
+        "node": "Rule",
+        "name": "totaal van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "totaal",
+              "objecttype": "Jutter",
+              "bron": "Het totaal van een Jutter"
+            },
+            "value": {
+              "node": "Fold",
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "scrutinee": {
-                "node": "BinderRef",
-                "name": "x",
-                "bron": "de vangst"
+              "list": {
+                "node": "AttribuutRef",
+                "attribuut": "vangsten",
+                "objecttype": "Jutter",
+                "bron": "zijn vangsten"
               },
-              "arms": [
-                {
-                  "constructor": "Waardevol",
-                  "binder": "b",
-                  "body": {
-                    "node": "IfThenElse",
-                    "type": {
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
                       "sign": "ONBEPAALD"
-                    },
-                    "condition": {
-                      "node": "Vergelijking",
-                      "op": "KLEINER_OF_GELIJK",
-                      "links": {
-                        "node": "Binair",
-                        "op": "PLUS",
-                        "links": {
-                          "node": "BinderRef",
-                          "name": "acc",
-                          "bron": "de opgetelde vangst"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "SumType",
+                      "domain": "vangst",
+                      "constructors": [
+                        {
+                          "name": "Waardevol",
+                          "payload": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "NIET_NEGATIEF"
+                          }
                         },
-                        "rechts": {
-                          "node": "BinderRef",
-                          "name": "b",
-                          "bron": "de vangstwaarde"
-                        },
+                        {
+                          "name": "Waardeloos",
+                          "payload": null
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Match",
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "scrutinee": {
+                    "node": "BinderRef",
+                    "name": "x",
+                    "bron": "de vangst"
+                  },
+                  "arms": [
+                    {
+                      "constructor": "Waardevol",
+                      "binder": "b",
+                      "body": {
+                        "node": "IfThenElse",
                         "type": {
                           "node": "Number",
                           "whole": false,
                           "decimals": 2,
                           "sign": "ONBEPAALD"
                         },
-                        "bron": "de opgetelde vangst plus de vangstwaarde"
-                      },
-                      "rechts": {
-                        "node": "ParameterRef",
-                        "parameter": "plafond",
-                        "bron": "het plafond"
-                      },
-                      "periode": null,
-                      "bron": "de opgetelde vangst plus de vangstwaarde kleiner dan of gelijk aan het plafond"
+                        "condition": {
+                          "node": "Vergelijking",
+                          "op": "KLEINER_OF_GELIJK",
+                          "links": {
+                            "node": "Binair",
+                            "op": "PLUS",
+                            "links": {
+                              "node": "BinderRef",
+                              "name": "acc",
+                              "bron": "de opgetelde vangst"
+                            },
+                            "rechts": {
+                              "node": "BinderRef",
+                              "name": "b",
+                              "bron": "de vangstwaarde"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "ONBEPAALD"
+                            },
+                            "bron": "de opgetelde vangst plus de vangstwaarde"
+                          },
+                          "rechts": {
+                            "node": "ParameterRef",
+                            "parameter": "plafond",
+                            "bron": "het plafond"
+                          },
+                          "periode": null,
+                          "bron": "de opgetelde vangst plus de vangstwaarde kleiner dan of gelijk aan het plafond"
+                        },
+                        "then": {
+                          "node": "Binair",
+                          "op": "PLUS",
+                          "links": {
+                            "node": "BinderRef",
+                            "name": "acc",
+                            "bron": "de opgetelde vangst"
+                          },
+                          "rechts": {
+                            "node": "BinderRef",
+                            "name": "b",
+                            "bron": "de vangstwaarde"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "ONBEPAALD"
+                          },
+                          "bron": "de opgetelde vangst plus de vangstwaarde"
+                        },
+                        "else": {
+                          "node": "BinderRef",
+                          "name": "acc",
+                          "bron": "de opgetelde vangst"
+                        },
+                        "bron": "de opgetelde vangst met de vangstwaarde erbij zolang het plafond niet wordt overschreden"
+                      }
                     },
-                    "then": {
-                      "node": "Binair",
-                      "op": "PLUS",
-                      "links": {
+                    {
+                      "constructor": "Waardeloos",
+                      "binder": null,
+                      "body": {
                         "node": "BinderRef",
                         "name": "acc",
                         "bron": "de opgetelde vangst"
-                      },
-                      "rechts": {
-                        "node": "BinderRef",
-                        "name": "b",
-                        "bron": "de vangstwaarde"
-                      },
-                      "type": {
-                        "node": "Number",
-                        "whole": false,
-                        "decimals": 2,
-                        "sign": "ONBEPAALD"
-                      },
-                      "bron": "de opgetelde vangst plus de vangstwaarde"
-                    },
-                    "else": {
-                      "node": "BinderRef",
-                      "name": "acc",
-                      "bron": "de opgetelde vangst"
-                    },
-                    "bron": "de opgetelde vangst met de vangstwaarde erbij zolang het plafond niet wordt overschreden"
-                  }
+                      }
+                    }
+                  ],
+                  "bron": "de opgetelde vangst afhankelijk van de vangst"
                 },
-                {
-                  "constructor": "Waardeloos",
-                  "binder": null,
-                  "body": {
-                    "node": "BinderRef",
-                    "name": "acc",
-                    "bron": "de opgetelde vangst"
-                  }
-                }
-              ],
-              "bron": "de opgetelde vangst afhankelijk van de vangst"
+                "bron": "de vangsten opgeteld tot het plafond"
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "0.00"
+              },
+              "bron": "de vangsten gevouwen tot het plafond"
             },
-            "bron": "de vangsten opgeteld tot het plafond"
-          },
-          "init": {
-            "node": "Literal",
-            "waarde": "0.00",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "0.00"
-          },
-          "bron": "de vangsten gevouwen tot het plafond"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -277,7 +283,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -248,67 +248,67 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "laagste vondstgewicht van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "laagste vondstgewicht",
-          "objecttype": "Jutter",
-          "bron": "Het laagste vondstgewicht van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MINIMUM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "inhoudsgewicht",
-              "objecttype": "Kist",
-              "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Kist",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "kg",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
-          "granulariteit": null,
-          "bronPad": [
-            {
-              "node": "RolBinding",
-              "feittype": "bemanning",
-              "rol": "gevoerde boot"
+        "node": "Rule",
+        "name": "laagste vondstgewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "RolBinding",
-              "feittype": "inpakking",
-              "rol": "ingepakte kist"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "laagste vondstgewicht",
+              "objecttype": "Jutter",
+              "bron": "Het laagste vondstgewicht van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "MINIMUM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "inhoudsgewicht",
+                  "objecttype": "Kist",
+                  "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+                }
+              ],
+              "elementType": "Kist",
+              "sourcePath": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "bemanning",
+                  "rol": "gevoerde boot"
+                },
+                {
+                  "node": "RolBinding",
+                  "feittype": "inpakking",
+                  "rol": "ingepakte kist"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -316,7 +316,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

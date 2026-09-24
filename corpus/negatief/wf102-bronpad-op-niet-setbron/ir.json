@@ -238,57 +238,57 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "laagste vondstgewicht van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "laagste vondstgewicht",
-          "objecttype": "Jutter",
-          "bron": "Het laagste vondstgewicht van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "geborgen vondst",
-              "objecttype": "Jutter",
-              "bron": "geborgen vondst van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal geborgen vondsten van de Jutter",
-          "granulariteit": null,
-          "bronPad": [
-            {
-              "node": "RolBinding",
-              "feittype": "bemanning",
-              "rol": "gevoerde boot"
+        "node": "Rule",
+        "name": "laagste vondstgewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "RolBinding",
-              "feittype": "berging",
-              "rol": "geborgen vondst"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "laagste vondstgewicht",
+              "objecttype": "Jutter",
+              "bron": "Het laagste vondstgewicht van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "geborgen vondst",
+                  "objecttype": "Jutter",
+                  "bron": "geborgen vondst van de Jutter"
+                }
+              ],
+              "elementType": "Vondst",
+              "sourcePath": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "bemanning",
+                  "rol": "gevoerde boot"
+                },
+                {
+                  "node": "RolBinding",
+                  "feittype": "berging",
+                  "rol": "geborgen vondst"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal geborgen vondsten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -296,7 +296,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -67,236 +67,277 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "heffing van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "heffing",
-          "objecttype": "Jutter",
-          "bron": "De heffing van een Jutter"
-        },
-        "waarde": {
-          "node": "Fold",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "list": {
-            "node": "ParameterRef",
-            "parameter": "kindertallen",
-            "bron": "de kindertallen"
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "acc",
-                "datatype": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                }
-              },
-              {
-                "name": "x",
-                "datatype": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
-                }
-              }
-            ],
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "acc",
-                "bron": "de opgetelde heffing"
-              },
-              "rechts": {
-                "node": "Afgerond",
-                "basis": {
-                  "node": "Binair",
-                  "op": "MAAL",
-                  "links": {
-                    "node": "ParameterRef",
-                    "parameter": "grondslag",
-                    "bron": "de grondslag"
-                  },
-                  "rechts": {
-                    "node": "Binair",
-                    "op": "PLUS",
-                    "links": {
-                      "node": "Literal",
-                      "waarde": "1.0000",
-                      "type": {
-                        "node": "Number",
-                        "whole": false,
-                        "decimals": 4,
-                        "sign": "ONBEPAALD"
-                      },
-                      "bron": "1,0000"
-                    },
-                    "rechts": {
-                      "node": "Binair",
-                      "op": "GEDEELD_DOOR",
-                      "links": {
-                        "node": "BinderRef",
-                        "name": "x",
-                        "bron": "het kindertal"
-                      },
-                      "rechts": {
-                        "node": "Literal",
-                        "waarde": "2.0000",
-                        "type": {
-                          "node": "Number",
-                          "whole": false,
-                          "decimals": 4,
-                          "sign": "ONBEPAALD"
-                        },
-                        "bron": "2,0000"
-                      },
-                      "type": {
-                        "node": "Number",
-                        "whole": false,
-                        "decimals": 4,
-                        "sign": "ONBEPAALD"
-                      },
-                      "bron": "het kindertal gedeeld door 2,0000"
-                    },
-                    "type": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 4,
-                      "sign": "ONBEPAALD"
-                    },
-                    "bron": "1,0000 plus het kindertal gedeeld door 2,0000"
-                  },
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 6,
-                    "sign": "ONBEPAALD"
-                  },
-                  "bron": "de grondslag maal de wegingsfactor"
-                },
-                "modus": "REKENKUNDIG",
-                "decimalen": 2,
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "de grondslag maal de wegingsfactor rekenkundig afgerond op 2 decimalen"
-              },
+        "node": "Rule",
+        "name": "heffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "heffing",
+              "objecttype": "Jutter",
+              "bron": "De heffing van een Jutter"
+            },
+            "value": {
+              "node": "Fold",
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "de opgetelde heffing plus het kinddeel"
+              "list": {
+                "node": "ParameterRef",
+                "parameter": "kindertallen",
+                "bron": "de kindertallen"
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "bron": "de opgetelde heffing"
+                  },
+                  "rechts": {
+                    "node": "Afgerond",
+                    "basis": {
+                      "node": "Binair",
+                      "op": "MAAL",
+                      "links": {
+                        "node": "ParameterRef",
+                        "parameter": "grondslag",
+                        "bron": "de grondslag"
+                      },
+                      "rechts": {
+                        "node": "Binair",
+                        "op": "PLUS",
+                        "links": {
+                          "node": "Literal",
+                          "value": {
+                            "number": "1.0000"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 4,
+                            "sign": "ONBEPAALD"
+                          },
+                          "bron": "1,0000"
+                        },
+                        "rechts": {
+                          "node": "Binair",
+                          "op": "GEDEELD_DOOR",
+                          "links": {
+                            "node": "BinderRef",
+                            "name": "x",
+                            "bron": "het kindertal"
+                          },
+                          "rechts": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "2.0000"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 4,
+                              "sign": "ONBEPAALD"
+                            },
+                            "bron": "2,0000"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 4,
+                            "sign": "ONBEPAALD"
+                          },
+                          "bron": "het kindertal gedeeld door 2,0000"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 4,
+                          "sign": "ONBEPAALD"
+                        },
+                        "bron": "1,0000 plus het kindertal gedeeld door 2,0000"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 6,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "de grondslag maal de wegingsfactor"
+                    },
+                    "modus": "REKENKUNDIG",
+                    "decimalen": 2,
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "de grondslag maal de wegingsfactor rekenkundig afgerond op 2 decimalen"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "de opgetelde heffing plus het kinddeel"
+                },
+                "bron": "de kinddelen opgeteld"
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "0.00"
+              },
+              "bron": "de kindertallen gevouwen tot de heffing"
             },
-            "bron": "de kinddelen opgeteld"
-          },
-          "init": {
-            "node": "Literal",
-            "waarde": "0.00",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "0.00"
-          },
-          "bron": "de kindertallen gevouwen tot de heffing"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "puntentotaal van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "puntentotaal",
-          "objecttype": "Jutter",
-          "bron": "Het puntentotaal van een Jutter"
-        },
-        "waarde": {
-          "node": "Fold",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "list": {
-            "node": "ParameterRef",
-            "parameter": "kindertallen",
-            "bron": "de kindertallen"
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "acc",
-                "datatype": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                }
+        "node": "Rule",
+        "name": "puntentotaal van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "puntentotaal",
+              "objecttype": "Jutter",
+              "bron": "Het puntentotaal van een Jutter"
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
-              {
-                "name": "x",
-                "datatype": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
-                }
-              }
-            ],
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "acc",
-                "bron": "het opgetelde punt"
+              "list": {
+                "node": "ParameterRef",
+                "parameter": "kindertallen",
+                "bron": "de kindertallen"
               },
-              "rechts": {
-                "node": "Binair",
-                "op": "MAAL",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "x",
-                  "bron": "het kindertal"
-                },
-                "rechts": {
-                  "node": "Literal",
-                  "waarde": "2",
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "bron": "het opgetelde punt"
+                  },
+                  "rechts": {
+                    "node": "Binair",
+                    "op": "MAAL",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "x",
+                      "bron": "het kindertal"
+                    },
+                    "rechts": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "2"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "2"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "het kindertal maal 2"
+                  },
                   "type": {
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "2"
+                  "bron": "het opgetelde punt plus het kindpunt"
+                },
+                "bron": "de kindpunten opgeteld"
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
                 },
                 "type": {
                   "node": "Number",
@@ -304,37 +345,14 @@
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "het kindertal maal 2"
+                "bron": "0"
               },
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "het opgetelde punt plus het kindpunt"
+              "bron": "de kindertallen gevouwen tot het puntentotaal"
             },
-            "bron": "de kindpunten opgeteld"
-          },
-          "init": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "0"
-          },
-          "bron": "de kindertallen gevouwen tot het puntentotaal"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -342,7 +360,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

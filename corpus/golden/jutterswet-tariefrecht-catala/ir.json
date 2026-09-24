@@ -62,156 +62,64 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "berekening aanslag",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aanslag",
-          "objecttype": "Penningplichtige",
-          "bron": "de aanslag"
-        },
-        "waarde": {
-          "node": "Let",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "binder": "aftrek",
-          "value": {
-            "node": "Afgerond",
-            "basis": {
-              "node": "Binair",
-              "op": "MAAL",
-              "links": {
-                "node": "Literal",
-                "waarde": "250.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "250.00"
-              },
-              "rechts": {
-                "node": "AttribuutRef",
-                "attribuut": "kindertal",
-                "objecttype": "Penningplichtige",
-                "bron": "de kindertal"
-              },
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "bron": null
+        "node": "Rule",
+        "name": "berekening aanslag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "modus": "REKENKUNDIG",
-            "decimalen": 2,
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aanslag",
+              "objecttype": "Penningplichtige",
+              "bron": "de aanslag"
             },
-            "bron": null
-          },
-          "body": {
-            "node": "Let",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "binder": "belasting",
             "value": {
-              "node": "Afgerond",
-              "basis": {
-                "node": "Binair",
-                "op": "MAAL",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "inkomen",
-                  "objecttype": "Penningplichtige",
-                  "bron": "de inkomen"
-                },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "tarief",
-                  "objecttype": "Penningplichtige",
-                  "bron": "de tarief"
-                },
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": null
-              },
-              "modus": "REKENKUNDIG",
-              "decimalen": 2,
+              "node": "Let",
               "type": {
                 "node": "Number",
                 "whole": false,
                 "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": null
-            },
-            "body": {
-              "node": "IfThenElse",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "condition": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "aftrek",
-                  "bron": "aftrek"
+              "binder": "aftrek",
+              "value": {
+                "node": "Afgerond",
+                "basis": {
+                  "node": "Binair",
+                  "op": "MAAL",
+                  "links": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "250.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "250.00"
+                  },
+                  "rechts": {
+                    "node": "AttribuutRef",
+                    "attribuut": "kindertal",
+                    "objecttype": "Penningplichtige",
+                    "bron": "de kindertal"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": null
                 },
-                "rechts": {
-                  "node": "BinderRef",
-                  "name": "belasting",
-                  "bron": "belasting"
-                },
-                "periode": null,
-                "bron": null
-              },
-              "then": {
-                "node": "Literal",
-                "waarde": "0.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0.00"
-              },
-              "else": {
-                "node": "Binair",
-                "op": "VERMINDERD_MET",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "belasting",
-                  "bron": "belasting"
-                },
-                "rechts": {
-                  "node": "BinderRef",
-                  "name": "aftrek",
-                  "bron": "aftrek"
-                },
+                "modus": "REKENKUNDIG",
+                "decimalen": 2,
                 "type": {
                   "node": "Number",
                   "whole": false,
@@ -220,18 +128,118 @@
                 },
                 "bron": null
               },
-              "bron": null
+              "body": {
+                "node": "Let",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "binder": "belasting",
+                "value": {
+                  "node": "Afgerond",
+                  "basis": {
+                    "node": "Binair",
+                    "op": "MAAL",
+                    "links": {
+                      "node": "AttribuutRef",
+                      "attribuut": "inkomen",
+                      "objecttype": "Penningplichtige",
+                      "bron": "de inkomen"
+                    },
+                    "rechts": {
+                      "node": "AttribuutRef",
+                      "attribuut": "tarief",
+                      "objecttype": "Penningplichtige",
+                      "bron": "de tarief"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": null
+                  },
+                  "modus": "REKENKUNDIG",
+                  "decimalen": 2,
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": null
+                },
+                "body": {
+                  "node": "IfThenElse",
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "condition": {
+                    "node": "Vergelijking",
+                    "op": "GROTER",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "aftrek",
+                      "bron": "aftrek"
+                    },
+                    "rechts": {
+                      "node": "BinderRef",
+                      "name": "belasting",
+                      "bron": "belasting"
+                    },
+                    "periode": null,
+                    "bron": null
+                  },
+                  "then": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0.00"
+                  },
+                  "else": {
+                    "node": "Binair",
+                    "op": "VERMINDERD_MET",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "belasting",
+                      "bron": "belasting"
+                    },
+                    "rechts": {
+                      "node": "BinderRef",
+                      "name": "aftrek",
+                      "bron": "aftrek"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": null
+                  },
+                  "bron": null
+                },
+                "bron": "belasting"
+              },
+              "bron": "aftrek"
             },
-            "bron": "belasting"
-          },
-          "bron": "aftrek"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -239,7 +247,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],
@@ -265,7 +272,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "2",
+                "value": {
+                  "number": "2"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,
@@ -279,7 +288,9 @@
             },
             "consequentie": {
               "node": "Literal",
-              "waarde": "0.1500",
+              "value": {
+                "number": "0.1500"
+              },
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -309,7 +320,9 @@
                         },
                         "rechts": {
                           "node": "Literal",
-                          "waarde": "4",
+                          "value": {
+                            "number": "4"
+                          },
                           "type": {
                             "node": "Number",
                             "whole": true,
@@ -323,7 +336,9 @@
                       },
                       "consequentie": {
                         "node": "Literal",
-                        "waarde": "0.1000",
+                        "value": {
+                          "number": "0.1000"
+                        },
                         "type": {
                           "node": "Number",
                           "whole": false,
@@ -354,7 +369,9 @@
                         },
                         "rechts": {
                           "node": "Literal",
-                          "waarde": "10000.00",
+                          "value": {
+                            "number": "10000.00"
+                          },
                           "type": {
                             "node": "Number",
                             "whole": false,
@@ -368,7 +385,9 @@
                       },
                       "consequentie": {
                         "node": "Literal",
-                        "waarde": "0.0000",
+                        "value": {
+                          "number": "0.0000"
+                        },
                         "type": {
                           "node": "Number",
                           "whole": false,
@@ -397,7 +416,9 @@
             },
             "consequentie": {
               "node": "Literal",
-              "waarde": "0.2000",
+              "value": {
+                "number": "0.2000"
+              },
               "type": {
                 "node": "Number",
                 "whole": false,

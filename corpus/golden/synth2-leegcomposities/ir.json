@@ -149,182 +149,195 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "heffing van een meting",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "heffing",
-          "objecttype": "Meting",
-          "bron": "De heffing van een Meting"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "VERMINDERD_MET",
-          "links": {
-            "node": "Binair",
-            "op": "MAAL",
-            "links": {
+        "node": "Rule",
+        "name": "heffing van een meting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "grondslag",
+              "attribuut": "heffing",
               "objecttype": "Meting",
-              "bron": "de grondslag van de Meting"
+              "bron": "De heffing van een Meting"
             },
-            "rechts": {
-              "node": "AttribuutRef",
-              "attribuut": "factor",
-              "objecttype": "Meting",
-              "bron": "de factor van de Meting"
+            "value": {
+              "node": "Binair",
+              "op": "VERMINDERD_MET",
+              "links": {
+                "node": "Binair",
+                "op": "MAAL",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "grondslag",
+                  "objecttype": "Meting",
+                  "bron": "de grondslag van de Meting"
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "factor",
+                  "objecttype": "Meting",
+                  "bron": "de factor van de Meting"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "de grondslag van de Meting maal de factor van de Meting"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "korting",
+                "objecttype": "Meting",
+                "bron": "de korting van de Meting"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de grondslag van de Meting maal de factor van de Meting verminderd met de korting van de Meting"
             },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "de grondslag van de Meting maal de factor van de Meting"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "korting",
-            "objecttype": "Meting",
-            "bron": "de korting van de Meting"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de grondslag van de Meting maal de factor van de Meting verminderd met de korting van de Meting"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "rest van een meting",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "rest",
-          "objecttype": "Meting",
-          "bron": "De rest van een Meting"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "VERMINDERD_MET",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aftrek",
-            "objecttype": "Meting",
-            "bron": "de aftrek van de Meting"
-          },
-          "rechts": {
-            "node": "Binair",
-            "op": "MAAL",
-            "links": {
+        "node": "Rule",
+        "name": "rest van een meting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "tarief",
+              "attribuut": "rest",
               "objecttype": "Meting",
-              "bron": "het tarief van de Meting"
+              "bron": "De rest van een Meting"
             },
-            "rechts": {
-              "node": "AttribuutRef",
-              "attribuut": "aantal",
-              "objecttype": "Meting",
-              "bron": "het aantal van de Meting"
+            "value": {
+              "node": "Binair",
+              "op": "VERMINDERD_MET",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aftrek",
+                "objecttype": "Meting",
+                "bron": "de aftrek van de Meting"
+              },
+              "rechts": {
+                "node": "Binair",
+                "op": "MAAL",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "tarief",
+                  "objecttype": "Meting",
+                  "bron": "het tarief van de Meting"
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "aantal",
+                  "objecttype": "Meting",
+                  "bron": "het aantal van de Meting"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "het tarief van de Meting maal het aantal van de Meting"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de aftrek van de Meting verminderd met het tarief van de Meting maal het aantal van de Meting"
             },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "het tarief van de Meting maal het aantal van de Meting"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de aftrek van de Meting verminderd met het tarief van de Meting maal het aantal van de Meting"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "uitkomst van een meting",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uitkomst",
-          "objecttype": "Meting",
-          "bron": "De uitkomst van een Meting"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "Binair",
-            "op": "GEDEELD_DOOR",
-            "links": {
+        "node": "Rule",
+        "name": "uitkomst van een meting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "som",
+              "attribuut": "uitkomst",
               "objecttype": "Meting",
-              "bron": "de som van de Meting"
+              "bron": "De uitkomst van een Meting"
             },
-            "rechts": {
-              "node": "AttribuutRef",
-              "attribuut": "deler",
-              "objecttype": "Meting",
-              "bron": "de deler van de Meting"
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "Binair",
+                "op": "GEDEELD_DOOR",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "som",
+                  "objecttype": "Meting",
+                  "bron": "de som van de Meting"
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "deler",
+                  "objecttype": "Meting",
+                  "bron": "de deler van de Meting"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "de som van de Meting gedeeld door de deler van de Meting"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "toeslag",
+                "objecttype": "Meting",
+                "bron": "de toeslag van de Meting"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de som van de Meting gedeeld door de deler van de Meting plus de toeslag van de Meting"
             },
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "actief",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "de Meting is actief"
             },
-            "bron": "de som van de Meting gedeeld door de deler van de Meting"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "toeslag",
-            "objecttype": "Meting",
-            "bron": "de toeslag van de Meting"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de som van de Meting gedeeld door de deler van de Meting plus de toeslag van de Meting"
-        },
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "actief",
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "de Meting is actief"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -332,7 +345,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

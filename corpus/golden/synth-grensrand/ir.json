@@ -140,139 +140,154 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "grensproduct van een meting",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "grensproduct",
-          "objecttype": "Meting",
-          "bron": "Het grensproduct van een Meting"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "MAAL",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "factorEen",
-            "objecttype": "Meting",
-            "bron": "de factorEen van de Meting"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "factorTwee",
-            "objecttype": "Meting",
-            "bron": "de factorTwee van de Meting"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de factorEen van de Meting maal de factorTwee van de Meting"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "grensproduct van een meting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "grensproduct",
+              "objecttype": "Meting",
+              "bron": "Het grensproduct van een Meting"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "MAAL",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "factorEen",
+                "objecttype": "Meting",
+                "bron": "de factorEen van de Meting"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "factorTwee",
+                "objecttype": "Meting",
+                "bron": "de factorTwee van de Meting"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de factorEen van de Meting maal de factorTwee van de Meting"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "totaal van een meting",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "totaal",
-          "objecttype": "Meting",
-          "bron": "Het totaal van een Meting"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "lengteA",
-            "objecttype": "Meting",
-            "bron": "de lengteA van de Meting"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "lengteB",
-            "objecttype": "Meting",
-            "bron": "de lengteB van de Meting"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "cm",
-              "system": "Lengte",
-              "canonical": "cm",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "de lengteA van de Meting plus de lengteB van de Meting"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "totaal van een meting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "totaal",
+              "objecttype": "Meting",
+              "bron": "Het totaal van een Meting"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "lengteA",
+                "objecttype": "Meting",
+                "bron": "de lengteA van de Meting"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "lengteB",
+                "objecttype": "Meting",
+                "bron": "de lengteB van de Meting"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "cm",
+                  "system": "Lengte",
+                  "canonical": "cm",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "de lengteA van de Meting plus de lengteB van de Meting"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "indicatie van een meting",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "indicatie",
-          "objecttype": "Meting",
-          "bron": "De indicatie van een Meting"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "1",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "1"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GROTER_OF_GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "lengteA",
-            "objecttype": "Meting",
-            "bron": "de lengteA van de Meting"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "lengteB",
-            "objecttype": "Meting",
-            "bron": "de lengteB van de Meting"
-          },
-          "periode": null,
-          "bron": "de lengteA van de Meting is groter of gelijk aan de lengteB van de Meting"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "indicatie van een meting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "indicatie",
+              "objecttype": "Meting",
+              "bron": "De indicatie van een Meting"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "1"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "1"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GROTER_OF_GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "lengteA",
+                "objecttype": "Meting",
+                "bron": "de lengteA van de Meting"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "lengteB",
+                "objecttype": "Meting",
+                "bron": "de lengteB van de Meting"
+              },
+              "periode": null,
+              "bron": "de lengteA van de Meting is groter of gelijk aan de lengteB van de Meting"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -280,7 +295,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

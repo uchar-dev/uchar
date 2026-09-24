@@ -26,55 +26,28 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Lijst-accumulator",
-        "subject": "Jutter",
-        "assertie": {
-          "node": "Predicaat",
-          "soort": "GEVULD",
-          "operand": {
-            "node": "Fold",
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              }
-            },
-            "list": {
-              "node": "ListLiteral",
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                }
-              },
-              "elements": [
-                {
-                  "node": "Literal",
-                  "waarde": "1.00",
-                  "type": {
+        "node": "Consistency",
+        "name": "Lijst-accumulator",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "Predicaat",
+              "soort": "GEVULD",
+              "operand": {
+                "node": "Fold",
+                "type": {
+                  "node": "ListType",
+                  "element": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
-                  },
-                  "bron": null
-                }
-              ],
-              "bron": null
-            },
-            "function": {
-              "node": "Lambda",
-              "parameters": [
-                {
-                  "name": "acc",
-                  "datatype": {
+                  }
+                },
+                "list": {
+                  "node": "ListLiteral",
+                  "type": {
                     "node": "ListType",
                     "element": {
                       "node": "Number",
@@ -82,54 +55,90 @@
                       "decimals": 2,
                       "sign": "ONBEPAALD"
                     }
-                  }
+                  },
+                  "elements": [
+                    {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1.00"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": null
+                    }
+                  ],
+                  "bron": null
                 },
-                {
-                  "name": "x",
-                  "datatype": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  }
-                }
-              ],
-              "body": {
-                "node": "BinderRef",
-                "name": "acc",
+                "function": {
+                  "node": "Lambda",
+                  "parameters": [
+                    {
+                      "name": "acc",
+                      "datatype": {
+                        "node": "ListType",
+                        "element": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "ONBEPAALD"
+                        }
+                      }
+                    },
+                    {
+                      "name": "x",
+                      "datatype": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      }
+                    }
+                  ],
+                  "body": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "bron": null
+                  },
+                  "bron": null
+                },
+                "init": {
+                  "node": "ListLiteral",
+                  "type": {
+                    "node": "ListType",
+                    "element": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    }
+                  },
+                  "elements": [],
+                  "bron": null
+                },
                 "bron": null
               },
+              "dagsoort": null,
+              "negatie": false,
+              "cijfers": 0,
+              "periode": null,
               "bron": null
             },
-            "init": {
-              "node": "ListLiteral",
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                }
-              },
-              "elements": [],
-              "bron": null
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": null
-          },
-          "dagsoort": null,
-          "negatie": false,
-          "cijfers": 0,
-          "periode": null,
-          "bron": null
-        },
-        "bron": null,
-        "line": 1,
-        "geldigheid": null
+            "bron": null,
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

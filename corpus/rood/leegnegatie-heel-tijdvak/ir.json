@@ -105,50 +105,57 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "meldpremie van een schuit",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "meldpremie",
-          "objecttype": "Schuit",
-          "bron": "De meldpremie van een Schuit"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "40",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "40"
-        },
-        "voorwaarde": {
-          "node": "Predicaat",
-          "soort": "LEEG",
-          "operand": {
-            "node": "AttribuutRef",
-            "attribuut": "lengte",
-            "objecttype": "Schuit",
-            "bron": "de lengte van de Schuit"
-          },
-          "dagsoort": null,
-          "negatie": true,
-          "cijfers": 0,
-          "periode": {
-            "node": "GeheelPeriode",
-            "jaar": true,
-            "niet": false
-          },
-          "bron": "de lengte van de Schuit gedurende het gehele jaar niet leeg is"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "meldpremie van een schuit",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "meldpremie",
+              "objecttype": "Schuit",
+              "bron": "De meldpremie van een Schuit"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "40"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "40"
+            },
+            "condition": {
+              "node": "Predicaat",
+              "soort": "LEEG",
+              "operand": {
+                "node": "AttribuutRef",
+                "attribuut": "lengte",
+                "objecttype": "Schuit",
+                "bron": "de lengte van de Schuit"
+              },
+              "dagsoort": null,
+              "negatie": true,
+              "cijfers": 0,
+              "periode": {
+                "node": "GeheelPeriode",
+                "jaar": true,
+                "niet": false
+              },
+              "bron": "de lengte van de Schuit gedurende het gehele jaar niet leeg is"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -156,7 +163,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

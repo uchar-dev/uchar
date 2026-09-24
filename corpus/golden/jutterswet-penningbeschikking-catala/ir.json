@@ -97,230 +97,252 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "berekening penningrecht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "penningrecht",
-          "objecttype": "Penningbeschikking",
-          "bron": "de penningrecht"
-        },
-        "waarde": {
-          "node": "Match",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "scrutinee": {
-            "node": "AttribuutRef",
-            "attribuut": "penningstatus",
-            "objecttype": "Penningbeschikking",
-            "bron": "de penningstatus"
-          },
-          "arms": [
-            {
-              "constructor": "Verleend",
-              "binder": "bedrag",
-              "body": {
-                "node": "Binair",
-                "op": "PLUS",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "bedrag",
-                  "bron": "bedrag"
-                },
-                "rechts": {
-                  "node": "Literal",
-                  "waarde": "30.00",
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
-                  },
-                  "bron": "30.00"
-                },
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": null
-              }
+        "node": "Rule",
+        "name": "berekening penningrecht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "constructor": "Geweigerd",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "0.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0.00"
-              }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "penningrecht",
+              "objecttype": "Penningbeschikking",
+              "bron": "de penningrecht"
             },
-            {
-              "constructor": "Aangehouden",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "15.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "15.00"
-              }
-            }
-          ],
-          "bron": "match Penningstatus"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "kenmerktoekenning voorlopig",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "voorlopig",
-          "objecttype": "Penningbeschikking",
-          "bron": "de voorlopig"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "penningstatus",
-            "objecttype": "Penningbeschikking",
-            "bron": "de penningstatus"
-          },
-          "rechts": {
-            "node": "Construct",
-            "type": {
-              "node": "SumType",
-              "domain": "Penningstatus",
-              "constructors": [
+            "value": {
+              "node": "Match",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "scrutinee": {
+                "node": "AttribuutRef",
+                "attribuut": "penningstatus",
+                "objecttype": "Penningbeschikking",
+                "bron": "de penningstatus"
+              },
+              "arms": [
                 {
-                  "name": "Verleend",
-                  "payload": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
+                  "constructor": "Verleend",
+                  "binder": "bedrag",
+                  "body": {
+                    "node": "Binair",
+                    "op": "PLUS",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "bedrag",
+                      "bron": "bedrag"
+                    },
+                    "rechts": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "30.00"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "30.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": null
                   }
                 },
                 {
-                  "name": "Geweigerd",
-                  "payload": null
-                },
-                {
-                  "name": "Aangehouden",
-                  "payload": null
-                }
-              ]
-            },
-            "constructor": "Aangehouden",
-            "argument": null,
-            "bron": "Aangehouden"
-          },
-          "periode": null,
-          "bron": null
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "kenmerktoekenning beslist",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "beslist",
-          "objecttype": "Penningbeschikking",
-          "bron": "de beslist"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "ONGELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "penningstatus",
-            "objecttype": "Penningbeschikking",
-            "bron": "de penningstatus"
-          },
-          "rechts": {
-            "node": "Construct",
-            "type": {
-              "node": "SumType",
-              "domain": "Penningstatus",
-              "constructors": [
-                {
-                  "name": "Verleend",
-                  "payload": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "ONBEPAALD"
+                  "constructor": "Geweigerd",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0.00"
                   }
                 },
                 {
-                  "name": "Geweigerd",
-                  "payload": null
-                },
-                {
-                  "name": "Aangehouden",
-                  "payload": null
+                  "constructor": "Aangehouden",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "15.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "15.00"
+                  }
                 }
-              ]
+              ],
+              "bron": "match Penningstatus"
             },
-            "constructor": "Aangehouden",
-            "argument": null,
-            "bron": "Aangehouden"
-          },
-          "periode": null,
-          "bron": null
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "kenmerktoekenning voorlopig",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "voorlopig",
+              "objecttype": "Penningbeschikking",
+              "bron": "de voorlopig"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "penningstatus",
+                "objecttype": "Penningbeschikking",
+                "bron": "de penningstatus"
+              },
+              "rechts": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "Penningstatus",
+                  "constructors": [
+                    {
+                      "name": "Verleend",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      }
+                    },
+                    {
+                      "name": "Geweigerd",
+                      "payload": null
+                    },
+                    {
+                      "name": "Aangehouden",
+                      "payload": null
+                    }
+                  ]
+                },
+                "constructor": "Aangehouden",
+                "argument": null,
+                "bron": "Aangehouden"
+              },
+              "periode": null,
+              "bron": null
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "kenmerktoekenning beslist",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "beslist",
+              "objecttype": "Penningbeschikking",
+              "bron": "de beslist"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "ONGELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "penningstatus",
+                "objecttype": "Penningbeschikking",
+                "bron": "de penningstatus"
+              },
+              "rechts": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "Penningstatus",
+                  "constructors": [
+                    {
+                      "name": "Verleend",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      }
+                    },
+                    {
+                      "name": "Geweigerd",
+                      "payload": null
+                    },
+                    {
+                      "name": "Aangehouden",
+                      "payload": null
+                    }
+                  ]
+                },
+                "constructor": "Aangehouden",
+                "argument": null,
+                "bron": "Aangehouden"
+              },
+              "periode": null,
+              "bron": null
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -328,7 +350,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],

@@ -100,7 +100,9 @@
           },
           "rechts": {
             "node": "Literal",
-            "waarde": "100",
+            "value": {
+              "number": "100"
+            },
             "type": {
               "node": "Number",
               "whole": true,
@@ -124,154 +126,42 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "berekening bedrag",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bedrag",
-          "objecttype": "Kamerbedrag",
-          "bron": "de bedrag"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "grondslag",
-            "objecttype": "Kamerbedrag",
-            "bron": "de grondslag"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "100",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "berekening bedrag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "100"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "berekening heffing",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "heffing",
-          "objecttype": "Kamerheffing",
-          "bron": "de heffing"
-        },
-        "waarde": {
-          "node": "Fold",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "list": {
-            "node": "MapList",
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              }
-            },
-            "list": {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "grondslagen",
-              "objecttype": "Kamerheffing",
-              "bron": "de grondslagen"
+              "attribuut": "bedrag",
+              "objecttype": "Kamerbedrag",
+              "bron": "de bedrag"
             },
-            "function": {
-              "node": "Lambda",
-              "parameters": [
-                {
-                  "name": "g",
-                  "datatype": {
-                    "node": "Number",
-                    "whole": true,
-                    "decimals": 0,
-                    "sign": "ONBEPAALD"
-                  }
-                }
-              ],
-              "body": {
-                "node": "Invoke",
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "grondslag",
+                "objecttype": "Kamerbedrag",
+                "bron": "de grondslag"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "100"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "function": "Kamerbedrag",
-                "arguments": [
-                  {
-                    "node": "BinderRef",
-                    "name": "g",
-                    "bron": "g"
-                  }
-                ],
-                "bron": "Kamerbedrag"
-              },
-              "bron": "g"
-            },
-            "bron": null
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "acc",
-                "datatype": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                }
-              },
-              {
-                "name": "b",
-                "datatype": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                }
-              }
-            ],
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "acc",
-                "bron": "acc"
-              },
-              "rechts": {
-                "node": "BinderRef",
-                "name": "b",
-                "bron": "b"
+                "bron": "100"
               },
               "type": {
                 "node": "Number",
@@ -281,27 +171,151 @@
               },
               "bron": null
             },
-            "bron": null
-          },
-          "init": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "berekening heffing",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "0"
-          },
-          "bron": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "heffing",
+              "objecttype": "Kamerheffing",
+              "bron": "de heffing"
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "list": {
+                "node": "MapList",
+                "type": {
+                  "node": "ListType",
+                  "element": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  }
+                },
+                "list": {
+                  "node": "AttribuutRef",
+                  "attribuut": "grondslagen",
+                  "objecttype": "Kamerheffing",
+                  "bron": "de grondslagen"
+                },
+                "function": {
+                  "node": "Lambda",
+                  "parameters": [
+                    {
+                      "name": "g",
+                      "datatype": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
+                      }
+                    }
+                  ],
+                  "body": {
+                    "node": "Invoke",
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "function": "Kamerbedrag",
+                    "arguments": [
+                      {
+                        "node": "BinderRef",
+                        "name": "g",
+                        "bron": "g"
+                      }
+                    ],
+                    "bron": "Kamerbedrag"
+                  },
+                  "bron": "g"
+                },
+                "bron": null
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    }
+                  },
+                  {
+                    "name": "b",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "bron": "acc"
+                  },
+                  "rechts": {
+                    "node": "BinderRef",
+                    "name": "b",
+                    "bron": "b"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": null
+                },
+                "bron": null
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "0"
+              },
+              "bron": null
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -309,7 +323,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],

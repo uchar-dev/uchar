@@ -46,57 +46,25 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "heffing over de posten van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "heffing",
-          "objecttype": "Jutter",
-          "bron": "De heffing over de posten van een Jutter"
-        },
-        "waarde": {
-          "node": "Let",
-          "binder": "aantal_posten",
-          "value": {
-            "node": "ListLength",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "heffing over de posten van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "list": {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "posten",
+              "attribuut": "heffing",
               "objecttype": "Jutter",
-              "bron": "zijn posten"
+              "bron": "De heffing over de posten van een Jutter"
             },
-            "bron": "het aantal posten"
-          },
-          "body": {
-            "node": "Binair",
-            "op": "MAAL",
-            "links": {
-              "node": "Literal",
-              "waarde": "100.00",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "NIET_NEGATIEF"
-              },
-              "bron": "500.00"
-            },
-            "rechts": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "aantal_posten",
-                "bron": "aantal_posten"
-              },
-              "rechts": {
+            "value": {
+              "node": "Let",
+              "binder": "aantal_posten",
+              "value": {
                 "node": "ListLength",
                 "type": {
                   "node": "Number",
@@ -112,36 +80,74 @@
                 },
                 "bron": "het aantal posten"
               },
+              "body": {
+                "node": "Binair",
+                "op": "MAAL",
+                "links": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "100.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "NIET_NEGATIEF"
+                  },
+                  "bron": "500.00"
+                },
+                "rechts": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "aantal_posten",
+                    "bron": "aantal_posten"
+                  },
+                  "rechts": {
+                    "node": "ListLength",
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "list": {
+                      "node": "AttribuutRef",
+                      "attribuut": "posten",
+                      "objecttype": "Jutter",
+                      "bron": "zijn posten"
+                    },
+                    "bron": "het aantal posten"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "e"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "e"
+              },
               "type": {
                 "node": "Number",
-                "whole": true,
-                "decimals": 0,
+                "whole": false,
+                "decimals": 2,
                 "sign": "ONBEPAALD"
               },
-              "bron": "e"
+              "bron": "de heffing over de posten"
             },
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "e"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de heffing over de posten"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -149,7 +155,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

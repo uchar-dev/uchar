@@ -72,80 +72,88 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "sluittijdstip van een getijpost",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "sluittijdstip",
-          "objecttype": "Getijpost",
-          "bron": "Het sluittijdstip van een Getijpost"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "meldtijdstip",
-            "objecttype": "Getijpost",
-            "bron": "zijn meldtijdstip"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "wachttermijn",
-            "objecttype": "Getijpost",
-            "bron": "zijn wachttermijn"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "millisecond"
-          },
-          "bron": "zijn meldtijdstip plus zijn wachttermijn"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "sluittijdstip van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "sluittijdstip",
+              "objecttype": "Getijpost",
+              "bron": "Het sluittijdstip van een Getijpost"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "meldtijdstip",
+                "objecttype": "Getijpost",
+                "bron": "zijn meldtijdstip"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "wachttermijn",
+                "objecttype": "Getijpost",
+                "bron": "zijn wachttermijn"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "bron": "zijn meldtijdstip plus zijn wachttermijn"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "openingstijdstip van een getijpost",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "openingstijdstip",
-          "objecttype": "Getijpost",
-          "bron": "Het openingstijdstip van een Getijpost"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "MIN",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "meldtijdstip",
-            "objecttype": "Getijpost",
-            "bron": "zijn meldtijdstip"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "wachttermijn",
-            "objecttype": "Getijpost",
-            "bron": "zijn wachttermijn"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "millisecond"
-          },
-          "bron": "zijn meldtijdstip min zijn wachttermijn"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "openingstijdstip van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "openingstijdstip",
+              "objecttype": "Getijpost",
+              "bron": "Het openingstijdstip van een Getijpost"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "MIN",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "meldtijdstip",
+                "objecttype": "Getijpost",
+                "bron": "zijn meldtijdstip"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "wachttermijn",
+                "objecttype": "Getijpost",
+                "bron": "zijn wachttermijn"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "bron": "zijn meldtijdstip min zijn wachttermijn"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [
@@ -161,12 +169,11 @@
               "node": "Vergelijking",
               "op": "GELIJK",
               "links": {
-                "node": "Functie",
+                "node": "BuiltinCall",
                 "kind": "DAG_UIT",
-                "argumenten": [
+                "arguments": [
                   {
-                    "node": "Constante",
-                    "naam": "de dag",
+                    "node": "BoundDay",
                     "type": {
                       "node": "Date",
                       "precision": "day"
@@ -174,22 +181,19 @@
                     "bron": "de dag"
                   }
                 ],
-                "elementObjecttype": null,
-                "leegwaarde": null,
-                "filter": null,
-                "dimensieSelectie": null,
                 "type": {
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "de dag uit de dag",
-                "granulariteit": null
+                "bron": "de dag uit de dag"
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "1",
+                "value": {
+                  "number": "1"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,
@@ -205,12 +209,11 @@
               "node": "Vergelijking",
               "op": "GELIJK",
               "links": {
-                "node": "Functie",
+                "node": "BuiltinCall",
                 "kind": "DAG_UIT",
-                "argumenten": [
+                "arguments": [
                   {
-                    "node": "Constante",
-                    "naam": "de dag",
+                    "node": "BoundDay",
                     "type": {
                       "node": "Date",
                       "precision": "day"
@@ -218,22 +221,19 @@
                     "bron": "de dag"
                   }
                 ],
-                "elementObjecttype": null,
-                "leegwaarde": null,
-                "filter": null,
-                "dimensieSelectie": null,
                 "type": {
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
                   "sign": "NIET_NEGATIEF"
                 },
-                "bron": "de dag uit de dag",
-                "granulariteit": null
+                "bron": "de dag uit de dag"
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "15",
+                "value": {
+                  "number": "15"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,
@@ -259,7 +259,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

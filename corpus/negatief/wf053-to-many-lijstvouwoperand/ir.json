@@ -136,68 +136,68 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "maatgevend gewicht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "maatgevend gewicht",
-          "objecttype": "Jutter",
-          "bron": "Het maatgevend gewicht van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MAXIMUM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "drempelgewicht",
-              "objecttype": "Jutter",
-              "bron": "het drempelgewicht van de Jutter"
+        "node": "Rule",
+        "name": "maatgevend gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "gewicht",
-              "objecttype": "Vondst",
-              "bron": "het gewicht van alle vondsten van de Jutter",
-              "navigatieBindingen": [
+              "attribuut": "maatgevend gewicht",
+              "objecttype": "Jutter",
+              "bron": "Het maatgevend gewicht van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "MAXIMUM",
+              "arguments": [
                 {
-                  "node": "RolBinding",
-                  "feittype": "vondstaanmelding",
-                  "rol": "vondst"
+                  "node": "AttribuutRef",
+                  "attribuut": "drempelgewicht",
+                  "objecttype": "Jutter",
+                  "bron": "het drempelgewicht van de Jutter"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "gewicht",
+                  "objecttype": "Vondst",
+                  "bron": "het gewicht van alle vondsten van de Jutter",
+                  "navigatieBindingen": [
+                    {
+                      "node": "RolBinding",
+                      "feittype": "vondstaanmelding",
+                      "rol": "vondst"
+                    }
+                  ]
                 }
-              ]
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "kg",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het maximum van het drempelgewicht van de Jutter en het gewicht van alle vondsten van de Jutter",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              ],
+              "elementType": "Vondst",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "het maximum van het drempelgewicht van de Jutter en het gewicht van alle vondsten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -205,7 +205,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

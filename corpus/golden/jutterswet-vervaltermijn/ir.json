@@ -93,277 +93,311 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening vervaldatum",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vervaldatum",
-          "objecttype": "Vondst",
-          "bron": "De vervaldatum van een Vondst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aangiftedatum",
-            "objecttype": "Vondst",
-            "bron": "zijn aangiftedatum"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "2",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "wk"
-              }
+        "node": "Rule",
+        "name": "Berekening vervaldatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "2 weken"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "zijn aangiftedatum plus 2 weken"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vervaldatum",
+              "objecttype": "Vondst",
+              "bron": "De vervaldatum van een Vondst"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aangiftedatum",
+                "objecttype": "Vondst",
+                "bron": "zijn aangiftedatum"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "wk"
+                  }
+                },
+                "bron": "2 weken"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "zijn aangiftedatum plus 2 weken"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening toetsdatum",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "toetsdatum",
-          "objecttype": "Vondst",
-          "bron": "De toetsdatum van een Vondst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aangiftedatum",
-            "objecttype": "Vondst",
-            "bron": "zijn aangiftedatum"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "1",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "maand"
-              }
+        "node": "Rule",
+        "name": "Berekening toetsdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1 maand"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "zijn aangiftedatum plus 1 maand"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "toetsdatum",
+              "objecttype": "Vondst",
+              "bron": "De toetsdatum van een Vondst"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aangiftedatum",
+                "objecttype": "Vondst",
+                "bron": "zijn aangiftedatum"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "maand"
+                  }
+                },
+                "bron": "1 maand"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "zijn aangiftedatum plus 1 maand"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening herinneringsdatum",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "herinneringsdatum",
-          "objecttype": "Vondst",
-          "bron": "De herinneringsdatum van een Vondst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "MIN",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aangiftedatum",
-            "objecttype": "Vondst",
-            "bron": "zijn aangiftedatum"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "1",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "week"
-              }
+        "node": "Rule",
+        "name": "Berekening herinneringsdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1 week"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "zijn aangiftedatum min 1 week"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "herinneringsdatum",
+              "objecttype": "Vondst",
+              "bron": "De herinneringsdatum van een Vondst"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "MIN",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aangiftedatum",
+                "objecttype": "Vondst",
+                "bron": "zijn aangiftedatum"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "week"
+                  }
+                },
+                "bron": "1 week"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "zijn aangiftedatum min 1 week"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening gedoogdatum",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "gedoogdatum",
-          "objecttype": "Vondst",
-          "bron": "De gedoogdatum van een Vondst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aangiftedatum",
-            "objecttype": "Vondst",
-            "bron": "zijn aangiftedatum"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "uitsteldagen",
-            "objecttype": "Vondst",
-            "bron": "zijn uitsteldagen"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "zijn aangiftedatum plus zijn uitsteldagen"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "Berekening gedoogdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "gedoogdatum",
+              "objecttype": "Vondst",
+              "bron": "De gedoogdatum van een Vondst"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aangiftedatum",
+                "objecttype": "Vondst",
+                "bron": "zijn aangiftedatum"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "uitsteldagen",
+                "objecttype": "Vondst",
+                "bron": "zijn uitsteldagen"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "zijn aangiftedatum plus zijn uitsteldagen"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening respijtdatum",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "respijtdatum",
-          "objecttype": "Vondst",
-          "bron": "De respijtdatum van een Vondst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "MIN",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aangiftedatum",
-            "objecttype": "Vondst",
-            "bron": "zijn aangiftedatum"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "1,9",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 1,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "mnd"
-              }
+        "node": "Rule",
+        "name": "Berekening respijtdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1,9 maanden"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "zijn aangiftedatum min 1,9 maanden"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "respijtdatum",
+              "objecttype": "Vondst",
+              "bron": "De respijtdatum van een Vondst"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "MIN",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aangiftedatum",
+                "objecttype": "Vondst",
+                "bron": "zijn aangiftedatum"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "1.9"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 1,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "mnd"
+                  }
+                },
+                "bron": "1,9 maanden"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "zijn aangiftedatum min 1,9 maanden"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening opschortdatum",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "opschortdatum",
-          "objecttype": "Vondst",
-          "bron": "De opschortdatum van een Vondst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aangiftedatum",
-            "objecttype": "Vondst",
-            "bron": "zijn aangiftedatum"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "1",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kw"
-              }
+        "node": "Rule",
+        "name": "Berekening opschortdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1 kwartaal"
-          },
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "zijn aangiftedatum plus 1 kwartaal"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "opschortdatum",
+              "objecttype": "Vondst",
+              "bron": "De opschortdatum van een Vondst"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aangiftedatum",
+                "objecttype": "Vondst",
+                "bron": "zijn aangiftedatum"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "kw"
+                  }
+                },
+                "bron": "1 kwartaal"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "zijn aangiftedatum plus 1 kwartaal"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -371,7 +405,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

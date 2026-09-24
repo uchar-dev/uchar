@@ -54,80 +54,91 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Bouw",
-        "subject": "Jutter",
-        "assertie": {
-          "node": "Predicaat",
-          "soort": "GEVULD",
-          "operand": {
-            "node": "StructLiteral",
-            "type": {
-              "node": "StructType",
-              "domain": "dossier",
-              "fields": [
-                {
-                  "name": "waarde",
-                  "datatype": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
-                  }
+        "node": "Consistency",
+        "name": "Bouw",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "Predicaat",
+              "soort": "GEVULD",
+              "operand": {
+                "node": "StructLiteral",
+                "type": {
+                  "node": "StructType",
+                  "domain": "dossier",
+                  "fields": [
+                    {
+                      "name": "waarde",
+                      "datatype": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
+                      }
+                    },
+                    {
+                      "name": "telling",
+                      "datatype": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "NIET_NEGATIEF"
+                      }
+                    }
+                  ]
                 },
-                {
-                  "name": "telling",
-                  "datatype": {
-                    "node": "Number",
-                    "whole": true,
-                    "decimals": 0,
-                    "sign": "NIET_NEGATIEF"
+                "fields": [
+                  {
+                    "name": "waarde",
+                    "value": {
+                      "node": "Literal",
+                      "value": {
+                        "text": "hoi"
+                      },
+                      "type": {
+                        "node": "Tekst"
+                      },
+                      "bron": null
+                    }
+                  },
+                  {
+                    "name": "telling",
+                    "value": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "3"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "NIET_NEGATIEF"
+                      },
+                      "bron": null
+                    }
                   }
-                }
-              ]
-            },
-            "fields": [
-              {
-                "name": "waarde",
-                "value": {
-                  "node": "Literal",
-                  "waarde": "hoi",
-                  "type": {
-                    "node": "Tekst"
-                  },
-                  "bron": null
-                }
+                ],
+                "bron": null
               },
-              {
-                "name": "telling",
-                "value": {
-                  "node": "Literal",
-                  "waarde": "3",
-                  "type": {
-                    "node": "Number",
-                    "whole": true,
-                    "decimals": 0,
-                    "sign": "NIET_NEGATIEF"
-                  },
-                  "bron": null
-                }
-              }
-            ],
-            "bron": null
-          },
-          "dagsoort": null,
-          "negatie": false,
-          "cijfers": 0,
-          "periode": null,
-          "bron": null
-        },
-        "bron": null,
-        "line": 1,
-        "geldigheid": null
+              "dagsoort": null,
+              "negatie": false,
+              "cijfers": 0,
+              "periode": null,
+              "bron": null
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": null,
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

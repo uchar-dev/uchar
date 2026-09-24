@@ -57,68 +57,82 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "afslag van een gekeurde vondst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "afslag",
-          "objecttype": "Vondst",
-          "bron": "De afslag van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "zeeveiling",
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "'zeeveiling'"
-        },
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "gekeurd",
-          "negatie": false,
-          "eigenaar": "Jutter",
-          "periode": null,
-          "bron": "de Vondst gekeurd is"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "afslag van een gekeurde vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "afslag",
+              "objecttype": "Vondst",
+              "bron": "De afslag van een Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "text": "zeeveiling"
+              },
+              "type": {
+                "node": "Tekst"
+              },
+              "bron": "'zeeveiling'"
+            },
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "gekeurd",
+              "negatie": false,
+              "eigenaar": "Jutter",
+              "periode": null,
+              "bron": "de Vondst gekeurd is"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "keurstatus van een ongekeurde vondst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "keurstatus",
-          "objecttype": "Vondst",
-          "bron": "De keurstatus van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "onbekeurd",
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "'onbekeurd'"
-        },
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "gekeurd",
-          "negatie": true,
-          "eigenaar": "Vondst",
-          "periode": null,
-          "bron": "de Vondst niet gekeurd is"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "keurstatus van een ongekeurde vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "keurstatus",
+              "objecttype": "Vondst",
+              "bron": "De keurstatus van een Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "text": "onbekeurd"
+              },
+              "type": {
+                "node": "Tekst"
+              },
+              "bron": "'onbekeurd'"
+            },
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "gekeurd",
+              "negatie": true,
+              "eigenaar": "Vondst",
+              "periode": null,
+              "bron": "de Vondst niet gekeurd is"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -126,7 +140,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

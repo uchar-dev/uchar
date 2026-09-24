@@ -30,7 +30,9 @@
           "soort": "DAGSOORT",
           "operand": {
             "node": "Literal",
-            "waarde": "2026-06-21",
+            "value": {
+              "date": "2026-06-21"
+            },
             "type": {
               "node": "Date",
               "precision": "day"
@@ -57,7 +59,9 @@
           "soort": "DAGSOORT",
           "operand": {
             "node": "Literal",
-            "waarde": "2026-06-21",
+            "value": {
+              "date": "2026-06-21"
+            },
             "type": {
               "node": "Date",
               "precision": "day"
@@ -81,7 +85,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

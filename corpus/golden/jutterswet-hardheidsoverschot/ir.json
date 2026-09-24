@@ -63,141 +63,157 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "drempeloverschot van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "drempeloverschot",
-          "objecttype": "Jutter",
-          "bron": "Het drempeloverschot van een Jutter"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "MIN",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "vondstteller",
-            "objecttype": "Jutter",
-            "bron": "de vondstteller van de Jutter"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "12",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "drempeloverschot van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "12"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de vondstteller van de Jutter min 12"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "bronAnnotaties": [
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "drempeloverschot",
+              "objecttype": "Jutter",
+              "bron": "Het drempeloverschot van een Jutter"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "MIN",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "vondstteller",
+                "objecttype": "Jutter",
+                "bron": "de vondstteller van de Jutter"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "12"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "12"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de vondstteller van de Jutter min 12"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ],
+        "statuteAnnotations": [
           "art. 3 Jutterswet"
         ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "hardheidsoverschot van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "hardheidsoverschot",
-          "objecttype": "Jutter",
-          "bron": "Het hardheidsoverschot van een Jutter"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "MIN",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "vondstteller",
-            "objecttype": "Jutter",
-            "bron": "de vondstteller van de Jutter"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "6",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "hardheidsoverschot van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "6"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de vondstteller van de Jutter min 6"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "bronAnnotaties": [
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "hardheidsoverschot",
+              "objecttype": "Jutter",
+              "bron": "Het hardheidsoverschot van een Jutter"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "MIN",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "vondstteller",
+                "objecttype": "Jutter",
+                "bron": "de vondstteller van de Jutter"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "6"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "6"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de vondstteller van de Jutter min 6"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ],
+        "statuteAnnotations": [
           "art. 3 Jutterswet",
           "art. 5 Jutterswet"
         ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "jaarsom van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "jaarsom",
-          "objecttype": "Jutter",
-          "bron": "De jaarsom van een Jutter"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "drempeloverschot",
-            "objecttype": "Jutter",
-            "bron": "het drempeloverschot van de Jutter"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "hardheidsoverschot",
-            "objecttype": "Jutter",
-            "bron": "het hardheidsoverschot van de Jutter"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het drempeloverschot van de Jutter plus het hardheidsoverschot van de Jutter"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "jaarsom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "jaarsom",
+              "objecttype": "Jutter",
+              "bron": "De jaarsom van een Jutter"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "drempeloverschot",
+                "objecttype": "Jutter",
+                "bron": "het drempeloverschot van de Jutter"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "hardheidsoverschot",
+                "objecttype": "Jutter",
+                "bron": "het hardheidsoverschot van de Jutter"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het drempeloverschot van de Jutter plus het hardheidsoverschot van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -205,7 +221,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

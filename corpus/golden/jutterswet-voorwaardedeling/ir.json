@@ -97,57 +97,58 @@
     "objectCreaties": [],
     "verdelingen": [
       {
-        "node": "ResolvedVerdeling",
-        "naam": "verdeel de bergopbrengst van een vrijgegeven strandberging",
-        "bronType": "Strandberging",
-        "bronAttribuut": "bergopbrengst",
-        "doelType": "Jutter",
-        "doelAttribuut": "bergdeel",
-        "methode": "NAAR_RATO",
-        "ratoAttribuut": "berggewicht",
-        "maximumAttribuut": null,
-        "afrondingDecimalen": null,
-        "restantAttribuut": null,
-        "groepeerAttribuut": null,
-        "afnemend": false,
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GROTER_OF_GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "vrijgavescore",
-            "objecttype": "Strandberging",
-            "bron": "de vrijgavescore van de strandberging"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "10",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Allocation",
+        "name": "verdeel de bergopbrengst van een vrijgegeven strandberging",
+        "versions": [
+          {
+            "sourceType": "Strandberging",
+            "sourceAttribute": "bergopbrengst",
+            "targetType": "Jutter",
+            "targetAttribute": "bergdeel",
+            "method": "NAAR_RATO",
+            "ratioAttribute": "berggewicht",
+            "descending": false,
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GROTER_OF_GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "vrijgavescore",
+                "objecttype": "Strandberging",
+                "bron": "de vrijgavescore van de strandberging"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "10"
+              },
+              "periode": null,
+              "bron": "de vrijgavescore van de strandberging groter of gelijk is aan 10"
             },
-            "bron": "10"
-          },
-          "periode": null,
-          "bron": "de vrijgavescore van de strandberging groter of gelijk is aan 10"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "bergdeelname",
-          "rol": "bergjutter"
-        }
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "bergdeelname",
+              "rol": "bergjutter"
+            }
+          }
+        ]
       }
     ],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

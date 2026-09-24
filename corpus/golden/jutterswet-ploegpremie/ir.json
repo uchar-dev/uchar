@@ -90,176 +90,192 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "premiegerechtigd bij dagvergoeding",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "premiegerechtigd",
-          "objecttype": "Bergingsploeg",
-          "bron": "Een Bergingsploeg is premiegerechtigd"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "ALLE",
-          "elementObjecttype": "Berger",
-          "filter": null,
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
+        "node": "Rule",
+        "name": "premiegerechtigd bij dagvergoeding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "dagvergoeding",
-              "objecttype": "Berger",
-              "bron": "de dagvergoeding van alle bergers van de Bergingsploeg"
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "40",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "40"
-            },
-            "periode": {
-              "node": "GeheelPeriode",
-              "jaar": true,
-              "niet": false
-            },
-            "bron": "de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40"
-          },
-          "bron": "de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "ploegindeling",
-            "rol": "berger"
-          }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "wisselvallig bij dagvergoeding",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "wisselvallig",
-          "objecttype": "Bergingsploeg",
-          "bron": "Een Bergingsploeg is wisselvallig"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "GEEN",
-          "elementObjecttype": "Berger",
-          "filter": null,
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "dagvergoeding",
-              "objecttype": "Berger",
-              "bron": "de dagvergoeding van geen van de bergers van de Bergingsploeg"
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "40",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "40"
-            },
-            "periode": {
-              "node": "GeheelPeriode",
-              "jaar": true,
-              "niet": false
-            },
-            "bron": "de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40"
-          },
-          "bron": "de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "ploegindeling",
-            "rol": "berger"
-          }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "bergertal van een bergingsploeg",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bergertal",
-          "objecttype": "Bergingsploeg",
-          "bron": "Het bergertal van een Bergingsploeg"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "bergers",
+              "attribuut": "premiegerechtigd",
               "objecttype": "Bergingsploeg",
-              "bron": "bergers van de Bergingsploeg"
-            }
-          ],
-          "elementObjecttype": "Berger",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal bergers van de Bergingsploeg",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "ploegindeling",
-            "rol": "berger"
+              "bron": "Een Bergingsploeg is premiegerechtigd"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "ALLE",
+              "elementObjecttype": "Berger",
+              "filter": null,
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "dagvergoeding",
+                  "objecttype": "Berger",
+                  "bron": "de dagvergoeding van alle bergers van de Bergingsploeg"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "40"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "40"
+                },
+                "periode": {
+                  "node": "GeheelPeriode",
+                  "jaar": true,
+                  "niet": false
+                },
+                "bron": "de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40"
+              },
+              "bron": "de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "ploegindeling",
+                "rol": "berger"
+              }
+            },
+            "initialisation": false
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wisselvallig bij dagvergoeding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "wisselvallig",
+              "objecttype": "Bergingsploeg",
+              "bron": "Een Bergingsploeg is wisselvallig"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "GEEN",
+              "elementObjecttype": "Berger",
+              "filter": null,
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "dagvergoeding",
+                  "objecttype": "Berger",
+                  "bron": "de dagvergoeding van geen van de bergers van de Bergingsploeg"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "40"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "40"
+                },
+                "periode": {
+                  "node": "GeheelPeriode",
+                  "jaar": true,
+                  "niet": false
+                },
+                "bron": "de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40"
+              },
+              "bron": "de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "ploegindeling",
+                "rol": "berger"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bergertal van een bergingsploeg",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bergertal",
+              "objecttype": "Bergingsploeg",
+              "bron": "Het bergertal van een Bergingsploeg"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "bergers",
+                  "objecttype": "Bergingsploeg",
+                  "bron": "bergers van de Bergingsploeg"
+                }
+              ],
+              "elementType": "Berger",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "ploegindeling",
+                "rol": "berger"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal bergers van de Bergingsploeg"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -267,7 +283,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

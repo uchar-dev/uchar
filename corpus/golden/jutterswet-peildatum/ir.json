@@ -95,188 +95,188 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "peildatum van een vondst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "peildatum",
-          "objecttype": "Vondst",
-          "bron": "De peildatum van een Vondst"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "EERSTE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "vondstdatum",
-              "objecttype": "Vondst",
-              "bron": "haar vondstdatum"
+        "node": "Rule",
+        "name": "peildatum van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "melddatum",
+              "attribuut": "peildatum",
               "objecttype": "Vondst",
-              "bron": "haar melddatum"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "de eerste van haar vondstdatum en haar melddatum",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De peildatum van een Vondst"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "EERSTE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vondstdatum",
+                  "objecttype": "Vondst",
+                  "bron": "haar vondstdatum"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "melddatum",
+                  "objecttype": "Vondst",
+                  "bron": "haar melddatum"
+                }
+              ],
+              "elementType": "Vondst",
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "de eerste van haar vondstdatum en haar melddatum"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "sluitdatum van een vondst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "sluitdatum",
-          "objecttype": "Vondst",
-          "bron": "De sluitdatum van een Vondst"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "LAATSTE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "vondstdatum",
-              "objecttype": "Vondst",
-              "bron": "haar vondstdatum"
+        "node": "Rule",
+        "name": "sluitdatum van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "melddatum",
+              "attribuut": "sluitdatum",
               "objecttype": "Vondst",
-              "bron": "haar melddatum"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Date",
-            "precision": "day"
-          },
-          "bron": "de laatste van haar vondstdatum en haar melddatum",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De sluitdatum van een Vondst"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "LAATSTE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vondstdatum",
+                  "objecttype": "Vondst",
+                  "bron": "haar vondstdatum"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "melddatum",
+                  "objecttype": "Vondst",
+                  "bron": "haar melddatum"
+                }
+              ],
+              "elementType": "Vondst",
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "bron": "de laatste van haar vondstdatum en haar melddatum"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "laagste loon van een vondst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "laagloon",
-          "objecttype": "Vondst",
-          "bron": "Het laagloon van een Vondst"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "EERSTE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "bergloon",
-              "objecttype": "Vondst",
-              "bron": "haar bergloon"
+        "node": "Rule",
+        "name": "laagste loon van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "meldloon",
+              "attribuut": "laagloon",
               "objecttype": "Vondst",
-              "bron": "haar meldloon"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de eerste van haar bergloon en haar meldloon",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "Het laagloon van een Vondst"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "EERSTE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "bergloon",
+                  "objecttype": "Vondst",
+                  "bron": "haar bergloon"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "meldloon",
+                  "objecttype": "Vondst",
+                  "bron": "haar meldloon"
+                }
+              ],
+              "elementType": "Vondst",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de eerste van haar bergloon en haar meldloon"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "hoogste loon van een vondst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "hoogloon",
-          "objecttype": "Vondst",
-          "bron": "Het hoogloon van een Vondst"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "LAATSTE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "bergloon",
-              "objecttype": "Vondst",
-              "bron": "haar bergloon"
+        "node": "Rule",
+        "name": "hoogste loon van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "meldloon",
+              "attribuut": "hoogloon",
               "objecttype": "Vondst",
-              "bron": "haar meldloon"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de laatste van haar bergloon en haar meldloon",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "Het hoogloon van een Vondst"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "LAATSTE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "bergloon",
+                  "objecttype": "Vondst",
+                  "bron": "haar bergloon"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "meldloon",
+                  "objecttype": "Vondst",
+                  "bron": "haar meldloon"
+                }
+              ],
+              "elementType": "Vondst",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de laatste van haar bergloon en haar meldloon"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -284,7 +284,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

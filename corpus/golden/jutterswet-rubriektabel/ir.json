@@ -63,219 +63,249 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "rubriek bij organische soort",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "rubriek",
-          "objecttype": "Aanspoelsel",
-          "bron": "De rubriek van een Aanspoelsel"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "organisch",
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "'organisch'"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 1,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "soort",
-                "objecttype": "Aanspoelsel",
-                "bron": "de soort van het Aanspoelsel"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "zeewier",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "'zeewier'"
-              },
-              "periode": null,
-              "bron": "zijn soort gelijk is aan 'zeewier'"
+        "node": "Rule",
+        "name": "rubriek bij organische soort",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "soort",
-                "objecttype": "Aanspoelsel",
-                "bron": "de soort van het Aanspoelsel"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "rubriek",
+              "objecttype": "Aanspoelsel",
+              "bron": "De rubriek van een Aanspoelsel"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "text": "organisch"
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "wrakhout",
-                "type": {
-                  "node": "Tekst"
+              "type": {
+                "node": "Tekst"
+              },
+              "bron": "'organisch'"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 1,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "soort",
+                    "objecttype": "Aanspoelsel",
+                    "bron": "de soort van het Aanspoelsel"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "zeewier"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "'zeewier'"
+                  },
+                  "periode": null,
+                  "bron": "zijn soort gelijk is aan 'zeewier'"
                 },
-                "bron": "'wrakhout'"
-              },
-              "periode": null,
-              "bron": "zijn soort gelijk is aan 'wrakhout'"
-            }
-          ],
-          "bron": "ten minste \u00e9\u00e9n van: soort 'zeewier', soort 'wrakhout'"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "node": "Vergelijking",
+                  "op": "GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "soort",
+                    "objecttype": "Aanspoelsel",
+                    "bron": "de soort van het Aanspoelsel"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "wrakhout"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "'wrakhout'"
+                  },
+                  "periode": null,
+                  "bron": "zijn soort gelijk is aan 'wrakhout'"
+                }
+              ],
+              "bron": "ten minste \u00e9\u00e9n van: soort 'zeewier', soort 'wrakhout'"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "rubriek bij overige soort",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "rubriek",
-          "objecttype": "Aanspoelsel",
-          "bron": "De rubriek van een Aanspoelsel"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "overig",
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "'overig'"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "ONGELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "soort",
-                "objecttype": "Aanspoelsel",
-                "bron": "de soort van het Aanspoelsel"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "zeewier",
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "'zeewier'"
-              },
-              "periode": null,
-              "bron": "zijn soort ongelijk is aan 'zeewier'"
+        "node": "Rule",
+        "name": "rubriek bij overige soort",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "ONGELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "soort",
-                "objecttype": "Aanspoelsel",
-                "bron": "de soort van het Aanspoelsel"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "rubriek",
+              "objecttype": "Aanspoelsel",
+              "bron": "De rubriek van een Aanspoelsel"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "text": "overig"
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "wrakhout",
-                "type": {
-                  "node": "Tekst"
+              "type": {
+                "node": "Tekst"
+              },
+              "bron": "'overig'"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "ONGELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "soort",
+                    "objecttype": "Aanspoelsel",
+                    "bron": "de soort van het Aanspoelsel"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "zeewier"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "'zeewier'"
+                  },
+                  "periode": null,
+                  "bron": "zijn soort ongelijk is aan 'zeewier'"
                 },
-                "bron": "'wrakhout'"
-              },
-              "periode": null,
-              "bron": "zijn soort ongelijk is aan 'wrakhout'"
-            }
-          ],
-          "bron": "alle van: soort niet 'zeewier', soort niet 'wrakhout'"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "node": "Vergelijking",
+                  "op": "ONGELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "soort",
+                    "objecttype": "Aanspoelsel",
+                    "bron": "de soort van het Aanspoelsel"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "wrakhout"
+                    },
+                    "type": {
+                      "node": "Tekst"
+                    },
+                    "bron": "'wrakhout'"
+                  },
+                  "periode": null,
+                  "bron": "zijn soort ongelijk is aan 'wrakhout'"
+                }
+              ],
+              "bron": "alle van: soort niet 'zeewier', soort niet 'wrakhout'"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "weegplicht bij dubbele borging",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "weegplichtig",
-          "objecttype": "Aanspoelsel",
-          "bron": "Een Aanspoelsel is weegplichtig"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 2,
-          "onderdelen": [
-            {
-              "node": "Kenmerk",
-              "kenmerk": "gekeurd",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "het Aanspoelsel gekeurd is"
+        "node": "Rule",
+        "name": "weegplicht bij dubbele borging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Kenmerk",
-              "kenmerk": "geborgen",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "het Aanspoelsel geborgen is"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "weegplichtig",
+              "objecttype": "Aanspoelsel",
+              "bron": "Een Aanspoelsel is weegplichtig"
             },
-            {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "stuks",
-                "objecttype": "Aanspoelsel",
-                "bron": "het stuks van het Aanspoelsel"
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "10",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 2,
+              "onderdelen": [
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "gekeurd",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "het Aanspoelsel gekeurd is"
                 },
-                "bron": "10"
-              },
-              "periode": null,
-              "bron": "het stuks groter of gelijk is aan 10"
-            }
-          ],
-          "bron": "ten minste twee van: gekeurd, geborgen, stuks vanaf 10"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "geborgen",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "het Aanspoelsel geborgen is"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER_OF_GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "stuks",
+                    "objecttype": "Aanspoelsel",
+                    "bron": "het stuks van het Aanspoelsel"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "10"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "10"
+                  },
+                  "periode": null,
+                  "bron": "het stuks groter of gelijk is aan 10"
+                }
+              ],
+              "bron": "ten minste twee van: gekeurd, geborgen, stuks vanaf 10"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -283,7 +313,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

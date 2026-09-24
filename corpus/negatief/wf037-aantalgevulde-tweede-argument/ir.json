@@ -146,51 +146,50 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal gevulde vondstgewichten",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal gevulde vondstgewichten",
-          "objecttype": "Jutter",
-          "bron": "Het aantal gevulde vondstgewichten van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL_GEVULDE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "vondstgewicht",
-              "objecttype": "Jutter",
-              "bron": "het vondstgewicht van een Jutter"
+        "node": "Rule",
+        "name": "aantal gevulde vondstgewichten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "wrakgewicht",
+              "attribuut": "aantal gevulde vondstgewichten",
               "objecttype": "Jutter",
-              "bron": "het wrakgewicht van een Jutter"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal gevulde waarden van het vondstgewicht en het wrakgewicht",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "Het aantal gevulde vondstgewichten van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL_GEVULDE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vondstgewicht",
+                  "objecttype": "Jutter",
+                  "bron": "het vondstgewicht van een Jutter"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "wrakgewicht",
+                  "objecttype": "Jutter",
+                  "bron": "het wrakgewicht van een Jutter"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal gevulde waarden van het vondstgewicht en het wrakgewicht"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -198,7 +197,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

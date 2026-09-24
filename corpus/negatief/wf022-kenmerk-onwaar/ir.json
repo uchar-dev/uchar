@@ -33,36 +33,42 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "geen herleving",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "herleefd",
-          "objecttype": "Recht",
-          "bron": "Een Recht is herleefd"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "onwaar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "onwaar"
-        },
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "nieuw recht ontstaan",
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "hij nieuw recht ontstaan is"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "geen herleving",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "herleefd",
+              "objecttype": "Recht",
+              "bron": "Een Recht is herleefd"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": false
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "onwaar"
+            },
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "nieuw recht ontstaan",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij nieuw recht ontstaan is"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -70,7 +76,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

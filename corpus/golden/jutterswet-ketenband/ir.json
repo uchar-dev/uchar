@@ -75,80 +75,84 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "voorliggerrang",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "voorliggerrang",
-          "objecttype": "Wachter",
-          "bron": "De voorliggerrang van een Wachter"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "rangnummer",
-          "objecttype": "Wachter",
-          "bron": "het rangnummer van de voorligger van de Wachter",
-          "navigatieBindingen": [
-            {
-              "node": "RolBinding",
-              "feittype": "ketenband",
-              "rol": "voorligger"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "voorliggerrang",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "voorliggerrang",
+              "objecttype": "Wachter",
+              "bron": "De voorliggerrang van een Wachter"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "rangnummer",
+              "objecttype": "Wachter",
+              "bron": "het rangnummer van de voorligger van de Wachter",
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "ketenband",
+                  "rol": "voorligger"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "opvolgeraantal",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "opvolgeraantal",
-          "objecttype": "Wachter",
-          "bron": "Het opvolgeraantal van een Wachter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "opvolgeraantal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "opvolgers",
+              "attribuut": "opvolgeraantal",
               "objecttype": "Wachter",
-              "bron": "opvolgers van de Wachter"
-            }
-          ],
-          "elementObjecttype": "Wachter",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal opvolgers van de Wachter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "ketenband",
-            "rol": "opvolger"
+              "bron": "Het opvolgeraantal van een Wachter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "opvolgers",
+                  "objecttype": "Wachter",
+                  "bron": "opvolgers van de Wachter"
+                }
+              ],
+              "elementType": "Wachter",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "ketenband",
+                "rol": "opvolger"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal opvolgers van de Wachter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -156,7 +160,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

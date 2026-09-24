@@ -88,40 +88,57 @@
     "consistenties": [],
     "uniciteiten": [
       {
-        "node": "ResolvedUniciteit",
-        "naam": "eenmalig nummer",
-        "subject": "Strandvondst",
-        "sleutels": [
-          "vondstnummer"
-        ],
-        "bron": "De vondstnummers van alle Strandvondsten moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Uniqueness",
+        "name": "eenmalig nummer",
+        "versions": [
+          {
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Strandvondst",
+                "keys": [
+                  "vondstnummer"
+                ]
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "De vondstnummers van alle Strandvondsten moeten uniek zijn."
+          }
+        ]
       },
       {
-        "node": "ResolvedUniciteit",
-        "naam": "kavel per kust",
-        "subject": "Strandvondst",
-        "sleutels": [
-          "kavelnummer"
-        ],
-        "bron": "De kavelnummers van alle Strandvondsten van de kust moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "scopeRol": {
-          "node": "RolBinding",
-          "feittype": "ligging",
-          "rol": "kust"
-        }
+        "node": "Uniqueness",
+        "name": "kavel per kust",
+        "versions": [
+          {
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Strandvondst",
+                "keys": [
+                  "kavelnummer"
+                ]
+              }
+            ],
+            "scope": {
+              "node": "RolBinding",
+              "feittype": "ligging",
+              "rol": "kust"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "De kavelnummers van alle Strandvondsten van de kust moeten uniek zijn."
+          }
+        ]
       }
     ],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

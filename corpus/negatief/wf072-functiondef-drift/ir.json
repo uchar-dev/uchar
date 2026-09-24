@@ -116,7 +116,9 @@
         },
         "body": {
           "node": "Literal",
-          "waarde": "1.00",
+          "value": {
+            "number": "1.00"
+          },
           "type": {
             "node": "Number",
             "whole": false,
@@ -136,7 +138,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -81,64 +81,73 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Typecontrole",
-        "subject": "Jutter",
-        "assertie": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "beschikking",
-            "objecttype": "Jutter",
-            "bron": null
-          },
-          "rechts": {
-            "node": "Construct",
-            "type": {
-              "node": "SumType",
-              "domain": "beschikking",
-              "constructors": [
-                {
-                  "name": "Toegekend",
-                  "payload": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
-                  }
-                },
-                {
-                  "name": "Afgewezen",
-                  "payload": null
-                },
-                {
-                  "name": "Aangehouden",
-                  "payload": null
-                }
-              ]
-            },
-            "constructor": "Toegekend",
-            "argument": {
-              "node": "Literal",
-              "waarde": "hoi",
-              "type": {
-                "node": "Tekst"
+        "node": "Consistency",
+        "name": "Typecontrole",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "beschikking",
+                "objecttype": "Jutter",
+                "bron": null
               },
+              "rechts": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "beschikking",
+                  "constructors": [
+                    {
+                      "name": "Toegekend",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
+                      }
+                    },
+                    {
+                      "name": "Afgewezen",
+                      "payload": null
+                    },
+                    {
+                      "name": "Aangehouden",
+                      "payload": null
+                    }
+                  ]
+                },
+                "constructor": "Toegekend",
+                "argument": {
+                  "node": "Literal",
+                  "value": {
+                    "text": "hoi"
+                  },
+                  "type": {
+                    "node": "Tekst"
+                  },
+                  "bron": null
+                },
+                "bron": null
+              },
+              "periode": null,
               "bron": null
             },
-            "bron": null
-          },
-          "periode": null,
-          "bron": null
-        },
-        "bron": null,
-        "line": 1,
-        "geldigheid": null
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": null,
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -127,134 +127,143 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "registratiekosten van een strandrecht",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "registratiekosten",
-          "objecttype": "Strandrecht",
-          "bron": "?S.registratiekosten"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "5.00",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "5.00"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "uitkeringstotaal van een kustgemeente",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uitkeringstotaal",
-          "objecttype": "Kustgemeente",
-          "bron": "?K.uitkeringstotaal"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "SOM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "uitkering",
-              "objecttype": "Strandrecht",
-              "bron": "?K.'geregistreerde strandrechten'.uitkering"
-            }
-          ],
-          "elementObjecttype": "Strandrecht",
-          "leegwaarde": {
-            "node": "Literal",
-            "waarde": "0.00",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "registratiekosten van een strandrecht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "0.00"
-          },
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "sum{?V | ?V = ?K.'geregistreerde strandrechten'.uitkering}",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "strandrechtregistratie",
-            "rol": "geregistreerde strandrechten"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "registratiekosten",
+              "objecttype": "Strandrecht",
+              "bron": "?S.registratiekosten"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "5.00"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "registertal van een kustgemeente",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "registertal",
-          "objecttype": "Kustgemeente",
-          "bron": "?K.registertal"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "uitkeringstotaal van een kustgemeente",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "geregistreerde strandrechten",
+              "attribuut": "uitkeringstotaal",
               "objecttype": "Kustgemeente",
-              "bron": "?K.'geregistreerde strandrechten'"
-            }
-          ],
-          "elementObjecttype": "Strandrecht",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "count{?V | ?V = ?K.'geregistreerde strandrechten'}",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "strandrechtregistratie",
-            "rol": "geregistreerde strandrechten"
+              "bron": "?K.uitkeringstotaal"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "SOM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "uitkering",
+                  "objecttype": "Strandrecht",
+                  "bron": "?K.'geregistreerde strandrechten'.uitkering"
+                }
+              ],
+              "elementType": "Strandrecht",
+              "emptyFallback": {
+                "node": "Literal",
+                "value": {
+                  "number": "0.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "0.00"
+              },
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "strandrechtregistratie",
+                "rol": "geregistreerde strandrechten"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "sum{?V | ?V = ?K.'geregistreerde strandrechten'.uitkering}"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "registertal van een kustgemeente",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "registertal",
+              "objecttype": "Kustgemeente",
+              "bron": "?K.registertal"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "geregistreerde strandrechten",
+                  "objecttype": "Kustgemeente",
+                  "bron": "?K.'geregistreerde strandrechten'"
+                }
+              ],
+              "elementType": "Strandrecht",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "strandrechtregistratie",
+                "rol": "geregistreerde strandrechten"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "count{?V | ?V = ?K.'geregistreerde strandrechten'}"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -262,7 +271,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],
@@ -287,7 +295,9 @@
             },
             "consequentie": {
               "node": "Literal",
-              "waarde": "99.00",
+              "value": {
+                "number": "99.00"
+              },
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -345,7 +355,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "20",
+                "value": {
+                  "number": "20"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,
@@ -359,7 +371,9 @@
             },
             "consequentie": {
               "node": "Literal",
-              "waarde": "55.00",
+              "value": {
+                "number": "55.00"
+              },
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -391,7 +405,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "2",
+                "value": {
+                  "number": "2"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,

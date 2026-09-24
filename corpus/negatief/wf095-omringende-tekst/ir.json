@@ -31,30 +31,36 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "meldstip",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "meldstip",
-          "objecttype": "Aanmelding",
-          "bron": "De meldstip van een Aanmelding"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "rommel 2026-03-15T12:00:00 x",
-          "type": {
-            "node": "Date",
-            "precision": "millisecond"
-          },
-          "bron": "rommel 2026-03-15T12:00:00 x"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "meldstip",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "meldstip",
+              "objecttype": "Aanmelding",
+              "bron": "De meldstip van een Aanmelding"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "dateTime": "rommel 2026-03-15T12:00:00 x"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "bron": "rommel 2026-03-15T12:00:00 x"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -62,7 +68,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

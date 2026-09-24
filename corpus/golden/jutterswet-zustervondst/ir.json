@@ -83,83 +83,99 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "vergoeding van een strandvondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vergoeding",
-          "objecttype": "Strandvondst",
-          "bron": "De vergoeding van een Strandvondst"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "grondwaarde",
-          "objecttype": "Strandvondst",
-          "bron": "zijn grondwaarde"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "vergoeding van een strandvondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vergoeding",
+              "objecttype": "Strandvondst",
+              "bron": "De vergoeding van een Strandvondst"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "grondwaarde",
+              "objecttype": "Strandvondst",
+              "bron": "zijn grondwaarde"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "toeslag van een wrakstuk",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "toeslag",
-          "objecttype": "Wrakstuk",
-          "bron": "De toeslag van een Wrakstuk"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "12.50",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "12.50"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "toeslag van een wrakstuk",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "toeslag",
+              "objecttype": "Wrakstuk",
+              "bron": "De toeslag van een Wrakstuk"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "12.50"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "12.50"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "toeslag van een drijfhout",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "toeslag",
-          "objecttype": "Drijfhout",
-          "bron": "De toeslag van een Drijfhout"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "3",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "3"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "toeslag van een drijfhout",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "toeslag",
+              "objecttype": "Drijfhout",
+              "bron": "De toeslag van een Drijfhout"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "3"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "3"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -167,7 +183,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

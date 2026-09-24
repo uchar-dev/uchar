@@ -50,53 +50,59 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Kenmerktoekenning jutter penninggerechtigd",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "penninggerechtigd",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is penninggerechtigd"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "GROTER_OF_GELIJK",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "aantal aangemelde vondsten",
-                "objecttype": "Jutter",
-                "bron": "zijn aantal aangemelde vondsten"
+        "node": "Rule",
+        "name": "Kenmerktoekenning jutter penninggerechtigd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "penninggerechtigd",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is penninggerechtigd"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
               },
-              "rechts": {
-                "node": "ParameterRef",
-                "parameter": "vondstdrempel",
-                "bron": "de vondstdrempel"
+              "type": {
+                "node": "Booleaan"
               },
-              "periode": null,
-              "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
-            }
-          ],
-          "bron": "ten minste 0"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER_OF_GELIJK",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "aantal aangemelde vondsten",
+                    "objecttype": "Jutter",
+                    "bron": "zijn aantal aangemelde vondsten"
+                  },
+                  "rechts": {
+                    "node": "ParameterRef",
+                    "parameter": "vondstdrempel",
+                    "bron": "de vondstdrempel"
+                  },
+                  "periode": null,
+                  "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
+                }
+              ],
+              "bron": "ten minste 0"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -104,7 +110,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

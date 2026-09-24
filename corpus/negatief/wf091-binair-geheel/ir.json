@@ -312,44 +312,48 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "uitaantal van de Jutter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uitaantal",
-          "objecttype": "Jutter",
-          "bron": "De uitaantal van een Jutter"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aantal",
-            "objecttype": "Jutter",
-            "bron": "de aantal van de Jutter"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "ruim",
-            "objecttype": "Jutter",
-            "bron": "de ruim van de Jutter"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het aantal van de Jutter plus het ruim van de Jutter"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "uitaantal van de Jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "uitaantal",
+              "objecttype": "Jutter",
+              "bron": "De uitaantal van een Jutter"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aantal",
+                "objecttype": "Jutter",
+                "bron": "de aantal van de Jutter"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "ruim",
+                "objecttype": "Jutter",
+                "bron": "de ruim van de Jutter"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het aantal van de Jutter plus het ruim van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -357,7 +361,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

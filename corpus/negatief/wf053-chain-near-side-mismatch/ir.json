@@ -157,39 +157,43 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "risicotoeslag van een wachter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "risicotoeslag",
-          "objecttype": "Wachter",
-          "bron": "De risicotoeslag van een Wachter"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "gevarenklasse",
-          "objecttype": "Kustvak",
-          "bron": "de gevarenklasse van het kustvak van zijn post",
-          "navigatieBindingen": [
-            {
-              "node": "RolBinding",
-              "feittype": "kustligging",
-              "rol": "kustvak"
+        "node": "Rule",
+        "name": "risicotoeslag van een wachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "RolBinding",
-              "feittype": "postbezetting",
-              "rol": "post"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "risicotoeslag",
+              "objecttype": "Wachter",
+              "bron": "De risicotoeslag van een Wachter"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "gevarenklasse",
+              "objecttype": "Kustvak",
+              "bron": "de gevarenklasse van het kustvak van zijn post",
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "kustligging",
+                  "rol": "kustvak"
+                },
+                {
+                  "node": "RolBinding",
+                  "feittype": "postbezetting",
+                  "rol": "post"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -197,7 +201,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

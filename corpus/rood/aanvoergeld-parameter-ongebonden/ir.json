@@ -172,94 +172,104 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aanvoerplichtig bij drempel",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aanvoerplichtig",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is aanvoerplichtig"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GROTER_OF_GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aangevoerd gewicht",
-            "objecttype": "Jutter",
-            "bron": "zijn aangevoerd gewicht"
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "aanvoerdrempel",
-            "bron": "de aanvoerdrempel"
-          },
-          "periode": null,
-          "bron": "zijn aangevoerd gewicht groter of gelijk is aan de aanvoerdrempel"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "aanvoerplichtig bij drempel",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aanvoerplichtig",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is aanvoerplichtig"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GROTER_OF_GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aangevoerd gewicht",
+                "objecttype": "Jutter",
+                "bron": "zijn aangevoerd gewicht"
+              },
+              "rechts": {
+                "node": "ParameterRef",
+                "parameter": "aanvoerdrempel",
+                "bron": "de aanvoerdrempel"
+              },
+              "periode": null,
+              "bron": "zijn aangevoerd gewicht groter of gelijk is aan de aanvoerdrempel"
+            },
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "aanvoergeld van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aanvoergeld",
-          "objecttype": "Jutter",
-          "bron": "Het aanvoergeld van een Jutter"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "aanvoerwaarde",
-            "objecttype": "Jutter",
-            "bron": "zijn aanvoerwaarde"
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "aanvoertarief",
-            "bron": "het aanvoertarief"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "EUR",
-              "system": "Munt",
-              "canonical": "EUR",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "zijn aanvoerwaarde plus het aanvoertarief"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "aanvoergeld van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aanvoergeld",
+              "objecttype": "Jutter",
+              "bron": "Het aanvoergeld van een Jutter"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aanvoerwaarde",
+                "objecttype": "Jutter",
+                "bron": "zijn aanvoerwaarde"
+              },
+              "rechts": {
+                "node": "ParameterRef",
+                "parameter": "aanvoertarief",
+                "bron": "het aanvoertarief"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "zijn aanvoerwaarde plus het aanvoertarief"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -267,7 +277,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -48,7 +48,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],
@@ -86,7 +85,9 @@
                   },
                   "rechts": {
                     "node": "Literal",
-                    "waarde": "8",
+                    "value": {
+                      "number": "8"
+                    },
                     "type": {
                       "node": "Number",
                       "whole": true,
@@ -117,7 +118,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "20",
+                "value": {
+                  "number": "20"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,

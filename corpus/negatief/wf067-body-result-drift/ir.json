@@ -82,7 +82,9 @@
         },
         "body": {
           "node": "Literal",
-          "waarde": "Noord",
+          "value": {
+            "enumeration": "Noord"
+          },
           "type": {
             "node": "Enumeratie",
             "domein": "Kust",
@@ -101,93 +103,103 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "tarief",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "tarief",
-          "objecttype": "Berging",
-          "bron": "de tarief"
-        },
-        "waarde": {
-          "node": "Match",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "scrutinee": {
-            "node": "Invoke",
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Vaarwater",
-              "waarden": [
-                "Wad",
-                "Zeegat",
-                "Ruimzee"
-              ]
+        "node": "Rule",
+        "name": "tarief",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "function": "Kies",
-            "arguments": [],
-            "bron": "Kies"
-          },
-          "arms": [
-            {
-              "constructor": "Wad",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "3",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "3"
-              }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "tarief",
+              "objecttype": "Berging",
+              "bron": "de tarief"
             },
-            {
-              "constructor": "Zeegat",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "7",
+            "value": {
+              "node": "Match",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "scrutinee": {
+                "node": "Invoke",
                 "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
+                  "node": "Enumeratie",
+                  "domein": "Vaarwater",
+                  "waarden": [
+                    "Wad",
+                    "Zeegat",
+                    "Ruimzee"
+                  ]
                 },
-                "bron": "7"
-              }
+                "function": "Kies",
+                "arguments": [],
+                "bron": "Kies"
+              },
+              "arms": [
+                {
+                  "constructor": "Wad",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "3"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "3"
+                  }
+                },
+                {
+                  "constructor": "Zeegat",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "7"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "7"
+                  }
+                },
+                {
+                  "constructor": "Ruimzee",
+                  "binder": null,
+                  "body": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "12"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "12"
+                  }
+                }
+              ],
+              "bron": "match"
             },
-            {
-              "constructor": "Ruimzee",
-              "binder": null,
-              "body": {
-                "node": "Literal",
-                "waarde": "12",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "12"
-              }
-            }
-          ],
-          "bron": "match"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -195,7 +207,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

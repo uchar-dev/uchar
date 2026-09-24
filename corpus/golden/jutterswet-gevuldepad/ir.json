@@ -135,57 +135,57 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal gevulde bergplaatsen",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal gevulde bergplaatsen",
-          "objecttype": "Jutter",
-          "bron": "Het aantal gevulde bergplaatsen van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL_GEVULDE",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "vangstgewicht",
-              "objecttype": "Bergplaats",
-              "bron": "het vangstgewicht van alle losplaatsen van alle gevoerde boten van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Bergplaats",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal gevulde waarden van het vangstgewicht van alle losplaatsen van alle gevoerde boten van de Jutter",
-          "granulariteit": null,
-          "bronPad": [
-            {
-              "node": "RolBinding",
-              "feittype": "bemanning",
-              "rol": "gevoerde boot"
+        "node": "Rule",
+        "name": "aantal gevulde bergplaatsen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "RolBinding",
-              "feittype": "lossing",
-              "rol": "losplaats"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aantal gevulde bergplaatsen",
+              "objecttype": "Jutter",
+              "bron": "Het aantal gevulde bergplaatsen van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL_GEVULDE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "vangstgewicht",
+                  "objecttype": "Bergplaats",
+                  "bron": "het vangstgewicht van alle losplaatsen van alle gevoerde boten van de Jutter"
+                }
+              ],
+              "elementType": "Bergplaats",
+              "sourcePath": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "bemanning",
+                  "rol": "gevoerde boot"
+                },
+                {
+                  "node": "RolBinding",
+                  "feittype": "lossing",
+                  "rol": "losplaats"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal gevulde waarden van het vangstgewicht van alle losplaatsen van alle gevoerde boten van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -193,7 +193,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

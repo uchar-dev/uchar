@@ -127,26 +127,34 @@
     "consistenties": [],
     "uniciteiten": [
       {
-        "node": "ResolvedUniciteit",
-        "naam": "eenmalig kavelaantal",
-        "subject": "Gemeente",
-        "sleutels": [
-          "kavelaantal"
-        ],
-        "bron": "De kavelaantal van alle Gemeente van de kavels moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "scopeRol": {
-          "node": "RolBinding",
-          "feittype": "kavelindeling",
-          "rol": "kavel"
-        }
+        "node": "Uniqueness",
+        "name": "eenmalig kavelaantal",
+        "versions": [
+          {
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Gemeente",
+                "keys": [
+                  "kavelaantal"
+                ]
+              }
+            ],
+            "scope": {
+              "node": "RolBinding",
+              "feittype": "kavelindeling",
+              "rol": "kavel"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "De kavelaantal van alle Gemeente van de kavels moeten uniek zijn."
+          }
+        ]
       }
     ],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

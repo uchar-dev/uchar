@@ -157,67 +157,68 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "keurlast van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "keurlast",
-          "objecttype": "Jutter",
-          "bron": "De keurlast van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TOTAAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "keurlast van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "keurtarief",
-              "objecttype": "Vondst",
-              "bron": "het keurtarief van alle vondsten van de Jutter die gekeurd zijn"
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "gekeurd",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "gekeurd zijn"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "EUR",
-              "system": "Munt",
-              "canonical": "EUR",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "keuring",
-            "rol": "vondst"
+              "attribuut": "keurlast",
+              "objecttype": "Jutter",
+              "bron": "De keurlast van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "TOTAAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "keurtarief",
+                  "objecttype": "Vondst",
+                  "bron": "het keurtarief van alle vondsten van de Jutter die gekeurd zijn"
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "gekeurd",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "gekeurd zijn"
+              },
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "keuring",
+                "rol": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -225,7 +226,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

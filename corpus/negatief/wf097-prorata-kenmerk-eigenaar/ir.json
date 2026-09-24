@@ -94,100 +94,102 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "borgdeel van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "borgdeel",
-          "objecttype": "Jutter",
-          "bron": "Het borgdeel van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSEVENREDIG_DEEL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "borgdeel van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "borgtarief",
+              "attribuut": "borgdeel",
               "objecttype": "Jutter",
-              "bron": "zijn borgtarief"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "borgplichtig",
-            "negatie": false,
-            "eigenaar": "Jutter",
-            "periode": null,
-            "bron": "gedurende de tijd dat hij borgplichtig is"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het tijdsevenredig deel per maand van zijn borgtarief gedurende de tijd dat hij borgplichtig is",
-          "granulariteit": "MAAND"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "Het borgdeel van een Jutter"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSEVENREDIG_DEEL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "borgtarief",
+                  "objecttype": "Jutter",
+                  "bron": "zijn borgtarief"
+                }
+              ],
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "borgplichtig",
+                "negatie": false,
+                "eigenaar": "Jutter",
+                "periode": null,
+                "bron": "gedurende de tijd dat hij borgplichtig is"
+              },
+              "granularity": "MAAND",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het tijdsevenredig deel per maand van zijn borgtarief gedurende de tijd dat hij borgplichtig is"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "jaardeel van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "jaardeel",
-          "objecttype": "Jutter",
-          "bron": "Het jaardeel van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TIJDSEVENREDIG_DEEL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "jaardeel van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "jaartarief",
+              "attribuut": "jaardeel",
               "objecttype": "Jutter",
-              "bron": "zijn jaartarief"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "borgplichtig",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "gedurende de tijd dat hij borgplichtig is"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het tijdsevenredig deel per jaar van zijn jaartarief gedurende de tijd dat hij borgplichtig is",
-          "granulariteit": "JAAR"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "Het jaardeel van een Jutter"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "TIJDSEVENREDIG_DEEL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "jaartarief",
+                  "objecttype": "Jutter",
+                  "bron": "zijn jaartarief"
+                }
+              ],
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "borgplichtig",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "gedurende de tijd dat hij borgplichtig is"
+              },
+              "granularity": "JAAR",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het tijdsevenredig deel per jaar van zijn jaartarief gedurende de tijd dat hij borgplichtig is"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -195,7 +197,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

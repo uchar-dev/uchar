@@ -46,130 +46,148 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "vrijgave zonder beletsel",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "status",
-          "objecttype": "Bergingszaak",
-          "bron": "De status van een Bergingszaak"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "vrijgegeven",
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "'vrijgegeven'"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "GEEN",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Kenmerk",
-              "kenmerk": "geclaimd",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "de Bergingszaak geclaimd is"
+        "node": "Rule",
+        "name": "vrijgave zonder beletsel",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "bezwaren",
-                "objecttype": "Bergingszaak",
-                "bron": "de bezwaren van de Bergingszaak"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "status",
+              "objecttype": "Bergingszaak",
+              "bron": "De status van een Bergingszaak"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "text": "vrijgegeven"
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "0",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
+              "type": {
+                "node": "Tekst"
+              },
+              "bron": "'vrijgegeven'"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "GEEN",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "geclaimd",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "de Bergingszaak geclaimd is"
                 },
-                "bron": "0"
-              },
-              "periode": null,
-              "bron": "haar bezwaren groter zijn dan 0"
-            }
-          ],
-          "bron": "geen van: geclaimd, bezwaren boven 0"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "bezwaren",
+                    "objecttype": "Bergingszaak",
+                    "bron": "de bezwaren van de Bergingszaak"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0"
+                  },
+                  "periode": null,
+                  "bron": "haar bezwaren groter zijn dan 0"
+                }
+              ],
+              "bron": "geen van: geclaimd, bezwaren boven 0"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "aanhouding bij beletsel",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "status",
-          "objecttype": "Bergingszaak",
-          "bron": "De status van een Bergingszaak"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "aangehouden",
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "'aangehouden'"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 1,
-          "onderdelen": [
-            {
-              "node": "Kenmerk",
-              "kenmerk": "geclaimd",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "de Bergingszaak geclaimd is"
+        "node": "Rule",
+        "name": "aanhouding bij beletsel",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "bezwaren",
-                "objecttype": "Bergingszaak",
-                "bron": "de bezwaren van de Bergingszaak"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "status",
+              "objecttype": "Bergingszaak",
+              "bron": "De status van een Bergingszaak"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "text": "aangehouden"
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "0",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
+              "type": {
+                "node": "Tekst"
+              },
+              "bron": "'aangehouden'"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 1,
+              "onderdelen": [
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "geclaimd",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "de Bergingszaak geclaimd is"
                 },
-                "bron": "0"
-              },
-              "periode": null,
-              "bron": "haar bezwaren groter zijn dan 0"
-            }
-          ],
-          "bron": "ten minste \u00e9\u00e9n van: geclaimd, bezwaren boven 0"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "bezwaren",
+                    "objecttype": "Bergingszaak",
+                    "bron": "de bezwaren van de Bergingszaak"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0"
+                  },
+                  "periode": null,
+                  "bron": "haar bezwaren groter zijn dan 0"
+                }
+              ],
+              "bron": "ten minste \u00e9\u00e9n van: geclaimd, bezwaren boven 0"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -177,7 +195,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

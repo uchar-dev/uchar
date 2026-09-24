@@ -68,7 +68,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],
@@ -102,7 +101,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "90.00",
+                "value": {
+                  "number": "90.00"
+                },
                 "type": {
                   "node": "Number",
                   "whole": false,
@@ -148,7 +149,9 @@
                         },
                         "rechts": {
                           "node": "Literal",
-                          "waarde": "20.00",
+                          "value": {
+                            "number": "20.00"
+                          },
                           "type": {
                             "node": "Number",
                             "whole": false,
@@ -195,7 +198,9 @@
                         },
                         "rechts": {
                           "node": "Literal",
-                          "waarde": "35.00",
+                          "value": {
+                            "number": "35.00"
+                          },
                           "type": {
                             "node": "Number",
                             "whole": false,
@@ -245,7 +250,9 @@
                           },
                           "rechts": {
                             "node": "Literal",
-                            "waarde": "15.00",
+                            "value": {
+                              "number": "15.00"
+                            },
                             "type": {
                               "node": "Number",
                               "whole": false,
@@ -264,7 +271,9 @@
                         },
                         "rechts": {
                           "node": "Literal",
-                          "waarde": "5.00",
+                          "value": {
+                            "number": "5.00"
+                          },
                           "type": {
                             "node": "Number",
                             "whole": false,
@@ -295,7 +304,9 @@
             "voorwaarde": null,
             "consequentie": {
               "node": "Literal",
-              "waarde": "5.00",
+              "value": {
+                "number": "5.00"
+              },
               "type": {
                 "node": "Number",
                 "whole": false,

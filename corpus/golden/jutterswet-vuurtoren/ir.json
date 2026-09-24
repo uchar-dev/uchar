@@ -101,297 +101,329 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "helder bij sterkte",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "helder",
-          "objecttype": "Vuurtoren",
-          "bron": "Een Vuurtoren is helder"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 2,
-          "elementObjecttype": "Lamp",
-          "filter": null,
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
+        "node": "Rule",
+        "name": "helder bij sterkte",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "sterkte",
-              "objecttype": "Lamp",
-              "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren"
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "5",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "5"
-            },
-            "periode": null,
-            "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5"
-          },
-          "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "torenindeling",
-            "rol": "lamp"
-          }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "zuinig bij sterkte",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "zuinig",
-          "objecttype": "Vuurtoren",
-          "bron": "Een Vuurtoren is zuinig"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "TEN_HOOGSTE",
-          "drempel": 1,
-          "elementObjecttype": "Lamp",
-          "filter": null,
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "sterkte",
-              "objecttype": "Lamp",
-              "bron": "de sterkte van ten hoogste 1 van de lampen van de Vuurtoren"
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "5",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "5"
-            },
-            "periode": null,
-            "bron": "de sterkte van ten hoogste 1 van de lampen van de Vuurtoren groter is dan 5"
-          },
-          "bron": "de sterkte van ten hoogste 1 van de lampen van de Vuurtoren groter is dan 5",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "torenindeling",
-            "rol": "lamp"
-          }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "enkelvoudig bij sterkte",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "enkelvoudig",
-          "objecttype": "Vuurtoren",
-          "bron": "Een Vuurtoren is enkelvoudig"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "PRECIES",
-          "drempel": 1,
-          "elementObjecttype": "Lamp",
-          "filter": null,
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "sterkte",
-              "objecttype": "Lamp",
-              "bron": "de sterkte van precies 1 van de lampen van de Vuurtoren"
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "5",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "5"
-            },
-            "periode": null,
-            "bron": "de sterkte van precies 1 van de lampen van de Vuurtoren groter is dan 5"
-          },
-          "bron": "de sterkte van precies 1 van de lampen van de Vuurtoren groter is dan 5",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "torenindeling",
-            "rol": "lamp"
-          }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "keurig bij sterkte",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "keurig",
-          "objecttype": "Vuurtoren",
-          "bron": "Een Vuurtoren is keurig"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Kwantorvouw",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 2,
-          "elementObjecttype": "Lamp",
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "gekeurd",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "gekeurd zijn"
-          },
-          "toets": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "sterkte",
-              "objecttype": "Lamp",
-              "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren die gekeurd zijn"
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "5",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "5"
-            },
-            "periode": null,
-            "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren die gekeurd zijn groter is dan 5"
-          },
-          "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren die gekeurd zijn groter is dan 5",
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "torenindeling",
-            "rol": "lamp"
-          }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "lampental van een vuurtoren",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "lampental",
-          "objecttype": "Vuurtoren",
-          "bron": "Het lampental van een Vuurtoren"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "lampen",
+              "attribuut": "helder",
               "objecttype": "Vuurtoren",
-              "bron": "lampen van de Vuurtoren"
-            }
-          ],
-          "elementObjecttype": "Lamp",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal lampen van de Vuurtoren",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "torenindeling",
-            "rol": "lamp"
+              "bron": "Een Vuurtoren is helder"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 2,
+              "elementObjecttype": "Lamp",
+              "filter": null,
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "sterkte",
+                  "objecttype": "Lamp",
+                  "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "5"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "5"
+                },
+                "periode": null,
+                "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5"
+              },
+              "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "torenindeling",
+                "rol": "lamp"
+              }
+            },
+            "initialisation": false
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zuinig bij sterkte",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "zuinig",
+              "objecttype": "Vuurtoren",
+              "bron": "Een Vuurtoren is zuinig"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "TEN_HOOGSTE",
+              "drempel": 1,
+              "elementObjecttype": "Lamp",
+              "filter": null,
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "sterkte",
+                  "objecttype": "Lamp",
+                  "bron": "de sterkte van ten hoogste 1 van de lampen van de Vuurtoren"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "5"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "5"
+                },
+                "periode": null,
+                "bron": "de sterkte van ten hoogste 1 van de lampen van de Vuurtoren groter is dan 5"
+              },
+              "bron": "de sterkte van ten hoogste 1 van de lampen van de Vuurtoren groter is dan 5",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "torenindeling",
+                "rol": "lamp"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "enkelvoudig bij sterkte",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "enkelvoudig",
+              "objecttype": "Vuurtoren",
+              "bron": "Een Vuurtoren is enkelvoudig"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "PRECIES",
+              "drempel": 1,
+              "elementObjecttype": "Lamp",
+              "filter": null,
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "sterkte",
+                  "objecttype": "Lamp",
+                  "bron": "de sterkte van precies 1 van de lampen van de Vuurtoren"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "5"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "5"
+                },
+                "periode": null,
+                "bron": "de sterkte van precies 1 van de lampen van de Vuurtoren groter is dan 5"
+              },
+              "bron": "de sterkte van precies 1 van de lampen van de Vuurtoren groter is dan 5",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "torenindeling",
+                "rol": "lamp"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "keurig bij sterkte",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "keurig",
+              "objecttype": "Vuurtoren",
+              "bron": "Een Vuurtoren is keurig"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Kwantorvouw",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 2,
+              "elementObjecttype": "Lamp",
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "gekeurd",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "gekeurd zijn"
+              },
+              "toets": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "sterkte",
+                  "objecttype": "Lamp",
+                  "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren die gekeurd zijn"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "5"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "5"
+                },
+                "periode": null,
+                "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren die gekeurd zijn groter is dan 5"
+              },
+              "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren die gekeurd zijn groter is dan 5",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "torenindeling",
+                "rol": "lamp"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "lampental van een vuurtoren",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "lampental",
+              "objecttype": "Vuurtoren",
+              "bron": "Het lampental van een Vuurtoren"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "lampen",
+                  "objecttype": "Vuurtoren",
+                  "bron": "lampen van de Vuurtoren"
+                }
+              ],
+              "elementType": "Lamp",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "torenindeling",
+                "rol": "lamp"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal lampen van de Vuurtoren"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -399,7 +431,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

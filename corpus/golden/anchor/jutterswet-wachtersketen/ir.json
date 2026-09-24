@@ -65,76 +65,114 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "opvolgerrang van een wachter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "opvolgerrang",
-          "objecttype": "Wachter",
-          "bron": "De opvolgerrang van een Wachter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "SOM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "rang",
-              "objecttype": "Wachter",
-              "bron": "de rang van alle opvolgers van de Wachter"
-            }
-          ],
-          "elementObjecttype": "Wachter",
-          "leegwaarde": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "opvolgerrang van een wachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "0"
-          },
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de som van de rang van alle opvolgers van de Wachter of 0 als die er niet zijn",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "opvolging",
-            "rol": "opvolger"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "opvolgerrang",
+              "objecttype": "Wachter",
+              "bron": "De opvolgerrang van een Wachter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "SOM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "rang",
+                  "objecttype": "Wachter",
+                  "bron": "de rang van alle opvolgers van de Wachter"
+                }
+              ],
+              "elementType": "Wachter",
+              "emptyFallback": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "0"
+              },
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "opvolging",
+                "rol": "opvolger"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de som van de rang van alle opvolgers van de Wachter of 0 als die er niet zijn"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
     "objectCreaties": [
       {
-        "node": "ResolvedObjectCreatie",
-        "naam": "werf de opvolger",
-        "nieuwType": "Wachter",
-        "subject": "Wachter",
-        "toekenningen": [
+        "node": "ObjectCreation",
+        "name": "werf de opvolger",
+        "versions": [
           {
-            "node": "Toekenning",
-            "attribuut": "rang",
-            "waarde": {
-              "node": "Binair",
-              "op": "PLUS",
+            "createdType": "Wachter",
+            "subject": "Wachter",
+            "initialisations": [
+              {
+                "node": "Toekenning",
+                "attribuut": "rang",
+                "waarde": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "rang",
+                    "objecttype": "Wachter",
+                    "bron": "de rang van de Wachter"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "1"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "de rang van de Wachter plus 1"
+                },
+                "kenmerk": false
+              }
+            ],
+            "condition": {
+              "node": "Vergelijking",
+              "op": "KLEINER",
               "links": {
                 "node": "AttribuutRef",
                 "attribuut": "rang",
@@ -143,101 +181,79 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "1",
+                "value": {
+                  "number": "5"
+                },
                 "type": {
                   "node": "Number",
                   "whole": true,
                   "decimals": 0,
                   "sign": "ONBEPAALD"
                 },
-                "bron": "1"
+                "bron": "5"
               },
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "de rang van de Wachter plus 1"
+              "periode": null,
+              "bron": "de rang van de Wachter is kleiner dan 5"
             },
-            "kenmerk": false
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "opvolging",
+              "rol": "opvolger"
+            }
           }
-        ],
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "KLEINER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "rang",
-            "objecttype": "Wachter",
-            "bron": "de rang van de Wachter"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "5",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
-            },
-            "bron": "5"
-          },
-          "periode": null,
-          "bron": "de rang van de Wachter is kleiner dan 5"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "opvolging",
-          "rol": "opvolger"
-        }
+        ]
       }
     ],
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "rangdetector",
-        "subject": "Wachter",
-        "assertie": {
-          "node": "Vergelijking",
-          "op": "KLEINER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "rang",
-            "objecttype": "Wachter",
-            "bron": "de rang van de Wachter"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "5",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Consistency",
+        "name": "rangdetector",
+        "versions": [
+          {
+            "subject": "Wachter",
+            "assertion": {
+              "node": "Vergelijking",
+              "op": "KLEINER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "rang",
+                "objecttype": "Wachter",
+                "bron": "de rang van de Wachter"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "5"
+              },
+              "periode": null,
+              "bron": "de rang van de Wachter is kleiner dan 5"
             },
-            "bron": "5"
-          },
-          "periode": null,
-          "bron": "de rang van de Wachter is kleiner dan 5"
-        },
-        "bron": "Er moet worden voldaan aan: de rang van elke Wachter is kleiner dan 5",
-        "line": 1,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "Er moet worden voldaan aan: de rang van elke Wachter is kleiner dan 5",
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [

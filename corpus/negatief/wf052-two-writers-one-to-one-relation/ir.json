@@ -54,36 +54,41 @@
     "resolvedDagsoorten": [],
     "objectCreaties": [
       {
-        "node": "ResolvedObjectCreatie",
-        "naam": "dossier een",
-        "nieuwType": "Dossier",
-        "subject": "Jutter",
-        "toekenningen": [],
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "ObjectCreation",
+        "name": "dossier een",
+        "versions": [
+          {
+            "createdType": "Dossier",
+            "subject": "Jutter",
+            "initialisations": [],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            }
+          }
+        ]
       },
       {
-        "node": "ResolvedObjectCreatie",
-        "naam": "dossier twee",
-        "nieuwType": "Dossier",
-        "subject": "Jutter",
-        "toekenningen": [],
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "ObjectCreation",
+        "name": "dossier twee",
+        "versions": [
+          {
+            "createdType": "Dossier",
+            "subject": "Jutter",
+            "initialisations": [],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            }
+          }
+        ]
       }
     ],
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

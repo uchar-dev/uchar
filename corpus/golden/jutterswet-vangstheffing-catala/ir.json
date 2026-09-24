@@ -68,72 +68,82 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "berekening vangstheffing bruto",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vangstheffing bruto",
-          "objecttype": "Vangstheffing",
-          "bron": "de vangstheffing bruto"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "aangebrachte_waarde",
-          "objecttype": "Vangstheffing",
-          "bron": "de aangebrachte_waarde"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "berekening vangstheffing bruto",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vangstheffing bruto",
+              "objecttype": "Vangstheffing",
+              "bron": "de vangstheffing bruto"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "aangebrachte_waarde",
+              "objecttype": "Vangstheffing",
+              "bron": "de aangebrachte_waarde"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "berekening vangstheffing na_opslag",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vangstheffing na_opslag",
-          "objecttype": "Vangstheffing",
-          "bron": "de vangstheffing na_opslag"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "vangstheffing bruto",
-            "objecttype": "Vangstheffing",
-            "bron": "de vangstheffing bruto"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "5.00",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "berekening vangstheffing na_opslag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "5.00"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "bron": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vangstheffing na_opslag",
+              "objecttype": "Vangstheffing",
+              "bron": "de vangstheffing na_opslag"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "vangstheffing bruto",
+                "objecttype": "Vangstheffing",
+                "bron": "de vangstheffing bruto"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "5.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "5.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "bron": null
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -141,7 +151,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [],
@@ -175,7 +184,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "20.00",
+                "value": {
+                  "number": "20.00"
+                },
                 "type": {
                   "node": "Number",
                   "whole": false,
@@ -215,7 +226,9 @@
               },
               "rechts": {
                 "node": "Literal",
-                "waarde": "12.00",
+                "value": {
+                  "number": "12.00"
+                },
                 "type": {
                   "node": "Number",
                   "whole": false,

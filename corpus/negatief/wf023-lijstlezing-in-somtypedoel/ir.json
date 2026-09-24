@@ -107,27 +107,31 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aanspraak van een jutter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aanspraak",
-          "objecttype": "Jutter",
-          "bron": "de aanspraak van de Jutter"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "aanspraken",
-          "objecttype": "Jutter",
-          "bron": "de aanspraken van de Jutter"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "aanspraak van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aanspraak",
+              "objecttype": "Jutter",
+              "bron": "de aanspraak van de Jutter"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "aanspraken",
+              "objecttype": "Jutter",
+              "bron": "de aanspraken van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -135,7 +139,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

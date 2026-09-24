@@ -81,67 +81,76 @@
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "Bouwcontrole",
-        "subject": "Jutter",
-        "assertie": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "beschikking",
-            "objecttype": "Jutter",
-            "bron": null
-          },
-          "rechts": {
-            "node": "Construct",
-            "type": {
-              "node": "SumType",
-              "domain": "beschikking",
-              "constructors": [
-                {
-                  "name": "Toegekend",
-                  "payload": {
+        "node": "Consistency",
+        "name": "Bouwcontrole",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "beschikking",
+                "objecttype": "Jutter",
+                "bron": null
+              },
+              "rechts": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "beschikking",
+                  "constructors": [
+                    {
+                      "name": "Toegekend",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "NIET_NEGATIEF"
+                      }
+                    },
+                    {
+                      "name": "Afgewezen",
+                      "payload": null
+                    },
+                    {
+                      "name": "Aangehouden",
+                      "payload": null
+                    }
+                  ]
+                },
+                "constructor": "Afgewezen",
+                "argument": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "0.00"
+                  },
+                  "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
-                  }
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": null
                 },
-                {
-                  "name": "Afgewezen",
-                  "payload": null
-                },
-                {
-                  "name": "Aangehouden",
-                  "payload": null
-                }
-              ]
-            },
-            "constructor": "Afgewezen",
-            "argument": {
-              "node": "Literal",
-              "waarde": "0.00",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
+                "bron": null
               },
+              "periode": null,
               "bron": null
             },
-            "bron": null
-          },
-          "periode": null,
-          "bron": null
-        },
-        "bron": null,
-        "line": 1,
-        "geldigheid": null
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": null,
+            "line": 1
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

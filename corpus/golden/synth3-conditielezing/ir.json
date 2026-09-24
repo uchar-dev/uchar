@@ -43,114 +43,126 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "heffing van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "heffing",
-          "objecttype": "Jutter",
-          "bron": "De heffing van een Jutter"
-        },
-        "waarde": {
-          "node": "Let",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "binder": "grondslag",
-          "value": {
-            "node": "AttribuutRef",
-            "attribuut": "grondslag",
-            "objecttype": "Jutter",
-            "bron": "zijn grondslag"
-          },
-          "body": {
-            "node": "IfThenElse",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "heffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "Binair",
-                "op": "MAAL",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "grondslag",
-                  "bron": "de grondslag"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "heffing",
+              "objecttype": "Jutter",
+              "bron": "De heffing van een Jutter"
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "binder": "grondslag",
+              "value": {
+                "node": "AttribuutRef",
+                "attribuut": "grondslag",
+                "objecttype": "Jutter",
+                "bron": "zijn grondslag"
+              },
+              "body": {
+                "node": "IfThenElse",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
                 },
-                "rechts": {
+                "condition": {
+                  "node": "Vergelijking",
+                  "op": "GROTER",
+                  "links": {
+                    "node": "Binair",
+                    "op": "MAAL",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "grondslag",
+                      "bron": "de grondslag"
+                    },
+                    "rechts": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1.00"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "1,00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "de grondslag maal 1,00"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "0,00"
+                  },
+                  "periode": null,
+                  "bron": "de grondslag maal 1,00 groter dan 0,00"
+                },
+                "then": {
                   "node": "Literal",
-                  "waarde": "1.00",
+                  "value": {
+                    "number": "5.00"
+                  },
                   "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "1,00"
+                  "bron": "5,00"
                 },
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
+                "else": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "9.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "9,00"
                 },
-                "bron": "de grondslag maal 1,00"
+                "bron": "5,00 boven nul en 9,00 daaronder"
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "0.00",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "0,00"
-              },
-              "periode": null,
-              "bron": "de grondslag maal 1,00 groter dan 0,00"
+              "bron": "de grondslag is zijn grondslag"
             },
-            "then": {
-              "node": "Literal",
-              "waarde": "5.00",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "5,00"
-            },
-            "else": {
-              "node": "Literal",
-              "waarde": "9.00",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "9,00"
-            },
-            "bron": "5,00 boven nul en 9,00 daaronder"
-          },
-          "bron": "de grondslag is zijn grondslag"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -158,7 +170,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

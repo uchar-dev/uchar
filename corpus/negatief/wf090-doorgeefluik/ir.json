@@ -173,102 +173,106 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "samenvatting van een berging",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "samenvatting",
-          "objecttype": "Berging",
-          "bron": null
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "EERSTE",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "samenvatting van een berging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "kern",
-              "objecttype": "Schuit",
-              "bron": "de kern van alle schuiten van de Berging"
-            }
-          ],
-          "elementObjecttype": "Schuit",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "StructType",
-            "domain": "logboek",
-            "fields": [
-              {
-                "name": "bedrag",
-                "datatype": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
+              "attribuut": "samenvatting",
+              "objecttype": "Berging",
+              "bron": null
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "EERSTE",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "kern",
+                  "objecttype": "Schuit",
+                  "bron": "de kern van alle schuiten van de Berging"
                 }
+              ],
+              "elementType": "Schuit",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "ligplaats",
+                "rol": "schuit"
               },
-              {
-                "name": "aantal",
-                "datatype": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "NIET_NEGATIEF"
-                }
-              }
-            ]
-          },
-          "bron": "de eerste kern van alle schuiten van de Berging",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "ligplaats",
-            "rol": "schuit"
+              "type": {
+                "node": "StructType",
+                "domain": "logboek",
+                "fields": [
+                  {
+                    "name": "bedrag",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  },
+                  {
+                    "name": "aantal",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  }
+                ]
+              },
+              "bron": "de eerste kern van alle schuiten van de Berging"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "tarief van een berging",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "tarief",
-          "objecttype": "Berging",
-          "bron": null
-        },
-        "waarde": {
-          "node": "FieldAccess",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "NIET_NEGATIEF"
-          },
-          "base": {
-            "node": "AttribuutRef",
-            "attribuut": "samenvatting",
-            "objecttype": "Berging",
-            "bron": null
-          },
-          "field": "bedrag",
-          "bron": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "tarief van een berging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "tarief",
+              "objecttype": "Berging",
+              "bron": null
+            },
+            "value": {
+              "node": "FieldAccess",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
+              },
+              "base": {
+                "node": "AttribuutRef",
+                "attribuut": "samenvatting",
+                "objecttype": "Berging",
+                "bron": null
+              },
+              "field": "bedrag",
+              "bron": null
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -276,7 +280,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

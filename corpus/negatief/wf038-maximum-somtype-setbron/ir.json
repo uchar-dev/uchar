@@ -121,63 +121,63 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bergstand van een berging",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bergstand",
-          "objecttype": "Berging",
-          "bron": "de bergstand"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MAXIMUM",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "bergstand van een berging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "stand",
-              "objecttype": "Schuit",
-              "bron": "de stand van alle schuiten van de Berging"
-            }
-          ],
-          "elementObjecttype": "Schuit",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "SumType",
-            "domain": "stand",
-            "constructors": [
-              {
-                "name": "Geborgen",
-                "payload": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "NIET_NEGATIEF"
+              "attribuut": "bergstand",
+              "objecttype": "Berging",
+              "bron": "de bergstand"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "MAXIMUM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "stand",
+                  "objecttype": "Schuit",
+                  "bron": "de stand van alle schuiten van de Berging"
                 }
+              ],
+              "elementType": "Schuit",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "ligplaats",
+                "rol": "schuit"
               },
-              {
-                "name": "Vermist",
-                "payload": null
-              }
-            ]
-          },
-          "bron": "het maximum stand van alle schuiten van de Berging",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "ligplaats",
-            "rol": "schuit"
+              "type": {
+                "node": "SumType",
+                "domain": "stand",
+                "constructors": [
+                  {
+                    "name": "Geborgen",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  },
+                  {
+                    "name": "Vermist",
+                    "payload": null
+                  }
+                ]
+              },
+              "bron": "het maximum stand van alle schuiten van de Berging"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -185,7 +185,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

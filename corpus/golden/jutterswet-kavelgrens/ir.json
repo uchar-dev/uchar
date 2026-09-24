@@ -75,64 +75,72 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "noordbuurbreedte",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "noordbuurbreedte",
-          "objecttype": "Duinkavel",
-          "bron": "De noordbuurbreedte van een Duinkavel"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "kavelbreedte",
-          "objecttype": "Duinkavel",
-          "bron": "de kavelbreedte van de noordbuur van het Duinkavel",
-          "navigatieBindingen": [
-            {
-              "node": "RolBinding",
-              "feittype": "kavelgrens",
-              "rol": "noordbuur"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "noordbuurbreedte",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "noordbuurbreedte",
+              "objecttype": "Duinkavel",
+              "bron": "De noordbuurbreedte van een Duinkavel"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "kavelbreedte",
+              "objecttype": "Duinkavel",
+              "bron": "de kavelbreedte van de noordbuur van het Duinkavel",
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "kavelgrens",
+                  "rol": "noordbuur"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "zuidbuurbreedte",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "zuidbuurbreedte",
-          "objecttype": "Duinkavel",
-          "bron": "De zuidbuurbreedte van een Duinkavel"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "kavelbreedte",
-          "objecttype": "Duinkavel",
-          "bron": "de kavelbreedte van de zuidbuur van het Duinkavel",
-          "navigatieBindingen": [
-            {
-              "node": "RolBinding",
-              "feittype": "kavelgrens",
-              "rol": "zuidbuur"
-            }
-          ]
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "zuidbuurbreedte",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "zuidbuurbreedte",
+              "objecttype": "Duinkavel",
+              "bron": "De zuidbuurbreedte van een Duinkavel"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "kavelbreedte",
+              "objecttype": "Duinkavel",
+              "bron": "de kavelbreedte van de zuidbuur van het Duinkavel",
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "kavelgrens",
+                  "rol": "zuidbuur"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -140,7 +148,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

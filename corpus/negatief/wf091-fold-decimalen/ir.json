@@ -312,51 +312,50 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "uitfijn van de Jutter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "uitfijn",
-          "objecttype": "Jutter",
-          "bron": "De uitfijn van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MINIMUM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "fijn",
-              "objecttype": "Jutter",
-              "bron": "de fijn van de Jutter"
+        "node": "Rule",
+        "name": "uitfijn van de Jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "deel",
+              "attribuut": "uitfijn",
               "objecttype": "Jutter",
-              "bron": "de deel van de Jutter"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 4,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de minimale waarde van het fijn van de Jutter en het deel van de Jutter",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De uitfijn van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "MINIMUM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "fijn",
+                  "objecttype": "Jutter",
+                  "bron": "de fijn van de Jutter"
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "deel",
+                  "objecttype": "Jutter",
+                  "bron": "de deel van de Jutter"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 4,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de minimale waarde van het fijn van de Jutter en het deel van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -364,7 +363,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

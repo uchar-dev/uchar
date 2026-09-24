@@ -192,73 +192,255 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "waardering van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "waardering",
-          "objecttype": "Vangst",
-          "bron": null
-        },
-        "waarde": {
-          "node": "StructLiteral",
-          "type": {
-            "node": "StructType",
-            "domain": "waardering",
-            "fields": [
-              {
-                "name": "toeslag",
-                "datatype": {
+        "node": "Rule",
+        "name": "waardering van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "waardering",
+              "objecttype": "Vangst",
+              "bron": null
+            },
+            "value": {
+              "node": "StructLiteral",
+              "type": {
+                "node": "StructType",
+                "domain": "waardering",
+                "fields": [
+                  {
+                    "name": "toeslag",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "NIET_NEGATIEF"
+                    }
+                  },
+                  {
+                    "name": "kern",
+                    "datatype": {
+                      "node": "StructType",
+                      "domain": "kernwaarde",
+                      "fields": [
+                        {
+                          "name": "eenheden",
+                          "datatype": {
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "NIET_NEGATIEF"
+                          }
+                        },
+                        {
+                          "name": "grondslag",
+                          "datatype": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "NIET_NEGATIEF"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "fields": [
+                {
+                  "name": "toeslag",
+                  "value": {
+                    "node": "AttribuutRef",
+                    "attribuut": "toeslagbedrag",
+                    "objecttype": "Vangst",
+                    "bron": null
+                  }
+                },
+                {
+                  "name": "kern",
+                  "value": {
+                    "node": "StructLiteral",
+                    "type": {
+                      "node": "StructType",
+                      "domain": "kernwaarde",
+                      "fields": [
+                        {
+                          "name": "eenheden",
+                          "datatype": {
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "NIET_NEGATIEF"
+                          }
+                        },
+                        {
+                          "name": "grondslag",
+                          "datatype": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "NIET_NEGATIEF"
+                          }
+                        }
+                      ]
+                    },
+                    "fields": [
+                      {
+                        "name": "eenheden",
+                        "value": {
+                          "node": "AttribuutRef",
+                          "attribuut": "stuks",
+                          "objecttype": "Vangst",
+                          "bron": null
+                        }
+                      },
+                      {
+                        "name": "grondslag",
+                        "value": {
+                          "node": "AttribuutRef",
+                          "attribuut": "grondbedrag",
+                          "objecttype": "Vangst",
+                          "bron": null
+                        }
+                      }
+                    ],
+                    "bron": null
+                  }
+                }
+              ],
+              "bron": null
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "heffing van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "heffing",
+              "objecttype": "Vangst",
+              "bron": null
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "FieldAccess",
+                "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
                   "sign": "NIET_NEGATIEF"
-                }
-              },
-              {
-                "name": "kern",
-                "datatype": {
-                  "node": "StructType",
-                  "domain": "kernwaarde",
-                  "fields": [
-                    {
-                      "name": "eenheden",
-                      "datatype": {
-                        "node": "Number",
-                        "whole": true,
-                        "decimals": 0,
-                        "sign": "NIET_NEGATIEF"
+                },
+                "base": {
+                  "node": "FieldAccess",
+                  "type": {
+                    "node": "StructType",
+                    "domain": "kernwaarde",
+                    "fields": [
+                      {
+                        "name": "eenheden",
+                        "datatype": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "NIET_NEGATIEF"
+                        }
+                      },
+                      {
+                        "name": "grondslag",
+                        "datatype": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "NIET_NEGATIEF"
+                        }
                       }
-                    },
-                    {
-                      "name": "grondslag",
-                      "datatype": {
-                        "node": "Number",
-                        "whole": false,
-                        "decimals": 2,
-                        "sign": "NIET_NEGATIEF"
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          "fields": [
-            {
-              "name": "toeslag",
-              "value": {
-                "node": "AttribuutRef",
-                "attribuut": "toeslagbedrag",
-                "objecttype": "Vangst",
+                    ]
+                  },
+                  "base": {
+                    "node": "AttribuutRef",
+                    "attribuut": "waardering",
+                    "objecttype": "Vangst",
+                    "bron": null
+                  },
+                  "field": "kern",
+                  "bron": null
+                },
+                "field": "grondslag",
                 "bron": null
-              }
+              },
+              "rechts": {
+                "node": "FieldAccess",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "NIET_NEGATIEF"
+                },
+                "base": {
+                  "node": "AttribuutRef",
+                  "attribuut": "waardering",
+                  "objecttype": "Vangst",
+                  "bron": null
+                },
+                "field": "toeslag",
+                "bron": null
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": null
             },
-            {
-              "name": "kern",
-              "value": {
-                "node": "StructLiteral",
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "grondslagkopie van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "grondslagkopie",
+              "objecttype": "Vangst",
+              "bron": null
+            },
+            "value": {
+              "node": "FieldAccess",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF"
+              },
+              "base": {
+                "node": "FieldAccess",
                 "type": {
                   "node": "StructType",
                   "domain": "kernwaarde",
@@ -283,180 +465,22 @@
                     }
                   ]
                 },
-                "fields": [
-                  {
-                    "name": "eenheden",
-                    "value": {
-                      "node": "AttribuutRef",
-                      "attribuut": "stuks",
-                      "objecttype": "Vangst",
-                      "bron": null
-                    }
-                  },
-                  {
-                    "name": "grondslag",
-                    "value": {
-                      "node": "AttribuutRef",
-                      "attribuut": "grondbedrag",
-                      "objecttype": "Vangst",
-                      "bron": null
-                    }
-                  }
-                ],
-                "bron": null
-              }
-            }
-          ],
-          "bron": null
-        },
-        "voorwaarde": null,
-        "geldigheid": null
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "heffing van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "heffing",
-          "objecttype": "Vangst",
-          "bron": null
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "FieldAccess",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "NIET_NEGATIEF"
-            },
-            "base": {
-              "node": "FieldAccess",
-              "type": {
-                "node": "StructType",
-                "domain": "kernwaarde",
-                "fields": [
-                  {
-                    "name": "eenheden",
-                    "datatype": {
-                      "node": "Number",
-                      "whole": true,
-                      "decimals": 0,
-                      "sign": "NIET_NEGATIEF"
-                    }
-                  },
-                  {
-                    "name": "grondslag",
-                    "datatype": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 2,
-                      "sign": "NIET_NEGATIEF"
-                    }
-                  }
-                ]
-              },
-              "base": {
-                "node": "AttribuutRef",
-                "attribuut": "waardering",
-                "objecttype": "Vangst",
-                "bron": null
-              },
-              "field": "kern",
-              "bron": null
-            },
-            "field": "grondslag",
-            "bron": null
-          },
-          "rechts": {
-            "node": "FieldAccess",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "NIET_NEGATIEF"
-            },
-            "base": {
-              "node": "AttribuutRef",
-              "attribuut": "waardering",
-              "objecttype": "Vangst",
-              "bron": null
-            },
-            "field": "toeslag",
-            "bron": null
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": null
-        },
-        "voorwaarde": null,
-        "geldigheid": null
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "grondslagkopie van een vangst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "grondslagkopie",
-          "objecttype": "Vangst",
-          "bron": null
-        },
-        "waarde": {
-          "node": "FieldAccess",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "NIET_NEGATIEF"
-          },
-          "base": {
-            "node": "FieldAccess",
-            "type": {
-              "node": "StructType",
-              "domain": "kernwaarde",
-              "fields": [
-                {
-                  "name": "eenheden",
-                  "datatype": {
-                    "node": "Number",
-                    "whole": true,
-                    "decimals": 0,
-                    "sign": "NIET_NEGATIEF"
-                  }
+                "base": {
+                  "node": "AttribuutRef",
+                  "attribuut": "waardering",
+                  "objecttype": "Vangst",
+                  "bron": null
                 },
-                {
-                  "name": "grondslag",
-                  "datatype": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "NIET_NEGATIEF"
-                  }
-                }
-              ]
-            },
-            "base": {
-              "node": "AttribuutRef",
-              "attribuut": "waardering",
-              "objecttype": "Vangst",
+                "field": "kern",
+                "bron": null
+              },
+              "field": "grondslag",
               "bron": null
             },
-            "field": "kern",
-            "bron": null
-          },
-          "field": "grondslag",
-          "bron": null
-        },
-        "voorwaarde": null,
-        "geldigheid": null
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -464,7 +488,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

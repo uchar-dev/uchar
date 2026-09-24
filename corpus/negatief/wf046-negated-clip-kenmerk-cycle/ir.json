@@ -59,99 +59,108 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "stilwachtsom van een jutter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "stilwachtsom",
-          "objecttype": "Jutter",
-          "bron": "De stilwachtsom van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TOTAAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "stilwachtsom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "wachtvergoeding per maand",
+              "attribuut": "stilwachtsom",
               "objecttype": "Jutter",
-              "bron": "zijn wachtvergoeding per maand"
-            }
-          ],
-          "elementObjecttype": "Jutter",
-          "leegwaarde": null,
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "aangesteld",
-            "negatie": true,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "gedurende de tijd dat hij niet aangesteld is"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij niet aangesteld is",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De stilwachtsom van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "TOTAAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "wachtvergoeding per maand",
+                  "objecttype": "Jutter",
+                  "bron": "zijn wachtvergoeding per maand"
+                }
+              ],
+              "elementType": "Jutter",
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "aangesteld",
+                "negatie": true,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "gedurende de tijd dat hij niet aangesteld is"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij niet aangesteld is"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "aangesteld van een jutter",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aangesteld",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is aangesteld"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GROTER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "stilwachtsom",
-            "objecttype": "Jutter",
-            "bron": "zijn stilwachtsom"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "aangesteld van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "0"
-          },
-          "periode": null,
-          "bron": "zijn stilwachtsom groter is dan 0"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aangesteld",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is aangesteld"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "stilwachtsom",
+                "objecttype": "Jutter",
+                "bron": "zijn stilwachtsom"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "0"
+              },
+              "periode": null,
+              "bron": "zijn stilwachtsom groter is dan 0"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -159,7 +168,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

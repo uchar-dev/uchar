@@ -55,162 +55,190 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "midzomerse vondst",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "midzomers",
-          "objecttype": "Vondst",
-          "bron": "Een Vondst is midzomers"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "vondstdatum",
-            "objecttype": "Vondst",
-            "bron": "de vondstdatum van de Vondst"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "2026-06-21",
-            "type": {
-              "node": "Date",
-              "precision": "day"
+        "node": "Rule",
+        "name": "midzomerse vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "21-06-2026"
-          },
-          "periode": null,
-          "bron": "haar vondstdatum gelijk is aan 21-06-2026"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "midzomers",
+              "objecttype": "Vondst",
+              "bron": "Een Vondst is midzomers"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "vondstdatum",
+                "objecttype": "Vondst",
+                "bron": "de vondstdatum van de Vondst"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "date": "2026-06-21"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "21-06-2026"
+              },
+              "periode": null,
+              "bron": "haar vondstdatum gelijk is aan 21-06-2026"
+            },
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "nagekomen vondst",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "nagekomen",
-          "objecttype": "Vondst",
-          "bron": "Een Vondst is nagekomen"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "ONGELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "vondstdatum",
-            "objecttype": "Vondst",
-            "bron": "de vondstdatum van de Vondst"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "2026-06-21",
-            "type": {
-              "node": "Date",
-              "precision": "day"
+        "node": "Rule",
+        "name": "nagekomen vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "21-06-2026"
-          },
-          "periode": null,
-          "bron": "haar vondstdatum ongelijk is aan 21-06-2026"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "nagekomen",
+              "objecttype": "Vondst",
+              "bron": "Een Vondst is nagekomen"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "ONGELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "vondstdatum",
+                "objecttype": "Vondst",
+                "bron": "de vondstdatum van de Vondst"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "date": "2026-06-21"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "21-06-2026"
+              },
+              "periode": null,
+              "bron": "haar vondstdatum ongelijk is aan 21-06-2026"
+            },
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "vroege vondst",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vroeg",
-          "objecttype": "Vondst",
-          "bron": "Een Vondst is vroeg"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "EERDER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "vondstdatum",
-            "objecttype": "Vondst",
-            "bron": "de vondstdatum van de Vondst"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "2026-06-01",
-            "type": {
-              "node": "Date",
-              "precision": "day"
+        "node": "Rule",
+        "name": "vroege vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "01-06-2026"
-          },
-          "periode": null,
-          "bron": "haar vondstdatum eerder is dan 01-06-2026"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vroeg",
+              "objecttype": "Vondst",
+              "bron": "Een Vondst is vroeg"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "EERDER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "vondstdatum",
+                "objecttype": "Vondst",
+                "bron": "de vondstdatum van de Vondst"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "date": "2026-06-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "01-06-2026"
+              },
+              "periode": null,
+              "bron": "haar vondstdatum eerder is dan 01-06-2026"
+            },
+            "initialisation": false
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "keurdatum volgt de vondstdatum",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "keurdatum",
-          "objecttype": "Vondst",
-          "bron": "De keurdatum van een Vondst"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "vondstdatum",
-          "objecttype": "Vondst",
-          "bron": "de vondstdatum van de Vondst"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "keurdatum volgt de vondstdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "keurdatum",
+              "objecttype": "Vondst",
+              "bron": "De keurdatum van een Vondst"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "vondstdatum",
+              "objecttype": "Vondst",
+              "bron": "de vondstdatum van de Vondst"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -218,7 +246,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

@@ -145,305 +145,323 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal penningen van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal penningen",
-          "objecttype": "Jutter",
-          "bron": "Het aantal penningen van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "penningen",
-              "objecttype": "Jutter",
-              "bron": "penningen van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Penning",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal penningen van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "penningbezit",
-            "rol": "penning"
-          }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "penningtotaal van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "penningtotaal",
-          "objecttype": "Jutter",
-          "bron": "Het penningtotaal van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "SOM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "bedrag",
-              "objecttype": "Penning",
-              "bron": "het bedrag van alle penningen van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Penning",
-          "leegwaarde": {
-            "node": "Literal",
-            "waarde": "0",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "aantal penningen van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "0"
-          },
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de som van het bedrag van alle penningen van de Jutter of 0 als die er niet zijn",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "penningbezit",
-            "rol": "penning"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aantal penningen",
+              "objecttype": "Jutter",
+              "bron": "Het aantal penningen van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "penningen",
+                  "objecttype": "Jutter",
+                  "bron": "penningen van de Jutter"
+                }
+              ],
+              "elementType": "Penning",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "penningbezit",
+                "rol": "penning"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal penningen van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "aantal dossiers van een jutter",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aantal dossiers",
-          "objecttype": "Jutter",
-          "bron": "Het aantal dossiers van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "penningtotaal van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "dossiers",
+              "attribuut": "penningtotaal",
               "objecttype": "Jutter",
-              "bron": "dossiers van de Jutter"
-            }
-          ],
-          "elementObjecttype": "Dossier",
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "NIET_NEGATIEF"
-          },
-          "bron": "het aantal dossiers van de Jutter",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "dossiervoering",
-            "rol": "dossier"
+              "bron": "Het penningtotaal van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "SOM",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "bedrag",
+                  "objecttype": "Penning",
+                  "bron": "het bedrag van alle penningen van de Jutter"
+                }
+              ],
+              "elementType": "Penning",
+              "emptyFallback": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "0"
+              },
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "penningbezit",
+                "rol": "penning"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "de som van het bedrag van alle penningen van de Jutter of 0 als die er niet zijn"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal dossiers van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aantal dossiers",
+              "objecttype": "Jutter",
+              "bron": "Het aantal dossiers van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "AANTAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "dossiers",
+                  "objecttype": "Jutter",
+                  "bron": "dossiers van de Jutter"
+                }
+              ],
+              "elementType": "Dossier",
+              "sourceRole": {
+                "node": "RolBinding",
+                "feittype": "dossiervoering",
+                "rol": "dossier"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "NIET_NEGATIEF"
+              },
+              "bron": "het aantal dossiers van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
     "objectCreaties": [
       {
-        "node": "ResolvedObjectCreatie",
-        "naam": "penning voor een gerechtigde jutter",
-        "nieuwType": "Penning",
-        "subject": "Jutter",
-        "toekenningen": [
+        "node": "ObjectCreation",
+        "name": "penning voor een gerechtigde jutter",
+        "versions": [
           {
-            "node": "Toekenning",
-            "attribuut": "bedrag",
-            "waarde": {
-              "node": "AttribuutRef",
-              "attribuut": "vondstwaarde",
-              "objecttype": "Jutter",
-              "bron": "de vondstwaarde van de Jutter"
-            },
-            "kenmerk": false
-          },
-          {
-            "node": "Toekenning",
-            "attribuut": "uitgereikt",
-            "waarde": {
-              "node": "Literal",
-              "waarde": "waar",
-              "type": {
-                "node": "Booleaan"
+            "createdType": "Penning",
+            "subject": "Jutter",
+            "initialisations": [
+              {
+                "node": "Toekenning",
+                "attribuut": "bedrag",
+                "waarde": {
+                  "node": "AttribuutRef",
+                  "attribuut": "vondstwaarde",
+                  "objecttype": "Jutter",
+                  "bron": "de vondstwaarde van de Jutter"
+                },
+                "kenmerk": false
               },
-              "bron": "waar"
+              {
+                "node": "Toekenning",
+                "attribuut": "uitgereikt",
+                "waarde": {
+                  "node": "Literal",
+                  "value": {
+                    "boolean": true
+                  },
+                  "type": {
+                    "node": "Booleaan"
+                  },
+                  "bron": "waar"
+                },
+                "kenmerk": true
+              }
+            ],
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "penninggerechtigd",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "de Jutter is penninggerechtigd"
             },
-            "kenmerk": true
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            }
           }
-        ],
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "penninggerechtigd",
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "de Jutter is penninggerechtigd"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedObjectCreatie",
-        "naam": "dossier voor een gerechtigde jutter",
-        "nieuwType": "Dossier",
-        "subject": null,
-        "toekenningen": [],
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "penninggerechtigd",
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "de Jutter is penninggerechtigd"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "ObjectCreation",
+        "name": "dossier voor een gerechtigde jutter",
+        "versions": [
+          {
+            "createdType": "Dossier",
+            "subject": null,
+            "initialisations": [],
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "penninggerechtigd",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "de Jutter is penninggerechtigd"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            }
+          }
+        ]
       }
     ],
     "verdelingen": [],
     "consistenties": [
       {
-        "node": "ResolvedConsistentie",
-        "naam": "penningcontrole",
-        "subject": "Penning",
-        "assertie": {
-          "node": "Kenmerk",
-          "kenmerk": "uitgereikt",
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "de Penning is uitgereikt"
-        },
-        "bron": "Er moet worden voldaan aan: elke Penning is uitgereikt",
-        "line": 1,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Consistency",
+        "name": "penningcontrole",
+        "versions": [
+          {
+            "subject": "Penning",
+            "assertion": {
+              "node": "Kenmerk",
+              "kenmerk": "uitgereikt",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "de Penning is uitgereikt"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "Er moet worden voldaan aan: elke Penning is uitgereikt",
+            "line": 1
+          }
+        ]
       },
       {
-        "node": "ResolvedConsistentie",
-        "naam": "houderscontrole",
-        "subject": "Penning",
-        "assertie": {
-          "node": "Vergelijking",
-          "op": "GROTER_OF_GELIJK",
-          "links": {
-            "node": "Functie",
-            "kind": "AANTAL",
-            "argumenten": [
-              {
-                "node": "AttribuutRef",
-                "attribuut": "houder",
-                "objecttype": "Penning",
-                "bron": "houder van de Penning"
-              }
-            ],
-            "elementObjecttype": "Jutter",
-            "leegwaarde": null,
-            "filter": null,
-            "dimensieSelectie": null,
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "NIET_NEGATIEF"
+        "node": "Consistency",
+        "name": "houderscontrole",
+        "versions": [
+          {
+            "subject": "Penning",
+            "assertion": {
+              "node": "Vergelijking",
+              "op": "GROTER_OF_GELIJK",
+              "links": {
+                "node": "Aggregation",
+                "kind": "AANTAL",
+                "arguments": [
+                  {
+                    "node": "AttribuutRef",
+                    "attribuut": "houder",
+                    "objecttype": "Penning",
+                    "bron": "houder van de Penning"
+                  }
+                ],
+                "elementType": "Jutter",
+                "sourceRole": {
+                  "node": "RolBinding",
+                  "feittype": "penningbezit",
+                  "rol": "houder"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "NIET_NEGATIEF"
+                },
+                "bron": "het aantal houder van de Penning"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "1"
+              },
+              "periode": null,
+              "bron": "het aantal houder van de Penning is groter of gelijk aan 1"
             },
-            "bron": "het aantal houder van de Penning",
-            "granulariteit": null,
-            "bronRol": {
-              "node": "RolBinding",
-              "feittype": "penningbezit",
-              "rol": "houder"
-            }
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "1",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "1"
-          },
-          "periode": null,
-          "bron": "het aantal houder van de Penning is groter of gelijk aan 1"
-        },
-        "bron": "Er moet worden voldaan aan: elke Penning heeft een houder",
-        "line": 2,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "bron": "Er moet worden voldaan aan: elke Penning heeft een houder",
+            "line": 2
+          }
+        ]
       }
     ],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

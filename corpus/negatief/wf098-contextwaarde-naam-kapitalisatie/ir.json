@@ -49,45 +49,49 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "huidig penningbedrag",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "huidig penningbedrag",
-          "objecttype": "Jutter",
-          "bron": "Het huidig penningbedrag van een Jutter"
-        },
-        "waarde": {
-          "node": "TemporalRead",
-          "basis": {
-            "node": "ParameterRef",
-            "parameter": "penningbedrag",
-            "bron": "het penningbedrag"
-          },
-          "datum": {
-            "node": "Constante",
-            "naam": "rekendatum",
-            "type": {
-              "node": "Date",
-              "precision": "day"
+        "node": "Rule",
+        "name": "huidig penningbedrag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "de rekendatum"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het penningbedrag op de rekendatum"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "huidig penningbedrag",
+              "objecttype": "Jutter",
+              "bron": "Het huidig penningbedrag van een Jutter"
+            },
+            "value": {
+              "node": "TemporalRead",
+              "basis": {
+                "node": "ParameterRef",
+                "parameter": "penningbedrag",
+                "bron": "het penningbedrag"
+              },
+              "datum": {
+                "node": "ContextValue",
+                "name": "rekendatum",
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "bron": "de rekendatum"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het penningbedrag op de rekendatum"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -95,7 +99,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

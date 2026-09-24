@@ -90,69 +90,75 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "sleeplengte van een sleepbaan",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "sleeplengte",
-          "objecttype": "Sleepbaan",
-          "bron": "De sleeplengte van een Sleepbaan"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "Literal",
-            "waarde": "2,5",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 1,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "km",
-                "system": "Afstandt",
-                "canonical": "m",
-                "factorToCanonical": {
-                  "num": 1000,
-                  "den": 1
-                }
-              }
+        "node": "Rule",
+        "name": "sleeplengte van een sleepbaan",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "2,5 km"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "aanloop",
-            "objecttype": "Sleepbaan",
-            "bron": "de aanloop van de Sleepbaan"
-          },
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 1,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "km",
-              "system": "Afstandt",
-              "canonical": "m",
-              "factorToCanonical": {
-                "num": 1000,
-                "den": 1
-              }
-            }
-          },
-          "bron": "2,5 km plus de aanloop van de Sleepbaan"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "sleeplengte",
+              "objecttype": "Sleepbaan",
+              "bron": "De sleeplengte van een Sleepbaan"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "Literal",
+                "value": {
+                  "number": "2.5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 1,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "km",
+                    "system": "Afstandt",
+                    "canonical": "m",
+                    "factorToCanonical": {
+                      "num": 1000,
+                      "den": 1
+                    }
+                  }
+                },
+                "bron": "2,5 km"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "aanloop",
+                "objecttype": "Sleepbaan",
+                "bron": "de aanloop van de Sleepbaan"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 1,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "km",
+                  "system": "Afstandt",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1000,
+                    "den": 1
+                  }
+                }
+              },
+              "bron": "2,5 km plus de aanloop van de Sleepbaan"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -160,7 +166,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

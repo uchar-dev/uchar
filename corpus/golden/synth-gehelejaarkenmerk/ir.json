@@ -94,82 +94,92 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "toeslag van een schuit",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "toeslag",
-          "objecttype": "Schuit",
-          "bron": "De toeslag van een Schuit"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "lengte",
-          "objecttype": "Schuit",
-          "bron": "de lengte van de Schuit"
-        },
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "bedrijvig",
-          "negatie": false,
-          "eigenaar": null,
-          "periode": {
-            "node": "GeheelPeriode",
-            "jaar": true,
-            "niet": false
-          },
-          "bron": "de werf van de Schuit gedurende het gehele jaar bedrijvig is",
-          "navigatieBinding": {
-            "node": "RolBinding",
-            "feittype": "ligplaats",
-            "rol": "werf"
+        "node": "Rule",
+        "name": "toeslag van een schuit",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "toeslag",
+              "objecttype": "Schuit",
+              "bron": "De toeslag van een Schuit"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "lengte",
+              "objecttype": "Schuit",
+              "bron": "de lengte van de Schuit"
+            },
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "bedrijvig",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": {
+                "node": "GeheelPeriode",
+                "jaar": true,
+                "niet": false
+              },
+              "bron": "de werf van de Schuit gedurende het gehele jaar bedrijvig is",
+              "navigatieBinding": {
+                "node": "RolBinding",
+                "feittype": "ligplaats",
+                "rol": "werf"
+              }
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "korting van een schuit",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "korting",
-          "objecttype": "Schuit",
-          "bron": "De korting van een Schuit"
-        },
-        "waarde": {
-          "node": "AttribuutRef",
-          "attribuut": "lengte",
-          "objecttype": "Schuit",
-          "bron": "de lengte van de Schuit"
-        },
-        "voorwaarde": {
-          "node": "Kenmerk",
-          "kenmerk": "bedrijvig",
-          "negatie": false,
-          "eigenaar": null,
-          "periode": {
-            "node": "GeheelPeriode",
-            "jaar": true,
-            "niet": true
-          },
-          "bron": "de werf van de Schuit niet gedurende het gehele jaar bedrijvig is",
-          "navigatieBinding": {
-            "node": "RolBinding",
-            "feittype": "ligplaats",
-            "rol": "werf"
+        "node": "Rule",
+        "name": "korting van een schuit",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "korting",
+              "objecttype": "Schuit",
+              "bron": "De korting van een Schuit"
+            },
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "lengte",
+              "objecttype": "Schuit",
+              "bron": "de lengte van de Schuit"
+            },
+            "condition": {
+              "node": "Kenmerk",
+              "kenmerk": "bedrijvig",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": {
+                "node": "GeheelPeriode",
+                "jaar": true,
+                "niet": true
+              },
+              "bron": "de werf van de Schuit niet gedurende het gehele jaar bedrijvig is",
+              "navigatieBinding": {
+                "node": "RolBinding",
+                "feittype": "ligplaats",
+                "rol": "werf"
+              }
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
           }
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -177,7 +187,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

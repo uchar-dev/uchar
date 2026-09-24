@@ -69,98 +69,112 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bergingstarief van een vondst",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bergingstarief",
-          "objecttype": "Vondst",
-          "bron": "Het bergingstarief van een Vondst"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "21",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "%",
-              "canonical": "%",
-              "factorToCanonical": {
-                "num": 1,
-                "den": 1
-              }
-            }
-          },
-          "bron": "21%"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "standaardbelast bij tarief",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "standaardbelast",
-          "objecttype": "Vondst",
-          "bron": "Een Vondst is standaardbelast"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Vergelijking",
-          "op": "GELIJK",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "vondsttarief",
-            "objecttype": "Vondst",
-            "bron": "het vondsttarief van de Vondst"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "21",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "%",
-                "canonical": "%",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+        "node": "Rule",
+        "name": "bergingstarief van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bergingstarief",
+              "objecttype": "Vondst",
+              "bron": "Het bergingstarief van een Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "21"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "%",
+                  "canonical": "%",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
               },
-              "presentation": "percentage"
+              "bron": "21%"
             },
-            "bron": "21%"
-          },
-          "periode": null,
-          "bron": "het vondsttarief van de Vondst gelijk is aan 21%"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "standaardbelast bij tarief",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "standaardbelast",
+              "objecttype": "Vondst",
+              "bron": "Een Vondst is standaardbelast"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "vondsttarief",
+                "objecttype": "Vondst",
+                "bron": "het vondsttarief van de Vondst"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "21"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "%",
+                    "canonical": "%",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  "presentation": "percentage"
+                },
+                "bron": "21%"
+              },
+              "periode": null,
+              "bron": "het vondsttarief van de Vondst gelijk is aan 21%"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -168,7 +182,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

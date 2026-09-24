@@ -63,58 +63,64 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "gemengd bij tenminste twee",
-        "soort": "KENMERKTOEKENNING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "gemengd",
-          "objecttype": "Jutter",
-          "bron": "Een Jutter is gemengd"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "waar",
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "waar"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "TEN_MINSTE",
-          "drempel": 2,
-          "onderdelen": [
-            {
-              "node": "RoleMembership",
-              "factType": "wachtindeling",
-              "role": "wachtjutter",
-              "negated": false,
-              "bron": "hij een wachtjutter is"
+        "node": "Rule",
+        "name": "gemengd bij tenminste twee",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "RoleMembership",
-              "factType": "wachtindeling",
-              "role": "wachtjutter",
-              "negated": true,
-              "bron": "hij geen wachtjutter is"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "gemengd",
+              "objecttype": "Jutter",
+              "bron": "Een Jutter is gemengd"
             },
-            {
-              "node": "Kenmerk",
-              "kenmerk": "actief",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "hij actief is"
-            }
-          ],
-          "bron": "ten minste 2 van de volgende gelden"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "waar"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "TEN_MINSTE",
+              "drempel": 2,
+              "onderdelen": [
+                {
+                  "node": "RoleMembership",
+                  "factType": "wachtindeling",
+                  "role": "wachtjutter",
+                  "negated": false,
+                  "bron": "hij een wachtjutter is"
+                },
+                {
+                  "node": "RoleMembership",
+                  "factType": "wachtindeling",
+                  "role": "wachtjutter",
+                  "negated": true,
+                  "bron": "hij geen wachtjutter is"
+                },
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "actief",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "hij actief is"
+                }
+              ],
+              "bron": "ten minste 2 van de volgende gelden"
+            },
+            "initialisation": false
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -122,7 +128,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

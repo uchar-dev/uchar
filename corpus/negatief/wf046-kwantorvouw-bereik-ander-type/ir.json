@@ -76,110 +76,119 @@
     "resolvedDagsoorten": [],
     "objectCreaties": [
       {
-        "node": "ResolvedObjectCreatie",
-        "naam": "richt een post in",
-        "nieuwType": "Post",
-        "subject": "Wachter",
-        "toekenningen": [
+        "node": "ObjectCreation",
+        "name": "richt een post in",
+        "versions": [
           {
-            "node": "Toekenning",
-            "attribuut": "nummer",
-            "waarde": {
-              "node": "Literal",
-              "waarde": "1",
-              "type": {
-                "node": "Number",
-                "whole": true,
-                "decimals": 0,
-                "sign": "ONBEPAALD"
-              },
-              "bron": "1"
-            },
-            "kenmerk": false
-          }
-        ],
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Vergelijking",
-              "op": "KLEINER",
-              "links": {
-                "node": "AttribuutRef",
-                "attribuut": "rang",
-                "objecttype": "Wachter",
-                "bron": "de rang van de Wachter"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "5",
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "ONBEPAALD"
-                },
-                "bron": "5"
-              },
-              "periode": null,
-              "bron": "de rang van de Wachter is kleiner dan 5"
-            },
-            {
-              "node": "Kwantorvouw",
-              "kwantor": "ALLE",
-              "elementObjecttype": "Post",
-              "filter": null,
-              "toets": {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "nummer",
-                  "objecttype": "Post",
-                  "bron": "de nummer van alle posten van de Wachter"
-                },
-                "rechts": {
+            "createdType": "Post",
+            "subject": "Wachter",
+            "initialisations": [
+              {
+                "node": "Toekenning",
+                "attribuut": "nummer",
+                "waarde": {
                   "node": "Literal",
-                  "waarde": "5",
+                  "value": {
+                    "number": "1"
+                  },
                   "type": {
                     "node": "Number",
                     "whole": true,
                     "decimals": 0,
                     "sign": "ONBEPAALD"
                   },
-                  "bron": "5"
+                  "bron": "1"
                 },
-                "periode": null,
-                "bron": "het nummer is groter dan 5"
-              },
-              "bron": "alle posten van de Wachter hebben een nummer groter dan 5",
-              "bronRol": {
-                "node": "RolBinding",
-                "feittype": "bemanning",
-                "rol": "post"
+                "kenmerk": false
               }
+            ],
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Vergelijking",
+                  "op": "KLEINER",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "rang",
+                    "objecttype": "Wachter",
+                    "bron": "de rang van de Wachter"
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "5"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "ONBEPAALD"
+                    },
+                    "bron": "5"
+                  },
+                  "periode": null,
+                  "bron": "de rang van de Wachter is kleiner dan 5"
+                },
+                {
+                  "node": "Kwantorvouw",
+                  "kwantor": "ALLE",
+                  "elementObjecttype": "Post",
+                  "filter": null,
+                  "toets": {
+                    "node": "Vergelijking",
+                    "op": "GROTER",
+                    "links": {
+                      "node": "AttribuutRef",
+                      "attribuut": "nummer",
+                      "objecttype": "Post",
+                      "bron": "de nummer van alle posten van de Wachter"
+                    },
+                    "rechts": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "5"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "ONBEPAALD"
+                      },
+                      "bron": "5"
+                    },
+                    "periode": null,
+                    "bron": "het nummer is groter dan 5"
+                  },
+                  "bron": "alle posten van de Wachter hebben een nummer groter dan 5",
+                  "bronRol": {
+                    "node": "RolBinding",
+                    "feittype": "bemanning",
+                    "rol": "post"
+                  }
+                }
+              ],
+              "bron": "de rang van de Wachter is kleiner dan 5 en alle posten van de Wachter hebben een nummer groter dan 5"
+            },
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "connectingRole": {
+              "node": "RolBinding",
+              "feittype": "bemanning",
+              "rol": "post"
             }
-          ],
-          "bron": "de rang van de Wachter is kleiner dan 5 en alle posten van de Wachter hebben een nummer groter dan 5"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        },
-        "verbindendeRol": {
-          "node": "RolBinding",
-          "feittype": "bemanning",
-          "rol": "post"
-        }
+          }
+        ]
       }
     ],
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": [

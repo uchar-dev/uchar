@@ -94,163 +94,168 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "wachtsom van een jutter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "wachtsom",
-          "objecttype": "Jutter",
-          "bron": "De wachtsom van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TOTAAL",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "wachtvergoeding per maand",
-              "objecttype": "Jutter",
-              "bron": "zijn wachtvergoeding per maand"
-            }
-          ],
-          "elementObjecttype": "Jutter",
-          "leegwaarde": null,
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "wachtplichtig",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "gedurende de tijd dat hij wachtplichtig is"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "topsom van een jutter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "topsom",
-          "objecttype": "Jutter",
-          "bron": "De topsom van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TOTAAL",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "wachtvergoeding per maand",
-              "objecttype": "Jutter",
-              "bron": "zijn wachtvergoeding per maand"
-            }
-          ],
-          "elementObjecttype": "Jutter",
-          "leegwaarde": null,
-          "filter": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "wachtvergoeding per maand",
-              "objecttype": "Jutter",
-              "bron": "zijn wachtvergoeding per maand"
+        "node": "Rule",
+        "name": "wachtsom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "10",
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "wachtsom",
+              "objecttype": "Jutter",
+              "bron": "De wachtsom van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "TOTAAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "wachtvergoeding per maand",
+                  "objecttype": "Jutter",
+                  "bron": "zijn wachtvergoeding per maand"
+                }
+              ],
+              "elementType": "Jutter",
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "wachtplichtig",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "gedurende de tijd dat hij wachtplichtig is"
+              },
               "type": {
                 "node": "Number",
                 "whole": true,
                 "decimals": 0,
                 "sign": "ONBEPAALD"
               },
-              "bron": "10"
+              "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is"
             },
-            "periode": null,
-            "bron": "gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "premiesom van een jutter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "premiesom",
-          "objecttype": "Jutter",
-          "bron": "De premiesom van een Jutter"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "TOTAAL",
-          "argumenten": [
-            {
+        "node": "Rule",
+        "name": "topsom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
               "node": "AttribuutRef",
-              "attribuut": "jaarpremie",
+              "attribuut": "topsom",
               "objecttype": "Jutter",
-              "bron": "zijn jaarpremie"
-            }
-          ],
-          "elementObjecttype": "Jutter",
-          "leegwaarde": null,
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "wachtplichtig",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "gedurende de tijd dat hij wachtplichtig is"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het totaal van zijn jaarpremie gedurende de tijd dat hij wachtplichtig is",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "De topsom van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "TOTAAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "wachtvergoeding per maand",
+                  "objecttype": "Jutter",
+                  "bron": "zijn wachtvergoeding per maand"
+                }
+              ],
+              "elementType": "Jutter",
+              "filter": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "wachtvergoeding per maand",
+                  "objecttype": "Jutter",
+                  "bron": "zijn wachtvergoeding per maand"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "ONBEPAALD"
+                  },
+                  "bron": "10"
+                },
+                "periode": null,
+                "bron": "gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "premiesom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "premiesom",
+              "objecttype": "Jutter",
+              "bron": "De premiesom van een Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "TOTAAL",
+              "arguments": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "jaarpremie",
+                  "objecttype": "Jutter",
+                  "bron": "zijn jaarpremie"
+                }
+              ],
+              "elementType": "Jutter",
+              "filter": {
+                "node": "Kenmerk",
+                "kenmerk": "wachtplichtig",
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "gedurende de tijd dat hij wachtplichtig is"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het totaal van zijn jaarpremie gedurende de tijd dat hij wachtplichtig is"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -258,7 +263,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

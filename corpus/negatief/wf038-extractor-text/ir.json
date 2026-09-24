@@ -33,47 +33,48 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "Berekening vondstjaar",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vondstjaar",
-          "objecttype": "Vondst",
-          "bron": "Het vondstjaar van een Vondst"
-        },
-        "waarde": {
-          "node": "Functie",
-          "kind": "MAAND_UIT",
-          "argumenten": [
-            {
-              "node": "Literal",
-              "waarde": "strandvondst",
+        "node": "Rule",
+        "name": "Berekening vondstjaar",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vondstjaar",
+              "objecttype": "Vondst",
+              "bron": "Het vondstjaar van een Vondst"
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "MAAND_UIT",
+              "arguments": [
+                {
+                  "node": "Literal",
+                  "value": {
+                    "text": "strandvondst"
+                  },
+                  "type": {
+                    "node": "Tekst"
+                  },
+                  "bron": "'strandvondst'"
+                }
+              ],
               "type": {
-                "node": "Tekst"
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
               },
-              "bron": "'strandvondst'"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "de maand uit 'strandvondst'",
-          "granulariteit": null
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "bron": "de maand uit 'strandvondst'"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -81,7 +82,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

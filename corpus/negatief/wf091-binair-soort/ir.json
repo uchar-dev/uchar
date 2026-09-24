@@ -312,41 +312,45 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "aandeel van de Jutter",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aandeel",
-          "objecttype": "Jutter",
-          "bron": "De aandeel van een Jutter"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "deel",
-            "objecttype": "Jutter",
-            "bron": "de deel van de Jutter"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "deel",
-            "objecttype": "Jutter",
-            "bron": "de deel van de Jutter"
-          },
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "het deel van de Jutter plus het deel van de Jutter"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "aandeel van de Jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aandeel",
+              "objecttype": "Jutter",
+              "bron": "De aandeel van een Jutter"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "deel",
+                "objecttype": "Jutter",
+                "bron": "de deel van de Jutter"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "deel",
+                "objecttype": "Jutter",
+                "bron": "de deel van de Jutter"
+              },
+              "type": {
+                "node": "Booleaan"
+              },
+              "bron": "het deel van de Jutter plus het deel van de Jutter"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -354,7 +358,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

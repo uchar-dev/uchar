@@ -58,22 +58,30 @@
     "consistenties": [],
     "uniciteiten": [
       {
-        "node": "ResolvedUniciteit",
-        "naam": "dubbel temporeel enkelvoudig",
-        "subject": "Strandvondst",
-        "sleutels": [
-          "vondstnummer",
-          "kavelnummer"
-        ],
-        "bron": "De vondstnummers en kavelnummers van alle Strandvondsten moeten uniek zijn.",
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Uniqueness",
+        "name": "dubbel temporeel enkelvoudig",
+        "versions": [
+          {
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Strandvondst",
+                "keys": [
+                  "vondstnummer",
+                  "kavelnummer"
+                ]
+              }
+            ],
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "bron": "De vondstnummers en kavelnummers van alle Strandvondsten moeten uniek zijn."
+          }
+        ]
       }
     ],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

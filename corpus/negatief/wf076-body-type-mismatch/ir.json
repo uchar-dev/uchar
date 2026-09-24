@@ -43,50 +43,62 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bepaal aanslag",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "aanslag",
-          "objecttype": "Jutter",
-          "bron": "de aanslag"
-        },
-        "waarde": {
-          "node": "Let",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "ONBEPAALD"
-          },
-          "binder": "x",
-          "value": {
-            "node": "Literal",
-            "waarde": "1.00",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 2,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "bepaal aanslag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": null
-          },
-          "body": {
-            "node": "Literal",
-            "waarde": "5.0000",
-            "type": {
-              "node": "Number",
-              "whole": false,
-              "decimals": 4,
-              "sign": "ONBEPAALD"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "aanslag",
+              "objecttype": "Jutter",
+              "bron": "de aanslag"
             },
-            "bron": null
-          },
-          "bron": "een verkeerd getypeerde let"
-        },
-        "voorwaarde": null,
-        "geldigheid": null
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "ONBEPAALD"
+              },
+              "binder": "x",
+              "value": {
+                "node": "Literal",
+                "value": {
+                  "number": "1.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": null
+              },
+              "body": {
+                "node": "Literal",
+                "value": {
+                  "number": "5.0000"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 4,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": null
+              },
+              "bron": "een verkeerd getypeerde let"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -94,7 +106,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

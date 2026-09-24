@@ -70,47 +70,51 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "vaarwater",
-        "soort": "BEREKENING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vaarwater",
-          "objecttype": "Berging",
-          "bron": "de vaarwater"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "tarief",
-            "objecttype": "Berging",
-            "bron": "de tarief"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "tarief",
-            "objecttype": "Berging",
-            "bron": "de tarief"
-          },
-          "type": {
-            "node": "Enumeratie",
-            "domein": "Vaarwater",
-            "waarden": [
-              "Wad",
-              "Zeegat",
-              "Ruimzee"
-            ]
-          },
-          "bron": "de tarief plus de tarief"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "vaarwater",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vaarwater",
+              "objecttype": "Berging",
+              "bron": "de vaarwater"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "tarief",
+                "objecttype": "Berging",
+                "bron": "de tarief"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "tarief",
+                "objecttype": "Berging",
+                "bron": "de tarief"
+              },
+              "type": {
+                "node": "Enumeratie",
+                "domein": "Vaarwater",
+                "waarden": [
+                  "Wad",
+                  "Zeegat",
+                  "Ruimzee"
+                ]
+              },
+              "bron": "de tarief plus de tarief"
+            },
+            "initialisation": false,
+            "presentation": "BEREKENING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -118,7 +122,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

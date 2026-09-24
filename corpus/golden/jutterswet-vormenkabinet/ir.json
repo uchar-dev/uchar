@@ -121,100 +121,113 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "vakcijfer uit voorjaarsopbrengst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "vakcijfer",
-          "objecttype": "Schouwveld",
-          "bron": "Het vakcijfer van een Schouwveld"
-        },
-        "waarde": {
-          "node": "DimensieCel",
-          "attribuut": {
-            "node": "AttribuutRef",
-            "attribuut": "opbrengst",
-            "objecttype": "Schouwveld",
-            "bron": "de opbrengst in het voorjaar"
-          },
-          "labels": [
-            "voorjaar"
-          ],
-          "bron": "de opbrengst in het voorjaar"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "vakcijfer uit voorjaarsopbrengst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "vakcijfer",
+              "objecttype": "Schouwveld",
+              "bron": "Het vakcijfer van een Schouwveld"
+            },
+            "value": {
+              "node": "DimensieCel",
+              "attribuut": {
+                "node": "AttribuutRef",
+                "attribuut": "opbrengst",
+                "objecttype": "Schouwveld",
+                "bron": "de opbrengst in het voorjaar"
+              },
+              "labels": [
+                "voorjaar"
+              ],
+              "bron": "de opbrengst in het voorjaar"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       },
       {
-        "node": "ResolvedRegel",
-        "naam": "peiling bij dubbele borging",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "peiling",
-          "objecttype": "Schouwveld",
-          "bron": "De peiling van een Schouwveld"
-        },
-        "waarde": {
-          "node": "Literal",
-          "waarde": "1",
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "1"
-        },
-        "voorwaarde": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Kenmerk",
-              "kenmerk": "bewaakt",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "het Schouwveld bewaakt is"
+        "node": "Rule",
+        "name": "peiling bij dubbele borging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            {
-              "node": "Kenmerk",
-              "kenmerk": "omheind",
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "het Schouwveld omheind is"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "peiling",
+              "objecttype": "Schouwveld",
+              "bron": "De peiling van een Schouwveld"
             },
-            {
-              "node": "Periode",
-              "vanaf": {
-                "node": "Literal",
-                "waarde": "2026-01-01",
-                "type": {
-                  "node": "Date",
-                  "precision": "day"
-                },
-                "bron": "2026-01-01"
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "1"
               },
-              "tot": null,
-              "totInclusief": false,
-              "bron": "vanaf 1 januari 2026"
-            }
-          ],
-          "bron": "bewaakt, omheind, en vanaf 1 januari 2026"
-        },
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "1"
+            },
+            "condition": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "bewaakt",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "het Schouwveld bewaakt is"
+                },
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "omheind",
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "het Schouwveld omheind is"
+                },
+                {
+                  "node": "Periode",
+                  "vanaf": {
+                    "node": "Literal",
+                    "value": {
+                      "date": "2026-01-01"
+                    },
+                    "type": {
+                      "node": "Date",
+                      "precision": "day"
+                    },
+                    "bron": "2026-01-01"
+                  },
+                  "tot": null,
+                  "totInclusief": false,
+                  "bron": "vanaf 1 januari 2026"
+                }
+              ],
+              "bron": "bewaakt, omheind, en vanaf 1 januari 2026"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -222,7 +235,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [
       {

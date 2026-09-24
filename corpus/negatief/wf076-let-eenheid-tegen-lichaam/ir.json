@@ -90,53 +90,57 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "kopie van het gewicht",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "kopie",
-          "objecttype": "Jutter",
-          "bron": "de kopie van de Jutter"
-        },
-        "waarde": {
-          "node": "Let",
-          "type": {
-            "node": "Number",
-            "whole": false,
-            "decimals": 2,
-            "sign": "NIET_NEGATIEF",
-            "unit": {
-              "node": "Unit",
-              "abbreviation": "t",
-              "system": "Gewicht",
-              "canonical": "kg",
-              "factorToCanonical": {
-                "num": 1000,
-                "den": 1
-              }
-            }
-          },
-          "binder": "b",
-          "value": {
-            "node": "AttribuutRef",
-            "attribuut": "gewicht",
-            "objecttype": "Jutter",
-            "bron": "het gewicht van de Jutter"
-          },
-          "body": {
-            "node": "BinderRef",
-            "name": "b",
-            "bron": "het gewicht"
-          },
-          "bron": "het gewicht als kopie"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+        "node": "Rule",
+        "name": "kopie van het gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "kopie",
+              "objecttype": "Jutter",
+              "bron": "de kopie van de Jutter"
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "NIET_NEGATIEF",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "t",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1000,
+                    "den": 1
+                  }
+                }
+              },
+              "binder": "b",
+              "value": {
+                "node": "AttribuutRef",
+                "attribuut": "gewicht",
+                "objecttype": "Jutter",
+                "bron": "het gewicht van de Jutter"
+              },
+              "body": {
+                "node": "BinderRef",
+                "name": "b",
+                "bron": "het gewicht"
+              },
+              "bron": "het gewicht als kopie"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -144,7 +148,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []

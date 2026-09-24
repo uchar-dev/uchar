@@ -83,174 +83,194 @@
   "rules": {
     "resolvedRegels": [
       {
-        "node": "ResolvedRegel",
-        "naam": "bruto van een vondst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "bruto",
-          "objecttype": "Vondst",
-          "bron": "De bruto van een Vondst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "gewicht",
-            "objecttype": "Vondst",
-            "bron": "het gewicht"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "5",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+        "node": "Rule",
+        "name": "bruto van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
             },
-            "bron": "5"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het gewicht van de Vondst plus 5"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "marge van een vondst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "marge",
-          "objecttype": "Vondst",
-          "bron": "De marge van een Vondst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "MIN",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "gewicht",
-            "objecttype": "Vondst",
-            "bron": "het gewicht"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "korting",
-            "objecttype": "Vondst",
-            "bron": "de korting"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het gewicht van de Vondst min de korting"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "netto van een vondst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "netto",
-          "objecttype": "Vondst",
-          "bron": "De netto van een Vondst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "VERMINDERD_MET",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "gewicht",
-            "objecttype": "Vondst",
-            "bron": "het gewicht"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "korting",
-            "objecttype": "Vondst",
-            "bron": "de korting"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "het gewicht van de Vondst verminderd met de korting"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
-      },
-      {
-        "node": "ResolvedRegel",
-        "naam": "som van een vondst",
-        "soort": "GELIJKSTELLING",
-        "doel": {
-          "node": "AttribuutRef",
-          "attribuut": "som",
-          "objecttype": "Vondst",
-          "bron": "De som van een Vondst"
-        },
-        "waarde": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
-            "node": "Literal",
-            "waarde": "5",
-            "type": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "ONBEPAALD"
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "bruto",
+              "objecttype": "Vondst",
+              "bron": "De bruto van een Vondst"
             },
-            "bron": "5"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "korting",
-            "objecttype": "Vondst",
-            "bron": "de korting"
-          },
-          "type": {
-            "node": "Number",
-            "whole": true,
-            "decimals": 0,
-            "sign": "ONBEPAALD"
-          },
-          "bron": "5 plus de korting van de Vondst"
-        },
-        "voorwaarde": null,
-        "geldigheid": {
-          "node": "Geldigheid",
-          "vanaf": null,
-          "tot": null
-        }
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "gewicht",
+                "objecttype": "Vondst",
+                "bron": "het gewicht"
+              },
+              "rechts": {
+                "node": "Literal",
+                "value": {
+                  "number": "5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het gewicht van de Vondst plus 5"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "marge van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "marge",
+              "objecttype": "Vondst",
+              "bron": "De marge van een Vondst"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "MIN",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "gewicht",
+                "objecttype": "Vondst",
+                "bron": "het gewicht"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "korting",
+                "objecttype": "Vondst",
+                "bron": "de korting"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het gewicht van de Vondst min de korting"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "netto van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "netto",
+              "objecttype": "Vondst",
+              "bron": "De netto van een Vondst"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "VERMINDERD_MET",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "gewicht",
+                "objecttype": "Vondst",
+                "bron": "het gewicht"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "korting",
+                "objecttype": "Vondst",
+                "bron": "de korting"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "het gewicht van de Vondst verminderd met de korting"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "som van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Geldigheid",
+              "vanaf": null,
+              "tot": null
+            },
+            "target": {
+              "node": "AttribuutRef",
+              "attribuut": "som",
+              "objecttype": "Vondst",
+              "bron": "De som van een Vondst"
+            },
+            "value": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "Literal",
+                "value": {
+                  "number": "5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "ONBEPAALD"
+                },
+                "bron": "5"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "korting",
+                "objecttype": "Vondst",
+                "bron": "de korting"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "ONBEPAALD"
+              },
+              "bron": "5 plus de korting van de Vondst"
+            },
+            "initialisation": false,
+            "presentation": "GELIJKSTELLING"
+          }
+        ]
       }
     ],
     "resolvedDagsoorten": [],
@@ -258,7 +278,6 @@
     "verdelingen": [],
     "consistenties": [],
     "uniciteiten": [],
-    "uniciteitUnies": [],
     "feitCreaties": [],
     "resolvedStartpunten": [],
     "regelGroepen": []
