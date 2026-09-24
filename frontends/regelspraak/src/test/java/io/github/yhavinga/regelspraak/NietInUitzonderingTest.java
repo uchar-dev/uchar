@@ -93,7 +93,7 @@ class NietInUitzonderingTest {
         assertEquals(List.of(Boolean.FALSE, Boolean.TRUE), besluiten(g),
                 "de uitzondering beslist onwaar boven de basis die waar beslist");
         String ir = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(ir.contains("\"besluit\":false"), () -> "de wire draagt geen besluit false:\n" + ir);
+        assertTrue(ir.contains("\"decision\":false"), () -> "de wire draagt geen decision false:\n" + ir);
     }
 
     // -------------------------------------------------------------------- admitted: the base of a chain (decision 2)

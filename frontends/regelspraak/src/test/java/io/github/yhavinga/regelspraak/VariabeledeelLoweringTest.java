@@ -68,7 +68,7 @@ class VariabeledeelLoweringTest {
         assertEquals(2, tel(c, "\"node\":\"BinderRef\",\"name\":\"grondloon\""),
                 () -> "twee lezingen verwacht, geen duplicatie van de definitie:\n" + c);
         // the definition itself occurs once — inside the Let's value, nowhere else.
-        assertEquals(1, tel(c, "\"attribuut\":\"wraktal\""), () -> "de definitie is gedupliceerd:\n" + c);
+        assertEquals(1, tel(c, "\"attribute\":\"wraktal\""), () -> "de definitie is gedupliceerd:\n" + c);
     }
 
     @Test void een_variabele_die_alleen_de_voorwaarde_leest_krijgt_geen_let_en_blijft_gesubstitueerd() {
@@ -90,7 +90,7 @@ class VariabeledeelLoweringTest {
         assertFalse(c.contains("\"node\":\"Let\""), () -> "geen Let verwacht om een voorwaarde-variabele:\n" + c);
         assertFalse(c.contains("\"node\":\"BinderRef\""), () -> "geen BinderRef buiten een Let:\n" + c);
         // the definition IS there — substituted into the condition's left operand.
-        assertTrue(c.contains("\"op\":\"GROTER\",\"links\":{\"node\":\"Literal\",\"value\":{\"number\":\"30\"}"),
+        assertTrue(c.contains("\"op\":\"greater\",\"left\":{\"node\":\"Literal\",\"value\":{\"number\":\"30\"}"),
                 () -> "de voorwaarde-substitutie ontbreekt:\n" + c);
     }
 
@@ -154,7 +154,7 @@ class VariabeledeelLoweringTest {
                 () -> "de waarde-lezing is een BinderRef:\n" + c);
         // the condition carries the SUBSTITUTED definition (a MAAL over the attribute), not a BinderRef.
         assertTrue(c.contains("\"source\":{\"snippet\":\"debasisgroterisdan10\"}"), () -> "de voorwaarde ontbreekt:\n" + c);
-        assertEquals(2, tel(c, "\"attribuut\":\"grondslag\""),
+        assertEquals(2, tel(c, "\"attribute\":\"grondslag\""),
                 () -> "één definitie in de Let-value, één gesubstitueerd in de voorwaarde:\n" + c);
     }
 
@@ -174,7 +174,7 @@ class VariabeledeelLoweringTest {
         String c = emitCompact(src);
         assertEquals(2, tel(c, "\"node\":\"BinderRef\",\"name\":\"tarief\""),
                 () -> "de variabele moet de parameter schaduwen:\n" + c);
-        assertFalse(c.contains("\"node\":\"ParameterRef\",\"parameter\":\"tarief\""),
+        assertFalse(c.contains("\"node\":\"ParameterReference\",\"parameter\":\"tarief\""),
                 () -> "geen parameterlezing binnen de regel:\n" + c);
     }
 
@@ -193,7 +193,7 @@ class VariabeledeelLoweringTest {
             """;
         String c = emitCompact(src);
         // the VALUE is a date read, the BODY a number (the year): the Let must carry the body's type.
-        assertTrue(c.contains("\"binder\":\"datum\",\"value\":{\"node\":\"AttribuutRef\",\"attribuut\":\"vonddatum\""),
+        assertTrue(c.contains("\"binder\":\"datum\",\"value\":{\"node\":\"AttributeReference\",\"attribute\":\"vonddatum\""),
                 () -> "de Let-value is de datum-lezing:\n" + c);
         assertTrue(c.contains("\"node\":\"Let\",\"type\":{\"node\":\"Number\",\"whole\":true"),
                 () -> "WF-076: het Let-type is het body-type (een getal), niet dat van zijn value (een datum):\n" + c);
@@ -222,9 +222,9 @@ class VariabeledeelLoweringTest {
             """;
         String c = emitCompact(src);
         // the filter SURVIVES as a comparison against the substituted literal …
-        assertTrue(c.contains("\"filter\":{\"node\":\"Vergelijking\",\"op\":\"GROTER\""),
+        assertTrue(c.contains("\"filter\":{\"node\":\"Comparison\",\"op\":\"greater\""),
                 () -> "de subselectie mag niet degraderen tot een marker:\n" + c);
-        assertTrue(c.contains("\"rechts\":{\"node\":\"Literal\",\"value\":{\"number\":\"5\"}"),
+        assertTrue(c.contains("\"right\":{\"node\":\"Literal\",\"value\":{\"number\":\"5\"}"),
                 () -> "het rechterlid moet de gesubstitueerde definitie zijn:\n" + c);
         // … and precisely because it did, there is no read left to bind: no Let, no BinderRef.
         assertFalse(c.contains("\"node\":\"Let\""), () -> "geen Let om een enkel structuurgevoelig gebruik:\n" + c);
@@ -389,7 +389,7 @@ class VariabeledeelLoweringTest {
             """;
         String c = emitCompact(vooruit);
         assertEquals(1, tel(c, "\"node\":\"Let\""), () -> "de gelezen variabele krijgt haar Let:\n" + c);
-        assertTrue(c.contains("\"filter\":{\"node\":\"Onopgelost\",\"source\":{\"snippet\":\"groterzijndandetweede\"}}"),
+        assertTrue(c.contains("\"filter\":{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"groterzijndandetweede\"}}"),
                 () -> "de voorwaartse verwijzing moet ook in pass 2 onopgelost blijven:\n" + c);
         assertTrue(meldt(meldingen(vooruit), "wordt nog niet omgezet"),
                 () -> "pass 1 meldt de degradatie: " + meldingen(vooruit));
@@ -412,9 +412,9 @@ class VariabeledeelLoweringTest {
                         de tweede is de som van het gewicht van alle vondsten van de Jutter die groter zijn dan de eerste of 0 als die er niet zijn.
             """;
         String d = emitCompact(achteruit);
-        assertTrue(d.contains("\"filter\":{\"node\":\"Vergelijking\",\"op\":\"GROTER\""),
+        assertTrue(d.contains("\"filter\":{\"node\":\"Comparison\",\"op\":\"greater\""),
                 () -> "een achterwaartse verwijzing zit WEL in het prefix:\n" + d);
-        assertTrue(d.contains("\"rechts\":{\"node\":\"Literal\",\"value\":{\"number\":\"5\"}"),
+        assertTrue(d.contains("\"right\":{\"node\":\"Literal\",\"value\":{\"number\":\"5\"}"),
                 () -> "het rechterlid is de gesubstitueerde eerdere definitie:\n" + d);
     }
 
@@ -447,7 +447,7 @@ class VariabeledeelLoweringTest {
         String c = emitCompact(src);
         assertEquals(0, tel(c, "\"node\":\"Let\""), () -> "geen Let: het enige gebruik zit onder de aggregatie:\n" + c);
         assertEquals(0, tel(c, "\"node\":\"BinderRef\""), () -> "geen BinderRef onder een aggregatie:\n" + c);
-        assertTrue(c.contains("\"emptyFallback\":{\"node\":\"Binair\",\"op\":\"PLUS\",\"links\":{\"node\":\"AttribuutRef\",\"attribuut\":\"bonusgrond\""),
+        assertTrue(c.contains("\"emptyFallback\":{\"node\":\"Binary\",\"op\":\"plus\",\"left\":{\"node\":\"AttributeReference\",\"attribute\":\"bonusgrond\""),
                 () -> "de leegwaarde draagt de gesubstitueerde definitie:\n" + c);
     }
 }

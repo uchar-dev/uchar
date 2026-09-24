@@ -72,7 +72,7 @@ class StilleMarkerTest {
      *  difference with the ERROR routes), so assert both halves at once. */
     private static void markerMetMelding(RegelSpraakModel m, String fragment) {
         String c = emitCompact(m);
-        assertTrue(c.contains("\"node\":\"Onopgelost\""),
+        assertTrue(c.contains("\"node\":\"Unresolved\""),
                 () -> "verwachtte een marker op de wire:\n" + c);
         assertTrue(m.diagnostics.stream().anyMatch(d -> d.severity() == Severity.WARNING
                         && d.message().contains(fragment)),
@@ -243,7 +243,7 @@ class StilleMarkerTest {
                     Een Schouwploeg is bevoegd
                     indien alle wachten van de Schouwploeg gediplomeerd zijn.
             """);
-        assertFalse(emitCompact(m).contains("Onopgelost"),
+        assertFalse(emitCompact(m).contains("Unresolved"),
                 () -> "de vouw hoort te landen:\n" + emitCompact(m));
         assertTrue(m.diagnostics.isEmpty(), () -> "een gelande vouw meldt niets: " + m.diagnostics);
     }

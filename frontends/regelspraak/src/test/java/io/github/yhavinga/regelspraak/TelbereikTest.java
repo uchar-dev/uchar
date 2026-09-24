@@ -123,7 +123,7 @@ class TelbereikTest {
     @Test
     void een_telling_op_een_typemeervoud_bindt_het_objecttype() {
         String c = ir(MODEL + TYPEMEERVOUD_REGEL);
-        assertTrue(c.contains("\"kind\": \"AANTAL\""), () -> "de telling hoort geëmitteerd te worden:\n" + c);
+        assertTrue(c.contains("\"kind\": \"count\""), () -> "de telling hoort geëmitteerd te worden:\n" + c);
         assertTrue(c.contains("\"elementType\": \"Munt\""),
                 () -> "het geschreven meervoud moet het objecttype binden:\n" + c);
     }
@@ -135,15 +135,15 @@ class TelbereikTest {
     void een_telling_op_een_typemeervoud_draagt_het_bereik_van_het_typenpaar() {
         String c = ir(MODEL + TYPEMEERVOUD_REGEL);
         assertTrue(c.contains("\"sourceRole\""), () -> "een vouw over gekoppelde instanties draagt haar bereik:\n" + c);
-        assertTrue(c.contains("\"feittype\": \"muntvondst\""), () -> "het enige verbindende feittype:\n" + c);
-        assertTrue(c.contains("\"rol\": \"gevonden munt\""), () -> "de binding noemt de gedeclareerde rol:\n" + c);
-        assertTrue(c.contains("\"attribuut\": \"gevonden munt\""),
+        assertTrue(c.contains("\"factType\": \"muntvondst\""), () -> "het enige verbindende feittype:\n" + c);
+        assertTrue(c.contains("\"role\": \"gevonden munt\""), () -> "de binding noemt de gedeclareerde rol:\n" + c);
+        assertTrue(c.contains("\"attribute\": \"gevonden munt\""),
                 () -> "de telbron noemt de gebonden rol bij haar gedeclareerde naam:\n" + c);
         assertTrue(c.contains("\"snippet\": \"Munten van de Jutter\""),
                 () -> "de geschreven spelling blijft in de bron:\n" + c);
         assertFalse(c.contains("\"sourcePath\""),
                 () -> "een eenstaps bereik is nooit een pad:\n" + c);
-        assertFalse(c.contains("\"node\": \"Onopgelost\""),
+        assertFalse(c.contains("\"node\": \"Unresolved\""),
                 () -> "de telling is opgelost:\n" + c);
     }
 
@@ -154,8 +154,8 @@ class TelbereikTest {
     void een_telling_op_de_geschreven_rolnaam_houdt_haar_bronrol() {
         String c = ir(MODEL + ROLNAAM_REGEL);
         assertTrue(c.contains("\"sourceRole\""), () -> "de geschreven rolnaam hoort te binden:\n" + c);
-        assertTrue(c.contains("\"feittype\": \"muntvondst\""), () -> "de binding noemt haar feittype:\n" + c);
-        assertTrue(c.contains("\"rol\": \"gevonden munt\""), () -> "de binding noemt de gedeclareerde rol:\n" + c);
+        assertTrue(c.contains("\"factType\": \"muntvondst\""), () -> "de binding noemt haar feittype:\n" + c);
+        assertTrue(c.contains("\"role\": \"gevonden munt\""), () -> "de binding noemt de gedeclareerde rol:\n" + c);
     }
 
     // ---------------- the ambiguous flank ----------------
@@ -183,7 +183,7 @@ class TelbereikTest {
     @Test
     void een_gedeeld_typemeervoud_bindt_geen_van_beide() {
         String c = irMetBronloosFout(GEDEELD_MEERVOUD_MODEL + TYPEMEERVOUD_REGEL);
-        assertTrue(c.contains("\"kind\": \"AANTAL\""), () -> "de telling hoort geëmitteerd te worden:\n" + c);
+        assertTrue(c.contains("\"kind\": \"count\""), () -> "de telling hoort geëmitteerd te worden:\n" + c);
         assertFalse(c.contains("\"elementType\""),
                 () -> "een gedeeld meervoud mag geen van beide types binden:\n" + c);
     }
@@ -194,7 +194,7 @@ class TelbereikTest {
     @Test
     void een_woord_dat_niets_benoemt_levert_geen_elementtype() {
         String c = irMetBronloosFout(MODEL + VREEMDE_REGEL);
-        assertTrue(c.contains("\"kind\": \"AANTAL\""), () -> "de telling hoort geëmitteerd te worden:\n" + c);
+        assertTrue(c.contains("\"kind\": \"count\""), () -> "de telling hoort geëmitteerd te worden:\n" + c);
         assertFalse(c.contains("\"elementType\""),
                 () -> "een onbekend elementwoord mag geen type binden:\n" + c);
     }
@@ -213,7 +213,7 @@ class TelbereikTest {
                 () -> "beide lezingen bereiken Munt, dus het elementtype staat vast:\n" + c);
         assertTrue(c.contains("\"sourceRole\""),
                 () -> "een woord dat een rol NOEMT hoort die rol te binden:\n" + c);
-        assertTrue(c.contains("\"rol\": \"munt\""),
+        assertTrue(c.contains("\"role\": \"munt\""),
                 () -> "de binding noemt de gedeclareerde rol:\n" + c);
     }
 

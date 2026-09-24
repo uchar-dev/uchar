@@ -106,16 +106,16 @@ class KwantorvouwTest {
     @Test void de_alle_zin_wordt_een_kwantorvouw_over_het_elementtype() {
         RegelSpraakModel m = resolveer(ZIN.formatted("alle"));
         String v = voorwaarde(m);
-        assertTrue(v.contains("\"node\":\"Kwantorvouw\""),
-                () -> "de §8.2-zin hoort een Kwantorvouw te worden:\n" + v);
-        assertTrue(v.contains("\"kwantor\":\"ALLE\""), () -> "verkeerde kwantor:\n" + v);
+        assertTrue(v.contains("\"node\":\"QuantifierFold\""),
+                () -> "de §8.2-zin hoort een QuantifierFold te worden:\n" + v);
+        assertTrue(v.contains("\"quantifier\":\"all\""), () -> "verkeerde kwantor:\n" + v);
         // the quantified range is the MEMBER type, not the rule subject
-        assertTrue(v.contains("\"elementObjecttype\":\"Vondst\""),
+        assertTrue(v.contains("\"elementType\":\"Vondst\""),
                 () -> "de vouw hoort over Vondst te kwantificeren:\n" + v);
-        // this sentence writes NO die/dat subselectie, so the range field stays empty. (Since the
+        // this sentence writes NO die/dat subselectie, so the filter field stays absent. (Since the
         // diedat-filter card a written subselectie DOES reach the wire; KwantorvouwFilterTest pins that
         // side, and this line is the regression pin for the unfiltered sentence.)
-        assertTrue(v.contains("\"filter\":null"), () -> "zonder geschreven deelselectie geen filter:\n" + v);
+        assertFalse(v.contains("\"filter\""), () -> "zonder geschreven deelselectie geen filter:\n" + v);
     }
 
     @Test void de_kwantorvouw_draagt_de_verbindende_rol_als_bereik() {
@@ -123,11 +123,11 @@ class KwantorvouwTest {
         // quantifies over a set the sentence never named. The range is the connecting role, the binding the
         // instance fold's sourceRole carries — one search in the model serves both, so the two can never disagree.
         String v = voorwaarde(resolveer(ZIN.formatted("alle")));
-        assertTrue(v.contains("\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\",\"rol\":\"vondst\"}"),
+        assertTrue(v.contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"vondstaanmelding\",\"role\":\"vondst\"}"),
                 () -> "de vouw hoort het verbindende feittype+rol als bereik te dragen:\n" + v);
-        // one-step range: bronRol XOR bronPad (WF-108 (c)), so no path beside the binding
-        assertFalse(v.contains("\"bronPad\""),
-                () -> "een bereik van één stap hoort geen bronPad te schrijven:\n" + v);
+        // one-step range: sourceRole XOR sourcePath (WF-108 (c)), so no path beside the binding
+        assertFalse(v.contains("\"sourcePath\""),
+                () -> "een bereik van één stap hoort geen sourcePath te schrijven:\n" + v);
     }
 
     @Test void de_toets_is_een_eigen_lezing_van_het_element_met_de_periode() {
@@ -135,29 +135,29 @@ class KwantorvouwTest {
         // comes back as an OWN read of the element type — no binding, so no navigation and no range. The
         // §8.2 qualifier stays on it: per member, "gedurende het gehele jaar" is what that member must satisfy.
         String v = voorwaarde(resolveer(ZIN.formatted("alle")));
-        assertTrue(v.contains("\"toets\":{\"node\":\"Vergelijking\",\"op\":\"GROTER\","
-                        + "\"links\":{\"node\":\"AttribuutRef\",\"attribuut\":\"gewicht\",\"objecttype\":\"Vondst\""),
+        assertTrue(v.contains("\"test\":{\"node\":\"Comparison\",\"op\":\"greater\","
+                        + "\"left\":{\"node\":\"AttributeReference\",\"attribute\":\"gewicht\",\"subjectType\":\"Vondst\""),
                 () -> "de toets hoort het attribuut op het ELEMENTtype te lezen:\n" + v);
-        assertTrue(java.util.regex.Pattern.compile("\"links\":\\{\"node\":\"AttribuutRef\",\"attribuut\":\"gewicht\","
-                        + "\"objecttype\":\"Vondst\",\"source\":\\{\"snippet\":\"[^\"]*\"\\}\\}").matcher(v).find(),
+        assertTrue(java.util.regex.Pattern.compile("\"left\":\\{\"node\":\"AttributeReference\",\"attribute\":\"gewicht\","
+                        + "\"subjectType\":\"Vondst\",\"source\":\\{\"snippet\":\"[^\"]*\"\\}\\}").matcher(v).find(),
                 () -> "de gekwantificeerde operand hoort als eigen lezing terug te komen, zonder binding:\n" + v);
-        String toets = v.substring(v.indexOf("\"toets\":"), v.lastIndexOf("\"bronRol\":"));
-        assertFalse(toets.contains("\"bronRol\"") || toets.contains("\"sourceRole\""),
+        String toets = v.substring(v.indexOf("\"test\":"), v.lastIndexOf("\"sourceRole\":"));
+        assertFalse(toets.contains("\"sourceRole\"") || toets.contains("\"sourcePath\""),
                 () -> "na de verlaging hoort er geen vouw over gekoppelde instanties meer in de toets te staan:\n" + v);
-        assertTrue(v.contains("\"periode\":{\"node\":\"GeheelPeriode\",\"jaar\":true,\"niet\":false}"),
+        assertTrue(v.contains("\"wholePeriod\":{\"node\":\"WholePeriod\",\"granularity\":\"year\",\"negated\":false}"),
                 () -> "de §8.2-kwalificatie hoort op de toets te blijven staan:\n" + v);
     }
 
     @Test void de_toets_draagt_geen_navigatiebindingen() {
         // The element-subject emission, and the reason it is not cosmetic: emitted from the OUTER
         // subject, an element-own read is an off-subject type and would pick up a by-pair
-        // navigatieBindingen — a navigation from the Jutter, inside a matrix whose subject is the
+        // path — a navigation from the Jutter, inside a matrix whose subject is the
         // Vondst. Exactly the trap an aggregation's filter already avoids the same way.
         String v = voorwaarde(resolveer(ZIN.formatted("alle")));
-        assertFalse(v.contains("\"navigatieBindingen\""),
+        assertFalse(v.contains("\"path\""),
                 () -> "de toets wordt met het ELEMENT als subject geëmitteerd en hoort dus geen "
                         + "navigatiebindingen te dragen:\n" + v);
-        assertTrue(v.contains("\"attribuut\":\"gewicht\",\"objecttype\":\"Vondst\""),
+        assertTrue(v.contains("\"attribute\":\"gewicht\",\"subjectType\":\"Vondst\""),
                 () -> "de eigen lezing noemt het elementtype, het onderwerp van de toets:\n" + v);
     }
 
@@ -167,8 +167,8 @@ class KwantorvouwTest {
         RegelSpraakModel m = resolveer(ZIN.formatted("geen van de"));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         String v = voorwaarde(m);
-        assertTrue(v.contains("\"kwantor\":\"GEEN\""),
-                () -> "'geen van de' hoort de GEEN-kwantor te schrijven, niet ALLE:\n" + v);
+        assertTrue(v.contains("\"quantifier\":\"none\""),
+                () -> "'geen van de' hoort de kwantor none te schrijven, niet all:\n" + v);
     }
 
     /**
@@ -181,15 +181,15 @@ class KwantorvouwTest {
      */
     @Test void de_tellende_kwantoren_worden_de_telvouw_met_hun_eigen_telwoord() {
         record Rij(String geschreven, String kwantor, int drempel) {}
-        for (Rij r : new Rij[]{new Rij("ten minste 2 van de", "TEN_MINSTE", 2),
-                               new Rij("ten hoogste 1 van de", "TEN_HOOGSTE", 1),
-                               new Rij("precies 3 van de", "PRECIES", 3)}) {
+        for (Rij r : new Rij[]{new Rij("ten minste 2 van de", "atLeast", 2),
+                               new Rij("ten hoogste 1 van de", "atMost", 1),
+                               new Rij("precies 3 van de", "exactly", 3)}) {
             RegelSpraakModel m = resolveer(ZIN.formatted(r.geschreven()));
             assertTrue(m.diagnostics.isEmpty(),
                     () -> r.geschreven() + " — onverwachte diagnostiek: " + m.diagnostics);
             String v = voorwaarde(m);
-            assertTrue(v.startsWith("\"condition\":{\"node\":\"Kwantorvouw\",\"kwantor\":\""
-                            + r.kwantor() + "\",\"drempel\":" + r.drempel() + ","),
+            assertTrue(v.startsWith("\"condition\":{\"node\":\"QuantifierFold\",\"quantifier\":\""
+                            + r.kwantor() + "\",\"threshold\":" + r.drempel() + ","),
                     () -> r.geschreven() + " hoort de kwantor EN het telwoord te dragen:\n" + v);
         }
     }
@@ -200,7 +200,7 @@ class KwantorvouwTest {
      */
     @Test void alle_en_geen_dragen_geen_drempel_op_de_wire() {
         for (String kw : new String[]{"alle", "geen van de"})
-            assertFalse(voorwaarde(resolveer(ZIN.formatted(kw))).contains("\"drempel\""),
+            assertFalse(voorwaarde(resolveer(ZIN.formatted(kw))).contains("\"threshold\""),
                     kw + " leest geen drempel, dus de wire hoort er geen te dragen");
     }
 
@@ -216,7 +216,7 @@ class KwantorvouwTest {
                 .filter(d -> d.message().contains("telwoord van de kwantor")).toList();
         assertEquals(1, telwoord.size(), () -> "de geweigerde drempel hoort benoemd te worden: " + m.diagnostics);
         assertEquals(Severity.WARNING, telwoord.get(0).severity());
-        assertFalse(emitCompact(m).contains("Kwantorvouw"),
+        assertFalse(emitCompact(m).contains("QuantifierFold"),
                 "een drempel onder 1 hoort niet op de wire te belanden");
     }
 
@@ -234,9 +234,9 @@ class KwantorvouwTest {
             """);
         assertTrue(setlezingfouten(m).isEmpty(), () -> "de vouw hoort de setlezing weg te nemen: " + m.diagnostics);
         String v = voorwaarde(m);
-        assertTrue(v.startsWith("\"condition\":{\"node\":\"Kwantorvouw\",\"kwantor\":\"ALLE\","),
+        assertTrue(v.startsWith("\"condition\":{\"node\":\"QuantifierFold\",\"quantifier\":\"all\","),
                 () -> "de ongekwalificeerde zin hoort dezelfde vouw te worden:\n" + v);
-        assertTrue(v.contains("\"periode\":null"),
+        assertFalse(v.contains("\"wholePeriod\""),
                 () -> "zonder §8.2-kwalificatie hoort de toets geen periode te dragen:\n" + v);
     }
 
@@ -277,9 +277,9 @@ class KwantorvouwTest {
             """);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
-        assertTrue(c.contains("\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\",\"rol\":\"vondst\"}"),
+        assertTrue(c.contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"vondstaanmelding\",\"role\":\"vondst\"}"),
                 () -> "de vouw hoort haar setlezing te houden, als bereik:\n" + c);
-        assertFalse(c.contains("\"kwantor\""),
+        assertFalse(c.contains("\"quantifier\""),
                 () -> "de geschreven kwantor is frontend-intern en hoort niet op de wire te staan:\n" + c);
     }
 }

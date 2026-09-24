@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * <p>The matrix is then an ordinary, NON-temporal condition of the member — RUNTIME-SEMANTICS ch. 3.9a
  * states the fold's formula over an arbitrary {@code test}, so nothing about the quantifier moves; only
- * the {@code periode} field of the matrix goes empty. {@link KwantorvouwTest} keeps measuring the
+ * the {@code wholePeriod} field of the matrix is absent. {@link KwantorvouwTest} keeps measuring the
  * qualified sentence, and every decline this file does not repeat is measured there and in
  * {@link KwantorvouwFilterTest}: those refusals are unchanged, and a spelling v2.3.0 does not bear is
  * still refused out loud.
@@ -112,17 +112,17 @@ class NietTemporeleVouwTest {
      */
     @Test void alle_vijf_kwantoren_lowered_zonder_kwalificatie() {
         record Rij(String geschreven, String kwantor, String drempel) {}
-        for (Rij r : new Rij[]{new Rij("alle", "ALLE", ""),
-                               new Rij("geen van de", "GEEN", ""),
-                               new Rij("ten minste 2 van de", "TEN_MINSTE", "\"drempel\":2,"),
-                               new Rij("ten hoogste 1 van de", "TEN_HOOGSTE", "\"drempel\":1,"),
-                               new Rij("precies 3 van de", "PRECIES", "\"drempel\":3,")}) {
+        for (Rij r : new Rij[]{new Rij("alle", "all", ""),
+                               new Rij("geen van de", "none", ""),
+                               new Rij("ten minste 2 van de", "atLeast", "\"threshold\":2,"),
+                               new Rij("ten hoogste 1 van de", "atMost", "\"threshold\":1,"),
+                               new Rij("precies 3 van de", "exactly", "\"threshold\":3,")}) {
             RegelSpraakModel m = resolveer(VERGELIJKING.formatted(r.geschreven()));
             assertTrue(m.diagnostics.isEmpty(),
                     () -> r.geschreven() + " — onverwachte diagnostiek: " + m.diagnostics);
             String v = voorwaarde(m);
-            assertTrue(v.startsWith("\"condition\":{\"node\":\"Kwantorvouw\",\"kwantor\":\""
-                            + r.kwantor() + "\"," + r.drempel() + "\"elementObjecttype\":\"Strandwacht\","),
+            assertTrue(v.startsWith("\"condition\":{\"node\":\"QuantifierFold\",\"quantifier\":\""
+                            + r.kwantor() + "\"," + r.drempel() + "\"elementType\":\"Strandwacht\","),
                     () -> r.geschreven() + " hoort de kwantor (en zijn telwoord) te dragen:\n" + v);
         }
     }
@@ -131,11 +131,11 @@ class NietTemporeleVouwTest {
      *  widening and not a rewrite: the matrix carries NO period. */
     @Test void de_toets_draagt_geen_periode() {
         String v = voorwaarde(resolveer(VERGELIJKING.formatted("alle")));
-        assertTrue(v.contains("\"toets\":{\"node\":\"Vergelijking\",\"op\":\"GROTER\","),
+        assertTrue(v.contains("\"test\":{\"node\":\"Comparison\",\"op\":\"greater\","),
                 () -> "de toets hoort de gewone vergelijking te zijn:\n" + v);
-        assertTrue(v.contains("\"periode\":null"),
+        assertFalse(v.contains("\"wholePeriod\""),
                 () -> "zonder §8.2-kwalificatie hoort er geen periode op de toets te staan:\n" + v);
-        assertFalse(v.contains("\"GeheelPeriode\""),
+        assertFalse(v.contains("\"WholePeriod\""),
                 () -> "er is geen periode geschreven, dus hoort er geen in de emissie te staan:\n" + v);
     }
 
@@ -143,14 +143,14 @@ class NietTemporeleVouwTest {
      *  left in the matrix, and the range spelled as the instance fold spells it. */
     @Test void de_gekwantificeerde_operand_komt_terug_als_eigen_lezing_van_het_element() {
         String v = voorwaarde(resolveer(VERGELIJKING.formatted("alle")));
-        assertTrue(v.contains("\"links\":{\"node\":\"AttribuutRef\",\"attribuut\":\"dienstjaren\","
-                        + "\"objecttype\":\"Strandwacht\""),
+        assertTrue(v.contains("\"left\":{\"node\":\"AttributeReference\",\"attribute\":\"dienstjaren\","
+                        + "\"subjectType\":\"Strandwacht\""),
                 () -> "de toets hoort het attribuut op het ELEMENTtype te lezen:\n" + v);
-        String toets = v.substring(v.indexOf("\"toets\":"), v.lastIndexOf("\"bronRol\":"));
-        assertFalse(toets.contains("\"bronRol\"") || toets.contains("\"sourceRole\""),
+        String toets = v.substring(v.indexOf("\"test\":"), v.lastIndexOf("\"sourceRole\":"));
+        assertFalse(toets.contains("\"sourceRole\"") || toets.contains("\"sourcePath\""),
                 () -> "na de verlaging hoort er geen vouw over gekoppelde instanties meer in de toets te staan:\n" + v);
-        assertTrue(v.contains("\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"schouwindeling\","
-                        + "\"rol\":\"wacht\"}"),
+        assertTrue(v.contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"schouwindeling\","
+                        + "\"role\":\"wacht\"}"),
                 () -> "de vouw hoort het verbindende feittype+rol als bereik te dragen:\n" + v);
     }
 
@@ -165,9 +165,9 @@ class NietTemporeleVouwTest {
             """);
         schoon(m);
         String v = voorwaarde(m);
-        assertTrue(v.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"gediplomeerd\""),
+        assertTrue(v.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gediplomeerd\""),
                 () -> "de geschreven deelselectie hoort het filter te worden:\n" + v);
-        assertTrue(v.contains("\"kwantor\":\"TEN_MINSTE\",\"drempel\":2,"),
+        assertTrue(v.contains("\"quantifier\":\"atLeast\",\"threshold\":2,"),
                 () -> "de tellende kwantor hoort naast het filter te staan:\n" + v);
     }
 
@@ -188,7 +188,7 @@ class NietTemporeleVouwTest {
             """);
         schoon(m);
         String v = voorwaarde(m);
-        assertTrue(v.contains("\"filter\":{\"node\":\"Vergelijking\",\"op\":\"GROTER\","),
+        assertTrue(v.contains("\"filter\":{\"node\":\"Comparison\",\"op\":\"greater\","),
                 () -> "het getalpredicaat hoort het filter te worden:\n" + v);
     }
 
@@ -206,16 +206,16 @@ class NietTemporeleVouwTest {
         RegelSpraakModel m = resolveer(KENMERK.formatted("alle", "gediplomeerd zijn"));
         schoon(m);
         String v = voorwaarde(m);
-        assertTrue(v.startsWith("\"condition\":{\"node\":\"Kwantorvouw\",\"kwantor\":\"ALLE\","
-                        + "\"elementObjecttype\":\"Strandwacht\",\"filter\":null,"),
+        assertTrue(v.startsWith("\"condition\":{\"node\":\"QuantifierFold\",\"quantifier\":\"all\","
+                        + "\"elementType\":\"Strandwacht\",\"test\":"),
                 () -> "de kenmerkvorm hoort een vouw over Strandwacht te worden:\n" + v);
-        assertTrue(v.contains("\"toets\":{\"node\":\"Kenmerk\",\"kenmerk\":\"gediplomeerd\","
-                        + "\"negatie\":false,"),
+        assertTrue(v.contains("\"test\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gediplomeerd\","
+                        + "\"negated\":false,"),
                 () -> "de matrix hoort de kenmerkcheck van het ELEMENT te zijn:\n" + v);
-        assertFalse(v.contains("\"navigatieBinding\""), () -> "de kenmerkcheck van het element navigeert niet:\n" + v);
-        assertFalse(v.contains("Onopgelost"), () -> "er hoort geen marker meer te staan:\n" + v);
-        assertTrue(v.contains("\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"schouwindeling\","
-                        + "\"rol\":\"wacht\"}"),
+        assertFalse(v.contains("\"navigation\""), () -> "de kenmerkcheck van het element navigeert niet:\n" + v);
+        assertFalse(v.contains("Unresolved"), () -> "er hoort geen marker meer te staan:\n" + v);
+        assertTrue(v.contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"schouwindeling\","
+                        + "\"role\":\"wacht\"}"),
                 () -> "de vouw hoort het verbindende feittype+rol als bereik te dragen:\n" + v);
     }
 
@@ -230,9 +230,9 @@ class NietTemporeleVouwTest {
         RegelSpraakModel m = resolveer(KENMERK.formatted("geen van de", "niet gediplomeerd is"));
         schoon(m);
         String v = voorwaarde(m);
-        assertTrue(v.contains("\"kwantor\":\"GEEN\""), () -> "de geschreven kwantor hoort GEEN te zijn:\n" + v);
-        assertTrue(v.contains("\"toets\":{\"node\":\"Kenmerk\",\"kenmerk\":\"gediplomeerd\","
-                        + "\"negatie\":true,"),
+        assertTrue(v.contains("\"quantifier\":\"none\""), () -> "de geschreven kwantor hoort none te zijn:\n" + v);
+        assertTrue(v.contains("\"test\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gediplomeerd\","
+                        + "\"negated\":true,"),
                 () -> "de geabsorbeerde 'niet' hoort de matrix te ontkennen:\n" + v);
     }
 
@@ -240,17 +240,17 @@ class NietTemporeleVouwTest {
      *  there for the same reason they do over a comparison. */
     @Test void alle_vijf_kwantoren_over_de_kenmerkvorm() {
         record Rij(String geschreven, String kwantor, String drempel) {}
-        for (Rij r : new Rij[]{new Rij("alle", "ALLE", ""),
-                               new Rij("geen van de", "GEEN", ""),
-                               new Rij("ten minste 2 van de", "TEN_MINSTE", "\"drempel\":2,"),
-                               new Rij("ten hoogste 1 van de", "TEN_HOOGSTE", "\"drempel\":1,"),
-                               new Rij("precies 3 van de", "PRECIES", "\"drempel\":3,")}) {
+        for (Rij r : new Rij[]{new Rij("alle", "all", ""),
+                               new Rij("geen van de", "none", ""),
+                               new Rij("ten minste 2 van de", "atLeast", "\"threshold\":2,"),
+                               new Rij("ten hoogste 1 van de", "atMost", "\"threshold\":1,"),
+                               new Rij("precies 3 van de", "exactly", "\"threshold\":3,")}) {
             RegelSpraakModel m = resolveer(KENMERK.formatted(r.geschreven(), "gediplomeerd zijn"));
             assertTrue(m.diagnostics.isEmpty(),
                     () -> r.geschreven() + " — onverwachte diagnostiek: " + m.diagnostics);
             String v = voorwaarde(m);
-            assertTrue(v.startsWith("\"condition\":{\"node\":\"Kwantorvouw\",\"kwantor\":\""
-                            + r.kwantor() + "\"," + r.drempel() + "\"elementObjecttype\":\"Strandwacht\","),
+            assertTrue(v.startsWith("\"condition\":{\"node\":\"QuantifierFold\",\"quantifier\":\""
+                            + r.kwantor() + "\"," + r.drempel() + "\"elementType\":\"Strandwacht\","),
                     () -> r.geschreven() + " hoort de kwantor (en zijn telwoord) te dragen:\n" + v);
         }
     }
@@ -269,8 +269,8 @@ class NietTemporeleVouwTest {
             """);
         schoon(m);
         String v = voorwaarde(m);
-        assertTrue(v.contains("\"node\":\"Kwantorvouw\",\"kwantor\":\"ALLE\","
-                        + "\"elementObjecttype\":\"Strandwacht\""),
+        assertTrue(v.contains("\"node\":\"QuantifierFold\",\"quantifier\":\"all\","
+                        + "\"elementType\":\"Strandwacht\""),
                 () -> "de bullet hoort dezelfde vouw te worden:\n" + v);
     }
 
@@ -281,9 +281,9 @@ class NietTemporeleVouwTest {
                 KENMERK.formatted("alle", "").replace("van de Schouwploeg .", "van de Schouwploeg die ervaren zijn gediplomeerd zijn."));
         schoon(m);
         String v = voorwaarde(m);
-        assertTrue(v.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"ervaren\""),
+        assertTrue(v.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ervaren\""),
                 () -> "de deelselectie hoort het filter te worden:\n" + v);
-        assertTrue(v.contains("\"toets\":{\"node\":\"Kenmerk\",\"kenmerk\":\"gediplomeerd\""),
+        assertTrue(v.contains("\"test\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gediplomeerd\""),
                 () -> "de matrix hoort het ANDERE kenmerk te blijven:\n" + v);
     }
 
@@ -295,7 +295,7 @@ class NietTemporeleVouwTest {
     @Test void een_kenmerk_van_het_subject_bindt_niet_op_het_element() {
         RegelSpraakModel m = resolveer(KENMERK.formatted("alle", "gekeurd zijn"));
         String v = voorwaarde(m);
-        assertTrue(v.contains("\"node\":\"Onopgelost\""),
+        assertTrue(v.contains("\"node\":\"Unresolved\""),
                 () -> "een kenmerk van het SUBJECT hoort op het element niets te binden:\n" + v);
     }
 
@@ -322,7 +322,7 @@ class NietTemporeleVouwTest {
         assertTrue(m.diagnostics.stream().anyMatch(d -> d.severity() == Severity.WARNING
                         && d.message().contains("bindt geen kenmerk of getalpredicaat van Strandwacht")),
                 () -> "de as van de weigering hoort erbij te staan: " + m.diagnostics);
-        assertTrue(voorwaarde(m).contains("\"node\":\"Onopgelost\""),
+        assertTrue(voorwaarde(m).contains("\"node\":\"Unresolved\""),
                 () -> "een niet-bindende deelselectie mag nooit als vouw over het VOLLE bereik landen:\n"
                         + voorwaarde(m));
     }
@@ -336,7 +336,7 @@ class NietTemporeleVouwTest {
                 .filter(d -> d.message().contains("telwoord van de kwantor")).toList();
         assertEquals(1, telwoord.size(), () -> "het geweigerde telwoord hoort benoemd te worden: " + m.diagnostics);
         assertEquals(Severity.WARNING, telwoord.get(0).severity());
-        assertFalse(emitCompact(m).contains("Kwantorvouw"),
+        assertFalse(emitCompact(m).contains("QuantifierFold"),
                 "een drempel onder 1 hoort niet op de wire te belanden");
     }
 
@@ -346,7 +346,7 @@ class NietTemporeleVouwTest {
     @Test void de_gekwalificeerde_kenmerkvorm_blijft_een_marker() {
         RegelSpraakModel m = resolveer(
                 KENMERK.formatted("alle", "gedurende het gehele jaar gediplomeerd zijn"));
-        assertTrue(voorwaarde(m).contains("\"node\":\"Onopgelost\""),
+        assertTrue(voorwaarde(m).contains("\"node\":\"Unresolved\""),
                 () -> "de gekwalificeerde kenmerkvorm hoort haar marker te houden:\n" + voorwaarde(m));
     }
 
@@ -378,7 +378,7 @@ class NietTemporeleVouwTest {
                     Een Haven is veilig
                     indien alle wachten van alle ploegen van de Haven gediplomeerd zijn.
             """);
-        assertTrue(voorwaarde(m).contains("\"node\":\"Onopgelost\""),
+        assertTrue(voorwaarde(m).contains("\"node\":\"Unresolved\""),
                 () -> "een meerstapsbereik hoort niet als eenstapsvouw te landen:\n" + voorwaarde(m));
     }
 }

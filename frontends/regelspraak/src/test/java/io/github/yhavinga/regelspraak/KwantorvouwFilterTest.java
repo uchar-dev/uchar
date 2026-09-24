@@ -95,10 +95,10 @@ class KwantorvouwFilterTest {
         RegelSpraakModel m = resolveer("alle", " die aangemeld zijn");
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         String v = voorwaarde(m);
-        assertTrue(v.contains("\"node\":\"Kwantorvouw\""), () -> "geen kwantorvouw:\n" + v);
-        assertTrue(v.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"aangemeld\""),
+        assertTrue(v.contains("\"node\":\"QuantifierFold\""), () -> "geen kwantorvouw:\n" + v);
+        assertTrue(v.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"aangemeld\""),
                 () -> "de die/dat-deelselectie hoort als filter op de wire te staan:\n" + v);
-        assertFalse(v.contains("\"filter\":null"),
+        assertTrue(v.contains("\"elementType\":\"Vondst\",\"filter\":{"),
                 () -> "een geschreven deelselectie mag nooit als een vol bereik landen:\n" + v);
     }
 
@@ -109,8 +109,8 @@ class KwantorvouwFilterTest {
         RegelSpraakModel m = resolveer("geen van de", " die aangemeld zijn");
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         String v = voorwaarde(m);
-        assertTrue(v.contains("\"kwantor\":\"GEEN\""), () -> "verkeerde kwantor:\n" + v);
-        assertTrue(v.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"aangemeld\""),
+        assertTrue(v.contains("\"quantifier\":\"none\""), () -> "verkeerde kwantor:\n" + v);
+        assertTrue(v.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"aangemeld\""),
                 () -> "ook onder GEEN hoort de deelselectie op de wire te staan:\n" + v);
     }
 
@@ -120,10 +120,10 @@ class KwantorvouwFilterTest {
         // subject is the Vondst, the same trap the toets avoids.
         String v = voorwaarde(resolveer("alle", " die aangemeld zijn"));
         int i = v.indexOf("\"filter\":");
-        String f = v.substring(i, v.indexOf("\"toets\":", i));
-        assertTrue(f.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"aangemeld\",\"negatie\":false,"),
+        String f = v.substring(i, v.indexOf("\"test\":", i));
+        assertTrue(f.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"aangemeld\",\"negated\":false,"),
                 () -> "een bevestigende deelselectie:\n" + f);
-        assertFalse(f.contains("\"navigatieBinding\""), () -> "het filter navigeert niet:\n" + f);
+        assertFalse(f.contains("\"navigation\""), () -> "het filter navigeert niet:\n" + f);
     }
 
     @Test void een_deelselectie_over_een_kenmerk_van_het_ONDERWERP_bindt_niet() {
@@ -136,7 +136,7 @@ class KwantorvouwFilterTest {
         assertEquals(1, deelselectieWaarschuwing(m).size(),
                 () -> "de geweigerde deelselectie hoort benoemd te worden: " + m.diagnostics);
         assertEquals(Severity.WARNING, deelselectieWaarschuwing(m).get(0).severity());
-        assertFalse(emitCompact(m).contains("Kwantorvouw"),
+        assertFalse(emitCompact(m).contains("QuantifierFold"),
                 "een onherleidbare deelselectie mag nooit als vouw over het VOLLE bereik landen");
     }
 
@@ -148,7 +148,7 @@ class KwantorvouwFilterTest {
         assertEquals(1, setlezingfouten(m).size(), () -> "de setlezing hoort te blijven staan: " + m.diagnostics);
         assertEquals(1, deelselectieWaarschuwing(m).size(),
                 () -> "de geweigerde deelselectie hoort benoemd te worden: " + m.diagnostics);
-        assertFalse(emitCompact(m).contains("Kwantorvouw"),
+        assertFalse(emitCompact(m).contains("QuantifierFold"),
                 "een geweigerde deelselectie mag nooit als vouw over het VOLLE bereik landen");
     }
 
@@ -161,7 +161,7 @@ class KwantorvouwFilterTest {
         assertEquals(1, setlezingfouten(m).size(), () -> "de setlezing hoort te blijven staan: " + m.diagnostics);
         assertEquals(1, deelselectieWaarschuwing(m).size(),
                 () -> "de geweigerde deelselectie hoort benoemd te worden: " + m.diagnostics);
-        assertFalse(emitCompact(m).contains("Kwantorvouw"),
+        assertFalse(emitCompact(m).contains("QuantifierFold"),
                 "een ontkende deelselectie mag nooit als de BEVESTIGENDE vouw landen");
     }
 
@@ -181,7 +181,7 @@ class KwantorvouwFilterTest {
                 () -> "de geweigerde deelselectie hoort benoemd te worden: " + m.diagnostics);
         assertTrue(deelselectieWaarschuwing(m).get(0).message().contains("gekwantificeerde attribuut 'gewicht'"),
                 () -> "de weigering hoort de AS te noemen waarop zij valt: " + m.diagnostics);
-        assertFalse(emitCompact(m).contains("Kwantorvouw"),
+        assertFalse(emitCompact(m).contains("QuantifierFold"),
                 "een getalpredicaat-deelselectie mag nooit als vouw over het VOLLE bereik landen");
     }
 
@@ -199,19 +199,19 @@ class KwantorvouwFilterTest {
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         String v = voorwaarde(m);
-        assertTrue(v.contains("\"filter\":{\"node\":\"Samengesteld\",\"kwantor\":\"ALLE\""),
+        assertTrue(v.contains("\"filter\":{\"node\":\"Compound\",\"quantifier\":\"all\""),
                 () -> "de samengestelde deelselectie hoort als filter op de wire te staan:\n" + v);
-        assertTrue(v.contains("\"kenmerk\":\"aangemeld\"") && v.contains("\"kenmerk\":\"geborgen\""),
+        assertTrue(v.contains("\"characteristic\":\"aangemeld\"") && v.contains("\"characteristic\":\"geborgen\""),
                 () -> "beide bullets horen tegen het ELEMENT gebonden te zijn:\n" + v);
     }
 
     @Test void zonder_deelselectie_blijft_het_filter_leeg() {
-        // The regression pin beside the four above: the unfiltered sentence is unchanged, filter null,
+        // The regression pin beside the four above: the unfiltered sentence is unchanged, no filter,
         // no diagnostics — a die-scan that started seeing subselections where none are written would
         // break every existing §8.2 golden.
         RegelSpraakModel m = resolveer("alle", "");
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        assertTrue(voorwaarde(m).contains("\"filter\":null"),
+        assertFalse(voorwaarde(m).contains("\"filter\""),
                 () -> "zonder geschreven deelselectie hoort er geen filter te staan:\n" + voorwaarde(m));
     }
 }

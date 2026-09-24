@@ -291,7 +291,7 @@ class GenesteVouwbronTest {
     void geneste_ketenzin_zonder_directe_relatie_wordt_een_bronpad() {
         assertEquals(List.of(), vouwbronDiagnoses(MODEL_A + KETENREGEL));
         String json = ir(MODEL_A + KETENREGEL);
-        assertTrue(json.contains("\"kind\": \"MINIMUM\""), "de vouw hoort nu gewoon geëmitteerd te worden");
+        assertTrue(json.contains("\"kind\": \"minimum\""), "de vouw hoort nu gewoon geëmitteerd te worden");
         assertBronPad(json, "bemanning", "gevoerde boot", "berging", "geborgen vondst");
     }
 
@@ -305,7 +305,7 @@ class GenesteVouwbronTest {
         String json = ir(MODEL_B + KETENREGEL);
         assertBronPad(json, "bemanning", "gevoerde boot", "berging", "geborgen vondst");
         assertFalse(json.contains("\"sourceRole\""), "sourcePath en sourceRole sluiten elkaar uit (WF-102 (a))");
-        assertFalse(json.contains("\"rol\": \"aangemelde vondst\""),
+        assertFalse(json.contains("\"role\": \"aangemelde vondst\""),
                 "de wire mag geen rolbinding dragen die de zin niet schrijft");
     }
 
@@ -335,8 +335,8 @@ class GenesteVouwbronTest {
         String json = ir(MODEL_B + GEMENGDE_KETENREGEL);
         assertFalse(json.contains("\"sourcePath\""), "een onoplosbare keten mag geen half pad op de wire zetten");
         assertFalse(json.contains("\"sourceRole\""), "een geneste keten mag geen sourceRole op de wire zetten");
-        assertFalse(json.contains("\"kind\": \"MINIMUM\""), "de vouw mag niet geëmitteerd worden");
-        assertTrue(json.contains("\"node\": \"Onopgelost\""), "de vouw moet een zichtbare markering worden");
+        assertFalse(json.contains("\"kind\": \"minimum\""), "de vouw mag niet geëmitteerd worden");
+        assertTrue(json.contains("\"node\": \"Unresolved\""), "de vouw moet een zichtbare markering worden");
     }
 
     // ---------------- (b) the intermediate to-ONE step ----------------
@@ -353,9 +353,9 @@ class GenesteVouwbronTest {
     void een_toone_tussenstap_wordt_een_stap_op_het_pad() {
         assertEquals(List.of(), vouwbronDiagnoses(FLANKMODEL + TUSSENSTAPREGEL));
         String json = ir(FLANKMODEL + TUSSENSTAPREGEL);
-        assertTrue(json.contains("\"kind\": \"MINIMUM\""), "de vouw hoort nu gewoon geëmitteerd te worden");
+        assertTrue(json.contains("\"kind\": \"minimum\""), "de vouw hoort nu gewoon geëmitteerd te worden");
         assertBronPad(json, "bemanning", "boot", "bootvangst", "vondst");
-        assertFalse(json.contains("\"feittype\": \"jutterbezit\""),
+        assertFalse(json.contains("\"factType\": \"jutterbezit\""),
                 "de type-paar-afleiding mag niet meer binden waar de zin een keten schrijft");
     }
 
@@ -376,8 +376,8 @@ class GenesteVouwbronTest {
     void zonder_tussenstap_bindt_dezelfde_zin_gewoon() {
         assertEquals(List.of(), vouwbronDiagnoses(FLANKMODEL + DIRECTE_REGEL));
         String json = ir(FLANKMODEL + DIRECTE_REGEL);
-        assertTrue(json.contains("\"kind\": \"MINIMUM\""), "de vouw moet gewoon geëmitteerd worden");
-        assertTrue(json.contains("\"feittype\": \"jutterbezit\""), "de directe relatie hoort op de wire");
+        assertTrue(json.contains("\"kind\": \"minimum\""), "de vouw moet gewoon geëmitteerd worden");
+        assertTrue(json.contains("\"factType\": \"jutterbezit\""), "de directe relatie hoort op de wire");
     }
 
     /** The role-anchor question the acute flank left to this card, DECIDED (2026-09-11) and decided by the
@@ -389,7 +389,7 @@ class GenesteVouwbronTest {
     void een_zelfdenoterend_rolanker_blijft_een_eenstaps_binding() {
         assertEquals(List.of(), vouwbronDiagnoses(MODEL_B + ROLANKERREGEL));
         String json = ir(MODEL_B + ROLANKERREGEL);
-        assertTrue(json.contains("\"rol\": \"aangemelde vondst\""),
+        assertTrue(json.contains("\"role\": \"aangemelde vondst\""),
                 "een zelfdenoterend anker IS het onderwerp, dus de eenstaps-binding blijft staan");
         assertFalse(json.contains("\"sourcePath\""), "één relatie blijft één relatie: geen pad");
     }
@@ -420,9 +420,9 @@ class GenesteVouwbronTest {
     @Test
     void de_botsende_eenstaps_vouwbron_wordt_niet_gevouwen() {
         String json = ir(MODEL_B + BOTSENDE_EENSTAPSREGEL);
-        assertFalse(json.contains("\"rol\": \"aangemelde vondst\""),
+        assertFalse(json.contains("\"role\": \"aangemelde vondst\""),
                 "de wire mag geen rolbinding dragen die de zin niet schrijft");
-        assertTrue(json.contains("\"node\": \"Onopgelost\""), "de vouw moet een zichtbare markering worden");
+        assertTrue(json.contains("\"node\": \"Unresolved\""), "de vouw moet een zichtbare markering worden");
     }
 
     /** Without the direct fact type there is nothing to bind silently, so the by-pair check stays out of it
@@ -441,9 +441,9 @@ class GenesteVouwbronTest {
     void een_correcte_eenstaps_vouw_blijft_ongewijzigd_emitteren() {
         assertEquals(List.of(), vouwbronDiagnoses(MODEL_B + CORRECTE_EENSTAPSREGEL));
         String json = ir(MODEL_B + CORRECTE_EENSTAPSREGEL);
-        assertTrue(json.contains("\"kind\": \"MINIMUM\""), "de vouw moet gewoon geëmitteerd worden");
-        assertTrue(json.contains("\"rol\": \"aangemelde vondst\""), "de sourceRole hoort op de wire");
-        assertFalse(json.contains("\"node\": \"Onopgelost\""), "geen markering op een correcte vouw");
+        assertTrue(json.contains("\"kind\": \"minimum\""), "de vouw moet gewoon geëmitteerd worden");
+        assertTrue(json.contains("\"role\": \"aangemelde vondst\""), "de sourceRole hoort op de wire");
+        assertFalse(json.contains("\"node\": \"Unresolved\""), "geen markering op een correcte vouw");
     }
 
     /** A written name that IS the element object type's own name claims no role, so the by-pair derivation
@@ -451,7 +451,7 @@ class GenesteVouwbronTest {
     @Test
     void een_geschreven_objecttypenaam_houdt_de_typepaar_afleiding() {
         assertEquals(List.of(), vouwbronDiagnoses(MODEL_B + OBJECTTYPENAAMREGEL));
-        assertTrue(ir(MODEL_B + OBJECTTYPENAAMREGEL).contains("\"rol\": \"aangemelde vondst\""),
+        assertTrue(ir(MODEL_B + OBJECTTYPENAAMREGEL).contains("\"role\": \"aangemelde vondst\""),
                 "de by-pair afleiding blijft staan waar de zin geen rol noemt");
     }
 
@@ -461,8 +461,8 @@ class GenesteVouwbronTest {
     void de_telvorm_blijft_via_de_geschreven_elementnaam_binden() {
         assertEquals(List.of(), vouwbronDiagnoses(MODEL_B + TELREGEL));
         String json = ir(MODEL_B + TELREGEL);
-        assertTrue(json.contains("\"kind\": \"AANTAL\""), "de telling moet gewoon geëmitteerd worden");
-        assertTrue(json.contains("\"rol\": \"aangemelde vondst\""), "de telling bindt via de geschreven naam");
+        assertTrue(json.contains("\"kind\": \"count\""), "de telling moet gewoon geëmitteerd worden");
+        assertTrue(json.contains("\"role\": \"aangemelde vondst\""), "de telling bindt via de geschreven naam");
     }
 
     /** The same nested chain with no fold around it is the set fence's position, decided by another card: it
@@ -500,8 +500,8 @@ class GenesteVouwbronTest {
         for (String bron : List.of(MODEL_B + GEMENGDE_KETENREGEL, MODEL_B + BOTSENDE_EENSTAPSREGEL,
                 MODEL_B + VREEMD_ANKERREGEL)) {
             String json = ir(bron);
-            assertTrue(json.contains("\"node\": \"Onopgelost\""), "verwacht een markering");
-            assertTrue(java.util.regex.Pattern.compile("\"node\": \"Onopgelost\",\\s*\"type\": \\{").matcher(json).find(),
+            assertTrue(json.contains("\"node\": \"Unresolved\""), "verwacht een markering");
+            assertTrue(java.util.regex.Pattern.compile("\"node\": \"Unresolved\",\\s*\"type\": \\{").matcher(json).find(),
                     "de markering hoort haar eigen resultaattype te dragen");
             assertTrue(json.contains("\"abbreviation\": \"kg\""), "het eigen resultaattype hoort erop te staan");
         }
@@ -511,7 +511,7 @@ class GenesteVouwbronTest {
     @Test
     void de_emissie_draagt_de_diagnose_op_de_wire() {
         String json = ir(MODEL_B + GEMENGDE_KETENREGEL);
-        assertTrue(json.contains("\"severity\": \"WARNING\""), "de diagnose hoort op de wire");
+        assertTrue(json.contains("\"severity\": \"warning\""), "de diagnose hoort op de wire");
         assertTrue(json.contains("geneste verzamelingsstap in een vouwbron"),
                 "de wire moet de reden dragen, niet alleen een niveau");
     }
@@ -522,11 +522,11 @@ class GenesteVouwbronTest {
         assertTrue(json.contains("\"sourcePath\""), () -> "verwacht een sourcePath op de wire:\n" + json);
         int vanaf = json.indexOf("\"sourcePath\"");
         for (int i = 0; i < feittypeEnRol.length; i += 2) {
-            String stap = "\"feittype\": \"" + feittypeEnRol[i] + "\"";
+            String stap = "\"factType\": \"" + feittypeEnRol[i] + "\"";
             String rolnaam = feittypeEnRol[i + 1];
             int hier = json.indexOf(stap, vanaf);
             assertTrue(hier >= 0, () -> "verwacht stap " + stap + " in het pad:\n" + json);
-            int rol = json.indexOf("\"rol\": \"" + rolnaam + "\"", hier);
+            int rol = json.indexOf("\"role\": \"" + rolnaam + "\"", hier);
             assertTrue(rol > hier, () -> "stap " + stap + " moet rol '" + rolnaam + "' binden");
             vanaf = rol;
         }

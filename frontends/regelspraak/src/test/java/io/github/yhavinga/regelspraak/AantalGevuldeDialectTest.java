@@ -115,7 +115,7 @@ class AantalGevuldeDialectTest {
             """);
         assertTrue(m.diagnostics.stream().noneMatch(d -> d.message().startsWith("setlezing buiten een vouwbron")),
                 () -> "de vouwbron wordt als setlezing buiten een vouw gelezen: " + m.diagnostics);
-        assertTrue(IrEmitter.emit(m).contains("\"kind\": \"AANTAL_GEVULDE\""), "de soort bereikt de wire niet");
+        assertTrue(IrEmitter.emit(m).contains("\"kind\": \"filledCount\""), "de soort bereikt de wire niet");
     }
 
     @Test void de_toets_is_typeloos_en_telt_ook_teksten() {

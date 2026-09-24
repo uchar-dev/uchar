@@ -69,9 +69,9 @@ class IrEmitterTest {
             """;
         String c = emitCompact(src);
         assertTrue(c.contains(
-                "\"navigatieBindingen\":["
-                + "{\"node\":\"RolBinding\",\"feittype\":\"aanstelling\",\"rol\":\"afdeling\"},"
-                + "{\"node\":\"RolBinding\",\"feittype\":\"onderdeel\",\"rol\":\"bedrijf\"}]"),
+                "\"path\":["
+                + "{\"node\":\"RoleBinding\",\"factType\":\"aanstelling\",\"role\":\"afdeling\"},"
+                + "{\"node\":\"RoleBinding\",\"factType\":\"onderdeel\",\"role\":\"bedrijf\"}]"),
                 () -> "keten-bindingen (subject-uitwaarts, gedeclareerde namen) ontbreken:\n" + c);
     }
 
@@ -93,8 +93,8 @@ class IrEmitterTest {
             """;
         String c = emitCompact(src);
         assertTrue(c.contains(
-                "\"navigatieBinding\":{\"node\":\"RolBinding\",\"feittype\":\"aanstelling\",\"rol\":\"afdeling\"}"),
-                () -> "navigatieBinding op de genavigeerde kenmerkcheck ontbreekt:\n" + c);
+                "\"navigation\":{\"node\":\"RoleBinding\",\"factType\":\"aanstelling\",\"role\":\"afdeling\"}"),
+                () -> "navigation op de genavigeerde kenmerkcheck ontbreekt:\n" + c);
     }
 
     @Test void scoperol_op_parent_scoped_uniciteit() {
@@ -114,14 +114,14 @@ class IrEmitterTest {
             """;
         String c = emitCompact(src);
         assertTrue(c.contains(
-                "\"scope\":{\"node\":\"RolBinding\",\"feittype\":\"aanstelling\",\"rol\":\"afdeling\"}"),
+                "\"scope\":{\"node\":\"RoleBinding\",\"factType\":\"aanstelling\",\"role\":\"afdeling\"}"),
                 () -> "de scope op de parent-scoped uniciteit ontbreekt:\n" + c);
     }
 
     @Test void feitcreatie_symbolisch_blok_is_heel_of_niet() {
         // A §13.4.7 feitcreatie with one tussenstap: the whole symbolic block — the created fact type, both
         // its roles, the anchor and the path from it, the intermediate hop and then the final one, each a
-        // RolBinding — and nothing beside it: IR-SPEC ch. 3.4 leaves the storage fields to the backend's own
+        // RoleBinding — and nothing beside it: IR-SPEC ch. 3.4 leaves the storage fields to the backend's own
         // role→field mapping, and the target type is the declared filler of the target role, so it is not
         // written either.
         String src = """
@@ -148,16 +148,16 @@ class IrEmitterTest {
         assertTrue(c.contains("{\"node\":\"FactCreation\",\"name\":\"sponsoring\",\"versions\":[{"
                 + "\"factType\":\"sponsoring\",\"anchorRole\":\"sponsorbedrijf\",\"targetRole\":\"sponsorproject\","
                 + "\"anchor\":\"Bedrijf\",\"path\":["
-                + "{\"node\":\"RolBinding\",\"feittype\":\"onderdeel\",\"rol\":\"afdeling\"},"
-                + "{\"node\":\"RolBinding\",\"feittype\":\"uitvoering\",\"rol\":\"project\"}],"
-                + "\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}]}"),
+                + "{\"node\":\"RoleBinding\",\"factType\":\"onderdeel\",\"role\":\"afdeling\"},"
+                + "{\"node\":\"RoleBinding\",\"factType\":\"uitvoering\",\"role\":\"project\"}],"
+                + "\"validity\":{\"node\":\"Validity\"}}]}"),
                 () -> "het symbolische feitcreatieblok ontbreekt, is onvolledig of draagt velden ernaast:\n" + c);
     }
 
     @Test void fold_bron_argument_draagt_geen_navigatiebindingen() {
         // The fold's SOURCE argument routes through its sourceRole; even though its type (Persoon) differs
         // from the fold's outer subject (Ploeg) — the by-pair shape — it must carry NO
-        // navigatieBindingen (IR-SPEC ch. 4.1a; the uchar verifier rejects nav bindings in a fold slot).
+        // path (IR-SPEC ch. 4.1a; the uchar verifier rejects a path in a fold slot).
         String src = """
             Objecttype de Ploeg
                 het totaalbedrag Numeriek (geheel getal);
@@ -173,16 +173,16 @@ class IrEmitterTest {
             """;
         String c = emitCompact(src);
         assertTrue(c.contains(
-                "\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"deelname\",\"rol\":\"deelnemer\"}"),
+                "\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"deelname\",\"role\":\"deelnemer\"}"),
                 () -> "de vouw moet haar sourceRole dragen:\n" + c);
-        assertFalse(c.contains("navigatieBindingen"),
-                () -> "een fold-bron-argument mag GEEN navigatieBindingen dragen:\n" + c);
+        assertFalse(c.contains("\"path\":"),
+                () -> "een fold-bron-argument mag GEEN path dragen:\n" + c);
     }
 
     @Test void fold_filter_elementlezing_draagt_geen_navigatiebindingen() {
         // The filter is a subselectie over the fold ELEMENT: "die kleiner zijn dan 18" reads the
         // deelnemer's OWN leeftijd — an own read, not a navigation from the outer groep. So the filter
-        // read carries no spurious by-pair navigatieBindingen (the emitter walks the filter with the
+        // read carries no spurious by-pair path (the emitter walks the filter with the
         // element as subject).
         String src = """
             Objecttype de Ploeg
@@ -199,10 +199,10 @@ class IrEmitterTest {
             """;
         String c = emitCompact(src);
         assertTrue(c.contains(
-                "\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"deelname\",\"rol\":\"deelnemer\"}"),
+                "\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"deelname\",\"role\":\"deelnemer\"}"),
                 () -> "de vouw moet haar sourceRole dragen:\n" + c);
-        assertFalse(c.contains("navigatieBindingen"),
-                () -> "een element-eigen filter-lezing mag GEEN navigatieBindingen dragen:\n" + c);
+        assertFalse(c.contains("\"path\":"),
+                () -> "een element-eigen filter-lezing mag GEEN path dragen:\n" + c);
     }
 
     @Test void unit_literal_lexeme_is_kaal_eenheid_in_type() {
@@ -224,7 +224,7 @@ class IrEmitterTest {
         // the emitter JSON-escapes non-ASCII, so the compacted € is the six-char escape \\u20ac
         assertTrue(c.contains(
                 "{\"node\":\"Literal\",\"value\":{\"number\":\"5\"},\"type\":{\"node\":\"Number\",\"whole\":true,"
-                + "\"decimals\":0,\"sign\":\"ONBEPAALD\",\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"EUR\","
+                + "\"decimals\":0,\"sign\":\"unspecified\",\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"EUR\","
                 + "\"system\":\"Munt\",\"canonical\":\"EUR\",\"factorToCanonical\":{\"num\":1,\"den\":1}}},"
                 + "\"source\":{\"snippet\":\"5\\u20ac\"}}"),
                 () -> "de unit-literal moet een kaal lexeme dragen met de eenheid in het type:\n" + c);
@@ -258,7 +258,7 @@ class IrEmitterTest {
                 + "{\"node\":\"Unit\",\"abbreviation\":\"bl\"," + stelsel + "{\"num\":3,\"den\":2},"
                 + "\"spellings\":[\"baal\"]}]}"),
                 () -> "het stelsel draagt de gedeclareerde breuken en de spellingen op de declaratie:\n" + c);
-        assertTrue(c.contains("\"datatype\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"ONBEPAALD\","
+        assertTrue(c.contains("\"datatype\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\","
                 + "\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"kr\"," + stelsel + "{\"num\":1,\"den\":1440}}}"),
                 () -> "het voorkomen draagt dezelfde breuk en geen spellingen:\n" + c);
         assertEquals(4, c.split("\"spellings\"", -1).length - 1, () -> "spellingen alleen in het stelsel:\n" + c);
@@ -334,18 +334,18 @@ class IrEmitterTest {
             """;
         String c = emitCompact(src);
         assertTrue(c.contains("{\"node\":\"Literal\",\"value\":{\"number\":\"21\"},\"type\":{\"node\":\"Number\",\"whole\":true,"
-                + "\"decimals\":0,\"sign\":\"ONBEPAALD\",\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"%\","
+                + "\"decimals\":0,\"sign\":\"unspecified\",\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"%\","
                 + "\"canonical\":\"%\",\"factorToCanonical\":{\"num\":1,\"den\":1}}},\"source\":{\"snippet\":\"21%\"}}"),
                 () -> "de percentage-literal moet een kaal lexeme dragen, als getal met de eenheid %, zonder tag:\n" + c);
         assertTrue(c.contains("{\"node\":\"Attribute\",\"name\":\"heffingspercentage\",\"datatype\":{\"node\":"
-                + "\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"ONBEPAALD\",\"unit\":{\"node\":\"Unit\","
+                + "\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":{\"node\":\"Unit\","
                 + "\"abbreviation\":\"%\",\"canonical\":\"%\",\"factorToCanonical\":{\"num\":1,\"den\":1}},"
                 + "\"presentation\":\"percentage\"}}"),
                 () -> "de declaratie draagt de presentatietag:\n" + c);
-        // the rule version's own presentation is the dialect tag GELIJKSTELLING, a field of another node
+        // the rule version's own presentation is the dialect tag equation, a field of another node
         assertEquals(1, c.split("\"presentation\":\"percentage\"", -1).length - 1,
                 () -> "de presentatietag staat alleen op de declaratie:\n" + c);
-        assertTrue(c.contains("\"initialisation\":false,\"presentation\":\"GELIJKSTELLING\"}"),
+        assertTrue(c.contains("\"initialisation\":false,\"presentation\":\"equation\"}"),
                 () -> "de regelversie draagt haar eigen presentatie:\n" + c);
         assertFalse(c.contains("\"number\":\"21%\""),
                 () -> "het %-teken mag niet in het literal-lexeme zitten:\n" + c);
@@ -570,7 +570,7 @@ class IrEmitterTest {
         // bare-lexeme row beside WF-081 (number) and WF-084 (date); the source record keeps the snippet.
         String c = emitCompact(tekstBron("\"Flevoland\""));
         assertTrue(c.contains(
-                "{\"node\":\"Literal\",\"value\":{\"text\":\"Flevoland\"},\"type\":{\"node\":\"Tekst\"},\"source\":{\"snippet\":\"\\\"Flevoland\\\"\"}}"),
+                "{\"node\":\"Literal\",\"value\":{\"text\":\"Flevoland\"},\"type\":{\"node\":\"Text\"},\"source\":{\"snippet\":\"\\\"Flevoland\\\"\"}}"),
                 () -> "de tekst-literal moet de geparste waarde dragen, de bron-snippet in source:\n" + c);
         assertFalse(c.contains("\"text\":\"\\\"Flevoland\\\"\""),
                 () -> "de buitenste aanhalingstekens mogen niet in de literalwaarde zitten:\n" + c);
@@ -616,7 +616,7 @@ class IrEmitterTest {
                 () -> "enkele aanhalingstekens zijn gewone tekens in een Tekst-literal:\n" + enkel);
 
         String leeg = emitCompact(tekstBron("\"\""));
-        assertTrue(leeg.contains("{\"node\":\"Literal\",\"value\":{\"text\":\"\"},\"type\":{\"node\":\"Tekst\"},\"source\":{\"snippet\":\"\\\"\\\"\"}}"),
+        assertTrue(leeg.contains("{\"node\":\"Literal\",\"value\":{\"text\":\"\"},\"type\":{\"node\":\"Text\"},\"source\":{\"snippet\":\"\\\"\\\"\"}}"),
                 () -> "de lege tekst is leeg, niet twee aanhalingstekens:\n" + leeg);
     }
 
@@ -642,7 +642,7 @@ class IrEmitterTest {
      *  unknown sentinel), the delimited source lexeme in the source snippet. */
     private static final String GAAF_GETYPEERD =
             "{\"node\":\"Literal\",\"value\":{\"enumeration\":\"gaaf\"},"
-            + "\"type\":{\"node\":\"Enumeratie\",\"domein\":\"Keurklasse\",\"waarden\":[\"gaaf\",\"beschadigd\"]},"
+            + "\"type\":{\"node\":\"Enumeration\",\"domain\":\"Keurklasse\",\"values\":[\"gaaf\",\"beschadigd\"]},"
             + "\"source\":{\"snippet\":\"'gaaf'\"}}";
 
     @Test void enum_literal_krijgt_zijn_domein_van_het_schrijfdoel() {
@@ -701,22 +701,22 @@ class IrEmitterTest {
                     Daarbij geldt:
                         de tint is 'gaaf'.
             """));
-        String enumType = "{\"node\":\"Enumeratie\",\"domein\":\"Keurklasse\",\"waarden\":[\"gaaf\",\"beschadigd\"]}";
+        String enumType = "{\"node\":\"Enumeration\",\"domain\":\"Keurklasse\",\"values\":[\"gaaf\",\"beschadigd\"]}";
         assertTrue(c.contains("\"node\":\"Let\",\"type\":" + enumType + ",\"binder\":\"tint\",\"value\":"
                         + GAAF_GETYPEERD + ",\"body\":{\"node\":\"BinderRef\",\"name\":\"tint\",\"source\":"),
                 () -> "de hele letketen moet het domein van het schrijfdoel dragen:\n" + c);
     }
 
     @Test void het_domein_draagt_zijn_naam_op_de_wrapper_en_de_referentie_houdt_hem() {
-        // M1 (delta B2, IR-SPEC ch. 2.3): the Domain wrapper writes the name once, so the Enumeratie at the
-        // declaration position carries no domein; at a reference position domein is the domain reference
+        // M1 (delta B2, IR-SPEC ch. 2.3): the Domain wrapper writes the name once, so the Enumeration at the
+        // declaration position carries no domain; at a reference position domain is the domain reference
         // and stays.
         String c = emitCompact(enumBron(""));
         assertTrue(c.contains("\"domains\":[{\"node\":\"Domain\",\"name\":\"Keurklasse\","
-                        + "\"datatype\":{\"node\":\"Enumeratie\",\"waarden\":[\"gaaf\",\"beschadigd\"]}}]"),
+                        + "\"datatype\":{\"node\":\"Enumeration\",\"values\":[\"gaaf\",\"beschadigd\"]}}]"),
                 () -> "de declaratiepositie hoort geen zelfnaam te dragen:\n" + c);
-        assertTrue(c.contains("{\"node\":\"Attribute\",\"name\":\"staat\",\"datatype\":{\"node\":\"Enumeratie\","
-                        + "\"domein\":\"Keurklasse\","),
+        assertTrue(c.contains("{\"node\":\"Attribute\",\"name\":\"staat\",\"datatype\":{\"node\":\"Enumeration\","
+                        + "\"domain\":\"Keurklasse\","),
                 () -> "de referentiepositie houdt haar domeinverwijzing:\n" + c);
     }
 
@@ -728,7 +728,7 @@ class IrEmitterTest {
         var vondst = m.objecttypen.get("Vondst");
         vondst.kenmerkSoorten.remove("veilbaar");
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(c.contains("{\"node\":\"Characteristic\",\"name\":\"veilbaar\",\"kind\":\"ZELFSTANDIG\"}"),
+        assertTrue(c.contains("{\"node\":\"Characteristic\",\"name\":\"veilbaar\",\"kind\":\"nominal\"}"),
                 () -> "een kenmerk zonder soort is zelfstandig (ch. 2.2):\n" + c);
 
         vondst.attribuutMeervoud.put("gewicht", "gewichten");
@@ -757,7 +757,7 @@ class IrEmitterTest {
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
         // IR-SPEC ch. 4.4: a marker whose type is unknown carries no type at all
-        assertTrue(c.contains("{\"node\":\"Onopgelost\",\"source\":{\"snippet\":\"'gaaf'\"}}"),
+        assertTrue(c.contains("{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"'gaaf'\"}}"),
                 () -> "een enumeratiewaarde zonder domeincontext hoort een marker te zijn:\n" + c);
         assertTrue(m.diagnostics.stream().anyMatch(d -> !d.isError()
                         && d.toString().contains("een enumeratiewaarde ontleent haar domein aan de context")),
@@ -803,10 +803,10 @@ class IrEmitterTest {
                     De onderhoudsbijdrage van een Bakenmeester moet gesteld worden op het tijdsevenredig deel per maand van zijn onderhoudstarief gedurende de tijd dat hij dienstdoend is.
             """;
         String c = emitCompact(src);
-        int at = c.indexOf("\"kind\":\"TIJDSEVENREDIG_DEEL\"");
+        int at = c.indexOf("\"kind\":\"timeProportionalPart\"");
         assertTrue(at >= 0, () -> "de pro-rata-node ontbreekt:\n" + c);
         // scope to the node's OWN type field: it sits between the node's granularity
-        // (the first one after kind — the argument refs and the Kenmerk filter carry none) and
+        // (the first one after kind — the argument refs and the CharacteristicCheck filter carry none) and
         // its source, so the base argument's type object cannot satisfy the assertion.
         int from = c.indexOf("\"granularity\"", at);
         int to = c.indexOf("\"source\"", from);
@@ -894,7 +894,7 @@ class IrEmitterTest {
                 () -> "de weigering noemt de reden: " + geweigerd.getMessage());
     }
 
-    /** WF-113 (a) at the producer boundary: the wire carries a diagnostic only as a WARNING whose message is
+    /** WF-113 (a) at the producer boundary: the wire carries a diagnostic only as a warning whose message is
      *  neither empty nor blank and whose line is at least 0, and the verifier refuses every other shape. The
      *  resolver writes none of the twisted diagnostics below, so each is grafted onto a resolver-built model;
      *  that the emitter refuses them by itself is the claim. Until 2026-09-23 nothing pinned INFO or a null
@@ -908,7 +908,7 @@ class IrEmitterTest {
         assertTrue(goed.diagnostics.isEmpty(), () -> "onverwachte diagnoses: " + goed.diagnostics);
         goed.diagnostics.add(new Diagnostic(Severity.WARNING, "een melding", 0));
         String c = IrEmitter.emit(goed).replaceAll("\\s+", "");
-        assertTrue(c.contains("\"diagnostics\":[{\"node\":\"Diagnostic\",\"severity\":\"WARNING\","
+        assertTrue(c.contains("\"diagnostics\":[{\"node\":\"Diagnostic\",\"severity\":\"warning\","
                         + "\"message\":\"eenmelding\",\"line\":0}]"),
                 () -> "een WARNING met een melding op regel 0 hoort geschreven te worden:\n" + c);
 
@@ -927,7 +927,7 @@ class IrEmitterTest {
         }
     }
 
-    /** WF-113 (b) at the producer boundary: a marker is accounted for by a WARNING that quotes its source snippet
+    /** WF-113 (b) at the producer boundary: a marker is accounted for by a warning that quotes its source snippet
      *  verbatim, so a marker whose snippet is null or blank can be accounted for by nothing and the verifier refuses
      *  the document. The frontend can build one ({@code DefinitionResolver.bron} gives an empty snippet for a
      *  missing context or an empty match); the emitter refuses to write it, at either marker node, with a WARNING
@@ -1038,7 +1038,7 @@ class IrEmitterTest {
             """);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains(
-                "\"navigatieBindingen\":[{\"node\":\"RolBinding\",\"feittype\":\"aanstelling\",\"rol\":\"afdeling\"}]"),
+                "\"path\":[{\"node\":\"RoleBinding\",\"factType\":\"aanstelling\",\"role\":\"afdeling\"}]"),
                 "de ongemoeide lezing draagt haar binding");
         tweedeAfdelingsrol(m);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
@@ -1055,7 +1055,7 @@ class IrEmitterTest {
             """);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains(
-                "\"navigatieBinding\":{\"node\":\"RolBinding\",\"feittype\":\"aanstelling\",\"rol\":\"afdeling\"}"),
+                "\"navigation\":{\"node\":\"RoleBinding\",\"factType\":\"aanstelling\",\"role\":\"afdeling\"}"),
                 "de ongemoeide kenmerkcheck draagt haar binding");
         tweedeAfdelingsrol(m);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
@@ -1131,7 +1131,7 @@ class IrEmitterTest {
                 new Expr.Onopgelost(onbekend, b.bron(), "test"), r.voorwaarde(), r.geldigheid()));
         m.diagnostics.add(new Diagnostic(Severity.WARNING, "onopgelost: " + b.bron().snippet(), 1));
         String marker = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(marker.contains("{\"node\":\"Onopgelost\",\"source\":{\"snippet\":\"devondsttellervandeJuttermin6\"}}"),
+        assertTrue(marker.contains("{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"devondsttellervandeJuttermin6\"}}"),
                 () -> "een marker van onbekend type draagt geen type:\n" + marker);
     }
 
@@ -1157,10 +1157,10 @@ class IrEmitterTest {
         assertEquals(List.of("waarde #1", "waarde #2"), m.resolvedRegels.stream().map(ResolvedRegel::naam).toList(),
                 "het model draagt één invoer per versie");
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
-        String doel = "\"target\":{\"node\":\"AttribuutRef\",\"attribuut\":\"waarde\",\"objecttype\":\"Vondst\",";
-        int eerste = c.indexOf("\"resolvedRegels\":[{\"node\":\"Rule\",\"name\":\"waarde\",\"versions\":[{\"validity\":"
-                + "{\"node\":\"Geldigheid\",\"vanaf\":\"2025-01-01\",\"tot\":\"2025-12-31\"}," + doel);
-        int tweede = c.indexOf("},{\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":\"2026-01-01\",\"tot\":null}," + doel);
+        String doel = "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"waarde\",\"subjectType\":\"Vondst\",";
+        int eerste = c.indexOf("\"rules\":[{\"node\":\"Rule\",\"name\":\"waarde\",\"versions\":[{\"validity\":"
+                + "{\"node\":\"Validity\",\"from\":\"2025-01-01\",\"to\":\"2025-12-31\"}," + doel);
+        int tweede = c.indexOf("},{\"validity\":{\"node\":\"Validity\",\"from\":\"2026-01-01\"}," + doel);
         assertTrue(eerste >= 0 && tweede > eerste, () -> "één vorm met twee versies in volgorde verwacht:\n" + c);
         assertTrue(c.indexOf("\"value\":{\"number\":\"1\"}") > eerste && c.indexOf("\"value\":{\"number\":\"2\"}") > tweede,
                 () -> "elke versie draagt haar eigen waarde:\n" + c);
@@ -1251,11 +1251,11 @@ class IrEmitterTest {
                     Een Vondst is zwaar indien zijn gewicht groter is dan 10.
             """);
         assertTrue(c.contains("\"value\":{\"number\":\"1\"},\"type\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,"
-                        + "\"sign\":\"ONBEPAALD\"},\"source\":{\"snippet\":\"1\"}},\"initialisation\":false,\"presentation\":\"GELIJKSTELLING\"}"),
+                        + "\"sign\":\"unspecified\"},\"source\":{\"snippet\":\"1\"}},\"initialisation\":false,\"presentation\":\"equation\"}"),
                 () -> "de gelijkstelling:\n" + c);
-        assertTrue(c.contains("\"initialisation\":false,\"presentation\":\"BEREKENING\"}"), () -> "de berekening:\n" + c);
+        assertTrue(c.contains("\"initialisation\":false,\"presentation\":\"calculation\"}"), () -> "de berekening:\n" + c);
         assertTrue(c.contains("\"source\":{\"snippet\":\"5\"}},\"initialisation\":true}"), () -> "de initialisatie, zonder tag:\n" + c);
-        assertTrue(c.contains("\"value\":{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Booleaan\"},"),
+        assertTrue(c.contains("\"value\":{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Boolean\"},"),
                 () -> "de kenmerktoekenning schrijft de booleaanse waarde waar:\n" + c);
         assertTrue(c.contains("\"initialisation\":false}]}"), () -> "de kenmerktoekenning draagt geen tag:\n" + c);
         assertFalse(c.contains("\"soort\"") || c.contains("KENMERKTOEKENNING") || c.contains("INITIALISATIE"),
@@ -1274,7 +1274,7 @@ class IrEmitterTest {
                     De toelage van een Jutter moet gesteld worden op 1.
             """);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        assertTrue(IrEmitter.emit(m).contains("\"presentation\": \"GELIJKSTELLING\""), "de ongemoeide regel wordt geschreven");
+        assertTrue(IrEmitter.emit(m).contains("\"presentation\": \"equation\""), "de ongemoeide regel wordt geschreven");
         m.objecttypen.get("Jutter").kenmerken.add("Toelage");
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         assertTrue(e.getMessage().contains("zowel een attribuut als een kenmerk") && e.getMessage().contains("(WF-022)"),
@@ -1298,13 +1298,13 @@ class IrEmitterTest {
                 geldig altijd
                     De nummers van alle Vierkanten moeten uniek zijn.
             """);
-        String geldig = "\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}";
+        String geldig = "\"validity\":{\"node\":\"Validity\"}";
         int enkel = c.indexOf("{\"node\":\"Uniqueness\",\"name\":\"nummersuniek\",\"versions\":[{\"sources\":["
                 + "{\"node\":\"Source\",\"objectType\":\"Vierkant\",\"keys\":[\"nummer\"]}]," + geldig + ",\"source\":");
         int unie = c.indexOf("{\"node\":\"Uniqueness\",\"name\":\"namenuniek\",\"versions\":[{\"sources\":["
                 + "{\"node\":\"Source\",\"objectType\":\"Cirkel\",\"keys\":[\"naam\"]},"
                 + "{\"node\":\"Source\",\"objectType\":\"Vierkant\",\"keys\":[\"naam\"]}]," + geldig + ",\"source\":");
-        assertTrue(c.indexOf("\"uniciteiten\":[{\"node\":\"Uniqueness\",\"name\":\"nummersuniek\"") >= 0 && enkel >= 0
+        assertTrue(c.indexOf("\"uniquenesses\":[{\"node\":\"Uniqueness\",\"name\":\"nummersuniek\"") >= 0 && enkel >= 0
                         && unie > enkel, () -> "de enkelvoudige vorm eerst, dan de unie, in één lijst:\n" + c);
         assertFalse(c.contains("uniciteitUnies"), () -> "de tweede lijst bestaat op de wire niet meer:\n" + c);
     }
@@ -1328,7 +1328,7 @@ class IrEmitterTest {
             """);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertEquals(1, m.verdelingen.size());
-        assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains("\"method\":\"GELIJKE_DELEN\""),
+        assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains("\"method\":\"equalShares\""),
                 "de ongemoeide verdeling wordt geschreven");
         io.github.yhavinga.regelspraak.ir.ResolvedVerdeling v = m.verdelingen.get(0);
         m.verdelingen.set(0, new io.github.yhavinga.regelspraak.ir.ResolvedVerdeling(v.naam(), v.bronType(),
@@ -1337,9 +1337,9 @@ class IrEmitterTest {
                 v.maximumAttribuut(), v.afrondingDecimalen(), v.restantAttribuut(), v.groepeerAttribuut(), v.afnemend(),
                 v.voorwaarde(), v.geldigheid()));
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(c.contains("\"verdelingen\":[],"), () -> "de verdeling zonder methode hoort weg te blijven:\n" + c);
+        assertTrue(c.contains("\"allocations\":[],"), () -> "de verdeling zonder methode hoort weg te blijven:\n" + c);
         assertFalse(c.contains("COMPLEX"), () -> "de plaatshouder heeft geen spelling:\n" + c);
-        assertTrue(c.contains("\"diagnostics\":[{\"node\":\"Diagnostic\",\"severity\":\"WARNING\",\"message\":"
+        assertTrue(c.contains("\"diagnostics\":[{\"node\":\"Diagnostic\",\"severity\":\"warning\",\"message\":"
                         + "\"verdeling'verdeling'wordtnietgeschreven:"), () -> "de WARNING noemt de verdeling:\n" + c);
         assertTrue(c.endsWith("\"line\":0}]}"), () -> "regel 0, als laatste diagnose:\n" + c);
         assertEquals(1, IrEmitter.ongeschrevenVerdelingen(m).size());
@@ -1363,11 +1363,13 @@ class IrEmitterTest {
             """);
         assertTrue(c.contains("{\"node\":\"BoundDay\",\"type\":{\"node\":\"Date\",\"precision\":\"day\"},\"source\":{\"snippet\":\"dedag\"}}"),
                 () -> "de gebonden dag:\n" + c);
-        assertTrue(c.contains("{\"node\":\"ContextValue\",\"name\":\"Rekendatum\",\"type\":{\"node\":\"Date\","
+        assertTrue(c.contains("{\"node\":\"ContextValue\",\"name\":\"evaluationDate\",\"type\":{\"node\":\"Date\","
                 + "\"precision\":\"day\"},"), () -> "de rekendatum:\n" + c);
-        assertTrue(c.contains("{\"node\":\"ContextValue\",\"name\":\"Rekenjaar\",\"type\":{\"node\":\"Number\","),
+        assertTrue(c.contains("{\"node\":\"ContextValue\",\"name\":\"evaluationYear\",\"type\":{\"node\":\"Number\","),
                 () -> "het rekenjaar:\n" + c);
         assertFalse(c.contains("Constante"), () -> "de v0-knoop bestaat op de wire niet meer:\n" + c);
+        assertFalse(c.contains("\"name\":\"Rekendatum\"") || c.contains("\"name\":\"Rekenjaar\""),
+                () -> "de v0-spelling van de naam staat niet op de wire:\n" + c);
     }
 
     @Test void een_literal_zonder_type_en_een_onbekende_constante_worden_geweigerd() {
@@ -1468,9 +1470,9 @@ class IrEmitterTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnoses: " + m.diagnostics);
         assertNotNull(m.consistenties.get(0).assertie().bron().file(), "het model kent het bestand van de assertie");
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(c.contains("\"validity\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null},\"source\":{\"snippet\":"
+        assertTrue(c.contains("\"validity\":{\"node\":\"Validity\"},\"source\":{\"snippet\":"
                 + "\"HetgewichtvaneenVondstmoetgroterzijndan0\",\"line\":12}}"), () -> "de consistentieversie:\n" + c);
-        assertTrue(c.contains("{\"node\":\"ResolvedRegelGroep\",\"naam\":\"weging\",\"recursief\":false,\"leden\":"
+        assertTrue(c.contains("{\"node\":\"RuleGroup\",\"name\":\"weging\",\"recursive\":false,\"members\":"
                 + "[\"waarde\",\"positiefgewicht\"],\"source\":{\"snippet\":\"weging\",\"line\":5}}"), () -> "de regelgroep:\n" + c);
         assertEquals(2, c.split("\"line\":", -1).length - 1, () -> "een regel staat alleen op de twee dragers:\n" + c);
         assertFalse(c.contains("\"file\"") || c.contains("\"column\"") || c.contains("\"bron\""),
@@ -1515,7 +1517,7 @@ class IrEmitterTest {
             if (snippet == null) {
                 String c = IrEmitter.emit(m).replaceAll("\\s+", "");
                 assertTrue(c.contains("\"value\":{\"number\":\"0\"},\"type\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,"
-                        + "\"sign\":\"ONBEPAALD\"}},\"periode\""), () -> "de literal zonder brontekst:\n" + c);
+                        + "\"sign\":\"unspecified\"}},\"source\":"), () -> "de literal zonder brontekst:\n" + c);
                 continue;
             }
             IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));

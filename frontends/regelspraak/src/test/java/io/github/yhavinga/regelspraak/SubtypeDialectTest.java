@@ -29,13 +29,13 @@ class SubtypeDialectTest {
         return IrEmitter.emit(m).replaceAll("\\s+", "");
     }
 
-    /** The {@code resolvedRegels} array of a compacted emission — the part a declaration SPLIT (one flat
+    /** The {@code rules} list of a compacted emission — the part a declaration SPLIT (one flat
      *  type versus a subtype and its parent) leaves untouched, so two documents that mean the same rule
      *  compare equal here even though their objecttypen sections differ. */
     private static String regeldeel(String compact) {
-        int van = compact.indexOf("\"resolvedRegels\":");
-        int tot = compact.indexOf("\"resolvedDagsoorten\":");
-        assertTrue(van >= 0 && tot > van, () -> "geen resolvedRegels-sectie in de emissie:\n" + compact);
+        int van = compact.indexOf("\"rules\":[");
+        int tot = compact.indexOf("\"dayKindDefinitions\":");
+        assertTrue(van >= 0 && tot > van, () -> "geen rules-lijst in de emissie:\n" + compact);
         return compact.substring(van, tot);
     }
 
@@ -369,8 +369,8 @@ class SubtypeDialectTest {
         assertEquals(io.github.yhavinga.regelspraak.ir.Conditie.Kwantor.ALLE, altijd.kwantor());
         assertTrue(altijd.onderdelen().isEmpty(), "'altijd' is een ALLE-groep zonder onderdelen");
         assertTrue(emitCompact(m).contains(
-                        "\"voorwaarde\":{\"node\":\"Samengesteld\",\"kwantor\":\"ALLE\",\"drempel\":0,"
-                        + "\"onderdelen\":[],\"source\":{\"snippet\":\"altijd\"}}"),
+                        "\"justification\":{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,"
+                        + "\"parts\":[],\"source\":{\"snippet\":\"altijd\"}}"),
                 () -> "de wire draagt de altijd-rechtvaardiging niet:\n" + emitCompact(m));
     }
 
@@ -414,8 +414,8 @@ class SubtypeDialectTest {
         assertNull(m.verbindendeRolBinding(m.objecttypen.get("Kustgemeente"), m.objecttypen.get("Wrakrecht")),
                 "het typepaar hoort door het subtype dubbel verbonden te zijn");
         String c = emitCompact(m);
-        assertTrue(c.contains("\"sourceRole\":{\"node\":\"RolBinding\",\"feittype\":\"wrakberging\","
-                        + "\"rol\":\"geborgenwrakrecht\"}"),
+        assertTrue(c.contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"wrakberging\","
+                        + "\"role\":\"geborgenwrakrecht\"}"),
                 () -> "de vouwbron hoort op de GESCHREVEN rol te binden in plaats van bindingloos de wire op te "
                         + "gaan (de wire eist sinds L2 het bereik):\n" + c);
     }
@@ -498,12 +498,12 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
-        assertTrue(c.contains("\"node\":\"Kenmerk\",\"kenmerk\":\"betwist\""),
+        assertTrue(c.contains("\"node\":\"CharacteristicCheck\",\"characteristic\":\"betwist\""),
                 () -> "een geërfd bijvoeglijk kenmerk hoort te binden in plaats van een marker te blijven:\n" + c);
         // the EEN-form reads the §3.5 soort of the SAME declarant the binding found
-        assertTrue(c.contains("\"node\":\"Kenmerk\",\"kenmerk\":\"aanmelding\""),
+        assertTrue(c.contains("\"node\":\"CharacteristicCheck\",\"characteristic\":\"aanmelding\""),
                 () -> "een geërfd zelfstandig kenmerk hoort in de een-vorm te binden:\n" + c);
-        assertFalse(c.contains("Onopgelost"), () -> "geen enkele voorwaarde hoort een marker te blijven:\n" + c);
+        assertFalse(c.contains("Unresolved"), () -> "geen enkele voorwaarde hoort een marker te blijven:\n" + c);
     }
 
     @Test void een_objectcreatie_zet_een_geerfd_kenmerk() {
@@ -532,9 +532,9 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
-        assertTrue(c.contains("\"node\":\"Toekenning\",\"attribuut\":\"betwist\","),
+        assertTrue(c.contains("\"node\":\"MemberInit\",\"member\":\"betwist\","),
                 () -> "een geërfd kenmerk hoort als toekenning te binden, niet als fout:\n" + c);
-        assertTrue(c.contains("\"kenmerk\":true"),
+        assertTrue(c.contains("\"characteristic\":true"),
                 () -> "de toekenning hoort als KENMERK te binden (een boolean setter, geen attribuut):\n" + c);
     }
 
@@ -560,7 +560,7 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
-        assertTrue(c.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"wachtplichtig\""),
+        assertTrue(c.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"wachtplichtig\""),
                 () -> "de gedurende-klem hoort gebonden op de wire te staan in plaats van als Onopgelost, "
                         + "dat WF-055 weigert:\n" + c);
     }
@@ -591,7 +591,7 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(),
                 () -> "een geërfde tijdlijn hoort de §8.2-controle gewoon te dragen: " + m.errors());
-        assertFalse(emitCompact(m).contains("Onopgelost"),
+        assertFalse(emitCompact(m).contains("Unresolved"),
                 "geen van beide §8.2-voorwaarden hoort een marker te worden");
     }
 
@@ -662,10 +662,10 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
-        assertFalse(c.contains("\"filter\":{\"node\":\"Samengesteld\""),
+        assertFalse(c.contains("\"filter\":{\"node\":\"Compound\""),
                 () -> "een tijdreekslezing hoort niet als statische vergelijking in de samengestelde "
                         + "gedurende-conditie te belanden:\n" + c);
-        assertTrue(c.contains("\"filter\":{\"node\":\"Onopgelost\""),
+        assertTrue(c.contains("\"filter\":{\"node\":\"Unresolved\""),
                 () -> "de niet-lowerbare samengestelde conditie hoort een eerlijke marker te zijn:\n" + c);
         assertEquals(regeldeel(emitCompact(Resolver.resolve(vlak))), regeldeel(c),
                 "een subtype-subject met geërfde tijdlijnleden hoort exact als het vlakke equivalent te "
@@ -694,7 +694,7 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
-        assertTrue(c.contains("\"node\":\"DimensieCel\""),
+        assertTrue(c.contains("\"node\":\"DimensionCellRead\""),
                 () -> "een cellezing van een geërfd gedimensioneerd attribuut hoort te resolven:\n" + c);
         assertTrue(c.contains("\"labels\":[\"voorjaar\"]"),
                 () -> "de cel hoort haar gedeclareerde label te dragen:\n" + c);
@@ -803,13 +803,13 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
-        assertTrue(c.contains("\"kind\":\"TIJDSEVENREDIG_DEEL\""), () -> "geen tijdsevenredige vouw:\n" + c);
-        assertTrue(c.contains("\"attribuut\":\"reistarief\",\"objecttype\":\"Zeereis\""),
+        assertTrue(c.contains("\"kind\":\"timeProportionalPart\""), () -> "geen tijdsevenredige vouw:\n" + c);
+        assertTrue(c.contains("\"attribute\":\"reistarief\",\"subjectType\":\"Zeereis\""),
                 () -> "de basis hoort het geërfde tijdlijnattribuut van het genavigeerde subtype te "
                         + "lezen:\n" + c);
         // the operand gate is what this pins: only a single-period timeline base admits the clip, so a
         // bound filter proves the navigated type's facets were read through its chain
-        assertTrue(c.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"varend\""),
+        assertTrue(c.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"varend\""),
                 () -> "een geërfde tijdlijn achter een to-one navigatie hoort de klem te dragen in plaats "
                         + "van een marker te worden:\n" + c);
     }
@@ -841,10 +841,10 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
-        assertTrue(c.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"gestremd\","),
+        assertTrue(c.contains("\"filter\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"gestremd\","),
                 () -> "de genavigeerde klem hoort te binden op het geërfde tijdlijnkenmerk:\n" + c);
-        assertTrue(c.contains("\"navigatieBinding\":{\"node\":\"RolBinding\",\"feittype\":\"reisdeelname\","
-                        + "\"rol\":\"vaartocht\"}"),
+        assertTrue(c.contains("\"navigation\":{\"node\":\"RoleBinding\",\"factType\":\"reisdeelname\","
+                        + "\"role\":\"vaartocht\"}"),
                 () -> "de kenmerkcheck navigeert via haar binding:\n" + c);
     }
 
@@ -880,7 +880,7 @@ class SubtypeDialectTest {
         // integrates over time, so a plain-EUR target is the right one and no unit error is raised.
         assertTrue(m.errors().isEmpty(),
                 () -> "een setlezing over een GEËRFDE tijdlijn is de gewone instantievouw niet: " + m.errors());
-        assertTrue(emitCompact(m).contains("\"kind\":\"TOTAAL\""), "de vouw hoort een totaal te blijven");
+        assertTrue(emitCompact(m).contains("\"kind\":\"total\""), "de vouw hoort een totaal te blijven");
     }
 
     @Test void een_naam_die_een_rol_in_een_ander_feittype_treft_bindt_niet() {

@@ -17,6 +17,7 @@ import io.github.yhavinga.regelspraak.ir.ResolvedStartpunt;
 import io.github.yhavinga.regelspraak.ir.ResolvedUniciteit;
 import io.github.yhavinga.regelspraak.ir.ResolvedUniciteitUnie;
 import io.github.yhavinga.regelspraak.ir.ResolvedVerdeling;
+import io.github.yhavinga.regelspraak.ir.Spelling;
 import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.model.Eenheid;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
@@ -37,9 +38,11 @@ import java.util.Map;
 /**
  * The mirror emitter: a faithful, engine-neutral JSON dump of the complete resolved
  * {@link RegelSpraakModel} — every declaration, every resolved IR list, and the diagnostics.
- * It writes {@code uchar-ir-v1} in its L4 shape with the source record of L5: a node's source text is its
- * {@code source} record ({@code snippet}, and the {@code line} on a consistency version and a rule group), absent
- * where the node has none. The container is the v1 one
+ * It writes {@code uchar-ir-v1} in its L5 shape: every node, key and enumeration value under its IR-SPEC name, the
+ * enumeration values through the one table {@link Spelling}; a node's source text is its {@code source} record
+ * ({@code snippet}, and the {@code line} on a consistency version and a rule group), absent where the node has
+ * none; an optional field the model leaves empty is absent, not null. The Java records keep their v0 names, so
+ * this emitter is where the two spellings meet. The container is the v1 one
  * ({@code {format, model, rules, diagnostics}}, the declarations as lists, an object type's
  * members as {@code Attribute}/{@code Characteristic} nodes, a domain as a {@code Domain}
  * wrapper). The type system is IR-SPEC's: a number is a {@code Number} (a percentage one with the
@@ -52,32 +55,26 @@ import java.util.Map;
  * linked instances, an allocation, a navigated characteristic check and a fact creation carry
  * their bindings, and a role check is one {@code RoleMembership} node. Where the resolver found
  * no unique binding for a position that needs one, the model is refused — a document without the
- * binding would be read as something else. The rule layer and the expression layer are the L4 ones: a named form
+ * binding would be read as something else. A named form
  * ({@code Rule}, {@code Allocation}, {@code ObjectCreation}, {@code FactCreation}, {@code Consistency},
  * {@code Uniqueness}) is its name and its versions, which the model's lists spell as one entry per version; a rule
  * version writes its kind as {@code initialisation} and {@code presentation}; a fold is an {@code Aggregation} and
  * every other function a {@code BuiltinCall}; a literal writes the typed value its type names; the bound day of a
- * day-kind definition is a {@code BoundDay} and a session value a {@code ContextValue}. Every other node keeps the
- * Dutch v0 field names EXACTLY as the Java records name them until its own migration step. No filtering: it is the
+ * day-kind definition is a {@code BoundDay} and a session value a {@code ContextValue}. No filtering: it is the
  * uchar-programme mirror artifact (mirror first, diverge later), with one exception the wire forces — an allocation
  * whose method the frontend could not decide has no spelling, so it is left out and a WARNING names it
- * ({@link #ongeschrevenVerdelingen}). For the M1 containers and nodes
- * (the root, {@code model}, {@code rules}, {@code ObjectType}, {@code Attribute},
- * {@code Characteristic}, {@code TimelineFacet}, {@code Domain}), for {@code RoleMembership} and for
- * the type-system nodes ({@code Number}, {@code Date}, {@code Unit}, {@code UnitSystem},
- * {@code Parameter}, {@code DayKind}), for the L4 nodes and their version records the
- * key order is the {@code properties} order of the schema ({@code spec/schema/uchar-ir-v1.schema.json});
- * a node carried over from v0 keeps the order this emitter has always written it in, without the
- * keys L2 took off it, so a re-emission is byte-identical to a migrated document. That order is not
- * always the schema's — {@code PrioritizedDefaults} writes {@code defaults} before
- * {@code ongeordend} (golden {@code jutterswet-wachtgeld}, pinned by gate 10) — until its own step,
- * as {@code spec/schema/README.md} records.
+ * ({@link #ongeschrevenVerdelingen}). The key order of every node is the order this emitter wrote it in before the
+ * L5 renaming, with the keys renamed in place and a field left out where the model is empty, so a re-emission is
+ * byte-identical to a migrated document. That is the {@code properties} order of the schema
+ * ({@code spec/schema/uchar-ir-v1.schema.json}) except where the emitter always wrote otherwise —
+ * {@code PrioritizedDefaults} writes {@code defaults} before {@code unordered} (golden {@code jutterswet-wachtgeld},
+ * pinned by gate 10) — as {@code spec/schema/README.md} records.
  *
  * <p>Completeness is compiler-enforced where it can be: the {@link Datatype}, {@link Expr}
  * and {@link Conditie} sealed hierarchies are walked with EXHAUSTIVE switches (no default
  * branch), so adding a subtype fails compilation until this emitter handles it. Every node
- * carries a {@code "node"} discriminator: the Java record's simple name, or the name the node
- * took when a migration step restructured it.
+ * carries a {@code "node"} discriminator: its name on the wire, whatever the Java record is called
+ * ({@code Regelversie} is the one node the wire still spells in its v0 form, delta B25).
  *
  * <p>Determinism: maps and lists are iterated in their natural (insertion/declaration)
  * order — no sorting — so the output is byte-stable across runs on the same input. Numbers
@@ -126,8 +123,8 @@ public final class IrEmitter {
                 .filter(d -> d.severity() != RegelSpraakModel.Severity.WARNING
                         || d.message() == null || d.message().isBlank() || d.line() < 0).toList();
         if (!nietWire.isEmpty())
-            throw new IllegalStateException("IrEmitter: WF-113 (a) — de wire draagt alleen een WARNING met een "
-                    + "melding die niet leeg of blanco is en een regel ≥ 0; dit model draagt " + nietWire);
+            throw new IllegalStateException("IrEmitter: WF-113 (a) — de wire draagt alleen de severity warning met "
+                    + "een melding die niet leeg of blanco is en een regel ≥ 0; dit model draagt " + nietWire);
         IrEmitter e = new IrEmitter();
         e.model(m);
         e.w.sb.append('\n');
@@ -145,8 +142,8 @@ public final class IrEmitter {
      *  resolve against it (null outside a subject-bearing form). */
     private Objecttype huidigSubject;
     /** The one AttribuutRef currently being emitted as the single argument of an instance fold: its
-     *  relation is the fold's range ({@code sourceRole} or {@code sourcePath}), so it never carries
-     *  {@code navigatieBindingen} (IR-SPEC ch. 4.1a; the verifier rejects them in a fold slot, WF-053).
+     *  relation is the fold's range ({@code sourceRole} or {@code sourcePath}), so it never carries a
+     *  {@code path} (IR-SPEC ch. 4.1a; the verifier rejects one in a fold slot, WF-053).
      *  Null otherwise. */
     private Expr foldBron;
     /** The name {@link #foldBron} is written with where it differs from the record's: see
@@ -196,55 +193,55 @@ public final class IrEmitter {
 
         w.key("rules").beginObject();
 
-        // the list keys stay v0 until their own landing; each list holds named forms, grouped from the model's
-        // one entry per version (vormen)
-        w.key("resolvedRegels").beginArray();
-        for (Vorm<ResolvedRegel> v : vormen("resolvedRegels", m.resolvedRegels, ResolvedRegel::naam,
+        // IR-SPEC ch. 2, Rules: each list holds named forms, grouped from the model's one entry per version
+        // (vormen); the model's lists keep their v0 names
+        w.key("rules").beginArray();
+        for (Vorm<ResolvedRegel> v : vormen("rules", m.resolvedRegels, ResolvedRegel::naam,
                 IrEmitter::annotaties)) rule(v);
         w.endArray();
 
-        w.key("resolvedDagsoorten").beginArray();
+        w.key("dayKindDefinitions").beginArray();
         for (ResolvedDagsoort d : m.resolvedDagsoorten) resolvedDagsoort(d);
         w.endArray();
 
-        w.key("objectCreaties").beginArray();
-        for (Vorm<ResolvedObjectCreatie> v : vormen("objectCreaties", m.objectCreaties, ResolvedObjectCreatie::naam,
+        w.key("objectCreations").beginArray();
+        for (Vorm<ResolvedObjectCreatie> v : vormen("objectCreations", m.objectCreaties, ResolvedObjectCreatie::naam,
                 null)) objectCreation(v);
         w.endArray();
 
         // an allocation without one of the three methods has no spelling: it is left out, and
         // ongeschrevenVerdelingen names it in the diagnostics below
-        w.key("verdelingen").beginArray();
+        w.key("allocations").beginArray();
         List<ResolvedVerdeling> verdelingen = m.verdelingen.stream()
                 .filter(v -> v.methode() != ResolvedVerdeling.Methode.COMPLEX).toList();
-        for (Vorm<ResolvedVerdeling> v : vormen("verdelingen", verdelingen, ResolvedVerdeling::naam, null))
+        for (Vorm<ResolvedVerdeling> v : vormen("allocations", verdelingen, ResolvedVerdeling::naam, null))
             allocation(v);
         w.endArray();
 
-        w.key("consistenties").beginArray();
-        for (Vorm<ResolvedConsistentie> v : vormen("consistenties", m.consistenties, ResolvedConsistentie::naam, null))
+        w.key("consistencies").beginArray();
+        for (Vorm<ResolvedConsistentie> v : vormen("consistencies", m.consistenties, ResolvedConsistentie::naam, null))
             consistency(v);
         w.endArray();
 
         // IR-SPEC ch. 3.6: one list of uniquenesses, the single-source forms first and then the unions, each in model
         // order; the model keeps the two in two lists
-        w.key("uniciteiten").beginArray();
-        for (Vorm<ResolvedUniciteit> v : vormen("uniciteiten", m.uniciteiten, ResolvedUniciteit::naam, null))
+        w.key("uniquenesses").beginArray();
+        for (Vorm<ResolvedUniciteit> v : vormen("uniquenesses", m.uniciteiten, ResolvedUniciteit::naam, null))
             uniqueness(v);
-        for (Vorm<ResolvedUniciteitUnie> v : vormen("uniciteiten", m.uniciteitUnies, ResolvedUniciteitUnie::naam, null))
-            uniquenessUnion(v);
+        for (Vorm<ResolvedUniciteitUnie> v : vormen("uniquenesses", m.uniciteitUnies, ResolvedUniciteitUnie::naam,
+                null)) uniquenessUnion(v);
         w.endArray();
 
-        w.key("feitCreaties").beginArray();
-        for (Vorm<ResolvedFeitCreatie> v : vormen("feitCreaties", m.feitCreaties, ResolvedFeitCreatie::naam, null))
+        w.key("factCreations").beginArray();
+        for (Vorm<ResolvedFeitCreatie> v : vormen("factCreations", m.feitCreaties, ResolvedFeitCreatie::naam, null))
             factCreation(v);
         w.endArray();
 
-        w.key("resolvedStartpunten").beginArray();
+        w.key("startPointDeterminations").beginArray();
         for (ResolvedStartpunt s : m.resolvedStartpunten) startpunt(s);
         w.endArray();
 
-        w.key("regelGroepen").beginArray();
+        w.key("ruleGroups").beginArray();
         for (ResolvedRegelGroep g : m.regelGroepen) regelGroep(g);
         w.endArray();
 
@@ -278,21 +275,21 @@ public final class IrEmitter {
     // --- §4 prioritized defaults (extension) -------------------------------
 
     private void prioritizedDefaults(PrioritizedDefaults p) {
-        // navigatieBindingen on a default's own-attribute/characteristic reads resolve against the group subject.
+        // the path of a default's own-attribute/characteristic read resolves against the group subject
         Objecttype vorigSubject = huidigSubject;
         huidigSubject = m == null ? null : m.objecttypen.get(p.onderwerp());
         w.beginObject();
         w.key("node").value("PrioritizedDefaults");
-        w.key("naam").value(p.naam());
-        w.key("onderwerp").value(p.onderwerp());
-        w.key("kenmerk").value(p.kenmerk());                        // always emitted (null on attribute defaults)
-        if (p.attribuut() != null) w.key("attribuut").value(p.attribuut());  // only on attribute defaults (WF-050)
+        w.key("name").value(p.naam());
+        w.key("subject").value(p.onderwerp());
+        if (p.kenmerk() != null) w.key("characteristic").value(p.kenmerk());   // absent on attribute defaults
+        if (p.attribuut() != null) w.key("attribute").value(p.attribuut());   // only on attribute defaults (WF-050)
         w.key("defaults").beginArray();
         for (Default d : p.defaults()) dflt(d);
         w.endArray();
-        if (p.ongeordend()) w.key("ongeordend").value(true);        // only on a declared-unordered group member
+        if (p.ongeordend()) w.key("unordered").value(true);         // only on a declared-unordered group member
         bronrecord(p.bron());
-        w.key("geldigheid"); geldigheid(p.geldigheid());
+        w.key("validity"); geldigheid(p.geldigheid());
         w.endObject();
         huidigSubject = vorigSubject;
     }
@@ -301,15 +298,16 @@ public final class IrEmitter {
     private void dflt(Default d) {
         w.beginObject();
         w.key("node").value("Default");
-        w.key("besluit");                                           // null on an attribute default
-        if (d.besluit() == null) w.valueNull(); else w.value(d.besluit().booleanValue());
-        w.key("voorwaarde"); conditie(d.voorwaarde());              // null only on the initialisation default
-        if (d.consequentie() != null) { w.key("consequentie"); expr(d.consequentie()); }  // attribute defaults only
-        if (d.initialisatie()) w.key("initialisatie").value(true);
+        // absent on an attribute default
+        if (d.besluit() != null) w.key("decision").value(d.besluit().booleanValue());
+        // absent on the initialisation default and on a group default (IR-SPEC ch. 6.1)
+        if (d.voorwaarde() != null) { w.key("justification"); conditie(d.voorwaarde()); }
+        if (d.consequentie() != null) { w.key("consequence"); expr(d.consequentie()); }  // attribute defaults only
+        if (d.initialisatie()) w.key("initialisation").value(true);
         if (d.excepties() != null) {
-            w.key("excepties").beginObject();
-            w.key("ongeordend").value(d.excepties().ongeordend());
-            w.key("leden").beginArray();
+            w.key("exceptions").beginObject();
+            w.key("unordered").value(d.excepties().ongeordend());
+            w.key("members").beginArray();
             for (ExceptionGroup g : d.excepties().leden()) exceptionGroup(g);
             w.endArray();
             w.endObject();
@@ -368,7 +366,8 @@ public final class IrEmitter {
             w.key("name").value(k);
             // ch. 2.2: an untagged characteristic is nominal
             Objecttype.KenmerkSoort soort = ot.kenmerkSoorten.get(k);
-            w.key("kind").value(soort == null ? Objecttype.KenmerkSoort.ZELFSTANDIG.name() : soort.name());
+            w.key("kind").value(Spelling.CHARACTERISTIC_KIND.spelling(
+                    soort == null ? Objecttype.KenmerkSoort.ZELFSTANDIG : soort));
             if (ot.kenmerkGranulariteit.containsKey(k))
                 timelineFacet(ot.kenmerkGranulariteit.get(k), ot.kenmerkTijdlijnAantal.get(k), null);
             w.endObject();
@@ -381,7 +380,7 @@ public final class IrEmitter {
     private void timelineFacet(Granulariteit granulariteit, Integer aantal, String tijdlijnNaam) {
         w.key("timeline").beginObject();
         w.key("node").value("TimelineFacet");
-        w.key("granularity").value(granulariteit.name());
+        w.key("granularity").value(Spelling.GRANULARITY.spelling(granulariteit));
         w.key("count").value(aantal == null ? 1 : aantal);
         if (tijdlijnNaam != null) w.key("timelineName").value(tijdlijnNaam);
         w.endObject();
@@ -413,7 +412,7 @@ public final class IrEmitter {
     }
 
     /** IR-SPEC ch. 2.3: the wrapper carries the name, so the datatype at this declaration position carries no
-     *  self-name; at every reference position {@code domein} stays (it is the domain reference there). */
+     *  self-name; at every reference position {@code domain} stays (it is the domain reference there). */
     private void domain(String naam, Datatype dt) {
         if (dt == null)
             throw new IllegalStateException("IrEmitter: domein '" + naam + "' heeft geen datatype");
@@ -424,8 +423,8 @@ public final class IrEmitter {
         if (dt instanceof Datatype.Enumeratie e) {
             eenNaam("domein", naam, e.domein());
             w.beginObject();
-            w.key("node").value("Enumeratie");
-            w.key("waarden"); stringList(e.waarden());
+            w.key("node").value("Enumeration");
+            w.key("values"); stringList(e.waarden());
             w.endObject();
         } else {
             datatype(dt, true);
@@ -598,10 +597,10 @@ public final class IrEmitter {
 
     private void feittype(Feittype ft) {
         w.beginObject();
-        w.key("node").value("Feittype");
-        w.key("naam").value(ft.naam);
-        w.key("wederkerig").value(ft.wederkerig);
-        w.key("rollen").beginArray();
+        w.key("node").value("FactType");
+        w.key("name").value(ft.naam);
+        w.key("reciprocal").value(ft.wederkerig);
+        w.key("roles").beginArray();
         for (Rol r : ft.rollen) rol(r);
         w.endArray();
         w.endObject();
@@ -609,31 +608,32 @@ public final class IrEmitter {
 
     private void rol(Rol r) {
         w.beginObject();
-        w.key("node").value("Rol");
-        w.key("naam").value(r.naam());
-        w.key("objecttypeNaam").value(r.objecttypeNaam());
-        w.key("meervoud").value(r.meervoud());
-        w.key("meervoudig").value(r.meervoudig());
+        w.key("node").value("Role");
+        w.key("name").value(r.naam());
+        w.key("objectType").value(r.objecttypeNaam());
+        if (r.meervoud() != null) w.key("plural").value(r.meervoud());
+        w.key("many").value(r.meervoudig());
         w.endObject();
     }
 
     private void dimensie(Dimensie d) {
         w.beginObject();
-        w.key("node").value("Dimensie");
-        w.key("naam").value(d.naam());
-        w.key("naamMeervoud").value(d.naamMeervoud());
-        w.key("voorzetsel").value(d.voorzetsel());
-        w.key("waarden"); stringList(d.waarden());
+        w.key("node").value("Dimension");
+        w.key("name").value(d.naam());
+        if (d.naamMeervoud() != null) w.key("plural").value(d.naamMeervoud());
+        if (d.voorzetsel() != null) w.key("preposition").value(d.voorzetsel());
+        w.key("labels"); stringList(d.waarden());
         w.endObject();
     }
 
     private void tijdlijn(Tijdlijn t) {
         w.beginObject();
-        w.key("node").value("Tijdlijn");
-        w.key("naam").value(t.naam());
-        w.key("variabelStartpunt").value(t.variabelStartpunt());
-        w.key("granulariteit").value(t.granulariteit() == null ? null : t.granulariteit().name());
-        w.key("aantal").value(t.aantal());
+        w.key("node").value("Timeline");
+        w.key("name").value(t.naam());
+        w.key("variableStart").value(t.variabelStartpunt());
+        w.key("granularity").value(t.granulariteit() == null ? null
+                : Spelling.GRANULARITY.spelling(t.granulariteit()));
+        w.key("count").value(t.aantal());
         w.endObject();
     }
 
@@ -643,7 +643,7 @@ public final class IrEmitter {
     private void datatype(Datatype dt) { datatype(dt, false); }
 
     /** IR-SPEC ch. 2.4. A number is a {@code Number}, its sign always written (a number declared without one is
-     *  ONBEPAALD); a percentage is a {@code Number} whose unit is '%' — the built-in one when it has none — and at a
+     *  unspecified); a percentage is a {@code Number} whose unit is '%' — the built-in one when it has none — and at a
      *  {@code declaratie} position (the datatype of an attribute, a parameter or a domain) it carries the presentation
      *  tag, which a type annotation never does. A date is a {@code Date} with its precision. */
     private void datatype(Datatype dt, boolean declaratie) {
@@ -654,7 +654,8 @@ public final class IrEmitter {
                 w.key("node").value("Number");
                 w.key("whole").value(n.geheel());
                 w.key("decimals").value(n.decimalen());
-                w.key("sign").value((n.teken() == null ? Datatype.Teken.ONBEPAALD : n.teken()).name());
+                w.key("sign").value(Spelling.NUMBER_SIGN.spelling(
+                        n.teken() == null ? Datatype.Teken.ONBEPAALD : n.teken()));
                 if (n.eenheid() != null) { w.key("unit"); unit(n.eenheid()); }
             }
             case Datatype.Percentage p -> {
@@ -665,24 +666,24 @@ public final class IrEmitter {
                 w.key("node").value("Number");
                 w.key("whole").value(p.geheel());
                 w.key("decimals").value(p.decimalen());
-                w.key("sign").value(Datatype.Teken.ONBEPAALD.name());
+                w.key("sign").value(Spelling.NUMBER_SIGN.spelling(Datatype.Teken.ONBEPAALD));
                 w.key("unit"); unit(e);
                 if (declaratie) w.key("presentation").value("percentage");
             }
-            case Datatype.Tekst t -> w.key("node").value("Tekst");
-            case Datatype.Booleaan b -> w.key("node").value("Booleaan");
+            case Datatype.Tekst t -> w.key("node").value("Text");
+            case Datatype.Booleaan b -> w.key("node").value("Boolean");
             case Datatype.DatumInDagen d -> {
                 w.key("node").value("Date");
-                w.key("precision").value("day");
+                w.key("precision").value(Spelling.DATE_PRECISION.spelling(d));
             }
             case Datatype.DatumTijd d -> {
                 w.key("node").value("Date");
-                w.key("precision").value("millisecond");
+                w.key("precision").value(Spelling.DATE_PRECISION.spelling(d));
             }
             case Datatype.Enumeratie e -> {
-                w.key("node").value("Enumeratie");
-                w.key("domein").value(e.domein());
-                w.key("waarden"); stringList(e.waarden());
+                w.key("node").value("Enumeration");
+                w.key("domain").value(e.domein());
+                w.key("values"); stringList(e.waarden());
             }
             // the resolver's "no claim" has no wire spelling: a derived position the frontend cannot type is
             // written null (afgeleidType) and a marker leaves its type out, so an unknown datatype reaching
@@ -696,7 +697,7 @@ public final class IrEmitter {
     private static IllegalStateException onbekendType(Datatype.Onbekend o) {
         return new IllegalStateException("IrEmitter: een onbekend datatype ('" + o.reden() + "') heeft op deze "
                 + "positie geen spelling in uchar-ir-v1; alleen een afgeleide positie schrijft null en een "
-                + "Onopgelost-marker laat zijn type weg");
+                + "Unresolved-marker laat zijn type weg");
     }
 
     /** IR-SPEC ch. 2.10 a DERIVED position — an arithmetic node, a fold, a rounding, a clamp — whose result
@@ -734,18 +735,20 @@ public final class IrEmitter {
         };
     }
 
-    /** IR-SPEC ch. 4.3: the eight fold kinds; every other kind is a builtin call. */
-    private static final java.util.Set<Expr.FunctieKind> AGGREGATIES = java.util.EnumSet.of(
-            Expr.FunctieKind.SOM, Expr.FunctieKind.TOTAAL, Expr.FunctieKind.AANTAL, Expr.FunctieKind.MINIMUM,
-            Expr.FunctieKind.MAXIMUM, Expr.FunctieKind.EERSTE, Expr.FunctieKind.LAATSTE, Expr.FunctieKind.AANTAL_GEVULDE);
+    /** IR-SPEC ch. 4.3: the eight fold kinds are an Aggregation and every other kind a BuiltinCall; the table
+     *  splits the one in-memory enum between the two families. */
+    private static Spelling.Familie<Expr.FunctieKind> soortFamilie(Expr.FunctieKind k) {
+        return Spelling.AGGREGATION_KIND.rijen().containsKey(k) ? Spelling.AGGREGATION_KIND : Spelling.BUILTIN_KIND;
+    }
 
-    /** IR-SPEC ch. 4.1: the two session values, spelled byte for byte (WF-098). */
-    private static final List<String> CONTEXTWAARDEN = List.of("Rekendatum", "Rekenjaar");
+    private static String soort(Expr.Functie f) {
+        return soortFamilie(f.kind()).spelling(f.kind());
+    }
 
     /** A field on the function node of the other kind: an Aggregation has no place for a granularity, a BuiltinCall
      *  none for a fold's element type, empty value or dimension selection (IR-SPEC ch. 4.3). */
     private static IllegalStateException facetWeigering(Expr.Functie f, String veld, String drager) {
-        return new IllegalStateException("IrEmitter: de " + f.kind() + "-aanroep '" + f.bron().snippet() + "' draagt "
+        return new IllegalStateException("IrEmitter: de " + soort(f) + "-aanroep '" + f.bron().snippet() + "' draagt "
                 + veld + ", en in uchar-ir-v1 staat dat veld alleen op " + drager);
     }
 
@@ -773,27 +776,28 @@ public final class IrEmitter {
                 bronrecord(l.bron().snippet());
             }
             case Expr.TekstReeks t -> {
-                w.key("node").value("TekstReeks");
-                w.key("delen").beginArray();
+                w.key("node").value("TextComposition");
+                w.key("parts").beginArray();
                 for (Expr.TekstReeks.Deel d : t.delen()) tekstReeksDeel(d);
                 w.endArray();
                 w.key("type"); datatype(t.type());
                 bronrecord(t.bron().snippet());
             }
             case Expr.Binair b -> {
-                w.key("node").value("Binair");
-                w.key("op").value(b.op().name());
-                w.key("links"); expr(b.links());
-                w.key("rechts"); expr(b.rechts());
+                w.key("node").value("Binary");
+                w.key("op").value(Spelling.BINARY_OP.spelling(b.op()));
+                w.key("left"); expr(b.links());
+                w.key("right"); expr(b.rechts());
                 w.key("type"); afgeleidType(b.type());
                 bronrecord(b.bron().snippet());
             }
             // IR-SPEC ch. 4.3: the eight fold kinds are an Aggregation, every other function a BuiltinCall, each
             // with the fields of its own node only
             case Expr.Functie f -> {
-                boolean aggregatie = AGGREGATIES.contains(f.kind());
+                boolean aggregatie = soortFamilie(f.kind()) == Spelling.AGGREGATION_KIND;
                 if (aggregatie && f.granulariteit() != null)
-                    throw facetWeigering(f, "de granulariteit " + f.granulariteit(), "een BuiltinCall");
+                    throw facetWeigering(f, "de granulariteit " + Spelling.GRANULARITY.spelling(f.granulariteit()),
+                            "een BuiltinCall");
                 if (!aggregatie) {
                     if (f.elementObjecttype() != null)
                         throw facetWeigering(f, "het elementtype '" + f.elementObjecttype().naam + "'", "een Aggregation");
@@ -801,8 +805,8 @@ public final class IrEmitter {
                     if (f.dimensieSelectie() != null) throw facetWeigering(f, "een dimensieselectie", "een Aggregation");
                 }
                 w.key("node").value(aggregatie ? "Aggregation" : "BuiltinCall");
-                w.key("kind").value(f.kind().name());
-                // decided before the arguments are written: under AANTAL the source's name follows the role
+                w.key("kind").value(soort(f));
+                // decided before the arguments are written: under count the source's name follows the role
                 // the range binds
                 Vouwbereik bereik = vouwbereik(f);
                 w.key("arguments").beginArray();
@@ -818,7 +822,7 @@ public final class IrEmitter {
                 // the filter is a subselectie over the fold ELEMENT: an element-own read there is an own
                 // read, not a navigation from the outer subject — emit the filter (and only the filter)
                 // with the element as subject so such reads take the own-attribute branch and carry no
-                // spurious by-pair navigatieBindingen. Restore the outer subject afterwards.
+                // spurious by-pair path. Restore the outer subject afterwards.
                 if (f.filter() != null) {
                     w.key("filter");
                     Objecttype vorigSubject = huidigSubject;
@@ -839,35 +843,37 @@ public final class IrEmitter {
                     for (RegelSpraakModel.RolBindingRef stap : bereik.pad()) rolBinding(stap);
                     w.endArray();
                 }
-                if (!aggregatie && f.granulariteit() != null) w.key("granularity").value(f.granulariteit().name());
+                if (!aggregatie && f.granulariteit() != null)
+                    w.key("granularity").value(Spelling.GRANULARITY.spelling(f.granulariteit()));
                 w.key("type"); afgeleidType(f.type());
                 bronrecord(f.bron().snippet());
             }
             case Expr.Afgerond a -> {
-                w.key("node").value("Afgerond");
-                w.key("basis"); expr(a.basis());
-                w.key("modus").value(a.modus().name());
-                w.key("decimalen").value(a.decimalen());
+                w.key("node").value("Rounding");
+                w.key("base"); expr(a.basis());
+                w.key("mode").value(Spelling.ROUNDING_MODE.spelling(a.modus()));
+                w.key("decimals").value(a.decimalen());
                 w.key("type"); afgeleidType(a.type());
                 bronrecord(a.bron().snippet());
             }
             case Expr.Begrensd b -> {
-                w.key("node").value("Begrensd");
-                w.key("basis"); expr(b.basis());
-                w.key("minimum"); expr(b.minimum());
-                w.key("maximum"); expr(b.maximum());
+                w.key("node").value("Clamp");
+                w.key("base"); expr(b.basis());
+                // an absent bound is no bound on that side (RUNTIME-SEMANTICS ch. 5.11)
+                if (b.minimum() != null) { w.key("minimum"); expr(b.minimum()); }
+                if (b.maximum() != null) { w.key("maximum"); expr(b.maximum()); }
                 w.key("type"); afgeleidType(b.type());
                 bronrecord(b.bron().snippet());
             }
             case Expr.AttribuutRef r -> {
-                w.key("node").value("AttribuutRef");
-                w.key("attribuut").value(r == foldBron && foldBronNaam != null ? foldBronNaam : r.attribuut());
-                w.key("objecttype").value(naamVan(r.objecttype()));
+                w.key("node").value("AttributeReference");
+                w.key("attribute").value(r == foldBron && foldBronNaam != null ? foldBronNaam : r.attribuut());
+                w.key("subjectType").value(naamVan(r.objecttype()));
                 bronrecord(r.bron().snippet());
                 if (r != foldBron) {
                     List<RegelSpraakModel.RolBindingRef> nb = navigatieBindingen(r);
                     if (!nb.isEmpty()) {
-                        w.key("navigatieBindingen").beginArray();
+                        w.key("path").beginArray();
                         for (RegelSpraakModel.RolBindingRef b : nb) rolBinding(b);
                         w.endArray();
                     } else {
@@ -876,19 +882,19 @@ public final class IrEmitter {
                 }
             }
             case Expr.DimensieCel c -> {
-                w.key("node").value("DimensieCel");
-                w.key("attribuut"); expr(c.attribuut());
+                w.key("node").value("DimensionCellRead");
+                w.key("attribute"); expr(c.attribuut());
                 w.key("labels"); stringList(c.labels());
                 bronrecord(c.bron().snippet());
             }
             case Expr.ParameterRef p -> {
-                w.key("node").value("ParameterRef");
+                w.key("node").value("ParameterReference");
                 w.key("parameter").value(p.parameter() == null ? null : p.parameter().naam());
                 bronrecord(p.bron().snippet());
             }
             case Expr.VariabeleRef v -> {
-                w.key("node").value("VariabeleRef");
-                w.key("naam").value(v.naam());
+                w.key("node").value("VariableReference");
+                w.key("name").value(v.naam());
                 bronrecord(v.bron().snippet());
             }
             // ch. 4.10 the Let cluster. Key ORDER is the schema's required order (node, type, binder,
@@ -903,16 +909,17 @@ public final class IrEmitter {
             }
             case Expr.BinderRef b -> {
                 w.key("node").value("BinderRef");
-                w.key("name").value(b.naam());     // the wire field is "name" (not "naam") — ch. 4.10
+                w.key("name").value(b.naam());
                 bronrecord(b.bron().snippet());
             }
             // IR-SPEC ch. 4.1: the bound day of a day-kind definition is a node of its own and carries no name; a
             // session value is a ContextValue under one of its two names. Any other name has no spelling.
             case Expr.Constante c -> {
-                if (c.naam() == null || !c.naam().equals("de dag") && !CONTEXTWAARDEN.contains(c.naam()))
+                if (c.naam() == null
+                        || !c.naam().equals("de dag") && !Spelling.CONTEXT_VALUE_NAME.rijen().containsKey(c.naam()))
                     throw new IllegalStateException("IrEmitter: de constante '" + c.naam() + "' ('" + c.bron().snippet()
                             + "') heeft geen spelling in uchar-ir-v1: de wire kent de gebonden dag van een "
-                            + "dagsoortdefinitie en de contextwaarden " + CONTEXTWAARDEN);
+                            + "dagsoortdefinitie en de contextwaarden " + Spelling.CONTEXT_VALUE_NAME.rijen().values());
                 if (c.type() == null)
                     throw new IllegalStateException("IrEmitter: de constante '" + c.naam() + "' ('" + c.bron().snippet()
                             + "') heeft geen type; de wire eist er een");
@@ -920,7 +927,7 @@ public final class IrEmitter {
                     w.key("node").value("BoundDay");
                 } else {
                     w.key("node").value("ContextValue");
-                    w.key("name").value(c.naam());
+                    w.key("name").value(Spelling.CONTEXT_VALUE_NAME.spelling(c.naam()));
                 }
                 w.key("type"); datatype(c.type());
                 bronrecord(c.bron().snippet());
@@ -962,7 +969,7 @@ public final class IrEmitter {
                 bronrecord(u.bron().snippet());
             }
             case Expr.Onopgelost o -> {
-                w.key("node").value("Onopgelost");
+                w.key("node").value("Unresolved");
                 // IR-SPEC ch. 4.4: absent is the one spelling of "type unknown"; a real datatype is written
                 if (o.type() != null && !(o.type() instanceof Datatype.Onbekend)) { w.key("type"); datatype(o.type()); }
                 bronrecord(markerBron(o.bron()));
@@ -975,11 +982,11 @@ public final class IrEmitter {
         w.beginObject();
         switch (d) {
             case Expr.TekstReeks.Letterlijk l -> {
-                w.key("node").value("Letterlijk");
-                w.key("tekst").value(l.tekst());
+                w.key("node").value("LiteralChunk");
+                w.key("text").value(l.tekst());
             }
             case Expr.TekstReeks.Ingevoegd i -> {
-                w.key("node").value("Ingevoegd");
+                w.key("node").value("EmbeddedExpression");
                 w.key("expr"); expr(i.expr());
             }
         }
@@ -989,8 +996,8 @@ public final class IrEmitter {
     private void dimensieSelectie(Expr.DimensieSelectie ds) {
         if (ds == null) { w.valueNull(); return; }
         w.beginObject();
-        w.key("node").value("DimensieSelectie");
-        w.key("dimensie").value(ds.dimensie());
+        w.key("node").value("DimensionSelection");
+        w.key("dimension").value(ds.dimensie());
         w.key("labels"); stringList(ds.labels());
         bronrecord(ds.bron().snippet());
         w.endObject();
@@ -1003,29 +1010,30 @@ public final class IrEmitter {
         w.beginObject();
         switch (c) {
             case Conditie.Vergelijking v -> {
-                w.key("node").value("Vergelijking");
-                w.key("op").value(v.op().name());
-                w.key("links"); expr(v.links());
-                w.key("rechts"); expr(v.rechts());
-                w.key("periode"); geheelPeriode(v.periode());
+                w.key("node").value("Comparison");
+                w.key("op").value(Spelling.COMPARISON_OP.spelling(v.op()));
+                w.key("left"); expr(v.links());
+                w.key("right"); expr(v.rechts());
+                geheelPeriode(v.periode());
                 bronrecord(v.bron().snippet());
             }
             case Conditie.Predicaat p -> {
-                w.key("node").value("Predicaat");
-                w.key("soort").value(p.soort().name());
+                w.key("node").value("Predicate");
+                w.key("kind").value(Spelling.PREDICATE_KIND.spelling(p.soort()));
                 w.key("operand"); expr(p.operand());
-                w.key("dagsoort").value(p.dagsoort());
-                w.key("negatie").value(p.negatie());
-                w.key("cijfers").value(p.cijfers());
-                w.key("periode"); geheelPeriode(p.periode());
+                if (p.dagsoort() != null) w.key("dayKind").value(p.dagsoort());
+                w.key("negated").value(p.negatie());
+                w.key("digits").value(p.cijfers());
+                geheelPeriode(p.periode());
                 bronrecord(p.bron().snippet());
             }
             case Conditie.Kenmerk k -> {
-                w.key("node").value("Kenmerk");
-                w.key("kenmerk").value(k.kenmerk());
-                w.key("negatie").value(k.negatie());
-                w.key("eigenaar").value(naamVan(k.eigenaar()));
-                w.key("periode"); geheelPeriode(k.periode());
+                w.key("node").value("CharacteristicCheck");
+                w.key("characteristic").value(k.kenmerk());
+                w.key("negated").value(k.negatie());
+                // absent is the subject (RUNTIME-SEMANTICS ch. 5.8b)
+                if (k.eigenaar() != null) w.key("host").value(k.eigenaar().naam);
+                geheelPeriode(k.periode());
                 bronrecord(k.bron().snippet());
                 // the binding IS the hop: a navigated check without one would read the subject's own kenmerk
                 if (k.navigatie() != null) {
@@ -1035,7 +1043,7 @@ public final class IrEmitter {
                                 + "' navigeert via '" + k.navigatie() + "', en vanaf "
                                 + (huidigSubject == null ? "geen onderwerp" : "'" + huidigSubject.naam + "'")
                                 + " bindt die stap geen unieke rol");
-                    w.key("navigatieBinding"); rolBinding(nb);
+                    w.key("navigation"); rolBinding(nb);
                 }
             }
             // IR-SPEC ch. 4.5: one node for both sides of the role check, naming the fact type, the role the
@@ -1044,52 +1052,54 @@ public final class IrEmitter {
             case Conditie.Rollidmaatschap r -> rolLidmaatschap(lidmaatschapNabij(r), r.negatie(), r.bron());
             case Conditie.VerreRollidmaatschap r -> rolLidmaatschap(lidmaatschapVer(r), r.negatie(), r.bron());
             case Conditie.Periode p -> {
-                w.key("node").value("Periode");
-                w.key("vanaf"); expr(p.vanaf());
-                w.key("tot"); expr(p.tot());
-                w.key("totInclusief").value(p.totInclusief());
+                w.key("node").value("TimeWindow");
+                // an absent bound is an open side
+                if (p.vanaf() != null) { w.key("from"); expr(p.vanaf()); }
+                if (p.tot() != null) { w.key("to"); expr(p.tot()); }
+                w.key("toInclusive").value(p.totInclusief());
                 bronrecord(p.bron().snippet());
             }
             case Conditie.Samengesteld s -> {
-                w.key("node").value("Samengesteld");
-                w.key("kwantor").value(s.kwantor().name());
-                w.key("drempel").value(s.drempel());
-                w.key("onderdelen").beginArray();
+                w.key("node").value("Compound");
+                w.key("quantifier").value(Spelling.QUANTIFIER.spelling(s.kwantor()));
+                w.key("threshold").value(s.drempel());
+                w.key("parts").beginArray();
                 for (Conditie o : s.onderdelen()) conditie(o);
                 w.endArray();
                 bronrecord(s.bron().snippet());
             }
-            // IR-SPEC ch. 4.5 / WF-108. Key ORDER is the schema's property order (node, kwantor, the
-            // counting drempel, elementObjecttype, filter, toets, source, then the range) — gate 2
+            // IR-SPEC ch. 4.5 / WF-108. Key ORDER is the schema's property order (node, quantifier, the
+            // counting threshold, elementType, filter, test, source, then the range) — gate 2
             // round-trips these bytes.
             case Conditie.Kwantorvouw k -> {
-                w.key("node").value("Kwantorvouw");
-                w.key("kwantor").value(k.kwantor().name());
+                w.key("node").value("QuantifierFold");
+                w.key("quantifier").value(Spelling.QUANTIFIER.spelling(k.kwantor()));
                 // WF-108 (e): the threshold is written EXACTLY under a counting quantifier and omitted
-                // under ALLE / GEEN — unlike Samengesteld, which always writes it and writes a 0 nobody
-                // reads. Emitting it here too would put a number on the wire the kwantor contradicts.
+                // under all / none — unlike Compound, which always writes it and writes a 0 nobody
+                // reads. Emitting it here too would put a number on the wire the quantifier contradicts.
                 if (k.kwantor() == Conditie.Kwantor.TEN_MINSTE || k.kwantor() == Conditie.Kwantor.TEN_HOOGSTE
                         || k.kwantor() == Conditie.Kwantor.PRECIES)
-                    w.key("drempel").value(k.drempel());
-                w.key("elementObjecttype").value(naamVan(k.elementObjecttype()));
-                // filter and toets are evaluated PER CONTRIBUTOR with the element as subject, exactly as
+                    w.key("threshold").value(k.drempel());
+                w.key("elementType").value(naamVan(k.elementObjecttype()));
+                // filter and test are evaluated PER CONTRIBUTOR with the element as subject, exactly as
                 // Functie.filter is: an element-own read there is an own read, not a navigation from the
                 // outer subject, so emit both with the element as subject and they take the own-attribute
-                // branch and carry no spurious by-pair navigatieBindingen. Restore the outer subject after.
+                // branch and carry no spurious by-pair path. Restore the outer subject after.
                 Objecttype vorigSubject = huidigSubject;
                 if (k.elementObjecttype() != null) huidigSubject = k.elementObjecttype();
-                w.key("filter"); conditie(k.filter());
-                w.key("toets"); conditie(k.toets());
+                // an absent filter is no subselection
+                if (k.filter() != null) { w.key("filter"); conditie(k.filter()); }
+                w.key("test"); conditie(k.toets());
                 huidigSubject = vorigSubject;
                 bronrecord(k.bron().snippet());
                 // the range is ONE field with two spellings, mutually exclusive, and required: without it the
                 // fold would range over nothing the sentence named (WF-102, WF-108 (c))
                 if (k.bronPad() != null && !k.bronPad().isEmpty()) {
-                    w.key("bronPad").beginArray();
+                    w.key("sourcePath").beginArray();
                     for (RegelSpraakModel.RolBindingRef stap : k.bronPad()) rolBinding(stap);
                     w.endArray();
                 } else if (k.bronRol() != null) {
-                    w.key("bronRol"); rolBinding(k.bronRol());
+                    w.key("sourceRole"); rolBinding(k.bronRol());
                 } else {
                     throw new IllegalStateException("IrEmitter: de kwantorvouw '" + k.bron().snippet()
                             + "' heeft geen bereik; de resolver vond geen unieke relatie naar "
@@ -1103,22 +1113,22 @@ public final class IrEmitter {
                 bronrecord(r.bron().snippet());
             }
             case Conditie.Onopgelost o -> {
-                w.key("node").value("Onopgelost");
+                w.key("node").value("Unresolved");
                 bronrecord(markerBron(o.bron()));
             }
         }
         w.endObject();
     }
 
-    /** WF-113 (b): a marker is accounted for by a WARNING that quotes its source snippet verbatim. A marker without
+    /** WF-113 (b): a marker is accounted for by a warning that quotes its source snippet verbatim. A marker without
      *  one is quoted by no message and a blank one by every message, so neither accounts for anything and the
      *  verifier refuses the document; the frontend can build one, since {@code DefinitionResolver.bron} gives an
      *  empty snippet for a missing context or an empty match. */
     private static String markerBron(Bron b) {
         String s = b == null ? null : b.snippet();
         if (s == null || s.isBlank())
-            throw new IllegalStateException("IrEmitter: WF-113 (b) — een Onopgelost-marker zonder bron ('" + s
-                    + "') kan door geen WARNING verantwoord worden");
+            throw new IllegalStateException("IrEmitter: WF-113 (b) — een Unresolved-marker zonder brontekst ('" + s
+                    + "') kan door geen warning verantwoord worden");
         return s;
     }
 
@@ -1146,12 +1156,13 @@ public final class IrEmitter {
         w.endObject();
     }
 
+    /** The whole-period qualifier of a condition, under its key; absent where the condition has none. */
     private void geheelPeriode(Conditie.GeheelPeriode gp) {
-        if (gp == null) { w.valueNull(); return; }
-        w.beginObject();
-        w.key("node").value("GeheelPeriode");
-        w.key("jaar").value(gp.jaar());
-        w.key("niet").value(gp.niet());
+        if (gp == null) return;
+        w.key("wholePeriod").beginObject();
+        w.key("node").value("WholePeriod");
+        w.key("granularity").value(Spelling.WHOLE_PERIOD_GRANULARITY.spelling(gp.jaar()));
+        w.key("negated").value(gp.niet());
         w.endObject();
     }
 
@@ -1246,7 +1257,7 @@ public final class IrEmitter {
         return r.bronAnnotaties().stream().filter(x -> !x.isEmpty()).toList();
     }
 
-    /** IR-SPEC ch. 3.10: every version writes its validity; always is a Geldigheid with both bounds null. */
+    /** IR-SPEC ch. 3.10: every version writes its validity; always is a Validity with neither bound. */
     private void validity(Geldigheid g) {
         geldigheid(g == null ? Geldigheid.ALTIJD : g);
     }
@@ -1297,7 +1308,7 @@ public final class IrEmitter {
         if (r.voorwaarde() != null) { w.key("condition"); conditie(r.voorwaarde()); }
         w.key("initialisation").value(r.soort() == ResolvedRegel.Soort.INITIALISATIE);
         if (r.soort() == ResolvedRegel.Soort.GELIJKSTELLING || r.soort() == ResolvedRegel.Soort.BEREKENING)
-            w.key("presentation").value(r.soort().name());
+            w.key("presentation").value(Spelling.PRESENTATION.spelling(r.soort()));
         w.endObject();
         huidigSubject = null;
     }
@@ -1318,10 +1329,10 @@ public final class IrEmitter {
 
     private void resolvedDagsoort(ResolvedDagsoort d) {
         w.beginObject();
-        w.key("node").value("ResolvedDagsoort");
-        w.key("naam").value(d.naam());
-        w.key("voorwaarde"); conditie(d.voorwaarde());
-        w.key("geldigheid"); geldigheid(d.geldigheid());
+        w.key("node").value("DayKindDefinition");
+        w.key("dayKind").value(d.naam());
+        w.key("condition"); conditie(d.voorwaarde());
+        w.key("validity"); geldigheid(d.geldigheid());
         w.endObject();
     }
 
@@ -1345,10 +1356,10 @@ public final class IrEmitter {
         w.key("initialisations").beginArray();
         for (ResolvedObjectCreatie.Toekenning t : oc.toekenningen()) {
             w.beginObject();
-            w.key("node").value("Toekenning");
-            w.key("attribuut").value(t.attribuut());
-            w.key("waarde"); expr(t.waarde());
-            w.key("kenmerk").value(t.kenmerk());
+            w.key("node").value("MemberInit");
+            w.key("member").value(t.attribuut());
+            w.key("value"); expr(t.waarde());
+            w.key("characteristic").value(t.kenmerk());
             w.endObject();
         }
         w.endArray();
@@ -1385,7 +1396,7 @@ public final class IrEmitter {
         w.key("sourceAttribute").value(v.bronAttribuut());
         w.key("targetType").value(naamVan(v.doelType()));
         w.key("targetAttribute").value(v.doelAttribuut());
-        w.key("method").value(v.methode().name());
+        w.key("method").value(Spelling.METHOD.spelling(v.methode()));
         if (v.ratoAttribuut() != null) w.key("ratioAttribute").value(v.ratoAttribuut());
         if (v.maximumAttribuut() != null) w.key("maximumAttribute").value(v.maximumAttribuut());
         if (v.afrondingDecimalen() != null) w.key("roundingDecimals").value(v.afrondingDecimalen().intValue());
@@ -1544,7 +1555,7 @@ public final class IrEmitter {
     }
 
     private static IllegalStateException vouwWeigering(Expr.Functie f, String reden) {
-        return new IllegalStateException("IrEmitter: de " + f.kind() + "-vouw '" + f.bron().snippet()
+        return new IllegalStateException("IrEmitter: de " + soort(f) + "-vouw '" + f.bron().snippet()
                 + "' heeft geen spelling in uchar-ir-v1: " + reden);
     }
 
@@ -1562,13 +1573,13 @@ public final class IrEmitter {
 
     private void rolBinding(RegelSpraakModel.RolBindingRef rb) {
         w.beginObject();
-        w.key("node").value("RolBinding");
-        w.key("feittype").value(rb.feittype());
-        w.key("rol").value(rb.rol());
+        w.key("node").value("RoleBinding");
+        w.key("factType").value(rb.feittype());
+        w.key("role").value(rb.rol());
         w.endObject();
     }
 
-    /** The {@code navigatieBindingen} of a value/condition-position AttribuutRef: one RolBinding per
+    /** The {@code path} of a value/condition-position attribute read: one RoleBinding per
      *  navigation hop, subject-outward, each naming the reached (far) role. Three shapes: a declared
      *  CHAIN (one binding per step, whole-or-not — all hops derivable, or none), a single by-NAME hop,
      *  and a by-PAIR read of an off-subject type. Empty when the read does not navigate, no subject
@@ -1602,7 +1613,7 @@ public final class IrEmitter {
         return List.of();                                                    // own attribute — not navigated
     }
 
-    /** The {@code navigatieBinding} of a navigated §8.1.8 kenmerk check: the single reached role, found
+    /** The {@code navigation} of a navigated §8.1.8 kenmerk check: the single reached role, found
      *  exactly as {@code RuleChecker.navigatieKenmerk} finds it (the target type via the written role, then
      *  the by-name binding). Null when the check does not navigate or the hop is not uniquely derivable. */
     private RegelSpraakModel.RolBindingRef navigatieBinding(Conditie.Kenmerk k) {
@@ -1821,19 +1832,19 @@ public final class IrEmitter {
 
     private void startpunt(ResolvedStartpunt s) {
         w.beginObject();
-        w.key("node").value("ResolvedStartpunt");
-        w.key("tijdlijn").value(s.tijdlijn());
-        w.key("objecttype").value(s.objecttype());
-        w.key("lid").value(s.lid());
+        w.key("node").value("StartPointDetermination");
+        w.key("timeline").value(s.tijdlijn());
+        w.key("objectType").value(s.objecttype());
+        w.key("member").value(s.lid());
         w.endObject();
     }
 
     private void regelGroep(ResolvedRegelGroep g) {
         w.beginObject();
-        w.key("node").value("ResolvedRegelGroep");
-        w.key("naam").value(g.naam());
-        w.key("recursief").value(g.recursief());
-        w.key("leden"); stringList(g.leden());
+        w.key("node").value("RuleGroup");
+        w.key("name").value(g.naam());
+        w.key("recursive").value(g.recursief());
+        w.key("members"); stringList(g.leden());
         bronrecord(g.bron().snippet(), g.line());
         w.endObject();
     }
@@ -1841,18 +1852,19 @@ public final class IrEmitter {
     private void diagnostic(Diagnostic d) {
         w.beginObject();
         w.key("node").value("Diagnostic");
-        w.key("severity").value(d.severity() == null ? null : d.severity().name());
+        w.key("severity").value(d.severity() == null ? null : Spelling.SEVERITY.spelling(d.severity()));
         w.key("message").value(d.message());
         w.key("line").value(d.line());
         w.endObject();
     }
 
+    /** IR-SPEC ch. 3.10: an absent bound is open on that side, and a validity with neither bound is always. */
     private void geldigheid(Geldigheid g) {
         if (g == null) { w.valueNull(); return; }
         w.beginObject();
-        w.key("node").value("Geldigheid");
-        w.key("vanaf").value(g.vanaf() == null ? null : g.vanaf().toString());
-        w.key("tot").value(g.tot() == null ? null : g.tot().toString());
+        w.key("node").value("Validity");
+        if (g.vanaf() != null) w.key("from").value(g.vanaf().toString());
+        if (g.tot() != null) w.key("to").value(g.tot().toString());
         w.endObject();
     }
 

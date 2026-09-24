@@ -47,8 +47,11 @@ class VouwsoortenGrensTest {
 
     private static final String CHECKS = "spec/verifier/lib/checks.ml";
 
-    /** {@code | <Ctor> -> Some "NAME"} — one arm of the verifier's kind list. */
-    private static final Pattern ARM = Pattern.compile("\\|\\s*\\w+\\s*->\\s*Some\\s+\"([A-Z_]+)\"");
+    /** {@code | <Ctor> -> Some …} — one arm of the verifier's kind list, read by its constructor: the AST keeps its
+     *  v0 names, while the string an arm returns is the kind as the verifier's messages spell it, which follows the
+     *  wire (lowerCamel since the L5 landing). The constructor upper-cased is the frontend's kind name, as for
+     *  aggregation_kinds below. */
+    private static final Pattern ARM = Pattern.compile("\\|\\s*(\\w+)\\s*->\\s*Some\\b");
 
     /** The two arms of {@code source_reading} that read a ranged source under the COUNT kind as instances;
      *  every other aggregation kind falls to the value arms below them. Whitespace-tolerant. */
@@ -76,7 +79,7 @@ class VouwsoortenGrensTest {
         List<String> soorten = new ArrayList<>();
         for (String regel : bron.substring(start).lines().skip(1).toList()) {
             Matcher m = ARM.matcher(regel);
-            if (m.find()) { soorten.add(m.group(1)); continue; }
+            if (m.find()) { soorten.add(m.group(1).toUpperCase(java.util.Locale.ROOT)); continue; }
             if (regel.strip().startsWith("|")) break;   // the `| _ -> None` catch-all closes the list
             if (!regel.isBlank()) break;
         }

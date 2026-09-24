@@ -40,11 +40,11 @@ class EenheidIdentiteitTest {
         // the old degradation
         assertFalse(c.contains("\"type\":null"),
                 () -> "het product mag niet meer degraderen naar een ontypeerbaar resultaat:\n" + c);
-        // the MAAL product carries its own number type with the EUR unit (2 = 0 + 2 decimals, Tabel 13).
+        // the times product carries its own number type with the EUR unit (2 = 0 + 2 decimals, Tabel 13).
         // NOTE emitCompact strips ALL whitespace, also inside the source snippet.
-        assertTrue(c.contains("\"op\":\"MAAL\","), () -> "het MAAL-product ontbreekt:\n" + c);
+        assertTrue(c.contains("\"op\":\"times\","), () -> "het times-product ontbreekt:\n" + c);
         assertTrue(c.contains(
-                "\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"ONBEPAALD\","
+                "\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\","
                 + "\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"EUR\",\"system\":\"Munt\",\"canonical\":\"EUR\","
                 + "\"factorToCanonical\":{\"num\":1,\"den\":1}}},"
                 + "\"source\":{\"snippet\":\"hetstuktalvandeVerkoopmaaldestukprijsvandeVerkoop\"}"),
