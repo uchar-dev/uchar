@@ -8,7 +8,9 @@ operator.
     AANTAL aggregation is typed 2 decimals, but the type a count derives is 0
     decimals
 
-**Rewritten at L2 (2026-09-24), stamp: herschreven (i).** The document is
+**Rewritten at L2 (2026-09-24), stamp: herschreven (m).** (First stamped
+(i); the L2 fix round measured the document byte-identical to the
+migration's translation of its L1 form.) The document is
 the migration's translation (`spec/proposals/v1-migratie/m2.py`): the two
 operand reads lost their own `type` (B13), and the count's annotation, a
 derived position, kept its (V5 (a)). The card's rewrite drops the second

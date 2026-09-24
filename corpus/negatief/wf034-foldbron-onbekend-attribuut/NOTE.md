@@ -8,7 +8,9 @@ resolves against nothing.
     not a declared attribute of 'Jutter': a value fold's source reads an
     attribute of each contributor
 
-**Rewritten at L2 (2026-09-24), stamp: herschreven (i).** Until L2 the fold
+**Rewritten at L2 (2026-09-24), stamp: herschreven (m).** (First stamped
+(i); the L2 fix round measured the document byte-identical to the
+migration's translation of its L1 form.) Until L2 the fold
 carried no range and the verifier's type-pair fallback stood in for it; the
 attribute name was the defect then as now. Since L2 the range is written
 (B12, D7): the migration derived it from the one reciprocal role, and the

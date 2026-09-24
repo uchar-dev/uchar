@@ -8,7 +8,9 @@ never a silent first pick.
     'post' in a scalar slot — a to-many step needs an aggregation, never a
     silent first pick
 
-**Rewritten at L2 (2026-09-24), stamp: herschreven (i).** Until L2 the hop
+**Rewritten at L2 (2026-09-24), stamp: herschreven (m).** (First stamped
+(i); the L2 fix round measured the document byte-identical to the
+migration's translation of its L1 form.) Until L2 the hop
 was spelled by the written plural `posten` and derived by name. Since L2 the
 navigation carries its binding (B11, D10); the migration derived
 `postbezetting`/`post` from the written name, and the to-many hop is what

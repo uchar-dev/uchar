@@ -9,7 +9,9 @@ attribute of the element type.
     instances, and only AANTAL reads those — it cannot be the source of this
     SOM aggregation
 
-**Rewritten at L2 (2026-09-24), stamp: herschreven (i).** As
+**Rewritten at L2 (2026-09-24), stamp: herschreven (m).** (First stamped
+(i); the L2 fix round measured the document byte-identical to the
+migration's translation of its L1 form.) As
 `wf093-aantalgevulde-wrat`, under `SOM`: the sentinel spelling of the count
 source left the wire (B13), WF-093 keys on the source itself (D9), and the
 document is the migration's translation. `wf093-telbron-onder-som` pins the

@@ -11,7 +11,9 @@ tests it for presence, and an instance has no value to test.
     instances, and only AANTAL reads those — it cannot be the source of this
     AANTAL_GEVULDE aggregation
 
-**Rewritten at L2 (2026-09-24), stamp: herschreven (i).** Until L2 the count
+**Rewritten at L2 (2026-09-24), stamp: herschreven (m).** (First stamped
+(i); the L2 fix round measured the document byte-identical to the
+migration's translation of its L1 form.) Until L2 the count
 source was spelled with the unknown-type sentinel on the argument's own
 `type`, and WF-093 keyed on that sentinel. L2 took the annotation off the
 reference (B13) and the count source is recognised at the source itself

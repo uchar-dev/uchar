@@ -101,7 +101,7 @@ The negatief zone went from 444 to 394 documents (with the U12 witness `wf034-ro
 
 | directory | rule | delta | stamp | arm | reason |
 | --- | --- | --- | --- | --- | --- |
-| `wf091-aantal-decimalen` | WF-091 | B13 (+B21, L4) | herschreven (i) | derived arm, AANTAL, decimals facet | a count's annotation is a derived position and keeps its type (V5 (a)); the second operand leaves with the count's operand list at B21 (L4), and until then WF-037 reports beside it |
+| `wf091-aantal-decimalen` | WF-091 | B13 (+B21, L4) | herschreven (m) | derived arm, AANTAL, decimals facet | a count's annotation is a derived position and keeps its type (V5 (a)); the second operand leaves with the count's operand list at B21 (L4), and until then WF-037 reports beside it |
 | `wf091-aantalgevulde-eenheid` | WF-091 | B13 | herschreven (m) | derived arm, AANTAL_GEVULDE, unit facet | the operand references lost their own type; the composite's annotation is a derived position and is still crossed against what the operands' declarations derive |
 | `wf091-afgerond-decimalen` | WF-091 | B13 | herschreven (m) | derived arm, rounding, decimals facet | the operand references lost their own type; the composite's annotation is a derived position and is still crossed against what the operands' declarations derive |
 | `wf091-afgerond-eenheid` | WF-091 | B13 (+B17, L3) | herschreven (m) | derived arm, rounding, unit facet | the operand references lost their own type; the composite's annotation is a derived position and is still crossed against what the operands' declarations derive |
@@ -170,9 +170,9 @@ The negatief zone went from 444 to 394 documents (with the U12 witness `wf034-ro
 | `wf034-sentinel-structveld-payload` | WF-034 (d) | B16 | verwijderd-met-reden | the unknown-type node in a payload of a node's type | B16 takes the unknown-type node out of the datatype union: the payload cannot be written (m2.py: "Onbekend outside a reference type, an Onopgelost type or a derived composite type") |
 | `wf034-sentinel-sumtype-payload` | WF-034 (d) | B16 | verwijderd-met-reden | the unknown-type node in a payload of a node's type | B16 takes the unknown-type node out of the datatype union: the payload cannot be written (m2.py: "Onbekend outside a reference type, an Onopgelost type or a derived composite type") |
 | `wf034-sentinel-null-vouwoperand` | WF-034 (sentinel fence) | B13 | verwijderd-met-reden | a null type on a listed operand | a reference without a type is the L2 form; measured: the migration's translation is verifier-clean |
-| `wf093-aantalgevulde-wrat` | WF-093 | B13, B16 (+V6) | herschreven (i) | WF-093, a count source under AANTAL_GEVULDE | WF-093 keys on the source itself (D9) instead of the sentinel; the document is the migration's translation |
-| `wf093-wratvouw-kale-eerste` | WF-093 | B13, B16 (+V6) | herschreven (i) | WF-093, a count source under EERSTE | as `wf093-aantalgevulde-wrat` |
-| `wf093-wratvouw-kale-som` | WF-093 | B13, B16 (+V6) | herschreven (i) | WF-093, a count source under SOM | as `wf093-aantalgevulde-wrat` |
+| `wf093-aantalgevulde-wrat` | WF-093 | B13, B16 (+V6) | herschreven (m) | WF-093, a count source under AANTAL_GEVULDE | WF-093 keys on the source itself (D9) instead of the sentinel; the document is the migration's translation |
+| `wf093-wratvouw-kale-eerste` | WF-093 | B13, B16 (+V6) | herschreven (m) | WF-093, a count source under EERSTE | as `wf093-aantalgevulde-wrat` |
+| `wf093-wratvouw-kale-som` | WF-093 | B13, B16 (+V6) | herschreven (m) | WF-093, a count source under SOM | as `wf093-aantalgevulde-wrat` |
 | `wf093-wratvouw-set-maximum` | WF-093 | B13, B11 | verwijderd-met-reden | the set spelling of the count source | without the sentinel and the set reading the source is an ordinary value fold's set source; measured: the migration's translation is verifier-clean |
 | `wf093-wratvouw-set-som` | WF-093 | B13, B11 | verwijderd-met-reden | the set spelling of the count source | as the row above, under SOM; measured: the migration's translation is verifier-clean |
 | `wf034-feitcreatie-hoofdletterveld` | WF-034 (m) | B7 | verwijderd-met-reden | a bean field of a fact creation | B7 takes the bean fields off the fact creation: the symbolic block is the whole creation; the seven translations are byte-identical and the migration's translation is verifier-clean |
@@ -189,12 +189,12 @@ The negatief zone went from 444 to 394 documents (with the U12 witness `wf034-ro
 | `wf053-chain-near-side-mismatch` | WF-053 | B11 | herschreven (m) | bound chain, near side | the written-step lines left with the written names; the near-side and endpoint lines remain |
 | `wf053-dangling-navigation-binding` | WF-053 | B11 | herschreven (m) | bound hop, undeclared fact type | unchanged but for the written hop name |
 | `wf053-geleste-vouwoperand-onverbonden-hop` | WF-053 | B11 (+B12) | herschreven (i) | WF-053 unbound read with a foreign objecttype (D10) | no fact type relates the two types, so the migration refuses; written by hand as the read without bindings whose objecttype is not the subject type |
-| `wf053-to-many-hop-in-scalar` | WF-053 | B11 | herschreven (i) | to-many hop in a scalar position (the whole rule value) | the written plural left; the migration derived the binding, and the to-many hop remains |
+| `wf053-to-many-hop-in-scalar` | WF-053 | B11 | herschreven (m) | to-many hop in a scalar position (the whole rule value) | the written plural left; the migration derived the binding, and the to-many hop remains |
 | `wf053-written-role-mismatch` | WF-053 | B11 | verwijderd-met-reden | written step against the bound role | there is no written step in L2; measured: the migration's translation is verifier-clean |
 | `wf053-zelfverwijzing-vreemde-rol` | WF-053 | B11 | verwijderd-met-reden | the zero-hop self-reference test | the self-reference exists only as a written step; without it the read is the subject's own read (m2.py refuses the written name: "derives no unique binding") |
 | `wf054-binding-on-unscoped` | WF-054 | B8 | verwijderd-met-reden | a scope binding on an unscoped uniqueness | the scope binding IS the scoping, so this shape cannot be written (m2.py: "a scope binding on an unscoped uniqueness") |
 | `wf054-dangling-scope-binding` | WF-054 | B8 | herschreven (m) | bound scope, undeclared fact type | the written scope field left; the binding is the scope |
-| `wf054-to-many-scope-role` | WF-054 | B8 | herschreven (i) | to-many scope role | the bindingless scope became a `scopeRol` derived from the written name; the to-many role remains |
+| `wf054-to-many-scope-role` | WF-054 | B8 | herschreven (m) | to-many scope role | the bindingless scope became a `scopeRol` derived from the written name; the to-many role remains |
 | `wf096-aantal-setbron` → `wf093-telling-over-attribuutbron` | WF-096 → WF-093 | B11 (+V6) | vervangen (WF-093, D9) | WF-093, AANTAL over a source that is no count source | WF-096 retired with the set reading; its count half went into WF-093, which since L2 demands a count source under AANTAL (D9) |
 | `wf096-aantal-setbron-bronpad` | WF-096 | B11 (+V6) | verwijderd-met-reden | the set reading under AANTAL, multi-step range | measured: the translation falls on WF-093 like the successor of `wf096-aantal-setbron`; the path length does not reach that rule |
 | `wf096-aantal-setbron-wrat` | WF-096 | B11, B13 | verwijderd-met-reden | the set spelling of the count source under AANTAL | measured: the translation is a count source anchored on the element type, WF-083 (c) — the shape of `wf083-vouwbron-anker-op-operand`, rewritten in place |
@@ -218,7 +218,7 @@ The negatief zone went from 444 to 394 documents (with the U12 witness `wf034-ro
 | `wf034-parameterref-zonder-parameter` | WF-034 | — | herschreven (m) | `parameter` null | no L2 delta |
 | `wf034-dimensiecel-geen-referentie` | WF-034 | B13 (L2) | herschreven (m) | a cell read whose attribute position is no reference | the cell lost its own type; the literal in the attribute position remains |
 | `wf034-dimensiecel-zonder-attribuut` | WF-034 | B13 (L2) | herschreven (m) | a cell read without an attribute | the cell lost its own type |
-| `wf034-foldbron-onbekend-attribuut` | WF-034 | B12, B11 (L2) | herschreven (i) | an unresolved attribute at a value fold's source | the migration wrote the range; the unknown name remains |
+| `wf034-foldbron-onbekend-attribuut` | WF-034 | B12, B11 (L2) | herschreven (m) | an unresolved attribute at a value fold's source | the migration wrote the range; the unknown name remains |
 | `wf034-foldbron-zonder-attribuut` | WF-034 | B13 (L2) | herschreven (m) | a fold source without an attribute | the WF-091 line of the source's own type left with it |
 | `wf034-foldbron-zonder-objecttype` | WF-034 | B13 (L2) | herschreven (m) | a fold source without an object type | as the row above |
 | `wf034-neerwaartse-lezing` | WF-034 | B11 (L2) | herschreven (m) | a supertype read of a subtype attribute at a fold source | the set reading left; the resolution stays |
