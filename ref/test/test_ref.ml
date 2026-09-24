@@ -2847,7 +2847,7 @@ let () =
              dimensie_selectie = None; typ = Some num2; bron = None; granulariteit = None;
              bron_rol = None; bron_pad = Some pad2 }));
   (* WF-102 (c), the verifier's sentence: a count's range is one step,
-     spelled bronRol, so a path under AANTAL is refused by name, with and
+     spelled sourceRole, so a path under AANTAL is refused by name, with and
      without a die/dat subselection. Until this refusal ref counted the
      instances the path reached while the verifier refused the document *)
   let telling filter : Ir_v0.Ast.expr =
@@ -2864,11 +2864,11 @@ let () =
         periode = None; bron = None }
   in
   expect_fault_msg "WV-3.4b-telling-over-een-pad-faalt" (fun () -> ev w1 "J1" (telling None))
-    "a bronPad is admissible only as the range of a single-argument VALUE fold's set source \
-     — a count's range is one step, spelled bronRol (WF-102)";
+    "a sourcePath is admissible only as the range of a single-argument VALUE fold's set source \
+     — a count's range is one step, spelled sourceRole (WF-102)";
   expect_fault_msg "WV-3.4b-telling-over-een-pad-met-filter-faalt"
     (fun () -> ev w1 "J1" (telling (Some zwaar)))
-    "a count's range is one step, spelled bronRol (WF-102)";
+    "a count's range is one step, spelled sourceRole (WF-102)";
   (* WF-093 (b) before WF-102, as the verifier and the Drools loader judge
      it: a count whose source names a MEMBER of the element type is refused
      for that, over a path of two steps and of one step alike. A count whose
@@ -2889,7 +2889,7 @@ let () =
     "reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES";
   expect_fault_msg "WV-3.4b-roltelling-over-een-eenstapspad-faalt"
     (fun () -> ev w1 "J1" (telling_over "geborgen vondsten" "Jutter" een_stap))
-    "a count's range is one step, spelled bronRol (WF-102)";
+    "a count's range is one step, spelled sourceRole (WF-102)";
   (* WF-080: a characteristic is no attribute, so a value fold's set source
      never names one — the verifier's aggregation-source sentence *)
   expect_fault_msg "WV-3.4b-kenmerk-als-setbron-faalt"
@@ -6394,10 +6394,9 @@ let () =
   in
   let zin ?(regel = "geen herleving") ?(doel = "herleefd") ?(ot = "Recht") waarde =
     Printf.sprintf
-      "rule %S is a KENMERKTOEKENNING on %S of %S with %s: a KENMERKTOEKENNING writes the boolean \
-       constant waar and nothing else (WF-022's value clause; this interpreter holds it for every \
-       KENMERKTOEKENNING, the verifier only where the target is a declared characteristic). \
-       Declined at evaluation"
+      "rule %S writes %S of %S as a characteristic, with %s: a version without a presentation and \
+       without initialisation writes the boolean constant true and nothing else (WF-022's value \
+       clause). Declined at evaluation"
       regel doel ot waarde
   in
   let weigert naam waarde verwacht =
@@ -6411,7 +6410,7 @@ let () =
           false
   in
   weigert "WF-022-kenmerk-onwaar-weigert" (litv "onwaar" Ir_v0.Ast.Booleaan)
-    (zin {|the literal "onwaar" typed Booleaan|});
+    (zin {|the literal {"boolean": false} typed Booleaan|});
   weigert "WF-022-kenmerk-berekend-weigert"
     (aref "actief" "Recht")
     (zin "a computed value");
@@ -6423,11 +6422,11 @@ let () =
      variant under Tekst — a node only a hand builds, since the loader
      refuses a variant its type does not name (WF-114) *)
   weigert "WF-022-kenmerk-waar-als-tekst-weigert" (litv "waar" Ir_v0.Ast.Tekst)
-    (zin {|the literal "waar" typed Tekst|});
+    (zin {|the literal {"text": "waar"} typed Tekst|});
   weigert "WF-022-kenmerk-booleaanse-variant-als-tekst-weigert"
     (Literal
        { waarde = Some "waar"; variant = Lv_boolean true; typ = Some Ir_v0.Ast.Tekst; bron = None })
-    (zin {|the literal "waar" typed Tekst|});
+    (zin {|the literal {"boolean": true} typed Tekst|});
   (* the control: the constant itself still attributes, on the condition *)
   let w = Eval.evaluate (env_of (doc (litv "waar" Ir_v0.Ast.Booleaan))) wereld in
   check "WF-022-kenmerk-waar-kent-toe"
@@ -6453,7 +6452,7 @@ let () =
   | exception Value.Fault m ->
       let verwacht =
         zin ~regel:"aantal als kenmerk" ~doel:"aantal aangemelde vondsten" ~ot:"Jutter"
-          {|the literal "onwaar" typed Booleaan|}
+          {|the literal {"boolean": false} typed Booleaan|}
       in
       check ("WF-022-kenmerktoekenning-op-attribuut-weigert (got: " ^ m ^ ")") (m = verwacht)
   | _ -> check "WF-022-kenmerktoekenning-op-attribuut-weigert (no fault at all)" false)

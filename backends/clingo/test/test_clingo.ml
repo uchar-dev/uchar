@@ -3776,8 +3776,8 @@ let () =
             }
           ],|})
     ~case_text:bp_case
-    ~needle:"a bronPad is admissible only as the range of a single-argument VALUE fold's set source";
-  (* WF-102 (c): a count's range is one step, spelled bronRol, so a path
+    ~needle:"a sourcePath is admissible only as the range of a single-argument VALUE fold's set source";
+  (* WF-102 (c): a count's range is one step, spelled sourceRole, so a path
      under AANTAL is refused by name, with and without a die/dat
      subselection. Until this refusal clingo counted the instances the path
      reached while the verifier refused the document *)
@@ -3787,7 +3787,7 @@ let () =
       ~waar:{|"attribuut": "gewicht",|} ~door:{|"attribuut": "geborgen vondsten",|}
   in
   faults_with ~name:"ch3.4b een telling over een pad" ~ir:telling ~case_text:bp_case
-    ~needle:"a count's range is one step, spelled bronRol (WF-102)";
+    ~needle:"a count's range is one step, spelled sourceRole (WF-102)";
   (* WF-093 (b) before WF-102, as the verifier and the Drools loader judge
      it: a count whose source names a MEMBER of the element type is refused
      for that, over a path of two steps and of one step alike; a count whose
@@ -3810,7 +3810,7 @@ let () =
     ~ir:(een_stap lidtelling) ~case_text:bp_case
     ~needle:"reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES";
   faults_with ~name:"ch3.4b een roltelling over een pad van een stap" ~ir:(een_stap telling)
-    ~case_text:bp_case ~needle:"a count's range is one step, spelled bronRol (WF-102)";
+    ~case_text:bp_case ~needle:"a count's range is one step, spelled sourceRole (WF-102)";
   faults_with ~name:"ch3.4b een telling over een pad met filter"
     ~ir:
       (vervang telling ~waar:{|"elementType": "Vondst",|}
@@ -3823,7 +3823,7 @@ let () =
                           "type": { "node": "Number", "whole": false, "decimals": 2,
                                     "sign": "ONBEPAALD" }, "bron": "4,00" },
               "periode": null, "bron": "zijn gewicht groter is dan 4,00" },|})
-    ~case_text:bp_case ~needle:"a count's range is one step, spelled bronRol (WF-102)"
+    ~case_text:bp_case ~needle:"a count's range is one step, spelled sourceRole (WF-102)"
 
 
 (* ch. 3.4b's to-ONE clause: "a step through a to-ONE role is an ordinary
@@ -4575,7 +4575,7 @@ let () =
          ~ext:
            {|, "bronPad": [ { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } ]|}
          ())
-    ~case_text:vals ~needle:"a bronPad carries at least TWO steps";
+    ~case_text:vals ~needle:"a sourcePath carries at least TWO steps";
   refused_at_load ~name:"ch3.9a bereikpad naast een bronRol"
     ~ir:
       (kv_doc

@@ -570,8 +570,9 @@ let fold_members ?binding ?path env world (self : World.instance) ~element =
     | None, Some rb -> linked env world self ~binding:rb
     | None, None ->
         Value.fault
-          "an instance fold over %S carries no range: its relation is written as bronRol or \
-           bronPad and never derived (B12)"
+          "an instance fold over %S carries no range: its relation is written as a range (sourceRole \
+           or sourcePath on an aggregation, bronRol or bronPad on a quantifier fold) and never \
+           derived (B12)"
           element
   in
   List.filter (fun (i : World.instance) -> isa env i.otype element) reached
@@ -1366,7 +1367,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
   | None -> ()
   | Some pad ->
       if bron_rol <> None then
-        Value.fault "a bronPad beside a bronRol: the one-step range IS bronRol (WF-102)";
+        Value.fault "a sourcePath beside a sourceRole: the one-step range IS sourceRole (WF-102)";
       (* WF-102 (c), the verifier's sentence: the set source is the single
          argument of an instance fold that carries a range, and a path is the
          range of a VALUE fold's set source only. A count's source names the
@@ -1376,10 +1377,13 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       | k, Some _, [ Attribuut_ref { navigatie_bindingen = None; _ } ] when k <> Aantal -> ()
       | _ ->
           Value.fault
-            "a bronPad is admissible only as the range of a single-argument VALUE fold's set \
-             source — a count's range is one step, spelled bronRol (WF-102)");
+            "a sourcePath is admissible only as the range of a single-argument VALUE fold's set \
+             source — a count's range is one step, spelled sourceRole (WF-102)");
       if List.length pad < 2 then
-        Value.fault "a bronPad carries at least TWO steps, found %d (WF-102)" (List.length pad));
+        Value.fault
+          "a sourcePath carries at least TWO steps, found %d — the one-step range is spelled \
+           sourceRole (WF-102)"
+          (List.length pad));
   (* WF-083 (c), the verifier's sentence: a TOTAAL without a range is the
      subject's own read, so the type it folds over is the subject type. The
      field is checked here because a foreign type in it otherwise moves no
@@ -1718,8 +1722,8 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
         `Values (map_in_order (eval_expr env world self ~err) args)
     | Some el, [ _ ] when (not ranged) && kind <> Totaal ->
         Value.fault
-          "an instance fold over %S carries no range: its relation is written as bronRol or \
-           bronPad and never derived (B12)"
+          "an instance fold over %S carries no range: its relation is written as sourceRole or \
+           sourcePath and never derived (B12)"
           el
     | Some _, _ -> Value.fault "unsupported instance-fold source shape"
   in
@@ -2480,32 +2484,34 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
         "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a \
          gedurende condition over an own temporal characteristic); no corpus case for more"
 
-(* WF-022's value clause, held for every KENMERKTOEKENNING: the rule writes
-   the boolean constant waar and nothing else. On this wire a negative
-   decision on a characteristic exists only inside a defaults group, where it
-   keeps the group from attributing; a flat rule with another value has no
-   reading. Until 2026-09-23 the attribution arm below evaluated the value and
-   let onwaar write nothing: corpus/negatief/wf022-kenmerk-onwaar, forced past
-   the verifier, answered with the characteristic absent without a word, and a
-   computed boolean was written like the constant, while the ASP backend
-   refused both at translation.
+(* WF-022's value clause, held for every version that attributes a
+   characteristic — a version without a presentation and without
+   initialisation (IR-SPEC ch. 3.1): it writes the boolean constant true and
+   nothing else. On this wire a negative decision on a characteristic exists
+   only inside a defaults group, where it keeps the group from attributing; a
+   flat rule with another value has no reading. Until 2026-09-23 the
+   attribution arm below evaluated the value and let false write nothing:
+   corpus/negatief/wf022-kenmerk-onwaar, forced past the verifier, answered
+   with the characteristic absent without a word, and a computed boolean was
+   written like the constant, while the ASP backend refused both at
+   translation.
 
-   The verifier keys the clause on the TARGET, this check on the SOORT, and
-   that is a difference in reach: a KENMERKTOEKENNING whose target is an
-   attribute passes the verifier and is refused here (measured 2026-09-23 on
-   jutterswet-penningdrempel with the attribute "aantal aangemelde vondsten"
-   as target and onwaar as value: verifier PASS, the ASP backend refuses as
-   well). Where the verifier refuses the document this fault is fail-fast on a
-   non-conforming input; where it admits it, the fault refuses a write that has
-   no reading; in neither case may it be softened to a fallback. The test of
-   the constant is the verifier's own (the literal waar typed Booleaan).
+   This check is keyed on the version's kind, never on the target's
+   declaration. Measured 2026-09-23 on jutterswet-penningdrempel with the
+   attribute "aantal aangemelde vondsten" as target and false as value: the
+   verifier of the day passed it, this check refused it, and so did the ASP
+   backend. Since the L4 landing the verifier refuses that document as well,
+   because WF-022 crosses a version's kind against its target's member. Where
+   the verifier refuses the document this fault is fail-fast on a
+   non-conforming input; in no case may it be softened to a fallback. The
+   test of the constant is the verifier's own (the boolean variant true
+   typed Booleaan).
 
    What the check does not reach: a rule outside its validity window is
    skipped before it ([applies] comes first, in the ASP backend too), and a
-   KENMERKTOEKENNING with the value waar on an attribute target passes it and
-   writes a characteristic of the attribute's name, which no reader of that
-   attribute sees (WF-022 does not tie the soort to a characteristic target;
-   open for the verifier). *)
+   version of this kind with the value true on an attribute target passes it
+   and writes a characteristic of the attribute's name, which no reader of
+   that attribute sees; the verifier refuses that document (WF-022). *)
 let kenmerkwaarde_constant_waar (r : resolved_regel) ~ot ~attr =
   match r.waarde with
   | Some (Literal { variant = Lv_boolean true; typ = Some Booleaan; _ }) -> ()
@@ -2521,21 +2527,27 @@ let kenmerkwaarde_constant_waar (r : resolved_regel) ~ot ~attr =
         | List_type _ -> "ListType"
         | Struct_type _ -> "StructType"
       in
+      (* the literal as the wire writes its value: {"<variant>": <value>} *)
+      let variant_json (v : literal_variant) =
+        match v with
+        | Lv_boolean b -> Printf.sprintf "{\"boolean\": %b}" b
+        | v ->
+            Printf.sprintf "{\"%s\": %S}" (Ir_v0.Checks.literal_variant_key v)
+              (Ir_v0.Loader.literal_lexeme v)
+      in
       let waarde =
         match w with
         | Some (Literal { variant; typ = Some t; _ }) ->
-            Printf.sprintf "the literal %S typed %s" (Ir_v0.Loader.literal_lexeme variant)
-              (datatype_woord t)
+            Printf.sprintf "the literal %s typed %s" (variant_json variant) (datatype_woord t)
         | Some (Literal { variant; typ = None; _ }) ->
-            Printf.sprintf "the untyped literal %S" (Ir_v0.Loader.literal_lexeme variant)
+            Printf.sprintf "the untyped literal %s" (variant_json variant)
         | Some _ -> "a computed value"
         | None -> "no value"
       in
       Value.fault
-        "rule %S is a KENMERKTOEKENNING on %S of %S with %s: a KENMERKTOEKENNING writes the boolean \
-         constant waar and nothing else (WF-022's value clause; this interpreter holds it for every \
-         KENMERKTOEKENNING, the verifier only where the target is a declared characteristic). \
-         Declined at evaluation"
+        "rule %S writes %S of %S as a characteristic, with %s: a version without a presentation \
+         and without initialisation writes the boolean constant true and nothing else (WF-022's \
+         value clause). Declined at evaluation"
         (rule_name r) attr ot waarde
 
 let run_rule env world (r : resolved_regel) =
@@ -2543,7 +2555,7 @@ let run_rule env world (r : resolved_regel) =
   else
     match r.doel with
     | Some (Attribuut_ref { attribuut; objecttype = Some ot; _ }) ->
-        let attr = req "doel.attribuut" attribuut in
+        let attr = req "RuleVersion.target attribuut" attribuut in
         let env = { env with subj = Some ot } in
         let temporal_target =
           match r.rr_soort with
@@ -2642,9 +2654,9 @@ let run_rule env world (r : resolved_regel) =
               | Some Kenmerktoekenning -> World.set_char w ~label:self.label ~char:attr
               | Some (Gelijkstelling | Berekening) when temporal_target ->
                   let venster = Option.map (venster_van w self ~err) clip in
-                  run_pro_rata ?venster env w self ~ot ~attr (req "waarde" r.waarde)
+                  run_pro_rata ?venster env w self ~ot ~attr (req "RuleVersion.value" r.waarde)
               | Some (Gelijkstelling | Berekening) ->
-                  let v = eval_expr env w self ~err (req "waarde" r.waarde) in
+                  let v = eval_expr env w self ~err (req "RuleVersion.value" r.waarde) in
                   (* ch. 7.8: on a standing target — and on a ch. 7.7
                      desugaring-domain target, whose defaults reading ref
                      replays natively — the rule decides like a default: a
@@ -2664,7 +2676,7 @@ let run_rule env world (r : resolved_regel) =
                   (* writes only when the target is empty (ch. 5.4) *)
                   if World.attr self attr <> Value.Empty then (w, false)
                   else
-                    let v = eval_expr env w self ~err (req "waarde" r.waarde) in
+                    let v = eval_expr env w self ~err (req "RuleVersion.value" r.waarde) in
                     World.write_attr w ~label:self.label ~attr ~decl:(attr_decl env ~otype:ot ~attr)
                       v
               | None -> Value.fault "rule %S has no kind" (rule_name r))
@@ -2674,11 +2686,11 @@ let run_verdeling env world (v : resolved_verdeling) =
   if not (applies env v.vd_geldigheid) then (world, false)
   else begin
     let name = Option.value v.vd_naam ~default:"<verdeling>" in
-    let bron_type = req "bronType" v.bron_type in
+    let bron_type = req "AllocationVersion.sourceType" v.bron_type in
     let env = { env with subj = Some bron_type } in
-    let doel_type = req "doelType" v.doel_type in
-    let bron_attr = req "bronAttribuut" v.bron_attribuut in
-    let doel_attr = req "doelAttribuut" v.doel_attribuut in
+    let doel_type = req "AllocationVersion.targetType" v.doel_type in
+    let bron_attr = req "AllocationVersion.sourceAttribute" v.bron_attribuut in
+    let doel_attr = req "AllocationVersion.targetAttribute" v.doel_attribuut in
     over_subjects env world ~otype:bron_type ~rule:name (fun w src cond_err ->
         let cond_ok =
           match v.vd_voorwaarde with
@@ -2776,7 +2788,7 @@ let run_feit_creatie env world (fc : resolved_feit_creatie) =
        anker, which short-circuits the chain exactly as before. *)
     let doel_guard = if guard_on_doel env.doc fc then fc.fc_voorwaarde else None in
     let anker_guard = if doel_guard = None then fc.fc_voorwaarde else None in
-    over_subjects env world ~otype:(req "FeitCreatie.anker" fc.anker) ~rule:name
+    over_subjects env world ~otype:(req "FactCreationVersion.anchor" fc.anker) ~rule:name
       (fun w self err ->
         let fire =
           match anker_guard with Some c -> eval_cond env w self ~err c | None -> true
@@ -2827,8 +2839,8 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
   if not (applies env oc.oc_geldigheid) then (world, false)
   else begin
     let name = Option.value oc.oc_naam ~default:"<objectcreatie>" in
-    let nieuw = req "ObjectCreatie.nieuwType" oc.nieuw_type in
-    let subject = req "ObjectCreatie.subject" oc.oc_subject in
+    let nieuw = req "ObjectCreationVersion.createdType" oc.nieuw_type in
+    let subject = req "ObjectCreationVersion.subject" oc.oc_subject in
     let env = { env with subj = Some subject } in
     let pair =
       (* the explicit back-link binding (extension, IR-SPEC ch. 3.3)
@@ -3124,9 +3136,9 @@ let run_consistentie env world (c : resolved_consistentie) =
     let name = Option.value c.cons_naam ~default:"<consistentie>" in
     let env = { env with subj = c.cons_subject } in
     let world, _ =
-      over_subjects env world ~otype:(req "Consistentie.subject" c.cons_subject) ~rule:name
+      over_subjects env world ~otype:(req "ConsistencyVersion.subject" c.cons_subject) ~rule:name
         (fun w self err ->
-          if eval_cond env w self ~err (req "assertie" c.assertie) then (w, false)
+          if eval_cond env w self ~err (req "ConsistencyVersion.assertion" c.assertie) then (w, false)
           else (World.insert_error w ~rule:name ~subject:self.label, false))
     in
     world
@@ -3186,7 +3198,7 @@ let run_uniciteit env world (u : resolved_uniciteit) =
   if not (applies env u.uni_geldigheid) then world
   else begin
     let name = Option.value u.uni_naam ~default:"<uniciteit>" in
-    let subject = req "Uniciteit.subject" u.uni_subject in
+    let subject = req "Source.objectType" u.uni_subject in
     (* the scope hop of a parent-scoped uniqueness (ch. 5.9, WF-054):
        keys are unique within the sub-population sharing one scope
        parent; an instance without a scope parent does not participate —
@@ -3199,7 +3211,7 @@ let run_uniciteit env world (u : resolved_uniciteit) =
           Some (fun i -> role_links world i role)
       | None -> None
     in
-    let keys = List.map (req "sleutel") u.sleutels in
+    let keys = List.map (req "Source.keys entry") u.sleutels in
     (* a duplicate non-empty key (ch. 5.6): rows with an empty key
        component do not participate; temporal keys read ever-uniqueness
        through the shared tuple function, composed with the scope
@@ -3257,8 +3269,8 @@ let run_uniciteit_unie env world (u : resolved_uniciteit_unie) =
     let keyed =
       List.concat_map
         (fun (b : uniciteit_unie_bron) ->
-          let t = req "UniciteitUnie.bron.type" b.uub_type in
-          let keys = List.map (req "sleutel") b.uub_sleutels in
+          let t = req "Source.objectType" b.uub_type in
+          let keys = List.map (req "Source.keys entry") b.uub_sleutels in
           (* the shared ever-tuple function (ch. 5.9): one reading for
              the union and the single form alike *)
           List.concat_map

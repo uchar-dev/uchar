@@ -1639,8 +1639,8 @@ let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
         | Some rb -> rb
         | None ->
             fault
-              "an instance fold over %S carries no range: its relation is written as bronRol or \
-               bronPad and never derived (B12)"
+              "an instance fold over %S carries no range: its relation is written as sourceRole or \
+               sourcePath and never derived (B12)"
               el
       in
       ignore subject_ot;
@@ -1649,9 +1649,12 @@ let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
   | Some pad ->
       let n = List.length pad in
       if n < 2 then
-        fault "a bronPad carries at least TWO steps, found %d (WF-102)" n;
+        fault
+          "a sourcePath carries at least TWO steps, found %d — the one-step range is spelled \
+           sourceRole (WF-102)"
+          n;
       if bron_rol <> None then
-        fault "a bronPad beside a bronRol: the one-step range IS bronRol (WF-102)";
+        fault "a sourcePath beside a sourceRole: the one-step range IS sourceRole (WF-102)";
       let atoms, _ =
         List.fold_left
           (fun (atoms, cur) (i, rb) ->
@@ -3345,8 +3348,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Functie { kind = Aantal; argumenten = [ Instance_set_union _ ]; _ } ->
       fault
         "a count over an instance-set union names a source of its own: the selections carry the \
-         population, the relation and the subselection, one set each, so elementObjecttype, \
-         bronRol, bronPad and filter are absent on this node (WF-110)"
+         population, the relation and the subselection, one set each, so elementType, \
+         sourceRole, sourcePath and filter are absent on this node (WF-110)"
   | Instance_set_union _ ->
       fault
         "an instance-set union stands where a value term is wanted: it denotes the INSTANCES of a \
@@ -3378,8 +3381,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               | Some _, [ Attribuut_ref { navigatie_bindingen = None; _ } ] -> true
               | _ -> false) ->
       fault
-        "a bronPad is admissible only as the range of a single-argument VALUE fold's set source \
-         — a count's range is one step, spelled bronRol (WF-102)"
+        "a sourcePath is admissible only as the range of a single-argument VALUE fold's set source \
+         — a count's range is one step, spelled sourceRole (WF-102)"
   (* WF-083 (c), the verifier's sentence and ref's check: a TOTAAL without a
      range is the subject's own read, so the type it folds over is the
      subject type; a foreign type in the field otherwise moves no answer *)
@@ -5289,7 +5292,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       fault
         "a som over listed operands is not translated: every som this backend carries ranges a \
          #sum over an instance source, and a listed fold has none; and where it carries a \
-         ch. 5.11 leegwaarde, the addition chain that would carry it must evaluate that stand-in \
+         ch. 5.11 emptyFallback, the addition chain that would carry it must evaluate that stand-in \
          unconditionally. No corpus case pins a value for the form"
   | _ -> fault "expression kind not translated (no corpus case exercises it)"
 
@@ -8740,7 +8743,7 @@ let translate_regel ctx (r : resolved_regel) =
      version-free rule — including the ch. 6d fence when the case supplies
      its (never-standing) computed target. *)
   if applies ctx r.rr_geldigheid then begin
-      let doel = req "doel" r.doel in
+      let doel = req "RuleVersion.target" r.doel in
       ctx.rule_name <- Option.value r.rr_naam ~default:"?";
       (match doel with
       | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } ->
@@ -8818,7 +8821,7 @@ let translate_regel ctx (r : resolved_regel) =
                 fault "temporal characteristic %S: temporal writes are not implemented" a;
               (match r.waarde with
               | Some (Literal { variant = Lv_boolean true; _ }) -> ()
-              | _ -> fault "characteristic attribution with a non-waar value");
+              | _ -> fault "characteristic attribution with a value other than the boolean constant true");
               head_body ctx (Printf.sprintf "heeft(%s,%s)" subject (str a)) (base :: cond)
           | Some (Berekening | Gelijkstelling) when attr_sum_typed ctx ~otype:ot ~attr:a ->
               (* ch. 9.1: a Construct write to a sum-typed target. A sum value
@@ -8834,7 +8837,7 @@ let translate_regel ctx (r : resolved_regel) =
                    case)"
                   a;
               ctx.rule_guard <- cond;
-              let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
+              let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
               ctx.rule_guard <- [];
               head_body ctx (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
                 ((base :: cond) @ bindings)
@@ -8851,7 +8854,7 @@ let translate_regel ctx (r : resolved_regel) =
                    case)"
                   a;
               ctx.rule_guard <- cond;
-              let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
+              let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
               ctx.rule_guard <- [];
               head_body ctx (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
                 ((base :: cond) @ bindings)
@@ -8869,7 +8872,7 @@ let translate_regel ctx (r : resolved_regel) =
                    case)"
                   a;
               ctx.rule_guard <- cond;
-              let atoms, dd, dm = dt_term ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
+              let atoms, dd, dm = dt_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
               ctx.rule_guard <- [];
               head_body ctx (Printf.sprintf "val(%s,%s,dt(%s,%s))" subject (str a) dd dm)
                 ((base :: cond) @ atoms)
@@ -8891,7 +8894,7 @@ let translate_regel ctx (r : resolved_regel) =
                    case)"
                   a;
               ctx.rule_guard <- cond;
-              let bindings, term = symbolic_term ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
+              let bindings, term = symbolic_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
               ctx.rule_guard <- [];
               head_body ctx (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
                 ((base :: cond) @ bindings)
@@ -8965,7 +8968,7 @@ let translate_regel ctx (r : resolved_regel) =
                  non-branching value is one branch, identical to the single-head
                  emission; a Let-nested IfThenElse is one val head per branch,
                  the shared Let value atoms in each branch's body *)
-              let branches = value_branches ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
+              let branches = value_branches ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
               ctx.rule_guard <- [];
               ctx.write_scale <- 1;
               (* ch. 7.8 standing target: the rule decides like a default. The
@@ -9051,8 +9054,8 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
      creations' oc%d terms are unchanged by a skipped neighbour. *)
   if applies ctx oc.oc_geldigheid then begin
   ctx.rule_name <- Option.value oc.oc_naam ~default:"?";
-  let nieuw = req "ObjectCreatie.nieuwType" oc.nieuw_type in
-  let subject_ot = req "ObjectCreatie.subject" oc.oc_subject in
+  let nieuw = req "ObjectCreationVersion.createdType" oc.nieuw_type in
+  let subject_ot = req "ObjectCreationVersion.subject" oc.oc_subject in
   let subject = "S" in
   let term = Printf.sprintf "oc%d(%s)" i subject in
   let env =
@@ -9180,7 +9183,7 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
   let role rname = Eval.bound_role env { rb_feittype = ftn; rb_rol = rname } in
   let anker_rol = role fc.anker_rol in
   let doel_rol = role fc.doel_rol in
-  let anker = req "FeitCreatie.anker" fc.anker in
+  let anker = req "FactCreationVersion.anchor" fc.anker in
   let subject = "S" in
   (* RUNTIME-SEMANTICS ch. 5.5 / ch. 5.8b, WF-109: the guard is the one
      condition position with two objects in scope, and the host field names
@@ -9213,7 +9216,7 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
   let cond_doel =
     match fc.fc_voorwaarde with
     | Some c when on_doel ->
-        cond_atoms ctx ~subject:target ~subject_ot:(req "FeitCreatie.doel" fc.fc_doel) c
+        cond_atoms ctx ~subject:target ~subject_ot:(req "the target type of a fact creation (the declared filler of its targetRole)" fc.fc_doel) c
     | _ -> []
   in
   let body =
@@ -9233,7 +9236,7 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
         (str (role_canonical r))
   in
   to_one_guard doel_rol anker;
-  to_one_guard anker_rol (req "FeitCreatie.doel" fc.fc_doel)
+  to_one_guard anker_rol (req "the target type of a fact creation (the declared filler of its targetRole)" fc.fc_doel)
   end
 
 (* the defaults group (RUNTIME-SEMANTICS ch. 7.1/7.2/7.9, IR-SPEC ch. 6.1;
@@ -9614,8 +9617,8 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
         fault "COMPLEX allocation is not admissible IR (WF-024)"
     | Some m -> m
   in
-  let bt = req "bronType" v.bron_type and dt = req "doelType" v.doel_type in
-  let ba = req "bronAttribuut" v.bron_attribuut and da = req "doelAttribuut" v.doel_attribuut in
+  let bt = req "AllocationVersion.sourceType" v.bron_type and dt = req "AllocationVersion.targetType" v.doel_type in
+  let ba = req "AllocationVersion.sourceAttribute" v.bron_attribuut and da = req "AllocationVersion.targetAttribute" v.doel_attribuut in
   (* case input on the allocation target: ref (like v0) OVERWRITES the
      target where the verdeling reaches an instance and the input stands
      where it does not (World.write_attr, ch. 4). The S10 defeasible-input
@@ -9832,7 +9835,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
      method's raw atom with X free; the declared cap floors to the
      rounding scale (an upscale is exact, a downscale is the floor). *)
   let emit_cap_atoms ~raw_pat =
-    let cap = req "maximumAttribuut" v.maximum_attribuut in
+    let cap = req "AllocationVersion.maximumAttribute" v.maximum_attribuut in
     let c = match cdec with Some c -> c | None -> assert false in
     let capd =
       if ddec >= c then scaled "C" (pow10 (ddec - c))
@@ -9847,7 +9850,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   match methode with
   | Complex -> assert false (* fenced above *)
   | Naar_rato ->
-      let rato = req "ratoAttribuut (proportional)" v.rato_attribuut in
+      let rato = req "AllocationVersion.ratioAttribute (proportional)" v.rato_attribuut in
       (* fail-fast guards, mirrored on ref/'s faults and on floor
          semantics: integer division is floor only on non-negative
          operands, and an empty pot is the ch. 4.4 v0 hole ref/ faults
@@ -10009,9 +10012,9 @@ let translate_consistentie ctx i (c : resolved_consistentie) =
      THIS name, like ref's err collector (the verify lens caught the
      stale rule_name of the last-translated rule leaking in) *)
   ctx.rule_name <- name;
-  let subject_ot = req "subject" c.cons_subject in
+  let subject_ot = req "ConsistencyVersion.subject" c.cons_subject in
   let ok = Printf.sprintf "cons%d_ok(S)" i in
-  let atoms = cond_atoms ctx ~subject:"S" ~subject_ot (req "assertie" c.assertie) in
+  let atoms = cond_atoms ctx ~subject:"S" ~subject_ot (req "ConsistencyVersion.assertion" c.assertie) in
   head_body ctx ok (Printf.sprintf "isa(S,%s)" (str subject_ot) :: atoms);
   emit ctx "inconsistent(%s,S) :- isa(S,%s), not cons%d_ok(S)." (str name) (str subject_ot) i
 
@@ -10057,8 +10060,8 @@ let translate_uniciteit ctx (u : resolved_uniciteit) =
       fault "uniqueness validity windows are not translated (no corpus case)"
   | _ -> ());
   let name = Option.value u.uni_naam ~default:"uniciteit" in
-  let subject_ot = req "subject" u.uni_subject in
-  let keys = List.map (req "sleutel") u.sleutels in
+  let subject_ot = req "Source.objectType" u.uni_subject in
+  let keys = List.map (req "Source.keys entry") u.sleutels in
   uni_key_guards ctx ~otype:subject_ot ~keys;
   let joins label =
     List.mapi (fun i k -> uni_key_atom ctx ~otype:subject_ot ~label ~pos:i k) keys
@@ -10102,8 +10105,8 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
   let max_scale pos =
     List.fold_left
       (fun m (b : uniciteit_unie_bron) ->
-        let t = req "UniciteitUnie.bron.type" b.uub_type in
-        let k = req "sleutel" (List.nth b.uub_sleutels pos) in
+        let t = req "Source.objectType" b.uub_type in
+        let k = req "Source.keys entry" (List.nth b.uub_sleutels pos) in
         max m (attr_decimals ctx ~otype:t ~attr:k))
       0 u.bronnen
   in
@@ -10114,14 +10117,14 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
      twice — #count over (instance, source) pairs is exactly that sum *)
   List.iteri
     (fun j (b : uniciteit_unie_bron) ->
-      let t = req "UniciteitUnie.bron.type" b.uub_type in
+      let t = req "Source.objectType" b.uub_type in
       (* the shared ever-uniqueness guards and key atoms (ch. 5.9):
          one reading for the union and the single form alike *)
-      uni_key_guards ctx ~otype:t ~keys:(List.map (req "sleutel") b.uub_sleutels);
+      uni_key_guards ctx ~otype:t ~keys:(List.map (req "Source.keys entry") b.uub_sleutels);
       let head_args =
         List.mapi
           (fun pos k ->
-            let k = req "sleutel" k in
+            let k = req "Source.keys entry" k in
             let d = attr_decimals ctx ~otype:t ~attr:k in
             let m = pow10 (List.nth scales pos - d) in
             if m = 1 then Printf.sprintf "K%d" pos else Printf.sprintf "(K%d*%d)" pos m)
@@ -10130,14 +10133,14 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
       let body =
         Printf.sprintf "isa(S,%s)" (str t)
         :: List.mapi
-             (fun pos k -> uni_key_atom ctx ~otype:t ~label:"S" ~pos (req "sleutel" k))
+             (fun pos k -> uni_key_atom ctx ~otype:t ~label:"S" ~pos (req "Source.keys entry" k))
              b.uub_sleutels
       in
       (* the per-position upscale is an emitted multiplication: fence
          the raw key against the compile-time factor *)
       List.iteri
         (fun pos k ->
-          let k = req "sleutel" k in
+          let k = req "Source.keys entry" k in
           let d = attr_decimals ctx ~otype:t ~attr:k in
           let m = pow10 (List.nth scales pos - d) in
           if m > 1 then
