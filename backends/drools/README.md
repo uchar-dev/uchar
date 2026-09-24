@@ -17,10 +17,15 @@ in tests.
 - `schema/`, `graaf/`, `engine/` — the fact-model contract + bean generation, the rule
   graph, and the fire-layer support (in-memory bean compiler, parameterset loader).
 - `loader/IrLoader.java` — **the heart**: the inverse of the frontend's `IrEmitter`. It
-  parses `uchar-ir-v1` JSON (the M1 shape) into the frontend IR record types the
-  transpiler consumes, with a **loud per-form `Refusal`** for every form the v0 backend
-  does not carry (another `format`, an unknown section of the root, the model or the
-  rules, an unknown `Expr`/`Conditie`/`Datatype` node — a v1 struct/list/Let/fold, …).
+  parses `uchar-ir-v1` JSON in its L5 shape — every node, key and list under `rules` in
+  its IR-SPEC name, every enumeration value read through the one translation table
+  `ir/Spelling.java` that the emitter writes with — into the frontend IR record types the
+  transpiler consumes, which keep their v0 form. A form the backend does not carry
+  (another `format`, the `functionDefs` section, an unknown `Expr`/`Conditie`/`Datatype`
+  node — a v1 struct/list/match, a temporal read, …) is a **loud per-form `Refusal`**; a
+  document that is not well-formed — a v0 node name, key, list or enumeration value
+  among its defects — is a `Documentfout` naming its JSON pointer, in the shared OCaml
+  loader's words, never a `Refusal`.
 - `cases/CaseRunner.java`, `cases/DroolsBackendMain.java` — the case runner and the
   jar-only CLI the gate drives.
 
