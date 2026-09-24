@@ -35,7 +35,7 @@ construction, never carrying a leeg field) — or
 **empty** (leeg): the distinguished absence of a value, belonging to no
 datatype. Empty is not zero, not the empty string, not false; every context
 below defines explicitly what it does with an empty operand. (Empty is also
-distinct from `Onopgelost`, which marks an *unresolvable construct*, not an
+distinct from `Unresolved`, which marks an *unresolvable construct*, not an
 absent value — `CONSTRUCTS.md` row 16.)
 
 ### 1.2 Empty in each context (v0 mirror)
@@ -93,7 +93,7 @@ recorded as such.
 | non-numeric equality (text/enum/boolean, §5 Tabel 38) | any empty operand → false | leeg =ₜ leeg → onwaar |
 | date equality (v0's Tabel-38 guard on the date shape) | any empty operand → false — in particular **both** empty, never the numeric two-empties-equal cell | leeg =ᴰ leeg → onwaar; leeg =ᴰ 2026-06-21 → onwaar |
 | **inequality — every datatype (§5.6 Tabel 44)** | true iff **exactly one** empty, else value inequality — uniform over numeric, percentage, text, enum, boolean, date, and the ch. 9/11 constructor and record values | leeg ≠ 5 → waar; 5 ≠ 3 → waar; leeg ≠ leeg → onwaar; leeg ≠ₜ "a" → waar; leeg ≠ᴰ 2026-06-21 → waar; leeg ≠ᴰ leeg → onwaar |
-| leeg / gevuld predicates | absence — including a failed to-one navigation — **is** leeg = waar; the `negated` field is the inner, per-value negation and complements the test — negated leeg is gevuld, negated gevuld is leeg (the qualifier's own negation is `GeheelPeriode.niet`, ch. 3.9; which threshold a negated leeg test takes under that qualifier — touched-days or days(B) — is an OPEN norm point, and all three executors refuse the form by name: ref and the ASP backend in the same words, because neither executes any whole-period leeg/gevuld test, and both Drools branches in the loader as `Predicaat.negatie`, on that open threshold. Red case `corpus/rood/leegnegatie-heel-tijdvak` holds the refusal, and `corpus/rood/gevuldnegatie-heel-tijdvak` the same refusal of a negated gevuld test (the Drools refusal names both); their twins `corpus/rood/leegtest-heel-tijdvak` and `corpus/rood/gevuldtest-heel-tijdvak` hold the refusal of the unnegated leeg and gevuld tests, which ch. 3.9 norms and no executor runs, ch. 3.12) | "de leeftijd van zijn partner is leeg" is waar for a partnerless person; `leeg(5)` negated = waar, `leeg(leeg)` negated = onwaar (WV-1.2-neg) |
+| leeg / gevuld predicates | absence — including a failed to-one navigation — **is** leeg = waar; the `negated` field is the inner, per-value negation and complements the test — negated leeg is gevuld, negated gevuld is leeg (the qualifier's own negation is `WholePeriod.negated`, ch. 3.9; which threshold a negated leeg test takes under that qualifier — touched-days or days(B) — is an OPEN norm point, and all three executors refuse the form by name: ref and the ASP backend in the same words, because neither executes any whole-period leeg/gevuld test, and both Drools branches in the loader as `Predicaat.negatie`, on that open threshold. Red case `corpus/rood/leegnegatie-heel-tijdvak` holds the refusal, and `corpus/rood/gevuldnegatie-heel-tijdvak` the same refusal of a negated gevuld test (the Drools refusal names both); their twins `corpus/rood/leegtest-heel-tijdvak` and `corpus/rood/gevuldtest-heel-tijdvak` hold the refusal of the unnegated leeg and gevuld tests, which ch. 3.9 norms and no executor runs, ch. 3.12) | "de leeftijd van zijn partner is leeg" is waar for a partnerless person; `leeg(5)` negated = waar, `leeg(leeg)` negated = onwaar (WV-1.2-neg) |
 
 Note the deliberate asymmetry, now confined to **equality**: numeric
 equality treats two empties as equal; non-numeric equality (text, enum,
@@ -190,7 +190,7 @@ can be checked: WF-038's ordering-fold clause requires every operand of
 in either wire form, the instance fold's one set-valued argument and the
 articulated fold's listed ones alike — to come from one comparable
 family: numbers, or dates of ONE precision. An equality-only operand
-(`Enumeratie`, `SumType`, `StructType`, `Tekst`, `Booleaan`,
+(`Enumeration`, `SumType`, `StructType`, `Text`, `Boolean`,
 `ListType`: the ch. 2.4 orderability paragraph of `IR-SPEC.md`) is
 ill-formed, and so is a fold that mixes families — a number against a
 date, and (since 2026-09-05) a day-precision `Date` against a
@@ -202,7 +202,7 @@ tijd-precisie hebben", the same `Typering.datumAggregatie`), so the
 tightening puts the wire fence and the frontend that writes to it in
 agreement. An operand without a static type defers: since L2 that is a
 reference whose declaration does not resolve (WF-034 reports it) or an
-`Onopgelost` without a `type` (an executor faults on reaching it,
+`Unresolved` without a `type` (an executor faults on reaching it,
 WF-044). Until L2 it was the unknown sentinel, the one operand shape v0
 never typed and did hand to this very fold at runtime; the sentinel left
 the datatype union at L2 (B16). The
@@ -481,7 +481,7 @@ van nul* are sign-symmetric.
 `begrensd(x, min, max)`: if x < min then min, else if x > max then max,
 else x — minimum applied first, comparisons exact, an absent bound is no
 bound. The three operands are **evaluated** in the same direction the
-bounds are applied in — `basis`, `minimum`, `maximum` — which is
+bounds are applied in — `base`, `minimum`, `maximum` — which is
 ch. 5.11's wire-order rule and is observable whenever a bound faults or
 deposits. A trailing rounding applies to the **whole** clamped result:
 `(X met een minimum van 0) afgerond op 0 naar beneden` rounds the clamped
@@ -515,7 +515,7 @@ side scales every value by its declared `decimals`, an *unbounded*
 decimal form would be integer-only there. The pin: a Catala-decimal
 declaration carries a **finite scale `decimals = S`, with S = 4**
 (chosen against the tutorial, fixed here) — the frontend maps `TRat` to
-`Number{whole = false, decimals = 4, sign ONBEPAALD}` without a unit.
+`Number{whole = false, decimals = 4, sign unspecified}` without a unit.
 
 `ref` stays exact-rational throughout; both executors then **fault
 loudly and consistently on a value that does not terminate at 4
@@ -534,7 +534,7 @@ guards (ch. 2.4); every intermediate value stays the exact rational of
 ch. 2.1 — a `Let` binder (ch. 10.6) and a `Match`-arm result
 (ch. 9.2) among them, rounded to no scale — and a declared scale is never
 itself a collapse point: those stay exactly the three of ch. 2.1 — an
-explicit `Afgerond` node (ch. 2.5), the ch. 2.2 abs-division operator, and
+explicit `Rounding` node (ch. 2.5), the ch. 2.2 abs-division operator, and
 the ch. 2.4 write boundary already named. Worked example: `100 ÷
 3` (non-terminating) bound through a `Let` at a 2-decimal
 declaration and rounded once at the endpoint — `afgerond op 2
@@ -547,7 +547,7 @@ limit conform to the norm, not a value split (`ASP-TRANSLATION.md` S19).
 
 **Money × decimal rounds to the cent.** Catala's runtime rounds money
 multiplication (`Mult_mon_rat`/`Mult_mon_int`) to the cent, so the
-frontend wraps those products in `Afgerond {REKENKUNDIG, 2}` — the same
+frontend wraps those products in `Rounding {halfAwayFromZero, 2}` — the same
 wrapper the money *divisions* already carry. (No existing corpus golden
 contains a money multiplication, so the fix is byte-neutral; it lands
 with the first fixture that exercises it. The ASP encoding must split
@@ -570,16 +570,16 @@ rule to put in its place — and they are listed below rather than left to a
 consumer's discretion. Everywhere else a consumer of the IR derives the
 unit, the soort and the precision it computes with:
 
-1. **Reference positions** — an `AttribuutRef` (bare, navigated, or the one
-   a rule names as its `doel`), a `ParameterRef`, a `DimensieCel` read, a
-   `BinderRef` — take unit, soort and precision from the
+1. **Reference positions** — an `AttributeReference` (bare, navigated, or
+   the one a rule names as its `target`), a `ParameterReference`, a
+   `DimensionCellRead`, a `BinderRef` — take unit, soort and precision from the
    **declaration** the reference names: the object type's declared
    attribute datatype, the parameter's declared datatype, the attribute's
    element datatype, the binder's declaration (a `Let`'s value, a match
    arm's payload, a lambda or function parameter). Since L2 that is the
    only place they can take it from: the wire carries no type on these
-   nodes, nor on a `VariabeleRef` (`IR-SPEC.md` ch. 4.1), and a loader
-   refuses one by name. A `VariabeleRef` names no declaration: it is the
+   nodes, nor on a `VariableReference` (`IR-SPEC.md` ch. 4.1), and a loader
+   refuses one by name. A `VariableReference` names no declaration: it is the
    marker for a variable the resolver could not bind (`IR-SPEC.md`
    ch. 4.1), so there is no type to take — the verifier assigns it none,
    and `ref` faults on reaching it. Until
@@ -645,8 +645,8 @@ that is why gate 13 leaves both positions untwisted for a reason it already
 carried.
 
 **A fourth class, and it says something weaker.** A *position* whose result
-unit v0 does not *derive* at all — a division (`GEDEELD_DOOR`), a power
-(`TOT_DE_MACHT`), a percentage-of (`PERCENTAGE_VAN`), an absolute value, a
+unit v0 does not *derive* at all — a division (`dividedBy`), a power
+(`power`), a percentage-of (`percentageOf`), an absolute value, a
 root, the date/time extractors — keeps its own annotation, because clause 2
 has nothing to put in its place. That is not the annotation being the
 source; it is v0 having no rule, and the two consumers answer it
@@ -659,14 +659,14 @@ unchanged. Measured 2026-09-04: **zero** unit-bearing annotations in the
 corpus sit at such a position, so the class is empty today and the
 difference between the two answers is unobservable. The clamp that reports
 the first witness is step 6 of `scripts/check-reftype-derivation.sh`. Note
-that this class is a set of *positions*, not of node kinds: `GEDEELD_DOOR`
-and `PLUS` are the same node kind (`Binair`), and only one of them derives.
-The clamp therefore keys on **(node, op)** for a `Binair` and on
+that this class is a set of *positions*, not of node kinds: `dividedBy`
+and `plus` are the same node kind (`Binary`), and only one of them derives.
+The clamp therefore keys on **(node, op)** for a `Binary` and on
 **(node, kind)** for an `Aggregation` or a `BuiltinCall` (one `Functie` until L4), and it separates the two arrivals it can
 see — a fourth-class *branch* of a node kind the twist table otherwise
 carries, and a node kind outside the table altogether — each failing the
 gate with the position class and the golden named. Keying on the node alone
-would twist a unit-bearing `GEDEELD_DOOR` as though it sat at a derived
+would twist a unit-bearing `dividedBy` as though it sat at a derived
 position and report the result as a consumer defect, which is a wrong
 diagnosis of a real gap. What the witness must then buy is a derivation
 rule (or a fence) — never a wider licence to read the wire.
@@ -713,7 +713,7 @@ the stated ch. 2.3 formula only in prose (crossing it costs eleven
 documents across three producers with three precision policies). The
 fourth class — **positions** whose result unit v0 does not derive —
 stays uncrossed and named; positions, not node kinds, for the reason
-that class already gives above (`GEDEELD_DOOR` and `PLUS` are one node
+that class already gives above (`dividedBy` and `plus` are one node
 kind and only one of them derives, which is why the enforcing clamp
 keys on **(node, op)**), and WF-091's honesty note 4 is now a coverage
 note rather than a deferral. The element-passing aggregation keeps its
