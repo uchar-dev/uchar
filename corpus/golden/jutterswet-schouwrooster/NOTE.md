@@ -1,9 +1,9 @@
 # jutterswet-schouwrooster — a day-kind unit spelling on the wire
 
-The public witness for `dagsoortPerEenheid`, the map that couples a **unit
-spelling** to a declared day kind (`spec/IR-SPEC.md` ch. 2.9 DayKind: the
-`plural` field is the duration-unit spelling, and spelling lookup is trimmed
-and case-insensitive).
+The public witness for a day kind's **unit spelling** on the wire, the
+`plural` of a `DayKind` (`spec/IR-SPEC.md` ch. 2.9 DayKind: the `plural`
+field is the duration-unit spelling, and spelling lookup is trimmed and
+case-insensitive).
 
 ## What it declares
 
@@ -12,11 +12,16 @@ own term, Jutterswet art. 3b–3c), each defined by a **compound** condition
 over the day-kind reference `de dag`: two date comparisons under `alle`,
 bounding the day on both sides. Only dates and literals are read, so WF-031's
 purity clause holds; no day kind names another, so the reference graph is
-empty and WF-085 holds vacuously. Declaring a day kind registers **both** its
-spellings, singular and plural, so the map carries four entries:
+empty and WF-085 holds vacuously. Each day kind carries **both** its
+spellings on its own node, the singular `name` and the `plural`:
 
-    schouwdag   -> schouwdag        stormvloeddag   -> stormvloeddag
-    schouwdagen -> schouwdag        stormvloeddagen -> stormvloeddag
+    { "node": "DayKind", "name": "schouwdag", "plural": "schouwdagen" }
+    { "node": "DayKind", "name": "stormvloeddag", "plural": "stormvloeddagen" }
+
+Until L3 of the v1 wire migration (the L3 card,
+`backlog/done/20260924-l3-typesysteem.md`) the same four spellings stood as
+four keys of a separate day-kind registry beside the list of names; since L3
+there is no registry, and a spelling cannot name any day kind but its own.
 
 The two windows are complementary inside one bounded period: a schouwdag is
 later than 28-02-2026 **and** earlier than 01-10-2026; a stormvloeddag is
@@ -28,52 +33,61 @@ period rather than split the time axis in two.
 
 ## Two shapes, both on purpose
 
-- `schouwdagen` is the declared `eenheid` of the three `Strandmeester`
+- `schouwdagen` is the declared `unit` of the three `Strandmeester`
   attributes and of the `schouwdrempel` parameter, so the spelling reaches
   evaluation. **What reaches evaluation is the UNIT, not the day-kind-ness of
-  it.** Measured: replace every `schouwdagen` spelling in this document by
-  `gram` — the unit annotations and the registry key alike — and the verifier,
-  the reference interpreter, the ASP backend and the Drools backend all stay
-  green on the same pinned values. The arithmetic runs on a unit name; nothing
-  on that path asks the registry what that name is.
+  it.** Measured before L3: replace every `schouwdagen` spelling in this
+  document by `gram` — the unit annotations and the registry key alike — and
+  the verifier, the reference interpreter, the ASP backend and the Drools
+  backend all stay green on the same pinned values. Measured again on the L3
+  wire (2026-09-24), where the spelling is the `plural` itself: the reference
+  interpreter and the ASP backend stay green on the same values. The
+  arithmetic runs on a unit name; nothing on that path asks which day kind
+  spells it.
   The unit is load-bearing in its own right, and skewing it is loud: retype
-  one attribute's declared `eenheid` to `dagen` and the verifier refuses with
+  one attribute's declared `unit` to `dagen` and the verifier refuses with
   WF-091 (`unit mismatch: attribute reference 'extra schouwlast' is typed
   'schouwdagen' … but the declaration it reads from is 'dagen'`), the
   reference interpreter faults with `incompatible units: schouwdagen vs
   dagen`, and the ASP backend faults on the additive join. (In the reference
   interpreter that fault is case1's: case2's second operand is leeg, so the
   join never puts two filled units side by side.)
-- `stormvloeddagen` is **registered and never mentioned** by any expression.
-  That is the ordinary shape of a day-kind registry entry, and a witness that
-  means to carry the map has to carry it too.
+- `stormvloeddagen` is **declared and never mentioned** by any expression.
+  That is the ordinary shape of a day kind's plural, and a witness that means
+  to carry the spelling has to carry it too.
 
 ## What no consumer reads here
 
-No consumer resolves a spelling through `dagsoortPerEenheid` in *this*
-document. The verifier consults the map at exactly two positions — the
-day-kind-unit admission beside the nine calendar units in date arithmetic
-(WF-035) and in a tijdsduur (WF-038) — and neither form occurs here. The
-reference interpreter and the ASP backend read the map at zero positions. The
-Drools backend does cross it, but only from those same two duration lowerings
-(§6.10, §6.11), which are likewise absent.
+No consumer resolves a day-kind spelling in *this* document. The verifier
+consults the spellings at exactly two positions — the day-kind-unit admission
+beside the nine calendar units in date arithmetic (WF-035) and in a tijdsduur
+(WF-038) — and neither form occurs here. The reference interpreter and the ASP
+backend read them at zero positions. The Drools backend does cross them, but
+only from those same two duration lowerings (§6.10, §6.11), which are
+likewise absent.
 
-Four mutants confirm it. Each was replayed through all four consumers against
-the pinned expectations of `case1.json` and `case2.json`:
+Four mutants confirmed it on the wire before L3, when the spellings stood in
+the registry. Each was replayed through all four consumers against the pinned
+expectations of `case1.json` and `case2.json`:
 
-| mutant | verifier | ref | clingo | Drools |
+| mutant (before L3) | verifier | ref | clingo | Drools |
 |---|---|---|---|---|
-| `dagsoortPerEenheid` emptied | PASS | PASS | PASS | PLAYED |
-| every value replaced by a non-name | PASS | PASS | PASS | PLAYED |
+| the registry emptied | PASS | PASS | PASS | PLAYED |
+| every registry value replaced by a non-name | PASS | PASS | PASS | PLAYED |
 | `resolvedDagsoorten` emptied | PASS | PASS | PASS | PLAYED |
-| one value pointed at an undeclared day kind | PASS | PASS | PASS | PLAYED |
+| one registry value pointed at an undeclared day kind | PASS | PASS | PASS | PLAYED |
+
+Since L3 the second and the fourth mutant cannot be written: a plural hangs
+on its own day kind and names no other. The first becomes both plurals
+removed; that mutant and the third, measured on the L3 wire (2026-09-24),
+leave the reference interpreter and the ASP backend green on the same values.
 
 Carrying without executing is the corpus norm for this form, not a defect of
 this golden: over all 156 goldens there is not one **executed** day-kind
 position, because the two forms that would execute one are refused (next
 section). And a carrying witness is precisely what a resolution arm needs —
-an arm that crosses a map value against `dagsoorten` needs a document the map
-lives in, not a document that computes with it.
+an arm that crosses a spelling against the declared day kinds needs a
+document the spelling lives in, not a document that computes with it.
 
 ## Firsts this golden puts on the wire
 
@@ -99,7 +113,7 @@ lives in, not a document that computes with it.
 - **A `Dagsoort` declaration in a `bron.rgs`**, and with it the first
   frontend-emitted `Dagsoortdefinitie` entries in `regels`. Gate 10 re-emits
   this source byte-identically, so the frontend's day-kind path — declaration,
-  plural registration, compound condition — is pinned end to end.
+  the plural on the day kind, compound condition — is pinned end to end.
 
 ## What is deliberately absent
 

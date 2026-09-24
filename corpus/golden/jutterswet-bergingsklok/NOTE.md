@@ -2,7 +2,7 @@
 
 The first corpus document whose **day-kind predicate is evaluated**. Until
 2026-09-19 a day kind could only be *carried* (`jutterswet-schouwrooster`
-carries the registry, `jutterswet-schouwkalender` two definitions), because
+carries the unit spellings, `jutterswet-schouwkalender` two definitions), because
 the two forms that would execute one — `tijdsduur … in hele <dagsoort>`
 (§6.10) and `datum ± N <dagsoort>` (§6.11) — were refused by `ref` and by the
 ASP backend. This golden is the witness that they are not any more, and that
@@ -18,9 +18,12 @@ walk. The definition is a top-level `TEN_MINSTE 1` composite over two
 own Christmas-day example with the year dropped.
 
 `springtijdagen` is the declared unit of `bergingsbestek`, `bergingsspanne`
-and `bergingsafstand`, so the spelling reaches evaluation through
-`dagsoortPerEenheid` — the registry `jutterswet-schouwrooster` carries and no
-consumer there reads.
+and `bergingsafstand`, and the `plural` of the day kind
+(`{ "node": "DayKind", "name": "springtijdag", "plural": "springtijdagen" }`),
+so the spelling reaches evaluation through the day kind that carries it — the
+spelling `jutterswet-schouwrooster` carries and no consumer there reads. Until
+L3 of the v1 wire migration that plural stood as a key of a separate day-kind
+registry (the L3 card, `backlog/done/20260924-l3-typesysteem.md`).
 
 Four rules, one per corner of `RUNTIME-SEMANTICS.md` ch. 3.8's day-kind
 section:
