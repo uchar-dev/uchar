@@ -1,5 +1,5 @@
 Violates WF-090 (`spec/IR-SPEC.md` ch. 2.4) at the second write position —
-an object creation's attribute member. A `ResolvedObjectCreatie` creates a
+an object creation's attribute member. An `ObjectCreation` creates a
 `Bundel` per `Jutter` and initialises `kern`, declared with the struct
 domain `dossier`, with a `StructLiteral` of the second declared struct
 domain `logboek`. A rule on the created type reads `kern.waarde`

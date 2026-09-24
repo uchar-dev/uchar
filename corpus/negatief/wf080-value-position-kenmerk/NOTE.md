@@ -10,7 +10,8 @@ characteristic endpoint; a characteristic is read through a characteristic
 check (ch. 4.5, a `KenmerkCheck` condition), never an `AttribuutRef` in a
 value slot. WF-080 fires only in value positions (the rule value, a member
 value, a condition operand, a default consequence) — a rule TARGET lvalue is
-WF-022's job and is not walked, so `KENMERKTOEKENNING` targets are unaffected.
+WF-022's job and is not walked, so the target of a characteristic attribution
+(a version with neither `presentation` nor `initialisation`) is unaffected.
 Until L2 the reference carried a serialized `type {Booleaan}`, which kept
 the assignment kind-clean for WF-023, so the verifier before WF-080 had
 nothing else to catch.

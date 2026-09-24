@@ -8,13 +8,13 @@ declaration carries*.
 
 **What the field is.** `subject` names the population the creation iterates:
 one new instance per subject instance the condition admits, and every member
-value in `toekenningen` evaluates **on the subject**, never on the created
+value in `initialisations` evaluates **on the subject**, never on the created
 type (ch. 5.5). It is a reference like any other, spelled in one field.
 
 **What crossed it before: nothing that is about it.** WF-027 crosses the
-CREATED type (`nieuwType`) and stops there. The subject was reached only by
+CREATED type (`createdType`) and stops there. The subject was reached only by
 rules that read *through* it — WF-053 when a member value navigates, WF-047
-when an explicit `verbindendeRol` names the back-link — and those are
+when an explicit `connectingRole` names the back-link — and those are
 incidental cover, not coverage: they stand down the moment a creation has
 neither.
 
@@ -57,8 +57,8 @@ thirtieth is this document. The four-zone sweep moves no other verdict and no
 other report.
 
 A hand-broken variant of `corpus/golden/anchor/jutterswet-penninguitgifte/ir.json`
-— one field repointed, a one-line diff; schema-valid, since
-`ResolvedObjectCreatie.subject` is `["string","null"]` on the v0 wire.
+— one field repointed, a one-line diff; schema-valid, since the version's
+`subject` is `["string","null"]` on the wire.
 
 Falsifiable, clause-exact: make `wf034_objectcreatie_subject`
 (`spec/verifier/lib/checks.ml`) inert and this case, alone in all four zones,
@@ -67,4 +67,6 @@ turns clean — 503 documents compared, one verdict moved, no report elsewhere.
 Since L4 an object creation is an `ObjectCreation` with its versions (delta
 B19); the defect sits on the `ObjectCreationVersion`, whose fields are
 `createdType`, `subject`, `initialisations` (each a `Toekenning`) and
-`connectingRole`. `expect.txt` pins the arm.
+`connectingRole`; the measurement above names the member list as it was
+spelled then (`toekenningen` → `initialisations`). `expect.txt` pins the
+arm.

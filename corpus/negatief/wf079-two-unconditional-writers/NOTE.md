@@ -14,11 +14,12 @@ makes the pair pass. WF-079 refuses it: at most one unconditional computing
 rule per target without defaults — priority is a defaults group (explicit)
 or `ongeordend` (explicitly absent), never implicit agenda order.
 
-The exemptions the fence must respect stay clean corpus-wide: `KENMERKTOEKENNING`
-pairs (the penningrecht `= waar` pair, monotone) are outside the rule, guarded
-case splits (`anchor/jutterswet-rekenkamer-overzee`, the gewone/overzeese
-pair) carry their own priority through their voorwaarden, and versioned forms
-group by stripped name.
+The exemptions the fence must respect stay clean corpus-wide: pairs of
+characteristic attributions, versions with neither `presentation` nor
+`initialisation` (the penningrecht `= waar` pair, monotone), are outside the
+rule, guarded case splits (`anchor/jutterswet-rekenkamer-overzee`, the
+gewone/overzeese pair) carry their own priority through their conditions,
+and two versions of one form do not count as two writers.
 
 Old verifier: `PASS`. New verifier: `WF-079 FAIL … two unconditional computing
 rules write target (jutter, uitkomst) with no prioritized defaults`.

@@ -36,11 +36,11 @@ creation without one anywhere is this witness. The four-zone sweep moves no
 other verdict and no other report.
 
 A hand-broken variant of `corpus/golden/anchor/jutterswet-penninguitgifte/ir.json`
-— one field emptied, a one-line diff; schema-valid, since
-`ResolvedObjectCreatie.subject` is `["string","null"]` on the v0 wire. It is
-deliberately the SAME creation the filled-name witness breaks: the one with no
-`toekenningen`, the only one the fifth wave's measurement found unfenced, so
-the two witnesses are the two spellings of one position.
+— one field emptied, a one-line diff; schema-valid, since the version's
+`subject` is `["string","null"]` on the wire. It is deliberately the SAME
+creation the filled-name witness breaks: the one with no `initialisations`,
+the only one the fifth wave's measurement found unfenced, so the two
+witnesses are the two spellings of one position.
 
 Falsifiable, arm-exact: delete the `| None ->` branch of
 `wf034_objectcreatie_subject` (`spec/verifier/lib/checks.ml`) and this case,

@@ -18,8 +18,8 @@ neither the creation nor the type: the fixpoint counter is the last line of
 defence, and the document was refusable statically.
 
 The literal-name twin of this case was ALREADY refused before the repair — a
-creation with `subject` and `nieuwType` both `Strandrecht` produces exactly
-the report above — so what the case pins is that a subtype is not an escape
+creation with `subject` and `createdType` both `Strandrecht` produces
+exactly the report above — so what the case pins is that a subtype is not an escape
 hatch from a rule the same document in one type already met.
 
 **The boundary, measured on this document's three variants** (2026-09-12,
@@ -36,6 +36,9 @@ cycles, not subtype creation):
 - the same creation inside a `regelGroep` marked `recursief` with a guard —
   removed from the graph by WF-045's own recursive-creation exemption, as
   every guarded recursive creation is.
+
+The variants were measured on the wire of that day; since L4 `nieuwType` is
+the version's `createdType` (delta B19).
 
 Falsifiable in one edit: drop `Wrakrecht`'s `supertype` and the two types
 become unrelated, the population write no longer reaches the subject's node,
