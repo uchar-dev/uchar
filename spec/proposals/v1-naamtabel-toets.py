@@ -47,7 +47,10 @@ Wat de toets eist, en waarom:
    de naam overal verdween, op een doelgroep met `knopen` als hij alleen op
    die plaatsen verdween. Voor zo'n rij of groep eist de toets het
    omgekeerde van 1 en 2: de naam (of de plaats) staat NIET meer in het
-   schema. Vorm en bewijs worden gewoon getoetst, zodat de geschiedenis
+   schema. Een rij waarvan elke groep `geland` draagt, is als geheel
+   geland: de naam verdween stap voor stap van de wire (sinds M8 voor
+   namen die al eerder van sommige plaatsen gingen). Vorm en bewijs worden
+   gewoon getoetst, zodat de geschiedenis
    letterlijk blijft kloppen met IR-SPEC; botsingen tellen alleen levende
    namen, want een hernoeming raakt een gelande naam niet meer. De nieuwe
    namen die een M-stap schrijft, krijgen hun eigen rij (meestal identiteit).
@@ -61,6 +64,25 @@ Wat de toets eist, en waarom:
    staat op de wire. Zonder dit bleven twee mutaties stil groen (gemeten
    2026-09-23): een gelande rij weghalen, en diagnostics/severity/line terug
    op `vervalt` zetten.
+9. De enumwaarden zijn verantwoord (sectie `waarden`, sinds M8). Elke familie
+   noemt haar plaatsen in het schema (`Knoop.veld`, een versierecord onder
+   zijn schemanaam), haar paren `rijen` [v0, L5] en de paren `geweigerd`
+   [v0, L5] die een verifierregel bij naam weigert. Elke `enum` van het
+   schema staat op de plaats van precies een familie; op elke plaats is de
+   schema-enum (zonder `null`) precies de L5-waarden van `rijen`, plus die
+   van `geweigerd` waar de plaats niet in `geweigerd_op` staat; een `null` in
+   de enum staat alleen op een plaats uit `null_blijft`, en een familie met
+   `vrij` heeft op haar plaats een vrije string en geen enum. Een enum of
+   const in een voorwaardelijk deelschema (`if`, `not`) op een familieplaats
+   is een deelverzameling van de L5-waarden. De afbeelding is bijectief;
+   geen v0-waarde staat nog in een enum of const van het schema; `bewijs`
+   staat letterlijk in de genoemde sectie en zijn paren `v0` → `l5` zijn
+   precies `rijen` plus `geweigerd` (een identiteitsfamilie heeft geen
+   paren); elke L5-waarde staat in backticks in die sectie. De tabel
+   `VALUES` van spec/proposals/v1-migratie/m5.py draagt dezelfde families,
+   plaatsen en paren, en zijn `FREE` en `NULL_KEPT` zijn de families met
+   `vrij` en de plaatsen van `null_blijft`: de migratie en de sectie kunnen
+   niet uiteenlopen.
 
 Bekende grenzen — wat de toets NIET waarmaakt, zodat de hernoeming (M8) er
 niet meer vertrouwen in legt dan dit:
@@ -81,6 +103,7 @@ niet meer vertrouwen in legt dan dit:
 """
 import argparse
 import collections
+import importlib.util
 import json
 import os
 import re
@@ -246,6 +269,198 @@ def spec_knoopnamen(spec):
     return namen
 
 
+WAARDE_PAAR = re.compile(r"`([^`]+)` → `([^`]+)`")
+M5 = "spec/proposals/v1-migratie/m5.py"
+
+
+def schema_enums(schema):
+    """(plaats, waarden, voorwaardelijk) per `enum` op een property, en per `const` in een
+    voorwaardelijk deelschema; de plaats is `node`-const.property of, zonder discriminant, de
+    $defs-naam.property. Daarnaast per plaats de property-schema's buiten een voorwaarde."""
+    uit, velden = [], collections.defaultdict(list)
+
+    def loop(o, tag, cond):
+        if isinstance(o, list):
+            for x in o:
+                loop(x, tag, cond)
+            return
+        if not isinstance(o, dict):
+            return
+        props = o.get("properties")
+        if isinstance(props, dict):
+            nd = props.get("node")
+            if isinstance(nd, dict) and "const" in nd:
+                tag = nd["const"]
+            for k, v in props.items():
+                if k == "node" or not isinstance(v, dict):
+                    continue
+                plaats = "%s.%s" % (tag, k)
+                if not cond:
+                    velden[plaats].append(v)
+                if isinstance(v.get("enum"), list):
+                    uit.append((plaats, v["enum"], cond))
+                if cond and "const" in v:
+                    uit.append((plaats, [v["const"]], cond))
+                if cond and isinstance(v.get("not"), dict) and "const" in v["not"]:
+                    uit.append((plaats, [v["not"]["const"]], cond))
+        for k, v in o.items():
+            if k == "properties" and isinstance(v, dict):
+                for pv in v.values():
+                    loop(pv, tag, cond)
+            else:
+                loop(v, tag, cond or k in ("if", "then", "else", "not"))
+
+    for naam, d in schema.get("$defs", {}).items():
+        loop(d, naam, False)
+    return uit, velden
+
+
+def spelling(w):
+    """De spelling van een waarde zoals IR-SPEC haar in backticks schrijft."""
+    return json.dumps(w) if isinstance(w, bool) or w is None else str(w)
+
+
+def toets_waarden(tabel, schema, spec, sectie_van, spec_n, spec_regel, wortel):
+    families = tabel.get("waarden")
+    if not isinstance(families, list) or not families:
+        fout("`waarden` ontbreekt of is leeg: de enumfamilies van M8 staan in de naamtabel")
+        return 0
+    enums, velden = schema_enums(schema)
+    regels = spec.split("\n")
+    per_plaats, gezien, alle_v0 = {}, set(), []
+    for f in families:
+        naam = f.get("familie")
+        if naam in gezien:
+            fout("waarden: familie `%s` staat er meer dan eens" % naam)
+        gezien.add(naam)
+        rijen, geweigerd = f.get("rijen", []), f.get("geweigerd", [])
+        paren = [tuple(p) for p in rijen + geweigerd]
+        if any(len(p) != 2 for p in paren):
+            fout("waarden `%s`: een paar is geen [v0, L5]" % naam)
+            continue
+        v0s, l5s = [p[0] for p in paren], [p[1] for p in paren]
+        for kant, lijst in (("v0", v0s), ("L5", l5s)):
+            dubbel = sorted({spelling(x) for x in lijst if lijst.count(x) > 1})
+            if dubbel:
+                fout("waarden `%s`: de afbeelding is niet bijectief, %s-waarde(n) %s dubbel"
+                     % (naam, kant, ", ".join(dubbel)))
+        identiteit = all(a == b for a, b in paren)
+        alle_v0 += [a for a, b in paren if a != b]
+        for pl in f.get("plaatsen", []):
+            if pl in per_plaats:
+                fout("waarden: plaats %s staat in twee families (`%s`, `%s`)" % (pl, per_plaats[pl], naam))
+            per_plaats[pl] = naam
+            if f.get("veld") and not pl.endswith("." + f["veld"]):
+                fout("waarden `%s`: plaats %s is niet het veld `%s`" % (naam, pl, f["veld"]))
+        for pl in f.get("geweigerd_op", []) + f.get("null_blijft", []):
+            if pl not in f.get("plaatsen", []):
+                fout("waarden `%s`: %s is geen plaats van de familie" % (naam, pl))
+        # bewijs: letterlijk in de sectie, en zijn paren zijn de familie
+        frag = norm(f.get("bewijs") or "")
+        secties_ = set()
+        start = spec_n.find(frag) if frag else -1
+        while start >= 0:
+            secties_.add(sectie_van[spec_regel[start] - 1])
+            start = spec_n.find(frag, start + 1)
+        if not secties_:
+            fout("waarden `%s`: `bewijs` staat niet letterlijk in IR-SPEC: %r" % (naam, f.get("bewijs")))
+        elif f.get("sectie") not in secties_:
+            fout("waarden `%s`: `sectie` %s, maar het bewijs staat in %s"
+                 % (naam, f.get("sectie"), ", ".join(sorted(secties_))))
+        genoemd = sorted(WAARDE_PAAR.findall(f.get("bewijs") or ""))
+        verwacht = [] if identiteit else sorted((spelling(a), spelling(b)) for a, b in paren)
+        if genoemd != verwacht:
+            fout("waarden `%s`: het bewijs noemt de paren %s, de familie draagt %s"
+                 % (naam, genoemd, verwacht))
+        tekst = "\n".join(l for i, l in enumerate(regels) if sectie_van[i] == f.get("sectie"))
+        tokens = backtick_tokens(tekst)
+        for w in l5s:
+            if spelling(w) not in tokens:
+                fout("waarden `%s`: de L5-waarde `%s` staat niet in backticks in IR-SPEC %s"
+                     % (naam, spelling(w), f.get("sectie")))
+        # het schema, per plaats
+        vrij = f.get("vrij", False)
+        for pl in f.get("plaatsen", []):
+            decl = [w for p_, w, c in enums if p_ == pl and not c]
+            if vrij:
+                if decl or not velden.get(pl) or any(v.get("type") != "string" for v in velden[pl]):
+                    fout("waarden `%s`: %s is in het schema geen vrije string" % (naam, pl))
+                continue
+            if len(decl) != 1:
+                fout("waarden `%s`: het schema draagt op %s %d enum(s), verwacht een" % (naam, pl, len(decl)))
+                continue
+            enum = decl[0]
+            if None in enum and pl not in f.get("null_blijft", []):
+                fout("waarden `%s`: de enum op %s laat `null` toe, maar de plaats staat niet in "
+                     "`null_blijft`" % (naam, pl))
+            toe = {spelling(b) for a, b in rijen}
+            if pl not in f.get("geweigerd_op", []):
+                toe |= {spelling(b) for a, b in geweigerd}
+            if {spelling(w) for w in enum if w is not None} != toe:
+                fout("waarden `%s`: de enum op %s is %s, de familie verwacht %s"
+                     % (naam, pl, sorted(spelling(w) for w in enum if w is not None), sorted(toe)))
+    for pl, waarden_, cond in enums:
+        if pl not in per_plaats:
+            if not cond:
+                fout("waarden: de enum op %s hoort bij geen familie" % pl)
+            continue
+        f = next(x for x in families if x.get("familie") == per_plaats[pl])
+        l5 = {spelling(b) for a, b in f.get("rijen", []) + f.get("geweigerd", [])}
+        if cond and not {spelling(w) for w in waarden_} <= l5:
+            fout("waarden `%s`: een voorwaarde op %s noemt %s, geen L5-waarde van de familie"
+                 % (per_plaats[pl], pl, sorted(spelling(w) for w in waarden_)))
+    # een v0-string staat nergens meer; een v0-boolean (de jaar-vlag) dekt de plaatsvergelijking
+    v0_strings = {w for w in alle_v0 if isinstance(w, str)}
+    for pl, waarden_, cond in enums:
+        for w in waarden_:
+            if isinstance(w, str) and w in v0_strings:
+                fout("waarden: de v0-waarde %s staat nog in het schema, op %s" % (spelling(w), pl))
+    # de tabel van m5.py: dezelfde families, plaatsen en paren
+    pad = os.path.join(wortel, M5)
+    try:
+        spec_m5 = importlib.util.spec_from_file_location("m5", pad)
+        m5 = importlib.util.module_from_spec(spec_m5)
+        spec_m5.loader.exec_module(m5)
+    except Exception as e:  # een onleesbaar script is een bevinding, geen stille groene toets
+        fout("waarden: %s laadt niet: %s" % (M5, e))
+        return len(families)
+    tabel_m5 = getattr(m5, "VALUES", {})
+    for f in families:
+        naam = f.get("familie")
+        paren = [tuple(p) for p in f.get("rijen", []) + f.get("geweigerd", [])]
+        if all(a == b for a, b in paren):
+            if naam in tabel_m5:
+                fout("waarden `%s`: een identiteitsfamilie, maar m5.py draagt een tabel" % naam)
+            continue
+        if naam not in tabel_m5:
+            fout("waarden `%s`: m5.py draagt de familie niet" % naam)
+            continue
+        plaatsen_m5, paren_m5 = tabel_m5[naam]
+        if sorted(plaatsen_m5) != sorted(f.get("plaatsen", [])):
+            fout("waarden `%s`: m5.py noemt de plaatsen %s, de naamtabel %s"
+                 % (naam, sorted(plaatsen_m5), sorted(f.get("plaatsen", []))))
+        if sorted((spelling(a), b) for a, b in paren_m5.items()) != sorted((spelling(a), b) for a, b in paren):
+            fout("waarden `%s`: de paren van m5.py en van de naamtabel verschillen" % naam)
+    for naam in tabel_m5:
+        if naam not in gezien:
+            fout("waarden: m5.py draagt de familie `%s`, de naamtabel niet" % naam)
+    if sorted(getattr(m5, "FREE", ())) != sorted(f["familie"] for f in families if f.get("vrij")):
+        fout("waarden: FREE van m5.py is niet de verzameling families met `vrij`")
+    if sorted(getattr(m5, "NULL_KEPT", ())) != sorted(pl for f in families for pl in f.get("null_blijft", [])):
+        fout("waarden: NULL_KEPT van m5.py is niet de verzameling plaatsen van `null_blijft`")
+    return len(families)
+
+
+def rij_geland(rij):
+    """De M-stap(pen) waarmee de naam van de wire ging: `geland` op de rij, of elke groep geland."""
+    if rij.get("geland"):
+        return rij["geland"]
+    stappen = [g.get("geland") for g in rij.get("doel", [])]
+    if stappen and all(stappen):
+        return "/".join(sorted(set(stappen)))
+    return None
+
+
 def doelen(rij):
     for g in rij.get("doel", []):
         v1 = g.get("v1")
@@ -312,7 +527,7 @@ def main():
     for soort, rijen, schemaset in (("knoop", tabel["knopen"], s_knopen),
                                     ("property", tabel["properties"], set(s_plaatsen))):
         teller = collections.Counter(r["v0"] for r in rijen)
-        geland_ = {r["v0"]: r["geland"] for r in rijen if r.get("geland")}
+        geland_ = {r["v0"]: rij_geland(r) for r in rijen if rij_geland(r)}
         for naam in sorted(schemaset):
             if teller[naam] == 0:
                 fout("%s `%s`: staat in het schema maar heeft geen rij in de tabel" % (soort, naam))
@@ -531,6 +746,9 @@ def main():
         if k not in berekend_o:
             fout("`onzeker` `%s`: het doel draagt de markering niet (meer)" % k)
 
+    # 9. de enumwaarden
+    n_families = toets_waarden(tabel, schema, spec, sectie_van, spec_n, spec_regel, args.wortel)
+
     # rapport
     def tel(rijen):
         klassen = collections.Counter(r["klasse"] for r in rijen)
@@ -559,6 +777,7 @@ def main():
         for w in [r.get("geland")] + [g.get("geland") for g in r["doel"]] if w)
     print("geland (rijen en groepen per M-stap): %s; geland_telling (doelgroepen): %s"
           % (dict(sorted(gelande.items())), dict(sorted(telling.items()))))
+    print("waarden: %d enumfamilie(s)" % n_families)
     if bevindingen:
         for b in bevindingen:
             print("FAIL %s" % b, file=sys.stderr)
