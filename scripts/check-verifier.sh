@@ -89,7 +89,7 @@ EXPECTED_MIN_NEGATIEF=350   # 2026-09-10: measured 350 (corpus/negatief/**/ir.js
 # range on a node that is no instance fold) and three that never had one (WF-030's source type and
 # key resolution, WF-037's bucketing builtin without a granularity) — and three more WF-037 arms the
 # fix round found without one (the two builtin arities, a value fold with fewer than two operands).
-EXPECTED_MIN_EXPECT=229     # 2026-09-25: measured 229 (corpus/negatief/*/expect.txt); raised at L5 by the witness of the v0 context-value spelling
+EXPECTED_MIN_EXPECT=260     # 2026-09-25: measured 260 (corpus/negatief/*/expect.txt); raised at L5 by the witness of the v0 context-value spelling and by the 31 witnesses of the L5 stamp list that pin their arm
 
 # check 2: golden dumps — and the red corpus's documents, whose faults
 # are behavioural, never well-formedness — are verifier-clean.

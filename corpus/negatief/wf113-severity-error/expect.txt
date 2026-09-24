@@ -1,0 +1,1 @@
+severity error is not a wire severity

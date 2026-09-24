@@ -1,0 +1,1 @@
+the characteristic check is hosted on 'Post', which no object bound here can be

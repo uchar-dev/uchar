@@ -1,0 +1,1 @@
+the from bound of a time window is the parameter 'peildatum'

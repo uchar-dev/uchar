@@ -1,0 +1,1 @@
+'gekeurd' is not a declared characteristic of 'Jutter'
