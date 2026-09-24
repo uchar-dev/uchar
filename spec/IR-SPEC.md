@@ -198,23 +198,41 @@ A list entry carries its name on its node; there is no map key, so each
 name is written once (landed at M1; until then six of these lists were maps
 keyed by the declared name — WF-094 in the WF index).
 
-**Rules** carries the rule forms of ch. 3 under their v0 keys, verbatim until
-landings L4 (M5, the rule layer) and L5 (M8, the renaming): `resolvedRegels`,
-`resolvedDagsoorten`, `objectCreaties`, `verdelingen`, `consistenties`,
-`uniciteiten`, `feitCreaties`, `resolvedStartpunten`, `regelGroepen`, and the
-optional extension list `prioritizedDefaults` (ch. 6.1). L4 has landed: the
-six named forms in those lists are in their v1 shape (ch. 3, Versioning),
-and the single-source and union uniquenesses share the one list
-`uniciteiten` — the v0 list `uniciteitUnies` left the wire; the keys stay
-until L5.
+**Rules** carries the rule forms of ch. 3, one list per form kind:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `rules` | list of Rule | ch. 3.1 |
+| `dayKindDefinitions` | list of DayKindDefinition | ch. 3.7 |
+| `objectCreations` | list of ObjectCreation | ch. 3.3 |
+| `allocations` | list of Allocation | ch. 3.2 |
+| `consistencies` | list of Consistency | ch. 3.5 |
+| `uniquenesses` | list of Uniqueness | ch. 3.6; the single-source and the union uniquenesses share this one list |
+| `factCreations` | list of FactCreation | ch. 3.4 |
+| `startPointDeterminations` | list of StartPointDetermination | ch. 3.8 |
+| `ruleGroups` | list of RuleGroup | ch. 3.9 |
+| `prioritizedDefaults` | list of PrioritizedDefaults? | extension list: optional, written whole or not at all (ch. 6.1) |
+
+A wire pointer into a named form reads `/rules/rules/<form>/versions/<version>/…`,
+and so on per list. *History:* the lists kept their v0 keys until landing L5
+(M8, the renaming) — `resolvedRegels`, `resolvedDagsoorten`,
+`objectCreaties`, `verdelingen`, `consistenties`, `uniciteiten`,
+`feitCreaties`, `resolvedStartpunten` and `regelGroepen`, in the order of the
+table; `prioritizedDefaults` kept its name. Landing L4 (M5, the rule layer)
+put the six named forms in those lists into their v1 shape (ch. 3,
+Versioning) and the single-source and union uniquenesses into the one list
+`uniciteiten`, where the v0 list `uniciteitUnies` left the wire.
 
 **Diagnostic** — one entry of `diagnostics`:
 
 | Field | Type | Meaning |
 |---|---|---|
-| `severity` | `WARNING` | the one wire severity (WF-113 (a)) |
+| `severity` | `warning` | the one wire severity (WF-113 (a)) |
 | `message` | string | neither empty nor blank (WF-113 (a)) |
 | `line` | integer ≥ 0 | the source line the producer reports; 0 = the producer reports no source position (a hand-built document, or a frontend warning without a token) (WF-113 (a)) |
+
+v0 values: `WARNING` → `warning`; and the two values the verifier refuses
+by name (WF-113 (a)), `ERROR` → `error` and `INFO` → `info`.
 
 v0 name: `RegelSpraakModel`. **Delta (tracked, `CONSTRUCTS.md` ch. 2.4):** the
 v0 container also carries resolved-rule lists and backend helper methods; the
@@ -226,22 +244,31 @@ explicit (WF-001…WF-003).
 
 - **WF-113** `diagnostics` is the producer's own account of what stayed
   unresolved in a document it did write. (a) Every entry carries
-  `severity: WARNING`, a `message` that is neither empty nor blank, and an
+  `severity: warning`, a `message` that is neither empty nor blank, and an
   integer `line` ≥ 0, where 0 means the producer reports no source position
   (a hand-built document, or a frontend warning without a token — the
   RegelSpraak frontend writes 0 for a circular-reference warning, for one);
-  `ERROR` and `INFO` are not wire severities — an
-  ERROR means the producer refused to write the document, and INFO is
+  `error` and `info` are not wire severities — an
+  error means the producer refused to write the document, and info is
   tooling talk (measured 2026-09-23: zero carriers in 769 documents) — so
   the schema enum shrinks to the one value and the verifier refuses the
-  other two by name. (b) Every `Onopgelost` node MUST be accounted for:
-  the document carries at least one diagnostic whose `message` contains
-  that node's `bron` verbatim (the 2026-09-19 decision "every surviving
-  marker carries a WARNING", made normative and checkable). A marker whose
-  `bron` is null or blank cannot be accounted for and is refused: blank
-  counts as absent, as for a named form's name (WF-107), because the
-  containment is literal — an empty `bron` is contained in every message,
-  and a message about another marker would account for it. (c) No consumer
+  other two by name, as it refuses an entry whose severity is null. (b)
+  Every `Unresolved` node MUST be accounted for: the document carries at
+  least one diagnostic whose `message` contains that node's
+  `source.snippet` verbatim (the 2026-09-19 decision "every surviving
+  marker carries a WARNING", made normative and checkable). A marker
+  without a `source`, or whose snippet is blank, cannot be accounted for
+  and is refused: blank counts as absent, as for a named form's name
+  (WF-107), because the containment is literal — nearly every message
+  contains a blank snippet, and a message about another marker would
+  account for it. The schema requires `source` on an `Unresolved` and every
+  executor refuses a marker without one at load; the verifier loads it, so
+  that this clause names it. An EMPTY snippet cannot be written at all: the
+  schema requires at least one character, and every reader, the verifier
+  included, refuses an empty snippet at load under no WF number ("a source
+  snippet is never empty: a node without source text carries no source",
+  ch. 4). Until L5 the marker was the v0 node `Onopgelost` and this clause
+  read its `bron` string, which could be null or empty. (c) No consumer
   reads `diagnostics` for evaluation: the list carries no semantics, exactly
   as the ch. 3 paragraph says of the former `regels` stubs — stated, not
   fenced, because a rule on consumers has no document to reject.
@@ -350,8 +377,9 @@ to re-normalise inside it.
   `Feittype`, `Dimensie`) the schema typed `naam` as a non-null string, because
   with no map key beside it that field is the declaration's only name, and an
   ObjectType's `name` is a required string. Since L3 (2026-09-24) the first two
-  are `Parameter` and `UnitSystem` with a required `name` (ch. 2.10, ch. 2.5);
-  `Feittype` and `Dimensie` keep `naam` until their own landing. *What the
+  are `Parameter` and `UnitSystem` with a required `name` (ch. 2.10, ch. 2.5),
+  and since L5 the other two are `FactType` and `Dimension`, whose `name` is
+  the same non-null string (ch. 2.6, ch. 2.7). *What the
   rule's scope note recorded, and how it was settled:* in a unit system's v0
   `eenheden` map, 59 of 654 entries (recounted 2026-09-10) were keyed `€`
   against the stored abbreviation `EUR`, a question of unit identity next to
@@ -510,7 +538,7 @@ at the common supertype simply does not resolve, and WF-034 says so.
   than an omission.** Single parenthood is true by SHAPE: the field is one
   string, so a second direct parent is not a well-formed-but-wrong document
   the verifier rejects, it is a document that cannot be written — the
-  closed `Objecttype` node refuses the array form and gate 2 is where that
+  closed `ObjectType` node refuses the array form and gate 2 is where that
   refusal is mechanically enforced. A negatief case needs a well-formed
   wire document to put in it, and under `supertype: string?` that document
   does not exist by construction; inventing a representable-but-forbidden
@@ -536,9 +564,9 @@ facets (their "v0 name" is therefore not a node but the side-map facets on
 `Objecttype`; the same holds for **TimelineFacet**). *Migration (landed M1,
 2026-09-23):* mechanical — `spec/proposals/v1-migratie/m1.py` folds each v0 map
 entry into the corresponding member node, and absent map entries become the
-documented defaults below. The enum VALUES inside the new nodes keep their v0
-spelling until M8 (`BIJVOEGLIJK`/`BEZITTELIJK`/`ZELFSTANDIG` for `kind`,
-`DAG` … `JAAR` for `granularity`); the tables below give their v1 names. Until
+documented defaults below. The enum VALUES inside the new nodes kept their v0
+spelling until M8 (landing L5), which wrote the v1 values the tables below
+give; each table lists its v0 values. Until
 that reification the side-maps were fenced where the node shape fences them by
 construction: WF-034 clause (p) required every key of all eight maps to name a
 declared member, in that member's declared spelling, because an orphan key hung
@@ -563,8 +591,11 @@ default. The clause left the wire with the side-maps (ch. 4.6 (p), WF index).
 | `kind` | `adjectival` \| `possessive` \| `nominal` | presentation tag (below) |
 | `timeline` | TimelineFacet? | absent = not time-dependent |
 
-`kind` (v0 `KenmerkSoort`: BIJVOEGLIJK/BEZITTELIJK/ZELFSTANDIG; untagged
-defaults to nominal) is a **presentation tag**: all three kinds denote the
+v0 values: `BIJVOEGLIJK` → `adjectival`, `BEZITTELIJK` → `possessive`,
+`ZELFSTANDIG` → `nominal`.
+
+`kind` (v0 `KenmerkSoort`; untagged defaults to `nominal`) is a
+**presentation tag**: all three kinds denote the
 same boolean membership; the tag only selects the predicate surface form
 (§3.5, §8.1.8). This is the same pattern as the assignment presentation tag
 (PLAN §9, decision 4). Layer: the tag is `dialect(regelspraak)`; the
@@ -577,6 +608,10 @@ boolean membership is core.
 | `granularity` | Granularity | `day` \| `week` \| `month` \| `quarter` \| `year` |
 | `count` | integer ≥ 1 | periods per segment; 1 = single-period |
 | `timelineName` | string? | present iff declared via a named timeline |
+
+v0 values: `DAG` → `day`, `WEEK` → `week`, `MAAND` → `month`, `KWARTAAL` →
+`quarter`, `JAAR` → `year` — one granularity family, the same five values on
+a `Timeline` (ch. 2.8) and on a `BuiltinCall` (ch. 4.3).
 
 A characteristic's facet carries no `timelineName`: v0 recorded none, and M1
 keeps the position closed.
@@ -672,10 +707,12 @@ A closed sum. v1 variants:
 | `StructType` | `domain: string`, `fields: list of {name, datatype: Datatype}` | **extension node** (Method; wire node `StructType`, never emitter-produced): the record datatype, Phase-5c core (`spec/proposals/PHASE5C-TUTORIAL.md` §2) — see the StructType clause below |
 
 `sign` ∈ {`unspecified`, `negative`, `nonNegative`, `positive`} (v0
-`Teken`). On the wire it keeps the v0 spelling until its own landing
-(`ONBEPAALD`, `NEGATIEF`, `NIET_NEGATIEF`, `POSITIEF`) and it is always
-written: since L3 (2026-09-24) a number declared without a sign writes
-`ONBEPAALD`, where the v0 dump wrote `null` (the same reading, one spelling).
+`Teken`), always written: since L3 (2026-09-24) a number declared without a
+sign writes `unspecified`, where the v0 dump wrote `null` (the same reading,
+one spelling).
+v0 values: `ONBEPAALD` → `unspecified`, `NEGATIEF` → `negative`,
+`NIET_NEGATIEF` → `nonNegative`, `POSITIEF` → `positive` — the wire spelling
+until L5.
 A `Number` without `unit` carries no unit; `unit` is never `null`.
 
 **Precision forms** (v0 encoding mirrored, made explicit): a `Number` is
@@ -784,8 +821,8 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   conversely a use site taking a keuzetype value MUST name that
   keuzetype. Since L2 (2026-09-24) there is one such use site on the read
   side: an
-  **element-passing aggregation** — `EERSTE`, `LAATSTE`, `MINIMUM`,
-  `MAXIMUM`, the folds that select a contributor instead of computing a
+  **element-passing aggregation** — `first`, `last`, `minimum`,
+  `maximum`, the folds that select a contributor instead of computing a
   new value — takes its value from **each of its operands**, and its own
   `type` MUST name that operand's keuzetype; the operand is typed by its
   declaration where it is a reference (`RUNTIME-SEMANTICS.md` ch. 2.10) and
@@ -798,8 +835,8 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   (B13): a reference's type IS its declaration's, so it cannot name another
   domain, and the reference arm and its witnesses left with it (the
   witnesses whose translation fell on another rule moved there — WF-063,
-  WF-023, WF-070, WF-036 — `corpus/negatief/README.md`, L2). (`SOM`,
-  `TOTAAL` and `AANTAL` compute a number; no keuzetype travels through
+  WF-023, WF-070, WF-036 — `corpus/negatief/README.md`, L2). (`sum`,
+  `total` and `count` compute a number; no keuzetype travels through
   them.) The variant
   travels with the name because `domains` is **one namespace** — a domain
   is declared as an enumeration or as a sum type, never both, so an
@@ -881,10 +918,10 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   domain, never the inline copy. *One neighbouring gap, recorded here and
   since closed.* **Orderability of the
   element-passing folds.** This rule makes the fold's domain honest, not
-  its kind admissible: `EERSTE`/`LAATSTE`/`MINIMUM`/`MAXIMUM` are
+  its kind admissible: `first`/`last`/`minimum`/`maximum` are
   *ordering* folds (ch. 4.3), and Enumeration and SumType are
   equality-only by the orderability paragraph below — so an entirely
-  truthful `EERSTE` over an enumeration attribute was verifier-clean and
+  truthful `first` over an enumeration attribute was verifier-clean and
   faulted in ref (`unordered comparison: Zeegat vs Wad`) as soon as a
   second contributor existed, while a single contributor silently
   succeeded. That is a WF-038 operand question, not a domain-identity
@@ -1077,7 +1114,8 @@ no-hole/equality semantics are `RUNTIME-SEMANTICS.md` ch. 11.
   position is real: five goldens and two rood documents carry a
   struct-typed `doel` `type`, and drift there is verifier-clean and
   **measured harmless** (reverse the fields of
-  `jutterswet-dossierspelling`'s `/resolvedRegels/1/doel/type`, or
+  `jutterswet-dossierspelling`'s `/resolvedRegels/1/doel/type` — a
+  pointer on the v0 wire of that measurement —, or
   rename them to `bedrag`/`aantal`, and both variants stay schema-valid,
   verifier-clean and replay their three pinned expectations in ref AND
   clingo — both write through the target attribute's DECLARED datatype,
@@ -1090,7 +1128,7 @@ no-hole/equality semantics are `RUNTIME-SEMANTICS.md` ch. 11.
   struct domain. This is **struct-domain identity**, and it has the same
   two halves the keuzetype family has under WF-089 and WF-023's domain
   clause, over the same positions. **Read half:** an **element-passing
-  aggregation** (`EERSTE`/`LAATSTE`/`MINIMUM`/`MAXIMUM`) names the struct
+  aggregation** (`first`/`last`/`minimum`/`maximum`) names the struct
   domain of each of its operands, which are typed by their declarations in
   turn, so the fold cannot launder a domain; a composite position's
   annotation is crossed against its derivation. *(History until L2,
@@ -1136,16 +1174,16 @@ no-hole/equality semantics are `RUNTIME-SEMANTICS.md` ch. 11.
   measured). Two neighbouring gaps were recorded
   rather than claimed shut; one is still open, one is closed. First — still
   open — WF-090's aggregation arm reaches the
-  **element-passing** folds only, so a COMPUTING fold (`SOM`, `TOTAAL`)
+  **element-passing** folds only, so a COMPUTING fold (`sum`, `total`)
   over struct operands of two domains is verifier-clean. That is a
-  WF-038 operand question — `SOM` demands numeric operands — and it is
+  WF-038 operand question — `sum` demands numeric operands — and it is
   no wrong answer: measured, ref faults fail-fast (`plus: expected a
   number, got {waarde: 120.5, telling: 3}`) and the ASP carrier refuses
   the form ahead of translation. Second — **closed 2026-09-05** — the same
   **orderability** flank
-  WF-089 records: `EERSTE`/`LAATSTE`/`MINIMUM`/`MAXIMUM` are ordering
+  WF-089 records: `first`/`last`/`minimum`/`maximum` are ordering
   folds while `StructType` is equality-only (the orderability
-  paragraph above), so an entirely truthful struct `EERSTE` with two
+  paragraph above), so an entirely truthful struct `first` with two
   contributors was verifier-clean and failed observably — measured, ref
   `EVALUATION FAULT: unordered comparison: {waarde: 20, telling: 2} vs
   {waarde: 10, telling: 1}` and the ASP carrier refuses the form. A
@@ -1172,11 +1210,12 @@ no-hole/equality semantics are `RUNTIME-SEMANTICS.md` ch. 11.
   A unit-less v0 percentage became a `Number` with the built-in `%`,
   `{"abbreviation": "%", "canonical": "%", "factorToCanonical": {"num": 1,
   "den": 1}}` without a `system` (the form the other percentages already
-  carried), and its sign is `ONBEPAALD`. That is the one sign a percentage
-  has: the v0 percentage carried none and no reading of a signed percentage
-  is specified, so every reader refuses another at load ("a percentage
-  carries no sign restriction: a number whose unit is '%' has the sign
-  ONBEPAALD"), and refuses the tag on a `Number` whose unit is not `%`
+  carried), and its sign is `unspecified` (`ONBEPAALD` until L5). That is
+  the one sign a percentage has: the v0 percentage carried none and no
+  reading of a signed percentage is specified, so every reader refuses
+  another at load ("a percentage carries no sign restriction: a number
+  whose unit is '%' has the sign unspecified"), and refuses the tag on a
+  `Number` whose unit is not `%`
   ("the presentation "percentage" on a number whose unit is not '%'").
   Measured by the migration: no v0 `Numeriek` in the four zones or the
   parity zone carried the unit `%`, so on every document there the reading
@@ -1201,7 +1240,7 @@ no-hole/equality semantics are `RUNTIME-SEMANTICS.md` ch. 11.
   WF-038).
 - v0 `Onbekend(reden)` is removed: v1 fails fast at verification (WF-003)
   instead of carrying an unknown-type sentinel. Honest inexpressibility at
-  the *expression* level remains the job of the `Onopgelost` node
+  the *expression* level remains the job of the `Unresolved` node
   (`CONSTRUCTS.md` row 16), which is a different thing: a well-formed
   marker with a reason, not a type. **Landed L2 (2026-09-24, B16).**
   The unknown-type node left the datatype union: the schema carries no
@@ -1468,13 +1507,14 @@ bean-field names appear here; the bean-field leakage lives in the v0
 *navigation contract* and the rule-layer encodings, whose replacement by
 symbolic role bindings is `CONSTRUCTS.md` rows 4/22 (rule-layer chapters).
 
-A **RoleBinding** (wire node `RolBinding`; an extension node per the
-Method) is the symbolic reference those chapters bind with:
+A **RoleBinding** (an extension node per the Method; v0 wire node
+`RolBinding`, the wire name until L5) is the symbolic reference those
+chapters bind with:
 
 | Field | Type | Meaning |
 |---|---|---|
-| `factType` | string | v0 wire `feittype`: a declared fact type, by name |
-| `role` | string | v0 wire `rol`: one of its roles, by **declared role name** — the plural is presentation and does not bind |
+| `factType` | string | v0 `feittype`: a declared fact type, by name |
+| `role` | string | v0 `rol`: one of its roles, by **declared role name** — the plural is presentation and does not bind |
 
 - **WF-047** A role binding MUST resolve: the fact type is declared, the
   role names exactly one of its roles (case-insensitive over the declared
@@ -1490,8 +1530,8 @@ Method) is the symbolic reference those chapters bind with:
   bound role, on declared name or declared plural. **Since L2
   (2026-09-24):** where the written name on a count source denoted
   neither, the L2 migration and the emitter write the declared name of
-  the bound role in `attribute` and keep the written spelling in `bron`
-  (measured: two goldens, `jutterswet-kaveltelling` and
+  the bound role in `attribute` and keep the written spelling in `source`
+  (`bron` until L5; measured: two goldens, `jutterswet-kaveltelling` and
   `jutterswet-muntpeiling`, and four places in the parity zone; recorded
   in the L2 card, `backlog/done/20260923-l2-referentielaag.md`); the rule
   stays "denotes on name or plural".
@@ -1559,8 +1599,8 @@ third. A role MAY share its name, case-insensitively, with an attribute
 or a characteristic of an object type the same fact type relates. Such a
 document is **well-formed**, and no rule above narrows it. The reason is
 structural: a navigated read names its role hop and its attribute in
-*different* fields — the `navigatieBindingen` of ch. 4.1a against
-`attribuut` (in v1 the unified `path` against `attribute`, row 4) — so at
+*different* fields — the `path` of ch. 4.1a against `attribute` (row 4;
+until L5 `navigatieBindingen` against `attribuut`) — so at
 a read a role name and a member name do not compete for one wire
 position. The reference interpreter and the ASP backend both answer such
 a read correctly, with no special case. It is a REACHABLE but UNINHABITED
@@ -1580,7 +1620,7 @@ left the wire with B11 and B13). A role whose written name — its declared
 name or its declared plural, whichever the source writes (WF-047) — is
 also the name of a member of the element type therefore cannot be counted
 under that spelling: the source reads as the member, and WF-093 (b)
-refuses `AANTAL` over it. Where the other declared spelling does not
+refuses `count` over it. Where the other declared spelling does not
 collide, the count is written with that one; where every declared
 spelling collides, no count source can name the role.
 
@@ -1589,7 +1629,7 @@ roles — has no wire position since L2 (2026-09-24, B11, B12). A
 navigation and a fold range name their relation by a role binding (a
 fact type and a declared role name), so no reader resolves a written name
 to a relation: the binding decides which relation is walked, and the
-written name stays in `bron` — for the count source in `attribute`, where
+written name stays in `source` — for the count source in `attribute`, where
 WF-047 requires only that it denote the bound role.
 `corpus/golden/ambiguous-fold-role-name` pins it: the count's written
 name `vriend` is the declared name of a role in two fact types the
@@ -1669,6 +1709,8 @@ A named period grid.
 
 v0 name: `Tijdlijn`. Granularity is one of `day`, `week`, `month`,
 `quarter`, `year` — deliberately no sub-day granularity (mirrored).
+v0 values: `DAG` → `day`, `WEEK` → `week`, `MAAND` → `month`, `KWARTAAL` →
+`quarter`, `JAAR` → `year`, as on the `TimelineFacet` (ch. 2.2).
 
 *v0 mirror note:* the name-matching rule above (whitespace collapse,
 case-insensitivity, stripping one leading Dutch article) is v0 morphology
@@ -1949,7 +1991,7 @@ and invoked by name; design `spec/proposals/PHASE5B-KERNEL.md` §3).
   parameter MUST carry a datatype and a name unique within the
   definition; the `result` MUST be a declared-resolvable datatype; the
   **body is closed** — it may reference its own parameters
-  (`BinderRef`), document parameters (`ParameterRef`), literals,
+  (`BinderRef`), document parameters (`ParameterReference`), literals,
   operators, `Construct`/`Match`/`IfThenElse`, `StructLiteral`/
   `FieldAccess` (the **Phase-5c widening** — a record built or read over
   binders and parameters keeps the body closed), `Let` (a call-by-need binding
