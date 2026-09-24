@@ -47,11 +47,9 @@ class VouwsoortenGrensTest {
 
     private static final String CHECKS = "spec/verifier/lib/checks.ml";
 
-    /** {@code | <Ctor> -> Some …} — one arm of the verifier's kind list, read by its constructor: the AST keeps its
-     *  v0 names, while the string an arm returns is the kind as the verifier's messages spell it, which follows the
-     *  wire (lowerCamel since the L5 landing). The constructor upper-cased is the frontend's kind name, as for
-     *  aggregation_kinds below. */
-    private static final Pattern ARM = Pattern.compile("\\|\\s*(\\w+)\\s*->\\s*Some\\b");
+    /** A constructor of the verifier's AST, which keeps its v0 names: upper-cased it is the frontend's kind name, as
+     *  for aggregation_kinds below. */
+    private static final Pattern CONSTRUCTOR = Pattern.compile("\\b[A-Z][A-Za-z0-9_]*\\b");
 
     /** The two arms of {@code source_reading} that read a ranged source under the COUNT kind as instances;
      *  every other aggregation kind falls to the value arms below them. Whitespace-tolerant. */
@@ -76,12 +74,18 @@ class VouwsoortenGrensTest {
         assertTrue(start >= 0, () -> "value_fold_name staat niet meer in " + CHECKS
                 + " — de grens is verplaatst en deze getuige moet mee verhuizen");
 
+        // The kinds are the constructors in the pattern of every arm that returns Some, one constructor per arm or
+        // several in an or-pattern. The arms are read by their constructors, not by the strings they return: those
+        // spell the kind as the verifier's messages do, which follows the wire (lowerCamel since the L5 landing).
+        String functie = bron.substring(start + "let value_fold_name = function".length());
+        int einde = functie.indexOf("\n\n");
+        assertTrue(einde >= 0, "value_fold_name heeft geen einde (een lege regel) meer — de getuige leest haar niet");
         List<String> soorten = new ArrayList<>();
-        for (String regel : bron.substring(start).lines().skip(1).toList()) {
-            Matcher m = ARM.matcher(regel);
-            if (m.find()) { soorten.add(m.group(1).toUpperCase(java.util.Locale.ROOT)); continue; }
-            if (regel.strip().startsWith("|")) break;   // the `| _ -> None` catch-all closes the list
-            if (!regel.isBlank()) break;
+        for (String arm : functie.substring(0, einde).split("\n\\s*\\|")) {    // an arm opens a line with '|'
+            int pijl = arm.indexOf("->");
+            if (pijl < 0 || !arm.substring(pijl + 2).strip().startsWith("Some")) continue;   // the None catch-all
+            Matcher m = CONSTRUCTOR.matcher(arm.substring(0, pijl).replaceAll("\\bas\\s+\\w+", ""));
+            while (m.find()) soorten.add(m.group().toUpperCase(java.util.Locale.ROOT));
         }
         assertFalse(soorten.isEmpty(), "geen enkele arm gelezen — het patroon sluit niet meer aan op de bron");
 
