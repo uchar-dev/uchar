@@ -37,7 +37,7 @@
    field that left the wire with them is unknown and refused by name. Four
    values the schema types are refused here in one sentence each, which
    the other readers of the wire share: a conversion factor that is not an
-   exact rational {num, den} of two integers of at least 1, a presentation
+   exact rational {num, den} of two integers between 1 and 2^62 - 1, a presentation
    other than "percentage", the presentation on a number whose unit is not
    '%', and a sign other than ONBEPAALD on a number whose unit is '%'. The
    last two follow from the in-memory form ([Ast]): a number whose unit is
@@ -235,7 +235,8 @@ let severity_opt =
 (* --- unit and datatype ------------------------------------------------- *)
 
 (* A unit's conversion factor: the exact rational {num, den}, both integers
-   of at least 1 (IR-SPEC ch. 2.5). Whether it is in lowest terms is WF-092
+   of at least 1 and at most 2^62 - 1 — the schema's bound, which is also the
+   native integer here (IR-SPEC ch. 2.5). Whether it is in lowest terms is WF-092
    (c), a verifier check, so {2, 4} loads. Every other form — a JSON number,
    a string, a missing or unknown key, a value below 1 or beyond the native
    integer range — is refused in one sentence. *)
@@ -243,7 +244,7 @@ let rationaal path j : rationaal =
   let refuse () =
     fail path
       ("a conversion factor is an exact rational {num, den} whose two integers are at least \
-        1, got " ^ Yojson.Safe.to_string j)
+        1 and at most 4611686018427387903 (2^62 - 1), got " ^ Yojson.Safe.to_string j)
   in
   match j with
   | `Assoc kvs ->

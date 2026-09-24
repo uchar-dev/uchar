@@ -1215,7 +1215,7 @@ A **Unit**:
 | `abbreviation` | string | primary spelling (`jr`, `km`, `€`, `%`) |
 | `system` | string? | declaring system; absent for the built-in `%` and the bare calendar units |
 | `canonical` | string? | the system unit this reduces to, by its `abbreviation`; absent for opaque products and bare units |
-| `factorToCanonical` | `{num, den}`? | how many canonical units equal one of this unit: an exact rational, two integers of at least 1 in lowest terms (WF-092) |
+| `factorToCanonical` | `{num, den}`? | how many canonical units equal one of this unit: an exact rational, two integers of at least 1 and at most 2^62 − 1 in lowest terms (WF-092) |
 | `denominator` | Unit? | present for rate units (`€/jr`, `%/jaar`) |
 | `spellings` | list of string? | the further spellings that resolve to this unit (word and plural aliases): on its declaration in `units` only, at least one when present; the migration and the emitters write none equal to the `abbreviation` |
 
@@ -1307,9 +1307,10 @@ therefore correct, and is the only reading that keeps that arithmetic exact.
    factor as the exact rational `{"num": n, "den": d}`, two integers of at
    least 1, without a node discriminator and in lowest terms (WF-092 (c));
    a factor written as a JSON number or a string, or with an integer below
-   1, is refused at load by every reader, in one sentence: "a conversion
-   factor is an exact rational {num, den} whose two integers are at least
-   1". A v0 factor that was a whole number migrated verbatim over 1; any
+   1 or above 2^62 − 1, is refused at load by every reader, in one
+   sentence: "a conversion factor is an exact rational {num, den} whose two
+   integers are at least 1 and at most 4611686018427387903 (2^62 - 1)". A
+   v0 factor that was a whole number migrated verbatim over 1; any
    other became the fraction with the smallest denominator within 10^-14,
    relative, of the v0 double — the v0 doubles are products of ratios
    rounded per step, so exact double equality does not find the declared
@@ -1390,7 +1391,7 @@ Worked examples (expected values exact):
   factor byte for byte, so `{24, 2}` against `{12, 1}` would be a
   difference between two units that convert identically; a schema cannot
   state a greatest common divisor, so the verifier does. That both integers
-  are at least 1 is the wire form (WF-009). Witnesses: (a)
+  are at least 1 and at most 2^62 − 1 is the wire form (WF-009). Witnesses: (a)
   `wf092-canoniek-zonder-factor` and `wf092-noemer-zonder-factor` (the
   recursion), (b) `wf092-factor-zonder-canoniek`, (c)
   `wf092-factor-niet-in-laagste-termen`. This is a SHAPE law on every unit in

@@ -11014,7 +11014,8 @@ let () =
   let erbij waar extra = (waar, waar ^ " " ^ extra) in
   let factor = {|"factorToCanonical": { "num": 1000, "den": 1 }|} in
   let rationaal got =
-    "a conversion factor is an exact rational {num, den} whose two integers are at least 1, got "
+    "a conversion factor is an exact rational {num, den} whose two integers are at least 1 and at most \
+     4611686018427387903 (2^62 - 1), got "
     ^ got
   in
   let rows =

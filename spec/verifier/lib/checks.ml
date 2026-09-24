@@ -548,9 +548,10 @@ let named_forms ctx =
 
 let wf001 ctx =
   (* [root] is the in-library path a report is translated from ([m1_root],
-     [m1_named]); [label] is the namespace the message names. The unit
-     systems and the day kinds are named by their wire list, `unitSystems`
-     and `dayKinds`, the lists whose nodes L3 rewrote. *)
+     [m1_named]); [label] is the namespace the message names: the wire list
+     (`objectTypes`, `domains`, `parameters`, `unitSystems`, `factTypes`,
+     `dimensions`, `dayKinds`), while the in-library paths keep their v0
+     names until the naming landing. *)
   let ns ?label root keys =
     let label = Option.value label ~default:root in
     dups_by norm (List.map (fun k -> (k, "/" ^ root)) keys)
@@ -558,12 +559,12 @@ let wf001 ctx =
         v "WF-001" at
           (Printf.sprintf "namespace '%s': names '%s' and '%s' collide case-insensitively" label a b))
   in
-  ns "objecttypen" (List.map fst ctx.doc.objecttypen)
-  @ ns "domeinen" (List.map fst ctx.doc.domeinen)
+  ns ~label:"objectTypes" "objecttypen" (List.map fst ctx.doc.objecttypen)
+  @ ns ~label:"domains" "domeinen" (List.map fst ctx.doc.domeinen)
   @ ns "parameters" (List.map fst ctx.doc.parameters)
   @ ns ~label:"unitSystems" "eenheidstelsels" (List.map fst ctx.doc.eenheidstelsels)
-  @ ns "feittypen" (List.map fst ctx.doc.feittypen)
-  @ ns "dimensies" (List.map fst ctx.doc.dimensies)
+  @ ns ~label:"factTypes" "feittypen" (List.map fst ctx.doc.feittypen)
+  @ ns ~label:"dimensions" "dimensies" (List.map fst ctx.doc.dimensies)
   @ ns ~label:"dayKinds" "dagsoorten" (dagsoort_namen ctx)
 
 let wf002 ctx =
@@ -754,8 +755,8 @@ let rec ggd a b = if b = 0 then a else ggd b (a mod b)
    exact rational, and written in lowest terms, so one factor has one
    spelling — WF-091 compares it byte for byte, and two spellings of one
    value would be a lie it cannot tell from a real difference. That both
-   integers are at least 1 is the loader's (a factor is positive by its
-   wire form).
+   integers lie between 1 and 2^62 - 1 is the loader's (a factor is positive
+   and bounded by its wire form).
 
    The rule exists because neither half is reachable by a neighbour.
    WF-009 walks the declared systems but only ever follows a canonical
