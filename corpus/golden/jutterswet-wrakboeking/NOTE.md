@@ -48,7 +48,7 @@ about the created objects: `uchar-case-v0` has no way to address an instance
 that did not exist in the input, and what this golden exists to pin is that
 the document is ADMITTED and computes, not what the new `Strandrecht` holds.
 
-The creation names its back-link explicitly (`verbindendeRol` on
+The creation names its back-link explicitly (`connectingRole` on
 `wrakboeking`) rather than leaving it to the ch. 5.5 derivation. Until L2 that
 was load-bearing: with `Wrakrecht ⊑ Strandrecht` the pair is connected twice
 over once the chain closes (a Wrakrecht fills both roles of `wrakboeking`),

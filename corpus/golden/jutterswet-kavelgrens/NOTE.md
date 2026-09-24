@@ -76,12 +76,12 @@ kavelbreedte at the ends of the chain.
 Each case carries a seventh expectation, `{"kind": "consistent"}`: the
 §9.5 error channel is empty. Hand-confirmed from the wire rather than
 from a run — the document declares `consistenties`, `uniciteiten`,
-`uniciteitUnies`, `verdelingen`, `objectCreaties`, `feitCreaties` and
-`regelGroepen` all EMPTY and carries no prioritized defaults, and its
-two rules are plain navigated attribute assignments, so no construct
-that deposits an error fact is present at all. It is pinned anyway,
-because without the pin a spurious channel deposit — the one class of
-wrong answer that changes no attribute — would be invisible here.
+`verdelingen`, `objectCreaties`, `feitCreaties` and `regelGroepen` all
+EMPTY and carries no prioritized defaults, and its two rules are plain
+navigated attribute assignments, so no construct that deposits an error
+fact is present at all. It is pinned anyway, because without the pin a
+spurious channel deposit — the one class of wrong answer that changes no
+attribute — would be invisible here.
 
 ## Red-first
 
@@ -104,8 +104,8 @@ wrong answer that changes no attribute — would be invisible here.
    and reads", and worth stating exactly. `anchor/jutterswet-erflijn`
    does supply `opvolging.opvolger` from case input **and** read that
    relation — not from a rule, but through the joins of its two fact
-   creations, both of which carry the same
-   `joinRol = {opvolging, opvolger}`. It reads the
+   creations, both of whose `path` ends in the same
+   binding `{opvolging, opvolger}`. It reads the
    role the case **supplied**, though. The other four supply no role
    keys at all (object creation, or no relation read). So the property
    no corpus document had before is this one: **reading the direction

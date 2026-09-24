@@ -32,10 +32,10 @@ van de unie leeg te maken, en `J4` dat de lege unie **0** is en nooit leeg
 
 ## Wat er op de wire staat
 
-Een `Functie` met `kind: "AANTAL"`, ÉÉN argument — een `InstanceSetUnion` met
-twee `InstanceSetBranch`-selecties — en `elementObjecttype: null`,
-`filter: null`, geen `bronRol`: de telling noemt geen eigen bron, want de
-selecties dragen populatie, relatie en deelselectie elk voor zich (WF-110 (c)).
+Een `Aggregation` met `kind: "AANTAL"`, ÉÉN argument — een `InstanceSetUnion`
+met twee `InstanceSetBranch`-selecties — en zonder `elementType`, `filter` en
+`sourceRole`: de telling noemt geen eigen bron, want de selecties dragen
+populatie, relatie en deelselectie elk voor zich (WF-110 (c)).
 De unie draagt geen `type`: zij duidt instanties aan, geen waarde, en de
 typeproloog van WF-034 zondert haar daarom uit zoals zij een Lambda uitzondert.
 

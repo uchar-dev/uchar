@@ -6,7 +6,7 @@ sum; this one pins it on `MINIMUM` and `MAXIMUM`, the two arms that aggregate
 by comparing rather than by accumulating and that no golden narrowed before.
 
 The arrangement is the same and deliberately so: `vondstaanmelding` relates
-`Jutter` to `Vondst`, both folds declare `elementObjecttype: Munt`, and
+`Jutter` to `Vondst`, both folds declare `elementType: Munt`, and
 `Munt ⊑ Vondst` is a strict subtype — the role supplies the REACH, the
 declared element type supplies the POPULATION.
 
@@ -16,7 +16,7 @@ shift the answer a little, it replaces it. Measured on this document with the
 element filter removed from both OCaml executors: J1 answers 1.00 and 9.00
 instead of 5.00 and 7.00 — neither extreme is a `Munt` — and J2 answers 4.00
 twice where the fold has no member at all. The empty-set rule is the other
-half: min/max carry no `leegwaarde`, so an empty fold is empty, and an
+half: min/max carry no `emptyFallback`, so an empty fold is empty, and an
 executor that folded the reach instead of the population would have written a
 number there.
 

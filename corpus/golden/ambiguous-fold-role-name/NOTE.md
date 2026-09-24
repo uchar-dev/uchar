@@ -6,7 +6,7 @@ B12; the L2 card, `backlog/done/20260923-l2-referentielaag.md`). The count
 is declared on TWO fact types the Jutter reaches — `vondstband` (to `Vondst`)
 and `bakenband` (to `Baken`). While the fold's range was derived from that
 written name, the name resolved to two roles and both executors refused to
-pick one. Since L2 the range is written: the count carries its `bronRol`
+pick one. Since L2 the range is written: the count carries its `sourceRole`
 (`vondstband` / `vriend`), the only relation that reaches the element type
 `Vondst`, so the ambiguity of the name is never asked. The written name is
 presentation, and the count reads the binding (IR-SPEC ch. 4.3).
@@ -28,10 +28,10 @@ count over the empty set is 0.
   it would count 0 for both.
 
 Measured 2026-09-24: ref and clingo pass both cases. On the mutant
-`bronRol := bakenband / vriend` with `case2`, ref reports
-`MISMATCH: J1.aantal vrienden = 0, expected 2`, clingo reports the same
-mismatch, and the verifier refuses the mutant with WF-047 (`the bound role
-'vriend' fills 'Baken', but the node names 'Vondst'`).
+`bronRol := bakenband / vriend` (the field is `sourceRole` since L4) with
+`case2`, ref reports `MISMATCH: J1.aantal vrienden = 0, expected 2`, clingo
+reports the same mismatch, and the verifier refuses the mutant with WF-047
+(`the bound role 'vriend' fills 'Baken', but the node names 'Vondst'`).
 
 The singular key `vriend` stays ambiguous from `Jutter` in a case. The case
 loader of ref and clingo refuses it at load, `role key "vriend" is

@@ -21,7 +21,7 @@ do-nothing executor (gate 7): a case whose only verdict is an absent
 kenmerk is satisfied by the raw input.
 
 Under `AANTAL` a count over this range is ill-formed: a count's range is one
-step, spelled `bronRol` (WF-102 (c)), and the verifier, ref and the ASP
+step, spelled `sourceRole` (WF-102 (c)), and the verifier, ref and the ASP
 backend refuse it in one sentence (`corpus/negatief/wf102-bronpad-op-niet-setbron`).
 Until L2 WF-096 fenced the same node (`wf096-aantal-setbron-bronpad`, removed
 with WF-096 at L2). The quantifier fold is a different node

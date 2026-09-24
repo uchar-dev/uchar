@@ -99,8 +99,8 @@ heeft een winterschuit), `ligprijs` S1 leeg en S2 = 35, en de
   (`jutterswet-seinhijsing`, `jutterswet-mastsein`,
   `jutterswet-bakensein`). Beide creaties hier gebruiken daarom een
   voorwaarde op het ANKER — een kenmerk en een vergelijking — en zit de
-  per-doel-selectie in de joinrol en in het kenmerk van de
-  `ligprijs`-regel.
+  per-doel-selectie in de laatste stap van het `path` en in het kenmerk van
+  de `ligprijs`-regel.
 - **Een SOM/MINIMUM/MAXIMUM over dit typepaar.** Het argument van zo'n
   vouw is een ATTRIBUUTnaam, geen rolnaam, dus een uitvoerder die geen
   symbolische rolbinding van de wire leest houdt alleen de

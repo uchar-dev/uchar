@@ -7,7 +7,7 @@ proportional-with-cap admission narrowed 2026-08-28). One allocation
 `aandeelgewicht`, capped per jutter by `buitplafond`, writing each share
 into `buitdeel` and the undivided remainder into `buitrest` (ch. 4.3/4.4).
 
-The allocation is **exact**: `afrondingDecimalen` is `null`, so `floor_d`
+The allocation is **exact**: it carries no `roundingDecimals`, so `floor_d`
 is the identity (ch. 4.2) and each share is `max(0, min(raw, cap))`. Every
 attribute is a whole number (0 decimals), so the cap scale equals the
 target scale (cdec = tdec = 0): a clipped write is an exact integer at the

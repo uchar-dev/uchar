@@ -24,8 +24,8 @@ duplicated and recomputed. Both reads are spelled `het grondloon`, with
 the article the source language permits on a variable reference (§11);
 the binder name on the wire is the declared name minus that article.
 
-The variable is read in the value part only, so the rule has no
-`voorwaarde` and the whole variabelendeel lives inside the `Let`.
+The variable is read in the value part only, so the rule's version has no
+`condition` and the whole variabelendeel lives inside the `Let`.
 
 ## Hand-computed absolutes
 

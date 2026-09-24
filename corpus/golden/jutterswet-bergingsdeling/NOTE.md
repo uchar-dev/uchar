@@ -1,8 +1,8 @@
 # jutterswet-bergingsdeling — an allocation to a subtype, authored in RegelSpraak
 
 The **source twin** of `corpus/golden/jutterswet-hoofdberging`, which pins the
-same allocation shape by hand: `doelType` is `Hoofdberger` and
-`doelAttribuut` is `bergingsaandeel`, an attribute `Hoofdberger` does not
+same allocation shape by hand: `targetType` is `Hoofdberger` and
+`targetAttribute` is `bergingsaandeel`, an attribute `Hoofdberger` does not
 declare — `Berger`, its supertype, does. Resolution walks the chain upward
 (`IR-SPEC.md` ch. 2.2), so the write target resolves at the supertype and the
 share lands on a subtype instance.

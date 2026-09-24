@@ -2,7 +2,7 @@
 
 The **EERSTE/LAATSTE over a set source** witness (ASP-TRANSLATION S8). A
 `Jutter`'s `eerste vondstdag`/`laatste vondstdag` fold the `vondstdatum` of its
-aanmeldings-`vondsten` — the set-typed `Functie EERSTE`/`LAATSTE` arm, which
+aanmeldings-`vondsten` — the set-typed `Aggregation EERSTE`/`LAATSTE` arm, which
 rides the same contributor gathering and the same `#min`/`#max` aggregation as
 `jutterswet-vondstpiek`'s MINIMUM/MAXIMUM, because it is the same fold.
 

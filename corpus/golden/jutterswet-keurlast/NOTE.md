@@ -2,7 +2,7 @@
 
 `corpus/golden/jutterswet-tempovouw` folds a monthly rate over a jutter's
 vondsten; `corpus/golden/jutterswet-muntbewaring` narrows that fold's members
-by `elementObjecttype`. This golden narrows them the third way the wire admits:
+by `elementType`. This golden narrows them the third way the wire admits:
 the §5.6 die/dat SUBSELECTION.
 
 ```

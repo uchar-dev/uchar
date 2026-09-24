@@ -2,7 +2,7 @@
 
 The **MINIMUM/MAXIMUM over a DATE set source** witness. A `Jutter`'s
 `vroegste vondstdag`/`jongste vondstdag` fold the `vondstdatum` of its
-aanmeldings-`vondsten` through the set-typed `Functie MINIMUM`/`MAXIMUM`
+aanmeldings-`vondsten` through the set-typed `Aggregation MINIMUM`/`MAXIMUM`
 arm — the same contributor gathering and the same `#min`/`#max` the
 numeric `jutterswet-muntpiek` rides, over members whose values are
 calendar positions instead of amounts.

@@ -3,7 +3,7 @@
 De positiegetuige bij WF-110 (a), en zij bestaat omdat die clausule op twee
 manieren te lezen was. "Niet als operand van een conditie" gaat over de KALE
 unie; een TELLING over een unie is een gewoon geheel getal en staat waar elke
-andere telling staat — in de waarde van een regel, in een `voorwaarde`, aan
+andere telling staat — in de waarde van een regel, in een `condition`, aan
 weerszijden van een vergelijking. Die vorm is producentbereikbaar:
 
     Een Jutter is ruim voorzien indien het aantal aangemelde vondsten van de

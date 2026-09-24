@@ -19,7 +19,7 @@ als de volgorde haar nodig heeft.
 `Stratificatie.verzamelReads` in de gedeelde Drools-analyse daalde alleen af
 in geneste CONDITIES — de bullets van een samengestelde, het filter en de
 toets van een kwantorvouw — en nooit in de EXPRESSIE-operanden van een
-conditie. Een regel wier `voorwaarde` een aggregatie tegen een grens
+conditie. Een regel wier `condition` een aggregatie tegen een grens
 vergelijkt, en wier aggregatiefilter een afgeleid kenmerk negatief leest, zag
 er voor die analyse uit als een regel die niets leest. Gemeten:
 

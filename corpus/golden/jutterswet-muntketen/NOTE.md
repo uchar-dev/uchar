@@ -2,14 +2,14 @@
 
 `corpus/golden/jutterswet-vondstketen` and
 `corpus/golden/anchor/jutterswet-bootberging` both fold over a two-step
-`bronPad` — Jutter → Boot → Vondst — and in both the fold's
-`elementObjecttype` is exactly what the last step's role fills, so the ch. 2.2
+`sourcePath` — Jutter → Boot → Vondst — and in both the fold's
+`elementType` is exactly what the last step's role fills, so the ch. 2.2
 population equals the reach and the narrowing is invisible. This golden is the
-same chain with `Munt ⊑ Vondst` under it and `elementObjecttype: Munt`, which
+same chain with `Munt ⊑ Vondst` under it and `elementType: Munt`, which
 is the one arrangement in which the two can differ.
 
 The rule the document pins is `RUNTIME-SEMANTICS` ch. 3.4b: the instances the
-LAST step reaches are the fold's reach, and `elementObjecttype` narrows that
+LAST step reaches are the fold's reach, and `elementType` narrows that
 reach to the contributors exactly as in the one-step form — the intermediate
 steps are not narrowed, only the landing. In the ASP encoding the path is a
 chain of `rol/3` atoms through fresh intermediates and the `isa/2` atom closes
@@ -22,12 +22,16 @@ fail differently: a wrongly included instance shifts a sum and REPLACES an
 extreme. Measured on this document with the element filter removed from both
 OCaml executors, J1 answers 1.00 and 22.00 instead of 5.00 and 12.00.
 
-The Drools backend refuses `Functie.bronPad` per form — its accumulate source
-joins the element to the subject through one role — so this golden is a
-two-executor witness (ref ≡ clingo) and appears by name, with that reason, in
-gate 12's channel list beside the two bronPad goldens that predate it. The
-one-step narrowing IS pinned in all three, by `jutterswet-munttelling` and
-`jutterswet-muntpiek`.
+Until 2026-09-18 the Drools backend refused the multi-step range per form at
+load (`Functie.bronPad`, since L4 `Aggregation.sourcePath`), because its
+accumulate source joined the element to the subject through one role. Since
+then it carries the path, and this golden's refusal moved one layer deeper:
+the middle relation `berging` declares both roles to-many, so the hop
+Boot → Munt has no bean field. The golden is therefore a two-executor witness
+(ref ≡ clingo) and appears by name, with that reason, in gate 12's channel
+list beside `anchor/jutterswet-bootberging`, which is refused on the same
+relation. The one-step narrowing IS pinned in all three, by
+`jutterswet-munttelling` and `jutterswet-muntpiek`.
 
 ## Case derivation (hand-computed, absolute)
 
@@ -37,7 +41,7 @@ contributors are the reached instances whose type is `Munt`-or-below.
 | jutter | boten | reached | of those, `Munt` | `laagste` | `totaal` |
 |---|---|---|---|---|---|
 | J1 | B1, B2 | V1 (1.00), M1 (7.00), M2 (5.00), V2 (9.00) | M1, M2 | **5.00** | 7.00 + 5.00 = **12.00** |
-| J2 | B3 | V3 (4.00) | none | **leeg** | **0** (leegwaarde) |
+| J2 | B3 | V3 (4.00) | none | **leeg** | **0** (emptyFallback) |
 | J3 | B4, B5 | M3 (3.00), V4 (2.00) | M3 | **3.00** | **3.00** |
 
 J1 brackets the members on both sides again: the lightest and the heaviest
@@ -47,7 +51,7 @@ non-member unless the landing is narrowed, and the sum is 22.00 instead of
 
 J2 is the empty population over a non-empty reach, and it separates the two
 empty-set rules on one row: `MINIMUM` has no fallback and is empty, `SOM`
-carries a `leegwaarde` of 0 and writes it.
+carries an `emptyFallback` of 0 and writes it.
 
 J3 is the DIAMOND: both boats bergen the same `M3`, so the flat union has to
 deduplicate before the fold or the sum reads 6.00. It also carries a second

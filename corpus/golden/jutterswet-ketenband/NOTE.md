@@ -26,7 +26,7 @@ opvolgeraantal  := het aantal opvolgers van de Wachter
 
 The emitter binds both by NAME: the navigated read carries
 `navigatieBindingen [{ketenband, voorligger}]`, the count carries
-`bronRol {ketenband, opvolger}`. Neither reaches the by-pair derivation,
+`sourceRole {ketenband, opvolger}`. Neither reaches the by-pair derivation,
 which is ambiguous on a self-typed pair by construction.
 
 ## The three cases: one relation, three spellings

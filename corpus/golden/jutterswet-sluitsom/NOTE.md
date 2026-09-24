@@ -58,10 +58,10 @@ both measured against `frontends/regelspraak` on this branch:
    (`laatste van vereist datumexpressies, kreeg Numeriek`), while the
    numeric `EERSTE`/`LAATSTE` pair is admitted IR — `jutterswet-peildatum`
    pins it;
-2. on a form it does accept, the emitter writes
-   `elementObjecttype: null` for a listed fold and leaves the pronoun
-   operand (`haar meldloon`) unresolved beside a navigated sibling. The
-   VESTIGIAL `elementObjecttype` a listed fold may carry — the tag that
+2. on a form it does accept, the emitter writes a listed fold without an
+   `elementType` and leaves the pronoun operand (`haar meldloon`) unresolved
+   beside a navigated sibling. The VESTIGIAL `elementType` a listed fold may
+   carry — the tag that
    makes the fold-source arm run at all, and therefore the whole point of
    this witness — is exactly what that emission drops.
 
@@ -118,9 +118,11 @@ needed.
 
 ## Annotation indifference (gate 13)
 
-Four unit-bearing `type` annotations, all inside the twist table: three
-`AttribuutRef` positions (the `doel`, the own operand, the navigated
-operand) and the `Functie/LAATSTE` result. Measured on the twisted copy —
-ref, the ASP backend, the Drools exec-model branch and the Drools DRL-text
-branch all reproduce the untwisted outcome exactly, so the golden is
-carried by the harness and needs no survivor entry.
+One unit-bearing `type` annotation, inside the twist table: the
+`Aggregation`/`LAATSTE` result. Until L2 there were four — the three
+`AttribuutRef` positions (the rule's target, the own operand, the navigated
+operand) carried one each, and since L2 a reference carries no `type` (B13).
+Measured then on the twisted copy — ref, the ASP backend, the Drools
+exec-model branch and the Drools DRL-text branch all reproduced the untwisted
+outcome exactly, so the golden is carried by the harness and needs no
+survivor entry.

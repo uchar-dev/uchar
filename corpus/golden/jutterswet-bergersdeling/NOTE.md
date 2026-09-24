@@ -21,6 +21,9 @@ WF-034 FAIL /rules/verdelingen/0/doelType: allocation without a target object ty
 it resolves against no declaration
 ```
 
+That report is of the wire of its time; since L4 the two fields are the
+version's `targetType` and `targetAttribute` (delta B19).
+
 Since 2026-09-16 the written PLURAL of a declared object type resolves at the
 positions that name a population, so `alle hoofdbergers` binds `Hoofdberger`
 and the emitter writes the connecting role that reaches it — `berger`, whose

@@ -3,7 +3,7 @@
 `corpus/golden/jutterswet-tempovouw` folds a monthly `bewaartarief` over a
 jutter's vondsten and answers 48. This golden is that document with a subtype
 between the relation and the fold: `Munt ⊑ Vondst`, the fold declares
-`elementObjecttype: Munt`, and the same 48 has to come out — the numbers are
+`elementType: Munt`, and the same 48 has to come out — the numbers are
 deliberately identical so the difference between the two goldens is the
 narrowing and nothing else.
 
@@ -13,7 +13,7 @@ integrates each member's own timeline first, so every member must bring its
 own horizon, and a member carrying an asOfDate-BUCKET scalar instead —
 a value with no period of its own — is refused by name rather than silently
 bucketed at the session date. The fence has to walk the members, and the
-members are the reach narrowed by `elementObjecttype` (ch. 2.2). A fence that
+members are the reach narrowed by `elementType` (ch. 2.2). A fence that
 walked the raw reach would point at an instance the fold never folds.
 
 That is exactly the shape here: `V1` and `V2` are plain `Vondst` instances

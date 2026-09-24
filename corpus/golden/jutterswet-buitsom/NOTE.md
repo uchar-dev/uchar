@@ -1,12 +1,13 @@
 # jutterswet-buitsom
 
 The **SOM-without-a-fallback** witness (ASP-TRANSLATION S8/S19). A `Jutter`'s
-`buitsom` sums the `waarde` of its bergings-`vondsten` with **no** `leegwaarde`,
-so an empty contributor set is ref's Empty (`agg_som None → Empty`), NOT the
-0 a bare `#sum` would give. The clingo arm adds a presence guard (a helper that
-holds iff at least one contributor exists) so the reading rule is underivable on
-the empty set. Contrast `jutterswet-strandgoed`, whose SOM carries a
-`leegwaarde` 0 and correctly derives 0 there.
+`buitsom` sums the `waarde` of its bergings-`vondsten` with **no**
+`emptyFallback`, so an empty contributor set is ref's Empty
+(`agg_som None → Empty`), NOT the 0 a bare `#sum` would give. The clingo arm
+adds a presence guard (a helper that holds iff at least one contributor
+exists) so the reading rule is underivable on the empty set. Contrast
+`jutterswet-strandgoed`, whose SOM carries an `emptyFallback` 0 and correctly
+derives 0 there.
 
 ## Hand-computed absolutes (2 decimals)
 

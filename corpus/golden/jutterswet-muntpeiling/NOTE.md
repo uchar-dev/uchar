@@ -32,7 +32,7 @@ same number for every jutter.
 The ambiguous flank has no wire form since L2. With a second fact type
 between the same pair, the population plural names no single relation, so no
 binding can be written, and a single-argument count with an
-`elementObjecttype` but no range is refused at load. Until L2 it loaded and
+`elementType` but no range is refused at load. Until L2 it loaded and
 failed WF-034 and WF-048 at once; its witness `wf048-telling-meerduidig` left
 the corpus with WF-048 (`corpus/negatief/README.md`).
 
