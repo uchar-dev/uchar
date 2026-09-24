@@ -1,6 +1,6 @@
 # wf047-bronpad-stap-onopgeloste-rol
 
-Violates **WF-047** (`spec/IR-SPEC.md` ch. 2.6) at a `bronPad` step: the step
+Violates **WF-047** (`spec/IR-SPEC.md` ch. 2.6) at a `sourcePath` step: the step
 names a role the fact type does not declare.
 
     WF-047 FAIL /rules/resolvedRegels/0/versions/0/value/sourcePath/1: role

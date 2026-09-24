@@ -5,7 +5,7 @@ the maintainer decision of 2026-09-23 (option (a) of
 `backlog/done/20260920-aantal-zonder-bron.md`): a count is an instance
 fold and MUST carry an element type, the same sentence the filled count's
 element-type arm states. This is the arity-0 spelling: an `AANTAL` with no
-argument at all and no `elementObjecttype`. One sentence covers it and the
+argument at all and no `elementType`. One sentence covers it and the
 arity-1 spellings, because the defect is the same — no source.
 
     WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: the count is an
@@ -17,9 +17,9 @@ arity-1 spellings, because the defect is the same — no source.
 The document. A `Jutter` with two weighed posts of her own (`gewogen
 vangst`, `gewogen bijvangst`, kg with two decimals) and a count-typed
 target, `aantal gewogen posten` (whole, non-negative, unitless). The
-`AANTAL` carries an empty argument list and no `elementObjecttype`. Every
-other clause holds: no facet, the node type
-is the count's own derived type; the verifier reports one fault.
+`AANTAL` carries an empty argument list and no `elementType`. Every other
+clause holds: no facet, the node type is the count's own derived type; the
+verifier reports one fault.
 
 Why the form left the wire. It was verifier-clean and exactly ONE executor
 answered it. Measured before the arm on this shape, with a case in which

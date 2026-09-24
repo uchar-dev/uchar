@@ -1,5 +1,5 @@
 Violates WF-110 (c) (`spec/IR-SPEC.md` ch. 4.3): a well-formed two-selection
-union under a count that ALSO carries `elementObjecttype: "Vondst"` and,
+union under a count that ALSO carries `elementType: "Vondst"` and,
 with it, a range. The union's selections carry the population and the
 relation, one set per selection; the count's own source is a second claim on
 one node, and nothing decides which of the two a consumer should read.
@@ -21,5 +21,6 @@ beside a union. Written by hand with the first selection's relation as
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
-builtin `granularity`; the report cites and names them. `expect.txt` pins the
-arm.
+builtin `granularity`; the report cites and names them. The L2 paragraph above
+names the fields as they were spelled then (`elementObjecttype` →
+`elementType`, `bronRol` → `sourceRole`). `expect.txt` pins the arm.

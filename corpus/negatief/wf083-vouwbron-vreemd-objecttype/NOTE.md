@@ -13,7 +13,7 @@ consult come apart.
     so the two spellings name different declarations
 
 The document. A Vondst-subject rule whose value is the ch. 3.6 temporal
-total, `elementObjecttype: "Vondst"` (the subject, the tag v0 stamps on an
+total, `elementType: "Vondst"` (the subject, the tag v0 stamps on an
 own temporal total), one operand: `bewaarvergoeding per maand` with
 `objecttype: "Jutter"`, no range (so the subject's own read, D8 (iv)), no
 navigation. `Jutter` really does

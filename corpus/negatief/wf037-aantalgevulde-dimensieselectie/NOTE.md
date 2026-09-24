@@ -20,7 +20,7 @@ no amendment: it grants the facet to an enumerated set. The witness is what
 turns that silence into a checked MUST.
 
 The document. The well-formed shape plus a declared dimension `kustvak`
-(labels `noord`, `zuid`) and a `dimensieSelectie` over both labels — the
+(labels `noord`, `zuid`) and a `dimensionSelection` over both labels — the
 labels resolve, so WF-040 has nothing to say and the facet's presence is the
 only defect. The verifier reports one fault.
 

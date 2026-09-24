@@ -1,10 +1,10 @@
 # wf083-totaal-vreemd-elementtype
 
 Violates WF-083 (`spec/IR-SPEC.md` ch. 4.3), clause (c), at the **element
-type of the subject's own read**. A `TOTAAL` without a range (no `bronRol`, no
-`bronPad`) is the subject's own read, so the type it folds over is the subject
-type, and its `elementObjecttype` must name that type (equality in the WF-001
-form). Here it names another declared type.
+type of the subject's own read**. A `TOTAAL` without a range (no `sourceRole`,
+no `sourcePath`) is the subject's own read, so the type it folds over is the
+subject type, and its `elementType` must name that type (equality in the
+WF-001 form). Here it names another declared type.
 
     WF-083 FAIL /rules/resolvedRegels/2/versions/0/value/elementType: the
     elementType 'Vondst' of a TOTAAL without a range is not the fold subject
@@ -13,7 +13,7 @@ form). Here it names another declared type.
 
 The document is `corpus/golden/jutterswet-tempototaal` with one change: the
 third rule, "het bewaargeld van een Jutter is het totaal van zijn
-bewaarvergoeding per maand", carries `elementObjecttype: "Vondst"` instead of
+bewaarvergoeding per maand", carries `elementType: "Vondst"` instead of
 `"Jutter"`. Its one argument still reads `bewaarvergoeding per maand` on
 `Jutter`, the subject, so the source's own anchor (the other half of clause
 (c), `wf083-vouwbron-vreemd-objecttype`) is satisfied, and every other rule of

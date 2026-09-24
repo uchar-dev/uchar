@@ -3,7 +3,7 @@
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3) in the count's ARITY clause —
 the refusal of 2026-09-20, which took the LISTED form of a count off the
 wire. This is the form the decision was taken about: an `AANTAL` with no
-`elementObjecttype`, no `bronRol`, and two ordinary reads as its operand
+`elementType`, no `sourceRole`, and two ordinary reads as its operand
 list.
 
     WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: a count folds
@@ -78,5 +78,6 @@ their reports.
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
-builtin `granularity`; the report cites and names them. `expect.txt` pins the
-arm.
+builtin `granularity`; the report cites and names them. The measurements above
+name the fields as they were spelled then (`elementObjecttype` →
+`elementType`). `expect.txt` pins the arm.

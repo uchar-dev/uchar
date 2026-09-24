@@ -12,9 +12,10 @@ range instead of the fold's anchor.
 
 Before the path there were two kinds of type in this position — the element
 type and the fold subject — and (c) crossed against whichever the shape
-selected. A `bronPad` introduces a third: the types the walk passes THROUGH.
-They are range and never anchor; every member of the folded set is still an
-`elementObjecttype` instance and every declaration is still looked up there.
+selected. A `sourcePath` introduces a third: the types the walk passes
+THROUGH. They are range and never anchor; every member of the folded set is
+still an `elementType` instance and every declaration is still looked up
+there.
 So the clause needs no new arm, but it does need this witness, because the
 shape where a plausible-looking wrong name is available did not exist before:
 `Boot` is a type the fold demonstrably walks, and it declares no `gewicht` at

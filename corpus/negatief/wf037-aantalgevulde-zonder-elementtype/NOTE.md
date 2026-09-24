@@ -17,7 +17,7 @@ argument. So the kind is excluded from that clause and answers to its own,
 and the exclusion is itself measured (below).
 
 The document. The count keeps its single argument but drops
-`elementObjecttype` and, with it, the `bronRol` — a binding without an
+`elementType` and, with it, the `sourceRole` — a binding without an
 instance fold is WF-047's defect and would have masked this one. The
 argument is an ordinary read of the subject's own kg attribute, which
 resolves against its declaration and is clean on its own account. The

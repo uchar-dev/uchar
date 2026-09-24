@@ -16,7 +16,7 @@ Why it has to exist: the reference arms of WF-089 bind an
 `AttribuutRef`/`DimensieCel`/`ParameterRef`/`BinderRef` to the
 declaration it reads, and WF-023/WF-067 bind every value written into a
 declaration — but the fold sat between them, crossed by nothing. WF-037
-admits a one-argument value fold as soon as `elementObjecttype` is set;
+admits a one-argument value fold as soon as `elementType` is set;
 no rule looked at the node type. Before the rule the document was
 verifier-clean (`verifier: PASS`) while ref faulted at evaluation
 (`match has no arm for enumeration value "Noord"`, in a message that

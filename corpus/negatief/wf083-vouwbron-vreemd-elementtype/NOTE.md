@@ -1,7 +1,7 @@
 # wf083-vouwbron-vreemd-elementtype
 
 Violates WF-083 (`spec/IR-SPEC.md` ch. 4.3), the **anchor cross**, in its set
-half: a set source reads each member of the `elementObjecttype`, so its
+half: a set source reads each member of the `elementType`, so its
 `objecttype` must name that element type. Here it names the fold subject
 instead, and the attribute it spells is declared there and nowhere near the
 members being folded.
@@ -13,7 +13,7 @@ members being folded.
     declarations
 
 The document. A Jutter-subject `TOTAAL` over the Jutter's finds —
-`elementObjecttype: "Vondst"`, `bronRol` bound to the role `vondst` (which
+`elementType: "Vondst"`, `sourceRole` bound to the role `vondst` (which
 makes the operand the set source, D8 (i)), no navigation — whose operand names `kistgeld` with
 `objecttype: "Jutter"`. `Jutter` declares `kistgeld`; `Vondst` does not. Every
 declaration cross in the document is satisfied, which is exactly why the form

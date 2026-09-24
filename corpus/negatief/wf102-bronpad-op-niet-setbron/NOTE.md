@@ -1,6 +1,6 @@
 # wf102-bronpad-op-niet-setbron
 
-Violates **WF-102 (c)** (`spec/IR-SPEC.md` ch. 4.3): a `bronPad` on a source
+Violates **WF-102 (c)** (`spec/IR-SPEC.md` ch. 4.3): a `sourcePath` on a source
 that is not a value fold's SET source.
 
     WF-102 FAIL /rules/resolvedRegels/0/versions/0/value/sourcePath: a
@@ -10,7 +10,7 @@ that is not a value fold's SET source.
 The document turns the golden's minimum fold into a count: an `AANTAL` whose
 source names a ROLE (`geborgen vondst`), anchored on the fold subject as
 WF-083 (c) demands of a count source, with the two-step path left in place
-as its range. A count's range is one step, spelled `bronRol`: its source
+as its range. A count's range is one step, spelled `sourceRole`: its source
 names the one relation whose role it counts, and a multi-step path is
 admissible only as the range of a value fold's set source.
 

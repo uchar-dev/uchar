@@ -52,5 +52,6 @@ never share a sentence.
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
-builtin `granularity`; the report cites and names them. `expect.txt` pins the
-arm.
+builtin `granularity`; the report cites and names them. The load error quoted
+above carries the pointer of the wire it was measured on (`waarde/argumenten`,
+since L4 `versions/0/value/arguments`). `expect.txt` pins the arm.

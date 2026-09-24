@@ -19,7 +19,7 @@ refuses the same written shape and its own test says why: one Drools
 accumulate has ONE source pattern, so operands over different element types
 cannot be unioned without silently dropping the foreign set. That is a
 property of a code generator. uchar refuses it on a ground of its own: a
-count answers a cardinality over one DECLARED type — `elementObjecttype` is
+count answers a cardinality over one DECLARED type — `elementType` is
 the population everywhere else in the IR (ch. 2.2) — and with a population
 per selection the membership test differs per member. Whether two selections
 can then share an instance is a question about the subtype lattice
@@ -59,5 +59,6 @@ form the goldens carry — is untouched by construction.
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
-builtin `granularity`; the report cites and names them. `expect.txt` pins the
-arm.
+builtin `granularity`; the report cites and names them. The load error quoted
+above carries the pointer of the wire it was measured on (`waarde/argumenten`,
+since L4 `versions/0/value/arguments`). `expect.txt` pins the arm.

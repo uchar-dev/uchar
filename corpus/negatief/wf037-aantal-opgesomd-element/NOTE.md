@@ -2,7 +2,7 @@
 
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3) in the count's ARITY clause,
 in the spelling that ALSO claims an instance source: an `AANTAL` carrying
-`elementObjecttype: "Vondst"` and, beside it, an operand list of two
+`elementType: "Vondst"` and, beside it, an operand list of two
 ordinary reads.
 
     WF-037 FAIL /rules/resolvedRegels/0/versions/0/value: a count folds
@@ -13,9 +13,9 @@ ordinary reads.
     belongs to the filled count over its set source, never to this kind
 
 Why a third witness. The arm deliberately does NOT read
-`elementObjecttype`, and this document is what that decision costs and
+`elementType`, and this document is what that decision costs and
 buys. The neighbouring clause — the one that defines the listed value fold
-— keys on `elementObjecttype = null`, so an arm written in its image would
+— keys on the absence of `elementType`, so an arm written in its image would
 have let this spelling through. It must not: an element type beside an
 operand list is not a milder defect but a second claim on one node, "fold
 the Vondst instances" and "fold this list", and the wire may not say two
@@ -23,8 +23,8 @@ things at once (the same reason the set-source decision of 2026-09-19
 gave).
 
 The document. `wf037-aantal-opgesomd` with `Vondst` and the
-`vondstaanmelding` fact type restored and `elementObjecttype` set to
-`Vondst`. There is no `bronRol`: a listed count carries no range (the schema
+`vondstaanmelding` fact type restored and `elementType` set to
+`Vondst`. There is no `sourceRole`: a listed count carries no range (the schema
 demands one of a single-argument fold only), so WF-047 is silent and the
 verifier reports one fault.
 
@@ -62,7 +62,7 @@ van de Jutter" bound `Vondst` as its element from the first operand's
 written word and emitted this shape — arity 2 WITH an element type — under a
 warning that does not stop emission. Since 2026-09-20 the frontend refuses
 it at the node with the same ERROR its two siblings get, which is the point
-of the arm being blind to `elementObjecttype` on both sides of the wire.
+of the arm being blind to `elementType` on both sides of the wire.
 
 Rood-eerst: pre-refusal verifier (binary md5
 `c7356ed0f3002e933a550b899e888a1a`) says `verifier: PASS`; with the arm,

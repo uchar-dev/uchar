@@ -6,7 +6,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a LISTED fold operand names
 ordinary reads, and a role name read as an attribute resolves to nothing.
 
 The document. A `MAXIMUM` with two arguments and a vestigial
-`elementObjecttype`: operand 0 the subject's `drempelgewicht`, operand 1
+`elementType`: operand 0 the subject's `drempelgewicht`, operand 1
 `vondsten` on `Jutter`. The name is a count source only as the single
 argument of an aggregation (D9); here it is the second of two operands, and
 nothing reads a relation from it.

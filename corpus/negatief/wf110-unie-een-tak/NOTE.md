@@ -17,11 +17,11 @@ resolving relation (clause (e)), and the node sits at its admissible
 position (clause (a)).
 
 Why the form is refused rather than read as the count it obviously means.
-One selection has a spelling already: `elementObjecttype` beside `bronRol`
+One selection has a spelling already: `elementType` beside `sourceRole`
 on the fold itself, which every one-source count in the corpus carries and
 all four executors read. Admitting it here would give one meaning two
 spellings, which is the discipline WF-102 (b) draws for the one-step range
-("the one-step range IS bronRol") and WF-087 for the nullary keuzetype. The
+("the one-step range IS `sourceRole`") and WF-087 for the nullary keuzetype. The
 cost of the refusal is nil: a producer that has one selection writes the
 form that already exists.
 
@@ -53,5 +53,6 @@ same sentence with `0`).
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
-builtin `granularity`; the report cites and names them. `expect.txt` pins the
-arm.
+builtin `granularity`; the report cites and names them. The load error quoted
+above carries the pointer of the wire it was measured on (`waarde/argumenten`,
+since L4 `versions/0/value/arguments`). `expect.txt` pins the arm.

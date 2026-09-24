@@ -10,12 +10,12 @@ of an instance count. Clause (a), at the sharpest position: the whole rule value
     count — so this node is admissible as the SINGLE argument of an AANTAL
     aggregation and at no other position (ch. 4.3)
 
-The document. The union standing as a rule's entire `waarde`, assigned to a
-whole-number attribute. Measured before the rule: verifier-clean. No type
+The document. The union standing as a rule version's entire `value`, assigned
+to a whole-number attribute. Measured before the rule: verifier-clean. No type
 rule catches it, and that is the point — the union carries no `type` key at
-all (it denotes instances), and WF-034's type prologue exempts it for
-exactly that reason, the way it exempts a Lambda. Without clause (a) the
-typelessness that makes the node honest would also make it invisible.
+all (it denotes instances), and WF-034's type prologue exempts it for exactly
+that reason, the way it exempts a Lambda. Without clause (a) the typelessness
+that makes the node honest would also make it invisible.
 
 This is the sibling of `wf096-setlezing-regelwaarde`, and deliberately so:
 a collection standing where a scalar is written is the same defect whichever
@@ -49,5 +49,6 @@ this witness falls on the default and the count's own argument does not.
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,
 `emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
-builtin `granularity`; the report cites and names them. `expect.txt` pins the
-arm.
+builtin `granularity`; the report cites and names them. The load error quoted
+above carries the pointer of the wire it was measured on (`waarde`, since L4
+`versions/0/value`). `expect.txt` pins the arm.

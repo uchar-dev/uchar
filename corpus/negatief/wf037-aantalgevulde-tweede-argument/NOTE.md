@@ -20,7 +20,7 @@ admitted.
 
 The document. The same Jutterswet model as its siblings, written in the
 listed shape: two ordinary reads of the subject's own kg attributes
-(`vondstgewicht`, `wrakgewicht`), no `elementObjecttype`, no `bronRol` —
+(`vondstgewicht`, `wrakgewicht`), no `elementType`, no `sourceRole` —
 exactly how a `MINIMUM` over two operands is spelled. Every other clause
 holds; both operands resolve against their declarations, and the ordering
 family clause of WF-038 says nothing here because this kind hands no element

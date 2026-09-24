@@ -6,7 +6,7 @@ the Jutter is NOT `aangesteld`, and the characteristic rule derives
 `aangesteld` from that very total, so no evaluation strata exist.
 
 This case pins the ROUTE rather than the rule: it is the witness that a
-filter condition on a `Functie` reaches the dependency walk at all, and
+filter condition on an `Aggregation` reaches the dependency walk at all, and
 that a member with `negatie: true` enters it as a negative edge. The
 cycle passes through no recursive creation, so WF-045 is reported as
 well; `wf046-negated-read-in-recursive-cycle` is the case that isolates
