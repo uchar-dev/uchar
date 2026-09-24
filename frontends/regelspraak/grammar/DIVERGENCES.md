@@ -678,9 +678,9 @@ one argument, reusing the value folds' machinery rather than adding any:
 
 - the element type is the argument's own object type (`aggregatieElement`), the
   VALUE-fold derivation — not the count's, whose element word is a role name;
-- the range is the shared one: a single written step goes out as `bronRol`, and
-  a resolved multi-step range as `bronPad` (WF-102), which is ch. 3.4b's flat
-  union and the reason the kind exists at that width;
+- the range is the shared one: a single written step goes out as `sourceRole`,
+  and a resolved multi-step range as `sourcePath` (WF-102), which is ch. 3.4b's
+  flat union and the reason the kind exists at that width;
 - the `die/dat` subselectie rides the shared `aggregatieFilter` path;
 - the result type is a whole, unitless, non-negative number whatever the folded
   attribute measures (ch. 3.4c). The source's unit is deliberately NOT inherited;
