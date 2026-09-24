@@ -7,8 +7,8 @@
 #      polarities, with no corpus document involved — without it, deleting a
 #      pattern is a silent green (measured 2026-09-11). A clamp fails when a
 #      pattern appears at a position the table does not carry;
-#  1c. the positions the M1 and L2 shapes close by schema alone are held the same
-#      way: one small valid document per shape, one mutation per row, in both
+#  1c. the positions the M1, L2 and L3 shapes close by schema alone are held the
+#      same way: one small valid document per shape, one mutation per row, in both
 #      polarities;
 #   2. every corpus/golden/**/ir.json validates against it;
 #   3. every such file round-trips: parsed with raw number lexemes preserved and
@@ -205,8 +205,9 @@ n_selftest = 2 * len(BOUND_LEXEMES)
 # a verifier rule with its own negatief witness, the schema admits the value so that the witness
 # stays a document the schema admits.
 def _m1_base():
-    num = {"node": "Numeriek", "geheel": True, "decimalen": 0, "teken": "ONBEPAALD",
-           "eenheid": None}
+    # written in the L3 shape since L3 (the number node, the parameter and the day kinds): the
+    # rows below pin what M1 closed, and the schema they run against is the L3 one
+    num = {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD"}
     return {
         "format": "uchar-ir-v1",
         "model": {
@@ -220,8 +221,7 @@ def _m1_base():
                     "node": "Characteristic", "name": "aangemeld", "kind": "BIJVOEGLIJK",
                     "timeline": {"node": "TimelineFacet", "granularity": "MAAND", "count": 1}}]}],
             "factTypes": [],
-            "parameters": [{"node": "Parameter", "naam": "vondstdrempel", "datatype": dict(num),
-                            "granulariteit": None}],
+            "parameters": [{"node": "Parameter", "name": "vondstdrempel", "datatype": dict(num)}],
             "domains": [{"node": "Domain", "name": "Vondstsoort",
                          "datatype": {"node": "Enumeratie", "waarden": ["hout", "touw"]}}],
             "unitSystems": [],
@@ -229,7 +229,6 @@ def _m1_base():
             "timelines": [{"node": "Tijdlijn", "naam": "penningjaar", "variabelStartpunt": False,
                            "granulariteit": "JAAR", "aantal": 1}],
             "dayKinds": [],
-            "dagsoortPerEenheid": {},
         },
         "rules": {k: [] for k in schema["properties"]["rules"]["required"]},
         "diagnostics": [{"node": "Diagnostic", "severity": "WARNING",
@@ -290,8 +289,9 @@ M1_SHAPE_ROWS = [
     ("Domain's Enumeratie carries 'domein'",
      lambda d: d["model"]["domains"][0]["datatype"].update(domein="Vondstsoort"), False,
      "B2: at the declaration position the Domain wrapper's name is the one spelling"),
-    ("Parameter.naam = null", lambda d: d["model"]["parameters"][0].update(naam=None), False,
-     "B2: with the map key gone, naam is the declaration's only name"),
+    ("Parameter.name = null", lambda d: d["model"]["parameters"][0].update(name=None), False,
+     "B2: with the map key gone, the name is the declaration's only name (written 'name' "
+     "since L3)"),
     ("ObjectType.plural = null", lambda d: _ot(d).update(plural=None), False,
      "absent is the one spelling of 'no plural declared'"),
     ("Attribute.plural = null", lambda d: _attr(d).update(plural=None), False,
@@ -321,8 +321,7 @@ M1_SHAPE_ROWS = [
 # in the L2 card (backlog/done/20260923-l2-referentielaag.md).
 def _l2_base():
     d = _m1_base()
-    num = {"node": "Numeriek", "geheel": True, "decimalen": 0, "teken": "ONBEPAALD",
-           "eenheid": None}
+    num = {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD"}
     rb = lambda rol: {"node": "RolBinding", "feittype": "vondstregistratie", "rol": rol}
     ref = lambda attr, ot: {"node": "AttribuutRef", "attribuut": attr, "objecttype": ot,
                             "bron": None}
@@ -419,7 +418,7 @@ def _both(d, kind):
     _som(d).update(kind=kind, bronPad=[dict(_som(d)["bronRol"]), dict(_som(d)["bronRol"])])
 
 
-_NUM = {"node": "Numeriek", "geheel": True, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": None}
+_NUM = {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD"}
 
 L2_SHAPE_ROWS = [
     ("the L2 base document", lambda d: None, True,
@@ -548,8 +547,239 @@ L2_SHAPE_ROWS = [
      "D14, U10: absent, never null"),
 ]
 
+
+# --- check 1c, the L3 rows (card L3, 2026-09-24) -------------------------------------------------
+# L3 moves the type system to its v1 nodes and closes by schema what they no longer carry: the L2
+# number, percentage, date, unit and unit-system nodes and their fields, a factor that is not an
+# exact rational {num, den}, the day-kind registry beside the day kinds, a null where a field is
+# written whole or not at all, and a spelling on a unit occurrence (only the declaration in a
+# UnitSystem carries spellings). Same mechanism as the M1 and L2 rows: one small valid L3
+# document — the L2 base plus one node of every class L3 writes, in canonical key order — and one
+# mutation per row. The rows that must PASS pin the deliberate admissions: the presentation tag on
+# a type annotation and a factor not in lowest terms, both refused by the verifier (WF-007,
+# WF-092) with a negatief witness of their own, because one datatype union serves declarations and
+# annotations alike and a schema cannot state a greatest common divisor. In the reasons, a
+# B-number is a delta of spec/proposals/V1-WIREMIGRATIE.md.
+def _l3_base():
+    d = _l2_base()
+    m = d["model"]
+    ratio = lambda num, den: {"num": num, "den": den}
+    eur = {"node": "Unit", "abbreviation": "EUR", "system": "Munt", "canonical": "EUR",
+           "factorToCanonical": ratio(1, 1)}
+    mnd = {"node": "Unit", "abbreviation": "mnd", "system": "Tijd", "canonical": "mnd",
+           "factorToCanonical": ratio(1, 1)}
+    jr = {"node": "Unit", "abbreviation": "jr", "system": "Tijd", "canonical": "mnd",
+          "factorToCanonical": ratio(12, 1)}
+    pct = {"node": "Unit", "abbreviation": "%", "canonical": "%", "factorToCanonical": ratio(1, 1)}
+    m["unitSystems"] = [
+        {"node": "UnitSystem", "name": "Munt", "units": [dict(eur, spellings=["euro", "euros"])]},
+        {"node": "UnitSystem", "name": "Tijd", "units": [
+            dict(mnd, spellings=["maand", "maanden"]), dict(jr, spellings=["jaar", "jaren"])]}]
+    _ot(d)["attributes"] += [
+        {"node": "Attribute", "name": "vondsttarief", "datatype": {
+            "node": "Number", "whole": False, "decimals": 2, "sign": "NIET_NEGATIEF",
+            "unit": dict(eur, denominator=dict(jr))}},
+        {"node": "Attribute", "name": "vindersdeel", "datatype": {
+            "node": "Number", "whole": False, "decimals": 2, "sign": "ONBEPAALD",
+            "unit": dict(pct), "presentation": "percentage"}},
+        {"node": "Attribute", "name": "aangemeldOp", "datatype": {"node": "Date",
+                                                                  "precision": "day"}},
+        {"node": "Attribute", "name": "gemeldOp", "datatype": {"node": "Date",
+                                                               "precision": "millisecond"}}]
+    m["parameters"].append({
+        "node": "Parameter", "name": "vondsttarief",
+        "datatype": {"node": "Number", "whole": False, "decimals": 2, "sign": "NIET_NEGATIEF",
+                     "unit": dict(eur)},
+        "timeline": {"node": "TimelineFacet", "granularity": "JAAR", "count": 1}})
+    m["dayKinds"] = [{"node": "DayKind", "name": "schouwdag", "plural": "schouwdagen"}]
+    d["rules"]["resolvedRegels"].append({
+        "node": "ResolvedRegel", "naam": "vindersdeel", "soort": "BEREKENING",
+        "doel": {"node": "AttribuutRef", "attribuut": "vindersdeel", "objecttype": "Jutter",
+                 "bron": None},
+        "waarde": {"node": "Literal", "waarde": "5",
+                   "type": {"node": "Number", "whole": True, "decimals": 0, "sign": "ONBEPAALD",
+                            "unit": dict(pct)},
+                   "bron": None},
+        "voorwaarde": None, "geldigheid": None})
+    return d
+
+
+def _l3_attr(d, name):
+    return next(a for a in _ot(d)["attributes"] if a["name"] == name)
+
+
+def _tarief(d):
+    # a Number at a declaration, with a rate unit: EUR per jr
+    return _l3_attr(d, "vondsttarief")["datatype"]
+
+
+def _pct(d):
+    return _l3_attr(d, "vindersdeel")["datatype"]
+
+
+def _date(d):
+    return _l3_attr(d, "aangemeldOp")["datatype"]
+
+
+def _tijd(d):
+    return d["model"]["unitSystems"][1]
+
+
+def _jr(d):
+    # the declared jr, in the Tijd system
+    return _tijd(d)["units"][1]
+
+
+def _factor(d):
+    return _jr(d)["factorToCanonical"]
+
+
+def _lit(d):
+    # a Literal whose type annotation is a Number with the unit '%'
+    return d["rules"]["resolvedRegels"][-1]["waarde"]
+
+
+def _param(d):
+    return d["model"]["parameters"][1]
+
+
+def _daykind(d):
+    return d["model"]["dayKinds"][0]
+
+
+L3_SHAPE_ROWS = [
+    ("the L3 base document", lambda d: None, True,
+     "the L3 shape itself: Number, Date, Unit, UnitSystem, Parameter and DayKind in canonical "
+     "form, a percentage tagged at its declaration, exact rational factors, spellings on the "
+     "declared units"),
+    ("the presentation tag on a type annotation",
+     lambda d: _lit(d)["type"].update(presentation="percentage"), True,
+     "one datatype union serves declarations and annotations, so the schema cannot tell them "
+     "apart; the verifier refuses the tag on an annotation (WF-007)"),
+    ("a percentage Number without the tag", lambda d: _pct(d).pop("presentation"), True,
+     "B14: the tag is presentation only; a Number with the unit '%' is a percentage either way"),
+    ("factorToCanonical {num: 24, den: 2}", lambda d: _factor(d).update(num=24, den=2), True,
+     "lowest terms is WF-092, a verifier check: a schema cannot state a greatest common divisor"),
+    ("a declared unit without spellings", lambda d: _jr(d).pop("spellings"), True,
+     "absent is the one spelling of a unit with no further spelling"),
+    ("the bare unit: no system, canonical or factor",
+     lambda d: [_jr(d).pop(k) for k in ("system", "canonical", "factorToCanonical")], True,
+     "the bare form (IR-SPEC ch. 2.5); either half of the conversion pair alone is WF-092's"),
+    ("Parameter without timeline", lambda d: _param(d).pop("timeline"), True,
+     "absent: the parameter is not time-dependent"),
+    ("DayKind without plural", lambda d: _daykind(d).pop("plural"), True,
+     "absent is the one spelling of a day kind without a plural"),
+    ("the L2 number node where a Number stands",
+     lambda d: _l3_attr(d, "vondsttarief").update(datatype={
+         "node": "Numeriek", "geheel": False, "decimalen": 2, "teken": None, "eenheid": None}),
+     False, "B14: Number is the one number node"),
+    ("the L2 percentage node where a Number stands",
+     lambda d: _l3_attr(d, "vindersdeel").update(datatype={
+         "node": "Percentage", "geheel": False, "decimalen": 2, "eenheid": None}),
+     False, "B14: a percentage is a Number with the unit '%'"),
+    ("the L2 day-precision date node where a Date stands",
+     lambda d: _l3_attr(d, "aangemeldOp").update(datatype={"node": "DatumInDagen"}), False,
+     "B15: Date is the one date node, parameterised by its precision"),
+    ("the L2 millisecond-precision date node where a Date stands",
+     lambda d: _l3_attr(d, "gemeldOp").update(datatype={"node": "DatumTijd"}), False,
+     "B15: Date is the one date node, parameterised by its precision"),
+    ("the L2 unit node where a Unit stands",
+     lambda d: _tarief(d).update(unit={"node": "Eenheid", "afkorting": "EUR", "stelsel": "Munt",
+                                       "canoniek": "EUR", "factorNaarCanoniek": 1,
+                                       "noemer": None}), False,
+     "Unit is the one unit node, its factor a rational"),
+    ("the L2 unit-system node where a UnitSystem stands",
+     lambda d: d["model"]["unitSystems"].__setitem__(0, {
+         "node": "Eenheidstelsel", "naam": "Munt", "eenheden": {}, "aliassen": {}}), False,
+     "a unit system is its name and a list of units carrying their spellings"),
+    ("Number carries geheel", lambda d: _tarief(d).update(geheel=False), False,
+     "B14: whole is the one spelling of the field"),
+    ("Number carries decimalen", lambda d: _tarief(d).update(decimalen=2), False,
+     "B14: decimals is the one spelling of the field"),
+    ("Number carries teken", lambda d: _tarief(d).update(teken="NIET_NEGATIEF"), False,
+     "B14: sign is the one spelling of the field"),
+    ("Number carries eenheid", lambda d: _tarief(d).update(eenheid=None), False,
+     "B14: unit is the one spelling of the field, and absent the one spelling of no unit"),
+    ("Unit carries afkorting", lambda d: _tarief(d)["unit"].update(afkorting="EUR"), False,
+     "abbreviation is the one spelling of the field"),
+    ("Unit carries stelsel", lambda d: _tarief(d)["unit"].update(stelsel="Munt"), False,
+     "system is the one spelling of the field"),
+    ("Unit carries canoniek", lambda d: _tarief(d)["unit"].update(canoniek="EUR"), False,
+     "canonical is the one spelling of the field"),
+    ("Unit carries factorNaarCanoniek",
+     lambda d: _tarief(d)["unit"].update(factorNaarCanoniek=1), False,
+     "B17 (i): factorToCanonical is the one spelling of the factor, as a rational"),
+    ("Unit carries noemer", lambda d: _tarief(d)["unit"].update(noemer=None), False,
+     "denominator is the one spelling of a rate's denominator"),
+    ("Parameter carries naam", lambda d: _param(d).update(naam="vondsttarief"), False,
+     "B2: name is the declaration's one name"),
+    ("Parameter carries granulariteit", lambda d: _param(d).update(granulariteit="JAAR"), False,
+     "B18: the timeline facet is the one spelling of a parameter's time-dependence"),
+    ("UnitSystem carries naam", lambda d: _tijd(d).update(naam="Tijd"), False,
+     "B2: name is the declaration's one name"),
+    ("UnitSystem carries eenheden", lambda d: _tijd(d).update(eenheden={}), False,
+     "units is the one list of a system's units"),
+    ("UnitSystem carries aliassen", lambda d: _tijd(d).update(aliassen={}), False,
+     "a unit's further spellings are on the declared unit (spellings), not in a map beside it"),
+    ("the model carries dagsoortPerEenheid",
+     lambda d: d["model"].update(dagsoortPerEenheid={"schouwdagen": "schouwdag"}), False,
+     "a day kind carries its own spellings (name, plural); there is no registry beside it"),
+    ("dayKinds as a list of strings", lambda d: d["model"].update(dayKinds=["schouwdag"]), False,
+     "a day kind is a DayKind node"),
+    ("DayKind.plural = null", lambda d: _daykind(d).update(plural=None), False,
+     "absent is the one spelling of no plural"),
+    ("factorToCanonical as a JSON number", lambda d: _jr(d).update(factorToCanonical=12), False,
+     "B17 (i): the factor is an exact rational {num, den}, never a number that may be rounded"),
+    ("factorToCanonical as a string", lambda d: _jr(d).update(factorToCanonical="12/1"), False,
+     "B17 (i): the factor is the object {num, den}"),
+    ("factorToCanonical without den", lambda d: _factor(d).pop("den"), False,
+     "B17 (i): both halves of the rational are always written"),
+    ("factorToCanonical without num", lambda d: _factor(d).pop("num"), False,
+     "B17 (i): both halves of the rational are always written"),
+    ("factorToCanonical with den = 0", lambda d: _factor(d).update(den=0), False,
+     "a conversion factor is a positive rational: den is at least 1"),
+    ("factorToCanonical with num = 0", lambda d: _factor(d).update(num=0), False,
+     "a conversion factor is a positive rational: num is at least 1"),
+    ("factorToCanonical with a fractional num", lambda d: _factor(d).update(num=1.5), False,
+     "num and den are integers"),
+    ("factorToCanonical carries node", lambda d: _factor(d).update(node="Rational"), False,
+     "the factor is a value inside the Unit, not a node: it carries no discriminator"),
+    ("presentation = 'PERCENTAGE'", lambda d: _pct(d).update(presentation="PERCENTAGE"), False,
+     "B14: 'percentage' is the one value of the tag"),
+    ("presentation = null", lambda d: _pct(d).update(presentation=None), False,
+     "absent is the one spelling of an untagged Number"),
+    ("sign = null", lambda d: _tarief(d).update(sign=None), False,
+     "a number declared without a sign is ONBEPAALD; null is not a sign"),
+    ("Number without sign", lambda d: _tarief(d).pop("sign"), False,
+     "the sign is always written"),
+    ("Number.unit = null", lambda d: _tarief(d).update(unit=None), False,
+     "absent is the one spelling of a number without a unit"),
+    ("Date without precision", lambda d: _date(d).pop("precision"), False,
+     "B15: day and millisecond share no order (WF-036), so the precision is always written"),
+    ("Date.precision = 'DAG'", lambda d: _date(d).update(precision="DAG"), False,
+     "B15: the precision has the spellings day and millisecond, and no other"),
+    ("Unit.system = null", lambda d: _tarief(d)["unit"].update(system=None), False,
+     "no unit field is ever null: absent is the one spelling"),
+    ("Unit.denominator = null", lambda d: _tarief(d)["unit"].update(denominator=None), False,
+     "no unit field is ever null: absent is the one spelling of a plain unit"),
+    ("a unit occurrence carries spellings",
+     lambda d: _tarief(d)["unit"].update(spellings=["euro"]), False,
+     "only the declaration in a UnitSystem carries spellings; on an occurrence they would be "
+     "accepted and dropped"),
+    ("a declared unit with spellings = []", lambda d: _jr(d).update(spellings=[]), False,
+     "absent is the one spelling of no further spelling"),
+    ("Parameter's facet carries timelineName",
+     lambda d: _param(d)["timeline"].update(timelineName="penningjaar"), False,
+     "B18: no parameter records a timeline name, so the position is closed"),
+    ("Parameter.timeline = null", lambda d: _param(d).update(timeline=None), False,
+     "absent is the one spelling of a parameter that is not time-dependent"),
+    ("Parameter.datatype = null", lambda d: _param(d).update(datatype=None), False,
+     "a parameter has a datatype (IR-SPEC ch. 2.10)"),
+]
+
 shape_bad = 0
-for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS)):
+for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS),
+                   (_l3_base, L3_SHAPE_ROWS)):
     for row, mutate, want_ok, why in rows:
         probe = base()
         mutate(probe)
@@ -562,7 +792,7 @@ for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS)):
 if shape_bad:
     sys.stderr.write("check-ir-schema: FAIL (%d shape self-test row(s) bad)\n" % shape_bad)
     sys.exit(1)
-n_shape = len(M1_SHAPE_ROWS) + len(L2_SHAPE_ROWS)
+n_shape = len(M1_SHAPE_ROWS) + len(L2_SHAPE_ROWS) + len(L3_SHAPE_ROWS)
 
 
 # NOTE: gate 9 (scripts/check-catala.sh) executes the slice of this
