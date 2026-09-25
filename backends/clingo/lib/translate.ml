@@ -9078,6 +9078,53 @@ let translate_aantal_dagen ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : granularitei
   (* the ch. 7.8 timeline arm, as for pro-rata *)
   schrijf_segment ctx ~subject ~ot ~a ~clip ~p ~value:vterm ~body
 
+(* the writers of the attribute target (ot, a) beside a natively translated
+   initialisation (translate_regel's Initialisatie arm): the initialisations
+   and the computing rules among the rules that apply on the case's date — an
+   excluded version emits nothing and is no writer — and whether a defaults
+   group, an allocation or a creation-time member writes the target too. A
+   writer declared on a type of ot's chain, above or below it, writes the
+   instances the two types share (ch. 2.2), so it counts wherever the two
+   populations overlap *)
+let init_writers ctx ~ot ~a =
+  let overlaps t = Ir_v0.Checks.populations_overlap ctx.doc ot t in
+  let on_target (r : resolved_regel) =
+    r.rr_soort <> Some Kenmerktoekenning
+    && applies ctx r.rr_geldigheid
+    &&
+    match r.doel with
+    | Some (Attribuut_ref { attribuut = Some a'; objecttype = Some ot'; _ }) ->
+        norm a' = norm a && overlaps ot'
+    | _ -> false
+  in
+  let inits, comps =
+    List.partition
+      (fun (r : resolved_regel) -> r.rr_soort = Some Initialisatie)
+      (List.filter on_target ctx.doc.resolved_regels)
+  in
+  let other =
+    List.exists
+      (fun (l : prioritized_defaults) ->
+        overlaps l.pd_onderwerp
+        && match l.pd_attribuut with Some la -> norm la = norm a | None -> false)
+      ctx.doc.prioritized_defaults
+    || List.exists
+         (fun (v : resolved_verdeling) ->
+           (match v.doel_type with Some dt -> overlaps dt | None -> false)
+           && match v.doel_attribuut with Some da -> norm da = norm a | None -> false)
+         ctx.doc.verdelingen
+    || List.exists
+         (fun (o : resolved_object_creatie) ->
+           (match o.nieuw_type with Some nt -> overlaps nt | None -> false)
+           && List.exists
+                (fun (t : toekenning) ->
+                  (not t.toe_kenmerk)
+                  && match t.toe_attribuut with Some ta -> norm ta = norm a | None -> false)
+                o.toekenningen)
+         ctx.doc.object_creaties
+  in
+  (inits, comps, other)
+
 let translate_regel ctx (r : resolved_regel) =
   (* the ch. 8.2 validity gate: an excluded rule does not apply — nothing
      is emitted, so its target's case input stands untouched as the plain
@@ -9337,6 +9384,15 @@ let translate_regel ctx (r : resolved_regel) =
                 end
                 else None
               in
+              (* beside an initialisation (ch. 5.4) the initialisation arm
+                 reads when this rule decides — the computed value wins — and
+                 when it fires without deciding, the leeg evaluation v0 turns
+                 into a divergence. The decision atom carries the val head's
+                 body, as the standing effectiveness atom does *)
+              let naast_init =
+                let inits, _, _ = init_writers ctx ~ot ~a in
+                inits <> []
+              in
               List.iter
                 (fun { vb_guard = bindings; vb_term = term; vb_scale = scale; _ } ->
                   let body = (base :: cond) @ bindings in
@@ -9344,14 +9400,115 @@ let translate_regel ctx (r : resolved_regel) =
                   head_body ctx
                     (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
                     (body @ fit_guards);
+                  if naast_init then
+                    head_body ctx
+                      (Printf.sprintf "comp_decides(%s,%s)" subject (str a))
+                      (body @ fit_guards);
                   match eff with Some e -> head_body ctx e (body @ fit_guards) | None -> ())
                 branches;
+              if naast_init then
+                head_body ctx (Printf.sprintf "comp_fires(%s,%s)" subject (str a)) (base :: cond);
               (match eff with
               | Some e ->
                   head_body ctx
                     (Printf.sprintf "val(%s,%s,V)" subject (str a))
                     [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base; "not " ^ e ]
               | None -> ())
+          | Some Initialisatie ->
+              (* RUNTIME-SEMANTICS ch. 5.4, natively: an initialisation
+                 reaches this arm only outside the ch. 7.7 desugaring domain
+                 (a conditional or a windowed one), where ref replays the v0
+                 form natively too. It writes where the target is empty and
+                 its condition holds. Emptiness is read off the INPUT world,
+                 inputfilled/2 beside the untouched val/3 input fact: the
+                 input then stands by this guard alone, and reading val/3
+                 here would make the head its own negative premise. On an
+                 only writer the input world is the whole question; beside
+                 one computing rule the computed value wins whichever fires
+                 first, so that rule's decision atom guards the head too (a
+                 case input on that target stays fenced by the computing
+                 arm). Where the rule fires and evaluates leeg, v0 erases
+                 what this writes and this writes it again, and ref faults on
+                 its pass budget (ch. 5.7): the same body derives a viol/2
+                 witness, so clingo refuses there as well instead of
+                 answering. Every other writer beside it is refused by name. *)
+              let inits, comps, other = init_writers ctx ~ot ~a in
+              (match inits with
+              | _ :: _ :: _ ->
+                  fault
+                    "%d initialisations write %S: the first to fire writes and the others find \
+                     the target filled, an order among writers that no guard on the fact base \
+                     reproduces (no corpus case)"
+                    (List.length inits) a
+              | _ -> ());
+              (match comps with
+              | _ :: _ :: _ ->
+                  fault
+                    "the initialisation of %S sits beside %d computing rules on its target: \
+                     their v0 meaning is the order in which they fire (no corpus case)"
+                    a (List.length comps)
+              | _ -> ());
+              if other then
+                fault
+                  "the initialisation of %S shares its target with a defaults group, an \
+                   allocation or an object creation: ch. 5.4 places an initialisation beside \
+                   ordinary rules only (no corpus case)"
+                  a;
+              if attr_temporal ctx ~otype:ot ~attr:a then
+                fault "temporal attribute %S as a target: temporal writes are not implemented" a;
+              (match Ir_v0.Checks.find_ci (objecttype ctx ot).attributen a with
+              | Some (Some (Numeriek _ | Percentage _ | Datum_in_dagen)) -> ()
+              | _ ->
+                  fault
+                    "the initialisation of %S writes a target that is neither a number nor a \
+                     date, and only those are translated here (no corpus case)"
+                    a);
+              let naast = comps <> [] in
+              (* a STANDING computing rule (ch. 7.8; beside this arm only
+                 when it is declared on another type of the chain) writes
+                 nothing on a leeg evaluation, so ref's initialisation then
+                 writes and nothing diverges *)
+              let divergent =
+                match comps with
+                | [ { doel = Some (Attribuut_ref { objecttype = Some cot; _ }); _ } ] ->
+                    not (List.mem (norm cot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc))
+                | _ -> false
+              in
+              emit ctx "#defined inputfilled/2.";
+              if naast then emit ctx "#defined comp_decides/2. #defined comp_fires/2.";
+              let guard =
+                Printf.sprintf "not inputfilled(%s,%s)" subject (str a)
+                :: (if naast then [ Printf.sprintf "not comp_decides(%s,%s)" subject (str a) ]
+                    else [])
+              in
+              let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
+              units_identical_ok
+                ~what:(Printf.sprintf "the write to %S" a)
+                (attr_unit ctx ~otype:ot ~attr:a)
+                (Option.bind r.waarde (eff_unit ctx));
+              (* ref evaluates the value only where it would write, so the
+                 fences its translation emits carry the write guard *)
+              ctx.rule_guard <- cond @ guard;
+              ctx.write_scale <- target_scale;
+              let branches = value_branches ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
+              ctx.rule_guard <- [];
+              ctx.write_scale <- 1;
+              List.iter
+                (fun { vb_guard = bindings; vb_term = term; vb_scale = scale; _ } ->
+                  let body = (base :: cond) @ guard @ bindings in
+                  let term, fit_guards = fitted ctx ~subject ~what:a ~body term scale target_scale in
+                  head_body ctx
+                    (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
+                    (body @ fit_guards);
+                  if divergent then
+                    head_body ctx
+                      (Printf.sprintf
+                         "viol(\"no fixpoint: a computing rule evaluating leeg erases what the \
+                          initialisation of %s writes, and the initialisation writes it again \
+                          (ch. 5.7)\",%s)"
+                         (norm a) subject)
+                      (body @ fit_guards @ [ Printf.sprintf "comp_fires(%s,%s)" subject (str a) ]))
+                branches
           | _ -> fault "rule kind not translated")
       | _ -> fault "unsupported rule target")
   end
@@ -10550,6 +10707,19 @@ let translate_case ctx (case : Case.t) =
            && match v.doel_attribuut with Some da -> norm da = norm aname | None -> false)
          doc.verdelingen
   in
+  (* the targets translate_regel's Initialisatie arm writes: their input
+     world's filledness is the guard that arm reads (inputfilled/2) *)
+  let init_target otype aname =
+    List.exists
+      (fun (r : resolved_regel) ->
+        r.rr_soort = Some Initialisatie
+        &&
+        match r.doel with
+        | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ->
+            norm a = norm aname && inherits otype ot
+        | _ -> false)
+      doc.resolved_regels
+  in
   Eval.SMap.iter
     (fun label (i : Uchar_ref.World.instance) ->
       emit ctx "is_a(%s,%s)." (str_raw label) (str i.otype);
@@ -10558,6 +10728,8 @@ let translate_case ctx (case : Case.t) =
       if has_recursive_creation doc then emit ctx "depth(%s,0)." (str_raw label);
       Eval.SMap.iter
         (fun aname v ->
+          if v <> Value.Empty && init_target i.otype aname then
+            emit ctx "inputfilled(%s,%s)." (str_raw label) (str aname);
           match v with
           | Value.Bool b ->
               (* a boolean attribute is a characteristic in v0 (booleans are

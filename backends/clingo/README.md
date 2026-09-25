@@ -240,6 +240,21 @@ spec bug.
   (scalar or temporal); it remains on multi-writer and versioned
   computing targets, and an allocation `doelAttribuut` supplied by the
   case is fenced the same way.
+- An initialisation outside the desugaring domain — a conditional one,
+  which ch. 7.7 excludes, or a windowed one — translates natively, as
+  ref replays it (RS ch. 5.4): its `val` head needs the condition and
+  `not inputfilled(S,a)`, a case fact beside the untouched input `val`,
+  so a supplied value stands. Beside one computing rule on the target,
+  declared on its type or on another type of its chain, the head also
+  needs `not comp_decides(S,a)`, which that rule derives with its own
+  val body: the computed value wins. Where the rule fires and evaluates
+  leeg (`comp_fires` without `comp_decides`), v0 erases what the
+  initialisation writes and the initialisation writes it again; ref
+  faults on its pass budget, and a `viol/2` witness makes clingo refuse
+  too, unless the rule is a ch. 7.8 standing one, which writes nothing on
+  leeg. Two initialisations or two computing rules on one target, a
+  defaults group, allocation or creation-time write beside it, and a
+  target that is no number or date are refused by name.
 - Constructs outside the corpus-exercised subset fault the translator —
   fail fast, never a silent SKIP.
 

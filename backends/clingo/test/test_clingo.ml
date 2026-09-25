@@ -8935,14 +8935,15 @@ let () =
 (* the initialisation outside the ch. 7.7 desugaring domain (RUNTIME-SEMANTICS
    ch. 5.4). A CONDITIONAL initialisation is outside it (ch. 7.7: its
    justification would need the input-emptiness guard conjoined), and so is a
-   windowed one; ref replays both natively, and until the initialisation arm of
-   translate_regel this backend answered every frame below with the wildcard's
-   `rule kind not translated`. The arm writes only where the target is empty
-   and the condition holds; a filled input stands. Beside one computing rule
-   the computed value wins whichever fires first. Where that rule's condition
-   holds and its value is leeg, v0 erases what the initialisation writes and
-   the initialisation writes it again: ref faults on its pass budget, and
-   clingo must refuse there too rather than answer. *)
+   windowed one; ref replays both natively. Before the initialisation arm of
+   translate_regel this backend refused them with the wildcard's `rule kind
+   not translated` — measured on the frames up to the chain ones: 13 of their
+   25 checks failed, each on that sentence. The arm writes only where the
+   target is empty and the condition holds; a filled input stands. Beside one
+   computing rule the computed value wins whichever fires first. Where that
+   rule's condition holds and its value is leeg, v0 erases what the
+   initialisation writes and the initialisation writes it again: ref faults on
+   its pass budget, and clingo must refuse there too rather than answer. *)
 let () =
   let vondst =
     pf_ot ~naam:"Vondst" ~meervoud:"Vondsten"
@@ -8950,19 +8951,20 @@ let () =
         ("soort", {|{ "node": "Text" }|}) ]
   in
   let va = pf_a ~ot:"Vondst" in
-  let init ?(doel = "bergloon") ?voorwaarde ?(validity = {|{ "node": "Validity" }|}) ~naam waarde =
+  let init ?(ot = "Vondst") ?(doel = "bergloon") ?voorwaarde ?(validity = {|{ "node": "Validity" }|})
+      ~naam waarde =
     ( naam,
       Printf.sprintf
         {|{ "node": "Rule", "name": "%s", "versions": [ { "initialisation": true,
-      "target": { "node": "AttributeReference", "attribute": "%s", "subjectType": "Vondst", "source": { "snippet": "Het %s van een Vondst" } },
+      "target": { "node": "AttributeReference", "attribute": "%s", "subjectType": "%s", "source": { "snippet": "Het %s van een %s" } },
       "value": %s,%s
       "validity": %s } ] }|}
-        naam doel doel waarde
+        naam doel ot doel ot waarde
         (match voorwaarde with None -> "" | Some c -> Printf.sprintf {| "condition": %s,|} c)
         validity )
   in
   let groter a w = pf_cmp "greater" (va a) (pf_l w) in
-  let doc ?(defaults = []) regels = pf_doc ~objecttypen:[ vondst ] ~regels ~defaults () in
+  let doc regels = pf_doc ~objecttypen:[ vondst ] ~regels () in
   let v1 ?(as_of = "null") attrs rows =
     pf_case ~as_of
       ~instances:
@@ -9040,6 +9042,54 @@ let () =
                 ws)
        | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d: no refusal)" c) false
        | _, _ -> check (label ^ " (clingo killed)") false));
+  (* a type chain (ch. 2.2): a writer declared on another type of the chain
+     writes the instances the two types share, so there it is the
+     initialisation's co-writer. Measured with the co-writers matched on the
+     declared type alone: W1 carried both values, [3000;2500]. The computing
+     rule is its declared target's only writer, so it stands (ch. 7.8): a
+     leeg evaluation writes nothing and the initialisation fills W2 *)
+  let wrakvondst =
+    pf_ot ~naam:"Wrakvondst" ~meervoud:"Wrakvondsten" []
+    |> vervang ~waar:{|"plural": "Wrakvondsten",|}
+         ~door:{|"plural": "Wrakvondsten", "supertype": "Vondst",|}
+  in
+  let keten regels = pf_doc ~objecttypen:[ vondst; wrakvondst ] ~regels () in
+  let inst label ot attrs =
+    Printf.sprintf
+      {|{ "label": "%s", "objectType": "%s", "attributes": { %s }, "roles": {}, "characteristics": [] }|}
+      label ot (String.concat ", " attrs)
+  in
+  let wrakken =
+    [ inst "W1" "Wrakvondst" [ num "gewicht" "12.00"; num "taxatie" "30.00" ];
+      inst "W2" "Wrakvondst" [ num "gewicht" "12.00" ];
+      inst "W3" "Wrakvondst" [ num "gewicht" "8.00" ] ]
+  and wrakrijen =
+    [ pf_is ~label:"W1" ~attr:"bergloon" "30.00"; pf_is ~label:"W2" ~attr:"bergloon" "25.00";
+      pf_leeg ~label:"W3" ~attr:"bergloon" () ]
+  in
+  both_answer ~name:"initialisation on the supertype beside a computation on the subtype"
+    ~ir:
+      (keten
+         [ standaard; pf_regel ~ot:"Wrakvondst" ~doel:"bergloon" (pf_a ~ot:"Wrakvondst" "taxatie") ])
+    ~case_text:
+      (pf_case
+         ~instances:(inst "V1" "Vondst" [ num "gewicht" "12.00" ] :: wrakken)
+         ((pf_is ~label:"V1" ~attr:"bergloon" "25.00" :: wrakrijen) @ [ pf_cons ]));
+  both_answer ~name:"computation on the supertype beside an initialisation on the subtype"
+    ~ir:
+      (keten
+         [ pf_regel ~ot:"Vondst" ~doel:"bergloon" (va "taxatie");
+           init ~ot:"Wrakvondst" ~naam:"standaardbergloon van een wrakvondst"
+             ~voorwaarde:(pf_cmp "greater" (pf_a ~ot:"Wrakvondst" "gewicht") (pf_l "10.00"))
+             (pf_l "25.00") ])
+    ~case_text:
+      (pf_case
+         ~instances:
+           (inst "V1" "Vondst" [ num "taxatie" "30.00" ] :: inst "V2" "Vondst" [ num "gewicht" "12.00" ]
+           :: wrakken)
+         ((pf_is ~label:"V1" ~attr:"bergloon" "30.00" :: pf_leeg ~label:"V2" ~attr:"bergloon" ()
+          :: wrakrijen)
+         @ [ pf_cons ]));
   (* case input on a computed target keeps its fence beside an initialisation *)
   faults_with ~name:"initialisation beside a computation, input supplied" ~ir:naast
     ~case_text:(v1 [ num "gewicht" "8.00"; num "bergloon" "40.00" ] [ is "40.00"; pf_cons ])
@@ -9064,18 +9114,26 @@ let () =
            standaard ])
     ~case_text:(v1 [ num "gewicht" "8.00" ] [ is "25.00"; pf_cons ])
     ~needle:"the initialisation of \"bergloon\" sits beside 2 computing rules";
-  faults_with ~name:"an initialisation beside a defaults group on its target"
+  (* a defaults group on the subtype folds the supertype's initialisation
+     into the subtype's stack (ch. 7.10) as a default without its condition:
+     measured on this verifier-clean shape, ref and the Drools exec-model
+     branch write 25,00 on a Wrakvondst whose gewicht (8,00) fails the
+     condition, where leeg is right. This arm refuses the shape instead *)
+  faults_with ~name:"an initialisation beside a defaults group on its chain"
     ~ir:
-      (doc
+      (pf_doc ~objecttypen:[ vondst; wrakvondst ]
          ~defaults:
            [ Printf.sprintf
-               {|{ "node": "PrioritizedDefaults", "name": "bergloon naar lengte", "subject": "Vondst",
+               {|{ "node": "PrioritizedDefaults", "name": "wrakbergloon", "subject": "Wrakvondst",
           "attribute": "bergloon", "defaults": [ { "node": "Default", "justification": %s,
           "consequence": %s, "source": { "snippet": "d" } } ], "source": { "snippet": "w" },
           "validity": { "node": "Validity" } }|}
-               (groter "lengte" "3.00") (pf_l "30.00") ]
-         [ standaard ])
-    ~case_text:(v1 [ num "gewicht" "12.00" ] [ is "25.00"; pf_cons ])
+               (pf_cmp "greater" (pf_a ~ot:"Wrakvondst" "gewicht") (pf_l "50.00"))
+               (pf_l "5.00") ]
+         ~regels:[ standaard ] ())
+    ~case_text:
+      (pf_case ~instances:[ inst "W1" "Wrakvondst" [ num "gewicht" "8.00" ] ]
+         [ pf_leeg ~label:"W1" ~attr:"bergloon" (); pf_cons ])
     ~needle:"the initialisation of \"bergloon\" shares its target with a defaults group";
   faults_with ~name:"a conditional initialisation of a text target"
     ~ir:
