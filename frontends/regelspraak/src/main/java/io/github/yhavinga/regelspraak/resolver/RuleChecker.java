@@ -2728,6 +2728,20 @@ final class RuleChecker {
         // (IR-SPEC ch. 3.3), where the type pair alone may relate the two twice or, self-typed, ambiguously
         RegelSpraakModel.RolBindingRef verbindendeRol =
                 model.benoemdeRolBinding(subject, nieuwType, stripArtikel(rolEnAttr[0]));
+        if (verbindendeRol == null && subject != null && subject == nieuwType) {
+            List<Feittype> blokkade = zelfgetypeerdeKoppelBlokkade(subject);
+            if (!blokkade.isEmpty())
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "objectcreatie '" + naam + "': een " + subject.naam
+                        + " maakt een " + subject.naam + ", en de zin noemt geen rol die het nieuwe object bindt; dan "
+                        + "komt de koppeling uit het typenpaar, en die afleiding koppelt bij een zelfgetypeerd paar "
+                        + "niets (RUNTIME-SEMANTICS ch. 5.5). Noem de rol: 'Een " + subject.naam + " heeft een <rol> met "
+                        + "…', met als <rol> " + blokkade.stream()
+                                .map(ft -> ft.rollen.stream().map(r -> "'" + r.naam() + "'")
+                                        .collect(java.util.stream.Collectors.joining(" of "))
+                                        + " (feittype '" + ft.naam + "')")
+                                .collect(java.util.stream.Collectors.joining(", ")),
+                        oc.getStart().getLine()));
+        }
 
         List<ResolvedObjectCreatie.Toekenning> toek = new ArrayList<>();
         if (rolEnAttr.length == 2 && !waarden.isEmpty())
@@ -2762,6 +2776,32 @@ final class RuleChecker {
 
         model.objectCreaties.add(new ResolvedObjectCreatie(naam, nieuwType, subject, toek, voorwaarde, geldigheid,
                 verbindendeRol));
+    }
+
+    /** RUNTIME-SEMANTICS ch. 5.5: without a written role, the back-link of a creation whose subject creates its own
+     *  type is derived from the type pair, and for that pair the derivation links over one reciprocal fact type and
+     *  over nothing else — a two-role fact type both of whose roles the type fills leaves it no choice between the
+     *  roles, and neither do two candidates; ref and the ASP backend then create the object without a link. Returns
+     *  the fact types that stop it, in declaration order, or an empty list where the derivation links or where no
+     *  fact type relates the type to itself (the linkless creation). */
+    private List<Feittype> zelfgetypeerdeKoppelBlokkade(Objecttype type) {
+        List<Feittype> kandidaten = new ArrayList<>();
+        boolean tweerollig = false;
+        for (Feittype ft : model.feittypen.values()) {
+            if (ft.wederkerig && ft.rollen.size() == 1 && vultRol(type, ft.rollen.get(0))) kandidaten.add(ft);
+            else if (!ft.wederkerig && ft.rollen.size() == 2 && vultRol(type, ft.rollen.get(0))
+                    && vultRol(type, ft.rollen.get(1))) {
+                kandidaten.add(ft);
+                tweerollig = true;
+            }
+        }
+        return tweerollig || kandidaten.size() > 1 ? kandidaten : List.of();
+    }
+
+    /** Whether {@code type} fills {@code rol}: the role's declared filler or one of its subtypes (IR-SPEC ch. 2.6). */
+    private boolean vultRol(Objecttype type, Rol rol) {
+        Objecttype filler = model.objecttypeOpNaam(rol.objecttypeNaam());
+        return filler != null && type.isEen(filler);
     }
 
     /** §13.4.6.2 one waardetoekenning of an objectcreatie: the §13.4.6.3 ATTRIBUUT form (generic expressie

@@ -5,6 +5,8 @@ import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
 import io.github.yhavinga.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -91,6 +93,75 @@ class CreatieRolTest {
                     Een Jutter heeft een bewaard insigne met graad gelijk aan zijn rang.
             """);
         assertTrue(c.contains(rol("bewaring", "bewaardinsigne")), () -> "de rol tussen twee feittypen:\n" + c);
+    }
+
+    /** A self-typed creation whose sentence names the TYPE leaves the back-link to the type pair, and over a
+     *  two-role fact type both of whose roles the type fills that derivation links nothing (RUNTIME-SEMANTICS
+     *  ch. 5.5): ref and clingo minted the object and linked it to nothing, without a word (measured on the
+     *  wachtersketen source with "een Wachter" for "een opvolger": opvolgerrang 0 where the anchor pins 2). The
+     *  resolver refuses the sentence and names the form that does link. */
+    @Test void een_zelfgetypeerde_creatie_die_het_type_noemt_wordt_geweigerd() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Wachter (mv: Wachters) (bezield)
+                de rang Numeriek (geheel getal);
+
+            Feittype opvolging
+                de voorganger Wachter
+                de opvolger (mv: opvolgers) Wachter
+            Eén voorganger heeft één opvolger
+
+            Regelgroep estafette is recursief
+            Regel werf een wachter
+                geldig altijd
+                    Een Wachter heeft een Wachter met rang gelijk aan de rang van de Wachter plus 1
+                    indien de rang van de Wachter kleiner is dan 5.
+            """);
+        assertEquals(List.of("ERROR 12 objectcreatie 'werf een wachter': een Wachter maakt een Wachter, en de zin "
+                        + "noemt geen rol die het nieuwe object bindt; dan komt de koppeling uit het typenpaar, en die "
+                        + "afleiding koppelt bij een zelfgetypeerd paar niets (RUNTIME-SEMANTICS ch. 5.5). Noem de rol: "
+                        + "'Een Wachter heeft een <rol> met …', met als <rol> 'voorganger' of 'opvolger' (feittype "
+                        + "'opvolging')"),
+                m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList());
+    }
+
+    @Test void een_zelfgetypeerde_creatie_zonder_relatie_blijft_koppelloos() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Wachter (mv: Wachters) (bezield)
+                de rang Numeriek (geheel getal);
+
+            Objecttype de Post (mv: Posten)
+                de nummer Numeriek (geheel getal);
+
+            Feittype bezetting
+                de bezetter Wachter
+                de bezette post Post
+            Eén bezetter bezet één bezette post
+
+            Regel werf een wachter
+                geldig altijd
+                    Een Wachter heeft een Wachter met rang gelijk aan 1
+                    indien de rang van de Wachter kleiner is dan 1.
+            """);
+        assertTrue(m.errors().isEmpty(), () -> "geen feittype verbindt Wachter met Wachter, dus er is niets te "
+                + "koppelen en niets te weigeren: " + m.errors());
+    }
+
+    @Test void een_zelfgetypeerde_creatie_over_een_wederkerig_feittype_koppelt_zonder_rolnaam() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de rang Numeriek (geheel getal);
+
+            Wederkerig feittype strandmaatschap
+                de strandmaat (mv: strandmaten) Jutter
+            Eén strandmaat heeft één strandmaat
+
+            Regel werf een maat
+                geldig altijd
+                    Een Jutter heeft een Jutter met rang gelijk aan 1
+                    indien de rang van de Jutter kleiner is dan 1.
+            """);
+        assertTrue(m.errors().isEmpty(), () -> "over één wederkerig feittype leidt het typenpaar de koppeling af: "
+                + m.errors());
     }
 
     @Test void een_zin_die_het_type_noemt_schrijft_geen_rol() {
