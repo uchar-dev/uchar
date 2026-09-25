@@ -122,6 +122,20 @@ class TyperingZinTest {
         assertEquals(List.of(), meldingen(v.formatted("korting", "-5")));
     }
 
+    /** WF-035: a sub-day unit shifts a date by part of a day, which a day-precision date cannot hold. Measured on the
+     *  frontend before this: no diagnostic, the document written, and {@code WF-035 FAIL …/value: sub-day time unit
+     *  on a day-precision date (millisecond precision required)}. */
+    @Test void subdag_eenheid_op_een_dagdatum() {
+        String d = "De dag van een Jutter moet berekend worden als ";
+        assertEquals(fout("plus: sub-day time unit on a day-precision date (millisecond precision required)"),
+                meldingen(d + "zijn vondstdag plus 3 uur."));
+        assertEquals(fout("min: sub-day time unit on a day-precision date (millisecond precision required)"),
+                meldingen(d + "zijn vondstdag min 90 minuten."));
+        assertEquals(List.of(), meldingen(d + "zijn vondstdag plus 3 dagen."));
+        assertEquals(List.of(), meldingen("Een Jutter is waardevol indien zijn vondstmoment plus 3 uur later is dan "
+                + "zijn vondstmoment."));
+    }
+
     @Test void datumprecisie() {
         assertEquals(fout("voorwaarde: gelijk: equality across date precisions"),
                 meldingen("Een Jutter is waardevol indien zijn vondstdag gelijk is aan zijn vondstmoment."));

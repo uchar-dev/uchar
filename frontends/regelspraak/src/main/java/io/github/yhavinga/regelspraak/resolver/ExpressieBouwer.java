@@ -606,6 +606,12 @@ final class ExpressieBouwer {
                     tellingBronFout(argumenten, f), f.getStart().getLine()));
         meldAggregatie(kind, argumenten, f);
         Datatype type = f instanceof TijdsduurFuncContext t ? tijdsduurType(t) : functieType(kind, argumenten);
+        if (f instanceof TijdsduurFuncContext) {
+            String eenheidFout = tijdsduurEenheidFout(type.eenheidOf(), argumenten);
+            if (eenheidFout != null)
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                        "de (absolute) tijdsduur van … tot …: " + eenheidFout, f.getStart().getLine()));
+        }
         Expr leegwaarde = leegwaardeVan(f);
         // §4.10/§5.8.2: the fallback substitutes for the sum's RESULT, so it must be numeriek
         // (a Tekst/Datum fallback would otherwise emit a type-mixed DRL ternary that throws at
@@ -1990,6 +1996,20 @@ final class ExpressieBouwer {
                         + "precision)";
         }
         return null;
+    }
+
+    /** WF-038 on the counted unit of a duration, the unit of its node type: a recognised time unit or a declared day
+     *  kind (the calendar table first, as {@link Tijdrekening#dagsoortVoorEenheid} reads it), and a sub-day unit only
+     *  between millisecond-precision dates. The verifier's sentence where it refuses the unit, else null. */
+    private String tijdsduurEenheidFout(Eenheid e, List<Expr> argumenten) {
+        if (e == null) return "duration without a recognised time unit on its node type";
+        String eenheid = Tijdrekening.chronoUnit(e);
+        if (eenheid == null)
+            return Tijdrekening.dagsoortVoorEenheid(model, e) != null ? null
+                    : "duration: the counted unit '" + e.afkorting()
+                            + "' is neither a recognised time unit nor a declared day kind";
+        return Typering.subdagEenheid(eenheid) && argumenten.stream().anyMatch(a -> a.type() instanceof Datatype.DatumInDagen)
+                ? "sub-day duration unit on day-precision operands (millisecond precision required)" : null;
     }
 
     /** The §5.8.2 "of … als die er niet zijn" fallback expression of a sommatie, or null.

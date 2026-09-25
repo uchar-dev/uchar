@@ -137,6 +137,23 @@ class VouwOperandZinTest {
                 + "vondstdag tot zijn hulp in hele dagen."));
     }
 
+    /** WF-038 on the counted unit of a duration, the unit of its node type: a recognised time unit or a declared day
+     *  kind, and a sub-day unit only between millisecond-precision dates. Measured on the frontend before this: no
+     *  diagnostic, the document written, and {@code WF-038 FAIL …: duration: the counted unit 'kopjes' is neither a
+     *  recognised time unit nor a declared day kind} and {@code … sub-day duration unit on day-precision operands
+     *  (millisecond precision required)}. */
+    @Test void de_eenheid_van_een_tijdsduur() {
+        String w = "Een Jutter is waardevol indien de tijdsduur van %s in hele %s groter is dan 5.";
+        assertEquals(fout("de (absolute) tijdsduur van … tot …: duration: the counted unit 'kopjes' is neither a "
+                        + "recognised time unit nor a declared day kind"),
+                meldingen(w.formatted("zijn vondstdag tot zijn dag", "kopjes")));
+        assertEquals(fout("de (absolute) tijdsduur van … tot …: sub-day duration unit on day-precision operands "
+                        + "(millisecond precision required)"),
+                meldingen(w.formatted("zijn vondstdag tot zijn dag", "uren")));
+        assertEquals(List.of(), meldingen(w.formatted("zijn vondstdag tot zijn dag", "dagen")));
+        assertEquals(List.of(), meldingen(w.formatted("zijn vondstmoment tot zijn vondstmoment", "uren")));
+    }
+
     @Test void wat_de_verifier_toelaat_houdt_de_eigen_zin() {
         String u = "De uitkomst van een Jutter moet berekend worden als ";
         assertEquals(fout("maximale waarde van vereist numerieke operanden, kreeg Percentage"),

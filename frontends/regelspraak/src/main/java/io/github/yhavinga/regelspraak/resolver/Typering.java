@@ -55,11 +55,15 @@ public final class Typering {
             // tijdsWAARDE -> datum (Tabel 2/5 scenario 2): the right operand must carry a TIJDseenheid
             // (or a §6.11 dagsoort) — "datum plus 5 km" is a typing ERROR, not a valid date shift (the
             // kern's chronoUnit is the one time-unit classifier, so the resolver rejects exactly what the
-            // back-ends cannot execute). The result stays the LEFT type; the §4.1 "datum + sub-day unit ->
-            // Datum-tijd" precision nuance is deliberately not modeled here (carded separately if it bites).
+            // back-ends cannot execute). The result stays the LEFT type. A sub-day unit on a day-precision date is
+            // refused, as the verifier refuses it (WF-035): such a date has no time of day to shift; §4.1's
+            // "datum + sub-day unit -> Datum-tijd" reading has no wire form.
             case PLUS, MIN -> {
                 String opNaam = op == BinOp.PLUS ? "plus" : "min";
                 if (l.isDatum() && r instanceof Datatype.Numeriek rn && rn.heeftEenheid()) {
+                    if (l instanceof Datatype.DatumInDagen && subdagEenheid(Tijdrekening.chronoUnit(r)))
+                        yield Resultaat.fout(opNaam + ": sub-day time unit on a day-precision date (millisecond "
+                                + "precision required)");
                     if (dagsoortEenheidRechts || Tijdrekening.chronoUnit(r) != null) yield Resultaat.ok(l);
                     yield Resultaat.fout(opNaam + ": " + onbekendeDuureenheid(rn.eenheidOf().afkorting()));
                 }
@@ -481,6 +485,11 @@ public final class Typering {
         Eenheid e = r.eenheidOf();
         if (e == null) return "date \u00b1 duration: the duration operand carries no time unit";
         return onbekendeDuureenheid(e.afkorting());
+    }
+
+    /** Whether a {@link Tijdrekening#chronoUnit} is shorter than a day (the verifier's {@code time_unit_sub_day}). */
+    static boolean subdagEenheid(String chronoUnit) {
+        return chronoUnit != null && java.util.Set.of("HOURS", "MINUTES", "SECONDS", "MILLIS").contains(chronoUnit);
     }
 
     /** WF-035's sentence for a duration unit that is neither a recognised time unit nor a declared day kind. */
