@@ -107,7 +107,7 @@ public final class Typering {
                 if (!l.isNumeriek() || !r.isNumeriek())
                     yield Resultaat.fout("tot de macht vereist numerieke operanden, kreeg " + l.naam() + " en " + r.naam());
                 if (l.eenheidOf() != null || r.eenheidOf() != null)
-                    yield Resultaat.fout("tot de macht is alleen toegestaan op operanden zonder eenheid");
+                    yield Resultaat.fout("tot de macht: power operands must be unitless");   // the verifier's WF-035
                 yield Resultaat.ok(new Datatype.Numeriek(false, maxDec(l, r), Datatype.Teken.ONBEPAALD, null));
             }
         };
