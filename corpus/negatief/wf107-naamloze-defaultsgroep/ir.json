@@ -68,9 +68,6 @@
                 "snippet": "hij nx heeft"
               }
             },
-            "source": {
-              "snippet": "nx: vrijgesteld, tenzij een uitzondering geldt"
-            },
             "exceptions": {
               "unordered": true,
               "members": [
@@ -121,6 +118,9 @@
                   }
                 }
               ]
+            },
+            "source": {
+              "snippet": "nx: vrijgesteld, tenzij een uitzondering geldt"
             }
           }
         ],

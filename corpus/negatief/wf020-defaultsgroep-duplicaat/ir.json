@@ -87,7 +87,6 @@
         "name": "uitkering bij betwisting",
         "subject": "Strandrecht",
         "attribute": "uitkering",
-        "unordered": true,
         "defaults": [
           {
             "node": "Default",
@@ -119,6 +118,7 @@
             }
           }
         ],
+        "unordered": true,
         "source": {
           "snippet": "99,00 indien het Strandrecht betwist is"
         },
@@ -131,7 +131,6 @@
         "name": "uitkering bij betwisting",
         "subject": "Strandrecht",
         "attribute": "uitkering",
-        "unordered": true,
         "defaults": [
           {
             "node": "Default",
@@ -163,6 +162,7 @@
             }
           }
         ],
+        "unordered": true,
         "source": {
           "snippet": "44,00 indien het Strandrecht geborgen is"
         },

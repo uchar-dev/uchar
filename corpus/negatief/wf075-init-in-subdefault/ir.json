@@ -78,9 +78,6 @@
                 "snippet": "40.00"
               }
             },
-            "source": {
-              "snippet": "grondX: 40.00, met excepties"
-            },
             "exceptions": {
               "unordered": true,
               "members": [
@@ -115,6 +112,9 @@
                   }
                 }
               ]
+            },
+            "source": {
+              "snippet": "grondX: 40.00, met excepties"
             }
           }
         ],

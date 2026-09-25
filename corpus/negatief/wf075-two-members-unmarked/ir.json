@@ -60,9 +60,6 @@
         "defaults": [
           {
             "node": "Default",
-            "source": {
-              "snippet": "groep-default met twee ongemarkeerde leden"
-            },
             "exceptions": {
               "unordered": false,
               "members": [
@@ -141,6 +138,9 @@
                   }
                 }
               ]
+            },
+            "source": {
+              "snippet": "groep-default met twee ongemarkeerde leden"
             }
           }
         ],

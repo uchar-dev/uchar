@@ -229,6 +229,7 @@
                     {
                       "node": "QuantifierFold",
                       "quantifier": "atLeast",
+                      "threshold": 1,
                       "elementType": "Wachter",
                       "test": {
                         "node": "Comparison",
@@ -263,7 +264,6 @@
                       "source": {
                         "snippet": "ten minste 1 opvolger van de Wachter heeft een rang groter dan 0"
                       },
-                      "threshold": 1,
                       "sourceRole": {
                         "node": "RoleBinding",
                         "factType": "opvolging",

@@ -55,9 +55,6 @@
         "defaults": [
           {
             "node": "Default",
-            "source": {
-              "snippet": "groep-default"
-            },
             "exceptions": {
               "unordered": true,
               "members": [
@@ -108,6 +105,9 @@
                   }
                 }
               ]
+            },
+            "source": {
+              "snippet": "groep-default"
             }
           }
         ],

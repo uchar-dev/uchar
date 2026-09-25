@@ -68,9 +68,6 @@
                 "snippet": "stray justification on a group default"
               }
             },
-            "source": {
-              "snippet": "groep-default met een verdwaalde voorwaarde"
-            },
             "exceptions": {
               "unordered": false,
               "members": [
@@ -112,6 +109,9 @@
                   }
                 }
               ]
+            },
+            "source": {
+              "snippet": "groep-default met een verdwaalde voorwaarde"
             }
           }
         ],

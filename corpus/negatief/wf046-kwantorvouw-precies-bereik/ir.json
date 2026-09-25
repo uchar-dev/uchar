@@ -234,6 +234,7 @@
                 {
                   "node": "QuantifierFold",
                   "quantifier": "exactly",
+                  "threshold": 1,
                   "elementType": "Wachter",
                   "test": {
                     "node": "Comparison",
@@ -268,7 +269,6 @@
                   "source": {
                     "snippet": "precies 1 opvolger van de Wachter heeft een kleur ongelijk aan 7"
                   },
-                  "threshold": 1,
                   "sourceRole": {
                     "node": "RoleBinding",
                     "factType": "opvolging",

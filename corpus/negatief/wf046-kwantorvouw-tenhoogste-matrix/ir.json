@@ -224,6 +224,7 @@
                 {
                   "node": "QuantifierFold",
                   "quantifier": "atMost",
+                  "threshold": 1,
                   "elementType": "Wachter",
                   "test": {
                     "node": "Comparison",
@@ -258,7 +259,6 @@
                   "source": {
                     "snippet": "ten hoogste 1 ploeglid van de Wachter heeft een merk groter dan 0"
                   },
-                  "threshold": 1,
                   "sourceRole": {
                     "node": "RoleBinding",
                     "factType": "ploeg",

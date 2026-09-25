@@ -103,9 +103,6 @@
                 "snippet": "40.00"
               }
             },
-            "source": {
-              "snippet": "grondX: 40.00, tenzij een uitzonderingsgrond geldt"
-            },
             "exceptions": {
               "unordered": true,
               "members": [
@@ -221,13 +218,13 @@
                   }
                 }
               ]
+            },
+            "source": {
+              "snippet": "grondX: 40.00, tenzij een uitzonderingsgrond geldt"
             }
           },
           {
             "node": "Default",
-            "source": {
-              "snippet": "basisgrond: B1 of B2"
-            },
             "exceptions": {
               "unordered": true,
               "members": [
@@ -306,6 +303,9 @@
                   }
                 }
               ]
+            },
+            "source": {
+              "snippet": "basisgrond: B1 of B2"
             }
           }
         ],

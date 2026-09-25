@@ -83,9 +83,6 @@
                   "sign": "unspecified"
                 },
                 "binder": "f",
-                "source": {
-                  "snippet": "f is de factor"
-                },
                 "value": {
                   "node": "ParameterReference",
                   "parameter": "factor",
@@ -130,9 +127,6 @@
                         }
                       }
                     ],
-                    "source": {
-                      "snippet": "de vouwstap"
-                    },
                     "body": {
                       "node": "Binary",
                       "op": "plus",
@@ -179,6 +173,9 @@
                       "source": {
                         "snippet": "de opgetelde waarde plus het bedrag maal de factor"
                       }
+                    },
+                    "source": {
+                      "snippet": "de vouwstap"
                     }
                   },
                   "init": {
@@ -199,6 +196,9 @@
                   "source": {
                     "snippet": "de gevouwen som"
                   }
+                },
+                "source": {
+                  "snippet": "f is de factor"
                 }
               }
             },

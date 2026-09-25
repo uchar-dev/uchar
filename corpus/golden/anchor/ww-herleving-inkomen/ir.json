@@ -331,9 +331,6 @@
                 "snippet": "hij werkloos is"
               }
             },
-            "source": {
-              "snippet": "art. 15: de werknemer die werkloos is heeft recht op uitkering"
-            },
             "exceptions": {
               "unordered": false,
               "members": [
@@ -383,9 +380,6 @@
                         "source": {
                           "snippet": "hij werkloos is en zijn maandinkomen groter is dan zijn inkomensgrens"
                         }
-                      },
-                      "source": {
-                        "snippet": "art. 20 lid 1 onderdeel c: het recht eindigt bij inkomen boven de grens"
                       },
                       "exceptions": {
                         "unordered": false,
@@ -444,9 +438,6 @@
                                   "source": {
                                     "snippet": "hij werkloos is, zijn maandinkomen groter is dan zijn inkomensgrens en de omstandigheid die tot het eindigen heeft geleid is vervallen"
                                   }
-                                },
-                                "source": {
-                                  "snippet": "art. 21 lid 1: het recht herleeft als de omstandigheid is vervallen"
                                 },
                                 "exceptions": {
                                   "unordered": false,
@@ -547,6 +538,9 @@
                                       }
                                     }
                                   ]
+                                },
+                                "source": {
+                                  "snippet": "art. 21 lid 1: het recht herleeft als de omstandigheid is vervallen"
                                 }
                               }
                             ],
@@ -555,6 +549,9 @@
                             }
                           }
                         ]
+                      },
+                      "source": {
+                        "snippet": "art. 20 lid 1 onderdeel c: het recht eindigt bij inkomen boven de grens"
                       }
                     }
                   ],
@@ -563,6 +560,9 @@
                   }
                 }
               ]
+            },
+            "source": {
+              "snippet": "art. 15: de werknemer die werkloos is heeft recht op uitkering"
             }
           }
         ],

@@ -63,6 +63,12 @@
             },
             "value": {
               "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
               "binder": "aantal_posten",
               "value": {
                 "node": "ListLength",
@@ -151,12 +157,6 @@
                 "source": {
                   "snippet": "e"
                 }
-              },
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "unspecified"
               },
               "source": {
                 "snippet": "de heffing over de posten"

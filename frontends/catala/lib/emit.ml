@@ -521,8 +521,9 @@ let rec default (d : default) : json =
        @ optional "decision" b d.default_besluit
        @ optional "justification" conditie d.default_voorwaarde
        @ optional "consequence" expr d.default_consequentie
-       @ init @ [ source d.default_bron ]
-       @ optional "exceptions" exception_groups d.default_excepties))
+       @ init
+       @ optional "exceptions" exception_groups d.default_excepties
+       @ [ source d.default_bron ]))
 
 (* the nested exception group riding [exceptions] (v1, Phase 5c): the
    {unordered, members} object (no node discriminator) and its

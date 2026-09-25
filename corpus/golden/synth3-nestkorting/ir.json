@@ -124,9 +124,6 @@
                 "snippet": "de grondslag plus 90.00"
               }
             },
-            "source": {
-              "snippet": "rechtA: de grondslag plus 90.00, tenzij een uitzonderingsgrond geldt"
-            },
             "exceptions": {
               "unordered": true,
               "members": [
@@ -333,6 +330,9 @@
                   }
                 }
               ]
+            },
+            "source": {
+              "snippet": "rechtA: de grondslag plus 90.00, tenzij een uitzonderingsgrond geldt"
             }
           },
           {

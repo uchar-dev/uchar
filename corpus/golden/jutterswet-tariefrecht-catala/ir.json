@@ -315,9 +315,6 @@
                 "snippet": "0.1500"
               }
             },
-            "source": {
-              "snippet": "tarief"
-            },
             "exceptions": {
               "unordered": true,
               "members": [
@@ -434,6 +431,9 @@
                   }
                 }
               ]
+            },
+            "source": {
+              "snippet": "tarief"
             }
           },
           {

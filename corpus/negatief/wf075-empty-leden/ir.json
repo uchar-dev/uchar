@@ -55,12 +55,12 @@
         "defaults": [
           {
             "node": "Default",
-            "source": {
-              "snippet": "groep-default met lege excepties"
-            },
             "exceptions": {
               "unordered": true,
               "members": []
+            },
+            "source": {
+              "snippet": "groep-default met lege excepties"
             }
           }
         ],

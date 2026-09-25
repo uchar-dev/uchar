@@ -211,9 +211,6 @@
                 "snippet": "Wad"
               }
             },
-            "source": {
-              "snippet": "anders: Noord"
-            },
             "initialisation": true,
             "exceptions": {
               "unordered": true,
@@ -259,6 +256,9 @@
                   }
                 }
               ]
+            },
+            "source": {
+              "snippet": "anders: Noord"
             }
           }
         ],

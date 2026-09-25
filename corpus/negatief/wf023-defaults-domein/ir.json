@@ -205,10 +205,10 @@
                 "snippet": "Noord"
               }
             },
+            "initialisation": true,
             "source": {
               "snippet": "anders: Noord"
-            },
-            "initialisation": true
+            }
           }
         ],
         "source": {

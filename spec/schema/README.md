@@ -113,15 +113,13 @@ node L4 rewrites); measured again on the L5 shape, the same 20 objects deviate,
 the quantifier fold now under its name `QuantifierFold`. On 2026-09-25
 `PrioritizedDefaults` took `unordered` after `defaults`, the order of both
 emitters that write the key (the RegelSpraak frontend, pinned by gate 10 on
-`jutterswet-wachtgeld`, and the Catala plugin); measured that day, 14 of the
-11740 node objects and version records deviate: the ten `Default` objects that
-write `exceptions` after `source` (five hand-written documents and the Catala
-golden `jutterswet-tariefrecht-catala` — the Catala plugin writes that order,
-the RegelSpraak frontend the schema's), the two hand-written
-`PrioritizedDefaults` of `jutterswet-wrakconflict` that write `unordered`
-before `defaults`, the `QuantifierFold` and the `Let`; no version record. Gate
-2 does not check key order: its round-trip preserves the order of the document
-it reads.
+`jutterswet-wachtgeld`, and the Catala plugin); the Catala plugin took this
+order for a `Default`'s `exceptions` (before `source`, where the RegelSpraak
+frontend writes it); and the hand-written objects that still deviated were put
+in this order. Measured that day, none of the 12091 node objects and version
+records of `corpus/golden` and `corpus/rood` deviates, nor any of the 11592 of
+`corpus/negatief`. Gate 2 does not check key order: its round-trip preserves
+the order of the document it reads.
 Beyond key order: two-space indentation, empty containers inline, numbers in
 plain (non-exponential) form, non-ASCII and control characters escaped as
 `\uXXXX`. This makes a document byte-stable for a given input.

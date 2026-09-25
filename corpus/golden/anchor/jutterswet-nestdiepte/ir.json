@@ -98,9 +98,6 @@
                 "snippet": "40.00"
               }
             },
-            "source": {
-              "snippet": "grondX: 40.00, tenzij een geneste uitzonderingsgrond geldt"
-            },
             "exceptions": {
               "unordered": true,
               "members": [
@@ -168,9 +165,6 @@
                         "source": {
                           "snippet": "30.00"
                         }
-                      },
-                      "source": {
-                        "snippet": "grondP: 30.00, tenzij een diepere grond geldt"
                       },
                       "exceptions": {
                         "unordered": true,
@@ -250,6 +244,9 @@
                             }
                           }
                         ]
+                      },
+                      "source": {
+                        "snippet": "grondP: 30.00, tenzij een diepere grond geldt"
                       }
                     }
                   ],
@@ -258,6 +255,9 @@
                   }
                 }
               ]
+            },
+            "source": {
+              "snippet": "grondX: 40.00, tenzij een geneste uitzonderingsgrond geldt"
             }
           }
         ],
