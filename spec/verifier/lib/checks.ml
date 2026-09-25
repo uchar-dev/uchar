@@ -2695,12 +2695,77 @@ let composite_expectation ctx ~binders (e : expr) :
           | _ -> None))
   | _ -> None
 
+(* WF-091, the numeric-operand arm (IR-SPEC ch. 4.1). A sum and a total
+   add their operands and the pro-rata part scales its base by true days
+   over bucket days (RUNTIME-SEMANTICS ch. 3.5-3.7): all three are
+   arithmetic, so each is typed over a Number alone. Over any other
+   declaration there is no derived type — and the pass-through derivation
+   of the two folds above agreed with a Date annotation over a Date
+   operand, so such a document was verifier-clean while `ref` faulted on
+   the arithmetic (`maal`, `plus`, "pro-rata base is not numeric") and,
+   before the card temporele-datumvouw, the ASP backend answered the day
+   number. Every reading of the two folds shares the arm — the subject's
+   own temporal total and its gedurende clip, the §7.1 per-element fold,
+   the set fold over a plain attribute, the listed sum — because the
+   arithmetic is the same in each. A list is read through its element, the
+   value a list fold adds. An operand whose type nothing declares defers,
+   as everywhere in this rule. Where the arm reports, the identity cross
+   below does not run: there is no derived type to compare with. *)
+let wire_type_name = function
+  | Numeriek _ | Percentage _ -> "Number"
+  | Datum_in_dagen | Datum_tijd -> "Date"
+  | Tekst -> "Text"
+  | Booleaan -> "Boolean"
+  | Enumeratie _ -> "Enumeration"
+  | Sum_type _ -> "SumType"
+  | List_type _ -> "ListType"
+  | Struct_type _ -> "StructType"
+
+let rec list_element = function List_type { element } -> list_element element | d -> d
+
+let numeric_operand_arm ctx ~binders at (e : expr) =
+  let refuse ~head ~verb i a =
+    match Option.map list_element (expr_type ctx ~binders a) with
+    | Some d when not (is_number_like d) ->
+        let operand =
+          match a with
+          | Attribuut_ref { attribuut = Some n; objecttype = Some ot; _ } ->
+              Printf.sprintf "'%s' on '%s'" n ot
+          | Parameter_ref { parameter = Some p; _ } -> Printf.sprintf "the parameter '%s'" p
+          | _ -> Printf.sprintf "its operand %d" i
+        in
+        let t = wire_type_name d in
+        let why =
+          match d with
+          | Datum_in_dagen | Datum_tijd -> "Date values are calendar positions"
+          | _ -> t ^ " values are not amounts"
+        in
+        [ v "WF-091"
+            (Printf.sprintf "%s/arguments/%d" at i)
+            (Printf.sprintf
+               "%s of %s %s %s values: a total, sum or pro-rata part is arithmetic over a \
+                Number, and %s"
+               head operand verb t why) ]
+    | _ -> []
+  in
+  match e with
+  | Functie { kind = (Som | Totaal) as k; argumenten; _ } ->
+      let head = "the " ^ Spelling.encode Spelling.aggregation_kind k in
+      List.concat (List.mapi (refuse ~head ~verb:"folds") argumenten)
+  | Functie { kind = Tijdsevenredig_deel as k; argumenten = base :: _; _ } ->
+      let head = "the pro-rata part (" ^ Spelling.encode Spelling.builtin_kind k ^ ")" in
+      refuse ~head ~verb:"scales" 0 base
+  | _ -> []
+
 let composite_identity ctx ~binders at (e : expr) =
-  match composite_expectation ctx ~binders e with
-  | None -> []
-  | Some (what, source, derived, skip) ->
-      use_site_identity ~source ~skip (at ^ "/type") ~what ~decl:(Some derived)
-        ~typ:(annotation e)
+  match numeric_operand_arm ctx ~binders at e with
+  | _ :: _ as vs -> vs
+  | [] -> (
+      match composite_expectation ctx ~binders e with
+      | None -> []
+      | Some (what, source, derived, skip) ->
+          use_site_identity ~source ~skip (at ^ "/type") ~what ~decl:(Some derived)
+            ~typ:(annotation e))
 
 (* WF-030 over a uniqueness version's sources (IR-SPEC ch. 3.6). Since L4
    one construct carries both shapes (delta B27): one source is the
