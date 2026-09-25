@@ -1467,6 +1467,8 @@ period-coalescing rule. Further clauses:
   equal segments — equal-leeg included — coalesce.
 - Each contributor is restated to the target's unit **before** the fold
   (exact factors, ch. 2.6).
+- The operand is a Number — WF-091 (`IR-SPEC.md` ch. 4.1): a contributor
+  declared as any other type makes the document ill-formed.
 
 Worked examples (absolute; the staggered-contributor set): contributor
 p1 = {jan: 50, feb: 60}, p2 = {feb: 10, mrt: 10}, per month:
@@ -1522,7 +1524,8 @@ inherited from WF-055, and the verifier bounds it by rejecting the
 document either way. A fully clipped-away — or
 absent — value timeline totals 0, never leeg: the clip's presence
 turns absence into 0 (the mirrored v0 nuance; the unfiltered total of
-an absent timeline stays leeg). Worked example (the
+an absent timeline stays leeg). The operand is a Number — WF-091
+(`IR-SPEC.md` ch. 4.1) — so this 0 always lands in a numeric slot. Worked example (the
 `jutterswet-getijdenwacht` emitter golden, verbatim in gates 5–6):
 10/month through 2023 and 11/month January–June 2024, clipped to
 [2023-07-01, 2024-02-01) → 6×10 + 1×11 = 71; the comparison clip
@@ -1737,7 +1740,7 @@ deel on bucket B = read(base, start(B)) × trueDays(B) / days(B)
   guaranteed by requiring the base's granularity coarser-or-equal to the
   target's. A base that is **leeg at the bucket start emits no segment**
   for that bucket (a gap, not a 0); a bucket with `trueDays` = 0 emits
-  nothing.
+  nothing. The base is a Number — WF-091 (`IR-SPEC.md` ch. 4.1).
 - A rate-unit base is restated **first**, by its exact factor
   (`€/jr` base for a per-month target: ÷ 12 exactly), then prorated.
   *Delta (tracked, `CONSTRUCTS.md` row on the date builtins):* the rate
