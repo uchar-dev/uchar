@@ -19,6 +19,9 @@
 #      rule — so neither the line prefix nor a message of another rule can
 #      satisfy it; an empty or blank expect.txt, or one of more than one
 #      line, fails.
+#   4. every JSON pointer a negatief report cites resolves in that case's
+#      document (RFC 6901): a report that sends its reader to a position
+#      the document does not have is refused, whatever its rule and arm.
 #
 # With explicit file arguments it runs the verifier against those files and
 # prints the reports (handy for a dump outside the repo).
@@ -41,6 +44,7 @@ if ! command -v dune >/dev/null 2>&1; then
     echo 'FAIL: need dune (OCaml). Install via opam: opam install dune yojson' >&2
     exit 2
 fi
+command -v python3 >/dev/null 2>&1 || { echo 'FAIL: need python3 (the pointer check)' >&2; exit 2; }
 
 # check 1: build.
 if ! dune build --root "$VERIFIER_DIR" 2>&1; then
@@ -90,11 +94,15 @@ EXPECTED_MIN_NEGATIEF=350   # 2026-09-10: measured 350 (corpus/negatief/**/ir.js
 # key resolution, WF-037's bucketing builtin without a granularity) — and three more WF-037 arms the
 # fix round found without one (the two builtin arities, a value fold with fewer than two operands).
 EXPECTED_MIN_EXPECT=260     # 2026-09-25: measured 260 (corpus/negatief/*/expect.txt); raised at L5 by the witness of the v0 context-value spelling and by the 31 witnesses of the L5 stamp list that pin their arm
+# The cited pointers (check 4) are floored in the same regime: a parse that stopped finding the
+# pointer in a report line would check nothing and pass.
+EXPECTED_MIN_POINTERS=547   # 2026-09-25: measured 547 pointers over the 446 negatief reports, all resolving
 
 # check 2: golden dumps — and the red corpus's documents, whose faults
 # are behavioural, never well-formedness — are verifier-clean.
 list=$(mktemp) || exit 2
-trap 'rm -f "$list"' EXIT
+ptrs=$(mktemp) || exit 2
+trap 'rm -f "$list" "$ptrs"' EXIT
 
 n_golden=0
 find corpus/golden corpus/rood -name ir.json 2>/dev/null | sort > "$list"
@@ -133,6 +141,9 @@ while IFS= read -r f; do
     else
         rejected=1
     fi
+    # check 4's input: every pointer this report cites, beside the document it must resolve in
+    printf '%s\n' "$out" | awk -v f="$f" 'match($0, /^WF-[0-9]+ FAIL [^ ]*: /) {
+        p = substr($0, 1, RLENGTH - 2); sub(/^WF-[0-9]+ FAIL /, "", p); print f "\t" p }' >> "$ptrs"
     arm="$(dirname "$f")/expect.txt"
     if [ -f "$arm" ]; then
         n_expect=$((n_expect + 1))
@@ -163,6 +174,42 @@ while IFS= read -r f; do
     fi
 done < "$list"
 
+# check 4: the cited pointers resolve (RFC 6901, ~1 and ~0 unescaped) in the document they cite.
+# Until 2026-09-25 no check read them: a verifier that cited a field by its name under a segment the
+# document does not have passed gate 3 on rule and arm alone (measured on a copy with the WF-092
+# pointers of the L5 base reverted).
+n_ptr=$(python3 - "$ptrs" <<'PY'
+import json, sys
+docs, n, bad = {}, 0, []
+for line in open(sys.argv[1], encoding="utf-8"):
+    f, ptr = line.rstrip("\n").split("\t", 1)
+    if f not in docs:
+        docs[f] = json.load(open(f, encoding="utf-8"))
+    cur, ok = docs[f], ptr == "" or ptr.startswith("/")
+    for raw in (ptr[1:].split("/") if ok and ptr else []):
+        seg = raw.replace("~1", "/").replace("~0", "~")
+        if isinstance(cur, list) and seg.isdigit() and int(seg) < len(cur):
+            cur = cur[int(seg)]
+        elif isinstance(cur, dict) and seg in cur:
+            cur = cur[seg]
+        else:
+            ok = False
+            break
+    n += 1
+    if not ok:
+        bad.append((f, ptr))
+for f, ptr in bad:
+    sys.stderr.write("FAIL: negatief case %s cites %s, which does not resolve in the document: the "
+                     "report sends its reader to a position the document does not have\n" % (f, ptr))
+print(n)
+sys.exit(1 if bad else 0)
+PY
+) || status=1
+if [ "${n_ptr:-0}" -lt "$EXPECTED_MIN_POINTERS" ]; then
+    echo "FAIL: ${n_ptr:-0} cited pointer(s) found in the negatief reports, but EXPECTED_MIN_POINTERS pins at least $EXPECTED_MIN_POINTERS — the pointer check read fewer than it did (a deliberate removal lowers the floor in the same commit)" >&2
+    status=1
+fi
+
 # The floor is evaluated BEFORE the unpopulated-corpus exit, or that exit would answer the very
 # case the floor exists for: with the zones moved aside both counts are 0 and an "all zero -> exit
 # 0" branch placed first never lets the floor run. Measured 2026-09-10, before this order: both
@@ -185,6 +232,6 @@ if [ "$n_expect" -lt "$EXPECTED_MIN_EXPECT" ]; then
 fi
 
 if [ "$status" -eq 0 ]; then
-    echo "check-verifier: PASS ($n_golden golden clean; $n_neg negatief rejected for their declared rule, floor $EXPECTED_MIN_NEGATIEF; $n_expect on their declared arm (expect.txt), floor $EXPECTED_MIN_EXPECT)"
+    echo "check-verifier: PASS ($n_golden golden clean; $n_neg negatief rejected for their declared rule, floor $EXPECTED_MIN_NEGATIEF; $n_expect on their declared arm (expect.txt), floor $EXPECTED_MIN_EXPECT; $n_ptr cited pointers resolve in their documents, floor $EXPECTED_MIN_POINTERS)"
 fi
 exit "$status"
