@@ -105,12 +105,15 @@ schaal (`ExpressieBouwer.decimalenVanLiteral`): `0,8750` op drie decimalen,
 het product op vijf; het lexeem blijft `0.8750`. RUNTIME-SEMANTICS ch. 2.10
 maakt het type van een `Literal` de bron. De waarde is dezelfde, en de
 afgeronde inkomensgrens ook (2100,00). clingo's gesplitste geld-×-
-tariefcodering (ASP-TRANSLATION S18(c)) nam tot de kaart
-clingo-tarief-decimalen alleen een tarief op vier decimalen; het product
-viel daardoor op het gewone productpad, waar het operandhek bij een
-maandloon van 2400,00 vuurt, en clingo was UNSAT op alle tien cases. Sinds
-die kaart brengt de codering een eenheidsloos tarief op één tot drie
-decimalen exact naar schaal 10^4.
+tariefcodering (ASP-TRANSLATION S18(c)) koos tot de kaart
+clingo-tarief-decimalen haar route op dat type en nam alleen een tarief op
+vier decimalen; het product viel daardoor op het gewone productpad, waar het
+operandhek bij een maandloon van 2400,00 vuurt, en clingo was UNSAT op alle
+tien cases. Sinds die kaart kiest de codering haar route op de decimalen die
+de termen dragen: het lexeem `0.8750` draagt er vier, dus neemt het product
+de splitsing met de tariefterm zoals hij is (k = 1), zonder herschaling. De
+herschaling naar schaal 10^4 is voor een tarief dat op één tot drie
+decimalen geschreven of gedeclareerd is; deze tweeling gebruikt haar niet.
 
 **De eenheid.** Het frontend schrijft de eenheid `dag` met het
 conversiepaar naar zichzelf; het anker schrijft de kale vorm. Beide

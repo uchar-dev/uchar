@@ -1713,8 +1713,9 @@ scale.
       `[10,25]/200 → 70.00`).
     - **The money × rate product** rounded to the cent
       (`Rounding{halfAwayFromZero,2}` over a 2-decimal money times a
-      4-decimal rate or a unit-free rate of one to three decimals, the money
-      on either side, `money_mult_shape`) is the split encoding of S18(c) —
+      4-decimal rate or, with both operands unit-free, a rate of one to three
+      decimals, the money on either side, `money_mult_shape`) is the split
+      encoding of S18(c) —
       the shared `money_mult_rate`/`money_mult_fences`/`money_mult_body`, with
       the four fences (two negative-operand, two range) and, for a rate below
       four decimals, the range fence on the rate brought to scale 10⁴, all
@@ -2247,26 +2248,34 @@ translation derives a term's scale — a literal from its lexeme, a
 reference from its declaration, a binder from its binding, a join by the
 rule its arm applies — and never on a composite's own annotation
 (RUNTIME-SEMANTICS ch. 2.10). The money may stand on either side of the
-product; with two 2-decimal operands the left one is the money. A
-unit-free rate of one to three decimals takes the split as well: at scale
-10⁴ it is the same rational (0,875 at 10³ is 8750 at 10⁴), so its term is
-multiplied by 10^(4−d) first, under a `viol/2` range fence on the
-multiplied term, `|R| ≤ max_int31/10^(4−d)` — a wrapped rate would be a
-plausible wrong answer, not a loud one. The RegelSpraak frontend needs
-this: it types a numeric literal at its smallest scale, so `maandloon maal
-0,8750` carries a rate of three decimals, and a maandloon of 2400,00
-(240000) is past the S6 operand bound. Two kinds of rate below four
-decimals keep the S6 product, because the split would carry less there: a
-unit-carrying rate, which the split refuses and S6 admits as the
-factor-free product, and a whole-number rate (`Mult_mon_int`), whose cent
-rounding is the identity, so S6 carries a negative operand the split
-refuses. Below four decimals the split's sign fence costs one flank: two
-negative operands, or zero times a negative rate, are refused where the S6
-rounding carried their non-negative product at small magnitude. Witness:
-`ww-herleving-inkomen-rgs`, the RegelSpraak twin of
-`anchor/ww-herleving-inkomen`, ten cases (ref ≡ clingo); the rescale
-fence, both orders, the derived route and both flanks are pinned in the
-backend suite.
+product; with two 2-decimal operands the left one is the money. That route
+is what admits the RegelSpraak twin of `anchor/ww-herleving-inkomen`: the
+frontend annotates the literal `0,8750` at three decimals, its smallest
+scale, while its lexeme keeps four. A route that read the annotation took
+the split for a four-decimal rate only, so it sent the product to S6,
+whose operand fence fires at a maandloon of 2400,00 (240000); on the
+terms' decimals the product takes the split with the rate term as it
+stands (k = 1). When both operands are unit-free, a rate written or
+declared at one to three decimals — the literal `0,875`, an attribute at
+three — takes the split as well: at scale 10⁴ it is the same rational (875
+at 10³ is 8750 at 10⁴), so its term is multiplied by k = 10^(4−d) first,
+under a `viol/2` range fence on that term, `|R| ≤ max_int31/k` — a wrapped
+rate would be a plausible wrong answer, not a loud one. The rate's sign
+fence reads the term before it is multiplied: past the range fence the
+multiplied term has wrapped, and its sign would name a negative operand the
+document does not have. Two kinds of product below four decimals keep the
+S6 product, because the split would carry less there: one whose operands
+are not both unit-free — the split refuses a unit, S6 admits the
+factor-free product — and one with a whole-number rate (`Mult_mon_int`),
+whose cent rounding is the identity, so S6 carries a negative operand the
+split refuses. Below four decimals the split's sign fence costs one flank:
+a negative operand beside a negative or zero other operand is refused,
+where the S6 rounding carried the non-negative product at small magnitude.
+Witnesses: `ww-herleving-inkomen-rgs`, ten cases (ref ≡ clingo), for the
+route on the terms' decimals (k = 1); in the corpus only `synth3-letbeslag`
+(a rate of 0,10, k = 100) takes the rescale. The backend suite pins both
+routes apart on the program text, the rescale fence and the sign read
+before it, both orders, the derived route and the flank in its two forms.
 
 Witnesses: `anchor/jutterswet-tariefstelling` — **case1-elsetak** the
 else branch (`aanslag` 3700.00 from belasting 4200.00 − aftrek 500.00,
@@ -2852,15 +2861,17 @@ carries it everywhere (ch. 4.10); on the ASP side only `value_branches`
 reaches an `IfThenElse` at the rule value (a closed-body `IfThenElse` reducer
 does lower — `body_branches`). **Negative operands
 under the money multiplication** (ref rounds either sign; runtime `viol/2`, the
-non-richting-nul rounding sibling — below four decimals this includes two
-negative operands, or zero times a negative rate, whose non-negative
-product the S6 rounding carried at small magnitude) and the three split
-range fences (`M·Rh`, `M·Rl`, and a rate of one to three decimals brought
-to scale 10⁴; runtime `viol/2` — the tutorial's magnitudes clear them); a
-**money multiplication other than a 2-decimal money times a 4-decimal rate
-or a unit-free rate of one to three decimals** — `Mult_mon_int`, a
-unit-carrying rate below four decimals and other scale pairs are not split,
-they ride the S6 multiplicative fence (the 46340 operand bound, which
+non-richting-nul rounding sibling — below four decimals this includes a
+negative operand beside a negative or zero other operand, whose
+non-negative product the S6 rounding carried at small magnitude; the
+rate's sign is read before the rate is brought to scale 10⁴) and the three
+split range fences (`M·Rh`, `M·Rl`, and a rate of one to three decimals
+brought to scale 10⁴; runtime `viol/2` — the tutorial's magnitudes clear
+them); a **money multiplication other than a 2-decimal money times a
+4-decimal rate or, with both operands unit-free, a rate of one to three
+decimals** — `Mult_mon_int`, a product below four decimals whose money or
+rate carries a unit, and other scale pairs are not split, they ride the S6
+multiplicative fence (the 46340 operand bound, which
 faults at large magnitude) — while the split's own scale backstop (`the
 split money multiplication expects a 2-decimal money and a rate of at most
 4 decimals …`) is unreachable: `money_mult_shape` routes on the scales the

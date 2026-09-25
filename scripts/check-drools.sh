@@ -919,10 +919,10 @@ EXPECTED_CHANNEL=(
 # 201 -> 202 (2026-09-25, card clingo-tarief-decimalen): ww-herleving-inkomen-rgs, new — the RegelSpraak
 # twin of anchor/ww-herleving-inkomen, three `Uitzondering op` blocks that each name the preceding
 # rule as carrier (the first level a chain position above the base, the two deeper levels nested). It
-# was not admitted at 192 -> 194: clingo refused the emission on a range fence, because the frontend
-# types the rate literal 0,8750 at three decimals and clingo's split money × rate encoding took a
-# four-decimal rate only; since this card that encoding brings a unit-free rate of one to three
-# decimals to scale 10^4. No
+# was not admitted at 192 -> 194: clingo refused the emission on a range fence, because its split
+# money × rate encoding routed on the literal's annotation — the frontend annotates 0,8750 at three
+# decimals — and took a four-decimal rate only. Since this card the route reads the decimals of the
+# terms: the lexeme 0.8750 carries four, and the product takes the split unmultiplied (k = 1). No
 # source file of this backend changed: the exec branch plays the ten cases on the first run, PLAYED 10,
 # with ref's and clingo's values. The DRL-text branch refuses it on its defaults sentence (class (A) of
 # DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
