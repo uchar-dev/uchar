@@ -2370,13 +2370,44 @@ let rec differing_facets a b =
             | _ -> [])
       | _ -> [])
 
+(* Every facet, everywhere, the members of a keuzetype or a struct included:
+   the last resort of [detail_vs], for two datatypes whose difference lies
+   below what the facets name — a constructor's payload, a field's type, an
+   enumeration value. *)
+let rec datatype_detail_full dt =
+  let all = [ Wholeness; Sign; Unit_system; Unit_canonical; Unit_factor; Unit_denominator ] in
+  match dt with
+  | Numeriek _ | Percentage _ -> datatype_detail ~facets:all dt
+  | Enumeratie { domein; waarden } ->
+      (match domein with Some d -> "enumeration '" ^ d ^ "'" | None -> "enumeration")
+      ^ " [" ^ String.concat ", " (List.map (Option.value ~default:"?") waarden) ^ "]"
+  | Sum_type { domein; constructoren } ->
+      "sumtype '" ^ domein ^ "' ["
+      ^ String.concat ", "
+          (List.map
+             (fun (c, p) -> match p with None -> c | Some p -> c ^ " of " ^ datatype_detail_full p)
+             constructoren)
+      ^ "]"
+  | Struct_type { domein; velden } ->
+      "struct '" ^ domein ^ "' {"
+      ^ String.concat ", " (List.map (fun (f, t) -> f ^ ": " ^ datatype_detail_full t) velden)
+      ^ "}"
+  | List_type { element } -> "list of " ^ datatype_detail_full element
+  | other -> datatype_kind other
+
 (* One of two datatypes a message sets side by side ("X, but Y"): where the
    two differ only in a facet [datatype_detail] leaves out, it renders them
    alike and the message would name one type twice, so then each side names
-   the facets in which they differ. *)
+   the facets in which they differ — and where even that renders them alike,
+   the difference lies inside their members, and each side is rendered
+   whole. *)
 let detail_vs a ~against =
   if datatype_detail a <> datatype_detail against then datatype_detail a
-  else datatype_detail ~facets:(differing_facets a against) a
+  else
+    let facets = differing_facets a against in
+    if datatype_detail ~facets a <> datatype_detail ~facets against then datatype_detail ~facets a
+    else datatype_detail_full a
+
 
 (* The keuzetype a datatype names (IR-SPEC ch. 2.4) — its VARIANT and its
    declaring domain: an Enumeration's or SumType's domain, looked up THROUGH a

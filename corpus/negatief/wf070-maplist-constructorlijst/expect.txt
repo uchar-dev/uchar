@@ -1,0 +1,1 @@
+lambda body is sumtype 'aanspraak' [Erkend of number(3 decimals, fractional, sign nonNegative), Vervallen], but the MapList requires sumtype 'aanspraak' [Erkend of number(2 decimals, fractional, sign nonNegative), Vervallen]

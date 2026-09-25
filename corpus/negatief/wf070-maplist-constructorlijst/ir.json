@@ -1,0 +1,662 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aanspraken",
+            "datatype": {
+              "node": "ListType",
+              "element": {
+                "node": "SumType",
+                "domain": "aanspraak",
+                "constructors": [
+                  {
+                    "name": "Erkend",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "nonNegative"
+                    }
+                  },
+                  {
+                    "name": "Vervallen",
+                    "payload": null
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "herziene som",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "aanspraak",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "Erkend",
+              "payload": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "nonNegative"
+              }
+            },
+            {
+              "name": "Vervallen",
+              "payload": null
+            }
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "functionDefs": [
+      {
+        "node": "FunctionDef",
+        "name": "aanspraakwaarde",
+        "parameters": [
+          {
+            "name": "a",
+            "datatype": {
+              "node": "SumType",
+              "domain": "aanspraak",
+              "constructors": [
+                {
+                  "name": "Erkend",
+                  "payload": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "nonNegative"
+                  }
+                },
+                {
+                  "name": "Vervallen",
+                  "payload": null
+                }
+              ]
+            }
+          }
+        ],
+        "result": {
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "nonNegative"
+        },
+        "body": {
+          "node": "Match",
+          "type": {
+            "node": "Number",
+            "whole": false,
+            "decimals": 2,
+            "sign": "nonNegative"
+          },
+          "scrutinee": {
+            "node": "BinderRef",
+            "name": "a",
+            "source": {
+              "snippet": "de aanspraak"
+            }
+          },
+          "arms": [
+            {
+              "constructor": "Erkend",
+              "binder": "b",
+              "body": {
+                "node": "BinderRef",
+                "name": "b",
+                "source": {
+                  "snippet": "het erkende bedrag"
+                }
+              }
+            },
+            {
+              "constructor": "Vervallen",
+              "binder": null,
+              "body": {
+                "node": "Literal",
+                "value": {
+                  "number": "0.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "0.00"
+                }
+              }
+            }
+          ],
+          "source": {
+            "snippet": "de waarde van de aanspraak"
+          }
+        },
+        "source": {
+          "snippet": "de waarde van een aanspraak"
+        }
+      },
+      {
+        "node": "FunctionDef",
+        "name": "herziening",
+        "parameters": [
+          {
+            "name": "a",
+            "datatype": {
+              "node": "SumType",
+              "domain": "aanspraak",
+              "constructors": [
+                {
+                  "name": "Erkend",
+                  "payload": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "nonNegative"
+                  }
+                },
+                {
+                  "name": "Vervallen",
+                  "payload": null
+                }
+              ]
+            }
+          }
+        ],
+        "result": {
+          "node": "SumType",
+          "domain": "aanspraak",
+          "constructors": [
+            {
+              "name": "Erkend",
+              "payload": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "nonNegative"
+              }
+            },
+            {
+              "name": "Vervallen",
+              "payload": null
+            }
+          ]
+        },
+        "body": {
+          "node": "Match",
+          "type": {
+            "node": "SumType",
+            "domain": "aanspraak",
+            "constructors": [
+              {
+                "name": "Erkend",
+                "payload": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "nonNegative"
+                }
+              },
+              {
+                "name": "Vervallen",
+                "payload": null
+              }
+            ]
+          },
+          "scrutinee": {
+            "node": "BinderRef",
+            "name": "a",
+            "source": {
+              "snippet": "de aanspraak"
+            }
+          },
+          "arms": [
+            {
+              "constructor": "Erkend",
+              "binder": "b",
+              "body": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "aanspraak",
+                  "constructors": [
+                    {
+                      "name": "Erkend",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "nonNegative"
+                      }
+                    },
+                    {
+                      "name": "Vervallen",
+                      "payload": null
+                    }
+                  ]
+                },
+                "constructor": "Erkend",
+                "argument": {
+                  "node": "IfThenElse",
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "nonNegative"
+                  },
+                  "condition": {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "BinderRef",
+                      "name": "b",
+                      "source": {
+                        "snippet": "het erkende bedrag"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "10.00"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "nonNegative"
+                      },
+                      "source": {
+                        "snippet": "10.00"
+                      }
+                    },
+                    "source": {
+                      "snippet": "het erkende bedrag groter is dan 10,00"
+                    }
+                  },
+                  "then": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "10.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "nonNegative"
+                    },
+                    "source": {
+                      "snippet": "10.00"
+                    }
+                  },
+                  "else": {
+                    "node": "BinderRef",
+                    "name": "b",
+                    "source": {
+                      "snippet": "het erkende bedrag"
+                    }
+                  },
+                  "source": {
+                    "snippet": "ten hoogste 10,00"
+                  }
+                },
+                "source": {
+                  "snippet": "erkend tot ten hoogste 10,00"
+                }
+              }
+            },
+            {
+              "constructor": "Vervallen",
+              "binder": null,
+              "body": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "aanspraak",
+                  "constructors": [
+                    {
+                      "name": "Erkend",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "nonNegative"
+                      }
+                    },
+                    {
+                      "name": "Vervallen",
+                      "payload": null
+                    }
+                  ]
+                },
+                "constructor": "Vervallen",
+                "argument": null,
+                "source": {
+                  "snippet": "vervallen"
+                }
+              }
+            }
+          ],
+          "source": {
+            "snippet": "de herziene aanspraak"
+          }
+        },
+        "source": {
+          "snippet": "de herziening van een aanspraak"
+        }
+      }
+    ]
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "herziene som van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "herziene som",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De herziene som van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "list": {
+                "node": "MapList",
+                "type": {
+                  "node": "ListType",
+                  "element": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "nonNegative"
+                  }
+                },
+                "list": {
+                  "node": "MapList",
+                  "type": {
+                    "node": "ListType",
+                    "element": {
+                      "node": "SumType",
+                      "domain": "aanspraak",
+                      "constructors": [
+                        {
+                          "name": "Erkend",
+                          "payload": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "nonNegative"
+                          }
+                        },
+                        {
+                          "name": "Vervallen",
+                          "payload": null
+                        }
+                      ]
+                    }
+                  },
+                  "list": {
+                    "node": "AttributeReference",
+                    "attribute": "aanspraken",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn aanspraken"
+                    }
+                  },
+                  "function": {
+                    "node": "Lambda",
+                    "parameters": [
+                      {
+                        "name": "a",
+                        "datatype": {
+                          "node": "SumType",
+                          "domain": "aanspraak",
+                          "constructors": [
+                            {
+                              "name": "Erkend",
+                              "payload": {
+                                "node": "Number",
+                                "whole": false,
+                                "decimals": 2,
+                                "sign": "nonNegative"
+                              }
+                            },
+                            {
+                              "name": "Vervallen",
+                              "payload": null
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "body": {
+                      "node": "Invoke",
+                      "type": {
+                        "node": "SumType",
+                        "domain": "aanspraak",
+                        "constructors": [
+                          {
+                            "name": "Erkend",
+                            "payload": {
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 3,
+                              "sign": "nonNegative"
+                            }
+                          },
+                          {
+                            "name": "Vervallen",
+                            "payload": null
+                          }
+                        ]
+                      },
+                      "function": "herziening",
+                      "arguments": [
+                        {
+                          "node": "BinderRef",
+                          "name": "a",
+                          "source": {
+                            "snippet": "de aanspraak"
+                          }
+                        }
+                      ],
+                      "source": {
+                        "snippet": "de herziene aanspraak"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de herziening per aanspraak"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn herziene aanspraken"
+                  }
+                },
+                "function": {
+                  "node": "Lambda",
+                  "parameters": [
+                    {
+                      "name": "a",
+                      "datatype": {
+                        "node": "SumType",
+                        "domain": "aanspraak",
+                        "constructors": [
+                          {
+                            "name": "Erkend",
+                            "payload": {
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 2,
+                              "sign": "nonNegative"
+                            }
+                          },
+                          {
+                            "name": "Vervallen",
+                            "payload": null
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "body": {
+                    "node": "Invoke",
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "nonNegative"
+                    },
+                    "function": "aanspraakwaarde",
+                    "arguments": [
+                      {
+                        "node": "BinderRef",
+                        "name": "a",
+                        "source": {
+                          "snippet": "de aanspraak"
+                        }
+                      }
+                    ],
+                    "source": {
+                      "snippet": "de waarde van de aanspraak"
+                    }
+                  },
+                  "source": {
+                    "snippet": "de waarde per aanspraak"
+                  }
+                },
+                "source": {
+                  "snippet": "de waarden van zijn aanspraken"
+                }
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "nonNegative"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "source": {
+                      "snippet": "de opgetelde som"
+                    }
+                  },
+                  "right": {
+                    "node": "BinderRef",
+                    "name": "x",
+                    "source": {
+                      "snippet": "de aanspraakwaarde"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "de opgetelde som plus de aanspraakwaarde"
+                  }
+                },
+                "source": {
+                  "snippet": "de som van de aanspraakwaarden"
+                }
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0.00"
+                }
+              },
+              "source": {
+                "snippet": "de aanspraakwaarden opgeteld"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
