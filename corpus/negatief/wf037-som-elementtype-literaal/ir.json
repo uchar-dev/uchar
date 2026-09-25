@@ -1,0 +1,205 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aangemeld gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            },
+            "plural": "gewichten"
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vondstaanmelding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "aanmelder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Gewicht",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "kg",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "kilogram",
+              "kilogrammen"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "aangemeld gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aangemeld gewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aangemeld gewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "Literal",
+                  "value": {
+                    "number": "2.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified",
+                    "unit": {
+                      "node": "Unit",
+                      "abbreviation": "kg",
+                      "system": "Gewicht",
+                      "canonical": "kg",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  },
+                  "source": {
+                    "snippet": "2,00 kg"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vondstaanmelding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "de som van 2,00 kg"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
