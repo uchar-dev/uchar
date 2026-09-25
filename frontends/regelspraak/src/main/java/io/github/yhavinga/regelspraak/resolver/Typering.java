@@ -165,9 +165,11 @@ public final class Typering {
      *  because the spec sanctions it, but to accommodate a known casus inconsistency:
      *  a bedrag declared unitless yet bounded by "0 €" (a convertible pair like mnd/jr is
      *  restated at transpile time). The verifier refuses that one-sided pair (WF-099), so the
-     *  resolver warns about it beside this check. Returns the diagnostic, or null when ok / either
+     *  resolver warns about it beside this check. Two inconvertible units are the same WF-099
+     *  defect and carry the verifier's sentence, naming the bound as the wire does ({@code welke}:
+     *  {@code minimum} or {@code maximum}). Returns the diagnostic, or null when ok / either
      *  side is Onbekend (no claim). */
-    public static String begrenzing(Datatype basis, Datatype grens) {
+    public static String begrenzing(Datatype basis, Datatype grens, String welke) {
         if (basis.isOnbekend() || grens.isOnbekend()) return null;
         if (!basis.isGetalachtig())
             return "begrenzing is alleen toegestaan op een numerieke waarde, kreeg " + basis.naam();
@@ -175,8 +177,7 @@ public final class Typering {
             return "begrenzing vereist een numerieke grens, kreeg " + grens.naam();
         Eenheid eb = basis.eenheidOf(), eg = grens.eenheidOf();
         if (eb != null && eg != null && !eb.convertibleNaar(eg))
-            return "begrenzing: eenheden '" + eb.weergave() + "' en '" + eg.weergave()
-                    + "' zijn niet in elkaar om te rekenen";
+            return "clamp " + welke + " and base have incompatible units";
         return null;
     }
 

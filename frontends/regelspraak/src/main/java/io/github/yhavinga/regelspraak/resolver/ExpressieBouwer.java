@@ -332,7 +332,7 @@ final class ExpressieBouwer {
      *  value (a non-numeric, wrong-family, or unit-incompatible bound). Onbekend = no claim.
      *  {@code welke} is the bound's name on the wire, {@code minimum} or {@code maximum}. */
     private void meldBegrenzing(Expr basis, Expr grens, String welke, ParserRuleContext ctx) {
-        String fout = Typering.begrenzing(basis.type(), grens.type());
+        String fout = Typering.begrenzing(basis.type(), grens.type(), welke);
         if (fout != null) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(
                     RegelSpraakModel.Severity.ERROR, fout, ctx.getStart().getLine()));

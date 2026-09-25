@@ -120,16 +120,39 @@ public final class IrEmitter {
         // WF-113 (a): an ERROR means the producer refused the document, so a model that carries one has no
         // document to write; checked here and not only in irModus, so no emission route bypasses it. The
         // message and line clauses are the verifier's too: a document carrying either would be refused there.
-        List<Diagnostic> nietWire = m.diagnostics.stream()
-                .filter(d -> d.severity() != RegelSpraakModel.Severity.WARNING
-                        || d.message() == null || d.message().isBlank() || d.line() < 0).toList();
+        // Each arm is refused in the verifier's sentence, at the pointer the verifier reports it at, followed by
+        // the refused diagnostic itself: an ERROR's own message is what the caller needs to read.
+        List<String> nietWire = new java.util.ArrayList<>();
+        for (int i = 0; i < m.diagnostics.size(); i++) {
+            Diagnostic d = m.diagnostics.get(i);
+            String severity = severityWeigering(d.severity());
+            if (severity != null) nietWire.add("at /diagnostics/" + i + "/severity: " + severity + " — " + d);
+            if (d.message() == null || d.message().isBlank())
+                nietWire.add("at /diagnostics/" + i + "/message: diagnostic with an empty or blank message: an entry "
+                        + "that says nothing accounts for nothing — " + d);
+            if (d.line() < 0)
+                nietWire.add("at /diagnostics/" + i + "/line: diagnostic with line " + d.line() + ": a line is a "
+                        + "source position, and 0 is the value for none (a hand-built document, or a producer warning "
+                        + "without a token) — " + d);
+        }
         if (!nietWire.isEmpty())
-            throw new IllegalStateException("IrEmitter: WF-113 (a) — de wire draagt alleen de severity warning met "
-                    + "een melding die niet leeg of blanco is en een regel ≥ 0; dit model draagt " + nietWire);
+            throw new IllegalStateException("IrEmitter: WF-113 (a) " + String.join("; ", nietWire));
         IrEmitter e = new IrEmitter();
         e.model(m);
         e.w.sb.append('\n');
         return e.w.sb.toString();
+    }
+
+    /** WF-113 (a)'s severity arm, the verifier's sentences: warning is the one wire severity. Null for a warning. */
+    private static String severityWeigering(RegelSpraakModel.Severity s) {
+        if (s == null) return "diagnostic without a severity: the one wire severity is warning";
+        return switch (s) {
+            case WARNING -> null;
+            case ERROR -> "severity error is not a wire severity: an error means the producer refused to write the "
+                    + "document, so a document that was written carries none";
+            case INFO -> "severity info is not a wire severity: the list is the account of what stayed unresolved, "
+                    + "and info is tooling talk";
+        };
     }
 
     private final Json w = new Json();

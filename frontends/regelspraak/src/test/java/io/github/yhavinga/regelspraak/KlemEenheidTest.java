@@ -65,6 +65,30 @@ class KlemEenheidTest {
         assertEquals(List.of(), meldingen(bron(" met eenheid €", "met een minimum van 0 €", "")));
     }
 
+    /** Two units that do not convert are the same WF-099 defect as a unit on one side alone, and the resolver has
+     *  always refused them; since the card frontend-emitterrestanten in the verifier's sentence as well, where it
+     *  used to say "begrenzing: eenheden 'EUR' en 'kg' zijn niet in elkaar om te rekenen". */
+    @Test void twee_onverenigbare_eenheden_krijgen_dezelfde_zin_als_error() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Eenheidsysteem Munt
+                de euro (mv: euros) EUR €
+
+            Eenheidsysteem Gewicht
+                het kilogram (mv: kilogrammen) kg
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de vondstwaarde Numeriek (getal met 2 decimalen) met eenheid €;
+                het bergloon Numeriek (getal met 2 decimalen) met eenheid €;
+
+            Regel bergloon van een jutter
+                geldig altijd
+                    Het bergloon van een Jutter moet berekend worden als zijn vondstwaarde, met een minimum van 0 kg en een maximum van 5 kg.
+            """);
+        assertEquals(List.of("ERROR 13 clamp minimum and base have incompatible units",
+                        "ERROR 13 clamp maximum and base have incompatible units"),
+                m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList());
+    }
+
     @Test void de_waarschuwing_houdt_het_document() {
         RegelSpraakModel m = Resolver.resolve(bron("", "met een minimum van 0 €", ""));
         assertTrue(m.isOk(), () -> "een WARNING blokkeert het document niet: " + m.diagnostics);
