@@ -933,7 +933,12 @@ EXPECTED_CHANNEL=(
 # clingo answered; both branches now negate the fold their rule conditions carry for these quantifiers,
 # and play its two cases, PLAYED 2, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as
 # well.
-EXPECTED_PLAYED=203
+# 203 -> 204 (2026-09-25, the WF-052 decision): jutterswet-opvolgerversies, new, from bron.rgs and
+# hand-computed — one object creation in two disjoint versions on a to-one created-side role, which
+# WF-052 refused until the versions of one creation became one writer. No source file of this backend
+# changed: the exec branch plays its three cases on the first run, PLAYED 3, with ref's and clingo's
+# values. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=204
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1207,7 +1212,10 @@ DRL_CHANNEL=(
 # 175 -> 176 (2026-09-25, card aantal-bronarm-en-drools-lader): jutterswet-keurcriteria, new. This
 # branch plays both cases through the card's consistency arm, PLAYED 2. Reason block at EXPECTED_PLAYED
 # above.
-EXPECTED_DRL_PLAYED=176
+# 176 -> 177 (2026-09-25, the WF-052 decision): jutterswet-opvolgerversies, new. This branch plays its
+# three cases on the first run with no change of its own, PLAYED 3. Reason block at EXPECTED_PLAYED
+# above.
+EXPECTED_DRL_PLAYED=177
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

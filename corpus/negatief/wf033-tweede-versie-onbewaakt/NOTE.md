@@ -16,9 +16,10 @@ the document on WF-052 alone and gate 3 reported it `rejected, but not for
 WF-033`. Since then every version of the named creation is read, and a
 version of a form with several is named by its number (`#2`).
 
-The document also carries a WF-052 line (`connecting relation 'opvolging'
-has a to-one created-side role and 2 object-creation writers`): that rule
-counts the two versions of one form as two writers, although their validity
-windows are disjoint (WF-021 holds). No other document in any zone carries an
-object creation with more than one version (measured 2026-09-25).
+Until the WF-052 decision of 2026-09-25 the document also carried a WF-052
+line (`connecting relation 'opvolging' has a to-one created-side role and 2
+object-creation writers`): that rule counted the two versions of one form as
+two writers, although their validity windows are disjoint (WF-021 holds).
+Since then the versions of one object creation are one writer, and the report
+is the WF-033 line alone.
 `expect.txt` pins the arm.

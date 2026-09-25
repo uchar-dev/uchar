@@ -1,0 +1,20 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-06-01",
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wachter",
+        "attributes": { "rang": { "number": "1" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "W1", "attribute": "opvolgerrang", "value": { "number": "3" } },
+    { "kind": "consistent" }
+  ]
+}

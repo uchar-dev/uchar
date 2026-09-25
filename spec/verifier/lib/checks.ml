@@ -7973,18 +7973,26 @@ let wf050 ctx =
    model silently holds both; the divergence closes statically. Fact
    creations are not counted: their to-one writes are fault-paired
    (writer fault ≡ cardinality-guard UNSAT), and a to-many
-   created-side role makes multi-writer creation harmless. *)
+   created-side role makes multi-writer creation harmless. A writer is a
+   FORM: the versions of one object creation are one writer, version
+   selection being temporal (RUNTIME-SEMANTICS ch. 7.4) and whether two
+   versions overlap being WF-021's question, as WF-079 reads the versions of
+   a computing rule. *)
 let wf052 ctx =
+  let form (o : resolved_object_creatie) =
+    match o.oc_naam with Some n -> norm (strip_version n) | None -> o.oc_pointer
+  in
   let writers =
     List.filter_map
       (fun (o : resolved_object_creatie) ->
         let at = o.oc_pointer in
+        let form = form o in
         match o.oc_verbindende_rol with
         | Some rb -> (
             (* the explicit binding names the created-side role *)
             match resolve_binding ctx rb with
             | Ok (_, bound, _) when not bound.rol_meervoudig ->
-                Some (norm rb.rb_feittype, at)
+                Some (norm rb.rb_feittype, form, at)
             | _ -> None)
         | None -> (
             match (o.oc_subject, o.nieuw_type) with
@@ -8006,21 +8014,23 @@ let wf052 ctx =
                        writes no link — the block ref keeps as well, and the
                        reason this arm needs no separate guard for it. *)
                     match connecting_role_candidates ctx ~from_type:st ~to_type:nt with
-                    | [ r ] when not r.rol_meervoudig -> Some (norm fn, at)
+                    | [ r ] when not r.rol_meervoudig -> Some (norm fn, form, at)
                     | _ -> None)
                 | _ -> None)
             | _ -> None))
       ctx.doc.object_creaties
   in
   List.concat_map
-    (fun (ftn, at) ->
-      let same = List.filter (fun (f, _) -> f = ftn) writers in
-      if List.length same > 1 && snd (List.hd same) <> at then
+    (fun (ftn, form, at) ->
+      let same = List.filter (fun (f, _, _) -> f = ftn) writers in
+      let forms = List.sort_uniq compare (List.map (fun (_, fm, _) -> fm) same) in
+      let _, first, _ = List.hd same in
+      if List.length forms > 1 && form <> first then
         [ v "WF-052" at
             (Printf.sprintf
                "connecting relation '%s' has a to-one created-side role and %d object-creation \
                 writers; at most one may write it"
-               ftn (List.length same)) ]
+               ftn (List.length forms)) ]
       else [])
     writers
 
