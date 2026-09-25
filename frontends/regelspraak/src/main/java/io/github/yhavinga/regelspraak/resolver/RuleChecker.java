@@ -2175,7 +2175,7 @@ final class RuleChecker {
         // bound is malformed is null here (already diagnosed) and is not emitted.
         List<Geldigheid> gelden = new ArrayList<>();
         for (RegelVersieContext v : versies) gelden.add(geldigheidVan(v.versie()));
-        if (versies.size() > 1) meldOverlap(naam, gelden, line);
+        if (versies.size() > 1) meldOverlap(naam, versies, gelden, line);
         for (int i = 0; i < versies.size(); i++) {
             Geldigheid geldigheid = gelden.get(i);
             if (geldigheid == null) continue; // malformed validity bound — already reported
@@ -2242,13 +2242,12 @@ final class RuleChecker {
                 regelVersies(rijNaam, rc.regelVersie(), tabelAnnotaties, rc.getStart().getLine());
             }
             // A row's rule is named after the table and the row's number (its first cell), so rows without a
-            // number, or with the same one, share a name — two rules the verifier refuses as one (WF-020, WF-021).
+            // number, or with the same one, share a name: two rule forms of one name, which the verifier refuses
+            // in the rules array (WF-020), one sentence per name
             if (!dubbel.isEmpty())
-                model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                        "beslistabel '" + naam + "': rijen krijgen dezelfde regelnaam (" + opsomming(dubbel) + ") — een "
-                        + "rij heet naar de tabel en haar nummer in de eerste cel, dus rijen zonder nummer of met hetzelfde "
-                        + "nummer worden regels met één naam, die de wire niet kan onderscheiden (WF-020, WF-021). "
-                        + "Geef elke rij een eigen nummer", line));
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "beslistabel '" + naam + "': " + String.join("; ",
+                        dubbel.stream().map(n -> String.format("duplicate name '%s' in %s", n, "rules")).toList()),
+                        line));
         }
     }
 
@@ -2331,17 +2330,48 @@ final class RuleChecker {
 
     /** §4.2: the validity periods of a rule's versions must not overlap —
      *  otherwise more than one version applies at a Rekendatum (and, writing the same
-     *  attribute, they ping-pong in the engine). Flag any intersecting pair. */
-    private void meldOverlap(String naam, List<Geldigheid> gelden, int line) {
+     *  attribute, they ping-pong in the engine). Flag the first intersecting pair, in the verifier's WF-021
+     *  sentence: the versions of one kind reach one form of one wire array, whose versions the verifier numbers
+     *  "<name> #<k>" by their place among the written ones. A day-kind definition is no form WF-021 compares, and
+     *  versions of two kinds reach two arrays, so those keep this frontend's words. */
+    private void meldOverlap(String naam, List<RegelVersieContext> versies, List<Geldigheid> gelden, int line) {
+        List<String> rijen = versies.stream()
+                .map(v -> v.regelSpraakRegel() == null ? null : wireRij(v.regelSpraakRegel().resultaatDeel())).toList();
+        boolean eenRij = rijen.get(0) != null && rijen.stream().allMatch(rijen.get(0)::equals);
         for (int i = 0; i < gelden.size(); i++)
             for (int j = i + 1; j < gelden.size(); j++) {
                 Geldigheid a = gelden.get(i), b = gelden.get(j);
                 if (a != null && b != null && overlapt(a, b)) {
-                    model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                            "geldigheidsperioden van regelversies overlappen (regel '" + naam + "')", line));
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, eenRij
+                            ? "regel '" + naam + "': validity windows of versions '" + naam + " #"
+                                    + geschrevenPlaats(gelden, i) + "' and '" + naam + " #" + geschrevenPlaats(gelden, j)
+                                    + "' overlap (" + rijen.get(0) + ")"
+                            : "geldigheidsperioden van regelversies overlappen (regel '" + naam + "')", line));
                     return;
                 }
             }
+    }
+
+    /** The number the verifier gives version {@code i}: its place among the versions with a validity, the ones
+     *  written (a version whose bound is malformed is not). */
+    private static int geschrevenPlaats(List<Geldigheid> gelden, int i) {
+        int k = 0;
+        for (int j = 0; j <= i; j++) if (gelden.get(j) != null) k++;
+        return k;
+    }
+
+    /** The wire array a version of this kind reaches, as WF-021 names it; null for a day-kind definition, which no
+     *  rule-form array carries. */
+    private static String wireRij(ResultaatDeelContext rd) {
+        if (rd == null) return null;
+        if (rd.gelijkstelling() != null || rd.initialisatie() != null || rd.kenmerkToekenning() != null
+                || rd.startpuntBepaling() != null) return "rules";
+        if (rd.objectCreatie() != null) return "objectCreations";
+        if (rd.verdeling() != null) return "allocations";
+        if (rd.feitCreatie() != null) return "factCreations";
+        if (rd.consistentieRegel() != null)
+            return rd.consistentieRegel().uniciteitsControle() != null ? "uniquenesses" : "consistencies";
+        return null;
     }
     /** Two inclusive windows intersect unless one's upper bound is strictly before the
      *  other's lower bound; a null bound is an open end (±∞), so ALTIJD overlaps everything. */

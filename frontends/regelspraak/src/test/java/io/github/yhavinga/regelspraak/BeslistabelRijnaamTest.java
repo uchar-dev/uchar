@@ -44,12 +44,12 @@ class BeslistabelRijnaamTest {
 
     @Test void rijen_zonder_nummer_weigeren_bij_naam() {
         Diagnostic d = enigeFout(Resolver.resolve(MODEL + tabel(" ", " ")));
-        assertTrue(d.message().contains("'Bonustabel'") && d.message().contains("WF-020"), d.message());
+        assertTrue(d.message().contains("duplicate name 'Bonustabel' in rules"), d.message());
     }
 
     @Test void rijen_met_hetzelfde_nummer_weigeren_bij_naam() {
         Diagnostic d = enigeFout(Resolver.resolve(MODEL + tabel("1", "1")));
-        assertTrue(d.message().contains("'Bonustabel 1'") && d.message().contains("WF-020"), d.message());
+        assertTrue(d.message().contains("duplicate name 'Bonustabel 1' in rules"), d.message());
     }
 
     @Test void de_groep_noemt_een_dubbele_rijnaam_een_keer() {

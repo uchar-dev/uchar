@@ -152,6 +152,78 @@ class StructuurZinTest {
                     """));
     }
 
+    // ---- WF-021: overlapping versions, named as the verifier names them, in the array their kind lands in
+
+    @Test void overlappende_versies_van_een_regel() {
+        assertEquals(List.of("regel 'premie': validity windows of versions 'premie #1' and 'premie #2' overlap (rules)"),
+                fouten("""
+                    Objecttype de Jutter (mv: Jutters) (bezield)
+                        de premie Numeriek (geheel getal);
+
+                    Regel premie
+                        geldig vanaf 2024 t/m 2025
+                            De premie van een Jutter moet gesteld worden op 10.
+                        geldig vanaf 2025
+                            De premie van een Jutter moet gesteld worden op 20.
+                    """));
+    }
+
+    @Test void overlappende_versies_van_een_objectcreatie() {
+        assertEquals(List.of("regel 'werf de opvolger': validity windows of versions 'werf de opvolger #1' and 'werf de "
+                        + "opvolger #2' overlap (objectCreations)"),
+                fouten("""
+                    Objecttype de Wachter (mv: Wachters) (bezield)
+                        de rang Numeriek (geheel getal);
+
+                    Feittype opvolging
+                        de voorganger Wachter
+                        de opvolger (mv: opvolgers) Wachter
+                    Eén voorganger heeft meerdere opvolgers
+
+                    Regel werf de opvolger
+                        geldig vanaf 2025
+                            Een Wachter heeft een opvolger met rang gelijk aan de rang van de Wachter plus 1
+                            indien de rang van de Wachter kleiner is dan 5.
+                        geldig vanaf 2026
+                            Een Wachter heeft een opvolger met rang gelijk aan de rang van de Wachter plus 2
+                            indien de rang van de Wachter kleiner is dan 5.
+                    """));
+    }
+
+    @Test void overlappende_versies_van_een_dagsoortdefinitie_houden_de_eigen_zin() {
+        // WF-021 compares the versions of the seven rule forms; a day-kind definition is none of them
+        assertEquals(List.of("geldigheidsperioden van regelversies overlappen (regel 'Dagsoortdefinitie springtijdag')"),
+                fouten("""
+                    Dagsoort de springtijdag (mv: springtijdagen);
+
+                    Regel Dagsoortdefinitie springtijdag
+                        geldig altijd
+                            Een dag is een springtijdag
+                            indien de dag uit de dag gelijk is aan 1.
+                        geldig altijd
+                            Een dag is een springtijdag
+                            indien de dag uit de dag gelijk is aan 15.
+                    """));
+    }
+
+    // ---- WF-020: two decision-table rows with one rule name
+
+    @Test void twee_tabelrijen_met_een_regelnaam() {
+        assertEquals(List.of("beslistabel 'Premietabel': duplicate name 'Premietabel 1' in rules"),
+                fouten("""
+                    Objecttype de Jutter (mv: Jutters) (bezield)
+                        de premie Numeriek (geheel getal);
+                        het aantal geborgen wrakken Numeriek (niet-negatief geheel getal);
+
+                    Beslistabel Premietabel
+                        geldig altijd
+                    | | de premie van een Jutter moet gesteld worden op | indien zijn aantal geborgen wrakken groter is dan |
+                    |---|---|---|
+                    | 1 | 10 | 5 |
+                    | 1 | 20 | 10 |
+                    """));
+    }
+
     // ---- WF-033: an exception block whose base is a group member
 
     private static final String BERGING = """

@@ -554,8 +554,9 @@ block's own head, with two arms:
   those rows too: until the same fix round it carried the table's name, and
   the verifier refused every group holding a table under WF-033. A row is
   named after the table and its number, so rows without a number, or with the
-  same one, share a name; that table is refused by name (WF-020, WF-021 at the
-  verifier), and the group lists each name once (fix round 3). The arm speaks only where the
+  same one, share a name; that table is refused by name, in the verifier's
+  WF-020 sentence (`duplicate name '<rij>' in rules`), and the group lists each
+  name once (fix round 3). The arm speaks only where the
   lift would happen: a base that resolves to no plain rule — a table's own
   name, an object creation — gets the lowering's "no base rule" refusal,
   which names the construct (fix round 2, 2026-09-23); for a table it names
