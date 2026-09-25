@@ -3406,6 +3406,64 @@ let () =
     (fun () -> ev "V5" (opgesomd [ lijstlit [ litv "1" num0; litv "2" num0 ] ])) hint;
   expect_fault_msg "WV-3.4a-lijstliteraal-leeg" (fun () -> ev "V5" (opgesomd [ lijstlit [] ])) hint
 
+(* WF-037, second line: a fold that names its population and hands no source.
+
+   The wire refuses both shapes (IR-SPEC ch. 4.3), so no well-formed document
+   reaches these arms. Until the card aantal-bronargument-welgevormd this
+   evaluator refused them in its residual sentence, `unsupported instance-fold
+   source shape`, which names the position and not the construct. Each line
+   pins the verifier's sentence for one kind and one shape: no argument, under
+   every aggregation kind and without a range (the shape that was
+   verifier-clean), and one ListLiteral under the two counts, with the range
+   the loader demands of a single-argument fold. The last two lines pin the
+   boundary: a ListLiteral under a value fold and a Literal under a count keep
+   the refusals they had, and do not take this arm's sentence. *)
+let () =
+  let doc = { empty_doc with objecttypen = [ ot "Vondst" [ ("gewicht", Some num0) ] [] ] } in
+  let env = env_of doc in
+  let w = World.add_instance World.empty (inst "V1" "Vondst" [ ("gewicht", n "2") ]) in
+  let ev e = Eval.eval_expr env w (World.get w "V1") ~err:no_err e in
+  let rb f r : Ir_v0.Ast.rol_binding = { rb_feittype = f; rb_rol = r } in
+  let vouw ?bron_rol kind argumenten : Ir_v0.Ast.expr =
+    Functie
+      { kind; argumenten; element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
+        dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None; bron_rol;
+        bron_pad = None }
+  in
+  let lijst : Ir_v0.Ast.expr =
+    List_literal
+      { typ = Some (List_type { element = num0 }); elements = [ litv "1" num0; litv "2" num0 ];
+        bron = None }
+  in
+  let bereik = rb "vondstaanmelding" "vondst" in
+  List.iter
+    (fun (kind, naam) ->
+      expect_fault_msg
+        ("WF-037-elementtype-zonder-operand-" ^ naam)
+        (fun () -> ev (vouw kind []))
+        (Printf.sprintf "a %s aggregation carries elementType \"Vondst\" but no source operand"
+           naam))
+    [ (Ir_v0.Ast.Aantal, "count"); (Aantal_gevulde, "filledCount"); (Som, "sum");
+      (Totaal, "total"); (Minimum, "minimum"); (Maximum, "maximum"); (Eerste, "first");
+      (Laatste, "last") ];
+  expect_fault_msg "WF-037-elementtype-lijstliteraal-count"
+    (fun () -> ev (vouw ~bron_rol:bereik Aantal [ lijst ]))
+    "a count aggregation carries elementType \"Vondst\" and a ListLiteral operand";
+  expect_fault_msg "WF-037-elementtype-lijstliteraal-filledCount"
+    (fun () -> ev (vouw ~bron_rol:bereik Aantal_gevulde [ lijst ]))
+    "a filledCount aggregation carries elementType \"Vondst\" and a ListLiteral operand";
+  let niet_deze_arm name e =
+    match ev e with
+    | exception Value.Fault m ->
+        check (name ^ " (got: " ^ m ^ ")")
+          (not (substring m "no source operand" || substring m "no source of instances"))
+    | _ -> check (name ^ " (no fault at all)") false
+  in
+  niet_deze_arm "WF-037-elementtype-lijstliteraal-onder-sum-niet-deze-arm"
+    (vouw ~bron_rol:bereik Som [ lijst ]);
+  niet_deze_arm "WF-037-elementtype-literal-onder-count-niet-deze-arm"
+    (vouw ~bron_rol:bereik Aantal [ litv "2" num0 ])
+
 (* --- ch. 3.10: the period condition's evaluation-date gate -------------- *)
 
 (* WV-3.10: the ch. 3.10 worked example, verbatim — window

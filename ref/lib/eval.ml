@@ -1812,6 +1812,23 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           "an instance fold over %S carries no range: its relation is written as sourceRole or \
            sourcePath and never derived"
           el
+    (* WF-037, the verifier's two sentences: a fold that names its population
+       and hands no source. Out of reach through a well-formed document; named
+       so that a document which reaches this evaluator without the wire check
+       is refused for what it is, and not by the residual arm below, whose
+       sentence names no construct *)
+    | Some el, [] ->
+        Value.fault
+          "a %s aggregation carries elementType \"%s\" but no source operand: an instance fold \
+           ranges over a written source"
+          (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
+          el
+    | Some el, [ List_literal _ ] when kind = Aantal || kind = Aantal_gevulde ->
+        Value.fault
+          "a %s aggregation carries elementType \"%s\" and a ListLiteral operand: a listed value \
+           is no source of instances"
+          (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
+          el
     | Some _, _ -> Value.fault "unsupported instance-fold source shape"
   in
   let values () =
