@@ -3,6 +3,7 @@ package io.github.yhavinga.regelspraak.resolver;
 import io.github.yhavinga.regelspraak.ir.Bron;
 import io.github.yhavinga.regelspraak.ir.Conditie;
 import io.github.yhavinga.regelspraak.ir.Expr;
+import io.github.yhavinga.regelspraak.ir.Spelling;
 import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.model.Eenheid;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
@@ -1653,8 +1654,8 @@ final class ExpressieBouwer {
             // operand is admitted, because the spec's own §7.1 worked example totals a unitless Bedrag (the
             // temporality lives in the timeline, not the unit) — see grammar/DIVERGENCES.md.
             case TOTAAL -> totaalOperandFout(argumenten);
-            case EERSTE  -> Typering.datumAggregatie("eerste van", typen);
-            case LAATSTE -> Typering.datumAggregatie("laatste van", typen);
+            case EERSTE  -> Typering.datumAggregatie("eerste van", Spelling.AGGREGATION_KIND.spelling(kind), typen);
+            case LAATSTE -> Typering.datumAggregatie("laatste van", Spelling.AGGREGATION_KIND.spelling(kind), typen);
             // §6.12 / §13.4.17.21-.24: a time-of-day component is defined only on a datum-TIJD — a plain
             // "Datum in dagen" has no hour/minute/second. The DATE parts (jaar/maand/dag) accept any date, so
             // they are NOT checked. Onbekend is skipped (no claim); only a concrete DatumInDagen is a violation.
@@ -1893,8 +1894,8 @@ final class ExpressieBouwer {
      *  DatumInDagen operand, else null (Onbekend and any non-date type are not this check's concern). */
     private static String tijdComponentFout(List<Datatype> typen) {
         if (typen.size() != 1 || !(typen.get(0) instanceof Datatype.DatumInDagen)) return null;
-        return "een tijd-component (uur/minuut/seconde/milliseconde uit) vereist een datum-tijd, kreeg "
-                + typen.get(0).naam() + " (§13.4.17.21-.24)";
+        return "een tijd-component (uur/minuut/seconde/milliseconde uit): sub-day extractor operand is "
+                + Typering.soortWoord(typen.get(0)) + ", must be a millisecond-precision date";   // the verifier's WF-038
     }
 
     /** §4.16/§4.17 (typeringen, normative): the two operands (van, tot) of a (absolute) tijdsduur must BOTH be a
@@ -1911,9 +1912,9 @@ final class ExpressieBouwer {
             if (!d.isDatum())                                   // §4.16/§4.17: both operands must be a datumexpressie
                 return "de (absolute) tijdsduur van … tot … vereist twee datumexpressies, kreeg " + d.naam() + " (" + sectie + ")";
             if (ref == null) ref = d;
-            else if (!ref.getClass().equals(d.getClass()))      // both datum but a different tijd-precisie
-                return "de (absolute) tijdsduur van … tot … vereist dat beide expressies dezelfde tijd-precisie hebben, kreeg "
-                        + ref.naam() + " en " + d.naam() + " (" + sectie + ")";
+            else if (!ref.getClass().equals(d.getClass()))      // both datum but a different tijd-precisie: WF-038
+                return "de (absolute) tijdsduur van … tot …: duration operands mix date precisions (both must share one "
+                        + "precision)";
         }
         return null;
     }

@@ -51,7 +51,8 @@ class TyperingTest {
     // grammar-divergences): a mixed toekenning is a type-broken setter, a mixed gelijk never true.
     @Test void gelijk_gemengde_tijd_precisie_fout() {
         var r = Typering.vergelijk(CmpOp.GELIJK, datum(), datumTijd());
-        assertFalse(r.ok()); assertTrue(r.fout().contains("tijd-precisie"), r::fout);
+        // the refusal speaks the verifier's WF-036 sentence since the card frontend-emitterrestanten
+        assertFalse(r.ok()); assertTrue(r.fout().contains("equality across date precisions"), r::fout);
         assertFalse(Typering.vergelijk(CmpOp.ONGELIJK, datumTijd(), datum()).ok());
         assertTrue(Typering.vergelijk(CmpOp.GELIJK, datum(), datum()).ok());
         assertTrue(Typering.vergelijk(CmpOp.GELIJK, datumTijd(), datumTijd()).ok());

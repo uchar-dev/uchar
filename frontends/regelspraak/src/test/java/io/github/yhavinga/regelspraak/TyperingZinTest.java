@@ -54,6 +54,23 @@ class TyperingZinTest {
 
     static List<String> fout(String zin) { return List.of("ERROR 28 " + zin); }
 
+    @Test void datumprecisie() {
+        assertEquals(fout("voorwaarde: gelijk: equality across date precisions"),
+                meldingen("Een Jutter is waardevol indien zijn vondstdag gelijk is aan zijn vondstmoment."));
+        assertEquals(fout("gelijkstelling: toekenning: a date-ms value is assigned to a date-day target"),
+                meldingen("De dag van een Jutter moet gesteld worden op zijn vondstmoment."));
+        assertEquals(fout("eerste van: first orders dates of two precisions (day and millisecond), which share no order"),
+                meldingen("De dag van een Jutter moet gesteld worden op de eerste van zijn vondstdag en zijn vondstmoment."));
+        assertEquals(fout("een tijd-component (uur/minuut/seconde/milliseconde uit): sub-day extractor operand is "
+                        + "date-day, must be a millisecond-precision date"),
+                meldingen("De uitkomst van een Jutter moet gesteld worden op het uur uit zijn vondstdag."));
+        // the duration's own result also meets the unitless target, so only the precision line is pinned here
+        assertTrue(meldingen("De uitkomst van een Jutter moet gesteld worden op de tijdsduur van zijn vondstdag tot "
+                        + "zijn vondstmoment in hele dagen.")
+                .contains("ERROR 28 de (absolute) tijdsduur van … tot …: duration operands mix date precisions (both "
+                        + "must share one precision)"));
+    }
+
     @Test void tot_de_macht_met_een_eenheid() {
         assertEquals(fout("tot de macht: power operands must be unitless"),
                 meldingen("De uitkomst van een Jutter moet berekend worden als zijn waarde tot de macht 2 naar beneden afgerond op 2 decimalen."));

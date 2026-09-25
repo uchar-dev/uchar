@@ -157,8 +157,7 @@ public final class Typering {
             case GELIJK, ONGELIJK -> {
                 if (!zelfdeFamilie(l, r))
                     yield Resultaat.fout("gelijk/ongelijk vereist operanden van hetzelfde datatype, kreeg " + l.naam() + " en " + r.naam());
-                String p = datumPrecisieFout(l, r, "gelijk/ongelijk vereist");
-                if (p != null) yield Resultaat.fout(p);
+                if (anderePrecisie(l, r)) yield Resultaat.fout("gelijk: equality across date precisions");
                 String e = enumDomeinFout(l, r, "gelijk/ongelijk vereist");
                 if (e != null) yield Resultaat.fout(e);
                 if (l.isGetalachtig()) {
@@ -238,16 +237,16 @@ public final class Typering {
      *  follow the normative prose over the inconsistent illustration (the example's standalone
      *  corpus form resolves clean only because its operands are Onbekend "Daarbij geldt"
      *  variables). Onbekend = no claim. Returns the diagnostic, or null when ok. */
-    public static String datumAggregatie(String functie, java.util.List<Datatype> operanden) {
+    public static String datumAggregatie(String functie, String vouw, java.util.List<Datatype> operanden) {
         Datatype ref = null;
         for (Datatype d : operanden) {
             if (d.isOnbekend()) continue;
             if (!d.isDatum())
                 return functie + " vereist datumexpressies, kreeg " + d.naam();
             if (ref == null) { ref = d; continue; }
-            if (!ref.getClass().equals(d.getClass()))
-                return functie + ": alle datumexpressies moeten dezelfde tijd-precisie hebben, kreeg "
-                        + ref.naam() + " en " + d.naam();
+            if (!ref.getClass().equals(d.getClass()))   // WF-038, with the fold's wire name ({@code vouw})
+                return functie + ": " + vouw + " orders dates of two precisions (day and millisecond), which share no "
+                        + "order";
         }
         return null;
     }
@@ -281,8 +280,8 @@ public final class Typering {
         if (doel.isOnbekend() || waarde.isOnbekend()) return null;
         if (!zelfdeFamilie(doel, waarde))
             return "kan een waarde van type " + waarde.naam() + " niet toekennen aan een " + doel.naam();
-        String p = datumPrecisieFout(doel, waarde, "toekenning vereist");
-        if (p != null) return p;
+        if (anderePrecisie(doel, waarde))
+            return "toekenning: a " + soortWoord(waarde) + " value is assigned to a " + soortWoord(doel) + " target";
         String e = enumDomeinFout(doel, waarde, "toekenning vereist");
         if (e != null) return e;
         if (!doel.isGetalachtig()) return null;
@@ -392,12 +391,11 @@ public final class Typering {
      *  but a mixed toekenning generates a type-broken setter (a LocalDateTime into a LocalDate property)
      *  and a mixed gelijk compares values that can never be equal — both silently-dead outcomes. The
      *  language's own conversion forms are the escape hatch (documented in grammar/DIVERGENCES.md). The
-     *  precision test is the same getClass() equality tijdsduur/eerste/laatste already use. */
-    private static String datumPrecisieFout(Datatype a, Datatype b, String wat) {
-        if (a.isDatum() && b.isDatum() && !a.getClass().equals(b.getClass()))
-            return wat + " dezelfde tijd-precisie, kreeg " + a.naam() + " en " + b.naam()
-                    + "; converteer expliciet (bijv. 'de datum met jaar, maand en dag uit …')";
-        return null;
+     *  precision test is the same getClass() equality tijdsduur/eerste/laatste already use. The verifier refuses
+     *  both (WF-036's equality arm, WF-023's family arm, where the two precisions are two kinds), and the callers
+     *  carry its sentences. */
+    private static boolean anderePrecisie(Datatype a, Datatype b) {
+        return a.isDatum() && b.isDatum() && !a.getClass().equals(b.getClass());
     }
 
     /** Tabel 36/43 rij 7 (vergelijking) and Tabel 61 rij 7 (toekenning): both sides must be the SAME
@@ -435,7 +433,7 @@ public final class Typering {
 
     /** The kind word the verifier writes for a datatype in a message ({@code datatype_kind} in
      *  spec/verifier/lib/checks.ml). An unknown type makes no claim and never reaches a message. */
-    private static String soortWoord(Datatype t) {
+    static String soortWoord(Datatype t) {
         return switch (t) {
             case Datatype.Numeriek n -> "number";
             case Datatype.Percentage p -> "percentage";
