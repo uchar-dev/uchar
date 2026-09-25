@@ -24,11 +24,12 @@
 #      PURPOSE the pin was re-taken in that card and listed in toka/README.md
 #      ("Deliberate divergences from the toolchain emission"), and for those
 #      constructs this leg proves "frontend == the recorded state", not
-#      toolchain agreement. Today that list holds one entry: a Tekst literal's
-#      waarde is the PARSED string, not the source snippet with its own outer
-#      '"' (maintainer decision 2026-09-18). Divergence by holdout (toka-45,
-#      below) and divergence by re-pin are both recorded; a silent one is not
-#      available;
+#      toolchain agreement. That list carries every re-pin with its date and
+#      its card, one entry per landing since the first (maintainer decision
+#      2026-09-18: a Tekst literal's value is the PARSED string, not the
+#      source snippet with its own outer '"'), so this comment does not count
+#      them. Divergence by holdout (toka-45, below) and divergence by re-pin
+#      are both recorded; a silent one is not available;
 #   3. every replay slice (`toka/cases/**/ir.json`) obeys the SAME metaschema
 #      + byte-round-trip discipline gate 2 enforces on the public corpus, run
 #      here in explicit mode via scripts/check-ir-schema.sh — one serialiser,
