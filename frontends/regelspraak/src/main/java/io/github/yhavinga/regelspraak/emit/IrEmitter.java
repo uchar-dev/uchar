@@ -1155,18 +1155,24 @@ public final class IrEmitter {
     /** WF-113 (b): a marker is accounted for by a warning that quotes its source snippet verbatim. A marker without
      *  one is quoted by no message and a blank one by every message, so neither accounts for anything and the
      *  verifier refuses the document; the frontend can build one, since {@code DefinitionResolver.bron} gives an
-     *  empty snippet for a missing context or an empty match. */
+     *  empty snippet for a missing context or an empty match. Each is refused in the verifier's sentence for its
+     *  arm; an empty snippet is no snippet at all, and {@link #bronrecord} refuses it in the readers' own sentence. */
     private static String markerBron(Bron b) {
         String s = b == null ? null : b.snippet();
-        if (s == null || s.isBlank())
-            throw new IllegalStateException("IrEmitter: WF-113 (b) — een Unresolved-marker zonder brontekst ('" + s
-                    + "') kan door geen warning verantwoord worden");
+        if (s == null)
+            throw new IllegalStateException("IrEmitter: WF-113 (b) — Unresolved marker without a source: no diagnostic "
+                    + "message can contain it, so it cannot be accounted for");
+        if (!s.isEmpty() && s.isBlank())
+            throw new IllegalStateException("IrEmitter: WF-113 (b) — Unresolved marker whose source snippet is blank: "
+                    + "blank counts as absent, since nearly every message contains it and a message about another "
+                    + "marker would account for this one");
         return s;
     }
 
     /** IR-SPEC ch. 4 (B26): the source record, at the place the node's source text stands. A node without source
      *  text carries no record; an empty text is refused and not dropped, since a snippet is never empty and a
-     *  document that lost the record would read as a node without source text. */
+     *  document that lost the record would read as a node without source text. The refusal is the sentence every
+     *  reader gives for an empty snippet at load. */
     private void bronrecord(String snippet) {
         bronrecord(snippet, 0);
     }
@@ -1177,8 +1183,8 @@ public final class IrEmitter {
     private void bronrecord(String snippet, int regel) {
         if (snippet == null) return;
         if (snippet.isEmpty())
-            throw new IllegalStateException("IrEmitter: een knoop met een lege brontekst heeft geen spelling in "
-                    + "uchar-ir-v1: een snippet is nooit leeg, en een knoop zonder brontekst draagt geen source");
+            throw new IllegalStateException("IrEmitter: a source snippet is never empty: a node without source text "
+                    + "carries no source");
         if (regel < 0)
             throw new IllegalStateException("IrEmitter: de bronregel " + regel + " van '" + snippet + "' is "
                     + "negatief; een regel in het bronrecord is minstens 1, en 0 betekent geen regel");

@@ -931,7 +931,8 @@ class IrEmitterTest {
      *  verbatim, so a marker whose snippet is null or blank can be accounted for by nothing and the verifier refuses
      *  the document. The frontend can build one ({@code DefinitionResolver.bron} gives an empty snippet for a
      *  missing context or an empty match); the emitter refuses to write it, at either marker node, with a WARNING
-     *  on the model that a literal reading of an empty snippet would count as its account. */
+     *  on the model that a literal reading of an empty snippet would count as its account. An empty snippet is
+     *  refused before WF-113 is asked, in the sentence every reader gives for it at load. */
     @Test void wf113b_de_emitter_schrijft_geen_marker_zonder_bron() {
         for (Bron bron : new Bron[] { Bron.synthetisch(""), Bron.synthetisch("   "), Bron.synthetisch(null), null }) {
             for (boolean conditie : new boolean[] { false, true }) {
@@ -954,7 +955,8 @@ class IrEmitterTest {
                 IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
                         () -> "de emitter schreef een " + (conditie ? "conditie" : "expressie") + "marker met bron "
                                 + (bron == null ? null : "'" + bron.snippet() + "'"));
-                assertTrue(e.getMessage().contains("WF-113 (b)"), e::getMessage);
+                assertTrue(e.getMessage().contains(bron != null && "".equals(bron.snippet())
+                        ? "a source snippet is never empty" : "WF-113 (b)"), e::getMessage);
             }
         }
     }
@@ -1521,7 +1523,7 @@ class IrEmitterTest {
                 continue;
             }
             IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-            assertTrue(e.getMessage().contains("een knoop met een lege brontekst heeft geen spelling in uchar-ir-v1"),
+            assertTrue(e.getMessage().contains("a source snippet is never empty: a node without source text carries no source"),
                     e::getMessage);
         }
     }
