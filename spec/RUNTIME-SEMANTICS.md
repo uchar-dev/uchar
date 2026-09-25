@@ -5495,7 +5495,12 @@ two computing rules on one target mean agenda order, which is exactly what
 prioritized defaults exist to replace (ch. 7.7), so a level carrying two
 refuses by name rather than picking one. Outside the gate nothing changes —
 in a flat model two computing rules on one target keep the reading they
-always had, and WF-079 is what speaks about them. A rule beside a group the
+always had, and WF-079 is what speaks about them. It speaks there per
+concrete type, through the chain: outside the gate a bare rule on a type and
+a bare rule on one of its ancestors both write the type's instances, with
+nothing to rank them, so the pair is refused as two bare rules on one type
+are (`IR-SPEC.md` WF-079; witness
+`corpus/negatief/wf079-keten-kale-schrijvers`). A rule beside a group the
 level declares **itself** is likewise not this chapter's business: that is
 WF-050's single-writer lift, refused at the document.
 

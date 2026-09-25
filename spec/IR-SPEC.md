@@ -2271,7 +2271,23 @@ literal `{"boolean": true}` since L4.)
   discipline of WF-026/WF-050/WF-052 extended to bare attribute writers
   (`RUNTIME-SEMANTICS.md` ch. 7.7: the desugaring admits at most one
   version-free computing rule per target). Priority is a defaults group (explicit defaults) or `unordered`
-  (explicitly absent), never implicit agenda order. Characteristic
+  (explicitly absent), never implicit agenda order. **Through a type chain
+  the rule is read per concrete type** (ch. 2.2; `RUNTIME-SEMANTICS.md`
+  ch. 7.10): a version whose target names an ancestor of T writes T's
+  instances too, so the writers of T's attribute are the versions declared
+  on T and on its ancestors. Where T's chain — T and its ancestors —
+  declares a defaults group on the attribute, the fold of ch. 7.10 makes each
+  such version the base of its level and the subtype's base replaces the
+  inherited one, so the chain holds one writer; what the fold cannot take it
+  refuses by name, and a version beside a group of its own level is
+  WF-050's. Where the chain declares none — outside the gate of ch. 7.10 —
+  each such version writes T's instances, and two of them declared on two
+  types of the chain, one an ancestor of the other, pair exactly as two on
+  one type do. The report cites the version on the lower of the two types,
+  the first concrete type both write; two versions on one declared type keep
+  the report above. This is the chain-awareness ch. 6.1 asks of the
+  single-writer rules: whether two writers survive into one instance's
+  effective stack. Characteristic
   attributions (a version with neither tag nor flag) are exempt — a monotone
   many-grounds-one-truth — and a guarded case split (each writer carrying
   a `condition`) carries its own priority and stays outside the rule; only
@@ -2279,7 +2295,10 @@ literal `{"boolean": true}` since L4.)
   `PHASE5D-DIFF` §8.2 witness — the flat form is un-pinnable in every
   zone (ref oscillates and faults the fixpoint budget, clingo is silently
   multi-valued, so the executors disagree and no corpus zone admits it);
-  WF-079 refuses it ahead of the differential square. **Delta
+  WF-079 refuses it ahead of the differential square. The chain pair
+  behaves the same way (`corpus/negatief/wf079-keten-kale-schrijvers`): ref
+  and the Drools exec-model branch find no fixpoint, clingo derives two
+  values, and the DRL-text branch answers by document order. **Delta
   (promotion).**
 - **WF-082** The `statuteAnnotations` extension field of a Rule (v0 wire
   `bronAnnotaties`), when present, MUST be
@@ -8384,9 +8403,9 @@ the wrong one:
 > raw declaration set and never on a chain-closed target key.**
 
 The hazard runs the counter-intuitive way, so it is measured rather than
-argued. Today those three fences key on the DECLARED object-type name, so
-`Strandrecht.uitkering` and `Wrakrecht.uitkering` are two keys and the
-fences do **not** fire on a supertype/subtype pair at all. The tempting
+argued. Keyed on the DECLARED object-type name, `Strandrecht.uitkering` and
+`Wrakrecht.uitkering` are two keys, and a fence keyed that way does **not**
+fire on a supertype/subtype pair at all. The tempting
 repair — lift the target key to the chain-closed set, now that member
 resolution walks the chain — would make them fire on precisely the shape
 inheritance legitimises: a supertype base plus a subtype base on one
@@ -8397,7 +8416,10 @@ must therefore ask *"do these two writers survive into one instance's
 effective stack"*, never *"do these two targets close over the same
 member"*. This is a new obligation, not a restatement, and it is witnessed
 by `anchor/jutterswet-strandrechtketen`, whose two bases on one chain are
-verifier-clean and replay through all three executors.
+verifier-clean and replay through all three executors. WF-079's chain
+clause (ch. 3.1) asks exactly that of two bare computing versions: outside
+the gate of `RUNTIME-SEMANTICS.md` ch. 7.10 both write a subtype instance,
+inside it the fold makes them one.
 
 - **WF-050** A defaults group MUST carry at least one default and MUST
   target exactly one of a characteristic or an attribute, resolving on its
