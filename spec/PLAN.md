@@ -781,6 +781,7 @@ fragments; no gate-5/6/12 outcome moved; all fourteen gates green on the
 landing. With L5 the wire `uchar-ir-v1` is complete and phase 2 of the wire
 migration is closed; the one toolchain pin bump (phase 3) is now due, in the
 new toolchain under uchar; the `toka/` zone stays until the public flip.
+
 **Before the pin bump (2026-09-25, `54afea05`):** the six cards that touch spec
 or goldens landed as one union ahead of phase 3, so the bump carries them —
 WF-079 read through the type chain per concrete type
@@ -794,6 +795,41 @@ and the exception-on-exception dialect with `Afwijking van` and
 `Uitzonderingen ongeordend op` (`dialect-uitzondering-op-uitzondering`); all
 fourteen gates green on the landing. The bump itself waits for the
 maintainer's signal.
+
+**The last cards before the bump (2026-09-25, `07b1513c`):** six more landed as
+one union the same day, all of them direct fixes of what the lens rounds and
+the Results had left open — the dialect's opgave marker
+(`dialect-opgave-boven-berekening`: `(mag opgegeven worden)` lowered to the
+hardship pattern, no wire change), the emitter's last remnants
+(`frontend-emitterrestanten`: typed `dayCount` and `concatenation`, the
+dimension fold emitted, `connectingRole` on an object creation, the producer
+refusals in the readers' English), WF-026 and WF-050 read through the type
+chain (`verifier-allocatie-keten`), the source arm of the two counts with
+the Drools loader refusing at load and both Drools branches carrying
+consistencies under every quantifier (`aantal-bronarm-en-drools-lader`), the
+ASP backend's money × rate encoding taking a rate of one to three decimals
+so the WW twin is admitted (`clingo-tarief-decimalen`), and the parity zone
+made well-formed on the v1 wire (`toka-welgevormd`; maintainer decision the
+same day: the zone stays a while longer, in its own directory) — plus five
+rounds of card-less fixes of the smaller open points (among them: datatype
+names compared case-insensitively in the structural rules, WF-052 keyed on
+the form so the versions of one object creation are one writer, WF-039
+against the target's sign, WF-038 on the builtins' operands, the readers'
+date and duration sentences in one library, gate 3 resolving every cited
+pointer); all fourteen gates green on the landing. With this the spec, the
+goldens and the frontend slice are what the one pin bump carries; the bump
+waits for the maintainer's signal.
+
+**The parity zone is well-formed on the v1 wire (2026-09-25, card
+`toka-welgevormd`; maintainer decision the same day: the zone stays a while
+longer, in its own directory):** gate 11 gained a well-formedness leg —
+every replay slice verifier-clean (28 of 29; the 27 slices that lacked the
+casus's start-point determination and its anchor member carry them now, so
+the timeline with a variable start is anchored in every slice), with a
+reason-carrying holdout list that fails when stale (toka-24, a clamp bound
+written with a unit against a unitless base, WF-099) and the casus dump
+outside that leg (over-determined by its nature: its scenarios write the
+same targets each in their own way). The replays did not move.
 
 ## 10. Rough effort
 

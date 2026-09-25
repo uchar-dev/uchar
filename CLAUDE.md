@@ -121,8 +121,13 @@ green. Current gates:
    validates against
    `spec/schema/uchar-ir-v1.schema.json` (since L1 of the v1 wire
    migration, 2026-09-24; `regelspraak-ir-v0` until then) and round-trips
-   byte-identically; an unpopulated corpus is reported explicitly, never
-   silently green.
+   byte-identically; and, since the card-less fix round of 2026-09-25,
+   every object in `corpus/golden`, `corpus/rood` and `corpus/negatief`
+   carries its keys in the canonical order of the subschema it instantiates
+   (the `properties` order the schema's description makes canonical; an
+   object no subschema admits is counted apart, never skipped), failing
+   with the path and both orders on a deviation; an unpopulated corpus is
+   reported explicitly, never silently green.
 3. `scripts/check-verifier.sh` — the OCaml verifier (`spec/verifier/`)
    builds; every `corpus/golden/**/ir.json` and `corpus/rood/**/ir.json`
    is verifier-clean; every
@@ -132,8 +137,13 @@ green. Current gates:
    file is present (one literal fragment of the verifier's sentence,
    pointer-free; a blank or multi-line file fails; the count carries a
    floor `EXPECTED_MIN_EXPECT`), so a witness that drifts to another arm
-   of its own rule no longer passes unseen; an empty negatief corpus is a
-   failure, never silently green.
+   of its own rule no longer passes unseen; and, since the card-less fix
+   round of 2026-09-25, every JSON pointer a negatief report cites resolves
+   in that case's document (RFC 6901; the pointer is read up to the first
+   `: `, spaces included, and a FAIL line without that separator fails the
+   gate; the count carries a floor `EXPECTED_MIN_POINTERS`), so a witness
+   whose report points into the void no longer passes; an empty negatief
+   corpus is a failure, never silently green.
 4. `scripts/check-case-schema.sh` — the case schema
    (`spec/schema/uchar-case-v0.schema.json`) is metaschema-valid; every
    `corpus/golden/**/case*.json` and `corpus/rood/**/case*.json`
@@ -219,6 +229,14 @@ green. Current gates:
     by the identity unit typing, decision 16Y 2026-08-29, where uchar-v1
     deliberately diverges from the toolchain) mirrors gate 7 and fails when
     stale.
+    Since the card toka-welgevormd (2026-09-25; maintainer decision the same
+    day: the zone stays a while longer, in its own directory) the gate also
+    holds every replay slice VERIFIER-CLEAN — a well-formedness leg with its
+    own floor `EXPECTED_MIN_CLEAN` and a reason-carrying holdout list
+    (`VERIFIER_HOLDOUTS`, the slice whose clamp bound carries a unit against a
+    unitless base, WF-099) that fails when stale; the casus dump stays outside
+    that leg (the parity object, over-determined by its nature: its scenarios
+    write the same targets each in their own way).
     CI leg unconditional and blocking. **This gate is the one documented
     exception to gate-set monotonicity: it leaves the set with the zone,
     ahead of any public flip.**
