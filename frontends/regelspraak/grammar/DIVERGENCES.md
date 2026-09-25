@@ -324,17 +324,18 @@ conjunct — an unconditional base, whose justification is the empty `all` — t
 exception keeps the condition it was written with, since conjoining with the
 empty `all` changes nothing (`jutterswet-wrakrecht`, two unconditional bases,
 re-emits byte-identically). The compound's source text is the conjuncts' texts
-joined by " en ". The reasons: RUNTIME-SEMANTICS ch. 7.9 decides a default's
-exception groups before and regardless of the default's own justification, so an
-exception that does not carry its carrier's condition decides where the carrier
-does not hold; ch. 7.1 asks the frontend for self-contained justifications, built
-by conjoining the enclosing layer's condition; and the legal meaning of an
-exception is restrictive. The members of an `Uitzonderingen ongeordend op X`
-block inherit X's justification in the same way. The carrier's conjuncts are the
-same nodes in every justification that repeats them, and the two sweeps over the
-finished defaults — the report of unresolved markers and the WF-112 fence — judge
-each node once: a marker in a base's condition is one WARNING, not one per
-exception above it.
+joined by " en ", without the period that closes a compound conjunct's bullet list
+where another conjunct follows it. The reasons: RUNTIME-SEMANTICS ch. 7.9 decides
+a default's exception groups before and regardless of the default's own
+justification, so an exception that does not carry its carrier's condition decides
+where the carrier does not hold; ch. 7.1 asks the frontend for self-contained
+justifications, built by conjoining the enclosing layer's condition; and the legal
+meaning of an exception is restrictive. The members of an `Uitzonderingen
+ongeordend op X` block inherit X's justification in the same way. The carrier's
+conjuncts are the same nodes in every justification that repeats them, and the two
+sweeps over the finished defaults — the report of unresolved markers and the
+WF-112 fence — judge each node once: a marker in a base's condition is one
+WARNING, not one per exception above it.
 
 **`Afwijking van B` widens.** A block that widens its base — a hardship clause
 that applies the base "als ware twaalf vervangen door zes" — is not an exception
