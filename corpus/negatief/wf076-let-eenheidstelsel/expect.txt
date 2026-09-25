@@ -1,0 +1,1 @@
+the let type (number(2 decimals, kg, system GEWICHT)) differs from its body type (number(2 decimals, kg, system Gewicht))

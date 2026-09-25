@@ -2279,34 +2279,99 @@ let duration_sub_day_on_day_dates kind =
    shows its domain for the same reason (a WF-064/069/070 mismatch between
    two enumeration domains rendered as "enumeration, but ... enumeration"),
    and a list shows its element. *)
-let rec datatype_detail ?(wholeness = false) dt =
-  let dec_unit geheel decimalen eenheid =
-    let u =
-      match eenheid with
-      | None -> ""
-      | Some { afkorting = Some a; _ } -> ", " ^ a
-      | Some { canoniek = Some c; _ } -> ", " ^ c
-      | Some _ -> ", unit"
+(* The facets of a number-like datatype that [datatype_detail] leaves out by
+   default: its wholeness, its sign, and the parts of its unit beside the
+   spelling — system, canonical unit, factor, denominator. *)
+type detail_facet =
+  | Wholeness
+  | Sign
+  | Unit_system
+  | Unit_canonical
+  | Unit_factor
+  | Unit_denominator
+
+let rec datatype_detail ?(facets = []) dt =
+  let has f = List.mem f facets in
+  let unit_label (e : eenheid) =
+    match e with
+    | { afkorting = Some a; _ } -> a
+    | { canoniek = Some c; _ } -> c
+    | _ -> "unit"
+  in
+  let dec_unit geheel decimalen teken eenheid =
+    let u = match eenheid with None -> "" | Some e -> ", " ^ unit_label e in
+    let w = if not (has Wholeness) then "" else if geheel then ", whole" else ", fractional" in
+    let s =
+      if not (has Sign) then ""
+      else
+        match teken with
+        | Some t -> ", sign " ^ Spelling.encode Spelling.sign t
+        | None -> ", no sign"
     in
-    let w = if not wholeness then "" else if geheel then ", whole" else ", fractional" in
-    Printf.sprintf "(%d decimals%s%s)" decimalen u w
+    let of_unit f render =
+      match eenheid with Some e when has f -> render e | _ -> ""
+    in
+    let sys =
+      of_unit Unit_system (fun e ->
+          match e.stelsel with Some st -> ", system " ^ st | None -> ", no system")
+    in
+    let can =
+      of_unit Unit_canonical (fun e ->
+          match e.canoniek with Some c -> ", canonical " ^ c | None -> ", no canonical unit")
+    in
+    let fac =
+      of_unit Unit_factor (fun e ->
+          match e.factor_naar_canoniek with
+          | Some { num; den } -> Printf.sprintf ", factor %d/%d" num den
+          | None -> ", no factor")
+    in
+    let per =
+      of_unit Unit_denominator (fun e ->
+          match e.noemer with Some n -> ", per " ^ unit_label n | None -> ", no denominator")
+    in
+    Printf.sprintf "(%d decimals%s%s%s%s%s%s%s)" decimalen u w s sys can fac per
   in
   match dt with
-  | Numeriek { geheel; decimalen; eenheid; _ } -> "number" ^ dec_unit geheel decimalen eenheid
-  | Percentage { geheel; decimalen; eenheid } -> "percentage" ^ dec_unit geheel decimalen eenheid
+  | Numeriek { geheel; decimalen; teken; eenheid } -> "number" ^ dec_unit geheel decimalen teken eenheid
+  | Percentage { geheel; decimalen; eenheid } -> "percentage" ^ dec_unit geheel decimalen None eenheid
   | Enumeratie { domein = Some d; _ } -> "enumeration '" ^ d ^ "'"
   | Sum_type { domein; _ } -> "sumtype '" ^ domein ^ "'"
   | Struct_type { domein; _ } -> "struct '" ^ domein ^ "'"
-  | List_type { element } -> "list of " ^ datatype_detail ~wholeness element
+  | List_type { element } -> "list of " ^ datatype_detail ~facets element
   | other -> datatype_kind other
 
+(* the facets in which two number-like datatypes (or two lists of them)
+   differ; [datatype_detail] renders none of them by default *)
+let rec differing_facets a b =
+  let parts = function
+    | Numeriek { geheel; teken; eenheid; _ } -> Some (geheel, teken, eenheid)
+    | Percentage { geheel; eenheid; _ } -> Some (geheel, None, eenheid)
+    | _ -> None
+  in
+  match (a, b) with
+  | List_type { element = x }, List_type { element = y } -> differing_facets x y
+  | _ -> (
+      match (parts a, parts b) with
+      | Some (g1, t1, e1), Some (g2, t2, e2) ->
+          let when_ c f = if c then [ f ] else [] in
+          when_ (g1 <> g2) Wholeness
+          @ when_ (t1 <> t2) Sign
+          @ (match (e1, e2) with
+            | Some u1, Some u2 ->
+                when_ (u1.stelsel <> u2.stelsel) Unit_system
+                @ when_ (u1.canoniek <> u2.canoniek) Unit_canonical
+                @ when_ (u1.factor_naar_canoniek <> u2.factor_naar_canoniek) Unit_factor
+                @ when_ (u1.noemer <> u2.noemer) Unit_denominator
+            | _ -> [])
+      | _ -> [])
+
 (* One of two datatypes a message sets side by side ("X, but Y"): where the
-   two differ only in wholeness, [datatype_detail] renders them alike and the
-   message would name one type twice, so then each side names its
-   wholeness. *)
+   two differ only in a facet [datatype_detail] leaves out, it renders them
+   alike and the message would name one type twice, so then each side names
+   the facets in which they differ. *)
 let detail_vs a ~against =
   if datatype_detail a <> datatype_detail against then datatype_detail a
-  else datatype_detail ~wholeness:true a
+  else datatype_detail ~facets:(differing_facets a against) a
 
 (* The keuzetype a datatype names (IR-SPEC ch. 2.4) — its VARIANT and its
    declaring domain: an Enumeration's or SumType's domain, looked up THROUGH a
