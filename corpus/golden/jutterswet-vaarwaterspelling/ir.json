@@ -12,7 +12,7 @@
             "name": "vaarwater",
             "datatype": {
               "node": "Enumeration",
-              "domain": "Vaarwater",
+              "domain": "VAARWATER",
               "values": [
                 "Wad",
                 "Zeegat",
@@ -28,6 +28,19 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "standaardvaarwater",
+            "datatype": {
+              "node": "Enumeration",
+              "domain": "Vaarwater",
+              "values": [
+                "Wad",
+                "Zeegat",
+                "Ruimzee"
+              ]
             }
           }
         ],
@@ -154,6 +167,45 @@
             },
             "initialisation": false,
             "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "standaardvaarwater van een kadeplaats",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "standaardvaarwater",
+              "subjectType": "Kadeplaats",
+              "source": {
+                "snippet": "het standaardvaarwater"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "enumeration": "Wad"
+              },
+              "type": {
+                "node": "Enumeration",
+                "domain": "VAARWATER",
+                "values": [
+                  "Wad",
+                  "Zeegat",
+                  "Ruimzee"
+                ]
+              },
+              "source": {
+                "snippet": "Wad"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
           }
         ]
       }

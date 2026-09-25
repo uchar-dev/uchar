@@ -27,6 +27,14 @@
       }
     },
     {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "standaardvaarwater",
+      "value": {
+        "enumeration": "Wad"
+      }
+    },
+    {
       "kind": "consistent"
     }
   ]

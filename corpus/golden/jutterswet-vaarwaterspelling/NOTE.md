@@ -1,58 +1,57 @@
-# jutterswet-vaarwaterspelling — the ci witness of WF-088/WF-089 until L2
+# jutterswet-vaarwaterspelling — the ci witness of a domain name
 
 A `Kadeplaats` has a `vaarwater` of the declared enumeration domain
-`Vaarwater` (`Wad`, `Zeegat`, `Ruimzee`) and a `kadegeld` a `Match` over
-that attribute derives: `Wad` → 2, `Zeegat` → 5, `Ruimzee` → 9.
+`Vaarwater` (`Wad`, `Zeegat`, `Ruimzee`), a `kadegeld` that a `Match` over
+that attribute derives (`Wad` → 2, `Zeegat` → 5, `Ruimzee` → 9), and a
+`standaardvaarwater` that a rule sets to `Wad`.
 
-The single point of the case, until L2: the `Match` scrutinee — an
-`AttribuutRef` reading `vaarwater` — spelled its domain **`VAARWATER`**, in
-another case than the declaration's `Vaarwater`. Every value label was
-repeated exactly, in declaration order, so WF-088 was satisfied on its own
-terms; the only difference was the case of the domain NAME. Since L2 a
-reference carries no type of its own (B13), so the drift has no wire
-position left on the scrutinee: the spelling `VAARWATER` survives only in
-the `Match`'s source snippet (`match VAARWATER`), measured 2026-09-25.
+The domain name is written in another case, **`VAARWATER`**, at two
+positions the verifier reads case-insensitively, the WF-001 naming rule. The
+two cases pin absolute values (`kadegeld` 5 and 9, `standaardvaarwater`
+`Wad`); nothing else in the document differs from a plain spelling.
 
-What the document pins since L2, measured 2026-09-25 with two verifier
-mutants over the 293 golden and red documents: comparing domain names byte
-for byte in WF-089 and WF-090 turns none of them red, this golden included,
-so the ci clause below has no golden witness left; refusing every `Match`
-over a declared enumeration turns exactly two red, this golden and
-`jutterswet-vaarwatertoeslag-catala`, whose rule `berekening vaarwatertarief`
-has the same shape — a `Match` over the enumeration attribute `vaarwater`
-with three nullary arms. Every executor treats the two alike: `ref` and the
-ASP backend replay both, and the Drools backend refuses both at load
-(`Expr:Match`). This golden therefore pins nothing the catala golden does
-not pin as well.
+- **The lookup.** The datatype of the attribute `vaarwater` names
+  `VAARWATER`. The `Match` reads its scrutinee's declared type and looks the
+  domain up to check its arms (WF-063), and WF-088 looks it up to compare
+  the value list; both lookups are ci. Made case-sensitive, the lookup turns
+  this golden red:
 
-Why the case exists: WF-089 (domain identity, `spec/IR-SPEC.md` ch. 2.4)
-compares a use site's domain against the declaration's **ci**, following
-WF-001's naming rule, and WF-023 does the same at every write position.
-That ci clause was normative but unpinned — making the comparison
-case-sensitive left the whole negatief corpus red and the whole golden
-corpus clean, so nothing failed. Until L2 this document was the falsifier:
-it was verifier-clean only because the comparison is ci.
+      WF-063 FAIL /rules/rules/0/versions/0/value/scrutinee: match scrutinee
+      names enumeration domain 'VAARWATER', which is not a declared
+      enumeration domain
 
-    Falsifiable: drop the ci normalisation from the domain-identity
-    comparison in the verifier (compare the two domain names byte for
-    byte) and this golden alone turned red — measured before L2:
+- **The identity.** The rule `standaardvaarwater van een kadeplaats` writes
+  the literal `Wad` typed `VAARWATER` into `standaardvaarwater`, declared
+  `Vaarwater`. WF-023's write half compares the keuzetype identity (variant
+  and domain name) that WF-089 compares on the read half, ci. Made
+  case-sensitive, the identity turns this golden red:
 
-        FAIL: document corpus/golden/jutterswet-vaarwaterspelling/ir.json
-        is not verifier-clean:
-        WF-089 FAIL /rules/resolvedRegels/0/waarde/scrutinee/type: attribute
-        reference 'vaarwater' is typed as the enumeration domain
-        'VAARWATER', but the declaration it reads from is the enumeration
-        domain 'Vaarwater' (one namespace: a domain has one variant)
+      WF-023 FAIL /rules/rules/1/versions/0: a value of the enumeration
+      domain 'VAARWATER' is assigned to a target of the enumeration domain
+      'Vaarwater'
 
-    while every negatief case keeps failing for its own declared rule.
-    The report carries the pointer of the wire it was taken on; since L4 a
-    rule's value sits at `/rules/<list>/<r>/versions/<v>/value` (delta B19),
-    and since L5 that list is `rules` (delta B6).
+  WF-089's read half has no position where a keuzetype stands in a
+  verifier-clean document — the element-passing folds take numbers and dates
+  only (WF-038), and the composite positions are numeric — so a write
+  carries the identity.
 
-Deliberately carries no `bron.rgs` and no `bron.catala_en`: the drift is
-a wire-level spelling that neither frontend emits — both derive a
-reference's type from the declaration — so a source file would have to be
-round-tripped away. Hand-authored, in the Jutterswet's own vocabulary.
-The two case files pin absolute derived values (5 and 9), measured with
-the reference interpreter and confirmed by the ASP backend, so the
-identity transpiler fails on it: `kadegeld` is absent from the input.
+Measured 2026-09-25 with the two mutants over the golden and rood zones:
+each turns this golden red and leaves every other document clean.
+
+**What the verifier compares byte for byte.** A rule that compares two
+datatypes whole (WF-062, WF-064, WF-066 to WF-070, WF-073, WF-074, WF-076)
+compares the domain name in them byte for byte: on a probe outside the
+corpus, a `Let` typed `VAARWATER` over a body typed `Vaarwater` is refused
+under WF-076. This golden carries no such position.
+
+**Until L2** the one drift sat on the `Match` scrutinee's own type, an
+attribute reference typed `VAARWATER`. Since L2 a reference carries no type
+of its own (B13); the spelling stayed only in the `Match`'s source snippet
+(`match VAARWATER`), and until 2026-09-25 the golden pinned nothing that
+`jutterswet-vaarwatertoeslag-catala` did not pin as well.
+
+`ref` and the ASP backend replay both cases (3 expectations each); the
+Drools backend refuses the document at load in both branches (`Expr:Match`).
+Hand-authored, with no frontend source: neither frontend writes a domain
+name other than the declaration's. The identity transpiler fails on it,
+since `kadegeld` and `standaardvaarwater` are absent from the input.
