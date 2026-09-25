@@ -29,8 +29,10 @@ words, rather than two of them being taught a reading no source states.
 
 What the carrying reading would need is a source for what a test on a fixed
 date MEANS inside a definition about an arbitrary day — a constant conjunct, a
-scoping error, or a shorthand for something else. That is an open question
-(D9 of `backlog/done/20260910-dagsoort-semantiek.md`), not a decision against.
+scoping error, or a shorthand for something else. That is an open question, not
+a decision against: the day-kind card keeps the refusal and leaves the carrying
+reading open until a source states what such a test means
+(`backlog/done/20260910-dagsoort-semantiek.md`).
 
 ## What each executor pins
 
