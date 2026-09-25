@@ -7959,7 +7959,7 @@ let wf079 ctx =
   let writers =
     List.filter_map
       (fun (n, otn, a, g, at) ->
-        if has_defaults otn a then None else Some (n, norm otn, norm a, g, at))
+        if has_defaults otn a then None else Some (n, otn, a, g, at))
       computing
   in
   let rec pairs = function
@@ -7967,7 +7967,7 @@ let wf079 ctx =
     | (n1, ot1, a1, g1, at1) :: rest ->
         List.filter_map
           (fun (n2, ot2, a2, g2, _) ->
-            let same_target = ot1 = ot2 && a1 = a2 in
+            let same_target = norm ot1 = norm ot2 && norm a1 = norm a2 in
             if same_target && distinct_form n1 n2 && validity_overlaps g1 g2 then
               Some
                 (v "WF-079" at1
