@@ -708,10 +708,10 @@ class SubtypeDialectTest {
         // passed it — no WF rule holds an AttribuutRef name against the declarations, so nothing
         // downstream caught a member name that no declaration carries. The other five fail loudly.
         //
-        // Since L2 of the v1 wire migration the interval fold itself has no spelling: it names the subject
-        // as its element type and folds the subject's own attribute under SOM, and a fold over one source
-        // with an element type carries a range (IR-SPEC ch. 4.3). The emitter therefore refuses the model,
-        // and the spelling this test exists for is pinned where the fold reconstructs it, on the record.
+        // From L2 of the v1 wire migration until the card frontend-emitterrestanten the emitter refused the
+        // interval fold (it wrote the subject as the element type of a fold without a range), and this test
+        // pinned the spelling on the record alone. The dimension fold now goes out without an element type
+        // (IR-SPEC ch. 4.3), so the spelling is pinned on the wire again, where it was silent.
         String src = """
             Dimensie de jaardimensie, bestaande uit de jaardimensies (na het attribuut met voorzetsel van):
                 1. vorig jaar
@@ -733,8 +733,12 @@ class SubtypeDialectTest {
                         && f.argumenten().get(0) instanceof Expr.AttribuutRef a
                         && a.attribuut().equals("betaalde belasting"),
                 () -> "de vouw hoort de GEDECLAREERDE spelling te dragen: " + m.resolvedRegels.get(0).waarde());
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("eigen attribuut van het onderwerp"), e::getMessage);
+        String c = emitCompact(m);
+        assertTrue(c.contains("\"kind\":\"sum\",\"arguments\":[{\"node\":\"AttributeReference\","
+                        + "\"attribute\":\"betaaldebelasting\",\"subjectType\":\"Ondernemer\","),
+                () -> "de gedeclareerde spelling op de wire:\n" + c);
+        assertTrue(c.contains("\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"jaardimensie\","
+                + "\"labels\":[\"vorigjaar\",\"huidigjaar\"]"), () -> "de dimensieselectie op de wire:\n" + c);
     }
 
     @Test void twee_geerfde_tijdlijnsleutels_weigeren_de_uniciteit() {

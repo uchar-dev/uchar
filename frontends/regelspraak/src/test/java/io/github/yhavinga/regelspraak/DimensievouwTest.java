@@ -1,0 +1,72 @@
+package io.github.yhavinga.regelspraak;
+
+import io.github.yhavinga.regelspraak.emit.IrEmitter;
+import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
+import io.github.yhavinga.regelspraak.resolver.Resolver;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * A sum, minimum or maximum over the labels of the subject's own dimensioned attribute (§13.4.17.51-.54) is an
+ * {@code Aggregation} with a {@code dimensionSelection} (IR-SPEC ch. 4.3, CONSTRUCTS row 28): it folds label cells,
+ * not instances, so it carries no element type and no range, and its one argument is the subject's own read. The
+ * resolver records the subject as the fold's element type; written on the wire, an element type on a
+ * single-argument fold demands a range. Measured on the frontend before this: the emitter refused every such fold
+ * ("haar bron is het eigen attribuut van het onderwerp en geen instantiebron").
+ */
+class DimensievouwTest {
+
+    private static final String KOP = """
+        Eenheidsysteem Gewicht
+            het kilogram (mv: kilogrammen) kg
+
+        Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+            1. voorjaar
+            2. zomer
+            3. najaar
+
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            het vondstgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg gedimensioneerd met seizoen;
+            het jaargewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+
+        Regel jaargewicht van een jutter
+            geldig altijd
+                Het jaargewicht van een Jutter moet berekend worden als\s""";
+
+    private static String emitCompact(String waarde) {
+        RegelSpraakModel m = Resolver.resolve(KOP + waarde + "\n");
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        return IrEmitter.emit(m).replaceAll("\\s+", "");
+    }
+
+    private static final String EIGEN_LEZING = "\"arguments\":[{\"node\":\"AttributeReference\",\"attribute\":\"vondstgewicht\","
+            + "\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"zijnvondstgewicht\"}}],";
+
+    @Test void de_som_over_alle_labels_draagt_de_selectie_en_geen_elementtype() {
+        String c = emitCompact("de som van zijn vondstgewicht over alle seizoenen.");
+        assertTrue(c.contains("\"node\":\"Aggregation\",\"kind\":\"sum\"," + EIGEN_LEZING
+                + "\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
+                + "\"labels\":[\"voorjaar\",\"zomer\",\"najaar\"],\"source\":{\"snippet\":\"overalleseizoenen\"}},"
+                + "\"type\":{\"node\":\"Number\""), () -> "de som over alle seizoenen:\n" + c);
+        assertFalse(c.contains("\"elementType\""), () -> "een elementtype op de dimensievouw:\n" + c);
+        assertFalse(c.contains("\"sourceRole\"") || c.contains("\"sourcePath\""), () -> "een bereik op de dimensievouw:\n" + c);
+    }
+
+    @Test void de_som_over_een_interval_draagt_de_labels_in_gedeclareerde_volgorde() {
+        String c = emitCompact("de som van zijn vondstgewicht vanaf voorjaar t/m zomer.");
+        assertTrue(c.contains("\"kind\":\"sum\"," + EIGEN_LEZING
+                + "\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
+                + "\"labels\":[\"voorjaar\",\"zomer\"],\"source\":{\"snippet\":\"vanafvoorjaart/mzomer\"}},"),
+                () -> "de som over een interval:\n" + c);
+        assertFalse(c.contains("\"elementType\""), () -> "een elementtype op de dimensievouw:\n" + c);
+    }
+
+    @Test void het_maximum_over_een_interval_draagt_de_selectie() {
+        String c = emitCompact("de maximale waarde van zijn vondstgewicht vanaf zomer t/m najaar.");
+        assertTrue(c.contains("\"kind\":\"maximum\"," + EIGEN_LEZING
+                + "\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
+                + "\"labels\":[\"zomer\",\"najaar\"],"), () -> "het maximum over een interval:\n" + c);
+        assertFalse(c.contains("\"elementType\""), () -> "een elementtype op de dimensievouw:\n" + c);
+    }
+}

@@ -823,11 +823,22 @@ public final class IrEmitter {
                     if (f.leegwaarde() != null) throw facetWeigering(f, "een leegwaarde", "een Aggregation");
                     if (f.dimensieSelectie() != null) throw facetWeigering(f, "een dimensieselectie", "een Aggregation");
                 }
+                // IR-SPEC ch. 4.3 (row 28): a dimension fold ranges over the labels of the subject's own
+                // dimensioned attribute, not over instances, so it has no element type and no range and its one
+                // argument is an ordinary read. The resolver records the subject as its element type; written, that
+                // type would demand a range the fold does not have. Any other element type would be a fold this
+                // reading does not describe.
+                boolean dimensievouw = aggregatie && f.dimensieSelectie() != null;
+                if (dimensievouw && f.elementObjecttype() != null && f.elementObjecttype() != huidigSubject)
+                    throw vouwWeigering(f, "haar dimensieselectie loopt over een attribuut van "
+                            + f.elementObjecttype().naam + ", en een dimensievouw leest het eigen attribuut van "
+                            + (huidigSubject == null ? "het onderwerp" : huidigSubject.naam));
+                Objecttype element = dimensievouw ? null : f.elementObjecttype();
                 w.key("node").value(aggregatie ? "Aggregation" : "BuiltinCall");
                 w.key("kind").value(soort(f));
                 // decided before the arguments are written: under count the source's name follows the role
                 // the range binds
-                Vouwbereik bereik = vouwbereik(f);
+                Vouwbereik bereik = dimensievouw ? null : vouwbereik(f);
                 w.key("arguments").beginArray();
                 Expr vorigeFoldBron = foldBron;
                 String vorigeNaam = foldBronNaam;
@@ -837,7 +848,7 @@ public final class IrEmitter {
                 foldBron = vorigeFoldBron;
                 foldBronNaam = vorigeNaam;
                 w.endArray();
-                if (f.elementObjecttype() != null) w.key("elementType").value(f.elementObjecttype().naam);
+                if (element != null) w.key("elementType").value(element.naam);
                 // the filter is a subselectie over the fold ELEMENT: an element-own read there is an own
                 // read, not a navigation from the outer subject — emit the filter (and only the filter)
                 // with the element as subject so such reads take the own-attribute branch and carry no
@@ -845,7 +856,7 @@ public final class IrEmitter {
                 if (f.filter() != null) {
                     w.key("filter");
                     Objecttype vorigSubject = huidigSubject;
-                    if (f.elementObjecttype() != null) huidigSubject = f.elementObjecttype();
+                    if (element != null) huidigSubject = element;
                     conditie(f.filter());
                     huidigSubject = vorigSubject;
                 }
