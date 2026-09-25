@@ -8,7 +8,7 @@ The declaring enumeration `bergingsstatus` has two values (`Geborgen`,
 them faithfully in `domeinen`, and the three use sites repeat a third
 value `Verspoeld` that no declaration has. The verifier reports:
 
-    WF-088 FAIL /model/functionDefs/0/parameters/melding
+    WF-088 FAIL /model/functionDefs/0/parameters/0
     WF-088 FAIL /model/functionDefs/0/result
 
 the model layer's `FunctionDef` arm (parameter and result), both reached

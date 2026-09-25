@@ -991,14 +991,19 @@ let rec check_datatype_units ~stelsels at = function
       check_eenheid_form ~stelsels (at ^ "/unit") u
   | List_type { element } -> check_datatype_units ~stelsels (at ^ "/element") element
   | Struct_type { velden; _ } ->
-      List.concat_map (fun (f, d) -> check_datatype_units ~stelsels (at ^ "/velden/" ^ f) d) velden
+      List.concat
+        (List.mapi
+           (fun i (_, d) -> check_datatype_units ~stelsels (Printf.sprintf "%s/fields/%d/datatype" at i) d)
+           velden)
   | Sum_type { constructoren; _ } ->
-      List.concat_map
-        (fun (c, p) ->
-          match p with
-          | Some d -> check_datatype_units ~stelsels (at ^ "/constructoren/" ^ c) d
-          | None -> [])
-        constructoren
+      List.concat
+        (List.mapi
+           (fun i (_, p) ->
+             match p with
+             | Some d ->
+                 check_datatype_units ~stelsels (Printf.sprintf "%s/constructors/%d/payload" at i) d
+             | None -> [])
+           constructoren)
   | Numeriek _ | Percentage _ | Tekst | Booleaan | Datum_in_dagen | Datum_tijd | Enumeratie _ ->
       []
 
@@ -1027,15 +1032,17 @@ let wf092 ctx =
       ctx.doc.objecttypen
   @ List.concat_map (fun (d, dt) -> site ("/domeinen/" ^ d) dt) ctx.doc.domeinen
   @ List.concat_map
-      (fun (p, par) -> site ("/parameters/" ^ p) par.par_datatype)
+      (fun (p, par) -> site ("/parameters/" ^ p ^ "/datatype") par.par_datatype)
       ctx.doc.parameters
   @ List.concat
       (List.mapi
          (fun i (fd : function_def) ->
            let at = Printf.sprintf "/functionDefs/%d" i in
-           List.concat_map
-             (fun (pn, dt) -> check_datatype_units ~stelsels (at ^ "/parameters/" ^ pn) dt)
-             fd.fd_parameters
+           List.concat
+             (List.mapi
+                (fun j (_, dt) ->
+                  check_datatype_units ~stelsels (Printf.sprintf "%s/parameters/%d/datatype" at j) dt)
+                fd.fd_parameters)
            @ check_datatype_units ~stelsels (at ^ "/result") fd.fd_result)
          ctx.doc.function_defs)
 
@@ -5662,9 +5669,13 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
          lambda parameter. Measured: 58 of the goldens' 2161 datatype
          positions were unreachable, this arm's parameters and the composite
          element/field/payload datatypes nested inside them. *)
-      @ List.concat_map
-          (fun (pn, pt) -> check_datatype_units ~stelsels:(stelsel_namen ctx) (at ^ "/parameters/" ^ pn) pt)
-          parameters
+      @ List.concat
+          (List.mapi
+             (fun j (_, pt) ->
+               check_datatype_units ~stelsels:(stelsel_namen ctx)
+                 (Printf.sprintf "%s/parameters/%d/datatype" at j)
+                 pt)
+             parameters)
       @ (match
            ( result,
              expr_type ctx ~binders:(List.map (fun (n, dt) -> (n, Some dt)) parameters) lbody )
@@ -6184,7 +6195,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
          shared-rule discipline arm (c) states. *)
       @ (match (k.kv_kwantor, k.kv_drempel) with
          | (Ten_minste | Ten_hoogste | Precies), None ->
-             [ v "WF-108" (sub "threshold")
+             [ v "WF-108" at
                  "counting quantifier fold without a threshold: the verdict compares the number \
                   of contributors satisfying the matrix with a threshold, and there is none to \
                   compare it with" ]
@@ -8273,9 +8284,10 @@ let wf088 ctx =
       (List.mapi
          (fun i (fd : function_def) ->
            let at = Printf.sprintf "/functionDefs/%d" i in
-           List.concat_map
-             (fun (pn, dt) -> enum_use_site ctx (at ^ "/parameters/" ^ pn) dt)
-             fd.fd_parameters
+           List.concat
+             (List.mapi
+                (fun j (_, dt) -> enum_use_site ctx (Printf.sprintf "%s/parameters/%d" at j) dt)
+                fd.fd_parameters)
            @ enum_use_site ctx (at ^ "/result") fd.fd_result)
          ctx.doc.function_defs)
 
@@ -8364,9 +8376,10 @@ let wf072 ctx =
       (List.mapi
          (fun i (fd : function_def) ->
            let at = Printf.sprintf "/functionDefs/%d" i in
-           List.concat_map
-             (fun (pn, dt) -> struct_use_site ctx (at ^ "/parameters/" ^ pn) dt)
-             fd.fd_parameters
+           List.concat
+             (List.mapi
+                (fun j (_, dt) -> struct_use_site ctx (Printf.sprintf "%s/parameters/%d" at j) dt)
+                fd.fd_parameters)
            @ struct_use_site ctx (at ^ "/result") fd.fd_result)
          ctx.doc.function_defs)
   @ List.concat_map
@@ -8378,10 +8391,11 @@ let wf072 ctx =
            needs no walk: WF-060 admits no struct payload at all.) *)
         match dt with
         | Some (Struct_type { velden; _ }) ->
-            List.concat_map
-              (fun (fname, fdt) ->
-                struct_use_site ctx ("/domeinen/" ^ name ^ "/velden/" ^ fname) fdt)
-              velden
+            List.concat
+              (List.mapi
+                 (fun j (_, fdt) ->
+                   struct_use_site ctx (Printf.sprintf "/domeinen/%s/fields/%d" name j) fdt)
+                 velden)
         | _ -> [])
       ctx.doc.domeinen
 

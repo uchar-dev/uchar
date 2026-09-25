@@ -26,6 +26,6 @@ The schema also refuses this document — its `if`/`then` on `quantifier` requir
 as well. That is no substitute: the negatief zone is gate 3's, not gate 2's, and
 a rule whose only enforcement were the schema would have no citable violation.
 
-Verifier: `WF-108 FAIL /rules/rules/0/versions/0/condition/threshold: counting quantifier
+Verifier: `WF-108 FAIL /rules/rules/0/versions/0/condition: counting quantifier
 fold without a threshold: the verdict compares the number of contributors
 satisfying the matrix with a threshold, and there is none to compare it with`.

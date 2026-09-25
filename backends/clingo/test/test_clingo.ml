@@ -4623,7 +4623,7 @@ let () =
     [ ( "ch3.9a vouw zonder matrix (WF-108)", kv_doc ~toets:"null" (),
         "/rules/rules/0/versions/0/condition/test" );
       ( "ch3.9a tellende vouw zonder drempel", kv_doc ~kwantor:"atLeast" (),
-        "/rules/rules/0/versions/0/condition/threshold" ) ];
+        "/rules/rules/0/versions/0/condition" ) ];
   (* the quantifier `the` on a fold: the verifier loads it so that WF-108 (a)
      names it, and an executor refuses it at load in that same sentence, at
      the same pointer — ref and this backend never meet it off the wire *)
