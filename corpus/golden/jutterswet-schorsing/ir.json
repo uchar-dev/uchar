@@ -62,11 +62,51 @@
             "node": "Default",
             "decision": false,
             "justification": {
-              "node": "CharacteristicCheck",
-              "characteristic": "vergunning geschorst",
-              "negated": false,
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "greaterOrEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "aantal aangemelde vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn aantal aangemelde vondsten"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "12"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "12"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan 12"
+                  }
+                },
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "vergunning geschorst",
+                  "negated": false,
+                  "source": {
+                    "snippet": "hij vergunning geschorst is"
+                  }
+                }
+              ],
               "source": {
-                "snippet": "hij vergunning geschorst is"
+                "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan 12 en hij vergunning geschorst is"
               }
             },
             "source": {

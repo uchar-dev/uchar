@@ -42,8 +42,9 @@ default the block becomes, and the base's also on the group.
 One `PrioritizedDefaults` (kenmerk `recht op de penning`, onderwerp
 `Jutter`, named after the base), defaults in descending priority:
 
-1. **exception default** — `decision false`, justified by `vergunning
-   geschorst`; `source` "Jutterswet art. 4bis".
+1. **exception default** — `decision false`, justified by one flat `all`
+   of `aantal aangemelde vondsten >= 12` and `vergunning geschorst`, the
+   base's condition first; `source` "Jutterswet art. 4bis".
 2. **base default** — `decision true`, justified by `aantal aangemelde
    vondsten >= 12`; `source` "Jutterswet art. 3".
 
@@ -62,27 +63,28 @@ and this golden does not pin an answer to it.
 ## Case derivations (hand-computed, absolute)
 
 Walk top-down; the highest deciding default wins. The exception is
-justified iff the jutter's vergunning is geschorst, and then decides
-`onwaar`, so nothing is written whatever the base would decide. Otherwise
-the base decides `waar` iff the count is at least 12. Without a deciding
-default the characteristic is absent (closed world, §3.5).
+justified iff the count is at least 12 and the jutter's vergunning is
+geschorst, and then decides `onwaar`, so nothing is written although the
+base would decide `waar`. Otherwise the base decides `waar` iff the count
+is at least 12. Without a deciding default the characteristic is absent
+(closed world, §3.5).
 
 | case | label | vondsten | vergunning geschorst | exception | base (>= 12) | recht op de penning |
 |------|-------|----------|----------------------|-----------|--------------|---------------------|
 | case1-drempel                 | J | 12 | no  | not justified     | **waar**  | **present** |
 | case2-geschorst               | J | 14 | yes | **onwaar**        | (waar)    | **absent**  |
 |                               | K | 14 | no  | not justified     | **waar**  | **present** |
-| case3-geschorst-onder-drempel | J | 5  | yes | **onwaar**        | (none)    | **absent**  |
+| case3-geschorst-onder-drempel | J | 5  | yes | not justified     | none      | **absent**  |
 |                               | K | 12 | no  | not justified     | **waar**  | **present** |
 | case4-onder-drempel           | J | 11 | no  | not justified     | none      | **absent**  |
 |                               | K | 12 | no  | not justified     | **waar**  | **present** |
 
 A value in parentheses is what the base would decide; the exception
 decides first. case2 is the negated exception displacing the base on the
-same count as a sibling the base grants; case3 is the negated exception
-deciding where the base would decide nothing, with the same absent outcome;
-case1 and case4 put the threshold's two sides next to each other. All four
-are `consistent`: one ordered group never conflicts.
+same count as a sibling the base grants; in case3 the count is below the
+threshold, so neither default is justified and the characteristic is
+absent; case1 and case4 put the threshold's two sides next to each other.
+All four are `consistent`: one ordered group never conflicts.
 
 Every case carries an instance the base grants, so every case fails a
 no-op run and none needs a survivor entry.
@@ -93,9 +95,17 @@ ref and clingo replay all four cases. The Drools exec-model branch lowers a
 defaults group and plays them; the DRL-text branch refuses every document
 with `prioritizedDefaults` (no defaults lowering in that branch).
 
-Under the restrictive reading of `Uitzondering op` decided for the nesting
-card (an exception's justification conjoined with its carrier's), the
-exception default's justification becomes `aantal aangemelde vondsten >= 12`
-and `vergunning geschorst`. Every expected value above stays: where the
-count is below 12 neither default then decides, and the characteristic is
-absent either way. Only the `ir.json` changes.
+## The carrier's condition
+
+Since the card dialect-uitzondering-op-uitzondering an `Uitzondering op`
+is restrictive (`frontends/regelspraak/grammar/DIVERGENCES.md` §4): the
+frontend conjoins the base's condition into the exception's
+justification. The source is unchanged; the `ir.json` was re-emitted, and
+its only change is the exception default's justification, which was
+`vergunning geschorst` alone. Every expected value stays, and all four
+cases pass in ref, clingo and the Drools exec branch on the new `ir.json`:
+the two readings differ only where the count is below 12 and the
+vergunning is geschorst (case3), and there the exception decided `onwaar`
+before and nothing decides now, which leaves the characteristic absent
+either way. Art. 4bis does not widen art. 3, so the block keeps its
+`Uitzondering op` header; a widening block is written `Afwijking van`.
