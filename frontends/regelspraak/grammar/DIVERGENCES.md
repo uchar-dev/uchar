@@ -1347,9 +1347,14 @@ which is the measurement above stated as a property.
   document, as it does for every cycle (witness: `ZelflezingKringTest`). The
   clamp idiom "x = x, met een maximum van y" is such a self-read too, and so is
   a computation whose condition reads its own target: the verifier refuses both
-  under WF-045 as well (measured the same day). The condition's other reads are
-  no edges of the frontend's graph, so a cycle that runs through a condition
-  over another attribute is not warned.
+  under WF-045 as well (measured the same day). The frontend's graph mirrors the
+  reads of RUNTIME-SEMANTICS ch. 5.1 and 6.1 on the rule's own subject: what a
+  rule's condition reads is an edge as much as what its value reads, and a
+  characteristic is a node as much as an attribute, so a cycle through a
+  condition over another attribute and a characteristic attribution reading its
+  own characteristic are warned as well. A navigated read, a read inside a fold,
+  a role check and a channel test are no edges of it; a cycle only they close
+  is refused by the verifier and not warned by the frontend.
 - The semantic variant — a per-target marking on the wire that moves the input
   default of ch. 7.8 above the ordinary defaults — is the recorded alternative
   (the proposal's §5.9), not built.

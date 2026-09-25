@@ -1774,99 +1774,116 @@ final class RuleChecker {
         };
     }
 
-    /** A read-write dependency CYCLE between assignments (x = y+1; y = x+1) never reaches a fixpoint
-     *  under the freshness semantics (each write re-fires the other reader with a CHANGED value — the
-     *  engine caps the run-away instead of hanging, and both back-ends would diverge forever). The spec
-     *  does not forbid the writing, so this is a WARNING, not an ERROR: a voorwaarde may break the cycle
-     *  at runtime (statically undecidable). Edges: doel-attribuut -> every OWN attribute its value reads,
-     *  same objecttype. A SELF-read (x = x+1, the clamp idiom "x = x, met een maximum van y" included) is the
-     *  cycle of one node and gets the same WARNING: the verifier refuses it under WF-045 as it refuses a longer
-     *  cycle (measured 2026-09-25), so the Drools no-loop that makes a single writer terminate is no ground to
-     *  pass it in silence. A computation whose CONDITION reads its own target is refused the same way, so that
-     *  read is the same self-edge; the condition's other reads stay out of the graph, which is the value's. */
+    /** A read-write dependency CYCLE (x = y+1; y = x+1) never reaches a fixpoint under the freshness semantics
+     *  (each write re-fires the other reader with a CHANGED value — the engine caps the run-away instead of
+     *  hanging, and both back-ends would diverge forever). The spec does not forbid the writing, so this is a
+     *  WARNING, not an ERROR: a voorwaarde may break the cycle at runtime (statically undecidable). The graph
+     *  mirrors the reads of RUNTIME-SEMANTICS ch. 5.1 and 6.1 as far as they stay on the rule's own subject: a
+     *  node is an own attribute or characteristic of the subject's type, the two kinds kept apart and names
+     *  compared as the verifier compares them; the edges run from what a rule's value AND condition read —
+     *  attribute references, and characteristic checks in either polarity — to its target. A SELF-read (x = x+1,
+     *  the clamp idiom "x = x, met een maximum van y", a condition reading the target) is the cycle of one node:
+     *  the verifier refuses it under WF-045 as it refuses a longer cycle (measured 2026-09-25), so the Drools
+     *  no-loop that makes a single writer terminate is no ground to pass it in silence. Outside this graph, and so
+     *  unwarned where the verifier refuses them: a navigated read, a read in the filter or test of a fold, a role
+     *  check, a channel test, and the forms that are no rule (an allocation, a creation, a consistency). */
     private void keurKringverwijzingen() {
-        Map<String, Set<String>> leest = new LinkedHashMap<>();
+        Map<Leesknoop, Set<Leesknoop>> leest = new LinkedHashMap<>();
+        Map<Leesknoop, String> tekst = new java.util.HashMap<>();
         for (ResolvedRegel r : model.resolvedRegels) {
             if (!(r.doel() instanceof Expr.AttribuutRef d) || d.navigatieRol() != null || d.objecttype() == null) continue;
-            String doel = d.objecttype().naam + "." + d.attribuut();
-            Set<String> reads = leest.computeIfAbsent(doel, k -> new java.util.LinkedHashSet<>());
-            verzamelEigenReads(r.waarde(), d.objecttype(), reads);
-            if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING) {
-                Set<String> voorwaarde = new java.util.HashSet<>();
-                verzamelEigenReads(r.voorwaarde(), d.objecttype(), voorwaarde);
-                if (voorwaarde.contains(doel)) reads.add(doel);
-            }
+            Leesknoop doel = leesknoop(d.objecttype(), d.attribuut(),
+                    r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING, tekst);
+            Set<Leesknoop> reads = leest.computeIfAbsent(doel, k -> new java.util.LinkedHashSet<>());
+            verzamelEigenReads(r.waarde(), d.objecttype(), reads, tekst);
+            verzamelEigenReads(r.voorwaarde(), d.objecttype(), reads, tekst);
         }
-        Set<String> gemeld = new java.util.HashSet<>();
-        for (String start : leest.keySet()) {
-            List<String> pad = zoekKring(start, start, leest, new java.util.HashSet<>(), new ArrayList<>());
-            if (pad != null && gemeld.addAll(new java.util.TreeSet<>(pad)))
+        Set<Leesknoop> gemeld = new java.util.HashSet<>();
+        for (Leesknoop start : leest.keySet()) {
+            List<Leesknoop> pad = zoekKring(start, start, leest, new java.util.HashSet<>(), new ArrayList<>());
+            if (pad != null && gemeld.addAll(pad))
                 model.diagnostics.add(new Diagnostic(Severity.WARNING,
-                        "kringverwijzing tussen berekeningen: " + String.join(" -> ", pad) + " -> " + start
+                        "kringverwijzing tussen berekeningen: " + String.join(" -> ", pad.stream().map(tekst::get).toList())
+                        + " -> " + tekst.get(start)
                         + " — herberekening bereikt mogelijk geen fixpunt (de engine begrenst het aantal activaties)", 0));
         }
     }
 
-    private static List<String> zoekKring(String start, String hier, Map<String, Set<String>> leest,
-                                          Set<String> bezocht, List<String> pad) {
+    /** A node of the read-dependency graph: an own attribute or characteristic of an object type (ch. 6.1 keeps the
+     *  two kinds apart), its name under the verifier's name identity. The warning names it as it was first written. */
+    private record Leesknoop(String type, String naam, boolean kenmerk) {}
+
+    private static Leesknoop leesknoop(Objecttype type, String naam, boolean kenmerk, Map<Leesknoop, String> tekst) {
+        Leesknoop k = new Leesknoop(type.naam, io.github.yhavinga.regelspraak.emit.IrEmitter.norm(naam), kenmerk);
+        tekst.putIfAbsent(k, type.naam + "." + naam);
+        return k;
+    }
+
+    private static List<Leesknoop> zoekKring(Leesknoop start, Leesknoop hier, Map<Leesknoop, Set<Leesknoop>> leest,
+                                             Set<Leesknoop> bezocht, List<Leesknoop> pad) {
         if (!bezocht.add(hier)) return null;
         pad.add(hier);
-        for (String naar : leest.getOrDefault(hier, Set.of())) {
+        for (Leesknoop naar : leest.getOrDefault(hier, Set.of())) {
             if (naar.equals(start)) return new ArrayList<>(pad);   // one node: a self-read
-            List<String> diep = zoekKring(start, naar, leest, bezocht, pad);
+            List<Leesknoop> diep = zoekKring(start, naar, leest, bezocht, pad);
             if (diep != null) return diep;
         }
         pad.remove(pad.size() - 1);
         return null;
     }
 
-    /** The own reads of a condition, collected as from a value: the sides of a comparison, the operand of a
-     *  predicate, the bounds of a window, through every composite. The filter and the test of a quantifier fold
-     *  read the element and not the subject, and stay out, as a fold's filter does in a value. */
-    private static void verzamelEigenReads(Conditie c, Objecttype subject, Set<String> uit) {
+    /** The own reads of a condition: the sides of a comparison, the operand of a predicate, the bounds of a window,
+     *  an own characteristic check in either polarity, through every composite. The filter and the test of a
+     *  quantifier fold read the element and not the subject, and stay out, as a fold's filter does in a value; a
+     *  navigated or hosted characteristic check reads another object. */
+    private static void verzamelEigenReads(Conditie c, Objecttype subject, Set<Leesknoop> uit,
+                                           Map<Leesknoop, String> tekst) {
         switch (c) {
             case null -> { }
             case Conditie.Vergelijking v -> {
-                verzamelEigenReads(v.links(), subject, uit);
-                verzamelEigenReads(v.rechts(), subject, uit);
+                verzamelEigenReads(v.links(), subject, uit, tekst);
+                verzamelEigenReads(v.rechts(), subject, uit, tekst);
             }
-            case Conditie.Predicaat p -> verzamelEigenReads(p.operand(), subject, uit);
+            case Conditie.Predicaat p -> verzamelEigenReads(p.operand(), subject, uit, tekst);
             case Conditie.Periode p -> {
-                verzamelEigenReads(p.vanaf(), subject, uit);
-                verzamelEigenReads(p.tot(), subject, uit);
+                verzamelEigenReads(p.vanaf(), subject, uit, tekst);
+                verzamelEigenReads(p.tot(), subject, uit, tekst);
             }
-            case Conditie.Samengesteld sg -> sg.onderdelen().forEach(o -> verzamelEigenReads(o, subject, uit));
+            case Conditie.Kenmerk k -> {
+                if (k.navigatie() == null && k.eigenaar() == null) uit.add(leesknoop(subject, k.kenmerk(), true, tekst));
+            }
+            case Conditie.Samengesteld sg -> sg.onderdelen().forEach(o -> verzamelEigenReads(o, subject, uit, tekst));
             default -> { }
         }
     }
 
-    /** The OWN attributes (same objecttype) an expression reads, as "Objecttype.attribuut" nodes — the doel
-     *  itself included, since a self-read is a cycle too ({@link #keurKringverwijzingen}). */
-    private static void verzamelEigenReads(Expr e, Objecttype subject, Set<String> uit) {
+    /** The OWN attributes (same objecttype) an expression reads, as attribute nodes — the doel itself included,
+     *  since a self-read is a cycle too ({@link #keurKringverwijzingen}). */
+    private static void verzamelEigenReads(Expr e, Objecttype subject, Set<Leesknoop> uit, Map<Leesknoop, String> tekst) {
         if (e instanceof Expr.AttribuutRef a) {
-            if (a.navigatieRol() == null && a.objecttype() == subject) uit.add(subject.naam + "." + a.attribuut());
+            if (a.navigatieRol() == null && a.objecttype() == subject) uit.add(leesknoop(subject, a.attribuut(), false, tekst));
         } else if (e instanceof Expr.Binair b) {
-            verzamelEigenReads(b.links(), subject, uit);
-            verzamelEigenReads(b.rechts(), subject, uit);
+            verzamelEigenReads(b.links(), subject, uit, tekst);
+            verzamelEigenReads(b.rechts(), subject, uit, tekst);
         } else if (e instanceof Expr.Functie f) {
-            for (Expr a : f.argumenten()) verzamelEigenReads(a, subject, uit);
+            for (Expr a : f.argumenten()) verzamelEigenReads(a, subject, uit, tekst);
         } else if (e instanceof Expr.Afgerond af) {
-            verzamelEigenReads(af.basis(), subject, uit);
+            verzamelEigenReads(af.basis(), subject, uit, tekst);
         } else if (e instanceof Expr.Begrensd bg) {
-            verzamelEigenReads(bg.basis(), subject, uit);
-            verzamelEigenReads(bg.minimum(), subject, uit);
-            verzamelEigenReads(bg.maximum(), subject, uit);
+            verzamelEigenReads(bg.basis(), subject, uit, tekst);
+            verzamelEigenReads(bg.minimum(), subject, uit, tekst);
+            verzamelEigenReads(bg.maximum(), subject, uit, tekst);
         } else if (e instanceof Expr.TekstReeks tr) {
             for (Expr.TekstReeks.Deel d : tr.delen())
-                if (d instanceof Expr.TekstReeks.Ingevoegd i) verzamelEigenReads(i.expr(), subject, uit);
+                if (d instanceof Expr.TekstReeks.Ingevoegd i) verzamelEigenReads(i.expr(), subject, uit, tekst);
         } else if (e instanceof Expr.DimensieCel dc) {
-            verzamelEigenReads(dc.attribuut(), subject, uit);
+            verzamelEigenReads(dc.attribuut(), subject, uit, tekst);
         } else if (e instanceof Expr.Let l) {
             // ch. 4.10: since the let-lowering card a rule value is a Let CHAIN, so both halves carry reads —
             // a variabelendeel definition (the value) as much as the expression that reads it (the body).
             // Stopping at the Let would drop every §11 variable's edge out of the cycle graph.
-            verzamelEigenReads(l.value(), subject, uit);
-            verzamelEigenReads(l.body(), subject, uit);
+            verzamelEigenReads(l.value(), subject, uit, tekst);
+            verzamelEigenReads(l.body(), subject, uit, tekst);
         }
     }
 
