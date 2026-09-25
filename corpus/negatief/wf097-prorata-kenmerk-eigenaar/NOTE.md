@@ -12,7 +12,7 @@ outright.
 A minimal hand-broken variant of
 `corpus/golden/anchor/jutterswet-borgdeel/ir.json`: one field on one node —
 `rules[0].versions[0].value.filter.host` goes from absent to `"Jutter"` — a
-DECLARED type, so WF-034's owner arm (which only asks whether the name
+DECLARED type, so WF-034's host arm (which only asks whether the name
 resolves) stays silent. Since L5 the field is `host` (delta B10); the report
 names it, and `expect.txt` pins the arm.
 

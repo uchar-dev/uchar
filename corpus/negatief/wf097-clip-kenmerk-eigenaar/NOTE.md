@@ -6,7 +6,7 @@ A minimal hand-broken variant of
 `corpus/golden/jutterswet-tegenwacht/ir.json`: one field on one node —
 `rules[0].versions[0].value.filter.parts[0].host` goes from absent to
 `"Jutter"`. The name is a DECLARED object type on purpose, so
-WF-034's owner arm (which only asks whether the name resolves) stays silent
+WF-034's host arm (which only asks whether the name resolves) stays silent
 and this document is rejected by WF-097 alone.
 
 The member sits inside the flat `all` composite, so this witness also pins the

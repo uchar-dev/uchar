@@ -12,7 +12,7 @@ outright.
 A minimal hand-broken variant of
 `corpus/golden/anchor/jutterswet-dagentelling/ir.json`: one field on one node
 — `rules[0].versions[0].value.filter.host` goes from absent to `"Jutter"` — a
-DECLARED type, so WF-034's owner arm stays silent. Since L5 the field is `host`
+DECLARED type, so WF-034's host arm stays silent. Since L5 the field is `host`
 (delta B10); the report names it, and `expect.txt` pins the arm.
 
 Before the rule reached this clip the document was verifier-clean and both
