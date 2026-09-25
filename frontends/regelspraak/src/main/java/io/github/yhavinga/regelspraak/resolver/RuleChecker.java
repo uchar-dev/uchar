@@ -2205,6 +2205,10 @@ final class RuleChecker {
         String[] rolEnAttr = src(namen.get(0)).split("(?i)\\s+met\\s+", 2);
         Objecttype nieuwType = bouwer != null
                 ? model.resolveObjecttype(stripArtikel(rolEnAttr[0])) : null;
+        // the noun that names the created object may name the role it fills: that role is the back-link
+        // (IR-SPEC ch. 3.3), where the type pair alone may relate the two twice or, self-typed, ambiguously
+        RegelSpraakModel.RolBindingRef verbindendeRol =
+                model.benoemdeRolBinding(subject, nieuwType, stripArtikel(rolEnAttr[0]));
 
         List<ResolvedObjectCreatie.Toekenning> toek = new ArrayList<>();
         if (rolEnAttr.length == 2 && !waarden.isEmpty())
@@ -2237,7 +2241,8 @@ final class RuleChecker {
                             oc.getStart().getLine()));
             }
 
-        model.objectCreaties.add(new ResolvedObjectCreatie(naam, nieuwType, subject, toek, voorwaarde, geldigheid));
+        model.objectCreaties.add(new ResolvedObjectCreatie(naam, nieuwType, subject, toek, voorwaarde, geldigheid,
+                verbindendeRol));
     }
 
     /** §13.4.6.2 one waardetoekenning of an objectcreatie: the §13.4.6.3 ATTRIBUUT form (generic expressie

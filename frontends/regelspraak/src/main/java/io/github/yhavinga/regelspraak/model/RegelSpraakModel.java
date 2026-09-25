@@ -237,6 +237,21 @@ public final class RegelSpraakModel {
         return null;
     }
 
+    /**
+     * The role an object creation's written noun names (§13.4.6; IR-SPEC ch. 3.3 {@code connectingRole}): the
+     * noun is read at the candidate {@link #resolveObjecttype} resolves it at, and that candidate names a role when
+     * it is the DECLARED name or plural of a role {@code nieuwType} fills in a fact type that also relates
+     * {@code subject} — one such role, never a guessed plural. Null where the candidate names none or several: the
+     * back-link is then the type-pair derivation of RUNTIME-SEMANTICS ch. 5.5, as it was before a role was written.
+     */
+    public RolBindingRef benoemdeRolBinding(Objecttype subject, Objecttype nieuwType, String naam) {
+        if (subject == null || nieuwType == null) return null;
+        for (String kandidaat : naamKandidaten(naam))
+            if (objecttypeOpNaam(kandidaat) != null || objecttypeViaRol(kandidaat) != null)
+                return verbindendeRolViaNaamBinding(subject, nieuwType, kandidaat);
+        return null;
+    }
+
     /** The names {@link #resolveObjecttype} tries for {@code naam}, in its order: the HEAD noun phrase
      *  before any " van " navigation ("deelnemers van de groep" names the deelnemer; "van de groep" only
      *  scopes which one), then that head with leading words dropped one at a time (a multi-word role like

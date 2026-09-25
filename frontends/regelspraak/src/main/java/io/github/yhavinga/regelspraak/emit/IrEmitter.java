@@ -1368,8 +1368,10 @@ public final class IrEmitter {
         w.endObject();
     }
 
-    /** IR-SPEC ch. 3.3: an object creation and its versions. The back-link is left out: the frontend writes none, and
-     *  absent is the back-link derived from the type pair (RUNTIME-SEMANTICS ch. 5.5). */
+    /** IR-SPEC ch. 3.3: an object creation and its versions. A version whose sentence names the created object by a
+     *  role writes that role as its back-link, also where the type pair would derive it; a version whose sentence
+     *  names the type writes none, and absent is the back-link derived from the type pair (RUNTIME-SEMANTICS
+     *  ch. 5.5). */
     private void objectCreation(Vorm<ResolvedObjectCreatie> vorm) {
         w.beginObject();
         w.key("node").value("ObjectCreation");
@@ -1397,6 +1399,7 @@ public final class IrEmitter {
         w.endArray();
         if (oc.voorwaarde() != null) { w.key("condition"); conditie(oc.voorwaarde()); }
         w.key("validity"); validity(oc.geldigheid());
+        if (oc.verbindendeRol() != null) { w.key("connectingRole"); rolBinding(oc.verbindendeRol()); }
         w.endObject();
         huidigSubject = null;
     }
