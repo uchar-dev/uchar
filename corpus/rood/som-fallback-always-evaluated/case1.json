@@ -25,6 +25,6 @@
  },
  "expectedFault": {
   "ref": "division by numeric zero",
-  "clingo": "a som over listed operands is not translated"
+  "clingo": "a sum over listed operands is not translated"
  }
 }

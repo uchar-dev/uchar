@@ -2057,7 +2057,7 @@ let () =
          ~doel_eenheid:(eur mnd_eenheid))
     ~case_text:(setvouw_case ~v1:v1_timeline)
     ~needle:
-      "a ranking fold (minimum/maximum/eerste/laatste) over the temporal attribute \
+      "a ranking fold (minimum/maximum/first/last) over the temporal attribute \
        \"bewaartarief\" of a set has no defined moment to fold";
   (* the horizon rule on this frame too: one member with an asOfDate-bucket
      scalar instead of a timeline, refused BY NAME — ref's own convention *)
@@ -2599,7 +2599,7 @@ let () =
                  ~rechts:(dt_attr "sluitingstip"))
   in
   faults_with ~name:"datum-tijd gelijk-aan is een luide flank" ~ir:gelijk_ir
-    ~case_text:vooruit ~needle:"datum-tijd (on)gelijk-aan is not translated";
+    ~case_text:vooruit ~needle:"datum-tijd equal/notEqual is not translated";
   (* 5. an ill-formed literal lexeme: WF-095 refuses the document, and so
      does an executor's loader, in the same sentence. Built past the loader
      it reaches the translator, whose arm must still refuse it by name rather
@@ -6080,7 +6080,7 @@ let () =
          ~doel_eenheid:(eur mnd_eenheid))
     ~case_text:(setvouw_case ~v1:v1_timeline)
     ~needle:
-      "a ranking fold (minimum/maximum/eerste/laatste) over the temporal attribute \
+      "a ranking fold (minimum/maximum/first/last) over the temporal attribute \
        \"bewaartarief\" of a set has no defined moment to fold";
   faults_with ~name:"ch3.6 LAATSTE over een temporele setbron blijft geweigerd"
     ~ir:
@@ -6088,7 +6088,7 @@ let () =
          ~doel_eenheid:(eur mnd_eenheid))
     ~case_text:(setvouw_case ~v1:v1_timeline)
     ~needle:
-      "a ranking fold (minimum/maximum/eerste/laatste) over the temporal attribute \
+      "a ranking fold (minimum/maximum/first/last) over the temporal attribute \
        \"bewaartarief\" of a set has no defined moment to fold"
 
 (* --- de DATUM-setbron splijt op ORDENEN tegen OPTELLEN (kaart
@@ -6367,7 +6367,7 @@ let () =
   faults_with ~name:"§5.8.3 de gelijste som valt op haar eigen, vormnoemende arm"
     ~ir:(gelijste_vouw_doc ~kind:"sum" ~element_objecttype:"null" ())
     ~case_text:gelijste_vouw_case
-    ~needle:"a som over listed operands is not translated";
+    ~needle:"a sum over listed operands is not translated";
   (* armgrens, as KIND: hetzelfde frame, een buurvouw — de bodem, niet de som *)
   faults_with ~name:"§5.8.3 armgrens: het gelijste MINIMUM houdt de bodem"
     ~ir:(gelijste_vouw_doc ~kind:"minimum" ~element_objecttype:"null" ())

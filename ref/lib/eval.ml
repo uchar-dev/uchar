@@ -976,7 +976,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       (* tijdsduur van A tot B (ch. 3.8), routed on the node-type unit:
          the counted unit is the node's own declared unit, resolved by
          spelling through the shared table (WF-038). *)
-      if filter <> None then Value.fault "a filter on a tijdsduur has no v0 form";
+      if filter <> None then Value.fault "a filter on a duration has no v0 form";
       match argumenten with
       | [ a; b ] ->
           let unit_ =
@@ -990,7 +990,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                       && (static_type env a = Some Datum_in_dagen || static_type env b = Some Datum_in_dagen)
                     then
                       Value.fault
-                        "sub-day tijdsduur needs datum-tijd operands (WF-038)"
+                        "sub-day duration needs datum-tijd operands (WF-038)"
                     else `Calendar tu
                 | None -> (
                     (* not a calendar unit: the spelling may name a declared
@@ -1000,11 +1000,11 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                     | Some k -> `Day_kind k
                     | None ->
                         Value.fault
-                          "tijdsduur unit %S is neither a recognised time unit nor a declared \
+                          "duration unit %S is neither a recognised time unit nor a declared \
                            day kind (WF-038)"
                           (Option.value u.afkorting ~default:"?")))
             | _ ->
-                Value.fault "tijdsduur without a recognised time unit on its node type \
+                Value.fault "duration without a recognised time unit on its node type \
                              (WF-038)"
           in
           (* ch. 5.11, wire order: "van" (argument 0) before "tot"
@@ -1020,7 +1020,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
               Arith.tijdsduur_day_kind ~absolute
                 ~matches:(day_kind_pred env world self ~err k)
                 ~result_unit van tot)
-      | _ -> Value.fault "tijdsduur expects two arguments")
+      | _ -> Value.fault "duration expects two arguments")
   | Functie { kind; argumenten; element_objecttype; leegwaarde; filter; dimensie_selectie; granulariteit; bron_rol; bron_pad; typ = _; bron = _ } ->
       eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
         ~dimensie_selectie ~granulariteit ~bron_rol ~bron_pad
@@ -1695,13 +1695,13 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
               Value.fault
                 "the temporal attribute %S of a set has no moment at which a filled count can ask \
                  a timeline whether it is filled (ch. 3.4c); presence is a question about an \
-                 instant, and only som and totaal define the per-element collapse that would \
+                 instant, and only sum and total define the per-element collapse that would \
                  supply one"
                 name
           | _ ->
               Value.fault
                 "this aggregation over the temporal attribute %S of a set has no defined moment \
-                 to fold (ch. 3.6: only som and totaal carry the per-element timeline fold)"
+                 to fold (ch. 3.6: only sum and total carry the per-element timeline fold)"
                 name);
           let gran = attr_granulariteit el_decl name in
           let grid = Timeline.grid_unit env.doc gran in
@@ -1873,28 +1873,28 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
   | Wortel -> (
       match argumenten with
       | [ a ] -> Arith.sqrt_ ~err (eval_expr env world self ~err a)
-      | _ -> Value.fault "wortel expects one argument")
+      | _ -> Value.fault "squareRoot expects one argument")
   | Absolute_waarde -> (
       match argumenten with
       | [ a ] -> Arith.abs_ (eval_expr env world self ~err a)
-      | _ -> Value.fault "absolute waarde expects one argument")
+      | _ -> Value.fault "absoluteValue expects one argument")
   | Concatenatie -> Arith.concat (map_in_order (eval_expr env world self ~err) argumenten)
   | Jaar_uit -> (
       match argumenten with
       | [ a ] -> Arith.jaar_uit (eval_expr env world self ~err a)
-      | _ -> Value.fault "jaar uit expects one argument")
+      | _ -> Value.fault "yearOf expects one argument")
   | Maand_uit -> (
       match argumenten with
       | [ a ] -> Arith.maand_uit (eval_expr env world self ~err a)
-      | _ -> Value.fault "maand uit expects one argument")
+      | _ -> Value.fault "monthOf expects one argument")
   | Dag_uit -> (
       match argumenten with
       | [ a ] -> Arith.dag_uit (eval_expr env world self ~err a)
-      | _ -> Value.fault "dag uit expects one argument")
+      | _ -> Value.fault "dayOf expects one argument")
   | Eerste_paasdag -> (
       match argumenten with
       | [ a ] -> Arith.eerste_paasdag (eval_expr env world self ~err a)
-      | _ -> Value.fault "eerste paasdag expects one argument")
+      | _ -> Value.fault "easterSunday expects one argument")
   | Tijdsduur | Absolute_tijdsduur ->
       (* unreachable: eval_expr routes both variants on the node-type unit *)
       assert false

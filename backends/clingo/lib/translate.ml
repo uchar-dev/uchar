@@ -3534,7 +3534,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                      (Uchar_ref.Value.q_of_lexeme (Ir_v0.Loader.literal_lexeme variant))
                      Q.zero ->
                 true
-            | Some _ -> fault "som fallback other than 0 is not translated yet"
+            | Some _ -> fault "sum fallback other than 0 is not translated yet"
             | None -> false)
       in
       (* the range: the node's binding, never derived (B12). The environment
@@ -3972,7 +3972,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          rule. *)
       if attr_temporal ctx ~otype:el ~attr:a then
         fault
-          "a ranking fold (minimum/maximum/eerste/laatste) over the temporal attribute %S of a \
+          "a ranking fold (minimum/maximum/first/last) over the temporal attribute %S of a \
            set has no defined moment to fold (ch. 3.6); ref refuses the form, so this arm must \
            not answer from the asOfDate buckets"
           a;
@@ -4080,16 +4080,16 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          against a scaled numeric *)
       let dated = List.map (fun a -> is_date_operand ctx (Some a)) args in
       if List.exists Fun.id dated && not (List.for_all Fun.id dated) then
-        fault "mixed date/non-date operands under an eerste/laatste fold are not \
+        fault "mixed date/non-date operands under a first/last fold are not \
                translated (ref faults the unordered comparison)";
       List.iter
         (fun a ->
           if is_symbolic_operand ctx (Some a) then
-            fault "a text/boolean/enum operand under an eerste/laatste fold has no order \
+            fault "a text/boolean/enum operand under a first/last fold has no order \
                    (ref faults the unordered comparison)";
           match static_type ctx a with
           | Some Datum_tijd ->
-              fault "datum-tijd eerste/laatste is not translated (the pair term has no fold \
+              fault "datum-tijd first/last is not translated (the pair term has no fold \
                      ordering; no corpus case)"
           | _ -> ())
         args;
@@ -4103,7 +4103,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       List.iter
         (fun a ->
-          units_identical_ok ~what:"an eerste/laatste fold" first_unit (eff_unit ctx a))
+          units_identical_ok ~what:"a first/last fold" first_unit (eff_unit ctx a))
         args;
       (* the operand fence above reads the wire `type`, which covers the ch.
          1.2d scalars but never saw a sum/struct operand — and could not, since
@@ -4114,7 +4114,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         List.map
           (fun a ->
             let atoms, t, s = expr_term ctx ~subject ~subject_ot a in
-            (atoms, t, numeric_scale ~what:"an eerste/laatste fold" s))
+            (atoms, t, numeric_scale ~what:"a first/last fold" s))
           args
       in
       let m = List.fold_left (fun acc (_, _, s) -> max acc s) 1 ops in
@@ -4578,11 +4578,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          counted unit is the NODE type's unit, resolved by spelling
          (WF-038). Any empty operand leaves its bare join unbound — leeg
          propagation for free, never 0. *)
-      if filter <> None then fault "a filter on a tijdsduur has no v0 form";
+      if filter <> None then fault "a filter on a duration has no v0 form";
       let a, b =
         match argumenten with
         | [ a; b ] -> (a, b)
-        | _ -> fault "tijdsduur expects two arguments"
+        | _ -> fault "duration expects two arguments"
       in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let wrap t = if kind = Absolute_tijdsduur then Printf.sprintf "|%s|" t else t in
@@ -4596,8 +4596,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            difference (so a month/year span stays unbounded), exactly ref/'s
            whole_units_between_ms. *)
         if not (is_datetime_operand ctx (Some a) && is_datetime_operand ctx (Some b)) then
-          fault "tijdsduur mixes date precisions (WF-038)";
-        let tu = dt_time_unit_of ~doc:ctx.doc ~what:"tijdsduur" typ in
+          fault "duration mixes date precisions (WF-038)";
+        let tu = dt_time_unit_of ~doc:ctx.doc ~what:"duration" typ in
         let da_atoms, da, msa = dt_term ctx ~subject ~subject_ot a in
         let db_atoms, db, msb = dt_term ctx ~subject ~subject_ot b in
         let gbody = (base :: ctx.rule_guard) @ da_atoms @ db_atoms in
@@ -4653,7 +4653,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         let operand_day e =
           match static_type ctx e with
           | Some Datum_in_dagen -> ()
-          | _ -> fault "tijdsduur operand is not statically a day-precision date"
+          | _ -> fault "duration operand is not statically a day-precision date"
         in
         operand_day a;
         operand_day b;
@@ -4662,10 +4662,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             dk_tijdsduur ctx ~subject ~subject_ot ~kind:k
               ~absolute:(kind = Absolute_tijdsduur) a b
         | None ->
-        let tu = day_time_unit_of ~what:"tijdsduur" typ in
+        let tu = day_time_unit_of ~what:"duration" typ in
         let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
         let bb, tb, sb = expr_term ctx ~subject ~subject_ot b in
-        if sa <> 1 || sb <> 1 then fault "tijdsduur operands must be unscaled day terms";
+        if sa <> 1 || sb <> 1 then fault "duration operands must be unscaled day terms";
         match tu with
         | Tu_dag -> (ba @ bb, wrap (Printf.sprintf "((%s)-(%s))" tb ta), 1)
         | Tu_week -> (ba @ bb, wrap (Printf.sprintf "(((%s)-(%s))/7)" tb ta), 1)
@@ -4726,20 +4726,20 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          intermediate that needs floor is non-negative (fenced below), so
          gringo's toward-zero division is exact; leeg propagates by the
          bare join. *)
-      if filter <> None then fault "a filter on eerste-paasdag has no v0 form";
+      if filter <> None then fault "a filter on easterSunday has no v0 form";
       let y =
         match argumenten with
         | [ y ] -> y
-        | _ -> fault "eerste-paasdag expects one argument"
+        | _ -> fault "easterSunday expects one argument"
       in
       (match static_type ctx y with
       | Some (Numeriek { geheel = true; eenheid = None; _ }) -> ()
-      | _ -> fault "eerste-paasdag operand is not statically a whole unitless year (WF-038)");
+      | _ -> fault "easterSunday operand is not statically a whole unitless year (WF-038)");
       let by, ty, sy = expr_term ctx ~subject ~subject_ot y in
-      if sy <> 1 then fault "eerste-paasdag year operand must be an unscaled whole term";
+      if sy <> 1 then fault "easterSunday year operand must be an unscaled whole term";
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       emit ctx
-        "viol(\"eerste-paasdag of a year before 1 is not translated (the Gauss chain \
+        "viol(\"easterSunday of a year before 1 is not translated (the Gauss chain \
          needs non-negative intermediates)\",%s) :- %s, (%s) < 1."
         subject
         (String.concat ", " ((base :: ctx.rule_guard) @ by))
@@ -5319,7 +5319,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          absence does not mean listed there, and `count`'s listed form is no
          som. *)
       fault
-        "a som over listed operands is not translated: every som this backend carries ranges a \
+        "a sum over listed operands is not translated: every sum this backend carries ranges a \
          #sum over an instance source, and a listed fold has none; and where it carries a \
          ch. 5.11 emptyFallback, the addition chain that would carry it must evaluate that stand-in \
          unconditionally. No corpus case pins a value for the form"
@@ -5440,7 +5440,7 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
         (fun a ->
           if not (is_datetime_operand ctx (Some a)) then
             fault "a non-datum-tijd (or mixed-granularity) operand under a datum-tijd \
-                   eerste/laatste fold has no order here (ref faults the unordered comparison)")
+                   first/last fold has no order here (ref faults the unordered comparison)")
         args;
       ctx.fresh <- ctx.fresh + 1;
       let pred = Printf.sprintf "dtf%d" ctx.fresh in
@@ -5469,10 +5469,10 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
          form the wire admits, never a claim the form is ill-formed. *)
       fault
         "datum-tijd here is not the pair term's arithmetic. Carried: a datum-tijd literal, an \
-         own-subject read, datetime \xc2\xb1 duration, and eerste/laatste over listed operands. \
+         own-subject read, datetime \xc2\xb1 duration, and first/last over listed operands. \
          A loud flank, no corpus case: a datum-tijd PARAMETER read, a Let/BinderRef-bound \
-         datum-tijd (and the residual VariableReference), a set-typed fold, a datum-met or \
-         datumtijd-met constructor, and a navigated datum-tijd read"
+         datum-tijd (and the residual VariableReference), a set-typed fold, a dateWith or \
+         dateTimeWith constructor, and a navigated datum-tijd read"
 
 (* datetime + n sub-day units: linear on the ms value with the carry across
    the day boundary. The absolute ms value never forms — the step rides the
@@ -5959,7 +5959,7 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
             (Q.of_int (match k with Jaar_uit -> y | Maand_uit -> m | _ -> dd), Value.Unitless)
       | v -> fault "a date-part extractor needs a day-precision date, got %s" (Value.to_string v))
   | Functie { kind = Eerste_paasdag; argumenten; filter = None; _ } -> (
-      match dk_value ctx ~stack ~day (one "eerste-paasdag" argumenten) with
+      match dk_value ctx ~stack ~day (one "easterSunday" argumenten) with
       | Value.Empty -> Value.Empty
       | Value.Num (q, Value.Unitless) when Q.den q = Z.one ->
           (* the Gauss/Anonymous chain, RUNTIME-SEMANTICS ch. 3.8 verbatim *)
@@ -5975,7 +5975,7 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
           let maand = (h + l - (7 * m) + 114) / 31 in
           let dag = ((h + l - (7 * m) + 114) mod 31) + 1 in
           Value.Date (Value.days_from_civil ~y:j ~m:maand ~d:dag)
-      | v -> fault "eerste-paasdag needs a whole unitless year, got %s" (Value.to_string v))
+      | v -> fault "easterSunday needs a whole unitless year, got %s" (Value.to_string v))
   | _ -> fault "a day-kind condition carries an expression this backend does not evaluate"
 
 (* the comparison of two day-kind operands. Dates compare as day numbers,
@@ -6232,7 +6232,7 @@ and dk_tijdsduur ctx ~subject ~subject_ot ~kind ~absolute a b =
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
   let bb, tb, sb = expr_term ctx ~subject ~subject_ot b in
-  if sa <> 1 || sb <> 1 then fault "tijdsduur operands must be unscaled day terms";
+  if sa <> 1 || sb <> 1 then fault "duration operands must be unscaled day terms";
   let tbl, _far, _el, _eh, win = dk_table ctx kind in
   ctx.fresh <- ctx.fresh + 1;
   let id = ctx.fresh in
@@ -6470,7 +6470,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
                negation route over it. No corpus case, so it is a loud flank
                rather than an untested encoding. *)
             fault
-              "datum-tijd (on)gelijk-aan is not translated (the pair term carries no scale for \
+              "datum-tijd equal/notEqual is not translated (the pair term carries no scale for \
                the eqN harmonisation; no corpus case exercises it)"
       in
       let a1, d1, m1 = dt_term ctx ~subject ~subject_ot le in
@@ -8290,7 +8290,7 @@ and closed_division ctx ~guard_body ~witness ~rounding ~links ~rechts : string l
   | Some (modus, _) ->
       ignore modus;
       fault
-        "a closed-body rounded division supports only the richting-nul abs-division collapse (no \
+        "a closed-body rounded division supports only the towardZero abs-division collapse (no \
          corpus case for another rounding mode)"
 
 (* an IfThenElse condition (WF-077): a comparison whose operands are bound
@@ -8631,7 +8631,7 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit
   (match Ir_v0.Checks.find_ci (objecttype ctx ot).attributen b with
   | Some (Some Datum_in_dagen) ->
       fault
-        "the pro-rata part (tijdsevenredig deel) of the base %S on %S scales a DATE-valued base by \
+        "the pro-rata part (timeProportionalPart) of the base %S on %S scales a DATE-valued base by \
          true days over bucket days: a pro-rata part is arithmetic, a date is a calendar POSITION, \
          and scaling one has no meaning — this translation would scale its day number and answer \
          a definite number no calendar reads back. Declined in translation"

@@ -226,7 +226,7 @@ let root_exact q k =
 let sqrt_ ~err = function
   | Empty -> Empty
   | v -> (
-      let q, _u = num_exn "wortel" v in
+      let q, _u = num_exn "squareRoot" v in
       if Q.sign q < 0 then (
         err "negative radicand";
         Empty)
@@ -245,7 +245,7 @@ let sqrt_ ~err = function
 let sqrt_rounded ~err mode decimals = function
   | Empty -> Empty
   | v ->
-      let q, _u = num_exn "wortel" v in
+      let q, _u = num_exn "squareRoot" v in
       if Q.sign q < 0 then (
         err "negative radicand";
         Empty)
@@ -302,7 +302,7 @@ let pow_ l r =
 let abs_ = function
   | Empty -> Empty
   | v ->
-      let q, u = num_exn "absolute waarde" v in
+      let q, u = num_exn "absoluteValue" v in
       Num (Q.abs q, u) (* type — unit, precision, sign — passes through *)
 
 (* --- clamping (ch. 2.7): minimum first, absent bound is no bound ------- *)
@@ -494,17 +494,17 @@ let agg_laatste vs = agg_extreme (fun c -> c >= 0) vs
 let jaar_uit = function
   | Empty -> Empty
   | Date z -> let y, _, _ = civil_from_days z in Num (Q.of_int y, Unitless)
-  | v -> fault "jaar uit: expected a date, got %s" (to_string v)
+  | v -> fault "yearOf: expected a date, got %s" (to_string v)
 
 let maand_uit = function
   | Empty -> Empty
   | Date z -> let _, m, _ = civil_from_days z in Num (Q.of_int m, Unitless)
-  | v -> fault "maand uit: expected a date, got %s" (to_string v)
+  | v -> fault "monthOf: expected a date, got %s" (to_string v)
 
 let dag_uit = function
   | Empty -> Empty
   | Date z -> let _, _, d = civil_from_days z in Num (Q.of_int d, Unitless)
-  | v -> fault "dag uit: expected a date, got %s" (to_string v)
+  | v -> fault "dayOf: expected a date, got %s" (to_string v)
 
 (* eerste paasdag van a whole unitless year (ch. 3.8): the Gauss/Anonymous
    algorithm, verbatim from the spec; leeg propagates; a non-whole or
@@ -518,7 +518,7 @@ let eerste_paasdag = function
         match Z.to_int (Q.num q) with
         | j -> j
         | exception Z.Overflow ->
-            fault "eerste paasdag: year %s is out of range" (Q.to_string q)
+            fault "easterSunday: year %s is out of range" (Q.to_string q)
       in
       let a = j mod 19 and b = j / 100 and c = j mod 100 in
       let d = b / 4 and e = b mod 4 in
@@ -531,7 +531,7 @@ let eerste_paasdag = function
       let maand = (h + l - (7 * m) + 114) / 31 in
       let dag = ((h + l - (7 * m) + 114) mod 31) + 1 in
       Date (days_from_civil ~y:j ~m:maand ~d:dag)
-  | v -> fault "eerste paasdag: expected a whole unitless year, got %s (WF-038)" (to_string v)
+  | v -> fault "easterSunday: expected a whole unitless year, got %s (WF-038)" (to_string v)
 
 (* --- the calendar kernel (ch. 3.8): proleptic Gregorian, zoneless civil
    time, built on the civil helpers of Value (days_from_civil /
@@ -573,7 +573,7 @@ let whole_units_between (tu : Ir_v0.Checks.time_unit) za zb =
   | Tu_kwartaal -> (packed zb - packed za) / 32 / 3
   | Tu_jaar -> (packed zb - packed za) / 32 / 12
   | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
-      fault "sub-day tijdsduur needs datum-tijd operands (day-precision values)"
+      fault "sub-day duration needs datum-tijd operands (day-precision values)"
 
 let add_units (tu : Ir_v0.Checks.time_unit) n z =
   match tu with
@@ -763,14 +763,14 @@ let date_plus_day_kind ?(minus = false) ~matches d dur =
 let tijdsduur_day_kind ?(absolute = false) ~matches ?(result_unit = Unitless) a b =
   let datetime_flank () =
     fault
-      "tijdsduur in a day kind over datum-tijd operands is a recognised, unexecuted form: \
+      "duration in a day kind over datum-tijd operands is a recognised, unexecuted form: \
        counting whole days of a kind between two instants needs a rule for the partial days at \
        both ends and ch. 3.8 fixes none"
   in
   (match (a, b) with Date_time _, _ | _, Date_time _ -> datetime_flank () | _ -> ());
   let day_of = function
     | Date z -> z
-    | v -> fault "tijdsduur: expected two dates, got %s" (to_string v)
+    | v -> fault "duration: expected two dates, got %s" (to_string v)
   in
   match (a, b) with
   | Empty, _ | _, Empty -> Empty
@@ -813,16 +813,16 @@ let tijdsduur ?(absolute = false) ?unit_ ?(result_unit = Unitless) a b =
       | Some tu ->
           let n = whole_units_between tu za zb in
           Num (Q.of_int (if absolute then abs n else n), result_unit)
-      | None -> fault "tijdsduur without a resolved time unit (WF-038)")
+      | None -> fault "duration without a resolved time unit (WF-038)")
   | Date_time ta, Date_time tb -> (
       match unit_ with
       | Some tu ->
           let n = whole_units_between_ms tu ta tb in
           Num (Q.of_int (if absolute then abs n else n), result_unit)
-      | None -> fault "tijdsduur without a resolved time unit (WF-038)")
+      | None -> fault "duration without a resolved time unit (WF-038)")
   | (Date _, Date_time _ | Date_time _, Date _) ->
-      fault "tijdsduur operands mix date precisions (WF-038)"
-  | _ -> fault "tijdsduur: expected two dates, got %s and %s" (to_string a) (to_string b)
+      fault "duration operands mix date precisions (WF-038)"
+  | _ -> fault "duration: expected two dates, got %s and %s" (to_string a) (to_string b)
 
 (* --- text (ch. 1.2c): empty coerces to "" ------------------------------ *)
 

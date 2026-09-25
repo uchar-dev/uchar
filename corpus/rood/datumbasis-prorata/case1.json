@@ -35,6 +35,6 @@
   },
   "expectedFault": {
     "ref": "pro-rata base is not numeric: 2024-01-18",
-    "clingo": "the pro-rata part (tijdsevenredig deel) of the base \"borgtarief\" on \"Jutter\" scales a DATE-valued base by true days over bucket days: a pro-rata part is arithmetic, a date is a calendar POSITION, and scaling one has no meaning \u2014 this translation would scale its day number and answer a definite number no calendar reads back. Declined in translation"
+    "clingo": "the pro-rata part (timeProportionalPart) of the base \"borgtarief\" on \"Jutter\" scales a DATE-valued base by true days over bucket days: a pro-rata part is arithmetic, a date is a calendar POSITION, and scaling one has no meaning \u2014 this translation would scale its day number and answer a definite number no calendar reads back. Declined in translation"
   }
 }
