@@ -1,0 +1,20 @@
+Objecttype de Sluitkas (mv: Sluitkassen)
+    de sluitpremie Numeriek (geheel getal);
+    de sluitrest Numeriek (geheel getal);
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de strandrang Numeriek (geheel getal);
+    het sluitdeel Numeriek (geheel getal);
+
+Feittype sluitdienst
+    de sluitkas Sluitkas
+    de sluitjutter (mv: sluitjutters) Jutter
+Eén sluitkas heeft meerdere sluitjutters
+
+Regel verdeel de sluitpremie van een sluitkas
+    geldig altijd
+        De sluitpremie van een sluitkas wordt verdeeld over het sluitdeel van alle sluitjutters van de sluitkas, waarbij wordt verdeeld:
+        - op volgorde van afnemende strandrang,
+        - bij een even groot criterium in gelijke delen,
+        - afgerond op 0 decimalen naar beneden.
+        Als onverdeelde rest blijft de sluitrest van de sluitkas over.

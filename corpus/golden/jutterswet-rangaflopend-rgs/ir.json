@@ -1,0 +1,131 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Sluitkas",
+        "animate": false,
+        "plural": "Sluitkassen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "sluitpremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "sluitrest",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "strandrang",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "sluitdeel",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "sluitdienst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "sluitkas",
+            "objectType": "Sluitkas",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "sluitjutter",
+            "objectType": "Jutter",
+            "plural": "sluitjutters",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [
+      {
+        "node": "Allocation",
+        "name": "verdeel de sluitpremie van een sluitkas",
+        "versions": [
+          {
+            "sourceType": "Sluitkas",
+            "sourceAttribute": "sluitpremie",
+            "targetType": "Jutter",
+            "targetAttribute": "sluitdeel",
+            "method": "ordered",
+            "roundingDecimals": 0,
+            "remainderAttribute": "sluitrest",
+            "orderingAttribute": "strandrang",
+            "descending": true,
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "sluitdienst",
+              "role": "sluitjutter"
+            }
+          }
+        ]
+      }
+    ],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
