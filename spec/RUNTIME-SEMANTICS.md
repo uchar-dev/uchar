@@ -5493,6 +5493,35 @@ The rule's own condition becomes the default's justification, and an
 unconditional rule gets the vacuously true empty `all` — the same shape the
 ch. 7.7 desugaring uses, so the two readings are one form rather than two.
 
+**An initialisation the fold takes keeps its condition.** It becomes the
+initialisation default (ch. 7.3), justified where the target is empty in
+the input facts **and** its condition holds. The emptiness stays the
+default's kind and is written into no condition, so nothing reads the own
+target: the reason ch. 7.7 leaves a conditional initialisation out of the
+desugaring does not reach the fold. This justification exists inside the
+composed stack only; on the wire an initialisation default carries none
+(WF-050). Folded without its condition, the initialisation wrote its value
+where the condition failed — measured on a verifier-clean chain, in the
+reference interpreter and the Drools exec-model branch.
+
+**Each default is read on the level that declared it.** The composition
+moves an ancestor's defaults into a descendant's stack, but an own read in
+a default names the type it was declared on (WF-053: without a path the
+read is the subject's own, and a supertype is another type). An executor
+therefore evaluates every default of a composed stack on its declaring
+level, and an exception group on the level of the default that carries it;
+the instance it reads is the owner's, which is an instance of that level
+(ch. 2.2). Read on the owner's level instead, an inherited default that
+reads an attribute of its own level faulted on the own-read check in the
+reference interpreter and the ASP backend, and the Drools exec-model branch
+refused such a consequence as a far-side read. Witness, absolute:
+`corpus/golden/jutterswet-wrakinitialisatie` — an initialisation "2 maal
+zijn gewicht indien zijn gewicht groter is dan 10" on `Vondst` and a
+defaults group on `Wrakvondst` (5,00 above 50, 9,00 above 100): a
+`Wrakvondst` of 8,00 stays **leeg**, one of 12,00 gets **24,00**, one of
+60,00 **5,00**, one of 120,00 **9,00**, one of 12,00 with input 40,00
+keeps **40,00**; a `Vondst` of 12,00 gets **24,00** from the rule itself.
+
 A rule folded into a stack **must not also fire as a rule**: it is the base,
 and the group writes it. The absorption is per CONCRETE type and all three
 executors read it from one shared predicate, so no two of them can absorb on

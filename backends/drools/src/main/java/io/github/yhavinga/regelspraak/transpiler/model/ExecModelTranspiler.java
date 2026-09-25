@@ -114,6 +114,13 @@ public final class ExecModelTranspiler {
      *  {@link RegelSpraakModel} does not carry, so it is threaded in beside the model (see {@link #build}).
      *  Empty by default (a flat program); lowered to reduce-rules in {@link #defaultsGroepen} / {@link #defaultsGroep}. */
     private List<PrioritizedDefaults> prioritizedDefaults = List.of();
+    /** The type each default of an effective stack was declared on (RUNTIME-SEMANTICS ch. 7.10). The composition
+     *  moves an ancestor's defaults into a descendant's stack, but a default still reads as written: an own read
+     *  in it names its declaring level, so it is compiled there and not on the stack's owner — compiled on the
+     *  owner, such a consequence was refused as a far-side read while ref and the ASP backend evaluate it. Keyed
+     *  by IDENTITY: {@link Default} is a record with value equality, and the loader's defaults and the ones
+     *  {@link #regelLid} makes are distinct objects. */
+    private final Map<Default, Objecttype> defaultHerkomst = new java.util.IdentityHashMap<>();
     /** The wire's symbolic (feittype, rol) bindings per IR node, riding beside the model
      *  ({@code IrLoader.Loaded.rolBindingen}) because the vendored records cannot carry them: an objectcreatie's
      *  IR-SPEC ch. 3.3 {@code connectingRole} and an aggregation's {@code sourceRole}. Keyed by IDENTITY (the
@@ -7408,8 +7415,10 @@ public final class ExecModelTranspiler {
             Objecttype type, Set<String> absorb) {
         LinkedHashMap<String, List<PrioritizedDefaults>> eigen = new LinkedHashMap<>();
         for (PrioritizedDefaults l : prioritizedDefaults)
-            if (defaultsNorm(l.onderwerp()).equals(defaultsNorm(type.naam)))
+            if (defaultsNorm(l.onderwerp()).equals(defaultsNorm(type.naam))) {
                 eigen.computeIfAbsent(defaultsDoelSleutel(l), k -> new ArrayList<>()).add(l);
+                for (Default d : l.defaults()) defaultHerkomst.put(d, type);
+            }
         // SUBTYPING §4.1 rules 1 and 4: a level that declares no group on an ABSORBED key contributes
         // its ORDINARY RULE as that level's base instead. The Java twin of Desugar.rule_member — same
         // shape, same gate — so the three executors compose one stack.
@@ -7505,10 +7514,14 @@ public final class ExecModelTranspiler {
             ds.add(new Default(null, r.voorwaarde() != null ? r.voorwaarde() : ALTIJD,
                     r.waarde(), false, null, r.naam()));
         }
+        // An initialisation keeps its condition, as Desugar.rule_member's does: the initialisation default is
+        // justified where the target is empty (ch. 7.3) AND that condition holds. Dropping it wrote the
+        // initialisation's value where its condition failed.
         for (ResolvedRegel r : inits) {
             attr = ((Expr.AttribuutRef) r.doel()).attribuut();
-            ds.add(new Default(null, null, r.waarde(), true, null, r.naam()));
+            ds.add(new Default(null, r.voorwaarde(), r.waarde(), true, null, r.naam()));
         }
+        for (Default d : ds) defaultHerkomst.put(d, level);
         return new PrioritizedDefaults("regel als basis: " + attr + " van " + level.naam, level.naam,
                 null, attr, false, List.copyOf(ds),
                 "SUBTYPING §4.1 rules 1/4: an ordinary rule is the base of its level", null);
@@ -7753,12 +7766,18 @@ public final class ExecModelTranspiler {
 
     /** Compile one default to its build-time closures. A form the scalar-first back-end does not carry raises a loud
      *  {@link DefaultsOnvertaalbaar} (caught in {@link #defaultsGroep} as the group's fence reason). */
-    private GecompileerdeDefault compileDefault(Default r, Objecttype onderwerp, boolean isChar, String doel) {
+    private GecompileerdeDefault compileDefault(Default r, Objecttype stapelEigenaar, boolean isChar, String doel) {
+        // compiled on the level the default was declared on; an exception group's defaults share their root's
+        Objecttype onderwerp = defaultHerkomst.getOrDefault(r, stapelEigenaar);
         Predicate1<Object> just;
         boolean init = r.initialisatie();
         if (init) {
             if (isChar) throw new DefaultsOnvertaalbaar("initialisatie-default op kenmerk-defaults (WF-075/ref-fault)");
-            just = null;   // justified via target-empty at fire time (ch. 7.3)
+            // justified via target-empty at fire time (ch. 7.3), and where a folded initialisation's own
+            // condition holds
+            just = r.voorwaarde() == null ? null : subjectConditie(r.voorwaarde(), onderwerp);
+            if (r.voorwaarde() != null && just == null)
+                throw new DefaultsOnvertaalbaar("niet-reduceerbare justificatie (far-side/aggregatie/global): " + defaultsReden(r));
         } else if (r.voorwaarde() == null) {
             if (r.heeftEigenInhoud()) throw new DefaultsOnvertaalbaar("deciding default zonder justificatie");
             just = null;   // a contentless group-default never evaluates justified
@@ -7982,7 +8001,8 @@ public final class ExecModelTranspiler {
         }
 
         private boolean justified(GecompileerdeDefault r) {
-            if (r.initialisatie()) return doelGetter.apply(s) == null;   // ch. 7.3: justified iff target empty in the input
+            if (r.initialisatie() && doelGetter.apply(s) != null) return false;   // ch. 7.3: the target is empty
+            if (r.initialisatie() && r.justificatie() == null) return true;
             if (r.justificatie() == null) return false;
             try { return r.justificatie().test(s); }              // Drools Predicate1.test declares a checked Exception
             catch (RuntimeException e) { throw e; }

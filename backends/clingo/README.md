@@ -252,9 +252,15 @@ spec bug.
   initialisation writes and the initialisation writes it again; ref
   faults on its pass budget, and a `viol/2` witness makes clingo refuse
   too, unless the rule is a ch. 7.8 standing one, which writes nothing on
-  leeg. Two initialisations or two computing rules on one target, a
-  defaults group, allocation or creation-time write beside it, and a
-  target that is no number or date are refused by name.
+  leeg. Two initialisations or two computing rules on one target, an
+  allocation, a creation-time write or a defaults group of its own level
+  (WF-050's) beside it, and a target that is no number or date are
+  refused by name. A defaults group on another level of the chain is no
+  co-writer: on the instances its stack runs on, the initialisation is
+  folded into that stack with its condition (RS ch. 7.10), as the
+  initialisation default whose body is `not grpN_has_input(S)` and the
+  condition's atoms. Every default of a composed stack is translated on
+  the level that declared it, so an own read in it names that type.
 - Constructs outside the corpus-exercised subset fault the translator —
   fail fast, never a silent SKIP.
 

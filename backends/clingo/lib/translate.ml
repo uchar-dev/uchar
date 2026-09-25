@@ -9081,11 +9081,16 @@ let translate_aantal_dagen ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : granularitei
 (* the writers of the attribute target (ot, a) beside a natively translated
    initialisation (translate_regel's Initialisatie arm): the initialisations
    and the computing rules among the rules that apply on the case's date — an
-   excluded version emits nothing and is no writer — and whether a defaults
-   group, an allocation or a creation-time member writes the target too. A
-   writer declared on a type of ot's chain, above or below it, writes the
-   instances the two types share (ch. 2.2), so it counts wherever the two
-   populations overlap *)
+   excluded version emits nothing and is no writer — and whether an
+   allocation, a creation-time member or a defaults group of ot's own level
+   writes the target too. A writer declared on a type of ot's chain, above or
+   below it, writes the instances the two types share (ch. 2.2), so it counts
+   wherever the two populations overlap. A defaults group on ANOTHER level of
+   the chain is no co-writer: on every instance its stack runs on, the
+   initialisation is folded into that stack with its condition
+   (RUNTIME-SEMANTICS ch. 7.10) and excluded here by [absorbed_on], so the two
+   never write one instance. A group on ot's own level is WF-050's
+   single-writer lift, which the fold leaves alone, and stays refused *)
 let init_writers ctx ~ot ~a =
   let overlaps t = Ir_v0.Checks.populations_overlap ctx.doc ot t in
   let on_target (r : resolved_regel) =
@@ -9105,7 +9110,7 @@ let init_writers ctx ~ot ~a =
   let other =
     List.exists
       (fun (l : prioritized_defaults) ->
-        overlaps l.pd_onderwerp
+        norm l.pd_onderwerp = norm ot
         && match l.pd_attribuut with Some la -> norm la = norm a | None -> false)
       ctx.doc.prioritized_defaults
     || List.exists
@@ -9450,9 +9455,9 @@ let translate_regel ctx (r : resolved_regel) =
               | _ -> ());
               if other then
                 fault
-                  "the initialisation of %S shares its target with a defaults group, an \
-                   allocation or an object creation: ch. 5.4 places an initialisation beside \
-                   ordinary rules only (no corpus case)"
+                  "the initialisation of %S shares its target with an allocation, an object \
+                   creation or a defaults group of its own level: ch. 5.4 places an \
+                   initialisation beside ordinary rules only (no corpus case)"
                   a;
               if attr_temporal ctx ~otype:ot ~attr:a then
                 fault "temporal attribute %S as a target: temporal writes are not implemented" a;
@@ -9771,9 +9776,15 @@ let path_key target_form = function
   | [] -> target_form
   | path -> target_form ^ "/" ^ String.concat "/" (List.map string_of_int path)
 
-let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
+(* [origins] is aligned with [defaults]: the subject type each default was
+   declared on, which its own reads name (WF-053). A composed stack
+   (RUNTIME-SEMANTICS ch. 7.10) moves an ancestor's defaults under a
+   descendant's, so the position a default is translated on is its own and
+   not the owner's. *)
+let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
     ~target_form ~target_scale ~has_input ~outer_displaced (defaults : default list) :
     string * string =
+  let ot_at n = List.nth origins n in
   let tag = fresh ctx "nl" in
   let out = Printf.sprintf "%s_out" tag in
   let cfl = Printf.sprintf "%s_cfl" tag in
@@ -9788,34 +9799,42 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
   let reached n = outer_displaced @ List.init n (fun m -> Printf.sprintf "not %s(%s)" (stl m) subject) in
   let dec n = Printf.sprintf "%s_dec%d" tag n in
   let conf n = Printf.sprintf "%s_conf%d" tag n in
+  (* the chain's own context, whatever position asks for the atoms: they are
+     asked for early, inside the consequence, when that consequence reads a
+     parameter the case does not bind (below). [extra] is a form-a default's
+     wait on its exception groups: ref reads the justification only when they
+     decide nothing *)
+  let condition_atoms ~extra n c =
+    let saved_r = ctx.param_reach and saved_g = ctx.rule_guard in
+    let saved_n = ctx.let_needs and saved_b = ctx.binders and saved_v = ctx.value_of in
+    ctx.param_reach <- (fun _ -> (base :: reached n) @ extra);
+    ctx.rule_guard <- [];
+    ctx.let_needs <- [];
+    ctx.binders <- [];
+    ctx.value_of <- None;
+    let atoms = cond_atoms ctx ~subject ~subject_ot:(ot_at n) c in
+    ctx.param_reach <- saved_r;
+    ctx.rule_guard <- saved_g;
+    ctx.let_needs <- saved_n;
+    ctx.binders <- saved_b;
+    ctx.value_of <- saved_v;
+    atoms
+  in
   let own_just ?(extra = []) n (r : default) =
     if r.default_initialisatie then (
       if not root then
         fault "an initialisation default inside an exception group is ill-formed";
       match has_input with
-      | Some hi -> [ Printf.sprintf "not %s(%s)" hi subject ]
+      | Some hi ->
+          (* an initialisation folded with its condition (ch. 7.10) is
+             justified where the input left the target empty AND that
+             condition holds *)
+          Printf.sprintf "not %s(%s)" hi subject
+          :: (match r.default_voorwaarde with
+             | Some c -> condition_atoms ~extra n c
+             | None -> [])
       | None -> fault "initialisation default on characteristic defaults")
-    else begin
-      (* the chain's own context, whatever position asks for the atoms: they
-         are asked for early, inside the consequence, when that consequence
-         reads a parameter the case does not bind (below). [extra] is a form-a
-         default's wait on its exception groups: ref reads the justification
-         only when they decide nothing *)
-      let saved_r = ctx.param_reach and saved_g = ctx.rule_guard in
-      let saved_n = ctx.let_needs and saved_b = ctx.binders and saved_v = ctx.value_of in
-      ctx.param_reach <- (fun _ -> (base :: reached n) @ extra);
-      ctx.rule_guard <- [];
-      ctx.let_needs <- [];
-      ctx.binders <- [];
-      ctx.value_of <- None;
-      let atoms = cond_atoms ctx ~subject ~subject_ot (req "default justification" r.default_voorwaarde) in
-      ctx.param_reach <- saved_r;
-      ctx.rule_guard <- saved_g;
-      ctx.let_needs <- saved_n;
-      ctx.binders <- saved_b;
-      ctx.value_of <- saved_v;
-      atoms
-    end
+    else condition_atoms ~extra n (req "default justification" r.default_voorwaarde)
   in
   (* a default's OWN decision (a plain default, an init default, or a form-a
      fall-back): on the attribute arm the consequence bindings sit in the
@@ -9836,7 +9855,7 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
       let saved_r = ctx.param_reach in
       ctx.param_reach <- (fun _ -> (base :: reached n) @ Lazy.force just @ extra);
       let bindings, term, scale =
-        expr_term ctx ~subject ~subject_ot (req "default consequence" r.default_consequentie)
+        expr_term ctx ~subject ~subject_ot:(ot_at n) (req "default consequence" r.default_consequentie)
       in
       ctx.param_reach <- saved_r;
       if scale <> target_scale then
@@ -9860,7 +9879,7 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
             @ List.init n (fun m -> Printf.sprintf "not %s(%s)" (stl m) subject)
           in
           let u_out, u_cfl, u_any =
-            translate_group ctx ~is_char ~subject ~subject_ot ~base
+            translate_group ctx ~is_char ~subject ~subject_ot:(ot_at n) ~base
               ~group_path:(path @ [ n ]) ~target_form ~target_scale ~has_input
               ~outer_displaced:default_displaced egs
           in
@@ -9910,7 +9929,8 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
   let members =
     List.map
       (fun (eg : exception_group) ->
-        translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path:group_path
+        translate_chain ctx ~is_char ~subject
+          ~origins:(List.map (fun _ -> subject_ot) eg.eg_defaults) ~base ~path:group_path
           ~root:false ~target_form ~target_scale ~has_input
           ~outer_displaced eg.eg_defaults)
       egs.egs_leden
@@ -9968,16 +9988,18 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
    has already folded the supertype's declarations into this stack, so
    quantifying the subject extensionally as well would run the supertype's
    stack and the subtype's on one instance. *)
-let translate_defaults_group ctx gidx ~owner (members : (int * prioritized_defaults) list) =
+let translate_defaults_group ctx gidx ~owner
+    (members : (int * (prioritized_defaults * string list)) list) =
   (* the ch. 8.2 validity gate, per member: an excluded member is
      Undecided — no decision, no conflict, no §9.5 deposit (ref's
      member_decision returns Undecided before a single default is
      evaluated), so it simply leaves the group's member set. The group
      reconciles the members that remain. *)
-  let _, l0 = List.hd members in
+  let _, (l0, _) = List.hd members in
   let members =
     List.filter
-      (fun ((_, l) : int * prioritized_defaults) -> applies ctx l.pd_geldigheid)
+      (fun ((_, (l, _)) : int * (prioritized_defaults * string list)) ->
+        applies ctx l.pd_geldigheid)
       members
   in
   if members = [] then (
@@ -9995,7 +10017,7 @@ let translate_defaults_group ctx gidx ~owner (members : (int * prioritized_defau
             Printf.sprintf "is_a(S,%s)" (str owner) ]
     | None -> ())
   else begin
-  let _, l0 = List.hd members in
+  let _, (l0, _) = List.hd members in
   let subject = "S" in
   let base = Printf.sprintf "is_a(%s,%s)" subject (str owner) in
   let is_char, target_name =
@@ -10027,9 +10049,9 @@ let translate_defaults_group ctx gidx ~owner (members : (int * prioritized_defau
   (* each top-level member is a chain reconciled at the root path [] *)
   let member_info =
     List.map
-      (fun ((_, l) : int * prioritized_defaults) ->
+      (fun ((_, (l, origins)) : int * (prioritized_defaults * string list)) ->
         let out, cfl =
-          translate_chain ctx ~is_char ~subject ~subject_ot:l.pd_onderwerp ~base ~path:[]
+          translate_chain ctx ~is_char ~subject ~origins ~base ~path:[]
             ~root:true ~target_form ~target_scale ~has_input ~outer_displaced:[] l.defaults
         in
         (out, cfl, List.exists (fun (r : default) -> r.default_excepties <> None) l.defaults))

@@ -1,0 +1,20 @@
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (getal met 2 decimalen);
+    het bergloon Numeriek (getal met 2 decimalen);
+
+Objecttype de Wrakvondst is een Vondst (mv: Wrakvondsten)
+
+Regel standaardbergloon
+    geldig altijd
+        Het bergloon van een Vondst moet geïnitialiseerd worden op 2 maal zijn gewicht
+        indien zijn gewicht groter is dan 10.
+
+Regel wrakbergloon
+    geldig altijd
+        Het bergloon van een Wrakvondst moet gesteld worden op 5,00
+        indien zijn gewicht groter is dan 50.
+
+Uitzondering op wrakbergloon: zwaar wrakbergloon
+    geldig altijd
+        Het bergloon van een Wrakvondst moet gesteld worden op 9,00
+        indien zijn gewicht groter is dan 100.

@@ -3071,9 +3071,12 @@ type chain_result = Decided of defaults_decision | Conflict of string | Undecide
    (RUNTIME-SEMANTICS ch. 7.10): inheritance has already folded every
    inherited declaration into it, so the group runs on instances of exactly
    that type — reading the subject extensionally here as well would put the
-   supertype's stack and the subtype's on one instance. *)
-let run_defaults_group env world ~owner (members : prioritized_defaults list) =
-  let l0 = List.hd members in
+   supertype's stack and the subtype's on one instance. Each member comes
+   with the subject type every root default of it was declared on, and that
+   default is evaluated there. *)
+let run_defaults_group env world ~owner
+    (members : (prioritized_defaults * string list) list) =
+  let l0 = fst (List.hd members) in
   let env = { env with subj = Some l0.pd_onderwerp } in
   let target_name =
     match (l0.pd_kenmerk, l0.pd_attribuut) with
@@ -3148,23 +3151,34 @@ let run_defaults_group env world ~owner (members : prioritized_defaults list) =
          is the fall-back only when they decide nothing. Speculative
          deposits flush when — and only when — a default decides, composing
          through the recursion. *)
-      let member_decision (l : prioritized_defaults) : chain_result =
+      let member_decision ((l : prioritized_defaults), origins) : chain_result =
         if not (applies env l.pd_geldigheid) then Undecided
         else
           let is_char = l.pd_kenmerk <> None in
-          let justified (r : default) err =
+          (* a root default, and its exception groups with it, is evaluated on
+             the position it was declared on: the composition moved an
+             ancestor's default into this stack, and its own reads name the
+             ancestor (WF-053) *)
+          let env_at i = { env with subj = Some (List.nth origins i) } in
+          let justified env (r : default) err =
             if r.default_initialisatie then (
               match l.pd_attribuut with
-              | Some a -> World.attr self a = Value.Empty
+              | Some a ->
+                  (* an initialisation folded with its condition is justified
+                     only where that condition holds as well *)
+                  World.attr self a = Value.Empty
+                  && (match r.default_voorwaarde with
+                     | Some c -> eval_cond env w self ~err c
+                     | None -> true)
               | None -> Value.fault "initialisation default on characteristic defaults")
             else eval_cond env w self ~err (req "default justification" r.default_voorwaarde)
           in
           (* the default's OWN decision, exception groups aside (a plain default, the
              initialisation default, or a form-a default's fall-back): Some when it
              decides, None when it falls through *)
-          let own_decision (r : default) : defaults_decision option =
+          let own_decision env (r : default) : defaults_decision option =
             if is_char then (
-              let j, flush = speculate (fun err -> justified r err) in
+              let j, flush = speculate (fun err -> justified env r err) in
               if j then (
                 flush ();
                 Some (Char_dec (req "default decision" r.default_besluit)))
@@ -3172,7 +3186,7 @@ let run_defaults_group env world ~owner (members : prioritized_defaults list) =
             else
               let outcome, flush =
                 speculate (fun err ->
-                    if justified r err then
+                    if justified env r err then
                       Some
                         (eval_expr env w self ~err
                            (req "default consequence" r.default_consequentie))
@@ -3184,10 +3198,11 @@ let run_defaults_group env world ~owner (members : prioritized_defaults list) =
                   Some (Attr_dec v)
               | Some _ (* leeg: falls through *) | None -> None
           in
-          let rec decide ~path (defaults : default list) : chain_result =
+          let rec decide ~env_at ~path (defaults : default list) : chain_result =
             let rec go i = function
               | [] -> Undecided
               | (r : default) :: rest -> (
+                  let env = env_at i in
                   let fall_through () =
                     (* a form-a default falls back to its own decision; a
                        group-default (no own content) decides nothing (ch. 7.9) *)
@@ -3195,7 +3210,7 @@ let run_defaults_group env world ~owner (members : prioritized_defaults list) =
                       r.default_besluit <> None || r.default_consequentie <> None
                     in
                     if has_content then
-                      match own_decision r with Some d -> Decided d | None -> go (i + 1) rest
+                      match own_decision env r with Some d -> Decided d | None -> go (i + 1) rest
                     else go (i + 1) rest
                   in
                   match r.default_excepties with
@@ -3206,20 +3221,21 @@ let run_defaults_group env world ~owner (members : prioritized_defaults list) =
                       let sub_path = path @ [ i ] in
                       let results =
                         List.map
-                          (fun (eg : exception_group) -> decide ~path:sub_path eg.eg_defaults)
+                          (fun (eg : exception_group) ->
+                            decide ~env_at:(fun _ -> env) ~path:sub_path eg.eg_defaults)
                           egs.egs_leden
                       in
                       match reconcile ~path:sub_path results with
                       | (Conflict _ | Decided _) as d -> d
                       | Undecided -> fall_through ())
                   | None -> (
-                      match own_decision r with
+                      match own_decision env r with
                       | Some d -> Decided d
                       | None -> go (i + 1) rest))
             in
             go 0 defaults
           in
-          decide ~path:[] l.defaults
+          decide ~env_at ~path:[] l.defaults
       in
       match reconcile ~path:[] (List.map member_decision members) with
       | Undecided -> (w, false)

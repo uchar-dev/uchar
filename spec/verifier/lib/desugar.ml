@@ -242,25 +242,37 @@ let standing_targets = standing_targets_gen ~temporal:false
 let is_init (r : default) = r.default_initialisatie
 let default_has_content (r : default) = r.default_besluit <> None || r.default_consequentie <> None
 
-(* (exceptions, base, initialisation tail) of one member's ordered stack.
+(* (exceptions, base, initialisation tail) of one member's ordered stack,
+   each default paired with the subject type it was declared on.
    The base is the LOWEST ordinary default, and only when it decides
    something itself: a group-default delegates to its exception groups and is
    therefore not a base (rule 2), and a declared-unordered member has no
    "lowest" at all, so its whole block travels as one (rule 3). *)
-let split_stack (l : prioritized_defaults) =
-  let head = List.filter (fun r -> not (is_init r)) l.defaults in
-  let tail = List.filter is_init l.defaults in
+let split_stack (l : prioritized_defaults) (origins : string list) =
+  let pairs = List.combine l.defaults origins in
+  let head = List.filter (fun (r, _) -> not (is_init r)) pairs in
+  let tail = List.filter (fun (r, _) -> is_init r) pairs in
   if l.pd_ongeordend then (head, None, tail)
   else
     match List.rev head with
-    | last :: rest when default_has_content last -> (List.rev rest, Some last, tail)
+    | ((last, _) as b) :: rest when default_has_content last -> (List.rev rest, Some b, tail)
     | _ -> (head, None, tail)
 
-let compose_member ~(own : prioritized_defaults) ~(inherited : prioritized_defaults) =
-  let own_exc, own_base, own_tail = split_stack own in
-  let inh_exc, inh_base, inh_tail = split_stack inherited in
+(* The composed member carries, beside its defaults, the subject type each of
+   them was declared on. The composition moves an ancestor's defaults into a
+   descendant's stack, but a default still reads as it was written: an own
+   read in it names the type it was declared on (WF-053), so an executor
+   evaluates it on that position and not on the owner's. Evaluated on the
+   owner's, an inherited default that reads an attribute of its own level
+   faulted in ref and the ASP backend on verifier-clean documents while the
+   Drools exec branch played them. *)
+let compose_member ~own:((own : prioritized_defaults), own_origins)
+    ~inherited:((inherited : prioritized_defaults), inh_origins) =
+  let own_exc, own_base, own_tail = split_stack own own_origins in
+  let inh_exc, inh_base, inh_tail = split_stack inherited inh_origins in
   let base = match own_base with Some _ as b -> b | None -> inh_base in
-  { own with defaults = own_exc @ inh_exc @ Option.to_list base @ inh_tail @ own_tail }
+  let pairs = own_exc @ inh_exc @ Option.to_list base @ inh_tail @ own_tail in
+  ({ own with defaults = List.map fst pairs }, List.map snd pairs)
 
 exception Unlowered of string
 
@@ -316,8 +328,8 @@ let level_rules doc level key =
 (* [level]'s own contribution to [key] when it declares no defaults group:
    its rules, read as the ch. 7.7 shape — the computing rule as the base,
    the initialisation below it. None when the level writes the target with
-   no ordinary rule either. *)
-let rule_member doc level key : (prioritized_defaults * int) option =
+   no ordinary rule either. The origins are [level] throughout. *)
+let rule_member doc level key : (prioritized_defaults * int * string list) option =
   let rules = level_rules doc level key in
   let comps = List.filter (fun (soort, _, _) -> soort <> Initialisatie) rules in
   let inits = List.filter (fun (soort, _, _) -> soort = Initialisatie) rules in
@@ -363,11 +375,21 @@ let rule_member doc level key : (prioritized_defaults * int) option =
           | _ -> attribuut)
       | [] -> attribuut
     in
+    (* An initialisation keeps its condition. The initialisation default is
+       justified where the target is empty in the input facts (ch. 7.3); a
+       condition of its own is conjoined to that as its justification. The
+       emptiness stays the default's KIND and is written into no condition,
+       so nothing reads the own target — ch. 7.7's reason for leaving a
+       conditional initialisation out of the desugaring does not reach the
+       fold. An earlier revision dropped the condition: on a verifier-clean
+       chain ref and the Drools exec branch then wrote the initialisation's
+       value where its condition failed. *)
     let d ~init (r : resolved_regel) =
       {
         default_besluit = None;
         default_voorwaarde =
-          (if init then None else Some (Option.value r.rr_voorwaarde ~default:always_true));
+          (if init then r.rr_voorwaarde
+           else Some (Option.value r.rr_voorwaarde ~default:always_true));
         default_consequentie = Some (Option.get r.waarde);
         default_initialisatie = init;
         default_excepties = None;
@@ -390,20 +412,24 @@ let rule_member doc level key : (prioritized_defaults * int) option =
           pd_bron = Some "SUBTYPING §4.1 rules 1/4: an ordinary rule is the base of its level";
           pd_geldigheid = None;
         },
-        idx )
+        idx,
+        List.map (fun _ -> level) defaults )
 
 (* Every declared group with the index it sits at in the document, so a
-   consumer can still stratify a composed stack by its contributors.
+   consumer can still stratify a composed stack by its contributors, and the
+   subject type each of its defaults was declared on.
    [absorb] is the key set on which an ordinary rule counts as a base — a
    property of the stack's OWNER, threaded down so the answer does not
    change with the recursion depth. *)
 let rec effective_stacks_of doc ~visited ~absorb type_name :
-    (string * (prioritized_defaults * int) list) list =
+    (string * (prioritized_defaults * int * string list) list) list =
   let own_groups =
     List.concat
       (List.mapi
          (fun i (l : prioritized_defaults) ->
-           if norm l.pd_onderwerp = norm type_name then [ (l, i) ] else [])
+           if norm l.pd_onderwerp = norm type_name then
+             [ (l, i, List.map (fun _ -> l.pd_onderwerp) l.defaults) ]
+           else [])
          doc.prioritized_defaults)
   in
   (* a level that declares a group on a key keeps it; on an ABSORBED key it
@@ -413,7 +439,7 @@ let rec effective_stacks_of doc ~visited ~absorb type_name :
     own_groups
     @ List.filter_map
         (fun k ->
-          if List.exists (fun (l, _) -> Checks.target_key l = k) own_groups then None
+          if List.exists (fun (l, _, _) -> Checks.target_key l = k) own_groups then None
           else rule_member doc type_name k)
         absorb
   in
@@ -428,11 +454,11 @@ let rec effective_stacks_of doc ~visited ~absorb type_name :
   in
   let own_by_key =
     List.fold_left
-      (fun acc (l, i) ->
+      (fun acc ((l, _, _) as m) ->
         let k = Checks.target_key l in
         if List.mem_assoc k acc then
-          List.map (fun (k', ms) -> if k' = k then (k', ms @ [ (l, i) ]) else (k', ms)) acc
-        else acc @ [ (k, [ (l, i) ]) ])
+          List.map (fun (k', ms) -> if k' = k then (k', ms @ [ m ]) else (k', ms)) acc
+        else acc @ [ (k, [ m ]) ])
       [] own
   in
   let keys =
@@ -444,7 +470,9 @@ let rec effective_stacks_of doc ~visited ~absorb type_name :
       match (List.assoc_opt k own_by_key, List.assoc_opt k inherited) with
       | Some ms, None -> (k, ms)
       | None, Some ms -> (k, ms)
-      | Some [ (o, oi) ], Some [ (p, pi) ] -> (k, [ (compose_member ~own:o ~inherited:p, max oi pi) ])
+      | Some [ (o, oi, oo) ], Some [ (p, pi, po) ] ->
+          let m, origins = compose_member ~own:(o, oo) ~inherited:(p, po) in
+          (k, [ (m, max oi pi, origins) ])
       | Some [ _ ], Some ps ->
           (* ONE own group over an INHERITED DECLARED-UNORDERED SET. This is
              defined — SUBTYPING §4.1 rule 3: the inherited group stays
@@ -491,16 +519,21 @@ let rec effective_stacks_of doc ~visited ~absorb type_name :
 (* The effective stacks of every declared object type: (owner type, target
    key, members, contributing declaration indices). The owner is the CONCRETE
    type the stack belongs to, and its instances are exactly the instances the
-   stack runs on. *)
+   stack runs on. Each member comes with the subject type every one of its
+   root defaults was declared on, aligned with its [defaults]: the position
+   an executor evaluates that default on (a default's exception groups share
+   it). *)
 let effective_defaults (doc : document) :
-    (string * string * prioritized_defaults list * int list) list =
+    (string * string * (prioritized_defaults * string list) list * int list) list =
   List.concat_map
     (fun (name, _) ->
       let absorb = Checks.chain_group_keys doc name in
       List.filter_map
         (fun (k, ms) ->
           if ms = [] then None
-          else Some (name, k, List.map fst ms, List.map snd ms))
+          else
+            Some
+              (name, k, List.map (fun (m, _, o) -> (m, o)) ms, List.map (fun (_, i, _) -> i) ms))
         (effective_stacks_of doc ~visited:[] ~absorb name))
     doc.objecttypen
 

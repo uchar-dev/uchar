@@ -1,0 +1,28 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wrakvondst",
+        "attributes": { "gewicht": { "number": "8.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Wrakvondst",
+        "attributes": { "gewicht": { "number": "12.00" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeEmpty", "label": "W1", "attribute": "bergloon" },
+    { "kind": "attributeValue", "label": "W2", "attribute": "bergloon", "value": { "number": "24.00" } },
+    { "kind": "consistent" }
+  ]
+}

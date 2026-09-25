@@ -9134,26 +9134,48 @@ let () =
     ~case_text:(v1 [ num "gewicht" "8.00" ] [ is "25.00"; pf_cons ])
     ~needle:"the initialisation of \"bergloon\" sits beside 2 computing rules";
   (* a defaults group on the subtype folds the supertype's initialisation
-     into the subtype's stack (ch. 7.10) as a default without its condition:
-     measured on this verifier-clean shape, ref and the Drools exec-model
-     branch write 25,00 on a Wrakvondst whose gewicht (8,00) fails the
-     condition, where leeg is right. This arm refuses the shape instead *)
-  faults_with ~name:"an initialisation beside a defaults group on its chain"
-    ~ir:
-      (pf_doc ~objecttypen:[ vondst; wrakvondst ]
-         ~defaults:
-           [ Printf.sprintf
-               {|{ "node": "PrioritizedDefaults", "name": "wrakbergloon", "subject": "Wrakvondst",
+     into the subtype's stack (ch. 7.10), condition and all. Folded without
+     its condition, ref and the Drools exec-model branch wrote 25,00 on a
+     Wrakvondst whose gewicht (8,00) fails it, where leeg is right, and this
+     arm refused the shape; the condition reads the supertype's gewicht and
+     is evaluated on the level it was declared on *)
+  let wrakgroep ot =
+    Printf.sprintf
+      {|{ "node": "PrioritizedDefaults", "name": "wrakbergloon", "subject": "%s",
           "attribute": "bergloon", "defaults": [ { "node": "Default", "justification": %s,
           "consequence": %s, "source": { "snippet": "d" } } ], "source": { "snippet": "w" },
           "validity": { "node": "Validity" } }|}
-               (pf_cmp "greater" (pf_a ~ot:"Wrakvondst" "gewicht") (pf_l "50.00"))
-               (pf_l "5.00") ]
-         ~regels:[ standaard ] ())
+      ot
+      (pf_cmp "greater" (pf_a ~ot "gewicht") (pf_l "50.00"))
+      (pf_l "5.00")
+  in
+  let met_groep =
+    pf_doc ~objecttypen:[ vondst; wrakvondst ] ~defaults:[ wrakgroep "Wrakvondst" ]
+      ~regels:[ standaard ] ()
+  in
+  both_answer ~name:"an initialisation beside a defaults group on its chain: the condition fails"
+    ~ir:met_groep
     ~case_text:
       (pf_case ~instances:[ inst "W1" "Wrakvondst" [ num "gewicht" "8.00" ] ]
-         [ pf_leeg ~label:"W1" ~attr:"bergloon" (); pf_cons ])
-    ~needle:"the initialisation of \"bergloon\" shares its target with a defaults group";
+         [ pf_leeg ~label:"W1" ~attr:"bergloon" (); pf_cons ]);
+  both_answer ~name:"an initialisation beside a defaults group on its chain: the condition holds"
+    ~ir:met_groep
+    ~case_text:
+      (pf_case
+         ~instances:
+           [ inst "W2" "Wrakvondst" [ num "gewicht" "12.00" ];
+             inst "W3" "Wrakvondst" [ num "gewicht" "60.00" ];
+             inst "V1" "Vondst" [ num "gewicht" "12.00" ] ]
+         [ pf_is ~label:"W2" ~attr:"bergloon" "25.00"; pf_is ~label:"W3" ~attr:"bergloon" "5.00";
+           pf_is ~label:"V1" ~attr:"bergloon" "25.00"; pf_cons ]);
+  (* a group on the initialisation's own level is WF-050's single-writer
+     lift, which the fold does not take *)
+  faults_with ~name:"an initialisation beside a defaults group of its own level"
+    ~ir:(pf_doc ~objecttypen:[ vondst ] ~defaults:[ wrakgroep "Vondst" ] ~regels:[ standaard ] ())
+    ~case_text:(v1 [ num "gewicht" "8.00" ] [ leeg; pf_cons ])
+    ~needle:
+      "the initialisation of \"bergloon\" shares its target with an allocation, an object \
+       creation or a defaults group of its own level";
   faults_with ~name:"a conditional initialisation of a text target"
     ~ir:
       (doc
