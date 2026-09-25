@@ -33,15 +33,16 @@ at six paths, one per rule, all of the same kind:
 
 The difference sits in the type annotation of the division under each
 rounding: both documents annotate it with 0 decimals and no unit, and only
-the wholeness flag differs. A consumer does not read that annotation. A
-division is a composite position, whose precision a consumer takes from the
-ch. 2.3 table of RUNTIME-SEMANTICS (maxDec, a documented under-report), not
-from the wire (RUNTIME-SEMANTICS ch. 2.10, clause 2), and no verifier rule
-crosses it: IR-SPEC WF-091 lists the division among the positions it leaves
-uncrossed. Of the two flags the frontend's is the one the values bear out,
-since 87 / 4 = 21,75 is not a whole number. The executors confirm that the
-flag is not read: all four replay the same pinned values over both
-documents (below).
+the wholeness flag differs. RUNTIME-SEMANTICS ch. 2.10 (clause 2) has a
+consumer take a composite's precision from the ch. 2.3 table, not from the
+wire; the division's row there gives maxDec, a documented under-report, and
+says nothing about wholeness. The division is also one of ch. 2.10's
+fourth-class positions, which keep their annotation for the unit only, and
+neither document annotates a unit. No verifier rule crosses the flag:
+IR-SPEC WF-091 lists the division among the positions it leaves uncrossed.
+Of the two flags the frontend's is the one the values bear out, since
+87 / 4 = 21,75 is not a whole number. The flag changes no outcome here: all
+four executors replay the same pinned values over both documents (below).
 
 At the byte level the `source` records differ as well: the rule targets read
 `De prijsBovenaf van een Veilingronde` (the declared name) where the
