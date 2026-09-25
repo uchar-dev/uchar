@@ -708,6 +708,25 @@ public final class IrEmitter {
         if (dt instanceof Datatype.Onbekend) w.valueNull(); else datatype(dt);
     }
 
+    /** The type a function node writes. Two builtins have a result type the spec fixes whatever their operands are,
+     *  and the resolver leaves both without a claim, so their null would be refused by WF-034: the day count counts
+     *  days and is typed as every count is (RUNTIME-SEMANTICS ch. 2.3 and ch. 3.8: whole, non-negative, unitless),
+     *  and the concatenation joins its parts into one text (IR-SPEC ch. 4.3, the text fold). Every other kind writes
+     *  the resolver's type. A resolver claim that differs from the fixed type would give one annotation two sources,
+     *  so it is refused rather than overwritten. */
+    private static Datatype functieType(Expr.Functie f) {
+        Datatype vast = switch (f.kind()) {
+            case AANTAL_DAGEN_IN -> new Datatype.Numeriek(true, 0, Datatype.Teken.NIET_NEGATIEF, null);
+            case CONCATENATIE -> new Datatype.Tekst();
+            default -> null;
+        };
+        if (vast == null) return f.type();
+        if (f.type() != null && !(f.type() instanceof Datatype.Onbekend) && !vast.equals(f.type()))
+            throw new IllegalStateException("IrEmitter: de " + soort(f) + "-aanroep '" + f.bron().snippet()
+                    + "' draagt het type " + f.type().naam() + ", en de spec legt het type " + vast.naam() + " vast");
+        return vast;
+    }
+
     /** IR-SPEC ch. 4.1: the value variant of a literal, chosen by its type — a number (a percentage included), a
      *  boolean, a text, a date of day and of millisecond precision, an enumeration label. The frontend has no sum
      *  type, so it never writes the constructor variant. Without a type there is no variant to choose, and a boolean
@@ -845,7 +864,7 @@ public final class IrEmitter {
                 }
                 if (!aggregatie && f.granulariteit() != null)
                     w.key("granularity").value(Spelling.GRANULARITY.spelling(f.granulariteit()));
-                w.key("type"); afgeleidType(f.type());
+                w.key("type"); afgeleidType(functieType(f));
                 bronrecord(f.bron().snippet());
             }
             case Expr.Afgerond a -> {
