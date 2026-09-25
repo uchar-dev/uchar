@@ -33,16 +33,17 @@ functionDefs (unknown model section)`.
 ## What it pins
 
 Until 2026-09-25 the result arm of WF-068 compared the two datatypes byte
-for byte, while its argument arm already compared them as ch. 2.1 does;
-that verifier refuses this document, measured:
+for byte, while its argument arm already compared them as ch. 2.1 does.
+Making that one comparison byte for byte again turns this document, and no
+other golden or rood document, red, measured:
 
     WF-068 FAIL /rules/rules/0/versions/0/value/list/list/function/body/type:
     invoke result type differs from the declared function result
 
-and it refused no other golden or rood document. Making the whole datatype
-comparison byte for byte again (`same_datatype` as `a = b` in
-`spec/verifier/lib/checks.ml`) turns this document red at two rules, and
-of the other goldens only `jutterswet-meldtermijnen`:
+Making the whole datatype comparison byte for byte again (`same_datatype` as
+`a = b` in `spec/verifier/lib/checks.ml`) turns this document red at two
+rules, and of the other goldens `jutterswet-meldtermijnen` and
+`jutterswet-vangstwaardering`:
 
     WF-070 FAIL /rules/rules/0/versions/0/value/list/list/function: lambda
     body is sumtype 'AANSPRAAK', but the MapList requires sumtype 'aanspraak'
