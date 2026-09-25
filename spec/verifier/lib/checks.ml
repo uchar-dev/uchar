@@ -2175,6 +2175,17 @@ let datatype_kind = function
   | Enumeratie _ -> "enumeration" | Sum_type _ -> "sumtype" | List_type _ -> "list"
   | Struct_type _ -> "struct"
 
+(* WF-038 on the two numeric builtins (IR-SPEC ch. 4.3): a square root and an
+   absolute value take one number. Shared with ref and the ASP backend, which
+   refuse the form in this sentence when a document reaches them without the
+   verifier. *)
+let numeric_builtin_operand_refusal kind (d : datatype) =
+  if is_number_like d then None
+  else
+    Some
+      (Spelling.encode Spelling.builtin_kind kind ^ " operand is " ^ datatype_kind d
+     ^ ", must be a number")
+
 (* like [datatype_kind] but carrying the decimal count and unit a numeric type
    turns on: a WF-076 mismatch on precision or unit renders as "number differs
    from number" under the bare kind, hiding exactly the discrepancy the check
@@ -4630,6 +4641,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          | _ -> [])
       (* WF-038: operand typing slices *)
       @ (match f.kind, f.argumenten with
+         | (Wortel | Absolute_waarde), [ a ] -> (
+             match Option.bind (ty a) (numeric_builtin_operand_refusal f.kind) with
+             | Some sentence -> [ v "WF-038" at sentence ]
+             | None -> [])
          | Eerste_paasdag, [ a ] -> (
              match ty a with
              | Some (Numeriek { geheel = true; eenheid = None; _ }) -> []

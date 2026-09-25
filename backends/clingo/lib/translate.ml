@@ -1880,6 +1880,17 @@ let day_time_unit_of ~what (t : datatype option) =
             (Option.value u.afkorting ~default:"?"))
   | _ -> fault "%s without a time unit on its static type" what
 
+(* WF-038's operand of a square root or an absolute value, read off its static
+   type: the verifier's sentence, shared, ahead of this backend's own refusal
+   of the two builtins *)
+let numeric_builtin_operand ctx kind (argumenten : expr list) =
+  match argumenten with
+  | [ a ] -> (
+      match Option.bind (static_type ctx a) (Ir_v0.Checks.numeric_builtin_operand_refusal kind) with
+      | Some sentence -> fault "%s" sentence
+      | None -> ())
+  | _ -> ()
+
 (* The unit of a date ± duration step (WF-035), for the forms whose sentence
    the verifier and ref speak as well ([Ir_v0.Checks]): no time unit on the
    duration operand, a sub-day unit on a day-precision date, and a unit that
@@ -5118,10 +5129,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         ~rounding:(Some (Richting_nul, 5))
   | Binair { op = Tot_de_macht; links; rechts; _ } ->
       translate_power ctx ~subject ~subject_ot ~links ~rechts
-  | Afgerond { basis = Some (Functie { kind = Wortel; _ }); _ } ->
+  | Afgerond { basis = Some (Functie { kind = Wortel; argumenten; _ }); _ } ->
+      numeric_builtin_operand ctx Wortel argumenten;
       (* ref rounds the true irrational exactly (§13.4.17.13); that
          computation has no integer encoding here yet *)
       fault "rounded root is not translated (no corpus case)"
+  | Functie { kind = (Wortel | Absolute_waarde) as kind; argumenten; _ } ->
+      numeric_builtin_operand ctx kind argumenten;
+      fault "%s is not translated (no corpus case)" (Ir_v0.Spelling.encode Ir_v0.Spelling.builtin_kind kind)
   | Afgerond { basis = Some (Binair { op = Gedeeld_door; links; rechts; _ }); modus; decimalen; _ }
     ->
       translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding:(Some (modus, decimalen))

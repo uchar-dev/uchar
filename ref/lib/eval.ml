@@ -954,6 +954,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       | Some (Functie { kind = Wortel; argumenten = [ arg ]; _ }) ->
           (* the mandatory rounding after a root (§13.4.17.13) rounds the
              true irrational, exactly *)
+          numeric_builtin_operand env Wortel arg;
           Arith.sqrt_rounded ~err modus decimalen (eval_expr env world self ~err arg)
       | _ ->
           Arith.round_v modus decimalen (eval_expr env world self ~err (req "Rounding.base" basis)))
@@ -1397,6 +1398,13 @@ and eval_closed_body env world self ~err (parameters : (string * datatype) list)
     List.fold_left (fun acc (pname, dt) -> SMap.add (norm pname) (Some dt) acc) SMap.empty parameters
   in
   eval_expr { env with locals; btypes } world self ~err body
+
+(* WF-038's operand of a square root or an absolute value, read off its
+   static type before the value is: the verifier's sentence, shared *)
+and numeric_builtin_operand env kind a =
+  match Option.bind (static_type env a) (Ir_v0.Checks.numeric_builtin_operand_refusal kind) with
+  | Some sentence -> Value.fault "%s" sentence
+  | None -> ()
 
 and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
     ~dimensie_selectie ~granulariteit ~bron_rol ~bron_pad =
@@ -1914,11 +1922,15 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
   | Laatste -> Arith.agg_laatste (values ())
   | Wortel -> (
       match argumenten with
-      | [ a ] -> Arith.sqrt_ ~err (eval_expr env world self ~err a)
+      | [ a ] ->
+          numeric_builtin_operand env Wortel a;
+          Arith.sqrt_ ~err (eval_expr env world self ~err a)
       | _ -> Value.fault "squareRoot expects one argument")
   | Absolute_waarde -> (
       match argumenten with
-      | [ a ] -> Arith.abs_ (eval_expr env world self ~err a)
+      | [ a ] ->
+          numeric_builtin_operand env Absolute_waarde a;
+          Arith.abs_ (eval_expr env world self ~err a)
       | _ -> Value.fault "absoluteValue expects one argument")
   | Concatenatie -> Arith.concat (map_in_order (eval_expr env world self ~err) argumenten)
   | Jaar_uit -> (

@@ -13639,6 +13639,31 @@ let () =
   both_answer ~name:"money x rate in a closed body: the rate left of the money"
     ~ir:(tarief_fold_frame ~left:weging ~right:grondslag_ref) ~case_text:tarief_fold_case
 
+(* WF-038 on the two numeric builtins: a text operand under a square root or
+   an absolute value is refused in the verifier's sentence, ahead of this
+   backend's own refusal of the two builtins (the clingo side of
+   corpus/negatief/wf038-absolute-waarde-tekst and wf038-wortel-tekst) *)
+let () =
+  let tekst = pf_l ~typ:{|{ "node": "Text" }|} "vier" in
+  let builtin kind =
+    Printf.sprintf
+      {|{ "node": "BuiltinCall", "kind": "%s", "arguments": [ %s ], "type": %s, "source": { "snippet": "%s" } }|}
+      kind tekst pf_n2 kind
+  in
+  faults_with ~name:"WF-038: absoluteValue over a text operand"
+    ~ir:(pf_doc ~regels:[ pf_regel (builtin "absoluteValue") ] ())
+    ~case_text:(pf_case [ pf_is "0" ]) ~needle:"absoluteValue operand is text, must be a number";
+  faults_with ~name:"WF-038: squareRoot over a text operand, under its rounding"
+    ~ir:
+      (pf_doc
+         ~regels:
+           [ pf_regel
+               (Printf.sprintf
+                  {|{ "node": "Rounding", "base": %s, "mode": "halfAwayFromZero", "decimals": 2, "type": %s, "source": { "snippet": "afgerond" } }|}
+                  (builtin "squareRoot") pf_n2) ]
+         ())
+    ~case_text:(pf_case [ pf_is "0" ]) ~needle:"squareRoot operand is text, must be a number"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

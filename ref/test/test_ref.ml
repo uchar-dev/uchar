@@ -6965,6 +6965,37 @@ let () =
         && bevinding = [ { Ir_v0.Checks.wf = "WF-034"; at; reason = m } ]));
   Sys.remove irf
 
+(* WV-4.3-numerieke-builtin (WF-038): a square root and an absolute value take
+   one number; a text operand is refused before it is read, in the verifier's
+   sentence (the ref side of corpus/negatief/wf038-absolute-waarde-tekst and
+   corpus/negatief/wf038-wortel-tekst) *)
+let () =
+  let tekst : Ir_v0.Ast.expr = Literal { variant = Lv_text "vier"; typ = Some Tekst; bron = None } in
+  let builtin kind : Ir_v0.Ast.expr =
+    Functie
+      { kind; argumenten = [ tekst ]; element_objecttype = None; leegwaarde = None; filter = None;
+        dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None; bron_rol = None;
+        bron_pad = None }
+  in
+  let run waarde =
+    let doc =
+      { empty_doc with
+        objecttypen = [ ot "Jutter" [ ("aantal", Some num0) ] [] ];
+        resolved_regels = [ rr "aantal" Berekening (Some (aref "aantal" "Jutter")) (Some waarde) None ] }
+    in
+    Eval.evaluate (env_of doc) (World.add_instance World.empty (inst "J1" "Jutter" []))
+  in
+  expect_fault_msg "WV-4.3-absolute-waarde-tekst-faalt"
+    (fun () -> run (builtin Absolute_waarde))
+    "absoluteValue operand is text, must be a number";
+  expect_fault_msg "WV-4.3-wortel-tekst-faalt"
+    (fun () ->
+      run
+        (Afgerond
+           { basis = Some (builtin Wortel); modus = Rekenkundig; decimalen = 0; typ = Some num0;
+             bron = None }))
+    "squareRoot operand is text, must be a number"
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

@@ -1,0 +1,320 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Meting",
+        "animate": false,
+        "plural": "Metingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "factorEen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "factorTwee",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "grensproduct",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "lengteA",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "cm",
+                "system": "Lengte",
+                "canonical": "cm",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "lengteB",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "cm",
+                "system": "Lengte",
+                "canonical": "cm",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "totaal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "cm",
+                "system": "Lengte",
+                "canonical": "cm",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "indicatie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Lengte",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "cm",
+            "system": "Lengte",
+            "canonical": "cm",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "grensproduct van een meting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "grensproduct",
+              "subjectType": "Meting",
+              "source": {
+                "snippet": "Het grensproduct van een Meting"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "absoluteValue",
+              "arguments": [
+                {
+                  "node": "Literal",
+                  "value": {
+                    "text": "vier"
+                  },
+                  "type": {
+                    "node": "Text"
+                  },
+                  "source": {
+                    "snippet": "'vier'"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de absolute waarde van 'vier'"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "totaal van een meting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "totaal",
+              "subjectType": "Meting",
+              "source": {
+                "snippet": "Het totaal van een Meting"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "lengteA",
+                "subjectType": "Meting",
+                "source": {
+                  "snippet": "de lengteA van de Meting"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "lengteB",
+                "subjectType": "Meting",
+                "source": {
+                  "snippet": "de lengteB van de Meting"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "cm",
+                  "system": "Lengte",
+                  "canonical": "cm",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "de lengteA van de Meting plus de lengteB van de Meting"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "indicatie van een meting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "indicatie",
+              "subjectType": "Meting",
+              "source": {
+                "snippet": "De indicatie van een Meting"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "1"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "1"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "lengteA",
+                "subjectType": "Meting",
+                "source": {
+                  "snippet": "de lengteA van de Meting"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "lengteB",
+                "subjectType": "Meting",
+                "source": {
+                  "snippet": "de lengteB van de Meting"
+                }
+              },
+              "source": {
+                "snippet": "de lengteA van de Meting is groter of gelijk aan de lengteB van de Meting"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
