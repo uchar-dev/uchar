@@ -189,12 +189,12 @@ final class RuleChecker {
                         + "kan de keten niet laten voortschrijden (§9.10, gedocumenteerde extensie)", line));
                 continue;
             }
+            // each generation of a recursive group mints new instances, so its object creation carries a guard: the
+            // verifier refuses an unguarded one (WF-033), and so does the frontend, in the verifier's words
             for (ResolvedObjectCreatie oc : creaties)
                 if (oc.voorwaarde() == null)
-                    model.diagnostics.add(new Diagnostic(Severity.WARNING,
-                            "objectcreatieregel '" + oc.naam() + "' in recursieve regelgroep '" + naam
-                            + "' heeft geen voorwaarde — terminatie is niet automatisch te garanderen "
-                            + "(de engine begrenst het aantal activaties als vangnet; §9.10, gedocumenteerde extensie)", line));
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, "recursieve regelgroep '" + naam
+                            + "': unguarded object creation '" + oc.naam() + "' in a recursive group", line));
         }
     }
 

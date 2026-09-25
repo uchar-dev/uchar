@@ -46,4 +46,28 @@ class RegelgroepLedenTest {
         for (String lid : m.regelGroepen.get(0).leden())
             assertTrue(m.resolvedRegels.stream().anyMatch(r -> r.naam().equals(lid)), () -> "lid '" + lid + "' is geen regel");
     }
+
+    /** WF-033: an object creation in a recursive group mints new instances each generation, so it carries a guard,
+     *  and the verifier refuses an unguarded one. Measured on the frontend before this: a WARNING, the document
+     *  written, and {@code WF-033 FAIL /rules/ruleGroups/0: unguarded object creation 'werf de opvolger' in a
+     *  recursive group}. */
+    @Test void een_onbewaakte_objectcreatie_in_een_recursieve_groep_wordt_geweigerd() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Wachter (mv: Wachters) (bezield)
+                de rang Numeriek (geheel getal);
+
+            Feittype opvolging
+                de voorganger Wachter
+                de opvolger (mv: opvolgers) Wachter
+            Eén voorganger heeft één opvolger
+
+            Regelgroep estafette is recursief
+            Regel werf de opvolger
+                geldig altijd
+                    Een Wachter heeft een opvolger met rang gelijk aan de rang van de Wachter plus 1.
+            """);
+        assertEquals(List.of("ERROR recursieve regelgroep 'estafette': unguarded object creation 'werf de opvolger' in a "
+                        + "recursive group"),
+                m.diagnostics.stream().map(d -> d.severity() + " " + d.message()).toList());
+    }
 }
