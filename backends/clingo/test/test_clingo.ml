@@ -6459,6 +6459,102 @@ let () =
     ~case_text:dimensie_vouw_case
     ~needle:"expression kind not translated (no corpus case exercises it)"
 
+(* WF-037, de bronloze vouw: een vouw die haar populatie noemt (elementType)
+   en geen bron aanreikt. De verifier weigert beide vormen (IR-SPEC ch. 4.3):
+   geen argument, onder elke soort, en een ListLiteral als enig argument onder
+   de twee tellingen. Deze vertaling weigert ze in de twee zinnen van de
+   verifier en van `ref`, vanuit een benoemde arm ([sourceless_fold]) in elke
+   termfunctie die de knoop kan ontmoeten: [expr_term] voor de getal- en
+   datumvouwen, [symbolic_term] voor een tekst-, enumeratie- of booleaanse
+   first/last/minimum/maximum, [dt_term] voor die over datum-tijd. Geen
+   welgevormd document bereikt die armen, dus geen corpuszone kan ze pinnen;
+   met alle vier aanroepen `when false` viel elke vorm terug op een bodemzin
+   en bleef deze suite groen (gemeten). Eén regel per aanroepplaats; het
+   frame draagt het bereik dat de lader van een vouw met één argument eist. *)
+let bronloze_vouw_doc ~doeltype ~kind ~argumenten ~bereik =
+  Printf.sprintf
+    {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [ { "node": "Attribute", "name": "vondstvouw", "datatype": %s } ],
+        "characteristics": [] },
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [ { "node": "Attribute", "name": "gewicht", "datatype": %s } ],
+        "characteristics": [] } ],
+    "factTypes": [
+      { "node": "FactType", "name": "vondstaanmelding", "reciprocal": false,
+        "roles": [
+          { "node": "Role", "name": "aanmelder", "objectType": "Jutter", "many": false },
+          { "node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten",
+            "many": true } ] } ],
+    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
+    "dayKinds": [] },
+  "rules": {
+    "rules": [ { "node": "Rule", "name": "vondstvouw van een jutter", "versions": [ {
+      "initialisation": false, "presentation": "calculation",
+      "target": { "node": "AttributeReference", "attribute": "vondstvouw", "subjectType": "Jutter",
+        "source": { "snippet": "De vondstvouw van een Jutter" } },
+      "value": { "node": "Aggregation", "kind": "%s", "arguments": [ %s ],
+        "elementType": "Vondst",%s
+        "type": %s, "source": { "snippet": "de vouw van de vondsten van de Jutter" } },
+      "validity": { "node": "Validity" } } ] } ],
+    "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
+    "uniquenesses": [], "factCreations": [], "startPointDeterminations": [],
+    "ruleGroups": [] },
+  "diagnostics": []
+}|}
+    doeltype som_num0 kind argumenten
+    (if bereik then
+       {|
+        "sourceRole": { "node": "RoleBinding", "factType": "vondstaanmelding", "role": "vondst" },|}
+     else "")
+    doeltype
+
+let bronloze_vouw_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": {},
+      "roles": { "vondsten": [ "V1" ] }, "characteristics": [] },
+    { "label": "V1", "objectType": "Vondst", "attributes": { "gewicht": { "number": "2" } },
+      "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+
+let () =
+  let geen_bron kind =
+    Printf.sprintf
+      "a %s aggregation carries elementType \"Vondst\" but no source operand: an instance fold \
+       ranges over a written source"
+      kind
+  in
+  let lijstliteraal =
+    Printf.sprintf
+      {|{ "node": "ListLiteral", "type": { "node": "ListType", "element": %s },
+          "elements": [ { "node": "Literal", "value": { "number": "1" }, "type": %s },
+                        { "node": "Literal", "value": { "number": "2" }, "type": %s } ] }|}
+      som_num0 som_num0 som_num0
+  in
+  faults_with ~name:"WF-037 bronloze telling zonder argument (expr_term)"
+    ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"count" ~argumenten:"" ~bereik:false)
+    ~case_text:bronloze_vouw_case ~needle:(geen_bron "count");
+  faults_with ~name:"WF-037 telling met een ListLiteral en bereik (expr_term)"
+    ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"count" ~argumenten:lijstliteraal ~bereik:true)
+    ~case_text:bronloze_vouw_case
+    ~needle:
+      "a count aggregation carries elementType \"Vondst\" and a ListLiteral operand: a listed \
+       value is no source of instances";
+  faults_with ~name:"WF-037 tekstgetypeerde first zonder argument (symbolic_term)"
+    ~ir:
+      (bronloze_vouw_doc ~doeltype:{|{ "node": "Text" }|} ~kind:"first" ~argumenten:""
+         ~bereik:false)
+    ~case_text:bronloze_vouw_case ~needle:(geen_bron "first");
+  faults_with ~name:"WF-037 datum-tijd-getypeerde first zonder argument (dt_term)"
+    ~ir:
+      (bronloze_vouw_doc ~doeltype:{|{ "node": "Date", "precision": "millisecond" }|}
+         ~kind:"first" ~argumenten:"" ~bereik:false)
+    ~case_text:bronloze_vouw_case ~needle:(geen_bron "first")
+
 (* --- ch. 3.8: the day-kind duration forms -------------------------------
    The corpus witness (golden jutterswet-bergingsklok) carries ONE day-kind
    shape: a top-level `atLeast` composite over date-part comparisons, both
