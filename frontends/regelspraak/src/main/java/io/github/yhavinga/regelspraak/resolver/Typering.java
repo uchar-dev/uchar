@@ -164,8 +164,9 @@ public final class Typering {
      *  are flagged, while a unit-bearing literal against a unitless numeric is tolerated — not
      *  because the spec sanctions it, but to accommodate a known casus inconsistency:
      *  a bedrag declared unitless yet bounded by "0 €" (a convertible pair like mnd/jr is
-     *  restated at transpile time). Returns the diagnostic, or null when ok / either side is
-     *  Onbekend (no claim). */
+     *  restated at transpile time). The verifier refuses that one-sided pair (WF-099), so the
+     *  resolver warns about it beside this check. Returns the diagnostic, or null when ok / either
+     *  side is Onbekend (no claim). */
     public static String begrenzing(Datatype basis, Datatype grens) {
         if (basis.isOnbekend() || grens.isOnbekend()) return null;
         if (!basis.isGetalachtig())

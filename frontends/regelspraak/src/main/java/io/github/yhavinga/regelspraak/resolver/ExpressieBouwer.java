@@ -277,8 +277,8 @@ final class ExpressieBouwer {
             Expr[] mm = grenzen(s.begrenzing());
             // §6.1.4: each bound must be order-comparable with the bounded value (same numeric
             // family, unit-convertible) — else the clamp is meaningless and lowers to invalid DRL.
-            if (mm[0] != null) meldBegrenzing(basis.type(), mm[0].type(), s);
-            if (mm[1] != null) meldBegrenzing(basis.type(), mm[1].type(), s);
+            if (mm[0] != null) meldBegrenzing(basis, mm[0], "minimum", s);
+            if (mm[1] != null) meldBegrenzing(basis, mm[1], "maximum", s);
             return new Expr.Begrensd(basis, mm[0], mm[1], bron);
         }
         // GEEN GETUIGE: expressie heeft zeven gelabelde takken en alle zeven staan hierboven, dus geen
@@ -329,12 +329,35 @@ final class ExpressieBouwer {
     }
 
     /** Emit a §6.1.4 ERROR when a begrenzing bound is not order-comparable with the bounded
-     *  value (a non-numeric, wrong-family, or unit-incompatible bound). Onbekend = no claim. */
-    private void meldBegrenzing(Datatype basis, Datatype grens, ParserRuleContext ctx) {
-        String fout = Typering.begrenzing(basis, grens);
-        if (fout != null)
+     *  value (a non-numeric, wrong-family, or unit-incompatible bound). Onbekend = no claim.
+     *  {@code welke} is the bound's name on the wire, {@code minimum} or {@code maximum}. */
+    private void meldBegrenzing(Expr basis, Expr grens, String welke, ParserRuleContext ctx) {
+        String fout = Typering.begrenzing(basis.type(), grens.type());
+        if (fout != null) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(
                     RegelSpraakModel.Severity.ERROR, fout, ctx.getStart().getLine()));
+            return;
+        }
+        // the verifier refuses this clamp; a WARNING and not an ERROR, because the casus shape Typering.begrenzing
+        // tolerates carries it and an ERROR writes no document at all for it
+        if (eenzijdigeEenheid(basis, grens))
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                    "clamp " + welke + " and base have incompatible units", ctx.getStart().getLine()));
+    }
+
+    /** WF-099: a clamp restates each bound into its base's unit, so a unit on one side alone leaves nothing to
+     *  restate — unless the unitless side is a numeric literal, which adopts the other side's unit (IR-SPEC ch. 4.6,
+     *  the verifier's reading). {@link Typering#begrenzing} admits the one-sided pair; a side it makes no claim on
+     *  (Onbekend, not numeric) makes none here either. */
+    private static boolean eenzijdigeEenheid(Expr basis, Expr grens) {
+        Datatype b = basis.type(), g = grens.type();
+        if (b == null || g == null || !b.isGetalachtig() || !g.isGetalachtig()) return false;
+        if ((b.eenheidOf() == null) == (g.eenheidOf() == null)) return false;
+        return !eenheidlozeGetalLiteral(basis) && !eenheidlozeGetalLiteral(grens);
+    }
+
+    private static boolean eenheidlozeGetalLiteral(Expr e) {
+        return e instanceof Expr.Literal l && l.type() instanceof Datatype.Numeriek n && n.eenheid() == null;
     }
 
     /** Resolve a begrenzing into [minimum, maximum] (either may be null). */
