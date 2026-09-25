@@ -22,6 +22,8 @@
 #   4. every JSON pointer a negatief report cites resolves in that case's
 #      document (RFC 6901): a report that sends its reader to a position
 #      the document does not have is refused, whatever its rule and arm.
+#      The pointer is read up to the first ": ", spaces included, and a
+#      FAIL line without that separator is refused as well.
 #
 # With explicit file arguments it runs the verifier against those files and
 # prints the reports (handy for a dump outside the repo).
@@ -102,7 +104,8 @@ EXPECTED_MIN_POINTERS=547   # 2026-09-25: measured 547 pointers over the 446 neg
 # are behavioural, never well-formedness — are verifier-clean.
 list=$(mktemp) || exit 2
 ptrs=$(mktemp) || exit 2
-trap 'rm -f "$list" "$ptrs"' EXIT
+noptr=$(mktemp) || exit 2
+trap 'rm -f "$list" "$ptrs" "$noptr"' EXIT
 
 n_golden=0
 find corpus/golden corpus/rood -name ir.json 2>/dev/null | sort > "$list"
@@ -141,9 +144,13 @@ while IFS= read -r f; do
     else
         rejected=1
     fi
-    # check 4's input: every pointer this report cites, beside the document it must resolve in
-    printf '%s\n' "$out" | awk -v f="$f" 'match($0, /^WF-[0-9]+ FAIL [^ ]*: /) {
-        p = substr($0, 1, RLENGTH - 2); sub(/^WF-[0-9]+ FAIL /, "", p); print f "\t" p }' >> "$ptrs"
+    # check 4's input: every pointer this report cites, beside the document it must resolve in. The
+    # pointer is the text between "FAIL " and the FIRST ": ", spaces included: a pattern that stopped
+    # at a space skipped such a line in silence, and the floor below left room for it. A FAIL line
+    # without that separator cites no pointer anyone can read, and is refused after the loop.
+    printf '%s\n' "$out" | awk -v f="$f" -v noptr="$noptr" '/^WF-[0-9]+ FAIL / {
+        rest = $0; sub(/^WF-[0-9]+ FAIL /, "", rest); i = index(rest, ": ")
+        if (i == 0) print f "\t" $0 >> noptr; else print f "\t" substr(rest, 1, i - 1) }' >> "$ptrs"
     arm="$(dirname "$f")/expect.txt"
     if [ -f "$arm" ]; then
         n_expect=$((n_expect + 1))
@@ -174,10 +181,18 @@ while IFS= read -r f; do
     fi
 done < "$list"
 
-# check 4: the cited pointers resolve (RFC 6901, ~1 and ~0 unescaped) in the document they cite.
+# check 4: every FAIL line cites a readable pointer, and the cited pointers resolve (RFC 6901, ~1
+# and ~0 unescaped) in the document they cite.
 # Until 2026-09-25 no check read them: a verifier that cited a field by its name under a segment the
 # document does not have passed gate 3 on rule and arm alone (measured on a copy with the WF-092
 # pointers of the L5 base reverted).
+if [ -s "$noptr" ]; then
+    tab=$(printf '\t')
+    while IFS="$tab" read -r f line; do
+        printf 'FAIL: negatief case %s reports a line with no readable pointer (no ": " after "FAIL "): %s\n' "$f" "$line" >&2
+    done < "$noptr"
+    status=1
+fi
 n_ptr=$(python3 - "$ptrs" <<'PY'
 import json, sys
 docs, n, bad = {}, 0, []
