@@ -92,7 +92,7 @@ type stmt =
   | S_rule of rule
 
 (* --- rendering back to the source spelling ------------------------------
-   Every [bron] field the emitter writes is produced here, so the wire
+   Every [source] snippet the emitter writes is produced here, so the wire
    carries the F-logic reading of the node and never a RegelSpraak phrase
    borrowed from the twin golden. *)
 
