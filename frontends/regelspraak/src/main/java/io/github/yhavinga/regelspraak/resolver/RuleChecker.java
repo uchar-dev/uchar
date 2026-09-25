@@ -1432,9 +1432,10 @@ final class RuleChecker {
      *  moves neither, and beside the group each is a second writer, WF-050); a writer of X on another type of the
      *  inheritance line (the ch. 7.10 composition with the generated group is not built); a writer of a generated
      *  member; a generated form name another form already carries (WF-020); more than one initialisation of X, or one
-     *  with a window or with versions (the group has one window and one initialisation default). Without a computing
-     *  writer X is input already and nothing is generated: a WARNING, and the generated members are withdrawn — an
-     *  ERROR instead when a rule reads one of them, since the name would then read nothing. */
+     *  with a window, with versions or with a condition (the group has one window and one initialisation default, and
+     *  that default's justification is the empty input). Without a computing writer X is input already and nothing is
+     *  generated: a WARNING, and the generated members are withdrawn — an ERROR instead when a rule reads one of them,
+     *  since the name would then read nothing. */
     private void opgaveLowering(RegelSpraakDocumentContext doc) {
         if (opgaven.isEmpty()) return;
         Map<String, String[]> vormen = vormPlekken(doc);
@@ -1688,7 +1689,10 @@ final class RuleChecker {
         return null;
     }
 
-    /** The generated group carries one initialisation default and no window of its own per default. */
+    /** The generated group carries one initialisation default, no window of its own per default, and no condition on
+     *  the initialisation default: its justification is that X is empty in the input (ch. 7.3), and WF-050 admits no
+     *  written one beside it. Lowered without its condition, the initialisation would decide where the author's
+     *  condition fails, so a condition is refused rather than dropped. */
     private String initialisatieFout(Opgave o, List<ResolvedRegel> init) {
         List<String> namen = init.stream().map(r -> zonderVersie(r.naam())).distinct().toList();
         if (namen.size() > 1)
@@ -1700,6 +1704,11 @@ final class RuleChecker {
                     + "' heeft " + (init.size() > 1 ? "meer dan één versie" : "een ander geldigheidsvenster dan altijd")
                     + " — de gegenereerde defaults-groep geldt altijd, en een default draagt geen eigen venster "
                     + "(dialect §7)";
+        if (namen.size() == 1 && init.get(0).voorwaarde() != null)
+            return o.kop() + ": " + MARKERING + ", en de initialisatie '" + namen.get(0) + "' van '" + o.attribuut()
+                    + "' heeft een voorwaarde — de initialisatiedefault van de gegenereerde defaults-groep is alleen "
+                    + "gerechtvaardigd waar '" + o.attribuut() + "' in de invoer leeg is, en draagt geen eigen "
+                    + "voorwaarde (WF-050) (dialect §7)";
         return null;
     }
 

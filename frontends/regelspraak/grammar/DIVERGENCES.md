@@ -1313,7 +1313,18 @@ reason that holds, and the marker then generates nothing (witness:
   message names both;
 - more than one initialisation of X, or one with a window other than always or
   with several versions: the group carries one initialisation default and no
-  window per default.
+  window per default;
+- an initialisation of X with a condition ("… heeft een voorwaarde — de
+  initialisatiedefault van de gegenereerde defaults-groep is alleen
+  gerechtvaardigd waar 'X' in de invoer leeg is, en draagt geen eigen
+  voorwaarde (WF-050) …"): the initialisation default is justified by an empty
+  input alone (ch. 7.3) and carries no written justification (WF-050).
+  Lowered without its condition, the initialisation decided where the condition
+  fails: measured 2026-09-25 on an initialisation of 25,00 under `indien zijn
+  soort gelijk is aan "wrakhout"` beside a computation that decides nothing, a
+  Vondst of another kind got 25,00 in ref, clingo and the Drools exec branch
+  where the unmarked document leaves the target empty, with no diagnostic and a
+  clean verifier. The condition is refused, not dropped.
 
 And a WARNING: the marker on an attribute that no rule computes or sets (an
 initialisation alone included) — X is input already, the marker generates

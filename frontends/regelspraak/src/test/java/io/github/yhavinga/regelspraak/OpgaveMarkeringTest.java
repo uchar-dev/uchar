@@ -632,6 +632,21 @@ class OpgaveMarkeringTest {
         assertEquals(3, d.line());
     }
 
+    @Test void een_initialisatie_met_een_voorwaarde_weigert() {
+        // the group has no place for the condition: lowered without it, the initialisation decided where its
+        // condition fails (measured before this refusal: 25,00 in ref, clingo and the Drools exec branch where the
+        // unmarked document leaves the target empty)
+        RegelSpraakModel m = Resolver.resolve(VONDST + WAARDERING + STANDAARDWAARDE.replace("op 25,00.",
+                "op 25,00\n        indien zijn taxatie groter is dan 10,00."));
+        Diagnostic d = enigeFout(m);
+        assertEquals("attribuut 'waarde' van Vondst: '(mag opgegeven worden)', en de initialisatie 'standaardwaarde' "
+                + "van 'waarde' heeft een voorwaarde — de initialisatiedefault van de gegenereerde defaults-groep is "
+                + "alleen gerechtvaardigd waar 'waarde' in de invoer leeg is, en draagt geen eigen voorwaarde (WF-050) "
+                + "(dialect §7)", d.message());
+        assertEquals(3, d.line());
+        assertTrue(m.prioritizedDefaults.isEmpty(), "de markering genereert niets");
+    }
+
     // -------------------------------------------------------------------- the warning: nothing to put the opgave above
 
     @Test void zonder_rekenende_schrijver_waarschuwt_de_markering_en_genereert_niets() {
