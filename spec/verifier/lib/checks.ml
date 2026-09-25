@@ -6008,7 +6008,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             [ v "WF-070" (sub "init") "fold init datatype differs from the accumulator type" ]
         | _ -> [])
       (* WF-069/070: the (accumulator, element) function, its closed body *)
-      @ check_fold_fn ctx ~binders ~subject (sub "function") ~params:[ typ; src_elem ] ~result:typ functie
+      @ check_fold_fn ctx ~binders ~subject ~host:"the fold" (sub "function") ~params:[ typ; src_elem ]
+          ~result:typ functie
       @ walk_expr ctx ~binders ~subject ~body (sub "list") list
       @ walk_expr ctx ~binders ~subject ~body (sub "init") init
   | Map_list { typ; list; functie; _ } ->
@@ -6021,7 +6022,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
         | Some d ->
             [ v "WF-070" (sub "type") ("map result is " ^ datatype_kind d ^ ", must be a list type") ]
         | None -> [ v "WF-070" (sub "type") "map carries no result type" ])
-      @ check_fold_fn ctx ~binders ~subject (sub "function") ~params:[ src_elem ] ~result:out_elem functie
+      @ check_fold_fn ctx ~binders ~subject ~host:"the MapList" (sub "function") ~params:[ src_elem ]
+          ~result:out_elem functie
       @ walk_expr ctx ~binders ~subject ~body (sub "list") list
   | Filter_list { typ; list; binder; condition; _ } ->
       let src_elem = match ty list with Some (List_type { element }) -> Some element | _ -> None in
@@ -6147,7 +6149,7 @@ and fold_source_check ctx ~binders at list =
    parameter datatypes in order (accumulator then element for a fold, element
    for a map), [result] the expected body datatype. A lambda's body is a fresh
    closed body (WF-069); a name resolves against functionDefs (WF-070). *)
-and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : violation list =
+and check_fold_fn ctx ~binders ~subject ~host at ~params ~result (fn : fold_fn) : violation list =
   let arity = List.length params in
   match fn with
   | Fn_lambda { parameters; body = lbody; _ } ->
@@ -6185,7 +6187,7 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
          with
         | Some r, Some b when not (same_datatype r b) ->
             [ v "WF-070" at
-                ("lambda body is " ^ detail_vs b ~against:r ^ ", but the fold requires "
+                ("lambda body is " ^ detail_vs b ~against:r ^ ", but " ^ host ^ " requires "
                ^ detail_vs r ~against:b) ]
         | _ -> [])
       (* the lambda body is CLOSED (WF-069): it sees only its own parameters,

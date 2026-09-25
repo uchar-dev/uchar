@@ -45,7 +45,7 @@ comparison byte for byte again (`same_datatype` as `a = b` in
 of the other goldens only `jutterswet-meldtermijnen`:
 
     WF-070 FAIL /rules/rules/0/versions/0/value/list/list/function: lambda
-    body is sumtype 'AANSPRAAK', but the fold requires sumtype 'aanspraak'
+    body is sumtype 'AANSPRAAK', but the MapList requires sumtype 'aanspraak'
     WF-068 FAIL /rules/rules/0/versions/0/value/list/list/function/body/type:
     invoke result type differs from the declared function result
 
