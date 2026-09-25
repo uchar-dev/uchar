@@ -1,0 +1,18 @@
+# Vangstverdeling (deling) — rechtenvrij, eigen auteurschap
+
+Een gehele deling: twee integers gedeeld leveren in Catala een decimal op.
+RUNTIME-SEMANTICS ch. 2.3 typeert een quotiënt niet heel, wat de operanden
+ook zijn; de plugin typeert de `dividedBy` dus niet heel, en de suite leest
+de uitgestoten JSON terug om dat te toetsen. De twee cases delen exact
+binnen de schaal S = 4 (7 / 2 = 3.5, 9 / 4 = 2.25) en draaien door ref EN
+clingo.
+
+```catala
+declaration scope Vangstverdeling:
+  input vangst content integer
+  input jutters content integer
+  output aandeel content decimal
+
+scope Vangstverdeling:
+  definition aandeel equals vangst / jutters
+```

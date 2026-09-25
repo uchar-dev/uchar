@@ -619,10 +619,12 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
            which the money × rate split (money_mult_shape) reads to route a
            computed-rate product through the split encoding *)
         | Op.ToRat_int | Op.ToRat_mon -> Some num_rat
-        (* RUNTIME-SEMANTICS ch. 2.3: a product is typed not whole, whatever
-           its operands, as the RegelSpraak frontend types it *)
+        (* RUNTIME-SEMANTICS ch. 2.3: a product and a quotient are typed not
+           whole, whatever their operands, as the RegelSpraak frontend types
+           them *)
         | Op.Mult_int_int | Op.Mult_dur_int | Op.Mult_rat_rat | Op.Mult_mon_int
-        | Op.Mult_mon_rat ->
+        | Op.Mult_mon_rat | Op.Div_int_int | Op.Div_dur_dur | Op.Div_rat_rat
+        | Op.Div_mon_int | Op.Div_mon_rat | Op.Div_mon_mon ->
             Option.map not_whole (infer_dt ~env a)
         (* ch. 2.3: a sum or a difference is whole iff both operands are, so a
            product on either side makes it not whole (WF-091 crosses this) *)

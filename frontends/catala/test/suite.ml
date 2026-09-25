@@ -232,7 +232,10 @@ let () =
          per-element callee with two outputs, of which only `.bedrag` is read in
          the map body, synthesises exactly `KamerMulti bedrag` (grondslag + 100)
          and folds to a scalar. grondslagen [1;2;3] -> 306, ref AND clingo *)
-      ("subscope_perelement_multi.catala_en", [ "cases/perelement_drie.json" ]) ]
+      ("subscope_perelement_multi.catala_en", [ "cases/perelement_drie.json" ]);
+      (* an integer division, a decimal in Catala: 7 / 2 and 9 / 4, exact at
+         the pinned scale *)
+      ("deling.catala_en", [ "cases/deling_zeven.json"; "cases/deling_negen.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs. datum: clingo cannot translate a date literal
@@ -294,6 +297,43 @@ let () =
           absent
       end)
     wire;
+  (* RUNTIME-SEMANTICS ch. 2.3: a quotient is typed not whole, whatever its
+     operands — an integer division too, which the plugin typed after its first
+     operand, whole, until 2026-09-25. An E2E replay cannot see an annotation,
+     so the emitted JSON is read back and every dividedBy asserted. *)
+  Printf.printf "[wire] deling.catala_en (a quotient is not whole)\n%!";
+  let out = Filename.temp_file "catfe" ".ir.json" in
+  let code, o = run [ plugin; "deling.catala_en"; out ] in
+  check "deling.catala_en : translate (quotient)" (code = 0) (Printf.sprintf "exit %d\n%s" code o);
+  if code = 0 then begin
+    let rec quotients acc (j : Yojson.Safe.t) =
+      match j with
+      | `Assoc kvs ->
+          let acc =
+            match (List.assoc_opt "node" kvs, List.assoc_opt "op" kvs) with
+            | Some (`String "Binary"), Some (`String "dividedBy") -> j :: acc
+            | _ -> acc
+          in
+          List.fold_left (fun a (_, v) -> quotients a v) acc kvs
+      | `List xs -> List.fold_left quotients acc xs
+      | _ -> acc
+    in
+    let qs = quotients [] (Yojson.Safe.from_file out) in
+    check "deling.catala_en : the program divides" (qs <> []) "no dividedBy in the emitted IR";
+    List.iter
+      (fun q ->
+        let whole =
+          match q with
+          | `Assoc kvs -> (
+              match List.assoc_opt "type" kvs with
+              | Some (`Assoc t) -> List.assoc_opt "whole" t
+              | _ -> None)
+          | _ -> None
+        in
+        check "deling.catala_en : the quotient is typed not whole" (whole = Some (`Bool false))
+          (Yojson.Safe.to_string q))
+      qs
+  end;
   (* refusal programs: source -> expected reason fragment. Besluit 4's four
      forms plus the empty-operand and literal-false refusals; the subscope
      fence carries the boundary proof that the remaining tutorial construct

@@ -1,0 +1,8 @@
+{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "V", "objectType": "Vangstverdeling",
+      "attributes": { "vangst": { "number": "7" }, "jutters": { "number": "2" } },
+      "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "V", "attribute": "aandeel", "value": { "number": "3.5000" } },
+    { "kind": "consistent" } ] }
