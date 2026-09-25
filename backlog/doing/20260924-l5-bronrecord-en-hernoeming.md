@@ -218,7 +218,7 @@ Werkvorm:
   betekent: de eerste inhoudelijke stap van de kaart, vóór elke M8-wijziging op
   de kaartbranch.
 - **U2 — de nulmeting meet de hoofdsessie zelf**, met een script buiten de
-  repository (`/tmp/l5/nulmeting.sh <checkout> <uitvoermap>`): één keer vóór M7
+  repository (een meetscript `nulmeting <checkout> <uitvoermap>`): één keer vóór M7
   op main `1edd17e4` (parallel met M7-O), één keer na M7 op de M7-unie; de
   vergelijking is `diff -r` over padonafhankelijke uitvoer; toegestane
   verschillen zijn alleen verifiermeldingen die `bron` noemden, per regel
@@ -942,7 +942,7 @@ PASS JUnit 573 (570) / 73; 11 PASS 45 fragmenten, 29 slices, replay 29/29/29;
 12 PASS played 188, DRL 167, JUnit 756 (748) zonder skips; 13 PASS 40 twists /
 22 goldens, DRL 21; 14 PASS 135 / 2.
 
-**De bytevergelijking** (U2; `/tmp/l5/nulmeting.sh`, vóór op main `1690aa05`,
+**De bytevergelijking** (U2; het meetscript buiten de repository, vóór op main `1690aa05`,
 ná op `14f1bfdb`, 3308 bestanden elk): ref 619 van 619 byte-gelijk, clingo
 619/619, `ref --noop` 619/619, de replay-API exec-model 242/242 en DRL-tekst
 242/242 (statusregel, waarden en redenen), rood: ref 48/48, clingo 48/48,
@@ -987,13 +987,13 @@ Werkwijze (de hoofdsessie, met het script van U2):
 
 1. Vóór M7, op de basis `1edd17e4`, elk uitvoerderartefact één keer gebouwd (ref, clingo,
    de Drools-jar; de jar één keer per run), en buiten de repository opgeslagen
-   (`/tmp/l5/results/m7-voor/`): per golden case (619) de volledige uitvoer van de
+   (een meetmap buiten de repository): per golden case (619) de volledige uitvoer van de
    ref-runner, van clingo en van `ref --noop`; per golden de statusregel en de waarden van
    de replay-API in beide Drools-takken (exec-model en DRL-tekst), met de redenen van elke
    weigering per vorm; per rood case (48) het foutverslag van ref en clingo en, waar
    gepind (11), van Drools; per toka-slice (29) de replay door ref, clingo en Drools; de
    uitvoer van de verifier over alle 736 documenten.
-2. Na M7 hetzelfde in `/tmp/l5/results/m7-na/`.
+2. Na M7 hetzelfde in een tweede meetmap.
 3. Bytevergelijking (`diff -r`). Toegestane verschillen: alleen meldingen van de verifier
    die `bron` noemden (WF-113 (b) op vier negatief-getuigen, de WF-095-zin op zijn
    negatief-getuigen), elk per regel genoemd. Elk verschil in ref, clingo, `--noop`,
@@ -1260,9 +1260,9 @@ pointer met een v0-segment) en `corpus/rood/**/NOTE.md` (25, 93 keer). Mag split
 fixronde (de fixers per disjuncte bestandsgroep, plus een aparte NOTE-fixer voor het
 NOTE-proza), herkeuring, adviesronde.
 
-Elke bouwer volgt het regime in `/tmp/l5/regime.md` (door de hoofdsessie klaargezet); hij
+Elke bouwer volgt het regime-bestand van de hoofdsessie (buiten de repository); hij
 commit klein en vaak met een bouwbare branch; schrijft zijn Result tussentijds naar een
-bestand buiten de repository (`/tmp/l5/results/<bouwer>.md`) en werkt het bij na elke
+bestand buiten de repository (één Result-bestand per bouwer) en werkt het bij na elke
 afgeronde stap; geen `git add -A`; geen kaartjes in `backlog/new` (restpunten als
 genummerd open punt in het Result); nooit pushen of mergen; CONSTRUCTS/PLAN/CLAUDE.md
 nooit; loopt de lens-checklist na en noemt per punt wat hij mat; eindigt met een
