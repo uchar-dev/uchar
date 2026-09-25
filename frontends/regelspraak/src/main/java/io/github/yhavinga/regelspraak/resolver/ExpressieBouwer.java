@@ -308,7 +308,8 @@ final class ExpressieBouwer {
         boolean dagsoortRechts = (op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN)
                 && rechts.type() != null
                 && Tijdrekening.dagsoortVoorEenheid(model, rechts.type().eenheidOf()) != null;
-        Typering.Resultaat res = Typering.reken(naarTyperingOp(op), links.type(), rechts.type(), dagsoortRechts);
+        Typering.Resultaat res = Typering.reken(naarTyperingOp(op), links.type(), rechts.type(), dagsoortRechts,
+                eenheidlozeGetalLiteral(links), eenheidlozeGetalLiteral(rechts));
         if (!res.ok())
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(
                     RegelSpraakModel.Severity.ERROR, res.fout(), line));
@@ -356,7 +357,7 @@ final class ExpressieBouwer {
         return !eenheidlozeGetalLiteral(basis) && !eenheidlozeGetalLiteral(grens);
     }
 
-    private static boolean eenheidlozeGetalLiteral(Expr e) {
+    static boolean eenheidlozeGetalLiteral(Expr e) {
         return e instanceof Expr.Literal l && l.type() instanceof Datatype.Numeriek n && n.eenheid() == null;
     }
 
@@ -1575,7 +1576,7 @@ final class ExpressieBouwer {
         Expr lhs = new Expr.AttribuutRef(agg.attribuut(), elem, "", null, agg.type(), bron(p));
         // §5.6 getal/datum/tekstpredicaat: enforce the typeringen comparison legality (as the normal voorwaarde path
         // does), so a type-mismatched filter (a Numeriek attribute vs a Tekst literal) is an ERROR, not silent bad DRL.
-        Typering.Resultaat tr = Typering.vergelijk(cmp, lhs.type(), rhs.type());
+        Typering.Resultaat tr = Typering.vergelijk(cmp, lhs.type(), rhs.type(), false, eenheidlozeGetalLiteral(rhs));
         if (!tr.ok()) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
                     "subselectie-predicaat: " + tr.fout(), p.getStart().getLine()));

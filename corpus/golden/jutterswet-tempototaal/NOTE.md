@@ -60,6 +60,11 @@ target €,     AFTER:   ERROR (line 17): berekening: toekenning:
                        eenheden 'EUR' en 'EUR/mnd' zijn niet in elkaar om te rekenen
 ```
 
+Since the card frontend-emitterrestanten the refusal speaks the verifier's
+WF-023 sentence: on this golden's own source with `bewaarlast` declared in `€`
+the frontend reports `ERROR (line 23): berekening: toekenning: assignment across
+incompatible units` (re-measured 2026-09-25).
+
 The fix moved a runtime fault to a compile-time diagnostic and made the
 honest declaration the accepted one. On the wire it is one field:
 `Aggregation{kind: total}.type.unit.denominator` is now **held** when the

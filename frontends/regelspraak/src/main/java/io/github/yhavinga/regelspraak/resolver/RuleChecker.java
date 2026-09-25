@@ -2805,7 +2805,8 @@ final class RuleChecker {
                 // §13.3.4.2 enum-label membership, like registreer
                 keurEnumLabel(doelType, ExpressieBouwer.enumLabelVanWaarde(t.waarde()), oc.getStart().getLine());
                 keurTeken(doelType, t.waarde(), oc.getStart().getLine());   // §3.3.1 Teken-beperking, like registreer
-                String fout = Typering.toekenning(doelType, t.waarde().type());
+                String fout = Typering.toekenning(doelType, t.waarde().type(),
+                        ExpressieBouwer.eenheidlozeGetalLiteral(t.waarde()));
                 if (fout != null)
                     model.diagnostics.add(new Diagnostic(Severity.ERROR, "objectcreatie: " + fout,
                             oc.getStart().getLine()));
@@ -3269,7 +3270,7 @@ final class RuleChecker {
         keurEnumLabel(doelType, ExpressieBouwer.enumLabelVanWaarde(statisch), line);
         keurTeken(doelType, statisch, line);   // §3.3.1 Teken-beperking, static over a literal value
         if (doelType.isOnbekend() || waardeType.isOnbekend()) return; // not enough resolved to judge
-        String fout = Typering.toekenning(doelType, waardeType);
+        String fout = Typering.toekenning(doelType, waardeType, ExpressieBouwer.eenheidlozeGetalLiteral(waardeExpr));
         if (fout != null)
             model.diagnostics.add(new Diagnostic(Severity.ERROR, soort.name().toLowerCase() + ": " + fout, line));
     }
@@ -4753,7 +4754,7 @@ final class RuleChecker {
         // family separation (a literal would otherwise be mis-tagged Numeriek('%'), a datatype the spec never forms).
         if (rLit && l.isNumeriek() && l.eenheidOf() != null) r = metEenheid(r, l.eenheidOf());
         else if (lLit && r.isNumeriek() && r.eenheidOf() != null) l = metEenheid(l, r.eenheidOf());
-        var res = Typering.vergelijk(op, l, r);   // Onbekend operands -> ok, so no false positive
+        var res = Typering.vergelijk(op, l, r, lLit, rLit);   // Onbekend operands -> ok, so no false positive
         if (!res.ok()) model.diagnostics.add(new Diagnostic(Severity.ERROR, "voorwaarde: " + res.fout(), line));
     }
 

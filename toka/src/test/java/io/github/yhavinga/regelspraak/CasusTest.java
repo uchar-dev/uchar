@@ -52,8 +52,9 @@ class CasusTest {
         //            and uchar-v1 diverges from the toolchain here (it emitted an Onbekend degradation). The
         //            .rgs stays in original form; only its parity coverage moved to the holdout list.
         var datumQuirk = (java.util.function.Predicate<String>) msg -> msg.contains("kreeg Datum-tijd en Datum-tijd");
+        // the unit refusal speaks the verifier's WF-035 sentence since the card frontend-emitterrestanten
         var afstandQuirk = (java.util.function.Predicate<String>) msg ->
-                msg.contains("min:") && msg.contains("moeten beide er een hebben");
+                msg.contains("min:") && msg.contains("additive operands have incompatible units");
         var onverwacht = m.errors().stream()
                 .filter(d -> !datumQuirk.test(d.message()) && !afstandQuirk.test(d.message()))
                 .toList();
