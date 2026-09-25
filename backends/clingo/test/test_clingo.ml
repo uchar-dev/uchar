@@ -8937,7 +8937,7 @@ let () =
    justification would need the input-emptiness guard conjoined), and so is a
    windowed one; ref replays both natively. Before the initialisation arm of
    translate_regel this backend refused them with the wildcard's `rule kind
-   not translated` — measured on this section: 15 of its 29 checks failed,
+   not translated` — measured on this section: 18 of its 35 checks failed,
    each on that sentence, while every ref check passed. The arm writes only
    where the target is empty and the condition holds; a filled input stands.
    Beside one computing rule the computed value wins whichever fires first.
@@ -8984,6 +8984,25 @@ let () =
   both_answer ~name:"conditional initialisation: empty target, condition fails" ~ir:alleen
     ~case_text:(v1 [ num "gewicht" "8.00" ] [ leeg; pf_cons ]);
   both_answer ~name:"conditional initialisation: a filled input stands" ~ir:alleen
+    ~case_text:(v1 [ num "gewicht" "12.00"; num "bergloon" "40.00" ] [ is "40.00"; pf_cons ]);
+  (* ref evaluates the value only where it writes, so a parameter the case
+     does not bind faults there and nowhere else: not where the input fills
+     the target *)
+  let met_parameter =
+    pf_doc ~objecttypen:[ vondst ] ~parameters:[ pf_decl "standaard" ]
+      ~regels:[ init ~naam:"standaardbergloon" ~voorwaarde:(groter "gewicht" "10.00") (pf_p "standaard") ]
+      ()
+  in
+  let vondst_v1 attrs =
+    Printf.sprintf
+      {|{ "label": "V1", "objectType": "Vondst", "attributes": { %s }, "roles": {}, "characteristics": [] }|}
+      (String.concat ", " attrs)
+  in
+  pf_position ~name:"conditional initialisation: a parameter value" ~ir:met_parameter
+    ~param:"standaard" ~value:"25.00" ~instances:[ vondst_v1 [ num "gewicht" "12.00" ] ]
+    ~bound:[ is "25.00"; pf_cons ] ~silent_rows:[ leeg; pf_cons ] ~silent:"bergloon leeg" ();
+  both_answer ~name:"conditional initialisation: a parameter value, unbound, the input stands"
+    ~ir:met_parameter
     ~case_text:(v1 [ num "gewicht" "12.00"; num "bergloon" "40.00" ] [ is "40.00"; pf_cons ]);
   (* a validity window takes an unconditional initialisation out of the
      desugaring domain as well (ch. 7.7, versioned forms) *)
