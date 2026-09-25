@@ -1208,9 +1208,8 @@ public final class IrEmitter {
         if (snippet.isEmpty())
             throw new IllegalStateException("IrEmitter: a source snippet is never empty: a node without source text "
                     + "carries no source");
-        if (regel < 0)
-            throw new IllegalStateException("IrEmitter: de bronregel " + regel + " van '" + snippet + "' is "
-                    + "negatief; een regel in het bronrecord is minstens 1, en 0 betekent geen regel");
+        if (regel < 0)   // the readers refuse it in this sentence (the loaders' source-line refusal)
+            throw new IllegalStateException("IrEmitter: a source line is at least 1");
         w.key("source").beginObject();
         w.key("snippet").value(snippet);
         if (regel > 0) w.key("line").value(regel);

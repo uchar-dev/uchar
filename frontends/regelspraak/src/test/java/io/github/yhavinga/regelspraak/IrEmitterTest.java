@@ -1501,7 +1501,8 @@ class IrEmitterTest {
         m.regelGroepen.set(0, new io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep(groep.naam(), groep.recursief(),
                 groep.leden(), groep.bron(), -1));
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("de bronregel -1 van 'weging' is negatief"), e::getMessage);
+        // the refusal speaks the readers' sentence since the card frontend-emitterrestanten
+        assertEquals("IrEmitter: a source line is at least 1", e.getMessage());
     }
 
     /** A node without source text carries no record; an empty text is refused, not dropped: a snippet is never empty,
