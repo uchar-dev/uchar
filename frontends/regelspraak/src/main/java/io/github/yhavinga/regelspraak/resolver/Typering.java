@@ -207,7 +207,7 @@ public final class Typering {
         String basisFout = begrenzingsBasis(basis);
         if (basisFout != null) return basisFout;
         if (!grens.isGetalachtig())
-            return "clamp " + welke + " is " + soortWoord(grens) + ", must be numeric";
+            return clampNietNumeriek(welke, grens);
         Eenheid eb = basis.eenheidOf(), eg = grens.eenheidOf();
         if (eb != null && eg != null && !eb.convertibleNaar(eg))
             return "clamp " + welke + " and base have incompatible units";
@@ -218,7 +218,13 @@ public final class Typering {
      *  null. The base is one position whatever the number of bounds, so a caller reports it once. */
     public static String begrenzingsBasis(Datatype basis) {
         if (basis.isOnbekend() || basis.isGetalachtig()) return null;
-        return "clamp base is " + soortWoord(basis) + ", must be numeric";
+        return clampNietNumeriek("base", basis);
+    }
+
+    /** WF-035's sentence for a clamp position (base, minimum or maximum) that holds no number, one template for the
+     *  three positions as in the verifier. */
+    private static String clampNietNumeriek(String positie, Datatype d) {
+        return "clamp " + positie + " is " + soortWoord(d) + ", must be numeric";
     }
 
     /** §4.12/4.13 Tabel 22/23 — minimale/maximale waarde van (getalaggregatiefunctie): every
@@ -312,8 +318,10 @@ public final class Typering {
         if (anderePrecisie(doel, waarde))
             return "toekenning: a " + soortWoord(waarde) + " value is assigned to a " + soortWoord(doel) + " target";
         if (anderDomein(doel, waarde))
-            return "toekenning: a value of the enumeration domain '" + ((Datatype.Enumeratie) waarde).domein()
-                    + "' is assigned to a target of the enumeration domain '" + ((Datatype.Enumeratie) doel).domein() + "'";
+            // the verifier's WF-023 domain clause, its format string with its variant word
+            return "toekenning: " + String.format("a value of the %s '%s' is assigned to a target of the %s '%s'",
+                    "enumeration domain", ((Datatype.Enumeratie) waarde).domein(), "enumeration domain",
+                    ((Datatype.Enumeratie) doel).domein());
         if (!doel.isGetalachtig()) return null;
         String eenheidFout = eenhedenCompatibel(doel, waarde, "toekenning", false, waardeLit,
                 "assignment across incompatible units");
