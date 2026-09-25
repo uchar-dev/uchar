@@ -149,6 +149,22 @@ public sealed interface Conditie {
         return bevatExpr(c, toets);
     }
 
+    /** Every node of {@code c} that is no 'all', each once, handed to {@code doe}: an 'all' is entered part by
+     *  part, and a node already in {@code gezien} is passed over with everything it holds. The sweeps over a
+     *  finished defaults tree walk each justification with it, because a restrictive exception repeats its
+     *  carrier's conjuncts as the very same nodes (grammar/DIVERGENCES.md §4, form 2): each shared conjunct is
+     *  judged once, not once per exception above it. An 'all' itself neither complements nor counts a verdict
+     *  and holds nothing but its parts, so a sweep misses nothing by not being handed it. Null-safe. */
+    static void elkConjunctEenmaal(Conditie c, java.util.Set<Conditie> gezien,
+                                   java.util.function.Consumer<Conditie> doe) {
+        if (c == null || !gezien.add(c)) return;
+        if (c instanceof Samengesteld s && s.kwantor() == Kwantor.ALLE) {
+            for (Conditie d : s.onderdelen()) elkConjunctEenmaal(d, gezien, doe);
+            return;
+        }
+        doe.accept(c);
+    }
+
     /** §13.4.14 compound condition: a quantifier over a bullet list of sub-conditions.
      *  `drempel` is the threshold count N for the counting quantifiers (ten minste / ten
      *  hoogste / precies N, §13.4.14.4); 0 and unused for alle / geen / de. */

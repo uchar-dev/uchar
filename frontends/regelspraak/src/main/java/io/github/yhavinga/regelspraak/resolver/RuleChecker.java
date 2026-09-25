@@ -621,27 +621,16 @@ final class RuleChecker {
     }
 
     /** The defaults tree's justifications and consequences. A restrictive exception repeats its carrier's conjuncts,
-     *  the very same nodes, so each node is walked once: a window under a counting quantifier in a base's condition
-     *  is one refusal, not one per exception above it. */
+     *  the very same nodes, so each justification is walked with {@link Conditie#elkConjunctEenmaal}: a window under
+     *  a counting quantifier in a base's condition is one refusal, not one per exception above it. */
     private void vensterPositieDefaults(List<Default> defaults, java.util.Set<Conditie> gezien) {
         if (defaults == null) return;
         for (Default d : defaults) {
-            vensterPositieEenmaal(d.voorwaarde(), gezien);
+            Conditie.elkConjunctEenmaal(d.voorwaarde(), gezien, this::vensterPositie);
             vensterPositieIn(d.consequentie());
             if (d.excepties() != null)
                 for (var groep : d.excepties().leden()) vensterPositieDefaults(groep.defaults(), gezien);
         }
-    }
-
-    /** {@link #vensterPositie}, entering an 'all' part by part so a conjunct shared by several justifications is
-     *  judged once. An 'all' itself neither complements nor counts, so skipping its own check changes nothing. */
-    private void vensterPositieEenmaal(Conditie c, java.util.Set<Conditie> gezien) {
-        if (c == null || !gezien.add(c)) return;
-        if (c instanceof Conditie.Samengesteld s && s.kwantor() == Conditie.Kwantor.ALLE) {
-            for (Conditie d : s.onderdelen()) vensterPositieEenmaal(d, gezien);
-            return;
-        }
-        vensterPositie(c);
     }
 
     private void vensterPositie(Conditie c) {

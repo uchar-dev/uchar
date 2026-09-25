@@ -98,29 +98,18 @@ public final class Resolver {
     /** The §7 defaults tree: each default's guard and consequence, and recursively the defaults of its
      *  exception groups — a marker nested in an exception is as much on the wire as a top-level one. A
      *  restrictive exception repeats its carrier's conjuncts, the very same nodes (grammar/DIVERGENCES.md §4,
-     *  form 2), so a guard is entered 'all' by 'all' and each node reported once: one marker in a base's
-     *  condition is one WARNING, not one per exception above it. */
+     *  form 2), so a guard is walked with {@link Conditie#elkConjunctEenmaal} and each node reported once: one
+     *  marker in a base's condition is one WARNING, not one per exception above it. */
     private static void meldDefaults(java.util.List<io.github.yhavinga.regelspraak.ir.Default> defaults,
                                      java.util.function.BiConsumer<io.github.yhavinga.regelspraak.ir.Bron, String> meld,
                                      java.util.Set<Conditie> gezien) {
         if (defaults == null) return;
         for (var d : defaults) {
-            meldEenmaal(d.voorwaarde(), meld, gezien);
+            Conditie.elkConjunctEenmaal(d.voorwaarde(), gezien, c -> Conditie.verzamelOnopgelost(c, meld));
             Expr.verzamelOnopgelost(d.consequentie(), meld);
             if (d.excepties() != null)
                 for (var groep : d.excepties().leden()) meldDefaults(groep.defaults(), meld, gezien);
         }
-    }
-
-    private static void meldEenmaal(Conditie c,
-                                    java.util.function.BiConsumer<io.github.yhavinga.regelspraak.ir.Bron, String> meld,
-                                    java.util.Set<Conditie> gezien) {
-        if (c == null || !gezien.add(c)) return;
-        if (c instanceof Conditie.Samengesteld s && s.kwantor() == Conditie.Kwantor.ALLE) {
-            for (Conditie d : s.onderdelen()) meldEenmaal(d, meld, gezien);
-            return;
-        }
-        Conditie.verzamelOnopgelost(c, meld);
     }
 
     /** Two mis-spellings of the uchar 'is een' head form that ANTLR can only report as "no viable
