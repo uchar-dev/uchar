@@ -9,12 +9,12 @@ position that stays refused, and the case that shows the decision is made
 from the right table.
 
 The target here is a **characteristic**. A characteristic declares its
-timeline in `kenmerkGranulariteit`, not in `attribuutGranulariteit`, and an
-executor that asks only the attribute table sees a scalar target where the
-document has a timeline. That happened: on 2026-09-20, before the fix,
-the ASP backend PLAYED the scalar gate on this very document (`geborgen`
-present at an `asOfDate` inside the window, absent outside it), while both
-Drools branches named the §8.4.3 clip.
+timeline on its own `Characteristic` node (`timeline`), not on an
+`Attribute`, and an executor that asks only the attribute table sees a
+scalar target where the document has a timeline. That happened: on
+2026-09-20, before the fix, the ASP backend PLAYED the scalar gate on this
+very document (`geborgen` present at an `asOfDate` inside the window,
+absent outside it), while both Drools branches named the §8.4.3 clip.
 
 The clip cannot be built here. Neither OCaml executor writes a temporal
 characteristic (ch. 3.11), so the timeline the window would cut is never
