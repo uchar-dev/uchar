@@ -68,9 +68,12 @@ class OnbekendeKnoopWitnessTest {
     }
 
     @Test void een_conditieknoop_buiten_de_unie_is_een_documentfout() throws Exception {
-        // the name the lens measured, a member in another case, and two expression members: one this backend
-        // carries, one it refuses as a form — at a condition position both are no condition at all
-        for (String naam : List.of("RuleStatusCheck", "comparison", "Literal", "ListLength"))
+        // the name the lens measured, a member in another case, two expression members — one this backend carries,
+        // one it refuses as a form; at a condition position both are no condition at all — and the two role checks
+        // of the L1 shape, whose refusal carried, until the L5 landing's fix round, a hint the shared loader's
+        // sentence does not have
+        for (String naam : List.of("RuleStatusCheck", "comparison", "Literal", "ListLength", "Rollidmaatschap",
+                "VerreRollidmaatschap"))
             onbekend(CONDITIE, naam, met(CONDITIE, naam));
     }
 

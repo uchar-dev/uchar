@@ -1860,9 +1860,6 @@ public final class IrLoader {
                 plekken.put(r, p);
                 yield r;
             }
-            // the two role checks of the L1 shape, which RoleMembership replaced: nodes this format no longer has
-            case "Rollidmaatschap", "VerreRollidmaatschap" -> throw new Documentfout(padVan(n) + "/node",
-                    "unknown condition node \"" + node + "\": uchar-ir-v1 spells a role check as RoleMembership");
             // a bound is written whole or not at all: absent is open on that side, the record's null
             case "TimeWindow" -> new Conditie.Periode(expr(knoopVeld(n, "from")), expr(knoopVeld(n, "to")),
                     bool(n, "toInclusive"), bron(n));
@@ -1926,7 +1923,8 @@ public final class IrLoader {
             }
             // this backend carries every member of IR-SPEC ch. 4.5's condition union, so any other name is no node of
             // this format, refused at the discriminator in the shared loader's words: a node of the v0 shape that L5
-            // renamed, a node of another union, or no node at all
+            // renamed, one of the two role checks of the L1 shape that RoleMembership replaced, a node of another
+            // union, or no node at all
             default -> throw new Documentfout(padVan(n) + "/node", "unknown condition node \"" + node + "\"");
         };
     }
