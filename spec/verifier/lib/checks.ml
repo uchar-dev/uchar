@@ -444,6 +444,13 @@ let date_duration_unknown_unit abbr =
   "date \xc2\xb1 duration: the duration unit '" ^ abbr
   ^ "' is neither a recognised time unit nor a declared day kind"
 
+(* WF-038 on the duration builtins (IR-SPEC ch. 4.3): the counted unit on the
+   node type is a time unit or a declared day kind, in the same three
+   readers *)
+let duration_unknown_unit abbr =
+  "duration: the counted unit '" ^ abbr
+  ^ "' is neither a recognised time unit nor a declared day kind"
+
 let context_value_refusal name =
   if List.mem name context_value_names then None
   else
@@ -4730,8 +4737,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                             if day_kind_unit ctx u then []
                             else
                               [ v "WF-038" at
-                                  ("'" ^ Option.value u.afkorting ~default:"?"
-                                   ^ "' is not a recognised time unit or declared day kind") ])))
+                                  (duration_unknown_unit (Option.value u.afkorting ~default:"?")) ])))
          | _ -> [])
       (* WF-038, the ordering-fold operand clause (IR-SPEC ch. 4.6,
          semantics `RUNTIME-SEMANTICS.md` ch. 1.2): first/last/

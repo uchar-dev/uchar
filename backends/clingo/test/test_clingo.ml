@@ -13664,6 +13664,31 @@ let () =
          ())
     ~case_text:(pf_case [ pf_is "0" ]) ~needle:"squareRoot operand is text, must be a number"
 
+(* WF-038 on the duration builtins: a counted unit that is neither a time
+   unit nor a declared day kind is refused in the verifier's sentence (the
+   clingo side of corpus/negatief/wf038-duur-onbekende-eenheid) *)
+let () =
+  let vadem =
+    {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": { "node": "Unit", "abbreviation": "vadem" } }|}
+  in
+  let ir =
+    pf_doc
+      ~objecttypen:[ pf_ot [ ("van", pf_datum); ("tot", pf_datum); ("heffing", vadem) ] ]
+      ~regels:
+        [ pf_regel
+            (Printf.sprintf
+               {|{ "node": "BuiltinCall", "kind": "duration", "arguments": [ %s, %s ], "type": %s, "source": { "snippet": "de tijdsduur" } }|}
+               (pf_a "van") (pf_a "tot") vadem) ]
+      ()
+  in
+  faults_with ~name:"WF-038: a duration counted in a unit that is no time unit" ~ir
+    ~case_text:
+      (pf_case
+         ~instances:
+           [ {|{ "label": "J1", "objectType": "Jutter", "attributes": { "van": { "date": "2024-01-01" }, "tot": { "date": "2025-01-01" } }, "roles": {}, "characteristics": [] }|} ]
+         [ pf_is "1" ])
+    ~needle:(Ir_v0.Checks.duration_unknown_unit "vadem")
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

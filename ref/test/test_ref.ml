@@ -6996,6 +6996,37 @@ let () =
              bron = None }))
     "squareRoot operand is text, must be a number"
 
+(* WV-3.8-duur-onbekende-eenheid (WF-038): the counted unit of a duration is
+   a time unit or a declared day kind; any other is refused in the verifier's
+   sentence (the ref side of corpus/negatief/wf038-duur-onbekende-eenheid) *)
+let () =
+  let vadem : Ir_v0.Ast.datatype =
+    Numeriek
+      { geheel = true; decimalen = 0; teken = None;
+        eenheid =
+          Some { afkorting = Some "vadem"; stelsel = None; canoniek = None; factor_naar_canoniek = None;
+                 noemer = None } }
+  in
+  let duur : Ir_v0.Ast.expr =
+    Functie
+      { kind = Tijdsduur; argumenten = [ aref "van" "Jutter"; aref "tot" "Jutter" ];
+        element_objecttype = None; leegwaarde = None; filter = None; dimensie_selectie = None;
+        typ = Some vadem; bron = None; granulariteit = None; bron_rol = None; bron_pad = None }
+  in
+  let doc =
+    { empty_doc with
+      objecttypen =
+        [ ot "Jutter" [ ("van", Some Datum_in_dagen); ("tot", Some Datum_in_dagen); ("spanne", Some vadem) ] [] ];
+      resolved_regels = [ rr "spanne" Berekening (Some (aref "spanne" "Jutter")) (Some duur) None ] }
+  in
+  expect_fault_msg "WV-3.8-duur-onbekende-eenheid-faalt"
+    (fun () ->
+      Eval.evaluate (env_of doc)
+        (World.add_instance World.empty
+           (inst "J1" "Jutter"
+              [ ("van", Value.date_of_iso "2024-01-01"); ("tot", Value.date_of_iso "2025-01-01") ])))
+    (Ir_v0.Checks.duration_unknown_unit "vadem")
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

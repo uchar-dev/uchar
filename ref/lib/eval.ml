@@ -996,10 +996,9 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                     match day_kind_of_unit env u with
                     | Some k -> `Day_kind k
                     | None ->
-                        Value.fault
-                          "duration unit %S is neither a recognised time unit nor a declared \
-                           day kind"
-                          (Option.value u.afkorting ~default:"?")))
+                        Value.fault "%s"
+                          (Ir_v0.Checks.duration_unknown_unit
+                             (Option.value u.afkorting ~default:"?"))))
             | _ ->
                 Value.fault "duration without a recognised time unit on its node type"
           in

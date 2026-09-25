@@ -1891,6 +1891,16 @@ let numeric_builtin_operand ctx kind (argumenten : expr list) =
       | None -> ())
   | _ -> ()
 
+(* WF-038's counted unit of a duration that is neither a time unit nor a
+   declared day kind, in the sentence the verifier and ref speak
+   ([Ir_v0.Checks]); a day kind stays the helpers' *)
+let duration_unit_known ~doc (t : datatype option) =
+  match t with
+  | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ })
+    when Ir_v0.Checks.time_unit_of_eenheid u = None && not (day_kind_of_unit_doc doc u) ->
+      fault "%s" (Ir_v0.Checks.duration_unknown_unit (Option.value u.afkorting ~default:"?"))
+  | _ -> ()
+
 (* The unit of a date ± duration step (WF-035), for the forms whose sentence
    the verifier and ref speak as well ([Ir_v0.Checks]): no time unit on the
    duration operand, a sub-day unit on a day-precision date, and a unit that
@@ -4799,6 +4809,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            whole_units_between_ms. *)
         if not (is_datetime_operand ctx (Some a) && is_datetime_operand ctx (Some b)) then
           fault "duration mixes date precisions";
+        duration_unit_known ~doc:ctx.doc typ;
         let tu = dt_time_unit_of ~doc:ctx.doc ~what:"duration" typ in
         let da_atoms, da, msa = dt_term ctx ~subject ~subject_ot a in
         let db_atoms, db, msb = dt_term ctx ~subject ~subject_ot b in
@@ -4864,6 +4875,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             dk_tijdsduur ctx ~subject ~subject_ot ~kind:k
               ~absolute:(kind = Absolute_tijdsduur) a b
         | None ->
+        duration_unit_known ~doc:ctx.doc typ;
         let tu = day_time_unit_of ~what:"duration" typ in
         let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
         let bb, tb, sb = expr_term ctx ~subject ~subject_ot b in
