@@ -116,8 +116,9 @@ is_holdout() { local base=$1 h; for h in "${HOLDOUTS[@]}"; do [ "$base" = "$h" ]
 # scenario and not as one program (the competing writes of WF-026 and WF-079, and a WF-045 cycle that
 # closes only across scenarios). It also declares less than the slices, which carry the scenario test
 # model: every name-carrying WF-034 in it, and its one WF-022, names an attribute or a characteristic
-# the slices declare and the casus uses without declaring. Measured 2026-09-25: 18 reports. Its role
-# is the parity object of obligation 2, not a well-formed program.
+# the slices declare and the casus uses without declaring. Measured 2026-09-25: 15 reports, one per
+# pointer and sentence (WF-026 drops its repeats since the card verifier-allocatie-keten; 18 lines
+# before). Its role is the parity object of obligation 2, not a well-formed program.
 VERIFIER_HOLDOUTS=(
   'toka-24 WF-099 /rules/rules/0/versions/0/value/base/minimum'
 )

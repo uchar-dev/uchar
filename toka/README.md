@@ -79,17 +79,19 @@ verifier-clean under gate 3's verifier, and gate 11 checks it (its obligation
   goes stale in either direction: when the slice turns clean, or when it draws
   any other report.
 - **The casus dump is not a well-formed program, and is not meant to be.** As
-  one document it draws 18 reports. Its scenarios each write the same targets
-  in their own way, legitimate per scenario and not as one program (6 ×
-  WF-026, 1 × WF-079), and one dependency cycle closes only across scenarios
-  (1 × WF-045; the slice that carries the creation is clean). It also uses
-  four attributes and one characteristic that it does not declare and the
-  slices, cut in the scoping of the toolchain's own scenario tests, do (8 ×
-  WF-034: seven references to those attributes and the one derived position
-  their absence leaves untyped; 1 × WF-022, a rule writing that
-  characteristic). The last report, WF-099, sits at the very rule `toka-24`
-  carries. Its role is the parity object of the byte-identical re-emission,
-  so gate 11 keeps it out of the well-formedness leg.
+  one document it draws 15 reports, one per pointer and sentence: since the
+  card `verifier-allocatie-keten` (the same day) WF-026 no longer repeats one
+  sentence at one pointer, which made 18 lines before. Its scenarios each
+  write the same targets in their own way, legitimate per scenario and not as
+  one program (3 × WF-026, 1 × WF-079), and one dependency cycle closes only
+  across scenarios (1 × WF-045; the slice that carries the creation is
+  clean). It also uses four attributes and one characteristic that it does
+  not declare and the slices, cut in the scoping of the toolchain's own
+  scenario tests, do (8 × WF-034: seven references to those attributes and
+  the one derived position their absence leaves untyped; 1 × WF-022, a rule
+  writing that characteristic). The last report, WF-099, sits at the very
+  rule `toka-24` carries. Its role is the parity object of the byte-identical
+  re-emission, so gate 11 keeps it out of the well-formedness leg.
 
 ## Deliberate divergences from the toolchain emission
 
@@ -256,9 +258,10 @@ stays honest about where it no longer proves toolchain agreement.
   verifier's WF-099 sentence as a WARNING, because as an ERROR it would write no
   document for the casus at all, so `diagnostics` grew from 4 entries to 5 (six
   lines). No slice carries that diagnostic, as with the 2026-09-19 entry, and
-  the dump's 18 verifier reports keep their rules and pointers. The original
-  toolchain writes neither, so for these two nodes the comparison proves
-  "frontend == the recorded state".
+  the dump's verifier reports keep their rules and pointers (15, one per
+  pointer and sentence; see Well-formedness). The original toolchain writes
+  neither, so for these two nodes the comparison proves "frontend == the
+  recorded state".
 - The precedent runs the other way: `toka-45` (decision 16Y, 2026-08-29) is held
   **out** of the re-emission rather than re-pinned, because uchar's unit typing
   rejects the fragment as written. Divergence by holdout and divergence by
